@@ -72,8 +72,10 @@ It never changes a finding.
 `rules._table` → `maya_audit/rule_ids.json` (raises `FileNotFoundError` when absent).
 `facts._catalogue` → `maya_audit/rule_actions.json` (returns `{}` when absent or unreadable — a silent "no actions").
 Both were missing from the 0.2.8 wheel (stage 01). `rule_ids.json` has 56 checks; `rule_actions.json` 73 actions.
-`idx6.broken` (broken internal link) has a rule id but **no action entry**; `str2.no_h1`, `str2.empty_h1`,
-`str2.home_hidden_h1` have actions. Relevant to M1.
+Broken internal links are IDX-1 `idx1.4xx.referenced` / `idx1.4xx.referenced.linked` (4xx targets linked internally or
+in the sitemap; `broken_link_sources` turns their scope into the source pages); both have action entries. IDX-6
+`idx6.broken` ("Link target returns N, linked from N page(s)") has a rule id but **no action entry**. H1: `str2.no_h1`,
+`str2.empty_h1`, `str2.home_hidden_h1` have actions; `str2.hidden_h1`, `str2.many_h1`, `str2.home_no_h1` do not. Relevant to M1.
 
 ## 7. Test baseline
 

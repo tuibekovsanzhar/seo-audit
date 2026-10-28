@@ -63,7 +63,8 @@ Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bi
 4. The web PDF/Markdown/JSON download, print view and client-report export do not use the `release_gate` decision;
    only the `maya-audit-pro` skill does. → stage 09.
 5. `facts._catalogue()` returns `{}` when `rule_actions.json` is missing: a missing catalogue looks like "no action".
-6. `idx6.broken` (broken internal link) has no entry in `rule_actions.json`. → M1.
+6. Internal 4xx links are `idx1.4xx.referenced(.linked)` (have actions); `idx6.broken` and the H1 rules `str2.hidden_h1`,
+   `str2.many_h1`, `str2.home_no_h1` have no entry in `rule_actions.json`. → M1.
 
 **Isolation:** `tests/conftest.py` blocks non-loopback sockets and public DNS in-process. Child processes use
 `tests/offline_process.environment()` (temp HOME/MAYA_AUDIT_HOME/XDG dirs, absent `.env`, Firecrawl off, a
