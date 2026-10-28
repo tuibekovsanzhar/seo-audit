@@ -15,7 +15,7 @@ from .runclock import for_outcome, reader_allowance_s
 from .crawler import ConcurrentCrawlError, HostNotAllowed
 from .intent import DeclaredPolicy, IntentMarking
 from .ai_skills import skill_names
-from .report import (affected_urls, build_llm_brief, build_report, render_markdown, render_markdown_brief, render_text, run_outcome, write_json,
+from .report import (build_llm_brief, render_markdown, render_markdown_brief, render_text, run_outcome, write_json,
                      write_llm_brief, write_markdown)
 
 
@@ -713,8 +713,9 @@ def main(argv: list[str] | None = None) -> int:
                 texts=insights.page_texts(relevance_pages), pages=relevance_pages, brand_info=audit_brand)
         print(panel.render_text(dfs_panel))
     if args.json_path or args.markdown_path or args.markdown_brief_path or args.llm_brief_path:
-        report = build_report(outcome.result, outcome.gates, outcome.checks, firecrawl=fc_info,
-                              all_phases_s=clock.elapsed_s(), brand=audit_brand)
+        from . import final  # one sealed result: the report, its gate and its full address lists (DECISIONS 280)
+        sealed = final.seal(outcome, firecrawl=fc_info, all_phases_s=clock.elapsed_s(), brand=audit_brand)
+        report = sealed.report
         if evidence_index is not None:
             report["evidence_saved"] = {key: evidence_index[key] for key in ("mode", "total_bytes", "limits")} | {
                 # Relative to the JSON report, or the folder's name: never this computer's path (D-07).
@@ -740,10 +741,11 @@ def main(argv: list[str] | None = None) -> int:
             # reports in one folder never share (or mix up) one list. A client report reads it (DECISIONS 259).
             target = Path(args.json_path)
             companion = str(target.with_name(target.stem + ".affected-urls.json"))
-            write_json(affected_urls(outcome.checks), companion, args.overwrite)
+            write_json(sealed.affected, companion, args.overwrite)
             print(f"full affected-address lists written to {companion}")
         if args.markdown_path:
             markdown = render_markdown(outcome.result, outcome.gates, outcome.checks, firecrawl=fc_info)
+            markdown += final.cards_markdown(report)  # where each broken link is, from the sealed report
             if dfs_panel is not None:
                 markdown += panel.render_markdown(dfs_panel)
             if fc_info is not None:

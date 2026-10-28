@@ -492,6 +492,12 @@ def settle(check, access: dict | None = None, crawl_gap: Part | None = None, ind
         # A sitemap check that judged every sitemap URL needs no page the crawl left unread.
         if crawl_gap and not probe_scope_recorded(check.check_id, check.evidence or {}) and not sitemap_fully_checked(check):
             check.coverage["not_assessed"].append(crawl_gap)
+        elif crawl_gap and crawl_gap.get("count") and check.check_id == "IDX-1":
+            # IDX-1 judges the answers Maya's crawler received (its own scope), and an address the crawler found and
+            # never requested has no answer: it may be the broken one. Unknown, never "no 4xx" (DECISIONS 280).
+            check.coverage["not_assessed"].append(part(
+                "addresses found but never requested", "these addresses were found and never requested, so whether they "
+                "answer, redirect or fail is unknown", crawl_gap["count"]))
         if access and access["fetched"] and not access["readable"] and check.status in ("pass", "partial", "not_applicable"):
             check.status = "not_assessed"
             check.summary = (f"Not assessed: Maya could read none of the {access['fetched']} page(s) it fetched "

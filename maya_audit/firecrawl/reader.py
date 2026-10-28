@@ -747,10 +747,13 @@ def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, 
         launch_gate.apply(outcome.checks)  # the reader's own content checks are labelled as Maya's are
     from ..severity import apply as apply_severity
     apply_severity(outcome.checks, result)
-    from ..rules import assign as assign_rules
-    assign_rules(outcome.checks)
-    from ..facts import attach as attach_facts
-    attach_facts(outcome.checks)
+    # The same finalization as Maya's own checks (DECISIONS 280): broken-link tracing, rule ids, facts, page kinds, and
+    # a re-test state for any replaced finding that has none, within what is left of the re-test's request cap.
+    from .. import final
+    if replaced:
+        final.after_provider(outcome, cfg)
+    else:
+        final.settle(outcome.checks, result)
     info.setdefault("coverage", {})["elapsed_s"] = round(time.monotonic() - began, 3)
     used = sum(call["credits"] for call in client.calls)
     rate = settings.usd_per_credit()

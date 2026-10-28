@@ -28,7 +28,14 @@ def build_report(result: CrawlResult, gates: list[GateResult], checks: list[Chec
                  firecrawl: dict | None = None, all_phases_s: float | None = None,
                  brand: dict[str, Any] | None = None) -> dict[str, Any]:
     """The JSON report. `brand` is the audit's brand (`maya_audit.brand.resolve`); by default it is read from the
-    crawl's own pages, with no typed name."""
+    crawl's own pages, with no typed name. Outputs use `maya_audit.final.seal`, which also keeps the address lists."""
+    return report_and_affected(result, gates, checks, firecrawl=firecrawl, all_phases_s=all_phases_s, brand=brand)[0]
+
+
+def report_and_affected(result: CrawlResult, gates: list[GateResult], checks: list[CheckResult] | None = None, *,
+                        firecrawl: dict | None = None, all_phases_s: float | None = None,
+                        brand: dict[str, Any] | None = None) -> tuple[dict[str, Any], dict[str, list[str]]]:
+    """The JSON report and the full affected-address lists, both from the same qualified checks."""
     from .judgments import qualify_checks
     checks = qualify_checks(checks or [], result)
     site = [c for c in checks if not c.check_id.startswith("ANS")]
@@ -73,8 +80,9 @@ def build_report(result: CrawlResult, gates: list[GateResult], checks: list[Chec
         report["platform"] = platform
     # G1 (DECISIONS 278): the release gate's decision on the report itself, last; it never changes a finding.
     from .release_gate import run as release_gate
-    report["release_gate"] = release_gate(report, affected_urls(site))
-    return report
+    affected = affected_urls(checks)  # site and answer-engine findings, as the companion file always listed them
+    report["release_gate"] = release_gate(report, affected)
+    return report, affected
 
 
 def affected_urls(checks: list[CheckResult]) -> dict[str, list[str]]:

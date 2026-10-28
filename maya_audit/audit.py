@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 import time
+from typing import Any
 from urllib.parse import urlsplit
 
 import httpx
@@ -42,6 +43,13 @@ class AuditOutcome:
     deadline_mono: float | None = None
     pace_s: float = 0.0
     started_mono: float | None = None
+    # What the re-test used, so it can run again for findings a page reader replaced (maya_audit.final.after_provider).
+    transport: Any = field(default=None, repr=False, compare=False)
+    hooks: Any = field(default=None, repr=False, compare=False)
+
+    def __getstate__(self) -> dict:
+        # A saved result (maya_audit_web.snapshot) holds data only: the live transport and hooks stay out of it.
+        return {k: v for k, v in self.__dict__.items() if k not in ("transport", "hooks")}
 
 
 class NetworkPreflightFailed(Exception):
@@ -268,18 +276,14 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
                stop_reason=result.stop_reason.value if result.stop_reason else None)
     launch_gate.apply(answer_checks)
     apply_severity(answer_checks, result)
-    from .rules import assign as assign_rules
-    assign_rules(site_checks + answer_checks)  # titles settled above may have been reworded (DECISIONS 269)
-    from .facts import attach as attach_facts
-    attach_facts(site_checks + answer_checks)  # structured evidence for the most frequent rules (DECISIONS 271)
-    from .checks.structure import annotate_page_types
-    annotate_page_types(site_checks, result)  # each affected page's kind, for the release gate (DECISIONS 278)
+    # Rule ids (titles may have been reworded, DECISIONS 269), facts (271), page kinds (278): the same steps run again
+    # after a page reader replaces checks (maya_audit.final, DECISIONS 280).
+    from . import final
+    final.settle(site_checks + answer_checks, result)
     # Last: the most serious findings asked again, recorded beside them, severities untouched (DECISIONS 272).
-    from . import verification
-    result.verification = verification.run(site_checks + answer_checks, result, config, transport, hooks,
-                                           shared["pace_s"])
+    result.verification = final.verify(site_checks + answer_checks, result, config, transport, hooks, shared["pace_s"])
     if transport is None:
         result.network = {"preflight": {k: v for k, v in (preflight or {"status": "not_needed"}).items() if k != "addresses"},
                           "dns": resolver.summary()["hosts"]}
     return AuditOutcome(result, gates, site_checks + answer_checks, deadline_mono=shared["deadline_mono"],
-                        pace_s=float(shared["pace_s"] or 0.0), started_mono=started_mono)
+                        pace_s=float(shared["pace_s"] or 0.0), started_mono=started_mono, transport=transport, hooks=hooks)

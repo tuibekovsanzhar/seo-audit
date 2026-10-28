@@ -2505,3 +2505,26 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      slug (`Alpha` → `alpha.json`): one name on case-sensitive and case-insensitive file systems; two CSV names that differ
      only in case were already refused. (3) Test harness only: `tests/offline_process.environment` passes the user's
      Playwright browser folder to child processes on macOS/Linux, as it already did on Windows.
+
+280. **One final result for every output; broken internal links end to end; the release gate on every web download
+     (owner's request, M1 slice A, agent implementation, 2026-10-29).** (1) `maya_audit/final.py`: `settle` (broken-link
+     tracing, rule ids, facts, page kinds; no request) and `verify` (the controlled re-test) run inside `run_audit` and
+     again in `firecrawl.reader.apply` when a reader replaced checks (`after_provider`): a replaced High finding now gets
+     page kinds and a re-test state; the second re-test covers only findings with no record, within what is left of
+     `verification_max_requests`, and is recorded as `crawl.verification.after_provider`. `AuditOutcome` carries the
+     transport and hooks for it (never pickled into a snapshot). (2) `final.seal(outcome)` builds the report and the full
+     address lists once (`report.report_and_affected`); the CLI and the web worker both use it. The companion
+     `affected-urls.json` now comes from the qualified checks the report was built from (before: the unqualified ones).
+     `final.from_report` reads a saved report; one saved before schema 1.20 gets the gate run on it. Supplementary panels
+     may be added after sealing; `digest` covers checks, answer panel, order and gate. (3) Broken-link cards
+     (`final.broken_link_cards`): one per link (page to edit, link text, the address it links to, where it ends and that
+     address's status) and one per sitemap entry; "replacement: unknown" always, since the right address is never
+     known. Shown in the Markdown (CLI and web), on the web's finding rows and in the concise (client) and full PDF.
+     (4) Web: PDF, Markdown and JSON downloads and the final client-report export are refused (409 `release_blocked`)
+     when the gate is BLOCKED; `draft=true` gives a draft (file name `-draft`, a banner in the PDF/Markdown/print view;
+     the JSON is the record and carries the decision). Every report download sends `X-Maya-Release-Gate`. The results
+     card offers the draft links when blocked. The evidence zip is not a report and is not gated. CONDITIONAL is not
+     blocked. (5) IDX-1 judged only the answers Maya received but was called a pass when the crawl found addresses it
+     never requested (page cap): it now lists "addresses found but never requested" as not assessed, so it is partial
+     (INV-01). A reader's content cap still does not touch IDX-1. Not changed: severities; batch and the skills still
+     build their own report (stage 05); `render_markdown` still runs its own `qualify_checks` pass.

@@ -33,7 +33,7 @@ from . import API_VERSION, chat, comparison, demo, fc, followups, paid, pdf, pra
 from .runner import (AFFECTED_JSON, MAX_KEY_PAGES, MAX_QUEUED, MODES, REPORT_JSON, REPORT_MD, STEPS, Engine, Runner,
                      crawl_config, is_active, pages_saved, plan_shape, CRAWL_DB)
 from .security import Guard, error_body, loopback_hosts
-from maya_audit import archives, crux, ownership
+from maya_audit import archives, crux, final, ownership, release_gate
 from maya_audit import brand as brand_module
 from maya_audit.dataforseo import insights
 from maya_audit.dataforseo import panel as dfs_panel
@@ -896,8 +896,13 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                 "crux": summary.speed_view(report.get("crux") or crux.unavailable()),
                 "archives": summary.archives_view(archives.view(report["archives"])) if report.get("archives") else None,
                 "firecrawl_offer": firecrawl_offer(audit, report, view),
-                "downloads": [{"format": fmt, "label": t(f"result.download.{fmt}"), "url": f"{base}/downloads/{fmt}"}
-                              for fmt in ("pdf", "markdown", "json", "evidence")],
+                # A report the release gate blocked downloads only as a marked draft, and the buttons say so (DECISIONS 280).
+                "release_gate": gate_decision(report),
+                "downloads": [{"format": fmt, "url": f"{base}/downloads/{fmt}" + ("?draft=true" if draft else ""),
+                               "label": t("result.download.draft", label=t(f"result.download.{fmt}")) if draft
+                               else t(f"result.download.{fmt}")}
+                              for fmt in ("pdf", "markdown", "json", "evidence")
+                              for draft in [fmt != "evidence" and gate_decision(report) == release_gate.BLOCKED]],
                 "print_url": f"{base}/print", "has_previous": not audit.get("analysis") and store.previous_audit(audit) is not None}
         # The practical report in brief: the executive summary, the scorecard and the timeline's counts. The whole of it,
         # with every issue and the page table, is GET /audits/{id}/practical: a results card stays small.
@@ -1277,6 +1282,21 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         chosen = lang if lang in STRINGS else audit.get("language") if audit.get("language") in STRINGS else current_language()
         return set_language(chosen)
 
+    def gate_decision(report: dict[str, Any]) -> str | None:
+        """The saved gate's decision; a report saved before the gate existed is gated now."""
+        saved = report.get("release_gate")
+        return saved.get("decision") if isinstance(saved, dict) else final.from_report(report).decision
+
+    def publishable(audit: dict[str, Any], draft: bool = False) -> final.FinalAuditResult:
+        """The saved report as one final result and the release gate's decision on it (DECISIONS 280). A blocked
+        report is refused unless the caller asked for a draft; a report saved before the gate existed is gated now."""
+        sealed = final.from_report(load_report(audit), affected(audit["id"]))
+        if sealed.decision == release_gate.BLOCKED and not draft:
+            hard = [v for v in sealed.gate.get("violations") or [] if v.get("hard")]
+            raise ApiError(409, "release_blocked", t("error.release_blocked", count=len(hard)), decision=sealed.decision,
+                           rules=sorted({str(v.get("rule")) for v in hard}), draft=True)
+        return sealed
+
     def printable_html(audit: dict[str, Any], *, full: bool = False) -> tuple[str, dict[str, Any]]:
         report = load_report(audit)
         view = result_view(audit, report)
@@ -1289,6 +1309,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         audit = need_audit(audit_id)
         report_language(audit, lang)
         html, _ = printable_html(audit, full=full)
+        if publishable(audit, draft=True).decision == release_gate.BLOCKED:
+            html = pdf.draft_banner(html)  # a view may be read; it says it is not for delivery
         return HTMLResponse(html, headers={"Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; "
                                            "base-uri 'none'; form-action 'none'; frame-ancestors 'none'"})
 
@@ -1313,31 +1335,47 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         return buffer.getvalue()
 
     @api.get("/audits/{audit_id}/downloads/{format}", summary="pdf, markdown, json, or evidence (a zip)")
-    def download(audit_id: str, format: str, full: bool = False, lang: str | None = Query(default=None, pattern="^[a-z]{2}$")) -> Response:
+    def download(audit_id: str, format: str, full: bool = False, lang: str | None = Query(default=None, pattern="^[a-z]{2}$"),
+                 draft: bool = False) -> Response:
         audit = need_audit(audit_id)
         if format not in DOWNLOAD_NAMES:  # a fixed list: the value never becomes part of a path
             raise ApiError(404, "download_not_found", t("error.download_not_found"))
         extension, media_type = DOWNLOAD_NAMES[format]
         name = download_name(audit, extension)
         load_report(audit)
+        gate: dict[str, str] = {}
+        blocked = False
+        if format != "evidence":  # the raw evidence is not a report; every report form passes the release gate
+            sealed = publishable(audit, draft)
+            blocked = sealed.decision == release_gate.BLOCKED
+            gate = {"X-Maya-Release-Gate": str(sealed.decision)}
+            if blocked:
+                stem, dot, ext = name.rpartition(".")
+                name = f"{stem}-draft{dot}{ext}"
         if format == "pdf":
             report_language(audit, lang)
             html, view = printable_html(audit, full=full)
+            if blocked:
+                html = pdf.draft_banner(html)
             try:
-                content = pdf.to_pdf(html, footer_title=f"{t('app.title')} · {view['host']}", max_pages=None if full else 50)
+                content = pdf.to_pdf(html, footer_title=("DRAFT · " if blocked else "") + f"{t('app.title')} · {view['host']}",
+                                     max_pages=None if full else 50)
             except pdf.PdfPageLimit as exc:
                 raise ApiError(422, "pdf_page_limit", str(exc)) from None
             except pdf.PdfUnavailable:
                 raise ApiError(503, "pdf_unavailable", t("result.pdf_unavailable"),
                                print_url=f"/api/v1/audits/{audit['id']}/print") from None
-            return Response(content, media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{name}"'})
+            return Response(content, media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{name}"', **gate})
         if format == "evidence":
             return Response(evidence_zip(audit), media_type=media_type,
                             headers={"Content-Disposition": f'attachment; filename="{name.replace(".zip", "-evidence.zip")}"'})
         path = artifact_folder(audit["id"]) / (REPORT_JSON if format == "json" else REPORT_MD)
         if not path.is_file() or path.is_symlink():
             raise ApiError(409, "report_not_ready", t("chat.no_report"))
-        return FileResponse(path, media_type=media_type, filename=name)
+        if blocked and format != "json":  # the JSON is the evidence record and carries the gate's decision itself
+            text = f"> **{t('pdf.draft_banner')}**\n\n" + path.read_text(encoding="utf-8")
+            return Response(text, media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{name}"', **gate})
+        return FileResponse(path, media_type=media_type, filename=name, headers=gate)
 
     def compare_with(audit: dict[str, Any], other_id: str | None) -> dict[str, Any] | None:
         other = need_audit(other_id) if other_id else (None if audit.get("analysis") else store.previous_audit(audit))
@@ -1474,7 +1512,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
     def export_client_report(audit_id: str, format: str, mode: str = Query(default="draft", pattern="^(draft|final)$"), full: bool = False):
         if format not in ('html', 'pdf', 'json'):
             raise ApiError(404, "not_found", "Choose HTML, PDF or evidence JSON.")
-        _, workspace = client_workspace(audit_id)
+        audit, workspace = client_workspace(audit_id)
+        if mode == "final":  # a client report built on a blocked audit report is never delivered as final (DECISIONS 280)
+            publishable(audit)
         work = client_call(workspace.load)
         if format == 'json':
             return JSONResponse(client_reports.public(work), headers={"Content-Disposition": f'attachment; filename="maya-client-{audit_id}-evidence.json"'})

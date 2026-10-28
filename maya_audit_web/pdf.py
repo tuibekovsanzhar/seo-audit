@@ -180,6 +180,31 @@ def _reader_lines(reader: dict[str, Any], with_notice: bool = True) -> list[str]
     return [said for said, own in zip(shown, reader["lines"]) if with_notice or own != reader.get("notice")]
 
 
+def link_cards_html(cards: list[dict[str, Any]] | None) -> str:
+    """The "where to edit" table of a broken internal link (maya_audit.final.broken_link_cards): one row per link to
+    change, from the final report only. Link text is the site's own data and is escaped like any other value."""
+    if not cards:
+        return ""
+    from maya_audit.final import target_line
+    head = "".join(f"<th>{_e(t(key))}</th>" for key in ("pdf.links.source", "pdf.links.text", "pdf.links.to",
+                                                          "pdf.links.ends", "pdf.links.replacement", "pdf.links.retested"))
+    body = []
+    for card in cards:
+        source = card["source_url"] if card["kind"] == "link" else f"{t('pdf.links.sitemap')}: {card['source_url']}"
+        replacement = card["replacement_url"] or t("pdf.links.unknown")
+        body.append("<tr>" + "".join(f'<td class="wrap small">{_e(v)}</td>' for v in (
+            source, card.get("link_text") or "—", card.get("links_to"), target_line(card), replacement,
+            card.get("verification") or "—")) + "</tr>")
+    return (f'<p class="small"><b>{_e(t("pdf.links.title"))}</b></p>'
+            f'<table class="facts links"><thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table>')
+
+
+def draft_banner(html: str) -> str:
+    """Mark a page the release gate blocked: it may be read as a draft, never delivered as final."""
+    banner = f'<p class="draft" style="border:2px solid #a00;color:#a00;padding:6pt;font-weight:bold">{_e(t("pdf.draft_banner"))}</p>'
+    return html.replace("<body>", "<body>" + banner, 1)
+
+
 def _issue(row: dict[str, Any]) -> str:
     """One problem: what, where, why, the exact fix with a short example, who usually does it and how big it is."""
     pages = "".join(f'<li class="url">{_e(url)}</li>' for url in row["pages"])
@@ -200,7 +225,7 @@ def _issue(row: dict[str, Any]) -> str:
             + f'<tr><td>{_e(t("result.fix"))}</td><td class="wrap">{_e(row["fix"])}</td></tr>'
             + (f'<tr><td>{_e(t("pdf.example"))}</td><td class="wrap"><code>{_e(row["example"])}</code></td></tr>' if row.get("example") else "")
             + f'<tr><td>{_e(t("pdf.owner"))}</td><td>{_e(row["owner"])} · {_e(row["effort"])} <span class="muted small">({_e(t("result.estimates.label"))})</span></td></tr>'
-            + "</table></div>")
+            + "</table>" + link_cards_html(row.get("link_cards")) + "</div>")
 
 
 def _executive(view: dict[str, Any], practical: dict[str, Any], *, compact: bool = False) -> str:

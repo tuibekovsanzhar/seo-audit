@@ -11,15 +11,15 @@ Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bi
 |---|---|---|
 | 00 Baseline | IN_PROGRESS | Baseline, call map, test state recorded. Step 7 (`tests/fixtures/quality/`) not started |
 | 01 Packaging | IN_PROGRESS | Packaging defect fixed and verified from an installed wheel; guide steps 5 (report/static smoke) and 6 (explicit missing-catalogue error) open |
-| 02 Result contract | NOT_STARTED | |
+| 02 Result contract | IN_PROGRESS | M1 minimum: `maya_audit/final.py` (`FinalAuditResult`, `seal`, `from_report`) |
 | 03 Rule identity | NOT_STARTED | |
-| 04 Shared finalization | NOT_STARTED | |
-| 05 Shared service (CLI/batch/web) | NOT_STARTED | |
+| 04 Shared finalization | IN_PROGRESS | `final.settle`/`verify` in `run_audit` and after a page reader; batch not moved |
+| 05 Shared service (CLI/batch/web) | IN_PROGRESS | CLI and web use `final.seal`; batch and skills not moved |
 | 06 Output generations | NOT_STARTED | |
 | 07 Source/page type/scope/render | NOT_STARTED | |
 | 08 Rule contract + catalogue | NOT_STARTED | |
-| 09 One publication gate | NOT_STARTED | |
-| 10 URL-level report | NOT_STARTED | |
+| 09 One publication gate | IN_PROGRESS | Every web report download and the final client export gated; CLI writes and warns; batch not gated |
+| 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown and PDFs |
 | 11 Team status vs engine verification | NOT_STARTED | |
 | 12 SEO accuracy measurement | BLOCKED_ON_INPUT | Needs human SEO labels; nothing labelled yet |
 | 13 Integration and release | NOT_STARTED | |
@@ -108,3 +108,26 @@ contacted. The tests themselves build only with `--no-build-isolation --no-index
 explicit error is a behaviour decision for a separate small change with its own test
 (`test_missing_required_catalogue_is_explicit_error`). To make the wheel tests run locally without the tool, setuptools
 would have to be added to `.venv` (not done: no dependency installs without authorization).
+
+## M1 slice A — broken internal links end to end (2026-10-29)
+
+**Changed:** new `maya_audit/final.py`; `audit.py` (finalization through `final`, outcome keeps transport/hooks, not
+pickled), `firecrawl/reader.py` (`final.after_provider` when checks were replaced), `verification.py` (`only_missing`,
+`cap`), `report.py` (`report_and_affected`), `cli.py` and `maya_audit_web/runner.py` (`final.seal`, cards in Markdown,
+companion list from the sealed result), `coverage.py` (IDX-1 "addresses found but never requested"),
+`maya_audit_web/app.py` (gate on downloads, client export, print banner, draft links), `pdf.py`, `concise_report.py`,
+`practical.py`, `summary.py` (cards), strings EN/TR. DECISIONS 280. Tests: `tests/test_m1_broken_links.py` (hand-written
+broken-via-redirect, working counterpart, partial crawl, adapter, provider finalization),
+`tests/test_m1_publication.py` (web downloads vs the gate, cards in rows and HTML).
+
+**Results:** `pytest -q tests/test_m1_broken_links.py` → `10 passed`; `tests/test_m1_publication.py` → `10 passed`;
+w13 + client report app + report agreement + Firecrawl + distribution → `147 passed, 2 skipped`. The provider test was
+checked to fail with the old behaviour (`TypeError: 'NoneType' object is not subscriptable` on the missing re-test
+record). A full-suite run during the slice is not counted: files changed while it ran. Final full run: see slice B.
+
+**Found and fixed in the slice:** IDX-1 called a page-capped crawl "pass" though addresses were never requested
+(`coverage.probe_scope_recorded` exempts IDX-1 from the crawl gap). Now partial with its own part (DECISIONS 280 (5)).
+
+**Not done (slice A):** batch and the skills still build reports without `final.seal`; the CLI writes a BLOCKED report
+(prints the decision) instead of refusing; `render_markdown` re-qualifies on its own; the client-report editorial cards
+(`client_reporting`) do not show the broken-link card yet; the evidence zip is not gated (by choice).

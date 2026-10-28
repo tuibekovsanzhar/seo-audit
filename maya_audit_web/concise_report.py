@@ -151,6 +151,8 @@ def render(view, rows, generated_at, practical, companions, demo=False):
         observed = row.get("observed_at") or (row.get('evidence_record') or {}).get("requested_at")
         if observed:
             out.append(f'<p class="small">{e(t("concise.observed"))}: {e(observed)}</p>')
+        from .pdf import link_cards_html
+        out.append(link_cards_html(row.get('link_cards')))  # where each broken link is (maya_audit.final)
         urls = row.get('sample_pages') or []
         if urls:
             out.append('<ul>'+''.join(f'<li><a href="{e(u)}">{e(u)}</a></li>' for u in urls[:3])+'</ul>')

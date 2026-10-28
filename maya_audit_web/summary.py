@@ -889,6 +889,11 @@ def search(report: dict[str, Any], *, severity: list[str] | None = None, check_i
            owner: str = "", query: str = "", offset: int = 0, limit: int = 20) -> dict[str, Any]:
     """Filter and page through the findings. Filtering chooses which to show; it changes none of them."""
     rows = [item(f, bool(single_page_of(report))) for f in findings(report)]
+    from maya_audit.final import broken_link_cards
+    cards = broken_link_cards(report)  # where each broken internal link is, read from the final report (DECISIONS 280)
+    for row in rows:
+        if row["id"] in cards:
+            row["link_cards"] = cards[row["id"]]
     needle = query.strip().casefold()
     kept = [row for row in rows
             if (not severity or row["severity"] in severity)

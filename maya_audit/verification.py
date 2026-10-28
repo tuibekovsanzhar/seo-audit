@@ -245,13 +245,17 @@ def _public(row: dict) -> dict:
     return {k: v for k, v in row.items() if not k.startswith("_")}
 
 
-def run(checks, result, cfg, transport=None, hooks=None, pace_s: float | None = None) -> dict:
+def run(checks, result, cfg, transport=None, hooks=None, pace_s: float | None = None, *, only_missing: bool = False,
+        cap: int | None = None) -> dict:
     """Re-test the findings in scope and write `verification` on each. Returns the summary for `CrawlResult`.
 
     Every High or Critical finding leaves with a state (DECISIONS 278): one that was not asked again says so,
     `not_retested`, with the reason (no re-test for its rule, the stage switched off, the cap...). A missing state
-    used to look the same as a confirmed one on a client card."""
-    summary = _run(checks, result, cfg, transport, hooks, pace_s)
+    used to look the same as a confirmed one on a client card.
+
+    `only_missing`: re-test only findings with no record yet (a page reader replaced their check after the first run);
+    `cap` is then what is left of the audit's request cap, so the two runs together never exceed it (DECISIONS 280)."""
+    summary = _run(checks, result, cfg, transport, hooks, pace_s, only_missing=only_missing, cap=cap)
     for check in checks:
         for finding in _get(check, "findings") or []:
             if (in_scope(finding) or _sev(finding) in _SEVERE) and not _get(finding, "verification"):
@@ -263,10 +267,13 @@ def run(checks, result, cfg, transport=None, hooks=None, pace_s: float | None = 
     return summary
 
 
-def _run(checks, result, cfg, transport=None, hooks=None, pace_s: float | None = None) -> dict:
-    targets = sorted((f for c in checks for f in (_get(c, "findings") or []) if in_scope(f)), key=_sev)
+def _run(checks, result, cfg, transport=None, hooks=None, pace_s: float | None = None, *, only_missing: bool = False,
+         cap: int | None = None) -> dict:
+    targets = sorted((f for c in checks for f in (_get(c, "findings") or [])
+                      if in_scope(f) and not (only_missing and _get(f, "verification"))), key=_sev)
+    cap = cfg.verification_max_requests if cap is None else max(0, cap)
     summary: dict[str, Any] = {"enabled": bool(cfg.verification_enabled), "user_agent": cfg.user_agent,
-                               "cap": cfg.verification_max_requests, "requests": 0, "findings": len(targets)}
+                               "cap": cap, "requests": 0, "findings": len(targets)}
     if not cfg.verification_enabled:
         summary["reason"] = "switched off (--no-verification)"
         return summary
@@ -294,7 +301,7 @@ def _run(checks, result, cfg, transport=None, hooks=None, pace_s: float | None =
     fetcher.deadline_mono = time.monotonic() + cfg.verification_time_s
     if hooks is not None and getattr(hooks, "should_stop", None) is not None:
         fetcher.stop_check = hooks.stop_requested
-    ask = _Asker(fetcher, cfg, policy, cfg.verification_max_requests)
+    ask = _Asker(fetcher, cfg, policy, cap)
     from .probes import BROWSER_USER_AGENT, PROBE_HEADERS
     try:
         for finding in targets:

@@ -35,7 +35,8 @@ from maya_audit.dataforseo import insights, panel
 from maya_audit.firecrawl import panel as firecrawl_panel
 from maya_audit.firecrawl import reader as firecrawl_reader
 from maya_audit.progress import Hooks
-from maya_audit.report import affected_urls, build_report, duration_line, render_markdown, run_outcome
+from maya_audit import final
+from maya_audit.report import duration_line, render_markdown, run_outcome
 from maya_audit.runclock import for_outcome
 from maya_audit.scratchpad import Scratchpad
 
@@ -431,8 +432,11 @@ class Runner:
         business = ((store.plan(audit["plan_id"]) or {}).get("document") or {}).get("business") or {}
         audit_brand = brand_module.resolve(result, business.get("brand_name") if business.get("brand_confirmed") else None,
                                            firecrawl_pages or None)
-        report = build_report(result, outcome.gates, outcome.checks, firecrawl=firecrawl_section, brand=audit_brand)
+        # One sealed result: the report, its gate and its full address lists, as the CLI builds it (DECISIONS 280).
+        sealed = final.seal(outcome, firecrawl=firecrawl_section, brand=audit_brand)
+        report = sealed.report
         markdown = render_markdown(result, outcome.gates, outcome.checks, firecrawl=firecrawl_section)
+        markdown += final.cards_markdown(report)
 
         evidence_folder = out_dir / "evidence"
         shutil.rmtree(evidence_folder, ignore_errors=True)  # a resumed audit saves its evidence afresh
@@ -491,7 +495,7 @@ class Runner:
             from datetime import datetime, timezone
             report['generation']['processed_at'] = datetime.now(timezone.utc).isoformat()
             report['generation']['whole_job_finished_at'] = report['generation']['processed_at']
-        write_file(out_dir / AFFECTED_JSON, json.dumps(affected_urls(outcome.checks), ensure_ascii=False))
+        write_file(out_dir / AFFECTED_JSON, json.dumps(sealed.affected, ensure_ascii=False))
         # A report may be downloaded and passed on: where its input files sit on this computer is replaced by their names.
         local = sorted({str(value) for value in (config.db_path, config.citations_file, config.citation_domains_file) if value},
                        key=len, reverse=True)

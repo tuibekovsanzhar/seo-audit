@@ -139,7 +139,8 @@ def issue(row: dict[str, Any]) -> dict[str, Any]:
             "area": row["area"], "what": shown(row), "where": row["affects"], "pages": row["sample_pages"], "pages_total": row["pages_total"],
             "why": row["why"], "fix": shown(row, "fix"), "example": None if row.get("judgment",{}).get("qualified") else example_for(row["title"]), "owner": row["estimates"]["owner_label"],
             "effort": row["estimates"]["effort_label"], "source": row.get("source"), "confidence": row["confidence_label"],
-            "details": row.get("details") or [], "unverified": row.get("unverified"), "judgment": row.get("judgment"), "verification": row.get("verification")}
+            "details": row.get("details") or [], "unverified": row.get("unverified"), "judgment": row.get("judgment"), "verification": row.get("verification"),
+            "link_cards": row.get("link_cards")}
 
 
 def when(row: dict[str, Any]) -> str:
