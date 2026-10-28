@@ -74,3 +74,29 @@ def test_installed_package_resolves_rule_and_action_outside_checkout(wheel, tmp_
     assert dist.problems(smoke) == []
     assert smoke["rule"] == "idx6.broken"
     assert smoke["remediation"]["task_id"] == "str2.no_h1"
+
+
+@pytest.mark.parametrize("content", [None, "", "{not json", '{"actions": {}}', '{"other": 1}'])
+def test_missing_required_catalogue_is_explicit_error(content, tmp_path, monkeypatch):
+    """A missing, unreadable or empty action catalogue is an installation fault, never "no actions" (DECISIONS 279)."""
+    from maya_audit import facts, rules
+    if content is not None:
+        (tmp_path / "rule_actions.json").write_text(content, encoding="utf-8")
+    monkeypatch.setattr(rules, "__file__", str(tmp_path / "rules.py"))
+    facts._catalogue.cache_clear()
+    try:
+        with pytest.raises(rules.EngineDataMissing, match="rule_actions.json"):
+            facts.contract({"rule_id": "str2.no_h1", "evidence": {}, "scope": {}})
+    finally:
+        facts._catalogue.cache_clear()
+
+
+def test_missing_rule_table_is_explicit_error(tmp_path, monkeypatch):
+    from maya_audit import rules
+    monkeypatch.setattr(rules, "__file__", str(tmp_path / "rules.py"))
+    rules._table.cache_clear()
+    try:
+        with pytest.raises(rules.EngineDataMissing, match="rule_ids.json is missing"):
+            rules.rule_id("STR-2", "The homepage has no <h1>")
+    finally:
+        rules._table.cache_clear()

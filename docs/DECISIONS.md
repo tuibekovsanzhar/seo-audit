@@ -2496,3 +2496,12 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      dedup_key, which they do not yet); the hidden-<h1> and TTFB re-tests (DECISIONS 272). Reports saved before 1.20
      carry no contract fields: the gate then blocks content advice and High findings without a state, by design;
      regenerate them with this engine. Tests: `tests/test_w13_*.py`, the skill's `tests/test_client_text.py`.
+
+279. **Missing engine data is an error; batch file names are lower case (owner's request, agent implementation,
+     2026-10-29).** (1) `rules.engine_data` loads `rule_ids.json` and `rule_actions.json`; a missing, unreadable or empty
+     file raises `rules.EngineDataMissing` naming the file. Before, `facts._catalogue` returned `{}`, so a broken install
+     looked like "no action needed" for every finding. Both files are package data since stage 01
+     (`tests/test_distribution_contract.py`). (2) `batch` writes `<name>.json`, `.md` and `-evidence/` under a lower-case
+     slug (`Alpha` → `alpha.json`): one name on case-sensitive and case-insensitive file systems; two CSV names that differ
+     only in case were already refused. (3) Test harness only: `tests/offline_process.environment` passes the user's
+     Playwright browser folder to child processes on macOS/Linux, as it already did on Windows.

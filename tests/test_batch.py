@@ -100,8 +100,8 @@ def test_each_brand_gets_its_reports_and_a_brand_that_fails_mid_batch_does_not_s
     assert [table[name]["exit_code"] for name, _ in rows] == ["0", "2", "2", "2", "3", "0"]
 
     # A brand that worked: both reports, and the summary row is the report's own numbers.
-    alpha = json.loads((out / "Alpha.json").read_text(encoding="utf-8"))
-    assert (out / "Alpha.md").read_text(encoding="utf-8").startswith("# Maya Audit: http://127.0.0.1")
+    alpha = json.loads((out / "alpha.json").read_text(encoding="utf-8"))
+    assert (out / "alpha.md").read_text(encoding="utf-8").startswith("# Maya Audit: http://127.0.0.1")
     assert table["Alpha"]["result"].startswith("completed: ") and table["Alpha"]["error"] == ""
     assert int(table["Alpha"]["pages_checked"]) == len(alpha["crawl"]["pages"]) == 3 and table["Alpha"]["redirects"] == "0"
     assert alpha["page_counts"] == {"pages_checked": 3, "redirects": 0}
@@ -115,18 +115,18 @@ def test_each_brand_gets_its_reports_and_a_brand_that_fails_mid_batch_does_not_s
     int3 = next(gate for gate in alpha["gates"] if gate["check_id"] == "INT-3")["evidence"]
     assert table["Alpha"]["render_mode"] == int3["rendering_mode"] and table["Alpha"]["pages_rendered"] == "0"
     assert float(table["Alpha"]["duration_s"]) >= 0  # one decimal place; a loopback audit can round to 0.0
-    assert (table["Alpha"]["json"], table["Alpha"]["markdown"]) == ("Alpha.json", "Alpha.md")
+    assert (table["Alpha"]["json"], table["Alpha"]["markdown"]) == ("alpha.json", "alpha.md")
 
     # The page cap: a usable report, flagged as incomplete.
     assert table["Big Site"]["pages_checked"] == "3" and int(table["Big Site"]["pages_discovered"]) == 7
-    assert table["Big Site"]["result"].startswith("incomplete: ") and (out / "Big-Site.md").exists()
-    assert (out / "Omega-Co.json").exists()  # the name is made safe for a file name
+    assert table["Big Site"]["result"].startswith("incomplete: ") and (out / "big-site.md").exists()
+    assert (out / "omega-co.json").exists()  # the name is made safe for a file name
 
     # The failures: recorded with their error, no report files, and the brands after them still ran.
     assert table["Broken Brand"]["error"] == "RuntimeError: the site fell over half way"
     assert "ConcurrentCrawlError: an audit of busy.example is already running" in table["Busy"]["error"]
     assert "not a web address" in table["No Address"]["error"]
-    for failed in ("Broken-Brand", "Busy", "No-Address"):
+    for failed in ("broken-brand", "busy", "no-address"):
         assert not (out / f"{failed}.json").exists() and not (out / f"{failed}.md").exists()
     assert table["Broken Brand"]["pages_checked"] == "" and table["Broken Brand"]["result"] == "error: no audit was produced"
 
@@ -139,7 +139,7 @@ def test_each_brand_gets_its_reports_and_a_brand_that_fails_mid_batch_does_not_s
     # Without --dataforseo nothing about DataForSEO happens, as for a single audit.
     assert api.paths == [] and list(home.iterdir()) == []
     assert "dataforseo" not in alpha and table["Alpha"]["dfs_status"] == "" and table["Alpha"]["dfs_cost_usd"] == ""
-    assert "DataForSEO" not in printed + (out / "Alpha.md").read_text(encoding="utf-8") and "DataForSEO spend" not in text
+    assert "DataForSEO" not in printed + (out / "alpha.md").read_text(encoding="utf-8") and "DataForSEO spend" not in text
 
 
 def test_with_dataforseo_the_batch_plan_is_shown_first_and_each_brand_goes_through_the_cost_guard(
@@ -173,9 +173,9 @@ def test_with_dataforseo_the_batch_plan_is_shown_first_and_each_brand_goes_throu
     assert (table["Alpha Shop"]["dfs_cost_usd"], table["Alpha Shop"]["dfs_from_cache"]) == ("0.000000", "yes")
     assert (table["Marka"]["dfs_cost_usd"], table["Marka"]["dfs_from_cache"]) == ("0.043030", "no")
     assert (table["Broken"]["exit_code"], table["Broken"]["dfs_status"], table["Broken"]["dfs_cost_usd"]) == ("2", "", "")
-    section = json.loads((out / "Marka.json").read_text(encoding="utf-8"))["dataforseo"]
+    section = json.loads((out / "marka.json").read_text(encoding="utf-8"))["dataforseo"]
     assert section["target"] == "marka.com.tr" and section["status"] == "assessed"
-    assert "## DataForSEO: backlinks and authority" in (out / "Alpha-Shop.md").read_text(encoding="utf-8")
+    assert "## DataForSEO: backlinks and authority" in (out / "alpha-shop.md").read_text(encoding="utf-8")
     text = (out / "summary.md").read_text(encoding="utf-8")
     assert "**DataForSEO spend for the batch:** $0.0861" in text and "assessed, $0.0000 (from cache)" in text
 
@@ -295,7 +295,7 @@ def test_existing_reports_are_not_overwritten_unless_asked_and_the_csv_may_have_
     assert cli.main(["batch", str(path), "--out", str(out), "--delay", "0"]) == 0
     assert summary(out)["Alpha"]["url"] == url
     assert cli.main(["batch", str(path), "--out", str(out), "--delay", "0"]) == 2
-    assert "already holds Alpha.json" in capsys.readouterr().err and len(sites.audited) == 1
+    assert "already holds alpha.json" in capsys.readouterr().err and len(sites.audited) == 1
     assert cli.main(["batch", str(path), "--out", str(out), "--delay", "0", "--overwrite"]) == 0
 
 

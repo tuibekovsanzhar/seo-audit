@@ -189,12 +189,10 @@ def _set(value: Any, name: str, data) -> None:
 
 @lru_cache(maxsize=1)
 def _catalogue() -> dict:
-    import json
-    from pathlib import Path
-    try:
-        return json.loads(Path(__file__).with_name("rule_actions.json").read_text(encoding="utf-8")).get("actions") or {}
-    except (OSError, ValueError):
-        return {}
+    """The action catalogue. A missing or empty file raises `rules.EngineDataMissing`: an empty catalogue would read as
+    "no action needed" for every finding (DECISIONS 279)."""
+    from .rules import engine_data
+    return engine_data("rule_actions.json", "actions")
 
 
 def contract(finding) -> None:

@@ -1,6 +1,7 @@
 """Credential-free child processes with the same loopback boundary as pytest."""
 from pathlib import Path
 import os
+import sys
 import tempfile
 
 
@@ -21,11 +22,22 @@ socket.socket.connect, socket.getaddrinfo = connect, resolve
 '''
 
 
+def _browser_cache():
+    """Where Playwright keeps its browsers for this user when PLAYWRIGHT_BROWSERS_PATH is not set."""
+    if sys.platform == 'darwin':
+        return str(Path.home() / 'Library' / 'Caches' / 'ms-playwright')
+    return str(Path(os.environ.get('XDG_CACHE_HOME') or Path.home() / '.cache') / 'ms-playwright')
+
+
 def environment():
     root = Path(__file__).resolve().parents[1]
     work = Path(tempfile.mkdtemp(prefix='maya-offline-child-'))
     env = {k: os.environ[k] for k in ('PATH', 'LANG', 'LC_CTYPE', 'USER', 'PYTHONPYCACHEPREFIX',
             'PLAYWRIGHT_NODEJS_PATH', 'PLAYWRIGHT_BROWSERS_PATH') if k in os.environ}
+    if 'PLAYWRIGHT_BROWSERS_PATH' not in env and os.name != 'nt':
+        # The child gets a temporary HOME and XDG_CACHE_HOME, where Playwright would look for its browsers and find
+        # none; point it at the real cache, as the Windows branch below does.
+        env['PLAYWRIGHT_BROWSERS_PATH'] = _browser_cache()
     for key, name in (('HOME', 'home'), ('MAYA_AUDIT_HOME', 'audit'), ('TMPDIR', 'tmp'),
                       ('XDG_CACHE_HOME', 'cache'), ('XDG_CONFIG_HOME', 'config')):
         folder = work / name

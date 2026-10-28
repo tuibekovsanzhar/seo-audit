@@ -59,12 +59,13 @@ def read_brands(path: str) -> list[Brand]:
         name, url = values.get("name", ""), values.get("url", "")
         if not name and not url:
             continue
-        slug = re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-.")
+        # Lower case, so a report has one name on every file system (DECISIONS 279).
+        slug = re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-.").lower()
         if not slug:
             raise BatchError(f"{path} line {number}: the name {name!r} cannot be used as a file name")
-        if slug.lower() in seen:
-            raise BatchError(f"{path} line {number}: the name {name!r} would overwrite the reports of line {seen[slug.lower()]}")
-        seen[slug.lower()] = number
+        if slug in seen:
+            raise BatchError(f"{path} line {number}: the name {name!r} would overwrite the reports of line {seen[slug]}")
+        seen[slug] = number
         brands.append(Brand(name, url, slug))
     if not brands:
         raise BatchError(f"{path} lists no brands")
