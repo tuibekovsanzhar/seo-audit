@@ -1,0 +1,25 @@
+# Local owner state and private outputs must never enter git archives.
+HANDOVER.md export-ignore
+.claude export-ignore
+.claude/** export-ignore
+design-reference export-ignore
+design-reference/** export-ignore
+.env export-ignore
+.env.local export-ignore
+.env.production export-ignore
+.venv export-ignore
+.git export-ignore
+.cache export-ignore
+reports export-ignore
+output export-ignore
+out export-ignore
+reviews export-ignore
+*.db export-ignore
+*.db-wal export-ignore
+*.db-shm export-ignore
+*.zip export-ignore
+# The owner's local verification ledger includes archive hash and historical evidence locations.
+docs/MAYA-ACCURACY-HANDOVER.md export-ignore
+# Preserve the imported reporting resources byte-for-byte; CRLF is an intended line ending.
+maya_audit/client_reporting/assets/* whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+maya_audit/client_reporting/references/* whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

@@ -1,0 +1,1075 @@
+{
+ "_about": "Action titles and steps per rule id (DECISIONS 270): the to-do card's 'what to do' line, written once and reused in every report. Verb first, no numbers (a report's numbers come from report.json). Keys are rule ids from rule_ids.json; tests/test_w12_rule_actions.py checks they exist. A step may hold a condition (`step_when`, one entry per step, null for none; DECISIONS 278): the step is shown only when a finding's evidence meets it, and the release gate refuses a card that shows it otherwise.",
+ "actions": {
+  "str14.no_text": {
+   "en": "Give links that have no text a name",
+   "tr": "Metni olmayan bağlantılara ad verin",
+   "steps": {
+    "tr": [
+     "Bağlantıya görünür metin ya da aria-label ekleyin",
+     "İçinde görsel varsa görsele alt metin yazın"
+    ],
+    "en": [
+     "Add visible text or an aria-label to the link",
+     "If it wraps an image, give the image alt text"
+    ]
+   }
+  },
+  "idx8.copies": {
+   "en": "Merge or differentiate pages that copy each other",
+   "tr": "Birbirinin kopyası olan sayfaları birleştirin ya da ayrıştırın",
+   "steps": {
+    "tr": [
+     "Kopya sayfaların amacını karşılaştırın",
+     "Aynı amaçtakileri tek sayfada birleştirin",
+     "Ayrı kalacakların metnini farklılaştırın"
+    ],
+    "en": [
+     "Compare what each copied page is for",
+     "Merge pages that serve the same purpose",
+     "Rewrite the ones that stay so each is distinct"
+    ]
+   }
+  },
+  "str2.home_hidden_h1": {
+   "en": "Make the homepage's main heading visible",
+   "tr": "Ana sayfanın ana başlığını görünür yapın",
+   "steps": {
+    "tr": [
+     "Gizli <h1>'deki display:none ya da hidden'ı kaldırın",
+     "Ya da sitenin ne sunduğunu söyleyen görünür bir <h1> koyun",
+     "Sayfada tek bir <h1> kalsın"
+    ],
+    "en": [
+     "Remove display:none or hidden from the <h1>",
+     "Or add a visible <h1> that says what the site offers",
+     "Keep a single <h1> on the page"
+    ]
+   }
+  },
+  "str2.no_subheadings": {
+   "en": "Add section headings to long pages",
+   "tr": "Uzun sayfalara bölüm başlıkları ekleyin",
+   "steps": {
+    "tr": [
+     "Uzun bölümlere anlamlı <h2> ya da <h3> ekleyin",
+     "Tablo ve listeler zaten bölüyorsa ek başlık gerekmez"
+    ],
+    "en": [
+     "Add meaningful <h2> or <h3> headings to long sections",
+     "Tables and lists that already split the text need none"
+    ]
+   }
+  },
+  "str7.alt_split": {
+   "en": "Write alt text for images that carry information",
+   "tr": "Bilgi taşıyan görsellere alt metin yazın",
+   "steps": {
+    "tr": [
+     "Boş alt metinli görsellerden bilgi taşıyanları ayırın",
+     "Bunlara ne gösterdiğini söyleyen alt metin yazın"
+    ],
+    "en": [
+     "Pick out the empty-alt images that carry information",
+     "Give those alt text that says what they show"
+    ]
+   }
+  },
+  "str7.placeholder": {
+   "en": "Replace placeholder alt texts",
+   "tr": "Yer tutucu alt metinlerini değiştirin",
+   "steps": {
+    "tr": [
+     "Bilgi taşıyan görsele ne gösterdiğini yazın",
+     "Süs görselinde boş alt metni koruyun",
+     "Dosya adından açıklama üretmeyin"
+    ],
+    "en": [
+     "Describe what each informative image shows",
+     "Keep an empty alt on decorative images",
+     "Do not generate descriptions from file names"
+    ]
+   }
+  },
+  "str7.heavy": {
+   "en": "Resize and compress the heavy images",
+   "tr": "Ağır görselleri küçültüp sıkıştırın",
+   "steps": {
+    "tr": [
+     "Görseli gösterildiği en büyük boyuta küçültün",
+     "Sıkıştırın ya da WebP/AVIF olarak sunun",
+     "Dosyayı aynı adreste değiştirin"
+    ],
+    "en": [
+     "Resize each image to the largest size it is shown at",
+     "Compress it or serve WebP/AVIF",
+     "Replace the file at the same address"
+    ]
+   }
+  },
+  "str19.no_target": {
+   "en": "Give links an address or make them buttons",
+   "tr": "Bağlantılara adres verin ya da düğme yapın",
+   "steps": {
+    "tr": [
+     "Sayfa açan bağlantıya o sayfanın adresini verin",
+     "Yalnız betik çalıştıran öğeyi <button> yapın"
+    ],
+    "en": [
+     "Give links that open a page that page's address",
+     "Turn elements that only run a script into <button>"
+    ]
+   }
+  },
+  "idx5.stamped": {
+   "en": "Take sitemap lastmod dates from the real edit dates",
+   "tr": "Site haritası lastmod tarihlerini gerçek düzenleme tarihinden alın",
+   "steps": {
+    "tr": [
+     "lastmod'u sayfanın son düzenleme tarihinden alın",
+     "Bu ayar yoksa lastmod'u yazmamayı değerlendirin"
+    ],
+    "en": [
+     "Take lastmod from each page's last edit date",
+     "If that is not possible, consider leaving lastmod out"
+    ]
+   }
+  },
+  "str1.no_title": {
+   "en": "Write a title for pages that have none",
+   "tr": "Başlığı olmayan sayfalara başlık yazın",
+   "steps": {
+    "tr": [
+     "Her sayfaya konusunu söyleyen bir <title> yazın",
+     "Şablonda boş başlık bırakan alanı doldurun"
+    ],
+    "en": [
+     "Write a <title> that names each page's topic",
+     "Fill the template field that leaves the title empty"
+    ]
+   }
+  },
+  "str1.shared": {
+   "en": "Give pages that share a title their own title",
+   "tr": "Aynı başlığı paylaşan sayfalara ayrı başlık verin",
+   "steps": {
+    "tr": [
+     "Aynı <title>'ı taşıyan sayfaları listeleyin",
+     "Her birine onu ayıran şeyi söyleyen bir başlık yazın"
+    ],
+    "en": [
+     "List the pages that share a <title>",
+     "Give each a title that says what sets it apart"
+    ]
+   }
+  },
+  "str2.no_h1": {
+   "en": "Add one main heading to pages that have none",
+   "tr": "Ana başlığı olmayan sayfalara tek bir ana başlık ekleyin",
+   "steps": {
+    "tr": [
+     "Sayfanın konusunu söyleyen tek bir <h1> ekleyin",
+     "Şablonda <h1>'i bir kez tanımlayın"
+    ],
+    "en": [
+     "Add one <h1> that names the page's topic",
+     "Define the <h1> once in the template"
+    ]
+   }
+  },
+  "str3.expected_type": {
+   "en": "Add the structured data type each page kind expects",
+   "tr": "Sayfa türünün beklediği yapısal veri tipini ekleyin",
+   "steps": {
+    "tr": [
+     "Makaleye Article, ürüne Product, fiyat sayfasına Offer ekleyin",
+     "Liste ve sayfalama sayfalarına bu tipleri eklemeyin"
+    ],
+    "en": [
+     "Add Article to articles, Product to products, Offer to price pages",
+     "Do not add these types to list or pagination pages"
+    ]
+   },
+   "content_page_types": [
+    "article",
+    "product",
+    "pricing",
+    "faq"
+   ]
+  },
+  "str2.empty_h1": {
+   "en": "Write the page topic into empty main headings",
+   "tr": "Boş ana başlıklara sayfanın konusunu yazın",
+   "steps": {
+    "tr": [
+     "Boş <h1>'i sayfanın konusunu söyleyen metinle doldurun",
+     "Şablon <h1>'i boş bırakıyorsa alanı şablonda doldurun"
+    ],
+    "en": [
+     "Fill the empty <h1> with text that names the topic",
+     "If the template leaves the <h1> empty, fill it there"
+    ]
+   }
+  },
+  "str5.og_site_name": {
+   "en": "Set og:site_name to the site's name only",
+   "tr": "og:site_name değerini yalnız site adı yapın",
+   "steps": {
+    "tr": [
+     "og:site_name'e yalnız site adını yazın",
+     "Sayfanın kendi başlığını og:title'da tutun"
+    ],
+    "en": [
+     "Put only the site's name in og:site_name",
+     "Keep the page's own title in og:title"
+    ]
+   }
+  },
+  "str9.target_page": {
+   "en": "Fix the language versions hreflang points to",
+   "tr": "hreflang'in gösterdiği dil sürümlerini düzeltin",
+   "steps": {
+    "tr": [
+     "Her dil sürümüne kendi <title> ve açıklamasını yazın",
+     "Sürümün dizine girebildiğini doğrulayın",
+     "Uygun değilse onu hreflang'den çıkarın"
+    ],
+    "en": [
+     "Give each language version its own <title> and description",
+     "Make sure the version can be indexed",
+     "Otherwise remove it from the hreflang set"
+    ]
+   }
+  },
+  "str13.markers": {
+   "en": "Remove unfilled template markers",
+   "tr": "Doldurulmamış şablon işaretlerini kaldırın",
+   "steps": {
+    "tr": [
+     "İşaretlerin tarayıcıda görünüp görünmediğini teyit edin",
+     "Görünüyorsa gerçek metinle değiştirin ya da kaldırın"
+    ],
+    "en": [
+     "Confirm whether the markers show in a browser",
+     "If they do, replace them with real text or remove them"
+    ]
+   }
+  },
+  "shared.link_no_text": {
+   "en": "Name the shared link that has no text",
+   "tr": "Ortak alandaki metinsiz bağlantıya ad verin",
+   "steps": {
+    "tr": [
+     "Ortak alandaki bağlantıya aria-label ekleyin",
+     "Şablonda bir kez düzeltin; bütün sayfalara yansır"
+    ],
+    "en": [
+     "Add an aria-label to the shared link",
+     "Fix it once in the template; every page follows"
+    ]
+   }
+  },
+  "shared.links_no_address": {
+   "en": "Give the shared links an address",
+   "tr": "Ortak alandaki bağlantılara adres verin",
+   "steps": {
+    "tr": [
+     "Bağlantılara açtıkları sayfanın adresini verin",
+     "Yalnız pencere açıyorsa <button> yapın",
+     "Şablonda bir kez düzeltin"
+    ],
+    "en": [
+     "Give the links the address of the page they open",
+     "If they only open a panel, make them <button>",
+     "Fix it once in the template"
+    ]
+   }
+  },
+  "acc1.ungrouped": {
+   "en": "Move the stray robots.txt rule under a User-agent line",
+   "tr": "robots.txt'teki gruba ait olmayan kuralı taşıyın",
+   "steps": {
+    "tr": [
+     "İlk User-agent satırından önceki kuralı bulun",
+     "Onu ait olduğu User-agent satırının altına taşıyın"
+    ],
+    "en": [
+     "Find the rule above the first User-agent line",
+     "Move it under the User-agent line it belongs to"
+    ]
+   }
+  },
+  "idx5.drafts": {
+   "en": "Remove test pages from the index and the sitemap",
+   "tr": "Test sayfalarını dizinden ve site haritasından çıkarın",
+   "steps": {
+    "tr": [
+     "Sayfaların test ya da taslak olduğunu teyit edin",
+     "Gereksizse kaldırın; kalacaksa noindex verin",
+     "Site haritasından çıkarın"
+    ],
+    "en": [
+     "Confirm the pages are tests or drafts",
+     "Remove them, or add noindex if they must stay",
+     "Take them out of the sitemap"
+    ]
+   }
+  },
+  "rnd6.large": {
+   "en": "Slim down the oversized HTML pages",
+   "tr": "Aşırı büyük HTML sayfalarını hafifletin",
+   "steps": {
+    "tr": [
+     "Satır içi JSON, CSS ve SVG'yi ayrı dosyalara taşıyın",
+     "Kullanılmayan gömülü kodu kaldırın"
+    ],
+    "en": [
+     "Move inline JSON, CSS and SVG into separate files",
+     "Remove embedded code the page does not use"
+    ]
+   }
+  },
+  "str3.organization_broken": {
+   "en": "Fix the homepage's Organization block",
+   "tr": "Ana sayfadaki Organization bloğunu düzeltin",
+   "steps": {
+    "tr": [
+     "Ayrıştırıcının durduğu değeri kanıtta bulun",
+     "Değerdeki satır sonunu silin ya da kaçışla yazın",
+     "İkinci bir Organization bloğu eklemeyin"
+    ],
+    "en": [
+     "Find the value where the parser stops (see evidence)",
+     "Remove or escape the line break in that value",
+     "Do not add a second Organization block"
+    ]
+   }
+  },
+  "str7.video": {
+   "en": "Lighten the heavy video files",
+   "tr": "Ağır video dosyalarını hafifletin",
+   "steps": {
+    "tr": [
+     "Videoyu kısaltın ya da bit hızını düşürün",
+     "preload=\"none\" ve bir kapak görseli ekleyin",
+     "Ya da bir video platformunda barındırıp gömün"
+    ],
+    "en": [
+     "Shorten the video or lower its bit rate",
+     "Add preload=\"none\" and a poster image",
+     "Or host it on a video platform and embed it"
+    ]
+   }
+  },
+  "idx7.orphan": {
+   "en": "Link to pages that are only in the sitemap",
+   "tr": "Yalnız site haritasında olan sayfalara bağlantı verin",
+   "steps": {
+    "tr": [
+     "Sayfaların yayında kalacağını teyit edin",
+     "Kalacaksa ilgili sayfalardan bağlantı verin"
+    ],
+    "en": [
+     "Confirm the pages should stay live",
+     "If so, link to them from related pages"
+    ]
+   }
+  },
+  "idx8.two_addresses": {
+   "en": "Choose one address for pages reachable at two",
+   "tr": "İki adresten açılan sayfalar için tek adres seçin",
+   "steps": {
+    "tr": [
+     "İki adresin aynı sayfa olduğunu teyit edin",
+     "Birini asıl adres seçin, diğerini ona kalıcı yönlendirin"
+    ],
+    "en": [
+     "Confirm both addresses show the same page",
+     "Keep one and permanently redirect the other to it"
+    ]
+   }
+  },
+  "judgment.generic.identity": {
+   "en": "Review generic link texts such as 'click here'",
+   "tr": "'Tıklayınız' gibi genel bağlantı metinlerini gözden geçirin",
+   "steps": {
+    "tr": [
+     "'Devamı' gibi bağlantıları bağlamıyla okuyun",
+     "Gerekirse hedefi söyleyen bir metin yazın"
+    ],
+    "en": [
+     "Read links such as 'read more' in their context",
+     "Where needed, write text that names the target"
+    ]
+   }
+  },
+  "tseo1.heading_jumps": {
+   "en": "Fix skipped heading levels",
+   "tr": "Atlanan başlık seviyelerini düzeltin",
+   "steps": {
+    "tr": [
+     "Atlanan başlık seviyelerini bulun",
+     "Başlıkları sırayla kullanın: <h2>'den sonra <h3>"
+    ],
+    "en": [
+     "Find the skipped heading levels",
+     "Use headings in order: <h3> comes after <h2>"
+    ]
+   }
+  },
+  "rnd4.unnamed": {
+   "en": "Give embedded frames an accessible name",
+   "tr": "Gömülü çerçevelere erişilebilir bir ad verin",
+   "steps": {
+    "tr": [
+     "Her <iframe>'e içeriğini söyleyen bir title verin"
+    ],
+    "en": [
+     "Give each <iframe> a title that says what it holds"
+    ]
+   }
+  },
+  "judgment.heading.pages": {
+   "en": "Write meaningful text in empty main headings",
+   "tr": "Boş ana başlıklara anlamlı metin yazın",
+   "steps": {
+    "tr": [
+     "Boş <h1>'i sayfanın konusunu söyleyen metinle doldurun"
+    ],
+    "en": [
+     "Fill the empty <h1> with text that names the topic"
+    ]
+   }
+  },
+  "str5.names": {
+   "en": "Use one name for the brand across the site",
+   "tr": "Marka için sitede tek bir ad kullanın",
+   "steps": {
+    "tr": [
+     "Sitede kullanılacak marka adını seçin",
+     "Başlık, og:site_name ve Organization'da onu kullanın"
+    ],
+    "en": [
+     "Choose the one brand name the site uses",
+     "Use it in titles, og:site_name and Organization"
+    ]
+   }
+  },
+  "rnd6.home_large": {
+   "en": "Slim down the homepage HTML",
+   "tr": "Ana sayfanın HTML'ini hafifletin",
+   "steps": {
+    "tr": [
+     "Satır içi JSON, CSS ve betikleri ayrı dosyalara taşıyın",
+     "Kullanılmayan blok ve şablonları temadan kaldırın",
+     "Tema kısıtlıysa bunu platforma iletin"
+    ],
+    "en": [
+     "Move inline JSON, CSS and scripts into files",
+     "Remove unused blocks and templates from the theme",
+     "If the theme is locked, ask the platform"
+    ]
+   }
+  },
+  "prf1.home_ttfb": {
+   "en": "Speed up the homepage's first response",
+   "tr": "Ana sayfanın ilk yanıt süresini kısaltın",
+   "steps": {
+    "tr": [
+     "Platformdan ana sayfa için sayfa önbelleği isteyin",
+     "Ya da CDN'de ana sayfa HTML'ini önbelleğe alın",
+     "Olmuyorsa sunucunun yanıttan önce ne yaptığını inceleyin"
+    ],
+    "en": [
+     "Ask the platform for a page cache on the homepage",
+     "Or cache the homepage HTML at the CDN",
+     "Otherwise find what the server does before answering"
+    ]
+   }
+  },
+  "acc3.noindex_utility": {
+   "en": "Confirm the noindex on utility pages is intended",
+   "tr": "Yardımcı sayfalardaki noindex'in bilinçli olduğunu teyit edin",
+   "steps": {
+    "tr": [
+     "Sayfanın arama sonuçlarında istenip istenmediğini teyit edin",
+     "İsteniyorsa noindex'i kaldırın"
+    ],
+    "en": [
+     "Confirm whether the page should appear in search",
+     "If it should, remove the noindex"
+    ]
+   }
+  },
+  "judgment.empty.repeated": {
+   "en": "Fix pages that answer with an empty body",
+   "tr": "Boş gövdeyle yanıt veren sayfaları düzeltin",
+   "steps": {
+    "tr": [
+     "Adresleri tarayıcıda ve curl ile açıp boş gövdeyi teyit edin",
+     "Sunucu ya da önbellek kaydını inceleyin",
+     "Boş yanıtın kaynağını giderin"
+    ],
+    "en": [
+     "Open the addresses in a browser and with curl",
+     "Check the server or cache log",
+     "Fix what makes them answer empty"
+    ]
+   }
+  },
+  "judgment.empty.single": {
+   "en": "Confirm and fix the empty responses",
+   "tr": "Boş yanıtları teyit edip düzeltin",
+   "steps": {
+    "tr": [
+     "Adresleri tekrar açıp boş yanıtı teyit edin",
+     "Kalıcıysa sunucu kaydını inceleyin"
+    ],
+    "en": [
+     "Open the addresses again to confirm the empty answer",
+     "If it persists, check the server log"
+    ]
+   }
+  },
+  "judgment.sitemap.overlap": {
+   "en": "Review the sitemap addresses that do not work",
+   "tr": "Site haritasındaki çalışmayan adresleri gözden geçirin",
+   "steps": {
+    "tr": [
+     "Çalışmayan adresleri site haritasında bulun",
+     "Düzeltin ya da haritadan çıkarın"
+    ],
+    "en": [
+     "Find the failing addresses in the sitemap",
+     "Fix them or take them out of the sitemap"
+    ]
+   }
+  },
+  "idx5.failed_files": {
+   "en": "Fix or remove the sitemap files that do not load",
+   "tr": "Yüklenmeyen site haritası dosyalarını düzeltin ya da kaldırın",
+   "steps": {
+    "tr": [
+     "Yüklenmeyen site haritası dosyalarını açın",
+     "Düzeltin ya da dizinden ve robots.txt'den çıkarın"
+    ],
+    "en": [
+     "Open the sitemap files that do not load",
+     "Fix them or remove them from the index and robots.txt"
+    ]
+   }
+  },
+  "str8.headers": {
+   "en": "Mark the header cells of data tables",
+   "tr": "Veri tablolarının başlık hücrelerini işaretleyin",
+   "steps": {
+    "tr": [
+     "Tablonun başlık hücrelerini <th> yapın",
+     "Gerekirse scope ekleyin"
+    ],
+    "en": [
+     "Mark the table's header cells as <th>",
+     "Add scope where it helps"
+    ]
+   }
+  },
+  "str10.og_image_dead": {
+   "en": "Replace share images that return an error",
+   "tr": "Hata veren paylaşım görsellerini değiştirin",
+   "steps": {
+    "tr": [
+     "og:image adresinin açıldığını kontrol edin",
+     "Çalışan bir görselle değiştirin"
+    ],
+    "en": [
+     "Check that the og:image address opens",
+     "Replace it with a working image"
+    ]
+   }
+  },
+  "shared.block_links_no_text": {
+   "en": "Name the links in the shared block",
+   "tr": "Ortak bloktaki bağlantılara ad verin",
+   "steps": {
+    "tr": [
+     "Bloktaki bağlantılara metin ya da aria-label verin",
+     "Şablonda bir kez düzeltin"
+    ],
+    "en": [
+     "Give the block's links text or an aria-label",
+     "Fix it once in the template"
+    ]
+   }
+  },
+  "rnd1.partial": {
+   "en": "Put the missing content into the server's HTML",
+   "tr": "Eksik içeriği sunucunun HTML'ine koyun",
+   "steps": {
+    "tr": [
+     "Eksik bölümleri kanıttaki metinlerden bulun",
+     "Bu bölümleri sunucu tarafında oluşturun"
+    ],
+    "en": [
+     "Find the missing sections from the quoted text",
+     "Render those sections on the server"
+    ]
+   }
+  },
+  "str9.lang_mismatch": {
+   "en": "Declare each page's real language",
+   "tr": "Her sayfanın gerçek dilini belirtin",
+   "steps": {
+    "tr": [
+     "Sayfanın gerçek dilini teyit edin",
+     "<html lang>'i o dile ayarlayın"
+    ],
+    "en": [
+     "Confirm the page's real language",
+     "Set <html lang> to that language"
+    ]
+   }
+  },
+  "str11.two_values": {
+   "en": "Remove the conflicting structured data values",
+   "tr": "Çelişen yapısal veri değerlerini giderin",
+   "steps": {
+    "tr": [
+     "Aynı varlığı iki kez anlatan blokları bulun",
+     "Değerleri tek ve doğru hâlde birleştirin"
+    ],
+    "en": [
+     "Find the blocks that describe the entity twice",
+     "Keep one block with the correct values"
+    ]
+   }
+  },
+  "shared.heading_jump": {
+   "en": "Fix the heading level in the shared area",
+   "tr": "Ortak alandaki başlık seviyesini düzeltin",
+   "steps": {
+    "tr": [
+     "Ortak alandaki başlığın seviyesini sıraya uydurun",
+     "Şablonda bir kez düzeltin"
+    ],
+    "en": [
+     "Bring the shared heading's level into order",
+     "Fix it once in the template"
+    ]
+   }
+  },
+  "idx8.near": {
+   "en": "Differentiate pages with nearly identical content",
+   "tr": "Neredeyse aynı içerikli sayfaları ayrıştırın",
+   "steps": {
+    "tr": [
+     "Neredeyse aynı sayfaların amacını karşılaştırın",
+     "Birleştirin ya da her birine özgü içerik yazın"
+    ],
+    "en": [
+     "Compare what the near-identical pages are for",
+     "Merge them or give each distinct content"
+    ]
+   }
+  },
+  "str2.home_outline": {
+   "en": "Add section headings to the homepage",
+   "tr": "Ana sayfaya bölüm başlıkları ekleyin",
+   "steps": {
+    "tr": [
+     "Ana sayfadaki bölüm başlıklarını <h2> yapın",
+     "Soru-cevap sorularını <h3> olarak yazın",
+     "Görünümü CSS ile koruyun; yalnız etiketi değiştirin"
+    ],
+    "en": [
+     "Mark the homepage's section titles as <h2>",
+     "Write the Q&A questions as <h3>",
+     "Keep the look with CSS; change only the tags"
+    ]
+   }
+  },
+  "acc4.ua_check.status": {
+   "en": "Let Googlebot's requests through the firewall",
+   "tr": "Googlebot isteklerinin güvenlik duvarından geçmesini sağlayın",
+   "steps": {
+    "tr": [
+     "Güvenlik duvarında Googlebot'un doğrulanmış IP'lerine izin verin",
+     "Kuralı Search Console URL Denetimi ile test edin"
+    ],
+    "en": [
+     "Allow Googlebot's verified IPs in the firewall",
+     "Test it with Search Console's URL Inspection"
+    ]
+   }
+  },
+  "idx1.error_text": {
+   "en": "Hide server error messages and file paths",
+   "tr": "Sunucu hata mesajlarını ve dosya yollarını gizleyin",
+   "steps": {
+    "tr": [
+     "Hata mesajlarının ziyaretçiye gösterilmesini kapatın",
+     "Hatanın kendisini sunucu kaydından giderin"
+    ],
+    "en": [
+     "Turn off error display to visitors",
+     "Fix the error itself from the server log"
+    ]
+   }
+  },
+  "prf1.slow": {
+   "en": "Speed up the slow pages",
+   "tr": "Yavaş sayfaları hızlandırın",
+   "steps": {
+    "tr": [
+     "Yavaş sayfaların neden geç yanıt verdiğini bulun",
+     "Önbellekleyin ya da yavaş sorguları hızlandırın"
+    ],
+    "en": [
+     "Find why the slow pages answer late",
+     "Cache them or speed up the slow queries"
+    ]
+   }
+  },
+  "idx1.4xx.referenced": {
+   "en": "Fix or remove links to pages that return an error",
+   "tr": "Hata veren sayfalara giden bağlantıları düzeltin ya da kaldırın",
+   "steps": {
+    "tr": [
+     "Hata veren adreslere giden bağlantıları bulun",
+     "Doğru adrese yönlendirin ya da bağlantıyı kaldırın",
+     "Site haritasından çıkarın"
+    ],
+    "en": [
+     "Find the links to the failing addresses",
+     "Point them at the right address or remove them",
+     "Take the addresses out of the sitemap"
+    ]
+   },
+   "step_when": [
+    null,
+    null,
+    {
+     "evidence_any": "pages[].in_sitemap"
+    }
+   ]
+  },
+  "idx2.temporary": {
+   "en": "Make the http to https redirect permanent",
+   "tr": "http'den https'e yönlendirmeyi kalıcı yapın",
+   "steps": {
+    "tr": [
+     "http'den https'e yönlendirmeyi kalıcı yönlendirme yapın"
+    ],
+    "en": [
+     "Make the http to https redirect permanent"
+    ]
+   }
+  },
+  "idx3.chain": {
+   "en": "Shorten the redirect chains",
+   "tr": "Yönlendirme zincirlerini kısaltın",
+   "steps": {
+    "tr": [
+     "Zincirdeki ilk adresi doğrudan son adrese yönlendirin",
+     "İç bağlantıları son adrese güncelleyin"
+    ],
+    "en": [
+     "Redirect the first address straight to the last",
+     "Update internal links to the final address"
+    ]
+   }
+  },
+  "judgment.sitemap": {
+   "en": "Review the sitemap addresses that do not work",
+   "tr": "Site haritasındaki çalışmayan adresleri gözden geçirin",
+   "steps": {
+    "tr": [
+     "Çalışmayan adresleri site haritasında bulun",
+     "Düzeltin ya da haritadan çıkarın"
+    ],
+    "en": [
+     "Find the failing addresses in the sitemap",
+     "Fix them or take them out of the sitemap"
+    ]
+   }
+  },
+  "str8.pricing": {
+   "en": "Lay out price and spec comparisons as tables",
+   "tr": "Fiyat ve özellik karşılaştırmalarını tablo olarak yazın",
+   "steps": {
+    "tr": [
+     "Fiyat ve özellik karşılaştırmasını <table> ile yazın",
+     "Başlık hücrelerini <th> yapın"
+    ],
+    "en": [
+     "Write the price or spec comparison as a <table>",
+     "Mark its header cells as <th>"
+    ]
+   }
+  },
+  "str12.language": {
+   "en": "Align the declared language with the content",
+   "tr": "Belirtilen dili içerikle uyumlu hâle getirin",
+   "steps": {
+    "tr": [
+     "Sayfanın hangi dilde olması gerektiğini teyit edin",
+     "İçeriği ya da <html lang>'i buna göre düzeltin"
+    ],
+    "en": [
+     "Confirm which language the page should be in",
+     "Align the content or <html lang> with it"
+    ]
+   }
+  },
+  "idx1.4xx.referenced.linked": {
+   "en": "Fix or remove links to pages that return an error",
+   "tr": "Hata veren sayfalara giden bağlantıları düzeltin ya da kaldırın",
+   "steps": {
+    "tr": [
+     "Hata veren adreslere giden bağlantıları bulun",
+     "Doğru adrese yönlendirin ya da bağlantıyı kaldırın",
+     "Site haritasından çıkarın"
+    ],
+    "en": [
+     "Find the links to the failing addresses",
+     "Point them at the right address or remove them",
+     "Take the addresses out of the sitemap"
+    ]
+   },
+   "step_when": [
+    null,
+    null,
+    {
+     "evidence_any": "pages[].in_sitemap"
+    }
+   ]
+  },
+  "str16.shared": {
+   "en": "Give pages that share a description their own one",
+   "tr": "Aynı açıklamayı paylaşan sayfalara ayrı açıklama yazın",
+   "steps": {
+    "tr": [
+     "Aynı açıklamayı taşıyan sayfaları listeleyin",
+     "Her birine kendi meta açıklamasını yazın"
+    ],
+    "en": [
+     "List the pages that share a description",
+     "Write each its own meta description"
+    ]
+   }
+  },
+  "idx1.soft404.redirect": {
+   "en": "Answer addresses that do not exist with a real not-found",
+   "tr": "Olmayan adreslere gerçek bir \"bulunamadı\" yanıtı verin",
+   "steps": {
+    "tr": [
+     "Olmayan adreslerin ana sayfaya yönlenmesini kapatın",
+     "Bunlara gerçek bir \"bulunamadı\" sayfası gösterin"
+    ],
+    "en": [
+     "Stop sending missing addresses to the homepage",
+     "Show them a real not-found page instead"
+    ]
+   }
+  },
+  "idx4.different": {
+   "en": "Point canonicals at pages with the same content",
+   "tr": "Canonical'ı aynı içerikli sayfaya yönlendirin",
+   "steps": {
+    "tr": [
+     "Canonical'ın gösterdiği sayfayı açıp içeriği karşılaştırın",
+     "Farklıysa canonical'ı sayfanın kendisi yapın"
+    ],
+    "en": [
+     "Open the canonical target and compare the content",
+     "If it differs, make the page its own canonical"
+    ]
+   }
+  },
+  "idx6.tracking": {
+   "en": "Remove tracking parameters from internal links",
+   "tr": "İç bağlantılardan izleme parametrelerini kaldırın",
+   "steps": {
+    "tr": [
+     "İç bağlantılardaki utm ve benzeri parametreleri bulun",
+     "Bağlantıları temiz adresle yazın"
+    ],
+    "en": [
+     "Find utm and similar parameters on internal links",
+     "Write the links with the clean address"
+    ]
+   }
+  },
+  "rnd3.revealed": {
+   "en": "Show the hidden content without a click",
+   "tr": "Gizli içeriği tıklama gerektirmeden gösterin",
+   "steps": {
+    "tr": [
+     "Tıklamayla açılan içeriği belirleyin",
+     "Önemli olanı sayfada açık gösterin"
+    ],
+    "en": [
+     "Find the content that opens only on a click",
+     "Show the important parts openly on the page"
+    ]
+   }
+  },
+  "shared.link_no_address": {
+   "en": "Give the shared link an address",
+   "tr": "Ortak alandaki bağlantıya adres verin",
+   "steps": {
+    "tr": [
+     "Ortak alandaki bağlantıya adres verin",
+     "Yalnız pencere açıyorsa <button> yapın"
+    ],
+    "en": [
+     "Give the shared link an address",
+     "If it only opens a panel, make it a <button>"
+    ]
+   }
+  },
+  "rnd4.banner": {
+   "en": "Write alt text for banner images",
+   "tr": "Afiş görsellerine alt metin yazın",
+   "steps": {
+    "tr": [
+     "Afiş görsellerindeki yazıyı alt metne yazın",
+     "Önemli metni görselin dışında da verin"
+    ],
+    "en": [
+     "Put the banner's words into its alt text",
+     "Also give important text outside the image"
+    ]
+   }
+  },
+  "prf2.some": {
+   "en": "Find why some requests fail intermittently",
+   "tr": "Bazı isteklerin neden ara ara başarısız olduğunu bulun",
+   "steps": {
+    "tr": [
+     "Ara ara başarısız olan adresleri tekrar deneyin",
+     "Sunucu ya da CDN kaydında hatanın kaynağını bulun"
+    ],
+    "en": [
+     "Retry the addresses that fail now and then",
+     "Find the cause in the server or CDN log"
+    ]
+   }
+  },
+  "rnd1.missing": {
+   "en": "Render the main content on the server",
+   "tr": "Ana içeriği sunucuda oluşturun",
+   "steps": {
+    "tr": [
+     "Ana içeriği sunucu tarafında oluşturun (SSR)",
+     "Ya da sayfaları önceden oluşturun (prerender)"
+    ],
+    "en": [
+     "Render the main content on the server (SSR)",
+     "Or prerender the pages"
+    ]
+   }
+  },
+  "rnd2.candidates": {
+   "en": "Put headings and prices into the server's HTML",
+   "tr": "Başlıkları ve fiyatları sunucunun HTML'ine koyun",
+   "steps": {
+    "tr": [
+     "Yalnız JavaScript'le gelen başlık ve fiyatları bulun",
+     "Bunları sunucunun HTML'ine koyun"
+    ],
+    "en": [
+     "Find headings and prices that only JavaScript adds",
+     "Put them into the server's HTML"
+    ]
+   }
+  },
+  "tseo1.head_closed_lost": {
+   "en": "Move the element that ends the head early",
+   "tr": "Head'i erken kapatan öğeyi taşıyın",
+   "steps": {
+    "tr": [
+     "Kanıtta adı geçen öğeyi <head>'den çıkarın",
+     "Onu basan eklentiyi head etiketlerinden sonra yükleyin",
+     "Search Console'da canonical'ı teyit edin"
+    ],
+    "en": [
+     "Move the element named in the evidence out of <head>",
+     "Load the widget that prints it after the head tags",
+     "Confirm the canonical in Search Console"
+    ]
+   }
+  },
+  "tseo1.head_closed_later": {
+   "en": "Move the element that ends the head early",
+   "tr": "Head'i erken kapatan öğeyi taşıyın",
+   "steps": {
+    "tr": [
+     "Kanıtta adı geçen öğeyi <head>'den çıkarın",
+     "Onu basan eklentiyi head etiketlerinden sonra yükleyin"
+    ],
+    "en": [
+     "Move the element named in the evidence out of <head>",
+     "Load the widget that prints it after the head tags"
+    ]
+   }
+  },
+  "str3.invalid_values": {
+   "en": "Correct the structured data values",
+   "tr": "Yapısal veri değerlerini düzeltin",
+   "steps": {
+    "tr": [
+     "Sayılarda ondalık ayırıcı olarak nokta kullanın",
+     "Alan adlarındaki boşlukları silin",
+     "Para birimini büyük harfle yazın (TRY)"
+    ],
+    "en": [
+     "Use a period as the decimal separator",
+     "Remove spaces around property names",
+     "Write the currency in capitals (TRY)"
+    ]
+   }
+  },
+  "idx4.redirect_loop": {
+   "en": "Make the canonical the page's own address",
+   "tr": "Canonical'ı sayfanın kendi adresi yapın",
+   "steps": {
+    "tr": [
+     "Canonical'a sayfanın kendi son adresini yazın",
+     "Diğer adresi yazan şablonu düzeltin"
+    ],
+    "en": [
+     "Write the page's own final address as canonical",
+     "Fix the template that writes the other address"
+    ]
+   }
+  },
+  "idx4.redirecting": {
+   "en": "Point the canonical at the final address",
+   "tr": "Canonical'ı son adrese yönlendirin",
+   "steps": {
+    "tr": [
+     "Canonical'a yönlendirmenin vardığı adresi yazın"
+    ],
+    "en": [
+     "Write the address the redirect ends at as canonical"
+    ]
+   }
+  },
+  "idx8.location_template": {
+   "en": "Give each place page content of its own",
+   "tr": "Her yer sayfasına kendine özgü içerik verin",
+   "steps": {
+    "tr": [
+     "Her yer sayfasına o yere özgü bilgi ekleyin",
+     "Saat, menü, adres, ekip ya da yorumlar gibi",
+     "Ya da tek bir liste sayfası bırakıp kopyaları kaldırın"
+    ],
+    "en": [
+     "Add information that is only true of each place",
+     "Such as hours, menu, address, team or reviews",
+     "Or keep one list page and remove the copies"
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,93 @@
+:root {
+  --hero: #F85800; --hero-soft: #FFF1E8; --hero-ink: #C24A1B;
+  --ink: #1A1A1A; --mute: #5B6470; --line: #E3E7EB; --grid: #C0C8D0; --bg: #FFFFFF; --panel: #F7F8FA;
+  --s1: #B42318; --s1-bg: #FEECEB; --s2: #C2410C; --s2-bg: #FFF1E8; --s3: #A16207; --s3-bg: #FEF7E0;
+  --s4: #3F6212; --s4-bg: #EEF6E3; --info: #475467; --info-bg: #F2F4F7; --ok: #067647; --bad: #B42318;
+}
+@page { size: A4; margin: 16mm 14mm 16mm 14mm; }
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--ink); }
+body { font-family: 'Inter', system-ui, sans-serif; font-size: 10.5pt; line-height: 1.5; margin: 0; }
+.wrap { max-width: 182mm; margin: 0 auto; }
+a { color: var(--hero-ink); text-decoration: none; word-break: break-all; }
+h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 15pt; margin: 22px 0 4px; }
+h2 + .lead { margin-top: 0; }
+.lead { color: var(--mute); margin: 2px 0 12px; }
+.eyebrow { font-size: 8pt; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); font-weight: 600; }
+.brandtab { display: inline-block; width: 22px; height: 6px; background: var(--hero); border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+
+/* kapak */
+.cover { border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 14px; }
+.cover h1 { font-size: 26pt; margin: 6px 0 2px; }
+.cover .site { color: var(--mute); font-size: 11pt; }
+.dates { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font-size: 9pt; color: var(--mute); }
+.dates b { color: var(--ink); font-weight: 600; }
+.coverage { margin-top: 10px; padding: 8px 12px; background: var(--panel); border-radius: 8px; font-size: 9.5pt; }
+
+/* KPI */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(29mm, 1fr)); gap: 8px; margin: 14px 0; }
+.kpi { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.kpi .v { font-size: 17pt; white-space: normal; overflow-wrap: anywhere; font-weight: 600; line-height: 1.1; margin: 4px 0 2px; }
+.kpi .n { font-size: 8.5pt; color: var(--mute); }
+.kpi.hero .v { color: var(--hero); }
+
+/* tek okumada */
+.oneread { font-size: 11pt; margin: 6px 0 8px; }
+.bullets { margin: 0 0 6px; padding-left: 18px; }
+.bullets li { margin: 2px 0; }
+
+/* tablolar */
+table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+th { text-align: left; font-size: 8pt; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); font-weight: 600; border-bottom: 1px solid var(--grid); padding: 6px 6px; }
+td { border-bottom: 1px solid var(--line); padding: 7px 6px; vertical-align: top; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar { display: inline-block; height: 6px; background: var(--hero); border-radius: 3px; vertical-align: middle; margin-left: 6px; }
+
+/* önem etiketi */
+.pill { display: inline-block; font-size: 8pt; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.Kritik { color: var(--s1); background: var(--s1-bg); }
+.pill.Yüksek { color: var(--s2); background: var(--s2-bg); }
+.pill.Orta { color: var(--s3); background: var(--s3-bg); }
+.pill.Düşük { color: var(--s4); background: var(--s4-bg); }
+.pill.Bilgi { color: var(--info); background: var(--info-bg); }
+.chip { display: inline-block; font-size: 8pt; padding: 1px 7px; border-radius: 6px; border: 1px solid var(--line); color: var(--mute); margin-right: 4px; white-space: nowrap; }
+.chip.ok { color: var(--ok); border-color: #B7E4CC; background: #ECFDF3; }
+.chip.warn { color: var(--hero-ink); border-color: #FBCDB0; background: var(--hero-soft); }
+
+/* kart */
+.card { border: 1px solid var(--line); border-left: 4px solid var(--grid); border-radius: 10px; padding: 12px 14px; margin: 12px 0; }
+.card .head { break-inside: avoid; break-after: avoid; page-break-after: avoid; }
+.card h3, .card .lbl { break-after: avoid; page-break-after: avoid; }
+.card .head + .grid2 { break-before: avoid; }
+.card .grid2, .card .write, .card pre, .card li { break-inside: avoid; }
+.card.Kritik { border-left-color: var(--s1); } .card.Yüksek { border-left-color: var(--s2); }
+.card.Orta { border-left-color: var(--s3); } .card.Düşük { border-left-color: var(--s4); }
+.card h3 { font-size: 12.5pt; margin: 4px 0 6px; }
+.card .no { color: var(--mute); font-weight: 600; margin-right: 6px; }
+.meta { font-size: 8.5pt; color: var(--mute); margin-bottom: 8px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lbl { font-size: 8pt; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); font-weight: 600; margin: 8px 0 3px; }
+.card ol { margin: 0; padding-left: 18px; } .card ol li { margin: 2px 0; }
+.urls { margin: 0; padding: 0; list-style: none; font-size: 8.5pt; }
+.urls li { margin: 1px 0; color: var(--mute); }
+.write { background: var(--hero-soft); border-radius: 8px; padding: 8px 10px; }
+.write.decide { background: var(--panel); }
+.write .src { font-size: 8pt; color: var(--mute); margin-top: 4px; }
+pre, code { font-family: ui-monospace, Consolas, monospace; font-size: 8.5pt; }
+code { background: var(--panel); border-radius: 4px; padding: 0 3px; }
+pre { background: var(--panel); border-radius: 6px; padding: 6px 8px; white-space: pre-wrap; word-break: break-all; margin: 0; }
+.foot { font-size: 8.5pt; color: var(--mute); margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 6px; }
+
+/* fark */
+.cols3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.col { border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+.col h4 { margin: 0 0 6px; font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; }
+.col.fixed h4 { color: var(--ok); } .col.new h4 { color: var(--bad); } .col.open h4 { color: var(--s3); }
+.col ul { margin: 0; padding-left: 16px; font-size: 9pt; }
+
+.pagebreak { break-before: page; page-break-before: always; }
+.small { font-size: 8.5pt; color: var(--mute); }
+.footer { margin-top: 18px; font-size: 8pt; color: var(--mute); border-top: 1px solid var(--line); padding-top: 8px; }
+@media screen { body { padding: 24px 16px; } .wrap { max-width: 860px; } }
+@media screen and (max-width: 640px) { .grid2, .cols3 { grid-template-columns: 1fr; } }

@@ -1,0 +1,38 @@
+# Every platform and Python the project claims (pyproject: requires-python >=3.11; the team runs Windows and macOS).
+# Offline only: conftest blocks non-loopback network, isolates ~/.maya-audit and the .env lookup.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    env:
+      # Fail on any text read or write that relies on the platform's default encoding.
+      PYTHONWARNDEFAULTENCODING: "1"
+      MAYA_AUDIT_FIRECRAWL: "off"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]" ruff pip-audit
+          python -m playwright install --with-deps chromium
+      - name: Syntax on this Python
+        run: python -m compileall -q maya_audit maya_audit_web maya_audit_web_lite.py tests
+      - name: Undefined names and syntax errors
+        run: python -m ruff check --select E9,F821,F841 maya_audit maya_audit_web maya_audit_web_lite.py
+      - name: Tests
+        run: python -m pytest -q
+      - name: Known vulnerabilities in the installed dependencies
+        run: python -m pip_audit --skip-editable

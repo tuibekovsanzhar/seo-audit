@@ -1,0 +1,55 @@
+{
+  "format_version": 1,
+  "site": "moodist",
+  "must_find": [
+    {
+      "id": "english-canonical",
+      "check_id": "IDX-4",
+      "status": "verified",
+      "urls": [
+        "https://moodisthastanesi.com/en/"
+      ],
+      "reason": "Owner-reported /en/ canonical leading to /en/en/; inspect exact markup, destination and language before retaining defect.",
+      "verification": {
+        "reviewer": "Codex direct saved-response/markup inspection, separate from engine output; not independent human approval",
+        "observed_at": "2026-10-22T19:06:20.347354+00:00",
+        "evidence_reference": [
+          "moodist/responses/000014.body and requests.json record"
+        ],
+        "evidence_sha256": [
+          "4b08766ecfddc8ac0ad3c6ab5aee021e232a1a848b299ea2e8caea5ac96bf9c6"
+        ],
+        "collection_digest": "2cecb28e100a9cc87967a62a401689f10382868fb1c9f5ec98e435f1050fe07f",
+        "observation": "English /en/ response has html lang=en-US, English main navigation/H1 and canonical https://moodisthastanesi.com/en/en/. This independently confirms the erroneous duplicate-language canonical target; its final redirect/content must retain separate evidence."
+      },
+      "title_contains": "canonicalized"
+    }
+  ],
+  "must_not_find": [
+    {
+      "id": "false-portuguese-language",
+      "check_id": "STR-12",
+      "status": "verified",
+      "urls": [
+        "https://moodisthastanesi.com/tr/"
+      ],
+      "reason": "A Turkish page must not be labelled Portuguese without supporting language evidence.",
+      "verification": {
+        "reviewer": "Codex direct saved markup inspection; not independent human approval",
+        "observed_at": "2026-10-22T19:05:17.443560+00:00",
+        "evidence_reference": [
+          "moodist/responses/000004.body and requests.json record"
+        ],
+        "evidence_sha256": [
+          "ca260063ebe9fb4ed3863cb09f4229371f2e4864627056651424db50f0d04985"
+        ],
+        "collection_digest": "2cecb28e100a9cc87967a62a401689f10382868fb1c9f5ec98e435f1050fe07f",
+        "observation": "Completed HTTP200 /tr/ HTML declares tr-TR, names the psychiatric hospital in Turkish and has a substantial Turkish hospital-treatment H1. No Portuguese conclusion is supported for this inspected page."
+      },
+      "title_contains": "Portuguese"
+    }
+  ],
+  "limitations": [
+    "Labels apply to the pinned native client/time evidence, not every visitor or future live state. Hand inspection was by the implementing agent; owner/independent human acceptance is not established. Unreviewed claims remain provisional."
+  ]
+}

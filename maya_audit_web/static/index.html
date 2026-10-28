@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Maya Audit</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<a class="skip" href="#input" id="skip">Skip to the message box</a>
+<div class="app">
+  <aside class="sidebar" aria-labelledby="history-title">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">M</span><span id="app-title">Maya Audit</span></div>
+    <button id="new-audit" class="button primary wide" type="button"></button>
+    <h2 id="history-title" class="side-title"></h2>
+    <input id="search" class="field-input" type="search" autocomplete="off">
+    <nav id="history" class="history" aria-labelledby="history-title"></nav>
+    <div id="language-box" class="language" hidden>
+      <label id="language-label" class="side-title" for="language"></label>
+      <select id="language" class="field-input"></select>
+      <p id="language-note" class="muted small" hidden></p>
+    </div>
+    <button id="theme" class="button quiet wide" type="button"></button>
+  </aside>
+  <main class="main" id="main">
+    <div id="demo-banner" class="banner" role="note" hidden></div>
+    <div id="notice" class="notice" role="alert" hidden></div>
+    <h1 id="page-title" class="visually-hidden"></h1>
+    <section id="thread" class="thread"></section>
+    <form id="composer" class="composer" autocomplete="off">
+      <div id="options" class="options-row"></div>
+      <div class="composer-row">
+        <label class="visually-hidden" for="input" id="input-label"></label>
+        <textarea id="input" rows="1" maxlength="4000"></textarea>
+        <button id="send" class="button primary" type="submit"></button>
+      </div>
+    </form>
+  </main>
+  <aside id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+    <div class="drawer-head"><h2 id="drawer-title"></h2><button id="drawer-close" class="button quiet" type="button"></button></div>
+    <div id="drawer-body" class="drawer-body"></div>
+  </aside>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

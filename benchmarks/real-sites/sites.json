@@ -1,0 +1,105 @@
+{
+  "format_version": 1,
+  "sites": [
+    {
+      "id": "adile",
+      "url": "https://adilesultanevyemekleri.com/",
+      "sector": "restaurant",
+      "language": "tr",
+      "allowed_hosts": [
+        "adilesultanevyemekleri.com",
+        "www.adilesultanevyemekleri.com"
+      ]
+    },
+    {
+      "id": "arjava",
+      "url": "https://arjava.com.tr/",
+      "sector": "retail",
+      "language": "tr",
+      "allowed_hosts": [
+        "arjava.com.tr",
+        "www.arjava.com.tr"
+      ]
+    },
+    {
+      "id": "carpex",
+      "url": "https://carpex.com.tr/",
+      "sector": "b2b",
+      "language": "tr",
+      "allowed_hosts": [
+        "carpex.com.tr",
+        "www.carpex.com.tr"
+      ]
+    },
+    {
+      "id": "moodist",
+      "url": "https://moodisthastanesi.com/",
+      "sector": "hospital",
+      "language": "tr",
+      "allowed_hosts": [
+        "moodisthastanesi.com",
+        "www.moodisthastanesi.com"
+      ]
+    },
+    {
+      "id": "magazanolsun",
+      "url": "https://magazanolsun.com/",
+      "sector": "commerce-platform",
+      "language": "tr",
+      "allowed_hosts": [
+        "magazanolsun.com",
+        "www.magazanolsun.com"
+      ]
+    },
+    {
+      "id": "midas",
+      "url": "https://getmidas.com/",
+      "sector": "fintech",
+      "language": "tr",
+      "allowed_hosts": [
+        "getmidas.com",
+        "www.getmidas.com"
+      ]
+    },
+    {
+      "id": "maximum",
+      "url": "https://maximum.com.tr/",
+      "sector": "bank-card",
+      "language": "tr",
+      "allowed_hosts": [
+        "maximum.com.tr",
+        "www.maximum.com.tr"
+      ]
+    },
+    {
+      "id": "enpara",
+      "url": "https://enpara.com/",
+      "sector": "bank",
+      "language": "tr",
+      "allowed_hosts": [
+        "enpara.com",
+        "www.enpara.com"
+      ]
+    },
+    {
+      "id": "mozilla",
+      "url": "https://www.mozilla.org/en-US/",
+      "sector": "software",
+      "language": "en",
+      "allowed_hosts": [
+        "www.mozilla.org",
+        "mozilla.org"
+      ]
+    },
+    {
+      "id": "nhs",
+      "url": "https://www.nhs.uk/",
+      "sector": "public-health",
+      "language": "en",
+      "allowed_hosts": [
+        "www.nhs.uk",
+        "nhs.uk"
+      ]
+    }
+  ]
+}

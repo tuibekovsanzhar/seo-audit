@@ -1,0 +1,75 @@
+{
+  "stage": "B",
+  "complete_sites": 10,
+  "no_labelled_regressions": true,
+  "before": {
+    "hit": 8,
+    "correct_negative": 12,
+    "false_alarm": 2,
+    "unassessed": 1
+  },
+  "after": {
+    "hit": 8,
+    "correct_negative": 12,
+    "false_alarm": 2,
+    "unassessed": 1
+  },
+  "comparisons": [
+    {
+      "site": "adile",
+      "regressions": []
+    },
+    {
+      "site": "arjava",
+      "regressions": []
+    },
+    {
+      "site": "carpex",
+      "regressions": []
+    },
+    {
+      "site": "moodist",
+      "regressions": []
+    },
+    {
+      "site": "magazanolsun",
+      "regressions": []
+    },
+    {
+      "site": "midas",
+      "regressions": []
+    },
+    {
+      "site": "maximum",
+      "regressions": []
+    },
+    {
+      "site": "enpara",
+      "regressions": []
+    },
+    {
+      "site": "mozilla",
+      "regressions": []
+    },
+    {
+      "site": "nhs",
+      "regressions": []
+    }
+  ],
+  "engine_files_unchanged_after_replay": true,
+  "separately_verified_web_changes_after_replay": {
+    "maya_audit_web/locales/findings/tr.json": {
+      "benchmark_sha256": "006a48a7f901c6a10e406d80e55dabe0b235746723849050af9a093aed9c9582",
+      "current_sha256": "23425fe1f471fbfc80cd9e40f461bf5f61e519bf18b80d42dfb6288cc360faa3"
+    }
+  },
+  "limitation": "Fixed saved observations and labels only; same-agent review, not a general accuracy measure. Native engine bytes remain identical to the immutable replay. Two Turkish coverage translations were moved into the correct display lookup after replay and checked by the final full suite. HTTP replay does not reverify browser, OS TLS, cookies or missing captures.",
+  "before_run": "output/real-sites/control-preview24-before-b-retry",
+  "after_run": "output/real-sites/stage-b-verified-final",
+  "source_verification": {
+    "result": "2457 passed, 0 failed, 1 skipped",
+    "seconds": 1182.52,
+    "skip": "historical live-run examples absent",
+    "prior_failures": "Retained in output/oct22-integration and release-team-preview-25; a browser deadline failed previously and passed focused/final reruns, recorded as intermittent."
+  }
+}

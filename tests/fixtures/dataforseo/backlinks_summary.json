@@ -1,0 +1,102 @@
+{
+ "version": "0.1.20260901",
+ "status_code": 20000,
+ "status_message": "Ok.",
+ "time": "0.1384 sec.",
+ "cost": 0.02003,
+ "tasks_count": 1,
+ "tasks_error": 0,
+ "tasks": [
+  {
+   "id": "10061234-0001-0269-0000-fixture00001",
+   "status_code": 20000,
+   "status_message": "Ok.",
+   "time": "0.1021 sec.",
+   "cost": 0.02003,
+   "result_count": 1,
+   "path": [
+    "v3",
+    "backlinks",
+    "summary",
+    "live"
+   ],
+   "data": {
+    "api": "backlinks",
+    "function": "summary",
+    "target": "example-brand.com",
+    "include_subdomains": true
+   },
+   "result": [
+    {
+     "target": "example-brand.com",
+     "first_seen": "2019-03-14 08:21:07 +00:00",
+     "lost_date": null,
+     "rank": 287,
+     "backlinks": 18432,
+     "backlinks_spam_score": 7,
+     "crawled_pages": 1264,
+     "info": {
+      "server": "cloudflare",
+      "cms": null,
+      "platform_type": [
+       "organization"
+      ],
+      "ip_address": "203.0.113.10",
+      "country": "US",
+      "is_ip": false,
+      "target_spam_score": 3
+     },
+     "internal_links_count": 21877,
+     "external_links_count": 913,
+     "broken_backlinks": 142,
+     "broken_pages": 9,
+     "referring_domains": 1536,
+     "referring_domains_nofollow": 211,
+     "referring_main_domains": 1402,
+     "referring_main_domains_nofollow": 187,
+     "referring_ips": 1188,
+     "referring_subnets": 961,
+     "referring_pages": 15220,
+     "referring_pages_nofollow": 2310,
+     "referring_links_tld": {
+      "com": 9120,
+      "org": 1310,
+      "net": 802,
+      "io": 644,
+      "com.tr": 97
+     },
+     "referring_links_types": {
+      "anchor": 17011,
+      "image": 1203,
+      "redirect": 148,
+      "canonical": 70
+     },
+     "referring_links_attributes": {
+      "nofollow": 2988,
+      "noopener": 4102,
+      "noreferrer": 1730
+     },
+     "referring_links_platform_types": {
+      "blogs": 5120,
+      "news": 1904,
+      "organization": 3310,
+      "unknown": 8098
+     },
+     "referring_links_semantic_locations": {
+      "article": 7044,
+      "main": 3120,
+      "footer": 1877,
+      "": 6391
+     },
+     "referring_links_countries": {
+      "US": 8240,
+      "GB": 1120,
+      "DE": 904,
+      "TR": 233,
+      "": 7935
+     }
+    }
+   ]
+  }
+ ]
+}

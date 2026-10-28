@@ -1,0 +1,54 @@
+{
+  "format_version": 1,
+  "site": "enpara",
+  "must_find": [],
+  "must_not_find": [
+    {
+      "id": "false-portuguese-language",
+      "check_id": "STR-12",
+      "status": "verified",
+      "urls": [
+        "https://www.enpara.com/"
+      ],
+      "reason": "A Turkish page must not be labelled Portuguese without supporting language evidence.",
+      "verification": {
+        "reviewer": "Codex direct saved markup inspection; not independent human approval",
+        "observed_at": "2026-10-22T19:35:55.959816+00:00",
+        "evidence_reference": [
+          "enpara/responses/000007.body and requests.json record"
+        ],
+        "evidence_sha256": [
+          "ff5ebe2b3a80406308871d3280e3467a48e1358aa0aa5d8567ecae42513a9cc5"
+        ],
+        "collection_digest": "e1cfd85414b65d1e11d9412c91da97d2136fcb806d9840154acd10d5c288731b",
+        "observation": "Successful native HTML declares tr-TR and has a non-empty banking-related H1. Two canonical tags differ only by the root slash; these designate the same root URL. Browser visibility and owner intent are not inferred."
+      },
+      "title_contains": "Portuguese"
+    },
+    {
+      "id": "meaningful-h1-not-absent",
+      "check_id": "STR-2",
+      "status": "verified",
+      "urls": [
+        "https://www.enpara.com/"
+      ],
+      "title_contains": "no <h1>",
+      "reason": "A non-empty H1 exists in the saved raw document; visibility and heading usefulness remain separate questions.",
+      "verification": {
+        "reviewer": "Codex direct saved markup inspection; not independent human approval",
+        "observed_at": "2026-10-22T19:35:55.959816+00:00",
+        "evidence_reference": [
+          "enpara/responses/000007.body and requests.json record"
+        ],
+        "evidence_sha256": [
+          "ff5ebe2b3a80406308871d3280e3467a48e1358aa0aa5d8567ecae42513a9cc5"
+        ],
+        "collection_digest": "e1cfd85414b65d1e11d9412c91da97d2136fcb806d9840154acd10d5c288731b",
+        "observation": "Successful native HTML declares tr-TR and has a non-empty banking-related H1. Two canonical tags differ only by the root slash; these designate the same root URL. Browser visibility and owner intent are not inferred."
+      }
+    }
+  ],
+  "limitations": [
+    "Only collection-pinned reviewed source claims are labelled. No artificial positive defect is required for each site. Owner intent and independent human review are not established."
+  ]
+}

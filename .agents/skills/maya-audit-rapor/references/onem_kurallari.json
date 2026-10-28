@@ -1,0 +1,76 @@
+{
+  "_about": "Rapor katmanının Maya önem derecelerine uyguladığı kurallar. Bir kural önemi yalnızca DÜŞÜREBİLİR, motorun verdiğinden yükseğe çıkaramaz (H25): teknik rapor ile müşteri raporu aynı bulgu için çelişen önem göstermez. Uygulanan her kural kartta 'Maya: X → rapor: Y (kural)' diye görünür. Bir kuralı kapatmak için 'enabled': false yapın. Eşleşme kontrol kimliğiyle yapılır; motor bulguya kararlı bir kod vermediği için, aynı kontrolün içindeki ayrım gerektiğinde motorun sabit başlık kalıbına bakılır (yalnız düşüren kurallarda).",
+  "severity_labels": {
+    "S1": "Kritik",
+    "S2": "Yüksek",
+    "S3": "Orta",
+    "S4": "Düşük",
+    "Info": "Bilgi"
+  },
+  "rules": [
+    {
+      "id": "R10-headings-wordcount-note",
+      "enabled": true,
+      "label": "Kural 10: başlık sırası ve kelime sayısı not düzeyindedir",
+      "match": {
+        "check_ids": [
+          "TSEO-1",
+          "STR-2",
+          "STR-15"
+        ],
+        "title_regex": "(?i)(heading level jump|heading jump|fewer than \\d+ words|long page|no subheadings)"
+      },
+      "set_severity": "Info",
+      "scored": false
+    },
+    {
+      "id": "R11-llms-not-scored",
+      "enabled": true,
+      "label": "Kural 11: llms.txt bulguları kaydedilir, puana girmez (motorla aynı)",
+      "match": {
+        "check_ids": [
+          "ACC-8"
+        ]
+      },
+      "scored": false
+    },
+    {
+      "id": "R13-utility-noindex",
+      "enabled": true,
+      "label": "Kural 13: yardımcı sayfalardaki noindex bilgi düzeyindedir (bilinçli olabilir)",
+      "match": {
+        "check_ids": [
+          "ACC-3"
+        ],
+        "title_regex": "(?i)noindex",
+        "all_urls_regex": "(?i)/(qr|qr-menu|print|yazdir|tesekkur|tesekkurler|thank|thanks|form|basvuru|arama|search|sepet|cart|checkout|odeme|login|giris|uye|hesabim|account)(/|-|$)"
+      },
+      "set_severity": "Info",
+      "could_be_intentional": true,
+      "scored": false
+    }
+  ],
+  "launch_gated_policy": {
+    "_about": "Sözleşme v2: tarih yeterli değildir; tam URL kapsamı için yapılandırılmış verification kayıtları gerekir. Örnek kontrol tüm kartı doğrulamaz.",
+    "verify_first": [
+      "S1",
+      "S2"
+    ]
+  },
+  "score": {
+    "_about": "TASLAK puan modeli (öneri #38). Ağırlıklar kalibre edilmedi; raporda 'taslak' etiketiyle gösterilir.",
+    "start": 100,
+    "weights": {
+      "S1": 15,
+      "S2": 8,
+      "S3": 4,
+      "S4": 1.5,
+      "Info": 0
+    },
+    "share_floor": 0.5,
+    "_share": "Ağırlık × (0,5 + 0,5 × etkilenen/değerlendirilen): içerik kontrolünde açık pages_read, IDX-5 için listed_urls_assessed; bilinen URL sayısı kullanılmaz. Site geneli oranı 0,5, tavanlar aynı. Değerlendirme yoksa veya puanı etkileyen doğrulanmamış bulgu varsa puan null; kısmi örneklem puanı açık kapsamla taslaktır.",
+    "cap_per_check": 20,
+    "exclude_unverified_below": "S2",
+    "not_measured_weight": 0
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "format_version": 1,
+  "site": "arjava",
+  "must_find": [
+    {
+      "id": "test-brand-sitemap",
+      "check_id": "IDX-5",
+      "status": "verified",
+      "urls": [
+        "https://arjava.com.tr/test-marka"
+      ],
+      "reason": "Owner-reported test-mark URL in sitemap; membership alone is not proof of a harmful defect.",
+      "verification": {
+        "reviewer": "Codex direct saved-response/markup inspection, separate from engine output; not independent human approval",
+        "observed_at": "2026-10-22T18:57:07.228928+00:00",
+        "evidence_reference": [
+          "arjava/responses/000004.body and requests.json record",
+          "arjava/responses/000052.body and requests.json record"
+        ],
+        "evidence_sha256": [
+          "cbf9251044bd2939863d3ccc95db54c8c3a69dfeee82cd2958bdc7d6eb1f907a",
+          "2bdd8fec3c62efa2b0256c391535ed52f7f0aeda44fd5ee182030f546c455d62"
+        ],
+        "collection_digest": "e73672e7e0e0e4fa5028ea1a47d8fbeb409fb2857dd63d74b62ba1b3e0d443c4",
+        "observation": "The brands sitemap explicitly lists /test-marka. Its successful self-canonical indexable HTML contains shop chrome and a category shell but no H1 or substantive brand information. Treat as a test/draft candidate requiring owner confirmation, not proven accidental publication."
+      },
+      "title_contains": "draft or test"
+    }
+  ],
+  "must_not_find": [
+    {
+      "id": "false-portuguese-language",
+      "check_id": "STR-12",
+      "status": "verified",
+      "urls": [
+        "https://arjava.com.tr/"
+      ],
+      "reason": "A Turkish page must not be labelled Portuguese without supporting language evidence.",
+      "verification": {
+        "reviewer": "Codex direct saved-response/markup inspection, separate from engine output; not independent human approval",
+        "observed_at": "2026-10-22T18:57:11.676584+00:00",
+        "evidence_reference": [
+          "arjava/responses/000008.body and requests.json record"
+        ],
+        "evidence_sha256": [
+          "b2d27a7e399dbfdc5e254674a76be96a9fd48ebb52a54c3dd16d1f7db69c34fd"
+        ],
+        "collection_digest": "e73672e7e0e0e4fa5028ea1a47d8fbeb409fb2857dd63d74b62ba1b3e0d443c4",
+        "observation": "Homepage lang=tr-TR, Turkish product/navigation/description text. No Portuguese reading is supported for this page."
+      },
+      "title_contains": "Portuguese"
+    },
+    {
+      "id": "colour-variants-not-duplicate-defect",
+      "check_id": "IDX-8",
+      "status": "verified",
+      "urls": [
+        "https://arjava.com.tr/arjava-koku-difuzoru-siyah-8",
+        "https://arjava.com.tr/arjava-koku-difuzoru-bej-13"
+      ],
+      "reason": "Colour/size alternatives must not be merged solely from similar template text. Exact paired pages and distinguishing product evidence still need review.",
+      "verification": {
+        "reviewer": "Codex direct saved-response/markup inspection, separate from engine output; not independent human approval",
+        "observed_at": "2026-10-22T18:58:26.900292+00:00",
+        "evidence_reference": [
+          "arjava/responses/000037.body and requests.json record",
+          "arjava/responses/000062.body and requests.json record"
+        ],
+        "evidence_sha256": [
+          "151e74669138c73cf1227d50bc9f670b2329d057e97c9175b24a1131ec10463f",
+          "e002e887dca8e755df8e8d162c7b3065661821ac5c00b11b215f60fd4e114c5a"
+        ],
+        "collection_digest": "e73672e7e0e0e4fa5028ea1a47d8fbeb409fb2857dd63d74b62ba1b3e0d443c4",
+        "observation": "Two self-canonical Product pages explicitly name Siyah and Bej colour versions, with differing product image resources and meaningful H1s. Shared feature text alone does not establish a harmful duplicate/consolidation defect."
+      },
+      "severities": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ]
+    }
+  ],
+  "limitations": [
+    "Labels apply to the pinned native client/time evidence, not every visitor or future live state. Hand inspection was by the implementing agent; owner/independent human acceptance is not established. Unreviewed claims remain provisional."
+  ]
+}

@@ -1,0 +1,165 @@
+{
+ "schema_version": "1.20",
+ "report_version": "0.4",
+ "generation": {
+  "engine_version": "0.2.5",
+  "native_started_at": "2026-10-20T08:00:00+00:00"
+ },
+ "brand": {
+  "name": "Örnek Firma",
+  "source": "typed"
+ },
+ "crawl": {
+  "origin": "https://ornek-firma.test",
+  "started_at": "2026-10-20T08:00:00+00:00"
+ },
+ "audit_status": {
+  "content_coverage": {
+   "level": "complete_sample",
+   "pages_read": 12,
+   "known_urls_not_read": 0
+  }
+ },
+ "problem_summary": {
+  "pages_checked": 12,
+  "problems": 3,
+  "notes": 0,
+  "by_severity": {
+   "S1": 0,
+   "S2": 1,
+   "S3": 1,
+   "S4": 1,
+   "Info": 0
+  },
+  "by_page": [
+   {
+    "url": "https://ornek-firma.test/"
+   },
+   {
+    "url": "https://ornek-firma.test/"
+   },
+   {
+    "url": "https://ornek-firma.test/"
+   },
+   {
+    "url": "https://ornek-firma.test/"
+   },
+   {
+    "url": "https://ornek-firma.test/"
+   }
+  ]
+ },
+ "checks": [
+  {
+   "check_id": "IDX-2",
+   "title": "HTTPS",
+   "status": "findings",
+   "findings": [
+    {
+     "id": "IDX-2-aaaa1111",
+     "check_id": "IDX-2",
+     "title": "No HTTP to HTTPS redirect on ornek-firma.test",
+     "severity": "S2",
+     "confidence": "verified",
+     "scope": {
+      "kind": "sitewide",
+      "count": 1,
+      "urls": [
+       "http://ornek-firma.test/"
+      ]
+     },
+     "evidence": {
+      "hosts": [
+       {
+        "host": "ornek-firma.test",
+        "outcome": "served_on_http",
+        "http_url": "http://ornek-firma.test/",
+        "status": 200
+       }
+      ],
+      "reproduce": "curl -I http://ornek-firma.test/"
+     },
+     "how_to_fix": "Redirect every http:// address to its https:// address with a 301.",
+     "intent": null,
+     "launch_gated": [],
+     "notes": [],
+     "importance_tier": 2,
+     "observed_at": "2026-10-19T07:00:24+00:00",
+     "verification": {
+      "state": "not_retested",
+      "checked": [],
+      "reason": "no re-test for this rule",
+      "subjects": [
+       "http://ornek-firma.test/"
+      ]
+     }
+    },
+    {
+     "id": "STR-2-bbbb2222",
+     "check_id": "STR-2",
+     "title": "4 page(s) have no <h1>",
+     "severity": "S3",
+     "confidence": "verified",
+     "scope": {
+      "kind": "template",
+      "count": 4,
+      "urls": [
+       "https://ornek-firma.test/hakkimizda/",
+       "https://ornek-firma.test/iletisim/",
+       "https://ornek-firma.test/hizmetler/",
+       "https://ornek-firma.test/sss/"
+      ]
+     },
+     "evidence": {
+      "pages": [
+       {
+        "url": "https://ornek-firma.test/hakkimizda/",
+        "status": 200
+       },
+       {
+        "url": "https://ornek-firma.test/iletisim/",
+        "status": 200
+       }
+      ]
+     },
+     "how_to_fix": "Add one <h1> that names the page's topic.",
+     "intent": null,
+     "launch_gated": [],
+     "notes": [],
+     "importance_tier": 2,
+     "observed_at": "2026-10-19T07:00:24+00:00"
+    },
+    {
+     "id": "TSEO-1-cccc3333",
+     "check_id": "TSEO-1",
+     "title": "7 page titles above the 60-character guidance band",
+     "severity": "S4",
+     "confidence": "verified",
+     "scope": {
+      "kind": "template",
+      "count": 7,
+      "urls": [
+       "https://ornek-firma.test/"
+      ]
+     },
+     "evidence": {},
+     "how_to_fix": "Shorten the title.",
+     "intent": null,
+     "launch_gated": [],
+     "notes": [],
+     "importance_tier": 2,
+     "observed_at": "2026-10-19T07:00:24+00:00"
+    }
+   ],
+   "coverage": {
+    "not_assessed": []
+   }
+  }
+ ],
+ "answer_engine_panel": [],
+ "findings_in_priority_order": [
+  "IDX-2-aaaa1111",
+  "STR-2-bbbb2222",
+  "TSEO-1-cccc3333"
+ ]
+}

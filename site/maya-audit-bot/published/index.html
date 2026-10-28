@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maya-Audit crawler</title>
+<meta name="robots" content="noindex">
+<style>
+  body { font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; max-width: 42rem; margin: 0 auto; padding: 2rem 1rem; color: #1a1a1a; background: #fff; }
+  h1 { font-size: 1.6rem; margin-bottom: .25rem; }
+  h2 { font-size: 1.1rem; margin-top: 2rem; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; background: #f3f3f3; }
+  code { padding: .1em .3em; border-radius: 3px; }
+  pre { padding: .75rem 1rem; border-radius: 4px; overflow-x: auto; }
+  .muted { color: #555; }
+</style>
+</head>
+<body>
+<h1>Maya-Audit crawler</h1>
+<p class="muted">If you found <code>Maya-Audit</code> in your server logs, this page explains what it is.</p>
+<p class="muted"><strong>This page is hosted on a test deployment while Maya's crawler is being validated. The crawler is operated by Maya (withmaya.ai); the address below is monitored and reaches the person responsible.</strong></p>
+
+<h2>What it is</h2>
+<p>Maya-Audit is the crawler behind Maya's technical audit. The audit checks whether a website can be
+reached and read by AI answer engines: whether pages load, what robots.txt allows, and whether the crawler
+was blocked or rate-limited. It visits a site only when a Maya user has requested an audit of that site.</p>
+
+<h2>How to recognize it</h2>
+<p>Requests carry this user agent (the version number may change; the token <code>Maya-Audit</code> will not):</p>
+<pre>Maya-Audit/0.2 (+URL of this page)</pre>
+<p>The one exception is the verification check described below: those requests use other user agents, and
+every one of them carries the header <code>X-Maya-Probe: ua-differential</code>.</p>
+
+<h2>What it does</h2>
+<ul>
+  <li>Requests <code>/robots.txt</code> before anything else, and follows it (RFC 9309). It obeys a
+      <code>User-agent: Maya-Audit</code> group if you have one, otherwise the <code>*</code> group.</li>
+  <li>If robots.txt returns a server error, a 429, or cannot be reached, it makes no further requests to your site.</li>
+  <li>Fetches your XML sitemaps and HTML pages with plain HTTP GET requests. It does not submit forms, log in,
+      or keep cookies between pages. One exception: when an address redirects back to itself, the cookies your site
+      sets are kept for one re-check of that address only, never stored.</li>
+  <li>On a small sample of pages (by default at most 20 per audit) it also loads the page in a headless browser,
+      which runs your JavaScript, to compare what a browser shows with the raw HTML. It uses the same
+      <code>Maya-Audit</code> user agent, follows robots.txt for your page resources, does not load resources from
+      other sites, sends no requests other than GET, does not follow links, and may click tabs or "load more"
+      buttons (never anything inside a form) to see whether content appears.</li>
+  <li>Sends one request at a time to your site, by default at least one second apart, and honors <code>Crawl-delay</code> up to
+      90 seconds (a longer value is honored at 90 seconds and noted in the audit report). On a fast site that answers
+      without errors, the gap may shorten to 0.5 seconds, never below your <code>Crawl-delay</code>; any error or slow
+      answer puts it back to one second for the rest of the audit.</li>
+  <li>If you answer 429 with a <code>Retry-After</code> longer than a few seconds, it stops crawling your site.</li>
+  <li>Each audit is capped in pages and time (by default 50 pages and 5 minutes). It may fetch
+      <code>/robots.txt</code> a few times during one audit to catch intermittent errors.</li>
+  <li>After crawling, it fetches a small sample of pages (by default at most 30) two more times, 30 seconds apart,
+      to measure response time and whether requests fail intermittently. It sends none of these if your site
+      rate-limited it, and stops at the first 429.</li>
+  <li><strong>Only on sites whose owner has verified ownership with Maya</strong> (a verification tag on the
+      homepage): it also requests a small, capped sample of URLs using the user-agent strings of AI search and
+      answer bots (for example OAI-SearchBot or PerplexityBot) and of a regular browser, to check whether your
+      firewall or CDN treats them differently. Every such request carries <code>X-Maya-Probe: ua-differential</code>.
+      These requests come from Maya, not from those companies. Sites that have not verified ownership never
+      receive them.</li>
+  <li><strong>Only on ownership-verified sites, and only when the operator turns it on:</strong> it may ask Google
+      PageSpeed Insights to test up to 5 key pages, 3 times each. Those page loads come from Google's Lighthouse,
+      not from Maya-Audit, so they do not carry the <code>Maya-Audit</code> user agent.</li>
+  <li>If the operator supplies a list of pages that AI answer engines have cited, it fetches any of those pages on
+      the audited site that the crawl did not already reach (at most 50, robots.txt obeyed) to check they still work.
+      Cited pages on other sites are never fetched.</li>
+  <li><strong>Only when the operator of an audit turns it on</strong> (off by default): if a site being audited
+      links to your site as its social profile (<code>sameAs</code>), preview image (<code>og:image</code>), or
+      language version (<code>hreflang</code>), it may request those specific URLs on your site to check that they
+      work. It requests your <code>/robots.txt</code> first and follows it, sends at most 20 such requests per audit
+      across all linked sites, and does not crawl anything else on your site.</li>
+</ul>
+
+<h2>How to block or slow it</h2>
+<p>To block it entirely, add this to your robots.txt:</p>
+<pre>User-agent: Maya-Audit
+Disallow: /</pre>
+<p>To slow it down instead:</p>
+<pre>User-agent: Maya-Audit
+Crawl-delay: 10</pre>
+
+<h2>Contact</h2>
+<p>Questions or complaints about this crawler: <a href="mailto:sanzhar.tuibekov@withmaya.ai">sanzhar.tuibekov@withmaya.ai</a>. We answer every message about crawler behavior, and we will stop crawling a site on request.</p>
+</body>
+</html>

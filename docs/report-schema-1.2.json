@@ -1,0 +1,279 @@
+{
+  "schema_version": "1.2",
+  "report": {
+    "required": [
+      "schema_version",
+      "report_version",
+      "status_meanings",
+      "scope",
+      "gates",
+      "checks",
+      "answer_engine_panel",
+      "findings_in_priority_order",
+      "needs_human_review",
+      "page_counts",
+      "time_limit_cuts",
+      "crawl"
+    ],
+    "optional": [
+      "dataforseo",
+      "firecrawl",
+      "evidence_saved",
+      "migrated"
+    ]
+  },
+  "gate": [
+    "check_id",
+    "title",
+    "state",
+    "confidence",
+    "summary",
+    "evidence",
+    "how_to_fix"
+  ],
+  "check": [
+    "check_id",
+    "title",
+    "status",
+    "summary",
+    "findings",
+    "evidence",
+    "observations",
+    "review_items",
+    "coverage"
+  ],
+  "finding": [
+    "check_id",
+    "title",
+    "severity",
+    "confidence",
+    "rationale",
+    "engines",
+    "scope",
+    "evidence",
+    "expected",
+    "how_to_fix",
+    "cost_tier",
+    "intent",
+    "launch_gated",
+    "notes",
+    "importance_tier",
+    "observed_at",
+    "id"
+  ],
+  "review_item": [
+    "check_id",
+    "title",
+    "why_review",
+    "confidence",
+    "engines",
+    "scope",
+    "evidence",
+    "suggested_action",
+    "launch_gated",
+    "importance_tier",
+    "observed_at",
+    "id"
+  ],
+  "scope": [
+    "kind",
+    "count",
+    "urls"
+  ],
+  "coverage": [
+    "not_assessed",
+    "rule"
+  ],
+  "page_counts": [
+    "pages_checked",
+    "redirects"
+  ],
+  "time_limit_cut": [
+    "collector",
+    "reason",
+    "checks_not_run",
+    "checks_run_on_fetched_pages_only"
+  ],
+  "crawl": [
+    "start_url",
+    "origin",
+    "user_agent",
+    "product_token",
+    "started_at",
+    "finished_at",
+    "elapsed_s",
+    "config",
+    "robots",
+    "pages",
+    "skipped_robots",
+    "sitemap_docs",
+    "sitemap_urls",
+    "discovered_urls",
+    "not_fetched_urls",
+    "stop_reason",
+    "stop_detail",
+    "requests",
+    "deadline_hit",
+    "stopped",
+    "render_discovery",
+    "bot_info_check",
+    "access",
+    "index",
+    "render",
+    "structure",
+    "perf",
+    "citations",
+    "citation_domains",
+    "collector_errors",
+    "backoff",
+    "sessions",
+    "sitemap_lastmods",
+    "sitemap_notes"
+  ],
+  "page": [
+    "url",
+    "discovered_via",
+    "depth",
+    "requested_at",
+    "user_agent",
+    "status",
+    "error",
+    "elapsed_ms",
+    "content_type",
+    "body_bytes",
+    "body_truncated",
+    "headers",
+    "fetch_class",
+    "classification_confidence",
+    "classification_evidence",
+    "redirect_location",
+    "retried_after_429",
+    "view",
+    "content_checks_eligible",
+    "links_found",
+    "analysis",
+    "outlinks",
+    "external_links",
+    "ttfb_ms"
+  ],
+  "request": [
+    "seq",
+    "url",
+    "purpose",
+    "user_agent",
+    "started_at",
+    "status",
+    "error",
+    "elapsed_ms",
+    "extra_headers",
+    "ttfb_ms",
+    "started_mono",
+    "ended_mono"
+  ],
+  "sitemap_doc": [
+    "url",
+    "status",
+    "error",
+    "kind",
+    "urls_found",
+    "lastmod_count",
+    "lastmod_distinct",
+    "lastmod_top",
+    "lastmod_top_count"
+  ],
+  "skipped_url": [
+    "url",
+    "discovered_via",
+    "decision"
+  ],
+  "dataforseo": [
+    "source",
+    "audit_id",
+    "panel",
+    "confidence",
+    "target",
+    "status",
+    "checks",
+    "calls",
+    "requests_sent",
+    "estimated_usd",
+    "cost_usd"
+  ],
+  "firecrawl": [
+    "source",
+    "enabled",
+    "used",
+    "purpose",
+    "reason",
+    "notice",
+    "options",
+    "proxy",
+    "owner_approved_bypass",
+    "zero_data_retention",
+    "page_cap",
+    "crawl_blocked",
+    "robots",
+    "pages",
+    "rendered",
+    "pages_read",
+    "skipped_by_robots",
+    "pages_blocked_for_firecrawl_too",
+    "checks_from_firecrawl",
+    "needs_decision",
+    "stopped_because",
+    "calls",
+    "requests_sent",
+    "credits",
+    "usd"
+  ],
+  "evidence_saved": [
+    "folder",
+    "mode",
+    "pages",
+    "not_saved",
+    "total_bytes"
+  ],
+  "vocabulary": {
+    "check_status": [
+      "findings",
+      "needs_review",
+      "pass",
+      "partial",
+      "observed",
+      "not_assessed"
+    ],
+    "severity": [
+      "S1",
+      "S2",
+      "S3",
+      "S4",
+      "Info"
+    ],
+    "confidence": [
+      "verified",
+      "inferred",
+      "estimated",
+      "not_assessed"
+    ],
+    "fetch_class": [
+      "ok",
+      "blocked",
+      "rate_limited",
+      "error"
+    ],
+    "stop_reason": [
+      "exhausted",
+      "page_cap",
+      "time_limit",
+      "rate_limit",
+      "error",
+      "robots_disallowed",
+      "stopped"
+    ],
+    "dataforseo_status": [
+      "assessed",
+      "partly_assessed",
+      "not_assessed"
+    ]
+  }
+}

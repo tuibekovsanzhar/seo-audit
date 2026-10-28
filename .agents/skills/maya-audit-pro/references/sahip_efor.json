@@ -1,0 +1,794 @@
+{
+ "_source": "Maya Audit team-preview-21 maya_audit_web/catalog.py (owner/effort only, parsed statically). Estimates, not evidence.",
+ "default": {
+  "owner": "seo",
+  "effort": "M"
+ },
+ "by_check": {
+  "ACC-3": {
+   "owner": "seo",
+   "effort": "S"
+  },
+  "ACC-4": {
+   "owner": "developer",
+   "effort": "M"
+  },
+  "ACC-5": {
+   "owner": "developer",
+   "effort": "M"
+  },
+  "ACC-6": {
+   "owner": "seo",
+   "effort": "S"
+  },
+  "ACC-8": {
+   "owner": "content",
+   "effort": "S"
+  },
+  "ACC-9": {
+   "owner": "developer",
+   "effort": "M"
+  },
+  "IDX-9": {
+   "owner": "seo",
+   "effort": "S"
+  },
+  "PRF-3": {
+   "owner": "developer",
+   "effort": "L"
+  },
+  "RND-5": {
+   "owner": "developer",
+   "effort": "M"
+  },
+  "STR-11": {
+   "owner": "developer",
+   "effort": "M"
+  },
+  "STR-13": {
+   "owner": "developer",
+   "effort": "S"
+  },
+  "STR-15": {
+   "owner": "content",
+   "effort": "M"
+  },
+  "STR-16": {
+   "owner": "content",
+   "effort": "S"
+  },
+  "STR-17": {
+   "owner": "developer",
+   "effort": "S"
+  },
+  "STR-18": {
+   "owner": "content",
+   "effort": "S"
+  },
+  "STR-20": {
+   "owner": "content",
+   "effort": "M"
+  },
+  "STR-21": {
+   "owner": "content",
+   "effort": "M"
+  },
+  "STR-22": {
+   "owner": "content",
+   "effort": "M"
+  },
+  "STR-23": {
+   "owner": "developer",
+   "effort": "M"
+  }
+ },
+ "by_title": {
+  "ACC-1": [
+   {
+    "pattern": "robots\\.txt returned a server error",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "larger than 500 KiB",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "returns an HTML page",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "ACC-2": [
+   {
+    "pattern": "blocks .* bot\\(s\\)",
+    "owner": "seo",
+    "effort": "S"
+   },
+   {
+    "pattern": "Policy mismatch",
+    "owner": "seo",
+    "effort": "S"
+   },
+   {
+    "pattern": "Group precedence",
+    "owner": "seo",
+    "effort": "S"
+   }
+  ],
+  "ACC-7": [
+   {
+    "pattern": "Crawl-delay: .* applies to",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "asks .* to wait",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "IDX-1": [
+   {
+    "pattern": "server error \\(5xx\\)",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "fail at the connection level",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "time out on every attempt",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "client error \\(4xx\\)",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "soft 404",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "answer with an empty page",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "server error message with the server's file paths",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "IDX-2": [
+   {
+    "pattern": "TLS certificate is not valid",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "expires in",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "No HTTP to HTTPS redirect",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "IDX-3": [
+   {
+    "pattern": "redirect loop",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "intermittently redirect to themselves",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "loop (for visitors without cookies|in Maya)",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "redirected to themselves once|verification is incomplete",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "redirect chain",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "did not follow",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "IDX-4": [
+   {
+    "pattern": "canonical that is broken, noindexed, or an error",
+    "owner": "seo",
+    "effort": "M"
+   },
+   {
+    "pattern": "conflicting canonicals",
+    "owner": "seo",
+    "effort": "S"
+   },
+   {
+    "pattern": "canonical on another site",
+    "owner": "seo",
+    "effort": "S"
+   }
+  ],
+  "IDX-5": [
+   {
+    "pattern": "No usable XML sitemap",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "non-200 or noindex",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "are not live, indexable pages",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "could not be loaded",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "written wrongly",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "not percent-encoded",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "<lastmod> values are identical",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "same <lastmod>",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "in the future",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "ACC-8": [
+   {
+    "pattern": "lead to pages that do not work",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "does not open with",
+    "owner": "content",
+    "effort": "S"
+   }
+  ],
+  "IDX-6": [
+   {
+    "pattern": "external destination.*GET redirect cycle",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "Link target returns",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "tracking parameters",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "point to another site.*returns \\d",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "point to another site.*could not be checked",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "to other sites on .* 404 or 410",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "point to another site \\([^)]*\\) at a path that exists on this one$",
+    "owner": "content",
+    "effort": "S"
+   }
+  ],
+  "IDX-7": [
+   {
+    "pattern": "listed only in the sitemap",
+    "owner": "seo",
+    "effort": "M"
+   },
+   {
+    "pattern": "clicks from the homepage",
+    "owner": "seo",
+    "effort": "M"
+   }
+  ],
+  "IDX-8": [
+   {
+    "pattern": "identical visible text",
+    "owner": "seo",
+    "effort": "M"
+   },
+   {
+    "pattern": "share the title",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "nearly identical main content",
+    "owner": "seo",
+    "effort": "M"
+   },
+   {
+    "pattern": "copies or near-copies of each other",
+    "owner": "seo",
+    "effort": "M"
+   }
+  ],
+  "IDX-10": [
+   {
+    "pattern": "Bing's last crawl",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "IndexNow key",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "PRF-1": [
+   {
+    "pattern": "take more than",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "time out on some attempts",
+    "owner": "developer",
+    "effort": "M"
+   }
+  ],
+  "PRF-2": [
+   {
+    "pattern": "failed on some attempts",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "of fetches failed across the audit",
+    "owner": "developer",
+    "effort": "M"
+   }
+  ],
+  "RND-1": [
+   {
+    "pattern": "Main content is missing from the raw HTML",
+    "owner": "developer",
+    "effort": "L"
+   },
+   {
+    "pattern": "Part of the content",
+    "owner": "developer",
+    "effort": "L"
+   },
+   {
+    "pattern": "may be client-rendered",
+    "owner": "developer",
+    "effort": "M"
+   }
+  ],
+  "RND-2": [
+   {
+    "pattern": "declared critical fact",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "appear only after JavaScript",
+    "owner": "developer",
+    "effort": "M"
+   }
+  ],
+  "RND-3": [
+   {
+    "pattern": "only after a click or scroll",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "may hide content behind interaction",
+    "owner": "developer",
+    "effort": "M"
+   }
+  ],
+  "RND-4": [
+   {
+    "pattern": "<canvas> is on .* part of the site's layout",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "iframe",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "draw content on a <canvas>",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "banner-shaped images",
+    "owner": "content",
+    "effort": "M"
+   }
+  ],
+  "RND-6": [
+   {
+    "pattern": "HTML larger than",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "start their main content more than",
+    "owner": "developer",
+    "effort": "M"
+   }
+  ],
+  "RND-7": [
+   {
+    "pattern": "of their text in the main content",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "no <main> or <article>",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "STR-1": [
+   {
+    "pattern": "have no <title>",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "title\\(s\\) are shared",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "generic title",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "begin with the same",
+    "owner": "content",
+    "effort": "S"
+   }
+  ],
+  "STR-2": [
+   {
+    "pattern": "have no <h1>",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "The homepage has no <h1>",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "no subheadings",
+    "owner": "content",
+    "effort": "M"
+   },
+   {
+    "pattern": "more than one <h1>",
+    "owner": "content",
+    "effort": "S"
+   }
+  ],
+  "STR-3": [
+   {
+    "pattern": "JSON-LD that does not parse",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "no Organization structured data",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "missing Google-required properties",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "lack the structured data type expected",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "one price and no buy button",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "structured data that returns an error",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "different URL in their structured data than their canonical",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "@id that no crawled page defines",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "@id\\(s\\) are given different types",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "STR-4": [
+   {
+    "pattern": "differs from the .* shown on the page",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "did not show when it was read",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "is not shown on the page",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "STR-5": [
+   {
+    "pattern": "@id\\(s\\) carry a different name",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "brand is named .* different ways",
+    "owner": "content",
+    "effort": "M"
+   },
+   {
+    "pattern": "sameAs profile link",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "og:site_name holds the page title",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "STR-6": [
+   {
+    "pattern": "looks auto-stamped",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "carry a future date",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "date signals more than",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "show no published or updated date",
+    "owner": "content",
+    "effort": "S"
+   }
+  ],
+  "STR-7": [
+   {
+    "pattern": "do(es)? not load",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "WebP or AVIF",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "missing or empty alt text|has no alt text|with no alt text",
+    "owner": "content",
+    "effort": "M"
+   },
+   {
+    "pattern": "have no alt attribute",
+    "owner": "content",
+    "effort": "S"
+   }
+  ],
+  "STR-8": [
+   {
+    "pattern": "lack supported header associations",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "pricing or spec comparisons",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "other table-like",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "empty <table>",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "STR-9": [
+   {
+    "pattern": "hreflang links to URLs that do not return 200",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "hreflang links that are not returned",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
+    "pattern": "<html lang> that does not match",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": ".",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "STR-10": [
+   {
+    "pattern": "og:image that returns",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "site icon as share image",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "share image smaller than",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "have no |have an empty ",
+    "owner": "content",
+    "effort": "S"
+   }
+  ],
+  "STR-13": [
+   {
+    "pattern": "invisible characters",
+    "owner": "content",
+    "effort": "S"
+   }
+  ],
+  "STR-12": [
+   {
+    "pattern": "mostly in another language",
+    "owner": "content",
+    "effort": "M"
+   },
+   {
+    "pattern": "section headings in another language",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "placeholder or template text",
+    "owner": "content",
+    "effort": "S"
+   }
+  ],
+  "STR-14": [
+   {
+    "pattern": "generic text",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": "no text at all|ha(?:s|ve) no text \\(on ",
+    "owner": "developer",
+    "effort": "S"
+   }
+  ],
+  "STR-19": [
+   {
+    "pattern": "no address a crawler can follow|lead nowhere|ha(?:s|ve) no address \\(",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "control\\(s\\) are coded as links|control group\\(s\\) use anchors",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "in the footer look like links",
+    "owner": "content",
+    "effort": "S"
+   }
+  ],
+  "TSEO-1": [
+   {
+    "pattern": "guidance band",
+    "owner": "content",
+    "effort": "S"
+   },
+   {
+    "pattern": ".",
+    "owner": "content",
+    "effort": "S"
+   }
+  ]
+ }
+}

@@ -1,0 +1,3644 @@
+{
+ "version": "0.1.20260901",
+ "status_code": 20000,
+ "status_message": "Ok.",
+ "time": "0.1384 sec.",
+ "cost": 0.023,
+ "tasks_count": 1,
+ "tasks_error": 0,
+ "tasks": [
+  {
+   "id": "10061234-0001-0269-0000-fixture00001",
+   "status_code": 20000,
+   "status_message": "Ok.",
+   "time": "0.1021 sec.",
+   "cost": 0.023,
+   "result_count": 1,
+   "path": [
+    "v3",
+    "backlinks",
+    "referring_domains",
+    "live"
+   ],
+   "data": {
+    "api": "backlinks",
+    "function": "referring_domains",
+    "target": "example-brand.com",
+    "include_subdomains": true,
+    "limit": 100,
+    "order_by": [
+     "rank,desc"
+    ]
+   },
+   "result": [
+    {
+     "target": "example-brand.com",
+     "total_count": 1536,
+     "items_count": 100,
+     "items": [
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "wikipedia.org",
+       "rank": 940,
+       "backlinks": 412,
+       "first_seen": "2020-01-10 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 0,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 40,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "github.com",
+       "rank": 933,
+       "backlinks": 408,
+       "first_seen": "2021-02-11 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 1,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 39,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "medium.com",
+       "rank": 926,
+       "backlinks": 404,
+       "first_seen": "2022-03-12 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 2,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 38,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "techcrunch.com",
+       "rank": 919,
+       "backlinks": 400,
+       "first_seen": "2023-04-13 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 3,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 37,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "producthunt.com",
+       "rank": 912,
+       "backlinks": 396,
+       "first_seen": "2024-05-14 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 4,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 36,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "reddit.com",
+       "rank": 905,
+       "backlinks": 392,
+       "first_seen": "2025-06-15 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 5,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 35,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "hurriyet.com.tr",
+       "rank": 898,
+       "backlinks": 388,
+       "first_seen": "2020-07-16 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 6,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 34,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "webrazzi.com",
+       "rank": 891,
+       "backlinks": 384,
+       "first_seen": "2021-08-17 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 7,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 33,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "g2.com",
+       "rank": 884,
+       "backlinks": 380,
+       "first_seen": "2022-09-18 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 8,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 32,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "capterra.com",
+       "rank": 877,
+       "backlinks": 376,
+       "first_seen": "2023-01-19 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 9,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 31,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-011.example",
+       "rank": 870,
+       "backlinks": 372,
+       "first_seen": "2024-02-10 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 10,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 30,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-012.example",
+       "rank": 863,
+       "backlinks": 368,
+       "first_seen": "2025-03-11 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 11,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 29,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-013.example",
+       "rank": 856,
+       "backlinks": 364,
+       "first_seen": "2020-04-12 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 12,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 28,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-014.example",
+       "rank": 849,
+       "backlinks": 360,
+       "first_seen": "2021-05-13 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 13,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 27,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-015.example",
+       "rank": 842,
+       "backlinks": 356,
+       "first_seen": "2022-06-14 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 14,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 26,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-016.example",
+       "rank": 835,
+       "backlinks": 352,
+       "first_seen": "2023-07-15 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 15,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 25,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-017.example",
+       "rank": 828,
+       "backlinks": 348,
+       "first_seen": "2024-08-16 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 16,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 24,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-018.example",
+       "rank": 821,
+       "backlinks": 344,
+       "first_seen": "2025-09-17 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 17,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 23,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-019.example",
+       "rank": 814,
+       "backlinks": 340,
+       "first_seen": "2020-01-18 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 18,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 22,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-020.example",
+       "rank": 807,
+       "backlinks": 336,
+       "first_seen": "2021-02-19 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 19,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 21,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-021.example",
+       "rank": 800,
+       "backlinks": 332,
+       "first_seen": "2022-03-10 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 20,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 20,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-022.example",
+       "rank": 793,
+       "backlinks": 328,
+       "first_seen": "2023-04-11 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 21,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 19,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-023.example",
+       "rank": 786,
+       "backlinks": 324,
+       "first_seen": "2024-05-12 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 22,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 18,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-024.example",
+       "rank": 779,
+       "backlinks": 320,
+       "first_seen": "2025-06-13 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 0,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 17,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-025.example",
+       "rank": 772,
+       "backlinks": 316,
+       "first_seen": "2020-07-14 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 1,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 16,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-026.example",
+       "rank": 765,
+       "backlinks": 312,
+       "first_seen": "2021-08-15 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 2,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 15,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-027.example",
+       "rank": 758,
+       "backlinks": 308,
+       "first_seen": "2022-09-16 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 3,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 14,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-028.example",
+       "rank": 751,
+       "backlinks": 304,
+       "first_seen": "2023-01-17 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 4,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 13,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-029.example",
+       "rank": 744,
+       "backlinks": 300,
+       "first_seen": "2024-02-18 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 5,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 12,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-030.example",
+       "rank": 737,
+       "backlinks": 296,
+       "first_seen": "2025-03-19 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 6,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 11,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-031.example",
+       "rank": 730,
+       "backlinks": 292,
+       "first_seen": "2020-04-10 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 7,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 40,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-032.example",
+       "rank": 723,
+       "backlinks": 288,
+       "first_seen": "2021-05-11 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 8,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 39,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-033.example",
+       "rank": 716,
+       "backlinks": 284,
+       "first_seen": "2022-06-12 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 9,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 38,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-034.example",
+       "rank": 709,
+       "backlinks": 280,
+       "first_seen": "2023-07-13 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 10,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 37,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-035.example",
+       "rank": 702,
+       "backlinks": 276,
+       "first_seen": "2024-08-14 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 11,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 36,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-036.example",
+       "rank": 695,
+       "backlinks": 272,
+       "first_seen": "2025-09-15 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 12,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 35,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-037.example",
+       "rank": 688,
+       "backlinks": 268,
+       "first_seen": "2020-01-16 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 13,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 34,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-038.example",
+       "rank": 681,
+       "backlinks": 264,
+       "first_seen": "2021-02-17 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 14,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 33,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-039.example",
+       "rank": 674,
+       "backlinks": 260,
+       "first_seen": "2022-03-18 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 15,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 32,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-040.example",
+       "rank": 667,
+       "backlinks": 256,
+       "first_seen": "2023-04-19 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 16,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 31,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-041.example",
+       "rank": 660,
+       "backlinks": 252,
+       "first_seen": "2024-05-10 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 17,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 30,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-042.example",
+       "rank": 653,
+       "backlinks": 248,
+       "first_seen": "2025-06-11 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 18,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 29,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-043.example",
+       "rank": 646,
+       "backlinks": 244,
+       "first_seen": "2020-07-12 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 19,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 28,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-044.example",
+       "rank": 639,
+       "backlinks": 240,
+       "first_seen": "2021-08-13 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 20,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 27,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-045.example",
+       "rank": 632,
+       "backlinks": 236,
+       "first_seen": "2022-09-14 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 21,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 26,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-046.example",
+       "rank": 625,
+       "backlinks": 232,
+       "first_seen": "2023-01-15 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 22,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 25,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-047.example",
+       "rank": 618,
+       "backlinks": 228,
+       "first_seen": "2024-02-16 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 0,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 24,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-048.example",
+       "rank": 611,
+       "backlinks": 224,
+       "first_seen": "2025-03-17 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 1,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 23,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-049.example",
+       "rank": 604,
+       "backlinks": 220,
+       "first_seen": "2020-04-18 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 2,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 22,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-050.example",
+       "rank": 597,
+       "backlinks": 216,
+       "first_seen": "2021-05-19 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 3,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 21,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-051.example",
+       "rank": 590,
+       "backlinks": 212,
+       "first_seen": "2022-06-10 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 4,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 20,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-052.example",
+       "rank": 583,
+       "backlinks": 208,
+       "first_seen": "2023-07-11 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 5,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 19,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-053.example",
+       "rank": 576,
+       "backlinks": 204,
+       "first_seen": "2024-08-12 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 6,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 18,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-054.example",
+       "rank": 569,
+       "backlinks": 200,
+       "first_seen": "2025-09-13 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 7,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 17,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-055.example",
+       "rank": 562,
+       "backlinks": 196,
+       "first_seen": "2020-01-14 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 8,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 16,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-056.example",
+       "rank": 555,
+       "backlinks": 192,
+       "first_seen": "2021-02-15 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 9,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 15,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-057.example",
+       "rank": 548,
+       "backlinks": 188,
+       "first_seen": "2022-03-16 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 10,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 14,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-058.example",
+       "rank": 541,
+       "backlinks": 184,
+       "first_seen": "2023-04-17 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 11,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 13,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-059.example",
+       "rank": 534,
+       "backlinks": 180,
+       "first_seen": "2024-05-18 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 12,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 12,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-060.example",
+       "rank": 527,
+       "backlinks": 176,
+       "first_seen": "2025-06-19 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 13,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 11,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-061.example",
+       "rank": 520,
+       "backlinks": 172,
+       "first_seen": "2020-07-10 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 14,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 40,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-062.example",
+       "rank": 513,
+       "backlinks": 168,
+       "first_seen": "2021-08-11 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 15,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 39,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-063.example",
+       "rank": 506,
+       "backlinks": 164,
+       "first_seen": "2022-09-12 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 16,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 38,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-064.example",
+       "rank": 499,
+       "backlinks": 160,
+       "first_seen": "2023-01-13 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 17,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 37,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-065.example",
+       "rank": 492,
+       "backlinks": 156,
+       "first_seen": "2024-02-14 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 18,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 36,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-066.example",
+       "rank": 485,
+       "backlinks": 152,
+       "first_seen": "2025-03-15 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 19,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 35,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-067.example",
+       "rank": 478,
+       "backlinks": 148,
+       "first_seen": "2020-04-16 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 20,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 34,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-068.example",
+       "rank": 471,
+       "backlinks": 144,
+       "first_seen": "2021-05-17 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 21,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 33,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-069.example",
+       "rank": 464,
+       "backlinks": 140,
+       "first_seen": "2022-06-18 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 22,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 32,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-070.example",
+       "rank": 457,
+       "backlinks": 136,
+       "first_seen": "2023-07-19 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 0,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 31,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-071.example",
+       "rank": 450,
+       "backlinks": 132,
+       "first_seen": "2024-08-10 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 1,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 30,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-072.example",
+       "rank": 443,
+       "backlinks": 128,
+       "first_seen": "2025-09-11 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 2,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 29,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-073.example",
+       "rank": 436,
+       "backlinks": 124,
+       "first_seen": "2020-01-12 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 3,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 28,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-074.example",
+       "rank": 429,
+       "backlinks": 120,
+       "first_seen": "2021-02-13 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 4,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 27,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-075.example",
+       "rank": 422,
+       "backlinks": 116,
+       "first_seen": "2022-03-14 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 5,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 26,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-076.example",
+       "rank": 415,
+       "backlinks": 112,
+       "first_seen": "2023-04-15 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 6,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 25,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-077.example",
+       "rank": 408,
+       "backlinks": 108,
+       "first_seen": "2024-05-16 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 7,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 24,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-078.example",
+       "rank": 401,
+       "backlinks": 104,
+       "first_seen": "2025-06-17 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 8,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 23,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-079.example",
+       "rank": 394,
+       "backlinks": 100,
+       "first_seen": "2020-07-18 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 9,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 22,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-080.example",
+       "rank": 387,
+       "backlinks": 96,
+       "first_seen": "2021-08-19 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 10,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 21,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-081.example",
+       "rank": 380,
+       "backlinks": 92,
+       "first_seen": "2022-09-10 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 11,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 20,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-082.example",
+       "rank": 373,
+       "backlinks": 88,
+       "first_seen": "2023-01-11 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 12,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 19,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-083.example",
+       "rank": 366,
+       "backlinks": 84,
+       "first_seen": "2024-02-12 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 13,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 18,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-084.example",
+       "rank": 359,
+       "backlinks": 80,
+       "first_seen": "2025-03-13 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 14,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 17,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-085.example",
+       "rank": 352,
+       "backlinks": 76,
+       "first_seen": "2020-04-14 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 15,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 16,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-086.example",
+       "rank": 345,
+       "backlinks": 72,
+       "first_seen": "2021-05-15 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 16,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 15,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-087.example",
+       "rank": 338,
+       "backlinks": 68,
+       "first_seen": "2022-06-16 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 17,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 14,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-088.example",
+       "rank": 331,
+       "backlinks": 64,
+       "first_seen": "2023-07-17 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 18,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 13,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-089.example",
+       "rank": 324,
+       "backlinks": 60,
+       "first_seen": "2024-08-18 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 19,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 12,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-090.example",
+       "rank": 317,
+       "backlinks": 56,
+       "first_seen": "2025-09-19 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 20,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 11,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-091.example",
+       "rank": 310,
+       "backlinks": 52,
+       "first_seen": "2020-01-10 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 21,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 40,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-092.example",
+       "rank": 303,
+       "backlinks": 48,
+       "first_seen": "2021-02-11 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 22,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 39,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-093.example",
+       "rank": 296,
+       "backlinks": 44,
+       "first_seen": "2022-03-12 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 0,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 38,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-094.example",
+       "rank": 289,
+       "backlinks": 40,
+       "first_seen": "2023-04-13 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 1,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 37,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-095.example",
+       "rank": 282,
+       "backlinks": 36,
+       "first_seen": "2024-05-14 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 2,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 36,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-096.example",
+       "rank": 275,
+       "backlinks": 32,
+       "first_seen": "2025-06-15 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 3,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 35,
+       "referring_pages_nofollow": 0,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-097.example",
+       "rank": 268,
+       "backlinks": 28,
+       "first_seen": "2020-07-16 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 4,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 34,
+       "referring_pages_nofollow": 1,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-098.example",
+       "rank": 261,
+       "backlinks": 24,
+       "first_seen": "2021-08-17 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 5,
+       "broken_backlinks": 1,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 33,
+       "referring_pages_nofollow": 2,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-099.example",
+       "rank": 254,
+       "backlinks": 20,
+       "first_seen": "2022-09-18 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 6,
+       "broken_backlinks": 2,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 0,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 32,
+       "referring_pages_nofollow": 3,
+       "referring_main_domains_nofollow": 0,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": null,
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      },
+      {
+       "type": "backlinks_referring_domain",
+       "domain": "referrer-100.example",
+       "rank": 247,
+       "backlinks": 16,
+       "first_seen": "2023-01-19 10:00:00 +00:00",
+       "lost_date": null,
+       "backlinks_spam_score": 7,
+       "broken_backlinks": 0,
+       "broken_pages": 0,
+       "referring_domains": 1,
+       "referring_domains_nofollow": 1,
+       "referring_main_domains": 1,
+       "referring_ips": 1,
+       "referring_subnets": 1,
+       "referring_pages": 31,
+       "referring_pages_nofollow": 4,
+       "referring_main_domains_nofollow": 1,
+       "referring_links_tld": {
+        "com": 1
+       },
+       "referring_links_types": {
+        "anchor": 1
+       },
+       "referring_links_attributes": {
+        "nofollow": 1
+       },
+       "referring_links_platform_types": {
+        "unknown": 1
+       },
+       "referring_links_semantic_locations": {
+        "article": 1
+       },
+       "referring_links_countries": {
+        "US": 1
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

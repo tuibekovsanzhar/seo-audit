@@ -1,0 +1,48 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.DS_Store
+reports/
+# Crawl frontiers (--db-path). These hold the URLs of whatever was audited, so a client's
+# site map can end up in one; they are working state, never part of the repo.
+*.db
+*.db-wal
+*.db-shm
+
+# Third-party source archive used for research only; not part of this repo
+open-seo-main.zip
+
+# Secrets. API keys and tokens come from the environment; a file holding them is never committed.
+.env
+.env.*
+!.env.example
+
+# Caches and cost ledgers (paid-API responses and spend records are working state).
+cache/
+.cache/
+ledger/
+.maya-audit/
+*.ledger.jsonl
+
+# Audit output. Reports hold the audited site's page content, headers and citation data.
+output/
+out/
+archive_v2/
+examples/live-runs/*/
+examples/generated-documents/
+
+# Brand lists for `maya-audit batch` name clients. Only the example file is kept in the repo.
+brands.csv
+brands*.csv
+!examples/brands.example.csv
+
+# Owner notes and design references: not for the repository or the team zip
+HANDOVER.md
+design-reference/
+
+# Review and error reports name clients and live sites. Never committed, never in the team zip.
+reviews/
