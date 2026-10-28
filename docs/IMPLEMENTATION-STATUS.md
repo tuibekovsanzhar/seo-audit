@@ -16,8 +16,8 @@ Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bi
 | 04 Shared finalization | IN_PROGRESS | `final.settle`/`verify` in `run_audit` and after a page reader; batch not moved |
 | 05 Shared service (CLI/batch/web) | IN_PROGRESS | CLI and web use `final.seal`; batch and skills not moved |
 | 06 Output generations | NOT_STARTED | |
-| 07 Source/page type/scope/render | NOT_STARTED | |
-| 08 Rule contract + catalogue | NOT_STARTED | |
+| 07 Source/page type/scope/render | IN_PROGRESS | H1 only: raw HTML vs rendered page per page (`h1_sources`) |
+| 08 Rule contract + catalogue | IN_PROGRESS | Missing catalogue is an error; actions for idx6.broken and every H1 rule |
 | 09 One publication gate | IN_PROGRESS | Every web report download and the final client export gated; CLI writes and warns; batch not gated |
 | 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown and PDFs |
 | 11 Team status vs engine verification | NOT_STARTED | |
@@ -131,3 +131,34 @@ record). A full-suite run during the slice is not counted: files changed while i
 **Not done (slice A):** batch and the skills still build reports without `final.seal`; the CLI writes a BLOCKED report
 (prints the decision) instead of refusing; `render_markdown` re-qualifies on its own; the client-report editorial cards
 (`client_reporting`) do not show the broken-link card yet; the evidence zip is not gated (by choice).
+
+## M1 slice B — the main heading (2026-10-29)
+
+**Changed:** `maya_audit/checks/structure.py` (STR-2: per-page `h1_sources` raw vs rendered; new `str2.js_only_h1`;
+homepage empty <h1> built as its own finding under its existing rule `judgment.heading.home`), `maya_audit_web/wording.py`
++ regenerated `maya_audit/rule_ids.json` (one new frame), `maya_audit/rule_actions.json` (actions for `idx6.broken`,
+`str2.home_no_h1`, `judgment.heading.home`, `str2.hidden_h1`, `str2.many_h1`, `str2.js_only_h1`),
+`recommendation_catalog.py` + TR wording (catalog, findings), `docs/FIXTURE-MATRIX.md` (regenerated). DECISIONS 281.
+Tests: `tests/test_m1_h1.py` (hand-written pages for each state; homepage missing/empty/hidden; counter-example; raw vs
+rendered with the local browser).
+
+**Correction to stage 00 note 6:** the homepage-empty title already had a rule (`judgment.heading.home`); it had no action.
+
+**Final results (whole tree after slices A and B, macOS, Python 3.13.1):**
+
+| Command | Result |
+|---|---|
+| `.venv/bin/python -m pytest -q -rfEs` (full suite) | `2610 passed, 3 skipped, 1 warning in 701.07s (0:11:41)` |
+| `.venv/bin/python -m pytest -q .agents/skills/maya-audit-pro/tests/*.py` | `27 passed` |
+| `tests/test_m1_h1.py` | `8 passed` (2 of them render with the local Chromium) |
+| `.venv/bin/python tools/check_installed_package.py` | `PASS` |
+| `python3.11 -m compileall` | OK |
+| ruff, Linux/Windows CI | NOT RUN |
+
+Skipped: the two wheel tests (no setuptools in `.venv`), the live-run examples test. The two WebSocket render tests and
+the batch file-name test now pass (fixes in `feebcf3`).
+
+**Still open after M1:** batch and the skills on `final.seal`; CLI refusing a blocked report; `render_markdown`'s own
+qualification pass; broken-link card in the editorial client report (`client_reporting`) and the skill's cards (they
+already show target and sources); web UI shows a 409 for direct links only (the results card offers draft links);
+step 7 quality fixtures beyond these two rules; SEO accuracy labels (stage 12, needs people).

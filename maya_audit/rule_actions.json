@@ -1070,6 +1070,90 @@
      "Or keep one list page and remove the copies"
     ]
    }
+  },
+  "idx6.broken": {
+   "en": "Fix or remove links to addresses that return an error",
+   "tr": "Hata veren adreslere giden bağlantıları düzeltin ya da kaldırın",
+   "steps": {
+    "tr": [
+     "Bağlantının bulunduğu her sayfayı açın",
+     "Bağlantıyı çalışan bir sayfaya yönlendirin ya da kaldırın"
+    ],
+    "en": [
+     "Open each page that carries the link",
+     "Point the link at a working page or remove it"
+    ]
+   }
+  },
+  "str2.home_no_h1": {
+   "en": "Add one main heading to the homepage",
+   "tr": "Ana sayfaya tek bir ana başlık ekleyin",
+   "steps": {
+    "tr": [
+     "Sitenin ne sunduğunu söyleyen tek bir <h1> ekleyin",
+     "Başlığı ana sayfa şablonunda tanımlayın"
+    ],
+    "en": [
+     "Add one <h1> that says what the site offers",
+     "Define the heading in the homepage template"
+    ]
+   }
+  },
+  "str2.hidden_h1": {
+   "en": "Make the main heading visible where it is hidden",
+   "tr": "Gizli ana başlıkları görünür yapın",
+   "steps": {
+    "tr": [
+     "<h1>'deki display:none, hidden ya da aria-hidden'ı kaldırın",
+     "Ya da sayfanın konusunu söyleyen görünür bir <h1> koyun"
+    ],
+    "en": [
+     "Remove display:none, hidden or aria-hidden from the <h1>",
+     "Or put a visible <h1> naming the page topic"
+    ]
+   }
+  },
+  "str2.many_h1": {
+   "en": "Keep one main heading per page",
+   "tr": "Her sayfada tek bir ana başlık bırakın",
+   "steps": {
+    "tr": [
+     "Sayfanın konusunu söyleyen <h1>'i bırakın",
+     "Diğer <h1> etiketlerini <h2> yapın"
+    ],
+    "en": [
+     "Keep the <h1> that names the page topic",
+     "Change the other <h1> tags to <h2>"
+    ]
+   }
+  },
+  "str2.js_only_h1": {
+   "en": "Put the main heading in the HTML the server sends",
+   "tr": "Ana başlığı sunucunun gönderdiği HTML'e koyun",
+   "steps": {
+    "tr": [
+     "<h1>'i yalnızca JavaScript ile değil, sunucuda oluşturun",
+     "Ham HTML'de <h1> metninin olduğunu kontrol edin"
+    ],
+    "en": [
+     "Render the <h1> on the server, not only with JavaScript",
+     "Check that the raw HTML holds the <h1> text"
+    ]
+   }
+  },
+  "judgment.heading.home": {
+   "en": "Fill the homepage's empty main heading",
+   "tr": "Ana sayfanın boş ana başlığını doldurun",
+   "steps": {
+    "tr": [
+     "Boş <h1>'e sitenin ne sunduğunu söyleyen metni yazın",
+     "Şablon <h1>'i boş bırakıyorsa alanı şablonda doldurun"
+    ],
+    "en": [
+     "Write what the site offers into the empty <h1>",
+     "If the template leaves the <h1> empty, fill it there"
+    ]
+   }
   }
  }
 }

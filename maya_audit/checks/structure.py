@@ -499,6 +499,8 @@ def str1_titles(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
 HIDDEN_H1_NOTE = ("Hidden by its own markup or an element around it (inline display:none or visibility:hidden, the hidden "
                   "attribute, aria-hidden). A heading hidden by a stylesheet class is seen only on rendered pages.")
 SAME_AS_TITLE_NOTE = "The hidden <h1> repeats the page's <title> word for word."
+JS_ONLY_H1_NOTE = ("Seen on the rendered page only: the raw HTML has no <h1> text. Google renders JavaScript; a reader "
+                   "that does not (many AI crawlers) gets no main heading.")
 
 def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: set[str], gap: set[str]) -> CheckResult:
     title = "Heading structure for passage extraction"
@@ -506,7 +508,10 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
     if not checked:
         return CheckResult("STR-2", title, "not_assessed", "No indexable pages with content in raw HTML.",
                            evidence={"excluded_as_rnd1_root_cause": sorted(gap)})
-    no_h1, long_flat, multi, hidden_h1 = [], [], [], []
+    no_h1, long_flat, multi, hidden_h1, js_only = [], [], [], [], []
+    # What each source showed, kept apart (INV-03): the raw HTML Maya fetched, and the rendered page when there is one
+    # (None: not rendered, so unknown). DECISIONS 281.
+    h1_sources: dict[str, dict] = {}
     subheadings = question = 0
     rendered = getattr(result.render, "pages", None) or {} if getattr(result, "render", None) is not None else {}
     computed = 0
@@ -514,6 +519,7 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
         a = p.analysis
         levels = [h["level"] for h in a["headings"] if h["text"].strip()]
         h1s = [h["text"] for h in a["headings"] if h["level"] == 1 and h["text"].strip()]
+        raw_h1s = list(h1s)
         shown = [h["text"] for h in a["headings"] if h["level"] == 1 and h["text"].strip() and not h.get("hidden")]
         hidden_by = "its markup: inline style, the hidden attribute or aria-hidden (on it or an element around it)"
         entry = rendered.get(p.url) or {}
@@ -524,6 +530,11 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
             shown = [v["text"] for v in seen if v.get("visible")]
             h1s = h1s or [v["text"] for v in seen]
             hidden_by = "the rendered page's computed style (display, visibility or opacity of it or an element around it)"
+        h1_sources[p.url] = {"url": p.url, "raw_h1": raw_h1s[:3],
+                             "rendered_h1": [v["text"] for v in seen if v.get("visible")][:3] if seen else None}
+        if seen and shown and not raw_h1s:
+            # The browser shows an <h1> the raw HTML does not have: a reader that does not run JavaScript sees none.
+            js_only.append({"url": p.url, "rendered_h1": shown[:3]})
         if h1s and not shown:
             # Every <h1> the page has is hidden (H15): said as that, not as "no <h1>" (root cause once).
             title_text = a.get("title") or ""
@@ -553,11 +564,18 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
         # The homepage is the page that says what the whole site is: without a main heading it is Medium, said on its
         # own, and the other pages stay Low (Owner, 2026-10-12).
         no_h1 = [url for url in no_h1 if url != home]
-        # Medium by the owner's calibration (DECISIONS 181), so not capped (H12).
-        findings.append(_finding("STR-2", "The homepage has no <h1>", Severity.S3, Confidence.VERIFIED,
-                                 HYPOTHESIS, PASSAGE_ENGINES, [home], {"pages": [home]},
-                                 "one <h1> on the homepage saying what the site is",
-                                 "Add one <h1> to the homepage that says what the site offers.", key_urls))
+        if any(r["url"] == home and r["state"] == "empty" for r in heading_assessments):
+            # An empty <h1> is its own diagnosis and its own rule (DECISIONS 278, 281), with the same weight.
+            findings.append(_finding("STR-2", "The homepage has no meaningful <h1> text", Severity.S3, Confidence.VERIFIED,
+                                     HYPOTHESIS, PASSAGE_ENGINES, [home], {"pages": [home], "empty_heading_urls": [home]},
+                                     "one <h1> on the homepage with text saying what the site is",
+                                     "Fill the homepage's empty <h1> with text that says what the site offers.", key_urls))
+        else:
+            # Medium by the owner's calibration (DECISIONS 181), so not capped (H12).
+            findings.append(_finding("STR-2", "The homepage has no <h1>", Severity.S3, Confidence.VERIFIED,
+                                     HYPOTHESIS, PASSAGE_ENGINES, [home], {"pages": [home]},
+                                     "one <h1> on the homepage saying what the site is",
+                                     "Add one <h1> to the homepage that says what the site offers.", key_urls))
     home_hidden = [row for row in hidden_h1 if row["url"] == home]
     other_hidden = [row for row in hidden_h1 if row["url"] != home]
     if home_hidden:
@@ -609,6 +627,13 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
             Confidence.VERIFIED, HYPOTHESIS, PASSAGE_ENGINES, urls, {"pages": long_flat[:40]},
             "sections with <h2>/<h3> headings", "Split the page into sections with descriptive <h2>/<h3> headings.",
             key_urls, [CAPPED, "Word count is of the <main>/<article> text when present, else all visible text."]))
+    if js_only:
+        urls = [r["url"] for r in js_only]
+        findings.append(_finding(
+            "STR-2", f"{len(urls)} page(s) show an <h1> only after JavaScript runs", Severity.S4, Confidence.VERIFIED,
+            HYPOTHESIS, PASSAGE_ENGINES, urls, {"pages": js_only[:40]}, "an <h1> in the HTML the server sends",
+            "Put the <h1> in the HTML the server sends, so readers that do not run JavaScript see it.", key_urls,
+            [CAPPED, JS_ONLY_H1_NOTE]))
     if multi:
         urls = [r["url"] for r in multi]
         findings.append(_finding("STR-2", f"{len(urls)} page(s) have more than one <h1>", Severity.INFO,
@@ -621,12 +646,9 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
         rows = [r for r in heading_assessments if r['url'] in members]
         f.evidence['heading_assessments'] = rows
         empty = [r['url'] for r in rows if r['state'] == 'empty']
-        if empty and f.title.startswith("The homepage"):
-            # One page holds one state: the homepage's own finding keeps its weight and says which (DECISIONS 258).
-            f.evidence['empty_heading_urls'] = empty
-            f.title = f.title.replace('no <h1>', 'no meaningful <h1> text')
-            f.how_to_fix = 'Fill the existing empty <h1> with a meaningful page topic.'
-        elif empty and 'no <h1>' in f.title:
+        if f.title.startswith("The homepage"):
+            continue  # the homepage's empty <h1> is its own finding above
+        if empty and 'no <h1>' in f.title:
             absent = [u for u in f.scope.get('_all_urls') or f.scope.get('urls') or [] if u not in set(empty)]
             if absent:
                 f.title, f.evidence['pages'] = f"{len(absent)} page(s) have no <h1>", absent[:40]
@@ -640,6 +662,10 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
                 key_urls, [CAPPED]))
             if not absent:
                 findings.remove(f)
+    for f in findings:  # after the empty-<h1> split, so every heading finding says what each source showed
+        if "<h1>" in f.title:
+            members = f.scope.get('_all_urls') or f.scope.get('urls') or []
+            f.evidence['h1_sources'] = [h1_sources[u] for u in sorted(members) if u in h1_sources]
     observations = [{"metric": "share of <h2>/<h3> phrased as questions (recorded, not judged)",
                      "value": round(question / subheadings, 3) if subheadings else None,
                      "question_headings": question, "subheadings": subheadings}]

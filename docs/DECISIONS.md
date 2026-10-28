@@ -2528,3 +2528,16 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      never requested (page cap): it now lists "addresses found but never requested" as not assessed, so it is partial
      (INV-01). A reader's content cap still does not touch IDX-1. Not changed: severities; batch and the skills still
      build their own report (stage 05); `render_markdown` still runs its own `qualify_checks` pass.
+
+281. **The main heading: one finding per state, raw HTML and rendered page apart (owner's request, M1 slice B, agent
+     implementation, 2026-10-29).** (1) STR-2 keeps separate findings for each state: homepage missing (`str2.home_no_h1`,
+     Medium), homepage empty ("The homepage has no meaningful <h1> text", rule `judgment.heading.home`, Medium; now
+     built as its own finding with its own expected sentence and fix instead of retitling the "no <h1>" one), homepage hidden (High), and on other
+     pages missing, empty, hidden-only (Low) and more than one (Info). (2) Every heading finding records
+     `evidence.h1_sources`: per page the raw HTML's <h1> texts and the rendered page's visible ones, or `null` when the
+     page was not rendered (unknown, never "none"). (3) New `str2.js_only_h1` (Low, capped): the rendered page shows an
+     <h1> the raw HTML does not have. Before, such a page was silently counted as having one; a reader that does not run
+     JavaScript sees none. Only said when the page was rendered. (4) Action entries added for `idx6.broken`,
+     `str2.home_no_h1`, `judgment.heading.home`, `str2.hidden_h1`, `str2.many_h1`, `str2.js_only_h1`; explanation notes,
+     title frames and Turkish wording for the two new titles. Not changed: severities of the existing states.
+     Tests: `tests/test_m1_h1.py`.

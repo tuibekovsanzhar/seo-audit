@@ -917,6 +917,10 @@
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ have\\ an\\ empty\\ <h1>"
    ],
    [
+    "str2.js_only_h1",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ show\\ an\\ <h1>\\ only\\ after\\ JavaScript\\ runs"
+   ],
+   [
     "str2.no_subheadings",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ long\\ page\\(s\\)\\ \\(>(?P<words>\\d+(?:\\.\\d+)?)\\ words\\)\\ have\\ no\\ subheadings"
    ],
