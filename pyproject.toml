@@ -32,6 +32,8 @@ maya-audit = "maya_audit.cli:main"
 include = ["maya_audit*"]
 
 [tool.setuptools.package-data]
+# Read at run time by rules.rule_id and facts.contract; tests/test_distribution_contract.py checks the wheel.
+maya_audit = ["rule_ids.json", "rule_actions.json"]
 "maya_audit.client_reporting" = ["references/*", "assets/*"]
 maya_audit_web = ["static/*", "locales/*.json", "locales/catalog/*.json", "locales/findings/*.json"]
 

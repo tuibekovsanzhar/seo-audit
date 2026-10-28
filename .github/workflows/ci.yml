@@ -34,5 +34,8 @@ jobs:
         run: python -m ruff check --select E9,F821,F841 maya_audit maya_audit_web maya_audit_web_lite.py
       - name: Tests
         run: python -m pytest -q
+      # Separate from the source tests: build the wheel, install it outside the checkout, resolve a rule and an action.
+      - name: Installed package smoke
+        run: python tools/check_installed_package.py
       - name: Known vulnerabilities in the installed dependencies
         run: python -m pip_audit --skip-editable

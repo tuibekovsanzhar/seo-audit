@@ -4,13 +4,13 @@ Tracks `docs/Maya-Audit-Claude-Code-Uygulama-Rehberi-2026-10-28.md` (the guide).
 IN_PROGRESS, VERIFIED, BLOCKED_ON_INPUT. A command that was not run is written NOT RUN, never implied as passed.
 
 Source: `~/Projects/maya-audit`, Git repo created from `maya-audit-0.2.8-w13-2026-10-28.zip`, baseline commit `a40500b`.
-Branch `main`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bin/python` = CPython 3.13.1 (macOS arm64).
+Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bin/python` = CPython 3.13.1 (macOS arm64).
 `HANDOVER.md` not available. Call map and code-level findings: `docs/architecture/baseline.md`.
 
 | Stage | Status | Note |
 |---|---|---|
 | 00 Baseline | IN_PROGRESS | Baseline, call map, test state recorded. Step 7 (`tests/fixtures/quality/`) not started |
-| 01 Packaging | NOT_STARTED | |
+| 01 Packaging | IN_PROGRESS | Packaging defect fixed and verified from an installed wheel; guide steps 5 (report/static smoke) and 6 (explicit missing-catalogue error) open |
 | 02 Result contract | NOT_STARTED | |
 | 03 Rule identity | NOT_STARTED | |
 | 04 Shared finalization | NOT_STARTED | |
@@ -73,3 +73,37 @@ Branch `main`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bin/
 link, working counterpart, raw/render difference, partial crawl, healthy pagination), with expected results written
 independently of current output. Planned as the first M1 task. Optional: fix the browser-path pass-through in
 `tests/offline_process.py` and the `alpha.json` test path (each a one-line test change; not done, out of scope).
+
+## Stage 01 — packaging and installed-package smoke
+
+**Changed:** `pyproject.toml` (`maya_audit = ["rule_ids.json", "rule_actions.json"]` in package-data; existing web and
+client entries kept), `tools/check_installed_package.py` (new), `tests/test_distribution_contract.py` (new),
+`.github/workflows/ci.yml` (new step "Installed package smoke", after the source tests).
+
+**Commands and results (2026-10-29):**
+
+| Command | Result |
+|---|---|
+| Baseline wheel (built from `git archive HEAD` in a temp dir), contents compared with `git ls-files` | Missing exactly `maya_audit/rule_ids.json`, `maya_audit/rule_actions.json` |
+| `tools/check_installed_package.py --wheel <baseline wheel>` | `FAIL: missing from the wheel: maya_audit/rule_ids.json, maya_audit/rule_actions.json` |
+| `MAYA_AUDIT_WHEEL=<baseline wheel> pytest -q tests/test_distribution_contract.py` | `4 failed` (installed run: `FileNotFoundError: ... site-packages/maya_audit/rule_ids.json`) |
+| `.venv/bin/python tools/check_installed_package.py` (after the fix; real wheel, pip build isolation, new temp venv, `--no-deps --no-index` install, run with `-I` from a temp cwd) | `PASS: installed package resolves a rule and an action outside the checkout`; module loaded from `.../maya-wheel-*/venv/lib/python3.13/site-packages/maya_audit/`; rule `idx6.broken`; action `str2.no_h1` = "Add one main heading to pages that have none" |
+| `MAYA_AUDIT_WHEEL=<fixed wheel> pytest -q tests/test_distribution_contract.py` | `4 passed in 2.48s` |
+| `pytest -q tests/test_distribution_contract.py` (no wheel given) | `2 passed, 2 skipped` — `.venv` has no setuptools, so the wheel tests cannot build offline and skip with that reason |
+| `pytest -q` release gate, rule actions, rule ids, verification target, report agreement, distribution contract | `50 passed, 2 skipped, 1 warning in 4.94s` |
+| `python3.11 -m compileall` on the two new files | OK |
+| Full suite after stage 01 | NOT RUN (stage changes packaging metadata, one test file, one tool only) |
+| CI step | NOT RUN (no push) |
+
+**Tests:** `test_rule_resources_declared_as_package_data`, `test_package_data_covers_every_resource_file` (any data
+file in a package directory that no package-data pattern covers fails; always runs, offline),
+`test_wheel_contains_required_rule_resources`, `test_installed_package_resolves_rule_and_action_outside_checkout`.
+
+**Network:** building with isolation downloads the setuptools backend from PyPI. No website or paid provider is
+contacted. The tests themselves build only with `--no-build-isolation --no-index`.
+
+**Open (guide stage 01):** step 5 rest — in-memory report and web static file from the installed package; step 6 —
+`facts._catalogue()` still returns `{}` when the catalogue is missing or broken (`rules._table` raises). Making that an
+explicit error is a behaviour decision for a separate small change with its own test
+(`test_missing_required_catalogue_is_explicit_error`). To make the wheel tests run locally without the tool, setuptools
+would have to be added to `.venv` (not done: no dependency installs without authorization).
