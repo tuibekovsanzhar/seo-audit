@@ -22,7 +22,7 @@ Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bi
 | 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown, web PDFs and the `maya-audit-pro` client PDF |
 | 11 Team status vs engine verification | NOT_STARTED | |
 | 12 SEO accuracy measurement | BLOCKED_ON_INPUT | Needs human SEO labels; nothing labelled yet |
-| 13 Integration and release | IN_PROGRESS | w14c (tag `team-preview-w14c`): archive verification pending. w14b VERIFIED; w14 superseded (FAIL) |
+| 13 Integration and release | VERIFIED | w14c (tag `team-preview-w14c`, `78a27e3`): extracted-archive verification PASS. w14b superseded; w14 FAIL |
 
 ## Stage 00 — baseline
 
@@ -345,3 +345,21 @@ those audits is needed to see them change; not done (no new audits were started)
 | `.venv/bin/python -m pytest -q -rfE` (first run, after the five fixes) | `1 failed, 2629 passed, 3 skipped` — `test_m1_broken_links.py` used the hidden <h1> as a High example; test updated (`f885670`) |
 | same, after the test update | `2630 passed, 3 skipped, 1 warning in 779.81s (0:12:59)` |
 | skill tests `pytest -q .agents/skills/maya-audit-pro/tests` | `50 passed` |
+
+## w14c release (2026-10-29)
+
+Tag `team-preview-w14c` → `78a27e3` (local, not pushed); supersedes w14b with the DECISIONS 284 fixes. Zip
+`~/Projects/releases/maya-audit-0.2.8-w14c-2026-10-29.zip`, SHA-256
+`d04460ada20e612fb703984b3c9801b2c37b1090afc8928d86d9bbfe6218c105`, 488 files, matches `RELEASE-SNAPSHOT.json`, none
+under the excluded paths. Zip and `-VERIFICATION.json` copied to the Desktop.
+
+| Gate (extracted archive, fresh venv, Python 3.13.1, macOS) | Result |
+|---|---|
+| Full suite | `2628 passed, 5 skipped, 1 warning in 754.15s (0:12:34)` — 0 failed |
+| Skill tests | `50 passed` |
+| Wheel + `tools/check_installed_package.py --wheel` | PASS; `test_distribution_contract.py` with the wheel: 10 passed |
+| Demo audit (`--demo --port 8791`, demo-kafe.localhost) | finished, COMPLETED; web PDF 200, gate PASS |
+| `maya-audit-pro` Turkish PDF from the demo report | 5 pages, 4 cards, validate + render clean; gate PASS (0 hard; IDX-2 High not re-tested, listed) |
+| ruff, Linux/Windows, live providers | NOT RUN |
+
+VERDICT: PASS.
