@@ -319,7 +319,7 @@ def test_engine_error_is_complete_in_results_and_downloads_and_not_called_a_bloc
     view = get(client, audit, "/summary")
     assert view["firecrawl"]["also_blocked"] is False and view["firecrawl_offer"] is None
     assert report["firecrawl"]["credits"]["used_or_reserved"] == 0
-    for path in ("/summary", "/print?full=true", "/downloads/markdown"):
+    for path in ("/summary", "/print?full=true", "/downloads/markdown?draft=true"):
         text = client.get(f"{API}/audits/{audit['id']}{path}").text
         assert ENGINE_ERROR in text and "Firecrawl could not load the page as a website" in text
     assert all(b["proxy"] == "basic" for b in api.bodies)

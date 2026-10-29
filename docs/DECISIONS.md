@@ -2656,7 +2656,9 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      429 and `Retry-After: 60`, over the 30 s cap, so the crawl stopped with nothing read and Firecrawl never started
      (52). (1) The start page alone has its own cap, `start_max_retry_after_s = 120`: a 429 there with a Retry-After up
      to it is waited out once and asked again; any other page keeps the 30 s cap, and a second 429 stops the crawl as
-     before. Both requests are in the page's `attempts` (status, Retry-After, wait, `server`, `cf-ray`). (2) When the
+     before. Both requests are in the page's `classification_evidence` as "attempt 1: status 429, Retry-After 60 s,
+     server cloudflare, cf-ray … at …; waited 60 s and asked once more" and "attempt 2: …" (a new page field would have
+     changed the frozen 1.20 report shape; the structured record stays in memory as `PageFetch._attempts`). (2) When the
      crawl stopped on a rate limit and no page at all was read, the Firecrawl reader asks for the homepage alone, once:
      max 1 page, no sitemap discovery, the basic proxy forced on the client for that request (the plan's own proxy is
      restored after) and never the bot-protection bypass. `firecrawl.homepage_fallback` records the URL, proxy, bypass

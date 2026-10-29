@@ -836,7 +836,7 @@ def displayed(client, audit):
 
 def check_both_languages(client, audit):
     saved = client.get(f"{API}/audits/{audit['id']}/result").content
-    markdown = client.get(f"{API}/audits/{audit['id']}/downloads/markdown").content
+    markdown = client.get(f"{API}/audits/{audit['id']}/downloads/markdown?draft=true").content
     english_page = printed(client, audit, "en")
     english_card = get(client, audit, "/summary")
     # English: no "(s)" in what the web layer displays, in the page or on the card.
@@ -861,8 +861,13 @@ def check_both_languages(client, audit):
     for run in text_runs(page):
         assert "(s)" not in run.replace("http(s)://", ""), run
     # The saved report and its downloads are the engine's English, byte for byte, in both languages.
-    assert client.get(f"{API}/audits/{audit['id']}/result").content == saved and client.get(f"{API}/audits/{audit['id']}/downloads/json").content == saved
-    assert client.get(f"{API}/audits/{audit['id']}/downloads/markdown").content == markdown
+    assert client.get(f"{API}/audits/{audit['id']}/result").content == saved and client.get(f"{API}/audits/{audit['id']}/downloads/json?draft=true").content == saved
+    # A site nothing could read is a draft (DECISIONS 287): the banner is in the person's language, the report
+    # under it is the engine's English, byte for byte.
+    turkish = client.get(f"{API}/audits/{audit['id']}/downloads/markdown?draft=true").content
+    assert turkish.startswith("> **TASLAK:".encode()) == markdown.startswith(b"> **DRAFT:")
+    unbanner = lambda md: md.split(b"\n\n", 1)[1] if md.startswith(b"> **") else md  # noqa: E731
+    assert unbanner(turkish) == unbanner(markdown)
     # Every row keeps the report's own words beside what is shown.
     report = json.loads(saved)
     by_id = {check["check_id"]: check for check in report["checks"] + report.get("answer_engine_panel", [])}

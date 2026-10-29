@@ -177,7 +177,6 @@ A `pass` with anything in `coverage.not_assessed` is written as `partial`, never
 | `classification_confidence`, `classification_evidence` | How sure that class is, and why. |
 | `redirect_location` | The target, when the response was a redirect. |
 | `retried_after_429` | True when the fetch was repeated after a rate limit. |
-| `attempts` | Each request for the page when it was asked for twice: `requested_at`, `status`, `error`, `retry_after_s`, `waited_s`, `fetch_class`, `server`, `cf_ray`. Empty when it was asked for once (DECISIONS 286). |
 | `view` | `raw`: the record describes the HTML the server sent. |
 | `content_checks_eligible` | False when the tool could not read the page. |
 | `links_found`, `outlinks`, `external_links` | The count of links, the links to this site, and the links to other sites (capped; the caps are in `config`). Each link has its target, every anchor text used for it, how many links go there, and how many of those have no text. A link found only in the rendered page is marked `rendered`. |

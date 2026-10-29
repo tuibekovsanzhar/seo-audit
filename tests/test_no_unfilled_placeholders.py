@@ -86,7 +86,7 @@ def assert_no_open_hole(client, audit) -> dict:
     report = get(client, audit, "/result")
     allowed = site_markers(report)
     found = {}
-    markdown = client.get(f"{API}/audits/{audit['id']}/downloads/markdown").text
+    markdown = client.get(f"{API}/audits/{audit['id']}/downloads/markdown?draft=true").text
     found["report.md"] = open_holes(markdown, allowed)
     found["report.json"] = [hole for text in strings_of(report) for hole in open_holes(text, allowed)]
     for language in ("en", "tr"):

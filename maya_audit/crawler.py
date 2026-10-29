@@ -145,6 +145,16 @@ def _attempt(response, retry_after: float | None, *, waited: float) -> dict:
             "server": response.headers.get("server"), "cf_ray": response.headers.get("cf-ray")}
 
 
+def attempt_line(n: int, a: dict) -> str:
+    """One attempt as the report's evidence line (DECISIONS 286)."""
+    parts = [f"status {a['status']}" if a.get("status") is not None else f"error {a.get('error')}"]
+    if a.get("retry_after_s") is not None:
+        parts.append(f"Retry-After {a['retry_after_s']:g} s")
+    parts += [f"{k} {a[key]}" for k, key in (("server", "server"), ("cf-ray", "cf_ray")) if a.get(key)]
+    tail = f"; waited {a['waited_s']:g} s and asked once more" if a.get("waited_s") else ""
+    return f"attempt {n}: {', '.join(parts)} at {a.get('requested_at')}{tail}"
+
+
 def parse_retry_after(value: str | None) -> float | None:
     if value is None:
         return None
@@ -556,9 +566,9 @@ class Crawler:
                 wire_bytes=response.wire_bytes,
                 fetch_class=classification.fetch_class,
                 classification_confidence=classification.confidence,
-                classification_evidence=classification.evidence,
+                classification_evidence=classification.evidence + [attempt_line(i, a) for i, a in enumerate(attempts, 1)],
                 retried_after_429=retried,
-                attempts=attempts,
+                _attempts=attempts,
                 content_checks_eligible=classification.fetch_class == FetchClass.OK,
             )
             # IDX-1 (DECISIONS 204): an answer that says "OK" and sends nothing stays the site's own answer (fetch_class

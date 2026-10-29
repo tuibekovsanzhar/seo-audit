@@ -70,9 +70,15 @@ def test_a_start_page_429_with_a_60_second_retry_after_is_waited_once_and_read(s
     outcome = audit(handler)
     home = outcome.result.pages[0]
     assert home.fetch_class == FetchClass.OK and home.retried_after_429 and slept.count(60.0) == 1
-    assert [a["status"] for a in home.attempts] == [429, 200]
-    assert home.attempts[0]["retry_after_s"] == 60.0 and home.attempts[0]["waited_s"] == 60.0
-    assert home.attempts[0]["server"] == "cloudflare" and home.attempts[0]["cf_ray"] == "a5-IST"
+    assert [a["status"] for a in home._attempts] == [429, 200]
+    assert home._attempts[0]["retry_after_s"] == 60.0 and home._attempts[0]["waited_s"] == 60.0
+    assert home._attempts[0]["server"] == "cloudflare" and home._attempts[0]["cf_ray"] == "a5-IST"
+    # The report keeps both, as evidence lines of the page (its 1.20 shape unchanged).
+    from maya_audit.models import to_jsonable
+    lines = [x for x in to_jsonable(home)["classification_evidence"] if x.startswith("attempt ")]
+    assert lines[0].startswith("attempt 1: status 429, Retry-After 60 s, server cloudflare, cf-ray a5-IST at ")
+    assert lines[0].endswith("waited 60 s and asked once more") and lines[1].startswith("attempt 2: status 200 at ")
+    assert "_attempts" not in to_jsonable(home)
     assert outcome.result.stop_reason != StopReason.RATE_LIMIT and len(home_requests(outcome)) == 2
 
 
@@ -82,7 +88,7 @@ def test_the_wait_is_once_a_second_429_stops_the_crawl_with_both_attempts_record
     home = outcome.result.pages[0]
     assert len(home_requests(outcome)) == 2 and slept.count(60.0) == 1
     assert outcome.result.stop_reason == StopReason.RATE_LIMIT
-    assert [a["status"] for a in home.attempts] == [429, 429]
+    assert [a["status"] for a in home._attempts] == [429, 429]
 
 
 @pytest.mark.parametrize("wait, retried", [(120, True), (121, False)])
@@ -91,7 +97,7 @@ def test_the_start_page_cap_is_120_seconds(slept, no_lookups, wait, retried):
     outcome = audit(handler)
     assert (len(home_requests(outcome)) == 2) is retried and outcome.result.pages[0].retried_after_429 is retried
     if not retried:
-        assert outcome.result.stop_reason == StopReason.RATE_LIMIT and outcome.result.pages[0].attempts == []
+        assert outcome.result.stop_reason == StopReason.RATE_LIMIT and outcome.result.pages[0]._attempts == []
 
 
 def test_a_later_page_keeps_the_30_second_cap(slept, no_lookups):

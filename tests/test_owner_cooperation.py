@@ -74,7 +74,7 @@ def test_the_allowlist_steps_appear_only_when_nothing_could_read_the_site(web, t
     view = get(client, audit, "/summary")
     steps = view["blocked"]["allowlist"]
     assert [b["id"] for b in steps["blocks"]][0] == "cloudflare" and "Maya-Audit" in steps["note"]
-    markdown = client.get(f"{API}/audits/{audit['id']}/downloads/markdown").text
+    markdown = client.get(f"{API}/audits/{audit['id']}/downloads/markdown?draft=true").text
     printed = client.get(f"{API}/audits/{audit['id']}/print?full=true").text
     assert "## How to let the audit in" in markdown and "How to let the audit in" in printed and "http.user_agent contains" in printed
     # Read through Firecrawl: no block card, so no steps anywhere.

@@ -129,7 +129,7 @@ def test_basic_being_blocked_too_is_said_and_a_stronger_proxy_needs_the_owner_ti
     assert offer["kind"] == "also_blocked" and offer["title"] == "Firecrawl basic was also blocked" and offer["consent"]["owner"]
     assert [choice["proxy"] for choice in offer["choices"]] == ["enhanced", "auto"] and "never automatically" in " ".join(offer["lines"])
     assert offer["choices"][0]["label"] == "Retry with the enhanced proxy: confirm up to 12 credits"
-    for path in ("/print?full=true", "/downloads/markdown"):
+    for path in ("/print?full=true", "/downloads/markdown?draft=true"):
         text = client.get(f"{API}/audits/{audit['id']}{path}").text
         assert "Firecrawl basic was also blocked" in text and "never switched on automatically" in text
 

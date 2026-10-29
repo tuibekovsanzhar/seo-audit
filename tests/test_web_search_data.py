@@ -81,7 +81,7 @@ def test_archived_copies_are_read_only_when_asked_for_and_nothing_else_could_rea
     view = get(client, audit, "/summary")
     assert asked and set(asked) <= {"web.archive.org", "archive.org", "index.commoncrawl.org", "data.commoncrawl.org"}
     assert view["blocked"] and view["archives"]["pages_read"] == 0 and [s["id"] for s in view["archives"]["sources"]] == ["wayback", "common_crawl"]
-    assert "## Archived content" in client.get(f"{API}/audits/{audit['id']}/downloads/markdown").text
+    assert "## Archived content" in client.get(f"{API}/audits/{audit['id']}/downloads/markdown?draft=true").text
     # A site that could be read is never looked up in the archives.
     asked.clear()
     client.site.custom = None
