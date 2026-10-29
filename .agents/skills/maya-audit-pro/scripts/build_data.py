@@ -28,6 +28,9 @@ MEDIUM_UP = ("S1", "S2", "S3")
 MARK = "⟪YAZ: {}⟫"
 # DECISIONS 284 (1): findings with one cause are one card. The empty-response rules (one cause when on the same sections).
 EMPTY_RULES = frozenset({"idx1.empty", "judgment.empty.repeated", "judgment.empty.single"})
+# DECISIONS 284 (5): why a sitemap address needs review, from the engine's per-address decisions. Order breaks ties.
+SITEMAP_REASONS = ("redirect_404", "redirect", "empty_repeated", "empty_single", "not_found", "server_error", "noindex", "other")
+ERROR_PAGE = re.compile(r"/(?:404|not[-_]?found)(?:[/?.#]|$)|aspxerrorpath", re.I)
 # Evidence-sample rows that fit the box above its note; a fourth row printed over the note (Enpara render).
 EV_ROWS = 3
 # Maya Audit STR-3 «expected type» sayfa türü → müşteriye önerilecek tip
@@ -767,6 +770,56 @@ class Builder:
             self._groups = out
         return self._groups
 
+    def sitemap_reasons(self, f):
+        """[(reason, count)] for a sitemap finding that records a decision per address (`sitemap_decisions`), most
+        first; [] for any other finding. Counted over the addresses under review, so the counts add up to its scope."""
+        ev = f.get("evidence") or {}
+        decisions = {d.get("url"): d for d in ev.get("sitemap_decisions") or [] if isinstance(d, dict)}
+        urls = (ev.get("total_review_scope") or {}).get("urls") or (f.get("scope") or {}).get("urls") or []
+        if not decisions or not urls:
+            return []
+        counts = {}
+        for u in urls:
+            d = decisions.get(u) or {}
+            state, last = d.get("state"), (d.get("attempts") or [{}])[-1] or {}
+            status = last.get("status") if isinstance(last.get("status"), int) else 0
+            if state == "redirect_observed" or last.get("kind") == "redirect":
+                key = "redirect_404" if ERROR_PAGE.search(last.get("location") or last.get("final_url") or "") else "redirect"
+            elif state == "repeated_empty":
+                key = "empty_repeated"
+            elif state == "uncorroborated_empty" or last.get("kind") == "empty":
+                key = "empty_single"
+            elif state == "error_response" or status >= 400:
+                key = "server_error" if status >= 500 else "not_found"
+            elif state == "noindex_observed" or last.get("kind") == "noindex":
+                key = "noindex"
+            else:
+                key = "other"
+            counts[key] = counts.get(key, 0) + 1
+        out = sorted(counts.items(), key=lambda kv: (-kv[1], SITEMAP_REASONS.index(kv[0])))
+        self.fact(*[n for _, n in out])
+        return out
+
+    def reason_lines(self, f):
+        unit = self.L["scope_units"]["url"]
+        return [f"{fmt_int(n, self.lang)} {unit[0] if n == 1 else unit[1]} · {self.L['sitemap_reasons'][k][1]}"
+                for k, n in self.sitemap_reasons(f)]
+
+    def reason_title(self, f, maxlen):
+        """The findings table's row for a sitemap finding: the reasons with counts, as many as fit."""
+        reasons = self.sitemap_reasons(f)
+        if not reasons:
+            return None
+        parts, more = [], self.L["sitemap_and_more"]
+        for i, (k, n) in enumerate(reasons):
+            part = self.L["sitemap_part"].format(n=fmt_int(n, self.lang), label=self.L["sitemap_reasons"][k][0])
+            text = self.L["sitemap_row"].format(parts=", ".join(parts + [part]))
+            tail = f" {more}" if i < len(reasons) - 1 else ""
+            if len(text + tail) > maxlen and parts:
+                return self.L["sitemap_row"].format(parts=", ".join(parts)) + f" {more}"
+            parts.append(part)
+        return self.L["sitemap_row"].format(parts=", ".join(parts))
+
     def merged_lines(self, members):
         """One line per finding of a merged card: severity, scope and the finding's own title (DECISIONS 284 (1))."""
         if len(members) < 2:
@@ -843,6 +896,9 @@ class Builder:
     def title_for(self, f, path, maxlen):
         text, engine = self.w.title(f.get("check_id"), f.get("title") or "")
         self.fact(f.get("title"))
+        by_reason = self.reason_title(f, maxlen)
+        if by_reason:
+            return self.slot(path, "bulgu başlığı", f.get("title"), maxlen, prefill=by_reason)
         if text and self.lang == "en":
             return self.slot(path, "bulgu başlığı (kısa, sayısız ya da rapordaki sayıyla)", f.get("title"), maxlen, prefill=_short(text))
         if text and engine:
@@ -1081,7 +1137,7 @@ class Builder:
                     "verification_state": state,
                     "when": L["when"][when_key], "owner": L["owners"][owner], "effort": L["efforts"][effort],
                     "status": self.status_text(f, state),
-                    "sub": self.merged_lines(members),
+                    "sub": self.merged_lines(members) or self.reason_lines(f),
                     "rule_id": rule,
                     "fact": fact_line(self._w("facts")(rule, f.get("evidence")), L),
                     "known_paths": sorted({p for m in members for p in known_paths(m.get("title"), m.get("scope"), m.get("evidence"),

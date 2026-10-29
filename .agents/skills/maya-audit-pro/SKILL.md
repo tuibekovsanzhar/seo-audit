@@ -159,6 +159,7 @@ python scripts/render.py data.json -o rapor.html --pdf rapor.pdf --png onizleme/
 
 Maya Audit kodunun incelemesinden çıkan noktalar:
 - **IDX-5 sitemap bulgusu:** Başlıktaki oran ("123 of 245") ile `scope.count` (57) farklı olabilir. Motor kapsamı IDX-1 sayfalarını çıkararak daraltıyor. Bu skill KPI'da da tabloda da **başlıktaki oranı** kullanır, iki yerde aynı sayı görünür. Öncelik metninde "66'sı boş sayfa bulgusuyla örtüşüyor" gibi açıklamayı model yazar.
+- **IDX-5 incelenecek site haritası adresleri (DECISIONS 284):** Kart ve bulgu tablosu adresleri nedenine göre sayar (404 sayfasına yönlenen, başka adrese yönlenen, tekrar ya da bir kez boş, bulunamayan, sunucu hatası, noindex); sayılar motorun adres başına kararından (`sitemap_decisions`) gelir ve toplamı kapsamdır. "N adres ayrı inceleme gerektiriyor" yazma; nedenleri kullan.
 - **IDX-1 boş sayfa:** Motor bir sayfayı kendi istemcisiyle iki kez boş görürse birkaçını bir de tarayıcı kimliğiyle sorar. `evidence.observation_strength` hangisinin olduğunu söyler (testi `tests/test_w12_skill_claims.py`):
   - `repeated_empty`: tarayıcı da boş sayfa aldı. Kanıt durumu "Tekrarlanan ölçüm" olur; başka istemciyle doğrulanmıştır, `next_action.caveat` "doğrulanmadı" **demez**.
   - `repeated_empty_same_client_only` ya da `repeated_empty_mixed_browser_sample`: tarayıcıyla sorulmadı ya da sonuç karışık. `next_action.caveat` tarayıcıyla doğrulanmadığını söyler.

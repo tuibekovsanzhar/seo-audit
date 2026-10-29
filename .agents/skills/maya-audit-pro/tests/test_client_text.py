@@ -619,3 +619,45 @@ class OneCauseOneCard(unittest.TestCase):
             merged['more'] = 1
             rows = render.write_address_list(d, Path(tmp) / 'r.html').read_text(encoding='utf-8-sig').splitlines()
         self.assertIn(f'{merged["n"]};STR-14-b;Düşük;{S}/b', rows)
+
+
+def decision(url, state, kind, status, location=None):
+    return {'url': url, 'state': state, 'attempts': [{'url': url, 'status': status, 'kind': kind, 'location': location}]}
+
+
+class SitemapReasons(unittest.TestCase):
+    """DECISIONS 284 (5): the sitemap card says why each address needs review, with counts, not "N addresses need
+    separate review" (Enpara: 41 of 43 redirect to the 404 page)."""
+
+    def report(self):
+        rows = ([decision(f'{S}/r404-{i}', 'redirect_observed', 'redirect', 302, f'{S}/404?aspxerrorpath=/x{i}') for i in range(3)]
+                + [decision(f'{S}/moved', 'redirect_observed', 'redirect', 301, f'{S}/new')]
+                + [decision(f'{S}/empty-{i}', 'uncorroborated_empty', 'empty', 200) for i in range(2)]
+                + [decision(f'{S}/gone', 'error_response', 'not_found', 404),
+                   decision(f'{S}/private', 'noindex_observed', 'noindex', 200),
+                   decision(f'{S}/fine', 'live_observed', 'live', 200)])
+        review = [r['url'] for r in rows if r['state'] != 'live_observed']
+        f = finding('IDX-5-x', 'IDX-5', f'{len(review)} sitemap URL observation(s) require differentiated review (9 checked)',
+                    'S3', review, 'judgment.sitemap',
+                    evidence={'sitemap_decisions': rows, 'total_review_scope': {'count': len(review), 'urls': review}})
+        return report_of(f)
+
+    def test_the_card_counts_the_addresses_by_reason(self):
+        d = build_tr(self.report())
+        [card] = [t for t in d['todos'] if t['finding_ids'] == ['IDX-5-x']]
+        self.assertEqual(card['sub'], ['3 URL · 404 sayfasına yönleniyor', '2 URL · bir kez boş yanıt verdi (teyit edilmedi)',
+                                       '1 URL · başka bir adrese yönleniyor', '1 URL · bulunamadı (istemci hatası)',
+                                       '1 URL · noindex taşıyor'])
+        self.assertEqual(sum(int(line.split()[0]) for line in card['sub']), 8)  # adds up to the addresses under review
+        self.assertNotIn('+', render.todo_pages(d, render.LABELS['tr'])[0].split('todo-sub')[1].split('</div></div>')[0])
+
+    def test_the_findings_table_row_names_the_reasons(self):
+        d = build_tr(self.report())
+        title = d['findings'][0]['title']
+        self.assertTrue(title.startswith("Site haritası: 404'e yönlenen 3, bir kez boş 2"), title)
+        self.assertLessEqual(len(title), 70)
+        self.assertNotIn('inceleme', title)
+
+    def test_other_findings_get_no_reason_lines(self):
+        d = build_tr(report_of(finding('STR-2-x', 'STR-2', '3 page(s) have no <h1>', 'S4', [S + '/a'], 'str2.no_h1')))
+        self.assertEqual(d['todos'][0]['sub'], [])

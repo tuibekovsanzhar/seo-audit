@@ -441,7 +441,7 @@ def path_or_host(url):
     return path if path != "/" else (p.netloc or url)
 
 
-SUB_LINES = 3  # lines under a card's status; more are counted, every address is in the address list
+SUB_LINES = 5  # lines under a card's status (the overflow check measures them); more are counted
 
 
 def sub_lines(t, L):
