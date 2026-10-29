@@ -36,13 +36,15 @@ def test_a_short_homepage_without_questions_is_not_reported():
     assert outline("<h1>Örnekmağaza</h1><p>Hoş geldiniz.</p>") == []
 
 
-def test_the_homepage_hidden_h1_stays_high_after_the_severity_policy():
+def test_the_homepage_hidden_h1_is_medium_after_the_severity_policy():
+    """DECISIONS 284: never re-tested (no re-test exists for it), so at most Medium; the policy does not raise it."""
     result, pages = site({"/": html('<h1 style="display:none">Örnekmağaza</h1><h2>A</h2><h2>B</h2><h2>C</h2>' + TR * 3),
                           "/a": html("<h1>A</h1>")})
     check = str2_headings(result, CFG, pages, set(), set())
     apply_severity([check], result)
     [hidden] = [f for f in check.findings if f.title == "The homepage's only <h1> is hidden"]
-    assert hidden.severity.value == "S2"
+    assert hidden.severity.value == "S3"
+    assert any(n.startswith("Medium: one reading of the homepage, not re-tested") for n in hidden.notes)
 
 
 def payload(home_bytes):

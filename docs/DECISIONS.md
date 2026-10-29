@@ -2602,3 +2602,13 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      `real_sites_benchmark.main` now refuses `collect` without `--live` before reading the corpus, and the manifest test
      skips when the corpus is absent (it is never in a release). Found by the w14 archive verification.
 
+
+284. **Fixes after the 2026-10-29 client PDFs (owner's request, agent implementation, 2026-10-29).** Seen in the
+     `maya-audit-pro` PDFs for three sites; brand-independent, no site-specific code. Test file for the engine parts:
+     `tests/test_w14c_fixes.py`; for the skill: `.agents/skills/maya-audit-pro/tests/test_client_text.py`.
+     (2) The skill takes a card's owner and effort from the engine's catalogue (`recommendation_catalog.note`); its
+     static `sahip_efor.json` is the fallback only and gets the same rows. The static copy named İçerik for an
+     early-closed <head> and a hidden <h1>; both are template and markup work (Geliştirici), as are template markers.
+     (3) STR-2's "The homepage's only <h1> is hidden" is Medium (S3), not High: one reading of the page's markup or
+     computed style, and the second look has no re-test for it (`verification.RETESTS`), so it is never re-tested. This
+     lowers 258's High; the finding's note says why. A saved report keeps the severity it was written with.

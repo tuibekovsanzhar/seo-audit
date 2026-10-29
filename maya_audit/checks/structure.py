@@ -498,6 +498,8 @@ def str1_titles(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
 
 HIDDEN_H1_NOTE = ("Hidden by its own markup or an element around it (inline display:none or visibility:hidden, the hidden "
                   "attribute, aria-hidden). A heading hidden by a stylesheet class is seen only on rendered pages.")
+HIDDEN_H1_MEDIUM = ("Medium: one reading of the homepage, not re-tested (the second look has no re-test for a hidden "
+                    "heading); DECISIONS 284 lowers 258's High.")
 SAME_AS_TITLE_NOTE = "The hidden <h1> repeats the page's <title> word for word."
 
 def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: set[str], gap: set[str]) -> CheckResult:
@@ -586,13 +588,14 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
     other_hidden = [row for row in hidden_h1 if row["url"] != home]
     if home_hidden:
         row = home_hidden[0]
-        # High (DECISIONS 258): the homepage's main heading is invisible to every reader.
+        # Medium (DECISIONS 284, which lowers 258's High): one reading of the page's markup or computed style, and the
+        # second look has no re-test for it (verification.RETESTS), so it is never re-tested.
         findings.append(_finding(
-            "STR-2", "The homepage's only <h1> is hidden", Severity.S2, Confidence.VERIFIED, HEADINGS_DOCUMENTED, PASSAGE_ENGINES,
+            "STR-2", "The homepage's only <h1> is hidden", Severity.S3, Confidence.VERIFIED, HEADINGS_DOCUMENTED, PASSAGE_ENGINES,
             [home], {"pages": home_hidden}, "one visible <h1> on the homepage saying what the site is",
             "Show the homepage's <h1> (remove display:none, the hidden attribute or aria-hidden), or replace it with a visible "
             "<h1> that says what the site offers.", key_urls,
-            [HIDDEN_H1_NOTE] + ([SAME_AS_TITLE_NOTE] if row["same_as_title"] else [])))
+            [HIDDEN_H1_NOTE, HIDDEN_H1_MEDIUM] + ([SAME_AS_TITLE_NOTE] if row["same_as_title"] else [])))
     # The homepage's outline (DECISIONS 258): a homepage with real text but almost no visible section headings, or with
     # a question block whose questions are plain text, gives a reader moving by headings and a machine reading the
     # outline nothing to hold on to. High on the homepage by the owner's decision.
