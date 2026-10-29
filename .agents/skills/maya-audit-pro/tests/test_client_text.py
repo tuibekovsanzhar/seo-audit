@@ -478,3 +478,36 @@ class Gaps(unittest.TestCase):
         d = build_en(r)
         gaps = next(row for row in d['coverage']['rows'] if row['label'] == render.LABELS['en']['cov_gaps'])
         self.assertEqual(gaps['value'], '1')  # only "orphan pages"
+
+
+class Owners(unittest.TestCase):
+    """Template and markup work is the developer's: an early-closed <head>, a hidden <h1> and template markers were
+    shown as İçerik (Enpara, Adile, 2026-10-29). Both the engine's catalogue and the skill's fallback table."""
+    TITLES = [('TSEO-1', '2 page(s) end <head> early: canonical, robots or hreflang tags after it are read as body'),
+              ('TSEO-1', '1 page(s) end <head> early: meta or Open Graph tags after it are read as body'),
+              ('STR-2', "The homepage's only <h1> is hidden"),
+              ('STR-13', '1 page(s) have unfilled template markers in the main text: {{price}}')]
+
+    def owners(self, wording):
+        out = []
+        for cid, title in self.TITLES:
+            r = report(['https://sample.example/'])
+            f = r['checks'][0]['findings'][0]
+            f.update(check_id=cid, title=title, launch_gated=[])
+            d = build.Builder(r, 'tr', render.LABELS['tr'], json.loads((build.REFS / 'sahip_efor.json').read_text()),
+                              wording, None, 'test', False, None).build()
+            out.append(d['todos'][0]['owner'])
+        return out
+
+    def test_the_engine_catalogue_names_the_developer(self):
+        self.assertEqual(self.owners(build.Wording('tr', None)), ['Geliştirici'] * len(self.TITLES))
+
+    def test_the_fallback_table_names_the_developer(self):
+        self.assertEqual(self.owners(Wording()), ['Geliştirici'] * len(self.TITLES))
+
+    def test_content_work_stays_with_content(self):
+        r = report(['https://sample.example/a'])
+        r['checks'][0]['findings'][0].update(check_id='STR-2', title='3 page(s) have no <h1>')
+        d = build.Builder(r, 'tr', render.LABELS['tr'], json.loads((build.REFS / 'sahip_efor.json').read_text()),
+                          build.Wording('tr', None), None, 'test', False, None).build()
+        self.assertEqual(d['todos'][0]['owner'], 'İçerik')

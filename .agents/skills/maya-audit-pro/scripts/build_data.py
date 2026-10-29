@@ -195,6 +195,19 @@ class Wording:
         except Exception:
             return {}
 
+    def owner(self, check_id, title):
+        """(sorumlu, efor) from the engine's own catalogue (maya_audit.recommendation_catalog), or None without the
+        engine. The static `sahip_efor.json` is only the fallback: it was copied once and went stale (an early-closed
+        <head> and a hidden <h1> came out as content work)."""
+        if load_final() is None:
+            return None
+        try:
+            from maya_audit.recommendation_catalog import note  # type: ignore
+            found = note(check_id or "", title or "")
+            return found["owner"], found["effort"]
+        except Exception:
+            return None
+
     def action(self, rule):
         """Kural kataloğundaki iş başlığı (maya_audit/rule_actions.json, DECISIONS 270), ya da None."""
         return self._entry(rule).get(self.lang)
@@ -708,6 +721,10 @@ class Builder:
 
     def owner_effort(self, f):
         cid, title = f.get("check_id"), f.get("title") or ""
+        engine = getattr(self.w, "owner", None)
+        found = engine(cid, title) if callable(engine) else None
+        if found and found[0] in self.L["owners"] and found[1] in self.L["efforts"]:
+            return found
         for row in self.cat["by_title"].get(cid, []):
             if re.search(row["pattern"], title):
                 return row["owner"], row["effort"]

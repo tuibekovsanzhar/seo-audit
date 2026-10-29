@@ -509,6 +509,11 @@
   ],
   "STR-2": [
    {
+    "pattern": "only <h1> is hidden|only a hidden <h1>",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
     "pattern": "have no <h1>",
     "owner": "content",
     "effort": "S"
@@ -779,6 +784,11 @@
    }
   ],
   "TSEO-1": [
+   {
+    "pattern": "end <head> early",
+    "owner": "developer",
+    "effort": "S"
+   },
    {
     "pattern": "guidance band",
     "owner": "content",
