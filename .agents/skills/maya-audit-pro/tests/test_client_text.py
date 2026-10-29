@@ -408,3 +408,29 @@ class FinalResult(unittest.TestCase):
             t['link_rows'][0]['source_url'] = 'https://sample.example/baska'
             out = validate(d, json.loads(rp.read_text(encoding='utf-8')))
         self.assertIn('RG-3: card', out.stdout)
+
+
+class SearchPage(unittest.TestCase):
+    """DECISIONS 283 (5): no "search and performance" page when there is no search, lab or field data."""
+
+    def sections(self, d):
+        html = render.build_html(d)
+        return html.count('<section class="page">'), html
+
+    def test_the_page_is_left_out_without_search_or_lab_data(self):
+        d = build_en(report(['https://sample.example/a']))
+        fill(d)
+        self.assertEqual(d['search']['state'], 'missing')
+        self.assertIsNone(d['lab'])
+        n, html = self.sections(d)
+        self.assertEqual(n, 3 + 1)  # three summary pages and one to-do page
+        self.assertNotIn(render.e(render.LABELS['en']['p3_title']), html)
+        self.assertIn('04 / 04', html)
+
+    def test_the_page_stays_with_lab_data_only(self):
+        d = build_en(report(['https://sample.example/a']))
+        fill(d)
+        d['lab'] = {'score': 41, 'date': '29 Oct 2026', 'diagnostics': []}
+        n, html = self.sections(d)
+        self.assertEqual(n, 4 + 1)
+        self.assertIn(render.e(render.LABELS['en']['p3_title']), html)

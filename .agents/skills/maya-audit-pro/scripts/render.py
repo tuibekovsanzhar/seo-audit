@@ -234,10 +234,24 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 """
 
 
+def has_search_or_performance(d):
+    """DECISIONS 283 (5): the "search and performance" page is printed only when it has something to show: search
+    data, a lab result or field data. Without any, page 1's KPI already says "not measured"."""
+    if "search" not in d:
+        return True  # data.json from before the search box existed: the page as it always was
+    return (d.get("search") or {}).get("state") not in (None, "missing") or bool(d.get("lab")) or bool(d.get("field"))
+
+
+def summary_pages(d):
+    """The summary pages' tab indexes (0..3); 2 is "search and performance"."""
+    return [0, 1, 2, 3] if has_search_or_performance(d) else [0, 1, 3]
+
+
 def header(d, L, idx, title, sub):
     m = d["meta"]
     logo = base64.b64encode((ROOT / "assets" / "maya_logo.png").read_bytes()).decode()
-    tabs = "".join(f'<div class="tab{" on" if i == idx else ""}">{e(t)}</div>' for i, t in enumerate(L["tabs"]))
+    shown = summary_pages(d) + [4]
+    tabs = "".join(f'<div class="tab{" on" if i == idx else ""}">{e(L["tabs"][i])}</div>' for i in shown)
     date = e(m["date"]) + (f" &nbsp;/&nbsp; {e(m['revision'])}" if m.get("revision") else "")
     ok = " ok" if m["coverage_level"] == "complete_sample" else ""
     return f"""
@@ -467,17 +481,16 @@ def build_html(d):
     nf = len(d["findings"])
     m = d["meta"]
     sub3 = L["p3_sub_market"].format(market=m["market"]) if m.get("market") else L["p3_sub_nomarket"]
-    pages = [
-        (L["p1_title"], L["p1_sub"], page1(d, L)),
-        (L["p2_title"], L["p2_sub"].format(n=nf), page2(d, L)),
-        (L["p3_title"], sub3, page3(d, L)),
-        (L["p4_title"], L["p4_sub"], page4(d, L)),
-    ]
+    summary = {0: (L["p1_title"], L["p1_sub"], lambda: page1(d, L)),
+               1: (L["p2_title"], L["p2_sub"].format(n=nf), lambda: page2(d, L)),
+               2: (L["p3_title"], sub3, lambda: page3(d, L)),
+               3: (L["p4_title"], L["p4_sub"], lambda: page4(d, L))}
+    pages = [(tab, summary[tab][0], summary[tab][1], summary[tab][2]()) for tab in summary_pages(d)]
     for content in todo_pages(d, L):
-        pages.append((L["p5_title"], L["p5_sub"], content))
+        pages.append((4, L["p5_title"], L["p5_sub"], content))
     total = len(pages)
-    body = "".join(f'<section class="page">{header(d, L, min(i, 4), t, s)}{content}{footer(d, L, i + 1, total)}</section>'
-                   for i, (t, s, content) in enumerate(pages))
+    body = "".join(f'<section class="page">{header(d, L, tab, t, s)}{content}{footer(d, L, i + 1, total)}</section>'
+                   for i, (tab, t, s, content) in enumerate(pages))
     title = f"Maya | {m['brand']} | {L['doc_kind'].title()}"
     return (f'<!doctype html><html lang="{d["lang"]}"><head><meta charset="utf-8"><title>{e(title)}</title>'
             f'<style>{font_css()}\n{CSS}</style></head><body>{body}</body></html>')
@@ -532,7 +545,7 @@ def check_pdf(pdf_path, d):
     else:
         doc = fitz.open(str(pdf_path))
         texts = [pg.get_text() for pg in doc]
-    expected = 4 + -(-len(d.get("todos") or []) // 4)
+    expected = len(summary_pages(d)) + -(-len(d.get("todos") or []) // 4)
     if len(doc) != expected:
         problems.append(f"HATA: PDF {len(doc)} sayfa; {expected} olmalı (bir bölüm taştı)")
     if len(doc) > 50:
@@ -633,6 +646,8 @@ def main():
     out = Path(a.out)
     out.write_text(build_html(d), encoding="utf-8")
     print(f"HTML: {out}")
+    if not has_search_or_performance(d):
+        print("Arama ve performans sayfası basılmadı: bu denetimde arama, laboratuvar ve saha verisi yok.")
     addresses = write_address_list(d, out)
     if addresses:
         print(f"Adres listesi (rapora eklenir): {addresses}")

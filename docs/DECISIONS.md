@@ -2576,3 +2576,7 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      (4) PRF-1's homepage time-to-first-byte finding is Medium (S3), not High: it is one measurement from Maya's own
      network (the median of its samples in one audit), and the second look never repeats it (272), so it is never
      re-tested. This lowers 258 (4); the finding's note says why. Test: `tests/test_w11_homepage.py`.
+     (5) The client PDF leaves out the "Arama ve performans" page when the audit has no search data, no lab result and
+     no field data (the summary is then three pages; tabs and page numbers follow). Page 1's lab KPI still says "not
+     measured", so the absence is stated once instead of filling a page with empty boxes. data.json without a `search`
+     key keeps the old four pages.
