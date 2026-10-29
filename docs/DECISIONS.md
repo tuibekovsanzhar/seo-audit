@@ -2582,3 +2582,9 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      key keeps the old four pages.
      (6) The client PDF's address CSV keeps its UTF-8 byte-order mark and uses ";" as the delimiter in Turkish (Turkish
      Excel reads "," as the decimal mark and put each row in one cell); English keeps ",".
+     (7) `RELEASE-SNAPSHOT.json` and `CHECKPOINT-VERIFICATION.md` were team-preview-23's (0.2.6 / schema 1.16) inside the
+     0.2.8 w13 zip. `tools/release_metadata.py --release w14` writes both from the source (version from
+     `maya_audit.__version__`, schema from `schema.py`, files = tracked files without export-ignore, hashed); the
+     checkpoint claims no result and points at `docs/IMPLEMENTATION-STATUS.md`. `.gitattributes` now also export-ignores
+     `benchmarks/real-sites/` (real sites' expected results; no test reads them); `reviews/`, `.env` and `.claude/` were
+     already. No archive is built here. Test: `tests/test_release_metadata.py`.

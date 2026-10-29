@@ -41,7 +41,11 @@ checkout; in a folder that is not one, only mode B is possible (say so).
 6. **Mode A — commit and tag.** Inspect the diff and existing index first. Stage only individually reviewed release
    files, never `git add .` or a broad directory list that could include unrelated work. Preserve unrelated staged and
    unstaged work. `HANDOVER.md`, `design-reference/` and `.claude/` stay out. Then `git tag team-preview-N`.
-   **Mode B — snapshot.** Write `RELEASE-SNAPSHOT.json` as above; compute each SHA-256 from the file on disk.
+   **Mode B — snapshot.** Write `RELEASE-SNAPSHOT.json` and `CHECKPOINT-VERIFICATION.md` with
+   `<venv-python> tools/release_metadata.py --release <label>`: both then name the version in `maya_audit/__init__.py`
+   and the schema in `maya_audit/schema.py`, and each SHA-256 comes from the file on disk.
+   Either mode: the archive never holds `benchmarks/real-sites/`, `reviews/`, `.env` or `.claude/`
+   (`.gitattributes` export-ignore; `tests/test_release_metadata.py`).
    If step 2, 3 or 6 changed anything after the verifier ran, run the verifier again on the new source state.
 7. **Archive to the Desktop** (`~/Desktop` on POSIX, `$env:USERPROFILE\Desktop` on Windows).
    Mode A: `git archive --format=zip --prefix=maya-audit-team-preview-N/ -o <Desktop>/maya-audit-team-preview-N.zip team-preview-N`.

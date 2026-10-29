@@ -14,6 +14,10 @@ reports export-ignore
 output export-ignore
 out export-ignore
 reviews export-ignore
+reviews/** export-ignore
+# Real-site benchmark data (crawl results of named sites) stays in the repository, never in a release (DECISIONS 283).
+benchmarks/real-sites export-ignore
+benchmarks/real-sites/** export-ignore
 *.db export-ignore
 *.db-wal export-ignore
 *.db-shm export-ignore
