@@ -14,15 +14,15 @@ Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bi
 | 02 Result contract | IN_PROGRESS | M1 minimum: `maya_audit/final.py` (`FinalAuditResult`, `seal`, `from_report`) |
 | 03 Rule identity | NOT_STARTED | |
 | 04 Shared finalization | IN_PROGRESS | `final.settle`/`verify` in `run_audit` and after a page reader; batch not moved |
-| 05 Shared service (CLI/batch/web) | IN_PROGRESS | CLI and web use `final.seal`; batch and skills not moved |
+| 05 Shared service (CLI/batch/web) | IN_PROGRESS | CLI and web use `final.seal`; the `maya-audit-pro` skill reads through `final.from_report`; batch not moved |
 | 06 Output generations | NOT_STARTED | |
-| 07 Source/page type/scope/render | IN_PROGRESS | H1 only: raw vs rendered per page (`h1_sources`); a page cut off before an <h1> is not assessed |
+| 07 Source/page type/scope/render | IN_PROGRESS | H1: raw vs rendered per page (`h1_sources`); a page cut off at the size limit is not assessed for its <h1> or its section headings |
 | 08 Rule contract + catalogue | IN_PROGRESS | Missing catalogue is an error; actions for idx6.broken and every H1 rule |
 | 09 One publication gate | IN_PROGRESS | Every web report download and the final client export gated; CLI writes and warns; batch not gated |
-| 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown and PDFs |
+| 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown, web PDFs and the `maya-audit-pro` client PDF |
 | 11 Team status vs engine verification | NOT_STARTED | |
 | 12 SEO accuracy measurement | BLOCKED_ON_INPUT | Needs human SEO labels; nothing labelled yet |
-| 13 Integration and release | NOT_STARTED | |
+| 13 Integration and release | IN_PROGRESS | Release metadata (0.2.8 / w14) written from the source; archive exclusions pinned. No archive built |
 
 ## Stage 00 — baseline
 
@@ -202,3 +202,55 @@ VERDICT (baseline scope): PASS.
 **Still open:** on a page cut off at the size limit, "The homepage has N visible section heading(s)" and "long page(s)
 have no subheadings" can still fire on the cut body (same limitation, not reviewed); `maya-report-checker` not run on how
 IDX-1's part reads beside the report's single "not read" figure.
+
+## Report fixes before w14 (2026-10-29, DECISIONS 283)
+
+Brand-independent; no site-specific code. One commit per item: `3d0b988`, `9b42207`, `38b52b3`, `a20dd45`, `d38a800`,
+`df55f7e`, `af3d586`, `86008d7` (Turkish wording for items 4 and 8), `71608b9`.
+
+| # | Change | Tests |
+|---|---|---|
+| 1 | `maya-audit-pro` builds data.json through `final.from_report` (refuses without the engine); records `_digest`/`_gate_decision`; `validate_data.py` refuses data built from another state of the report. Broken-link card prints a "Düzenlenecek bağlantılar" table (page to edit, link text, link address, where it ends + status, new address "bilinmiyor"), 2 rows on the card, all rows in the CSV; RG-3 also checks the table's pages. H1 cards come from the separate H1 rules | skill `FinalResult` (4) |
+| 2 | Headline counts pages whose worst page-specific problem is Medium+ ("Orta ve üstü sorunlu sayfa") | skill `test_page_kpi_counts_only_pages_with_a_medium_or_higher_problem` |
+| 3 | STR-5 "brand named N ways" and "og:site_name holds the page title" share `dedup_key` `str5.site_name`; the name finding lists every page a counted name was seen on, so RG-9 sees the overlap | `tests/test_w14_report_fixes.py` (3, with a counter-example) |
+| 4 | PRF-1 homepage TTFB: S2 → S3 (one measurement from Maya's network, never re-tested); note + Turkish | `tests/test_w11_homepage.py` |
+| 5 | "Arama ve performans" page left out when there is no search, lab or field data (3 summary pages) | skill `SearchPage` (2) |
+| 6 | Address CSV: UTF-8 BOM kept; ";" in Turkish, "," in English | skill `AddressList` (2) |
+| 7 | `tools/release_metadata.py --release w14` wrote `RELEASE-SNAPSHOT.json` and `CHECKPOINT-VERIFICATION.md` (0.2.8 / schema 1.20 / w14; were 0.2.6 / 1.16 / team-preview-23). `.gitattributes` export-ignores `benchmarks/real-sites/`; `.env`, `.claude/`, `reviews/` already were. `git archive HEAD` lists 0 files under those paths. No zip built | `tests/test_release_metadata.py` (4) |
+| 8 | Cut-off page (`body_truncated`): homepage-outline and long-page findings not raised; `evidence.sections_cut_off` + coverage part with reason; STR-2 partial | `tests/test_w14_report_fixes.py` (3, with a counter-example) |
+| 9 | `maya-report-checker` on the partial-crawl fixture (below) | review only |
+
+**Item 9 — report-checker** (fixture: `test_m1_broken_links.routes()` + sitemap listing the 2 unread addresses,
+`max_pages=3`, offline loopback; schema 1.20, engine 0.2.8; gate PASS; outputs: report.json, CLI Markdown, Turkish PDF
+from the skill). Order: `findings_in_priority_order`. Groups: IDX-2 S2 (no HTTPS on the loopback host — real for the
+fixture, an environment artefact), STR-3 S3 no Organization (real: no JSON-LD), TSEO-1 S3 no viewport (real), IDX-5 S3
+/eski-urun in the sitemap ends at a 404 (real: 301 → /bulunamadi 404), IDX-8 S4 near-identical content (real, same
+filler text), STR-1 S4 generic title "Sayfa" (real); 7 Info not reviewed in detail. **6 real, 0 false, 0 unsure.**
+IDX-1 vs "pages found but not read": **no contradiction.** Markdown top line "3 page(s) read; 2 more found and not read
+(page cap)"; IDX-1 partial, summary scoped to "3 fetched URL(s)", part "addresses found but not fetched by the crawl"
+count 2, says another step may have requested them — IDX-5 says 5 checked / 0 not assessed (it did). JSON
+`known_urls_not_read` 2; Turkish PDF "Okunan sayfa 3 · 2 keşfedilen adres okunmadı", "3 sayfa okundu; 2 URL okunmadı".
+Observation (not a contradiction, not changed): the PDF's "Değerlendirilmeyen kapsam 25" counts distinct parts, and
+IDX-1's part and TSEO-1's "discovered pages not fetched" both restate the same 2 unread addresses as separate items.
+length-defect: none (5-page PDF; repeated step text is the fixture's neutral filler). privacy-defect: not applicable
+(fixture on 127.0.0.1, not a client export).
+
+**Client PDF changes (maya-audit-pro):** broken-link card table instead of the one-line target + source links;
+headline KPI Medium+ only, with new label and sub-line; page 3 dropped when empty (tabs and page numbers follow); CSV
+";" in Turkish and extra link columns when a broken-link card exists; no PDF from data built off a changed report;
+homepage TTFB card now Medium (scheduled later than before).
+
+**Verification** (source `71608b9` + this file; macOS, Python 3.13.1):
+
+| Gate | Result |
+|---|---|
+| `.venv/bin/python -m pytest -q -rfEs -p no:cacheprovider` (full suite) | `2626 passed, 3 skipped, 1 warning in 710.91s (0:11:50)` |
+| Skill tests `.agents/skills/maya-audit-pro/tests` | `36 passed` |
+| `python3.11 -m compileall` (maya_audit, maya_audit_web, tests, tools, skill scripts) | OK |
+| CLI once against a loopback fake site (`crawl … --no-prf --json`, offline child env) | exit 0; JSON parses, schema 1.20, gate PASS |
+| Fixture PDFs rendered and pages inspected (broken-link + H1 fixture: pages 1, 3, 5; partial fixture) | table, KPI and 3-page summary as described |
+| ruff `E9,F821,F841` | NOT RUN (not installed) |
+| Linux / Windows CI | NOT RUN (no push) |
+| Wheel tests | skipped (no setuptools in `.venv`) |
+
+Skips: two wheel tests, live-run examples. No live or paid calls; nothing pushed.
