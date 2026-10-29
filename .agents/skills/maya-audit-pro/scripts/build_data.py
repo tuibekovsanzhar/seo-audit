@@ -100,6 +100,27 @@ def path_of(url):
     return (p.path or "/") + (("?" + p.query) if p.query else "")
 
 
+def load_final(maya_src=None):
+    """Maya Audit's shared final result (maya_audit.final, DECISIONS 280): as installed, at --maya-src, or in the
+    repository holding this skill. None when the engine cannot be found; the skill then builds nothing."""
+    for where in [None, maya_src and str(Path(maya_src).resolve()), str(HERE.parents[3])]:
+        if where and where not in sys.path and (Path(where) / "maya_audit" / "final.py").exists():
+            sys.path.insert(0, where)
+        try:
+            from maya_audit import final  # type: ignore
+            return final
+        except ImportError:
+            continue
+    return None
+
+
+def link_rows(cards):
+    """A broken link's "what to edit" rows (maya_audit.final.broken_link_cards): page to edit, link text, the address
+    it links to, where it ends and that address's status. The new address is never known, so never guessed."""
+    keys = ("kind", "source_url", "link_text", "links_to", "target_url", "target_status", "replacement_url")
+    return [{k: c.get(k) for k in keys} for c in cards or []]
+
+
 class Wording:
     """Motorun kendi çeviri katmanı (maya_audit_web.wording), varsa."""
 
@@ -316,11 +337,13 @@ def english(text):
 
 # ---------------------------------------------------------------- çekirdek
 class Builder:
-    def __init__(self, report, lang, labels, catalog, wording, rev, audit_id, reanalysis=False, affected=None):
+    def __init__(self, report, lang, labels, catalog, wording, rev, audit_id, reanalysis=False, affected=None, cards=None):
         self.r, self.lang, self.L, self.cat, self.w = report, lang, labels, catalog, wording
         self.rev, self.audit_id, self.reanalysis = rev, audit_id, reanalysis
         self.slots, self.facts = [], set()
         self.affected = affected or {}
+        # broken-link rows from the final result (maya_audit.final.broken_link_cards), by finding id
+        self.cards = cards or {}
         self.findings = {}
         for chk in report.get("checks") or []:
             for f in chk.get("findings") or []:
@@ -971,6 +994,8 @@ class Builder:
                     "all_urls": urls, "unlisted": unlisted, "step_rules": conditional,
                     # DECISIONS 278: a broken link's failing addresses, shown apart from the pages to edit
                     "target_urls": list((f.get("evidence") or {}).get("target_urls") or []),
+                    # DECISIONS 283: one row per link to edit, from the final result
+                    "link_rows": link_rows(self.cards.get(f["id"])),
                     "launch_gated": [g for g in f.get("launch_gated") or [] if re.fullmatch(r"LG-\d+", str(g))],
                 })
                 self.fact(todos[-1]["fact"])  # a card may quote its evidence's numbers
@@ -1163,7 +1188,17 @@ def main():
     if affected:
         # Read from beside report.json; it must belong to the same saved audit.
         print(f"affected-urls.json okundu: {affected_path}")
-    data = Builder(report, a.lang, labels, catalog, w, a.rev, audit_id, a.reanalysis, affected).build()
+    # DECISIONS 283: the client PDF is built from the same final result as every other output (maya_audit.final) and
+    # carries its release-gate decision; without the engine nothing is built.
+    final = load_final(a.maya_src)
+    if final is None:
+        sys.exit("HATA: Maya Audit motoru (maya_audit.final) bulunamadı; --maya-src ile verin. "
+                 "Ortak son sonuç ve yayın kapısı olmadan taslak üretilmez.")
+    sealed = final.from_report(report, affected or None)
+    data = Builder(sealed.report, a.lang, labels, catalog, w, a.rev, audit_id, a.reanalysis, affected,
+                   cards=sealed.cards).build()
+    data["_digest"] = sealed.digest
+    data["_gate_decision"] = sealed.decision
     data["meta"]["source"] = a.source
     # Where the release gate reads the report and the engine from (DECISIONS 278); never printed in the report.
     data["_report_path"] = str(rp)

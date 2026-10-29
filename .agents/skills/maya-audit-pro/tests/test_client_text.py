@@ -307,3 +307,93 @@ class SecondLook(unittest.TestCase):
         tr = build.Builder(r, 'tr', render.LABELS['tr'], json.loads((build.REFS / 'sahip_efor.json').read_text()),
                            Wording(), None, 'test', False, None).build()
         self.assertIn('Yeniden sınanmadı', tr['todos'][0]['status'])
+
+
+REPO = Path(__file__).resolve().parents[4]
+
+
+def broken_link_report():
+    """One broken internal link: /urunler links "Eski ürün" to /eski-urun, which ends at /bulunamadi (404)."""
+    base = 'https://sample.example'
+    r = report([base + '/urunler'])
+    r['schema_version'] = '1.20'
+    r['crawl']['pages'] += [{'url': base + '/bulunamadi', 'status': 404}]
+    f = r['checks'][0]['findings'][0]
+    f.update(check_id='IDX-1', severity='S2', rule_id='idx1.4xx.referenced.linked', confidence='verified',
+             title='1 URL(s) return a client error (4xx), linked internally or listed in the sitemap; linked from 1 page(s)',
+             evidence={'pages': [{'url': base + '/bulunamadi', 'status': 404, 'in_sitemap': False}],
+                       'target_urls': [base + '/bulunamadi'],
+                       'link_sources': [{'source': base + '/urunler', 'anchor': 'Eski ürün', 'links_to': base + '/eski-urun',
+                                         'target': base + '/bulunamadi'}]},
+             verification={'state': 'confirmed', 'checked': [], 'subjects': [base + '/urunler']})
+    return r
+
+
+def build_tr_from_file(r, tmp):
+    """build_data.py as the skill runs it: a saved report, the engine from this repository."""
+    import subprocess
+    rp = Path(tmp) / 'report.json'
+    rp.write_text(json.dumps(r, ensure_ascii=False), encoding='utf-8')
+    out = Path(tmp) / 'data.json'
+    run = subprocess.run([sys.executable, str(Path(build.__file__)), str(rp), '--lang', 'tr', '-o', str(out),
+                          '--maya-src', str(REPO)], capture_output=True, text=True, encoding='utf-8')
+    assert run.returncode == 0, run.stderr
+    return json.loads(out.read_text(encoding='utf-8')), rp
+
+
+class FinalResult(unittest.TestCase):
+    """DECISIONS 283: the client PDF is built from Maya's shared final result and its release gate."""
+
+    def test_the_broken_link_card_shows_where_to_edit_as_a_table(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d, _ = build_tr_from_file(broken_link_report(), tmp)
+        self.assertEqual(d['_gate_decision'], 'PASS')
+        self.assertTrue(d['_digest'])
+        [t] = [t for t in d['todos'] if t['id'] == 'IDX-1-generic' or t.get('link_rows')]
+        self.assertEqual(t['link_rows'], [{'kind': 'link', 'source_url': 'https://sample.example/urunler',
+                                           'link_text': 'Eski ürün', 'links_to': 'https://sample.example/eski-urun',
+                                           'target_url': 'https://sample.example/bulunamadi', 'target_status': 404,
+                                           'replacement_url': None}])
+        html = render.todo_pages(d, render.LABELS['tr'])[0]
+        for cell in ('Düzenlenecek sayfa', 'Bağlantı metni', 'Bağlantının adresi', 'Vardığı yer', 'Yeni adres',
+                     '<td>/urunler</td>', '<td>Eski ürün</td>', '<td>/eski-urun</td>', '<td>/bulunamadi (404)</td>',
+                     '<td>bilinmiyor</td>'):
+            self.assertIn(cell, html)
+        self.assertNotIn('Hatalı hedef URL', html)  # the table replaces the one-line target
+
+    def test_more_links_than_the_card_shows_are_in_the_address_list(self):
+        r = broken_link_report()
+        f = r['checks'][0]['findings'][0]
+        base = 'https://sample.example'
+        for k in range(3):
+            f['scope']['urls'].append(f'{base}/sayfa-{k}')
+            f['evidence']['link_sources'].append({'source': f'{base}/sayfa-{k}', 'anchor': f'Bağlantı {k}',
+                                                  'links_to': base + '/eski-urun', 'target': base + '/bulunamadi'})
+        f['scope']['count'] = len(f['scope']['urls'])
+        with tempfile.TemporaryDirectory() as tmp:
+            d, _ = build_tr_from_file(r, tmp)
+            html = render.todo_pages(d, render.LABELS['tr'])[0]
+            self.assertIn('+2 bağlantı daha', html)
+            path = render.write_address_list(d, Path(tmp) / 'rapor.html')
+            text = path.read_text(encoding='utf-8-sig')
+        self.assertIn('Bağlantı 2', text)
+        self.assertIn('bilinmiyor', text)
+
+    def test_data_built_from_another_state_of_the_report_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d, rp = build_tr_from_file(broken_link_report(), tmp)
+            fill(d)
+            r = json.loads(rp.read_text(encoding='utf-8'))
+            r['checks'][0]['findings'][0]['severity'] = 'S3'  # the report changed after data.json was built
+            out = validate(d, r)
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn('şimdiki son sonucundan üretilmemiş', out.stdout)
+
+    def test_a_card_row_for_a_page_its_finding_does_not_list_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d, rp = build_tr_from_file(broken_link_report(), tmp)
+            fill(d)
+            [t] = [t for t in d['todos'] if t.get('link_rows')]
+            t['link_rows'][0]['source_url'] = 'https://sample.example/baska'
+            out = validate(d, json.loads(rp.read_text(encoding='utf-8')))
+        self.assertIn('RG-3: card', out.stdout)

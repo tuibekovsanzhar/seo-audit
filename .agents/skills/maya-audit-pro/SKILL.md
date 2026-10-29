@@ -29,7 +29,7 @@ Maya Audit'in report.json dosyasından, `Maya-Audit-Professional.pdf` tasarımı
 
 ## Dosyalar
 
-- `scripts/build_data.py`: report.json → data.json taslağı (`--lang tr|en` zorunlu, varsayılanı yok).
+- `scripts/build_data.py`: report.json → data.json taslağı (`--lang tr|en` zorunlu, varsayılanı yok). Raporu Maya'nın ortak son sonucu üzerinden okur (`maya_audit.final.from_report`, DECISIONS 283); motor bulunamazsa taslak üretmez. `validate_data.py`, data.json'un raporun şimdiki son sonucundan üretildiğini (`_digest`) de denetler.
 - `scripts/validate_data.py`: data.json denetimi ve Maya Audit'in yayın kapısı (DECISIONS 278). Hata varsa 1 ile çıkar; kapı çalışamazsa da.
 - `scripts/render.py`: data.json → HTML + PDF (+ `--png` önizleme). Taşma varsa alanın adını yazar ve PDF'i basmaz.
 - `references/etiketler.json`: Sabit etiketler (TR/EN). Yeni etiket eklenecekse iki dile birlikte eklenir.
@@ -163,7 +163,7 @@ Maya Audit kodunun incelemesinden çıkan noktalar:
   - `repeated_empty`: tarayıcı da boş sayfa aldı. Kanıt durumu "Tekrarlanan ölçüm" olur; başka istemciyle doğrulanmıştır, `next_action.caveat` "doğrulanmadı" **demez**.
   - `repeated_empty_same_client_only` ya da `repeated_empty_mixed_browser_sample`: tarayıcıyla sorulmadı ya da sonuç karışık. `next_action.caveat` tarayıcıyla doğrulanmadığını söyler.
   - `repeated_empty_to_maya_content_to_a_browser`: tarayıcı içerik aldı. Sorun boş sayfa değil, sitenin otomatik istemcilere farklı davranmasıdır (erişim sorunu).
-- **IDX-1 kırık iç bağlantı (DECISIONS 278):** Etkilenen adresler, bağlantısı hataya giden **kaynak sayfalar** ve hatada biten site haritası girdileridir. Hatalı hedef adresler `evidence.target_urls`'tedir; kart ikisini ayrı alanda basar: "Etkilenen kaynak sayfa" ve "Hatalı hedef URL". Bu iki kavramı metinde birbirinin yerine kullanma. "Site haritasından çıkarın" adımı yalnız bir adres gerçekten site haritasındaysa görünür.
+- **IDX-1 kırık iç bağlantı (DECISIONS 278):** Etkilenen adresler, bağlantısı hataya giden **kaynak sayfalar** ve hatada biten site haritası girdileridir. Hatalı hedef adresler `evidence.target_urls`'tedir; kart bunları "Düzenlenecek bağlantılar" tablosunda basar (DECISIONS 283): düzenlenecek sayfa, bağlantı metni, bağlantının adresi, vardığı yer (durumuyla) ve yeni adres ("bilinmiyor"; Maya doğru adresi bilmez, uydurma). Satırlar Maya'nın ortak son sonucundan (`maya_audit.final.broken_link_cards`) gelir; kartta 2 satır görünür, tamamı adres listesi CSV'sindedir. Bu iki kavramı metinde birbirinin yerine kullanma. "Site haritasından çıkarın" adımı yalnız bir adres gerçekten site haritasındaysa görünür.
 - **`<h1>` yok ve `<h1>` boş:** İki ayrı bulgudur (`str2.no_h1`, `str2.empty_h1`). "Boş başlığı doldurun" yalnız boş olanlar için yazılır.
 - **Sayfa türü:** Her bulgunun `page_types` alanı adres başına türü verir (`pagination`, `category`, `404`, `unknown` dahil). Sayfalama, liste, kategori, 404 ya da türü bilinmeyen sayfaya makale, ürün, fiyat ya da dönüşüm önerisi yazma; bunun yerine "sayfa tipi belirsiz; içerik önerisi üretilmedi" de.
 - **Erken kapanan `<head>`:** Etiketi kırılmadan sonra gelen sayfalar yalnız TSEO-1 altında anılır (`evidence.absorbed_from`). Aynı sayfa için "og:title yok" ya da "robots etiketi head dışında" diye ayrı kart yazma.

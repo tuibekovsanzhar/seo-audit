@@ -78,6 +78,12 @@ def gate_check(d: dict) -> tuple[dict | None, str | None]:
     report = json.loads(Path(rp).read_text(encoding="utf-8"))
     ap = d.get("_affected_path")
     affected = json.loads(Path(ap).read_text(encoding="utf-8")) if ap and Path(ap).exists() else None
+    # DECISIONS 283: the cards must come from the same final result (maya_audit.final) the gate judges now.
+    if d.get("_digest"):
+        from maya_audit import final  # type: ignore  (found with the gate above)
+        if final.from_report(report, affected).digest != d["_digest"]:
+            return None, (f"{GATE_MISSING} data.json, {rp} dosyasının şimdiki son sonucundan üretilmemiş "
+                          "(rapor değişmiş); build_data.py'yi yeniden çalıştırın.")
     return gate.run(report, affected, data=d), None
 
 

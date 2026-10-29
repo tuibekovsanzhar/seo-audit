@@ -222,6 +222,12 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 .todo .links a::before { content: '↗ '; color: var(--faint); }
 .todo .more { font-size: 8pt; color: var(--faint); margin-top: 4pt; }
 .todo .sw { font-size: 9pt; color: var(--muted); margin-top: 4pt; }
+.todo table.lk { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 3pt; font-size: 7.6pt; }
+.todo table.lk th:nth-child(1) { width: 25%; } .todo table.lk th:nth-child(2) { width: 18%; }
+.todo table.lk th:nth-child(3) { width: 22%; } .todo table.lk th:nth-child(4) { width: 21%; }
+.todo table.lk th { text-align: left; text-overflow: ellipsis; color: var(--faint); font-weight: 600; padding: 0 4pt 2pt 0; white-space: nowrap; overflow: hidden; }
+.todo table.lk td { padding: 2pt 4pt 1pt 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-top: 0.5pt solid var(--line); }
+.todo .lknote { font-size: 7.6pt; color: var(--faint); margin-top: 3pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .rp .eyebrow, .diag .eyebrow { font-size: 8.4pt !important; font-weight: 600 !important; color: var(--faint) !important; display: block !important; margin-top: 0 !important; }
 .prov p b { font-weight: 600; color: var(--muted); }
@@ -385,6 +391,39 @@ def target_line(urls, shown=2):
     return " · ".join(paths[:shown]) + (f" · +{len(paths) - shown}" if len(paths) > shown else "")
 
 
+LINK_ROWS = 2  # rows of the "links to edit" table a card has room for; the rest are in the address list
+
+
+def link_table(rows, L):
+    """DECISIONS 283: a broken link's card shows where to edit it, one row per link (page to edit, link text, the
+    address it links to, where it ends, replacement), as the web PDF does. The replacement is always unknown."""
+    head = "".join(f"<th>{e(c)}</th>" for c in L["link_cols"])
+    body = []
+    for r in rows[:LINK_ROWS]:
+        source = path_or_host(r["source_url"])
+        if r.get("kind") == "sitemap":
+            source = f'{L["link_sitemap"]}: {source}'
+        ends = path_or_host(r["target_url"]) if r.get("target_url") else "—"
+        if r.get("target_url") and r.get("target_status"):
+            ends += f' ({r["target_status"]})'
+        cells = (source, r.get("link_text") or "—", path_or_host(r.get("links_to")), ends,
+                 path_or_host(r["replacement_url"]) if r.get("replacement_url") else L["link_unknown"])
+        body.append("<tr>" + "".join(f"<td>{e(c)}</td>" for c in cells) + "</tr>")
+    more = len(rows) - LINK_ROWS
+    return (f'<table class="lk"><thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table>'
+            + (f'<div class="more">{e(L["link_more"].format(n=more))}</div>' if more > 0 else "")
+            + f'<div class="lknote">{e(L["link_note"])}</div>')
+
+
+def path_or_host(url):
+    from urllib.parse import urlsplit
+    if not url:
+        return "—"
+    p = urlsplit(url)
+    path = (p.path or "/") + (("?" + p.query) if p.query else "")
+    return path if path != "/" else (p.netloc or url)
+
+
 def todo_pages(d, L):
     """Yapılacaklar: sayfa başına 4 kart (2×2). Her kart: onay kutusu, iş, takvim/sorumlu/efor, adımlar, doğrulama, linkler."""
     todos = d.get("todos") or []
@@ -409,13 +448,16 @@ def todo_pages(d, L):
                 # DECISIONS 278: a broken link's failing address and the page to edit are two things, never swapped.
                 # The target line takes the evidence line's place: that line mixes source and target ("/a · /b · 404"),
                 # and a card has room for one such line (two overflowed the Carpex IDX-1 card, w13).
-                + (f'<div class="todo-fact"><b>{e(L["todo_targets"])}:</b> {e(target_line(t["target_urls"]))}</div>'
+                + ("" if t.get("link_rows") else
+                   f'<div class="todo-fact"><b>{e(L["todo_targets"])}:</b> {e(target_line(t["target_urls"]))}</div>'
                    if t.get("target_urls") else
                    f'<div class="todo-fact"><b>{e(L["todo_fact"])}:</b> {e(t["fact"])}</div>' if t.get("fact") else "")
                 + ''
                 f'<div class="sec"><div class="eyebrow">{e(L["todo_steps"])}</div><ol data-slot="todos[{i}].steps">{steps}</ol></div>'
                 f'<div class="sec"><div class="eyebrow">{e(L["todo_verify"])}</div><div class="vf" data-slot="todos[{i}].verify">{e(t["verify"])}</div></div>'
-                f'<div class="sec"><div class="eyebrow">{e(L["todo_sources"] if t.get("target_urls") else L["todo_links"])}</div>{links}</div></div>')
+                + (f'<div class="sec"><div class="eyebrow">{e(L["link_title"])}</div>{link_table(t["link_rows"], L)}</div></div>'
+                   if t.get("link_rows") else
+                   f'<div class="sec"><div class="eyebrow">{e(L["todo_sources"] if t.get("target_urls") else L["todo_links"])}</div>{links}</div></div>'))
         pages.append(f'<div class="body"><div class="todos">{"".join(cards)}</div></div>')
     return pages
 
@@ -506,15 +548,26 @@ def check_pdf(pdf_path, d):
 def write_address_list(d, out):
     """The "+N more" lines promise the attached address list; write it next to the HTML (Excel-friendly CSV).
 
-    Returns None when no card has more addresses than it shows, so no promise is printed either.
+    Returns None when no card has more addresses than it shows, so no promise is printed either. A broken-link card's
+    rows carry the link text, where the link points, where it ends and the replacement (DECISIONS 283).
     """
     todos = d.get("todos") or []
-    if not any(t.get("more") for t in todos):
+    if not any(t.get("more") or len(t.get("link_rows") or []) > LINK_ROWS for t in todos):
         return None
     en = d["lang"] == "en"
+    L = LABELS[d["lang"]]
     header = (["Card", "Finding", "Severity", "Address"] if en else ["Kart", "Bulgu", "Önem", "Adres"])
+    if any(t.get("link_rows") for t in todos):
+        header += L["link_cols"][1:]
     rows = []
     for t in todos:
+        if t.get("link_rows"):
+            for r in t["link_rows"]:
+                source = r["source_url"] if r.get("kind") != "sitemap" else f'{L["link_sitemap"]}: {r["source_url"]}'
+                ends = (f'{r["target_url"]} ({r["target_status"]})' if r.get("target_status") else r.get("target_url")) or ""
+                rows.append([t["n"], t["id"], t["severity_label"], source, r.get("link_text") or "", r.get("links_to") or "",
+                             ends, r.get("replacement_url") or L["link_unknown"]])
+            continue
         for u in t.get("all_urls") or [l["href"] for l in t.get("links") or []]:
             rows.append([t["n"], t["id"], t["severity_label"], u])
         if t.get("unlisted"):

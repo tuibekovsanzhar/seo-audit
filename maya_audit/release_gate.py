@@ -219,6 +219,7 @@ def path_of(url: str) -> str:
 def card_paths(card: dict) -> set[str]:
     """The addresses a card holds, without a trailing slash: its links, its full list, its targets, its evidence line."""
     urls = list(card.get("all_urls") or []) + list(card.get("target_urls") or []) + [l.get("href") for l in card.get("links") or []]
+    urls += [r.get(k) for r in card.get("link_rows") or [] for k in ("source_url", "links_to", "target_url")]
     paths = {path_of(u) for u in urls if isinstance(u, str)}
     paths |= {m.rstrip("/") for m in PATH.findall(card.get("fact") or "")}
     paths |= {p.rstrip("/") for p in card.get("known_paths") or []}
@@ -284,7 +285,8 @@ def check_cards(data: dict, report: dict, affected: dict | None = None) -> list[
             if check.get("check_id") in fids:
                 allowed |= {path_of(u) for u in _addresses_in([check.get("observations"), check.get("evidence")], set())}
         if mine:
-            for u in list(card.get("all_urls") or []) + [l.get("href") for l in card.get("links") or []]:
+            visible = [l.get("href") for l in card.get("links") or []] + [r.get("source_url") for r in card.get("link_rows") or []]
+            for u in list(card.get("all_urls") or []) + visible:
                 if isinstance(u, str) and path_of(u) not in allowed:
                     out.append(violation("RG-3", f"card {n} shows {u}, which none of its findings lists", hard=True, card=n))
                     break

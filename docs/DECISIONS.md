@@ -2556,3 +2556,12 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      assessed. Not changed: severities; the long-page and section-heading checks on a cut-off page (same limitation,
      not reviewed). No schema bump: evidence keys only, one finding title removed. Review records and reproducer:
      `maya-judgment-validator` session, 2026-10-29. Tests: `tests/test_m1_h1.py`, `tests/test_m1_broken_links.py`.
+
+283. **Report fixes before the w14 release (owner's request, agent implementation, 2026-10-29).** Brand-independent; no
+     site-specific code. (1) The `maya-audit-pro` client PDF is built from the shared final result: `build_data.py`
+     loads the report through `maya_audit.final.from_report` (as installed, `--maya-src`, or the repository holding the
+     skill) and refuses to build without it; data.json records `_digest` and `_gate_decision`, and `validate_data.py`
+     refuses data built from another state of the report (digest differs). A broken-link card carries `link_rows` from
+     `final.broken_link_cards` and prints a "links to edit" table (page to edit, link text, links to, ends at with its
+     status, replacement "unknown"), two rows on the card and every row in the address CSV; the gate's RG-3 also checks
+     the table's pages to edit. Heading cards come from the separate H1 findings (281/282) through their rule ids.
