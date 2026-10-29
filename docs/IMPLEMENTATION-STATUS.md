@@ -22,7 +22,7 @@ Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bi
 | 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown, web PDFs and the `maya-audit-pro` client PDF |
 | 11 Team status vs engine verification | NOT_STARTED | |
 | 12 SEO accuracy measurement | BLOCKED_ON_INPUT | Needs human SEO labels; nothing labelled yet |
-| 13 Integration and release | IN_PROGRESS | w14 zip built from tag `team-preview-w14` (`542c67e`); extracted-archive verification FAIL (2 benchmark tests needed the excluded corpus; fixed in `632ab19`, not in the zip) |
+| 13 Integration and release | VERIFIED | w14b (tag `team-preview-w14b`, `57aa9d6`): extracted-archive verification PASS. w14 superseded (FAIL) |
 
 ## Stage 00 — baseline
 
@@ -270,3 +270,21 @@ details in the `-VERIFICATION.json` beside it (also on the Desktop).
 | `maya-audit-pro` Turkish PDF from the demo report | 5 pages, 4 cards, validate + render clean; gate PASS |
 
 Next: a w14b tag and zip from `632ab19` or later, verified the same way (the release rule never moves a tag).
+
+## w14b release (2026-10-29)
+
+Tag `team-preview-w14b` → `57aa9d6` (local, not pushed); supersedes w14. Zip
+`~/Projects/releases/maya-audit-0.2.8-w14b-2026-10-29.zip`, SHA-256
+`434ed760e1eccf2e9fcfa21ef6cff0c2ed2b18da5d488d77077a4ace6a5dfac5`, 487 files, none under the excluded paths.
+`tests/test_release_metadata.py` now accepts a letter suffix on the release label.
+
+| Gate (extracted archive, fresh venv, Python 3.13.1, macOS) | Result |
+|---|---|
+| Full suite | `2624 passed, 5 skipped, 1 warning in 767.13s (0:12:47)` — 0 failed |
+| Skips | 3 not a Git checkout; live-run examples not committed; real-site corpus not shipped |
+| Wheel + `tools/check_installed_package.py --wheel` | PASS; `test_distribution_contract.py` with the wheel: 10 passed |
+| Demo audit (`--demo --port 8791`, demo-kafe.localhost) | finished, COMPLETED; web PDF 200, gate PASS |
+| `maya-audit-pro` Turkish PDF | 5 pages, 4 cards, validate + render clean; gate PASS (0 hard violations) |
+| ruff, Linux/Windows, live providers | NOT RUN |
+
+VERDICT: PASS. The w14 zip was removed from the Desktop; its copy stays in `~/Projects/releases`.
