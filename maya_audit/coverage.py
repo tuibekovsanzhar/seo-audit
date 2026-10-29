@@ -399,6 +399,12 @@ def _ans2(ev, obs):
                  "claims could not be compared", n)] if n else []
 
 
+def _str2(ev, obs):
+    return _listed(ev, "h1_cut_off", "h1_cut_off_count", "pages whose HTML was cut off before an <h1>",
+                   "the page's HTML was longer than the fetch-size limit and no <h1> appeared before the cut, so whether "
+                   "it has one is unknown")
+
+
 def _str8(ev, obs):
     return _listed(ev, "table_semantics_unassessed", None, "data-table header relationships",
                    "saved HTML does not establish table purpose or complete header associations")
@@ -414,7 +420,7 @@ RULES: dict[str, Callable[[dict, list], list[Part]]] = {
     "IDX-1": _idx1, "IDX-2": _idx2, "IDX-4": _idx4, "IDX-5": _idx5, "IDX-7": _idx7, "IDX-9": _idx9,
     "IDX-10": _idx10,
     "RND-1": _rnd1, "RND-2": _rnd2, "RND-3": _rnd3, "RND-4": _rnd4, "RND-5": _rnd5,
-    "STR-4": _str4, "STR-5": _str5, "STR-6": _str6, "STR-7": _str7, "STR-8": _str8, "STR-9": _str9,
+    "STR-2": _str2, "STR-4": _str4, "STR-5": _str5, "STR-6": _str6, "STR-7": _str7, "STR-8": _str8, "STR-9": _str9,
     "STR-10": _str10, "STR-11": _str11, "STR-12": _str12, "STR-16": _str16, "STR-17": _str17, "STR-20": _str20,
     "TSEO-1": _tseo1,
     "PRF-1": _prf1,
@@ -493,11 +499,12 @@ def settle(check, access: dict | None = None, crawl_gap: Part | None = None, ind
         if crawl_gap and not probe_scope_recorded(check.check_id, check.evidence or {}) and not sitemap_fully_checked(check):
             check.coverage["not_assessed"].append(crawl_gap)
         elif crawl_gap and crawl_gap.get("count") and check.check_id == "IDX-1":
-            # IDX-1 judges the answers Maya's crawler received (its own scope), and an address the crawler found and
-            # never requested has no answer: it may be the broken one. Unknown, never "no 4xx" (DECISIONS 280).
+            # IDX-1 judges the answers Maya's crawler received (its own scope), and an address the crawl found and
+            # did not fetch has no answer here: it may be the broken one. Unknown, never "no 4xx" (DECISIONS 280, 282).
             check.coverage["not_assessed"].append(part(
-                "addresses found but never requested", "these addresses were found and never requested, so whether they "
-                "answer, redirect or fail is unknown", crawl_gap["count"]))
+                "addresses found but not fetched by the crawl", "these addresses were found but the crawl did not fetch "
+                "them, so this check has no answer for them; another step, such as the sitemap check, may have requested "
+                "some", crawl_gap["count"]))
         if access and access["fetched"] and not access["readable"] and check.status in ("pass", "partial", "not_applicable"):
             check.status = "not_assessed"
             check.summary = (f"Not assessed: Maya could read none of the {access['fetched']} page(s) it fetched "

@@ -16,7 +16,7 @@ Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bi
 | 04 Shared finalization | IN_PROGRESS | `final.settle`/`verify` in `run_audit` and after a page reader; batch not moved |
 | 05 Shared service (CLI/batch/web) | IN_PROGRESS | CLI and web use `final.seal`; batch and skills not moved |
 | 06 Output generations | NOT_STARTED | |
-| 07 Source/page type/scope/render | IN_PROGRESS | H1 only: raw HTML vs rendered page per page (`h1_sources`) |
+| 07 Source/page type/scope/render | IN_PROGRESS | H1 only: raw vs rendered per page (`h1_sources`); a page cut off before an <h1> is not assessed |
 | 08 Rule contract + catalogue | IN_PROGRESS | Missing catalogue is an error; actions for idx6.broken and every H1 rule |
 | 09 One publication gate | IN_PROGRESS | Every web report download and the final client export gated; CLI writes and warns; batch not gated |
 | 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown and PDFs |
@@ -162,3 +162,43 @@ the batch file-name test now pass (fixes in `feebcf3`).
 qualification pass; broken-link card in the editorial client report (`client_reporting`) and the skill's cards (they
 already show target and sources); web UI shows a 409 for direct links only (the results card offers draft links);
 step 7 quality fixtures beyond these two rules; SEO accuracy labels (stage 12, needs people).
+
+## Judgment review of M1 and its fixes (2026-10-29)
+
+**Review** (`maya-judgment-validator`, read-only, 12 offline reproducer cases; records kept outside the repo):
+IDX-1 "partial" when the crawl did not fetch found addresses — **qualify** (status right, wording "never requested"
+false when the sitemap check requested them). `str2.js_only_h1` — **remove** (repeats RND-2 for the same page and
+heading). Also found: `h1_sources` wrote `null` ("not rendered") for a rendered page without an <h1>; and a pre-existing
+false "The homepage has no <h1>" (verified) when the HTML was cut off at the fetch-size limit before the <h1>.
+
+**Fixed** (DECISIONS 281 corrected, 282): IDX-1 part "addresses found but not fetched by the crawl"; `str2.js_only_h1`
+removed (frame, rule id, action, note, Turkish); `rendered_h1` is `[]` when rendered with none; a page cut off before any
+<h1> goes to `evidence.h1_cut_off` and coverage part "pages whose HTML was cut off before an <h1>" (STR-2 partial)
+instead of "no <h1>". Files: `maya_audit/coverage.py`, `maya_audit/checks/structure.py`, `maya_audit_web/wording.py`,
+`maya_audit/rule_ids.json` (regenerated), `maya_audit/rule_actions.json`, `maya_audit/recommendation_catalog.py`, TR
+locales, `docs/FIXTURE-MATRIX.md`, `tests/test_m1_h1.py`, `tests/test_m1_broken_links.py`.
+
+**Tests added:** `test_unread_addresses_part_does_not_claim_they_were_never_requested`, `test_an_h1_only_a_script_adds_is_left_to_rnd2`,
+`test_a_rendered_page_without_an_h1_records_none_not_unknown`, `test_an_h1_after_the_size_limit_is_not_assessed_not_missing`,
+`test_an_h1_before_the_size_limit_is_still_seen`, `test_a_short_page_without_an_h1_is_still_reported`.
+
+**Verification** (source: `b950494` + the files above, macOS, Python 3.13.1):
+
+| Gate | Result |
+|---|---|
+| Full suite, isolated (temp HOME/MAYA_AUDIT_HOME/TMPDIR/cache, no .env, no provider variables, `-p no:cacheprovider`) | `2615 passed, 4 skipped, 1 warning in 722.43s (0:12:02)` |
+| Related files (M1, wording, Turkish, rule ids/actions, web app, RND, STR) | `282 passed` |
+| CLI once against a loopback fake site, `--json` | exit 0; JSON parses (schema 1.20); STR-2 lists the cut-off homepage as not assessed |
+| `python3.11 -m compileall` | OK |
+| Skill tests `.agents/skills/maya-audit-pro/tests` | `27 passed` |
+| ruff `E9,F821,F841` | NOT RUN (not installed) |
+| pip-audit | NOT RUN (not installed) |
+| Linux / Windows | NOT RUN |
+
+Skips: two wheel tests (no setuptools), live-run examples, and `test_no_unfilled_placeholders.py:180` "Node is not
+installed" — an artifact of the isolated PATH (Node is under nvm; the test ran and passed in the non-isolated runs).
+VERDICT (baseline scope): PASS.
+
+**Still open:** on a page cut off at the size limit, "The homepage has N visible section heading(s)" and "long page(s)
+have no subheadings" can still fire on the cut body (same limitation, not reviewed); `maya-report-checker` not run on how
+IDX-1's part reads beside the report's single "not read" figure.

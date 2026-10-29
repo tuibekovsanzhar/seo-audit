@@ -499,8 +499,6 @@ def str1_titles(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
 HIDDEN_H1_NOTE = ("Hidden by its own markup or an element around it (inline display:none or visibility:hidden, the hidden "
                   "attribute, aria-hidden). A heading hidden by a stylesheet class is seen only on rendered pages.")
 SAME_AS_TITLE_NOTE = "The hidden <h1> repeats the page's <title> word for word."
-JS_ONLY_H1_NOTE = ("Seen on the rendered page only: the raw HTML has no <h1> text. Google renders JavaScript; a reader "
-                   "that does not (many AI crawlers) gets no main heading.")
 
 def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: set[str], gap: set[str]) -> CheckResult:
     title = "Heading structure for passage extraction"
@@ -508,13 +506,14 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
     if not checked:
         return CheckResult("STR-2", title, "not_assessed", "No indexable pages with content in raw HTML.",
                            evidence={"excluded_as_rnd1_root_cause": sorted(gap)})
-    no_h1, long_flat, multi, hidden_h1, js_only = [], [], [], [], []
-    # What each source showed, kept apart (INV-03): the raw HTML Maya fetched, and the rendered page when there is one
-    # (None: not rendered, so unknown). DECISIONS 281.
+    no_h1, long_flat, multi, hidden_h1, cut_off = [], [], [], [], []
+    # What each source showed, kept apart (INV-03): the raw HTML Maya fetched, and the visible <h1> texts of the rendered
+    # page ([] when it was rendered and showed none; None when it was not rendered, so unknown). DECISIONS 281, 282.
     h1_sources: dict[str, dict] = {}
     subheadings = question = 0
     rendered = getattr(result.render, "pages", None) or {} if getattr(result, "render", None) is not None else {}
     computed = 0
+    from ..evidence_accuracy import heading_state
     for p in checked:
         a = p.analysis
         levels = [h["level"] for h in a["headings"] if h["text"].strip()]
@@ -530,12 +529,16 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
             shown = [v["text"] for v in seen if v.get("visible")]
             h1s = h1s or [v["text"] for v in seen]
             hidden_by = "the rendered page's computed style (display, visibility or opacity of it or an element around it)"
+        looked = entry.get("ok") and isinstance(entry.get("h1_visibility"), list)
         h1_sources[p.url] = {"url": p.url, "raw_h1": raw_h1s[:3],
-                             "rendered_h1": [v["text"] for v in seen if v.get("visible")][:3] if seen else None}
-        if seen and shown and not raw_h1s:
-            # The browser shows an <h1> the raw HTML does not have: a reader that does not run JavaScript sees none.
-            js_only.append({"url": p.url, "rendered_h1": shown[:3]})
-        if h1s and not shown:
+                             "rendered_h1": [v["text"] for v in seen if v.get("visible")][:3] if looked else None}
+        # An <h1> only the rendered page has is RND-2's finding ("headings ... appear only after JavaScript"); here the
+        # page has an <h1> (DECISIONS 282).
+        if not h1s and getattr(p, "body_truncated", False) and heading_state(a)["state"] != "empty":
+            # The HTML stopped at the fetch-size limit before any <h1> was seen (the rendered page is built from the same
+            # cut body): whether the page has one is unknown, not "no <h1>" (DECISIONS 282).
+            cut_off.append(p.url)
+        elif h1s and not shown:
             # Every <h1> the page has is hidden (H15): said as that, not as "no <h1>" (root cause once).
             title_text = a.get("title") or ""
             hidden_h1.append({"url": p.url, "h1": h1s[:3], "title": title_text or None,
@@ -627,13 +630,6 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
             Confidence.VERIFIED, HYPOTHESIS, PASSAGE_ENGINES, urls, {"pages": long_flat[:40]},
             "sections with <h2>/<h3> headings", "Split the page into sections with descriptive <h2>/<h3> headings.",
             key_urls, [CAPPED, "Word count is of the <main>/<article> text when present, else all visible text."]))
-    if js_only:
-        urls = [r["url"] for r in js_only]
-        findings.append(_finding(
-            "STR-2", f"{len(urls)} page(s) show an <h1> only after JavaScript runs", Severity.S4, Confidence.VERIFIED,
-            HYPOTHESIS, PASSAGE_ENGINES, urls, {"pages": js_only[:40]}, "an <h1> in the HTML the server sends",
-            "Put the <h1> in the HTML the server sends, so readers that do not run JavaScript see it.", key_urls,
-            [CAPPED, JS_ONLY_H1_NOTE]))
     if multi:
         urls = [r["url"] for r in multi]
         findings.append(_finding("STR-2", f"{len(urls)} page(s) have more than one <h1>", Severity.INFO,
@@ -676,9 +672,11 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
         observations.append({"metric": QUESTIONS_NOT_HEADINGS, "pages": len(unmarked), "examples": unmarked[:5],
                              "note": "Mark each question as a heading (<h3>) or an accordion's <summary>, so a reader "
                                      "moving by headings and a machine reading the outline find it."})
-    summary = f"{len(findings)} finding(s)." if findings else f"All {len(checked)} page(s) have one <h1> and long pages are sectioned."
+    # A page cut off before any <h1> is not counted as checked here; coverage lists it (DECISIONS 282).
+    summary = f"{len(findings)} finding(s)." if findings else f"All {len(checked) - len(cut_off)} page(s) have one <h1> and long pages are sectioned."
     return CheckResult("STR-2", title, _status(findings), summary, findings,
                        {"pages_checked": len(checked), "heading_assessments": heading_assessments, "excluded_as_rnd1_root_cause": sorted(gap),
+                        "h1_cut_off": cut_off[:40], "h1_cut_off_count": len(cut_off),
                         "not_measured": "whether the <h1> matches the page topic",
                         "hidden_h1_assessed_by": {"rendered_computed_style": computed, "markup_only": len(checked) - computed,
                                                   "markup_only_limit": "an <h1> hidden by a stylesheet class is not seen "

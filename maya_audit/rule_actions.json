@@ -1127,20 +1127,6 @@
     ]
    }
   },
-  "str2.js_only_h1": {
-   "en": "Put the main heading in the HTML the server sends",
-   "tr": "Ana başlığı sunucunun gönderdiği HTML'e koyun",
-   "steps": {
-    "tr": [
-     "<h1>'i yalnızca JavaScript ile değil, sunucuda oluşturun",
-     "Ham HTML'de <h1> metninin olduğunu kontrol edin"
-    ],
-    "en": [
-     "Render the <h1> on the server, not only with JavaScript",
-     "Check that the raw HTML holds the <h1> text"
-    ]
-   }
-  },
   "judgment.heading.home": {
    "en": "Fill the homepage's empty main heading",
    "tr": "Ana sayfanın boş ana başlığını doldurun",

@@ -184,7 +184,6 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"have no <h1>", "content", "S", "The main heading tells engines what the page is about. Without it they rely on weaker hints."),
         (r"have an empty <h1>", "content", "S", "An empty heading does not supply a meaningful page topic."),
         (r"The homepage has no <h1>", "content", "S", "The homepage's main heading is where a visitor and an engine read what the whole site is. Without it they take it from the title and the menu."),
-        (r"only after JavaScript runs", "developer", "S", "A reader that does not run JavaScript, as many AI crawlers do not, finds no main heading in the page it fetched."),
         (r"visible section heading", "content", "M", "Section headings are the homepage's outline: they tell a reader moving by headings and a machine reading the page what each part is about."),
         (r"no subheadings", "content", "M", "Subheadings divide a long page into passages an engine can quote one at a time."),
         (r"more than one <h1>", "content", "S", "Several main headings make it less clear which one names the page's topic. This is a small matter."),

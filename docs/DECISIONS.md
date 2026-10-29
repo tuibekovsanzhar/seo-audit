@@ -2530,14 +2530,29 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      build their own report (stage 05); `render_markdown` still runs its own `qualify_checks` pass.
 
 281. **The main heading: one finding per state, raw HTML and rendered page apart (owner's request, M1 slice B, agent
-     implementation, 2026-10-29).** (1) STR-2 keeps separate findings for each state: homepage missing (`str2.home_no_h1`,
-     Medium), homepage empty ("The homepage has no meaningful <h1> text", rule `judgment.heading.home`, Medium; now
-     built as its own finding with its own expected sentence and fix instead of retitling the "no <h1>" one), homepage hidden (High), and on other
-     pages missing, empty, hidden-only (Low) and more than one (Info). (2) Every heading finding records
-     `evidence.h1_sources`: per page the raw HTML's <h1> texts and the rendered page's visible ones, or `null` when the
-     page was not rendered (unknown, never "none"). (3) New `str2.js_only_h1` (Low, capped): the rendered page shows an
-     <h1> the raw HTML does not have. Before, such a page was silently counted as having one; a reader that does not run
-     JavaScript sees none. Only said when the page was rendered. (4) Action entries added for `idx6.broken`,
-     `str2.home_no_h1`, `judgment.heading.home`, `str2.hidden_h1`, `str2.many_h1`, `str2.js_only_h1`; explanation notes,
-     title frames and Turkish wording for the two new titles. Not changed: severities of the existing states.
-     Tests: `tests/test_m1_h1.py`.
+     implementation, 2026-10-29; corrected by 282 the same day).** (1) STR-2 keeps separate findings for each state:
+     homepage missing (`str2.home_no_h1`, Medium), homepage empty ("The homepage has no meaningful <h1> text", rule
+     `judgment.heading.home`, Medium; now built as its own finding with its own expected sentence and fix instead of
+     retitling the "no <h1>" one), homepage hidden (High), and on other pages missing, empty, hidden-only (Low) and more
+     than one (Info). (2) Every heading finding records `evidence.h1_sources`: per page the raw HTML's <h1> texts and the
+     rendered page's visible ones: `[]` when the page was rendered and showed none, `null` only when it was not rendered
+     (unknown, never "none"). (3) Withdrawn (282): a separate `str2.js_only_h1` finding was added here on the claim that a
+     page whose <h1> appears only after JavaScript "was silently counted as having one". That claim was wrong: RND-2
+     already reports it ("headings or prices that appear only after JavaScript", with the heading text). STR-2 counts such
+     a page as having an <h1> and leaves the JavaScript dependence to RND-2. (4) Action entries added for `idx6.broken`,
+     `str2.home_no_h1`, `judgment.heading.home`, `str2.hidden_h1`, `str2.many_h1`. Not changed: severities of the
+     existing states. Tests: `tests/test_m1_h1.py`.
+
+282. **Fixes from the judgment review of 280 (5) and 281 (owner's request after a `maya-judgment-validator` review,
+     agent implementation, 2026-10-29).** (1) IDX-1's part is now "addresses found but not fetched by the crawl": the
+     sitemap check (IDX-5) can request a sitemap-listed address the page cap left unread, so "never requested" was false
+     there; IDX-1 still has no answer for those addresses and stays partial. (2) `str2.js_only_h1` removed (frame, rule id,
+     action, explanation note, Turkish wording): it repeated RND-2's finding for the same page and heading (281 (3)).
+     (3) `h1_sources.rendered_h1` is `[]` for a rendered page without a visible <h1>; it was `null`, the value for "not
+     rendered". (4) A page whose HTML was cut off at the fetch-size limit (`body_truncated`) with no <h1> before the cut
+     (not even an empty one) is no longer "no <h1>" or "The homepage has no <h1>" (confidence verified): the rendered page
+     is built from the same cut body, so the evidence cannot tell. STR-2 lists it in `evidence.h1_cut_off` and coverage
+     part "pages whose HTML was cut off before an <h1>", so the check is partial; its pass summary counts only the pages
+     assessed. Not changed: severities; the long-page and section-heading checks on a cut-off page (same limitation,
+     not reviewed). No schema bump: evidence keys only, one finding title removed. Review records and reproducer:
+     `maya-judgment-validator` session, 2026-10-29. Tests: `tests/test_m1_h1.py`, `tests/test_m1_broken_links.py`.

@@ -478,8 +478,6 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("str2.hidden_h1", "{n#} page(s) have only a hidden <h1>", "{n:page has|pages have} only a hidden <h1>"),
         ("str2.no_h1", "{n#} page(s) have no <h1>", "{n:page has|pages have} no <h1>"),
         ("str2.empty_h1", "{n#} page(s) have an empty <h1>", "{n:page has|pages have} an empty <h1>"),
-        ("str2.js_only_h1", "{n#} page(s) show an <h1> only after JavaScript runs",
-         "{n:page shows|pages show} an <h1> only after JavaScript runs"),
         ("str2.no_subheadings", "{n#} long page(s) (>{words#} words) have no subheadings", "{n:long page|long pages} (>{words} words) [n:has|have] no subheadings"),
         ("str2.many_h1", "{n#} page(s) have more than one <h1>", "{n:page has|pages have} more than one <h1>"),
     ),

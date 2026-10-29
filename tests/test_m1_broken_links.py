@@ -179,3 +179,21 @@ def test_a_finding_a_page_reader_replaced_gets_page_types_and_a_retest_state(tmp
     assert "after_provider" in outcome.result.verification
     report = final.seal(outcome, firecrawl=info).report
     assert [v for v in release_gate.check_report(report) if v["rule"] in ("RG-5", "RG-7")] == []
+
+
+def test_unread_addresses_part_does_not_claim_they_were_never_requested():
+    """The sitemap lists the addresses the page cap left unread, and the sitemap check requests them. IDX-1 still has
+    no answer for them (partial), but the part must not say they were never requested (judgment review I2)."""
+    site_routes = routes()
+    site_routes["/robots.txt"] = Response(body="User-agent: *\nAllow: /\nSitemap: /sitemap.xml\n", content_type="text/plain")
+    with FakeServer(Site(site_routes)) as fake:
+        site_routes["/sitemap.xml"] = Response(body="<?xml version='1.0'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>" + "".join(
+            f"<url><loc>{fake.base_url}{p}</loc></url>" for p in ("/", "/urunler", "/iletisim", "/eski-urun", "/kampanya")) + "</urlset>",
+            content_type="application/xml")
+        outcome = run_audit(fake.base_url + "/", replace(CrawlConfig(), **{**QUIET, "max_pages": 3}))
+        asked = {r.path for r in fake.requests}
+    assert {"/eski-urun", "/kampanya"} <= asked  # another step did request them
+    [idx1] = [c for c in final.seal(outcome).report["checks"] if c["check_id"] == "IDX-1"]
+    [part] = [p for p in idx1["coverage"]["not_assessed"] if p["part"] == "addresses found but not fetched by the crawl"]
+    assert part["count"] == 2 and "never requested" not in json.dumps(idx1["coverage"])
+    assert idx1["status"] == "partial"

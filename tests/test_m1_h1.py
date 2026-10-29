@@ -1,4 +1,5 @@
-"""M1 slice B: the main heading (<h1>), each state its own finding, raw HTML and rendered page kept apart (DECISIONS 281).
+"""M1 slice B: the main heading (<h1>), each state its own finding, raw HTML and rendered page kept apart (DECISIONS 281,
+corrected by 282 after the judgment review).
 
 Hand-written pages; the expected rule for each is written from the page itself:
 
@@ -8,7 +9,8 @@ Hand-written pages; the expected rule for each is written from the page itself:
   /gizli       <h1 hidden>                     -> str2.hidden_h1
   /iki         two <h1>                        -> str2.many_h1
   /tamam       one visible <h1>                -> no heading finding (counter-example)
-  JS           raw HTML without <h1>, a script adds one -> str2.js_only_h1, only when the page was rendered
+  JS           raw HTML without <h1>, a script adds one -> no STR-2 heading finding; RND-2 names the heading
+  CUT          the <h1> comes after the fetch-size limit -> STR-2 not assessed for that page, never "no <h1>"
 
 Offline: loopback fake server; the rendering case uses the local headless browser and skips without one.
 """
@@ -30,7 +32,7 @@ from test_review_fixes import TR, page
 ACTIONS = json.loads((Path(__file__).resolve().parents[1] / "maya_audit" / "rule_actions.json").read_text(encoding="utf-8"))["actions"]
 PAGES = ["/yok", "/bos", "/gizli", "/iki", "/tamam"]
 H1_RULES = {"str2.home_no_h1", "judgment.heading.home", "judgment.heading.pages", "str2.home_hidden_h1", "str2.no_h1", "str2.empty_h1",
-            "str2.hidden_h1", "str2.many_h1", "str2.js_only_h1"}
+            "str2.hidden_h1", "str2.many_h1"}
 
 
 def site(home_h1: str) -> dict:
@@ -80,7 +82,6 @@ def test_raw_and_rendered_are_kept_apart_when_nothing_was_rendered():
     rows = {r["url"]: r for f in found.values() for r in f["evidence"]["h1_sources"]}
     assert rows[base + "/yok"] == {"url": base + "/yok", "raw_h1": [], "rendered_h1": None}  # None: not rendered, unknown
     assert rows[base + "/iki"]["raw_h1"] == ["Birinci", "İkinci"]
-    assert "str2.js_only_h1" not in found  # never claimed without a rendered page
 
 
 def test_idx6_broken_has_an_action():
@@ -101,21 +102,72 @@ def browser_or_skip():
         pytest.skip(f"needs the local headless browser: {reason}")
 
 
-def test_an_h1_only_a_script_adds_is_its_own_finding_with_both_sources():
+def test_an_h1_only_a_script_adds_is_left_to_rnd2():
+    """RND-2 already reports a heading that appears only after JavaScript; STR-2 does not report it a second time."""
     browser_or_skip()
     routes = site("")
     routes["/"] = page(f"<p>{TR}</p>" + " ".join(f'<a href="{p}">{p}</a>' for p in PAGES) + SCRIPTED, nav="")
-    found, base = h1_findings(routes, **RENDER)
-    js = found["str2.js_only_h1"]
-    assert js["scope"]["urls"] == [base + "/"] and js["severity"] == "S4"
-    [row] = [r for r in js["evidence"]["h1_sources"] if r["url"] == base + "/"]
-    assert row["raw_h1"] == [] and row["rendered_h1"] == ["Betikle gelen başlık"]
-    assert "str2.home_no_h1" not in found  # the browser saw one: "no <h1>" would be wrong
+    with FakeServer(Site(routes)) as fake:
+        outcome = run_audit(fake.base_url + "/", replace(CrawlConfig(), **{**QUIET, "max_pages": 10, **RENDER}))
+    report, base = final.seal(outcome).report, fake.base_url
+    heading = [f for c in report["checks"] if c["check_id"] == "STR-2" for f in c["findings"]
+               if "<h1>" in f["title"] and base + "/" in f["scope"]["urls"]]
+    assert heading == []  # the browser saw an <h1>: "no <h1>" would be wrong, and a second finding would repeat RND-2
+    [candidate] = [f for c in report["checks"] for f in c["findings"] if f.get("rule_id") == "rnd2.candidates"]
+    [row] = [r for r in candidate["evidence"]["pages"] if r["url"] == base + "/"]
+    assert row["headings_only_after_render"] == ["Betikle gelen başlık"]
+    assert "str2.js_only_h1" not in json.dumps(report)
 
 
-def test_a_page_whose_raw_html_has_the_h1_is_not_js_only_when_rendered():
+def test_a_rendered_page_without_an_h1_records_none_not_unknown():
+    browser_or_skip()
+    found, base = h1_findings(site(""), **RENDER)
+    [row] = [r for r in found["str2.home_no_h1"]["evidence"]["h1_sources"] if r["url"] == base + "/"]
+    assert row == {"url": base + "/", "raw_h1": [], "rendered_h1": []}  # rendered and none seen: [], not null
+
+
+def test_a_page_whose_raw_html_has_the_h1_is_not_reported_when_rendered():
     browser_or_skip()
     found, base = h1_findings(site("<h1>Ana sayfa</h1>"), **RENDER)
-    assert "str2.js_only_h1" not in found
     rows = {r["url"]: r for f in found.values() for r in f["evidence"]["h1_sources"]}
     assert base + "/" not in rows  # a healthy homepage is in no heading finding
+
+
+# ------------------------------------------------------------------ HTML cut off at the fetch-size limit
+
+FILLER = "<p>" + "Uzun bir giriş metni, sayfanın başlığından önce gelen çok fazla kelime. " * 400 + "</p>"
+LIMIT = {"max_body_bytes": 20_000}
+
+
+def str2_of(routes: dict, **cfg) -> tuple[dict, str]:
+    with FakeServer(Site(routes)) as fake:
+        outcome = run_audit(fake.base_url + "/", replace(CrawlConfig(), **{**QUIET, "max_pages": 10, **cfg}))
+    [check] = [c for c in final.seal(outcome).report["checks"] if c["check_id"] == "STR-2"]
+    return check, fake.base_url
+
+
+def test_an_h1_after_the_size_limit_is_not_assessed_not_missing():
+    routes = site("")
+    routes["/"] = page(FILLER + "<h1>Geç gelen başlık</h1>" + " ".join(f'<a href="{p}">{p}</a>' for p in PAGES), nav="")
+    check, base = str2_of(routes, **LIMIT)
+    titles = [f["title"] for f in check["findings"]]
+    assert "The homepage has no <h1>" not in titles
+    assert all(base + "/" not in f["scope"]["urls"] for f in check["findings"] if "<h1>" in f["title"])
+    assert check["evidence"]["h1_cut_off"] == [base + "/"]
+    [cut] = [p for p in check["coverage"]["not_assessed"] if p["part"] == "pages whose HTML was cut off before an <h1>"]
+    assert cut["count"] == 1 and "whether it has one is unknown" in cut["reason"]
+    assert check["status"] != "pass"
+
+
+def test_an_h1_before_the_size_limit_is_still_seen():
+    routes = site("<h1>Ana sayfa</h1>")
+    routes["/"] = page("<h1>Ana sayfa</h1>" + FILLER + " ".join(f'<a href="{p}">{p}</a>' for p in PAGES), nav="")
+    check, base = str2_of(routes, **LIMIT)
+    assert all(base + "/" not in f["scope"]["urls"] for f in check["findings"] if "<h1>" in f["title"])
+    assert check["evidence"]["h1_cut_off"] == []
+
+
+def test_a_short_page_without_an_h1_is_still_reported():
+    check, base = str2_of(site("<h1>Ana sayfa</h1>"), **LIMIT)
+    [missing] = [f for f in check["findings"] if f.get("rule_id") == "str2.no_h1"]
+    assert missing["scope"]["urls"] == [base + "/yok"] and check["evidence"]["h1_cut_off"] == []
