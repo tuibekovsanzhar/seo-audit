@@ -560,9 +560,10 @@ class OneCauseOneCard(unittest.TestCase):
         self.assertEqual(card['finding_ids'], ['TSEO-1-a', 'TSEO-1-b'])
         self.assertEqual((card['severity'], card['owner'], card['verification_state']), ('S2', 'Geliştirici', 'not_retested'))
         self.assertEqual(len(card['sub']), 2)
-        self.assertTrue(card['sub'][0].startswith('Yüksek · 2 sayfa · ') and card['sub'][1].startswith('Orta · 1 sayfa · '))
+        self.assertTrue(card['sub'][0].startswith('Yüksek · 2 sayfada <head>') and card['sub'][1].startswith('Orta · 1 sayfada'),
+                        card['sub'])  # the count once: the title already starts with it
         self.assertEqual(card['all_urls'], [S + '/a', S + '/b', S + '/c'])
-        self.assertEqual([f['id'] for f in d['findings']], ['TSEO-1-a'])  # one row in the findings table too
+        self.assertEqual([(f['id'], f['scope']) for f in d['findings']], [('TSEO-1-a', '3 sayfa')])  # one row, all pages
         self.assertIn('class="todo-sub"', render.todo_pages(d, render.LABELS['tr'])[0])
         for slot in d['_slots']:  # Turkish text in every model field, so only the merge is under test
             parts = re.findall(r'[^.\[\]]+', slot['path'])
@@ -649,6 +650,9 @@ class SitemapReasons(unittest.TestCase):
                                        '1 URL · başka bir adrese yönleniyor', '1 URL · bulunamadı (istemci hatası)',
                                        '1 URL · noindex taşıyor'])
         self.assertEqual(sum(int(line.split()[0]) for line in card['sub']), 8)  # adds up to the addresses under review
+        # Room for the lines: two links (the rest in "+N" and the address list), and the steps box shrinks to its lines.
+        self.assertEqual((len(card['links']), card['more']), (2, 6))
+        self.assertIn('class="card todo sub"', render.todo_pages(d, render.LABELS['tr'])[0])
         self.assertNotIn('+', render.todo_pages(d, render.LABELS['tr'])[0].split('todo-sub')[1].split('</div></div>')[0])
 
     def test_the_findings_table_row_names_the_reasons(self):

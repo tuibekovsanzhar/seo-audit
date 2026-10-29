@@ -820,6 +820,16 @@ class Builder:
             parts.append(part)
         return self.L["sitemap_row"].format(parts=", ".join(parts))
 
+    def group_scope(self, f):
+        """A merged card's row in the findings table counts the addresses of all its findings, not only the lead's."""
+        members = next((g for g in self.groups() if g[0] is f), [f])
+        if len(members) < 2:
+            return self.scope_text(f)
+        urls = {u for m in members for u in (m.get("scope") or {}).get("urls") or [] if isinstance(u, str)}
+        unit = self.L["scope_units"]["url" if f.get("check_id") in ("IDX-1", "IDX-6", "IDX-3", "IDX-5") else "page"]
+        self.fact(len(urls))
+        return f"{fmt_int(len(urls), self.lang)} {unit[0] if len(urls) == 1 else unit[1]}"
+
     def merged_lines(self, members):
         """One line per finding of a merged card: severity, scope and the finding's own title (DECISIONS 284 (1))."""
         if len(members) < 2:
@@ -829,8 +839,10 @@ class Builder:
             text, _ = self.w.title(m.get("check_id"), m.get("title") or "")
             self.fact(m.get("title"))
             # The part before " — " says what was found; the rest lists examples, often in the engine's own words.
-            lines.append(f"{self.L['severity'][m['severity']]} · {self.scope_text(m)} · "
-                         f"{(text or m.get('title') or '').split(' — ')[0].rstrip(' ;,')}")
+            # A title that starts with its count says the scope already ("2 sayfada …"): not twice.
+            said = (text or m.get("title") or "").split(" — ")[0].rstrip(" ;,")
+            scope = "" if re.match(r"\d", said) else f"{self.scope_text(m)} · "
+            lines.append(f"{self.L['severity'][m['severity']]} · {scope}{said}")
         return lines
 
     def owner_effort(self, f):
@@ -1011,7 +1023,7 @@ class Builder:
         leads = [g[0] for g in self.groups()]
         top = leads[:5]
         findings = [{"id": f["id"], "title": self.title_for(f, f"findings[{i}].title", 70),
-                     "scope": self.scope_text(f), "severity": f["severity"], "severity_label": L["severity"][f["severity"]],
+                     "scope": self.group_scope(f), "severity": f["severity"], "severity_label": L["severity"][f["severity"]],
                      "status": self.status_text(f)} for i, f in enumerate(top)]
         for f in self.problems:
             self.fact(f.get("how_to_fix"), f.get("title"))
@@ -1106,7 +1118,9 @@ class Builder:
                         if isinstance(u, str):
                             url_finding.setdefault(u, m["id"])
                 urls = list(url_finding)
-                shown = urls[:4]  # kartta 4 link; tam liste render.py'nin yazdığı adres listesi CSV'sinde
+                sub = self.merged_lines(members) or self.reason_lines(f)
+                # kartta 4 link (satırlı kartta 2: satırlar yer kaplar); tam liste render.py'nin yazdığı adres listesi CSV'sinde
+                shown = urls[:2 if sub else 4]
                 # listelenip kartta gösterilmeyenler + rapordaki listeye hiç girmeyen sayfalar (problem_summary.not_listed)
                 unlisted = max(0 if m["id"] in self.affected else not_listed.get(m["id"], 0) for m in members)
                 more = max(0, len(urls) - len(shown)) + unlisted
@@ -1137,7 +1151,7 @@ class Builder:
                     "verification_state": state,
                     "when": L["when"][when_key], "owner": L["owners"][owner], "effort": L["efforts"][effort],
                     "status": self.status_text(f, state),
-                    "sub": self.merged_lines(members) or self.reason_lines(f),
+                    "sub": sub,
                     "rule_id": rule,
                     "fact": fact_line(self._w("facts")(rule, f.get("evidence")), L),
                     "known_paths": sorted({p for m in members for p in known_paths(m.get("title"), m.get("scope"), m.get("evidence"),

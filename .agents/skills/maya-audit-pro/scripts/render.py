@@ -215,6 +215,7 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 .todo-sub {font-size:8.1pt;color:var(--ink);margin:2pt 0 0 41pt;line-height:1.25;}
 .todo-sub div {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .todo-sub div::before {content:'• ';color:var(--faint);}
+.todo.sub ol { height: auto; max-height: 60pt; }
 .todo .sec { margin-top: 6pt; padding-left: 41pt; }
 .todo .sec .eyebrow { font-size: 7.6pt; }
 .todo ol { margin: 5pt 0 0 0; padding-left: 15pt; font-size: 9.2pt; color: var(--ink); line-height: 1.32; height: 60pt; overflow: hidden; }
@@ -470,7 +471,7 @@ def todo_pages(d, L):
             else:
                 links = f'<div class="sw">{e(L["todo_sitewide"])}</div>'
             cards.append(
-                f'<div class="card todo"><div class="th"><span class="box"></span><span class="tn">{t["n"]:02d}</span>'
+                f'<div class="card todo{" sub" if t.get("sub") else ""}"><div class="th"><span class="box"></span><span class="tn">{t["n"]:02d}</span>'
                 f'<b data-slot="todos[{i}].title">{e(t["title"])}</b></div>'
                 f'<div class="tm"><span class="sev {e(t["severity"])}">{e(t["severity_label"])}</span> {e(t["when"])} · {e(t["owner"])} · '
                 f'{e(L["col_effort"].title() if d["lang"] == "en" else "Efor")}: {e(t["effort"])} · <span class="mono">{e(t["id"])}</span></div>'
