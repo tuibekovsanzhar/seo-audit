@@ -587,6 +587,11 @@ class OneCauseOneCard(unittest.TestCase):
             finding('STR-5-b', 'STR-5', 'The brand is named 3 different ways', 'S4', [S + '/', S + '/k'], 'str5.names',
                     dedup_key='str5.site_name')))
         self.assertEqual([t['finding_ids'] for t in d['todos'] if t['severity'] != 'Info'], [['STR-5-a', 'STR-5-b']])
+        [card] = [t for t in d['todos'] if t['severity'] != 'Info']
+        steps = card['steps'].split('\n')  # each finding's own catalogue steps, while they fit
+        self.assertIn("og:site_name'e yalnız site adını yazın", steps)
+        self.assertIn('Sitede kullanılacak marka adını seçin', steps)
+        self.assertLessEqual(len(steps), 4)
 
     def empty(self, single_sections):
         rep = finding('IDX-1-r', 'IDX-1', '2 URL(s) returned repeated empty GET responses in the tested client', 'S2',

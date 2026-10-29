@@ -1136,6 +1136,18 @@ class Builder:
                 step_rules = getattr(self.w, "step_rules", None)
                 pre_steps, conditional = step_rules(rule, members) if step_rules else (self._w("steps")(rule), [])
                 pre_steps = pre_steps or (steps_from(fx) if fx and (fx_ok or self.lang == "en") else None)
+                # DECISIONS 284 (1): a merged card also takes the other findings' own catalogue steps, while they fit.
+                for m in members[1:]:
+                    other = self.rule_of(m)
+                    if not pre_steps or other == rule:
+                        continue
+                    more_steps, more_rules = step_rules(other, [m]) if step_rules else (self._w("steps")(other), [])
+                    lines = pre_steps.split("\n")
+                    for line in (more_steps or "").split("\n"):
+                        if line.strip() and line not in lines and len(lines) < STEP_LINES:
+                            lines.append(line)
+                    pre_steps = "\n".join(lines)
+                    conditional = conditional + [c for c in more_rules if c.get("text") in lines]
                 pre_verify = first_upper(ex, self.lang).rstrip(".") + "." if ex and (ex_ok or self.lang == "en") else None
                 # Maya Audit P2: bozuk bloğun düzelince de eksik kalacak önerilen alanları (ör. logo, sameAs)
                 lacking = (f.get("evidence") or {}).get("recommended_still_lacking") or []
