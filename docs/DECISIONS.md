@@ -2565,3 +2565,6 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      `final.broken_link_cards` and prints a "links to edit" table (page to edit, link text, links to, ends at with its
      status, replacement "unknown"), two rows on the card and every row in the address CSV; the gate's RG-3 also checks
      the table's pages to edit. Heading cards come from the separate H1 findings (281/282) through their rule ids.
+     (2) The client PDF's "pages with problems" headline counts only pages whose worst page-specific problem is Medium
+     or higher (`problem_summary.by_page[].worst_severity` S1–S3); the label and sub-line say so ("Orta ve üstü sorunlu
+     sayfa", "düşükler sayılmaz"). Carpex showed 145/146 because pages with only Low problems were counted.

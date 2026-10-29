@@ -13,7 +13,8 @@ def report(urls, whole=0, by_page=()):
          'expected': 'Meaningful heading', 'evidence': {}, 'launch_gated': ['LG-42']}
     pages = [{'url': u, 'status': 200} for u in urls]
     return {'checks': [{'findings': [f]}], 'findings_in_priority_order': [f['id']],
-            'problem_summary': {'problems': 1, 'by_severity': {'S4': 1}, 'by_page': [{'url': u} for u in by_page],
+            'problem_summary': {'problems': 1, 'by_severity': {'S4': 1},
+                                'by_page': [u if isinstance(u, dict) else {'url': u, 'worst_severity': 'S3'} for u in by_page],
                                 'whole_site': {'problems': whole}},
             'crawl': {'origin': 'https://sample.example', 'started_at': '2026-10-23T00:00:00+00:00', 'pages': pages},
             'audit_status': {'content_coverage': {'pages_read': len(urls), 'level': 'partial'}}}
@@ -78,7 +79,17 @@ class ClientText(unittest.TestCase):
         kpi = next(k for k in build_en(report(urls, whole=3, by_page=urls[:2]))['kpis']
                    if k['label'] == render.LABELS['en']['kpi_problem_pages'])
         self.assertEqual((kpi['value'], kpi['of']), ('2', '5'))
-        self.assertEqual(kpi['sub'], 'Plus 3 site-wide issues (shared header/footer, site files)')
+        self.assertEqual(kpi['sub'], 'Page-specific, Low not counted · plus 3 site-wide issues')
+
+    def test_page_kpi_counts_only_pages_with_a_medium_or_higher_problem(self):
+        """DECISIONS 283 (2): Carpex showed 145/146 because Low-only pages were counted."""
+        urls = [f'https://sample.example/p{i}' for i in range(4)]
+        rows = [{'url': urls[0], 'worst_severity': 'S2'}, {'url': urls[1], 'worst_severity': 'S3'},
+                {'url': urls[2], 'worst_severity': 'S4'}, {'url': urls[3], 'finding_ids': ['STR-2-generic']}]
+        kpi = next(k for k in build_en(report(urls, by_page=rows))['kpis']
+                   if k['label'] == render.LABELS['en']['kpi_problem_pages'])
+        self.assertEqual((kpi['value'], kpi['of']), ('2', '4'))  # the S4 page and the S4-only saved row are not counted
+        self.assertEqual(kpi['sub'], 'Page-specific; Low issues not counted')
 
 
 if __name__ == '__main__':

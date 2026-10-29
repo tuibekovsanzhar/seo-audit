@@ -24,6 +24,7 @@ from urllib.parse import urlsplit
 HERE = Path(__file__).resolve().parent
 REFS = HERE.parent / "references"
 SEVERITIES = ("S1", "S2", "S3", "S4")
+MEDIUM_UP = ("S1", "S2", "S3")
 MARK = "⟪YAZ: {}⟫"
 # Evidence-sample rows that fit the box above its note; a fourth row printed over the note (Enpara render).
 EV_ROWS = 3
@@ -804,7 +805,10 @@ class Builder:
         else:
             # yalnız gerçekten okunan sayfalar: yoklanıp okunmayan adresler paydayı aşmasın
             read = self.read_urls()
-            pages_with = sum(1 for row in ps.get("by_page") or [] if not read or row.get("url") in read)
+            # DECISIONS 283 (2): the headline counts pages with a Medium or higher page-specific problem; a page whose
+            # only problems are Low is not a "page with problems" there (Carpex showed 145/146).
+            pages_with = sum(1 for row in ps.get("by_page") or []
+                             if (not read or row.get("url") in read) and self.worst(row) in MEDIUM_UP)
             # by_page holds page-specific problems only; shared header/footer and site-wide ones are counted once under
             # whole_site. Say so, or a card listing every page reads as a contradiction of this number.
             whole = int((ps.get("whole_site") or {}).get("problems") or 0)
@@ -1043,6 +1047,13 @@ class Builder:
         data["_facts"] = sorted(self.facts)
         data["_engine_wording"] = self.w.mod is not None
         return data
+
+    def worst(self, row):
+        """A by_page row's worst severity; from its findings when a saved row lacks it."""
+        if row.get("worst_severity"):
+            return row["worst_severity"]
+        found = [self.findings.get(i, {}).get("severity") for i in row.get("finding_ids") or []]
+        return next((s for s in SEVERITIES if s in found), None)
 
     def read_urls(self):
         """İçeriği okunan sayfaların adresleri (Maya'nın kendi taraması + Firecrawl)."""
