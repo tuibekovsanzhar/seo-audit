@@ -40,7 +40,7 @@ from ..urls import non_page_kind, normalize_url, origin_of, same_origin
 from . import settings
 from .client import FirecrawlClient, ZeroDataRetentionUnavailable
 from .reading import SITEMAP_MIN_CAP, ReadingQueue, discover_through_reader
-from .settings import Options
+from .settings import DEFAULT_PROXY, Options
 
 SOURCE = "Source: Firecrawl (Maya's crawler was blocked)"
 RENDER_SOURCE = "Source: Firecrawl rendered these pages (the local browser could not start)"
@@ -358,6 +358,17 @@ def note_the_challenge(checks: list[CheckResult], pages_read: int) -> None:
                              "crawlers' names from Maya's own network: a limited probe, not the vendors' real requests."]
         check.summary = (f"1 note: {blocker_phrase((check.evidence or {}).get('blocked_by') or [])} answered Maya's direct crawler; "
                          f"{pages_read} page(s) were read through Firecrawl. Genuine AI-crawler access was not measured.")
+
+
+HOMEPAGE_FALLBACK_WHY = ("Maya's crawler was rate-limited before it read any page, also after waiting the Retry-After "
+                         "once; the homepage alone was asked for through the reader")
+HOMEPAGE_FALLBACK_PURPOSE = "homepage only, after the site rate-limited Maya's crawler"
+
+
+def start_page_read(result: CrawlResult) -> bool:
+    """Whether Maya's crawler read any page at all (a readable answer for the start page or another page)."""
+    return any(getattr(page, "content_checks_eligible", False) and page.fetch_class == FetchClass.OK
+               for page in result.pages)
 
 
 def read_blocked_site(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, options: Options,
@@ -698,11 +709,37 @@ def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, 
         if result.stop_reason == StopReason.NETWORK:
             info["crawl_blocked"].update(direct_not_reached=True, why=result.stop_detail)
         not_now = clock.why_not() if clock is not None else None
-        if not_now is None and result.stop_reason == StopReason.RATE_LIMIT:
+        rate_limited = not_now is None and result.stop_reason == StopReason.RATE_LIMIT
+        if rate_limited:
             # The site told Maya's crawler to slow down. Asking for the same pages through a reader in the same run
             # would be more requests to a site that asked for fewer (DECISIONS 52).
             not_now = "the site rate-limited Maya's crawler, so no further page was asked for through a reader in this run"
-        if not_now and options.read_blocked and (blocked or options.read_always):
+        if (rate_limited and options.read_blocked and (blocked or options.read_always)
+                and not start_page_read(result)):
+            # DECISIONS 286: nothing at all was read, not even the start page after its one wait. The homepage alone,
+            # once, through the basic reader: no sitemap, no other page, never the bot-protection bypass.
+            one = replace(options, max_pages=1, sitemap_discovery=False, spread_by_section=False, proxy=DEFAULT_PROXY,
+                          owner_approved_bypass=False)
+            home = homepage_url(result)
+            info["homepage_fallback"] = {"why": HOMEPAGE_FALLBACK_WHY, "url": home, "proxy": one.proxy,
+                                         "owner_approved_bypass": False, "pages_asked": 1}
+            # The client carries its own proxy (the plan's): basic for this one request, whatever the plan chose.
+            had = getattr(client, "proxy", None)
+            if had is not None:
+                client.proxy = DEFAULT_PROXY
+            try:
+                checks = read_blocked_site(result, cfg, client, one, info, blocked=True, progress=progress)
+            finally:
+                if had is not None:
+                    client.proxy = had
+            info["homepage_fallback"]["read"] = bool(checks)
+            if checks:
+                replaced.update({check.check_id: check for check in checks})
+                info.update(used=True, purpose=HOMEPAGE_FALLBACK_PURPOSE, notice=AI_NOTICE)
+            else:
+                info.update(reason=f"Firecrawl read the homepage only, after the rate limit, and could not read it: {not_now}",
+                            stopped_because=not_now)
+        elif not_now and options.read_blocked and (blocked or options.read_always):
             info.update(reason=f"Firecrawl was not started: {not_now}", stopped_because=not_now, not_started=True)
         elif options.read_blocked and (blocked or options.read_always):
             checks = read_blocked_site(result, cfg, client, options, info, blocked=blocked, progress=progress, ranking_urls=ranking_urls)

@@ -271,6 +271,9 @@ class CrawlConfig:
     # A Retry-After up to this long is waited out once (429, or 503 with Retry-After); a longer one stops the crawl.
     # 30 s (was 5 s, A13): a 10-second Retry-After is a routine answer, not a reason to end the audit.
     max_retry_after_s: float = 30.0
+    # The start page alone (DECISIONS 286): a 429 there with a Retry-After up to this long is waited out once, because
+    # without it nothing at all is read (nihan.com.tr answered its first page request with 429 and Retry-After: 60).
+    start_max_retry_after_s: float = 120.0
     # Stop after this many consecutive rate-limited pages without Retry-After.
     rate_limit_stop_after: int = 3
     # Adaptive backoff. A rate-limited response widens the gap between *all* later requests by this

@@ -2650,3 +2650,15 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      gate are derived again; nothing else is re-run. `judgments.qualify_report` was not used: it re-runs STR-7 and
      RND-4 on Maya's own page copies, which mixes readers when Firecrawl read the site (Adile's WebP count moved
      497 → 503) and rewrites every scope. The tool writes a new folder, never the source, never inside `~/.maya-audit`.
+
+286. **A rate-limited start page is waited out once, then asked for through the basic reader (owner's request, agent
+     implementation, 2026-10-29).** nihan.com.tr answered Maya's first page request (the homepage) with Cloudflare's
+     429 and `Retry-After: 60`, over the 30 s cap, so the crawl stopped with nothing read and Firecrawl never started
+     (52). (1) The start page alone has its own cap, `start_max_retry_after_s = 120`: a 429 there with a Retry-After up
+     to it is waited out once and asked again; any other page keeps the 30 s cap, and a second 429 stops the crawl as
+     before. Both requests are in the page's `attempts` (status, Retry-After, wait, `server`, `cf-ray`). (2) When the
+     crawl stopped on a rate limit and no page at all was read, the Firecrawl reader asks for the homepage alone, once:
+     max 1 page, no sitemap discovery, the basic proxy forced on the client for that request (the plan's own proxy is
+     restored after) and never the bot-protection bypass. `firecrawl.homepage_fallback` records the URL, proxy, bypass
+     (always false) and whether it was read. Once any page was read, 52 holds: no reader request after a rate limit.
+     Tests: `tests/test_rate_limited_start.py`; `test_run_clock.py`'s rate-limit test now expects the homepage only.

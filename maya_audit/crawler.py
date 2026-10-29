@@ -137,6 +137,14 @@ def _shared_site_lock(origin: str):
         stream.close()
 
 
+def _attempt(response, retry_after: float | None, *, waited: float) -> dict:
+    """One request for a page that was asked for twice (DECISIONS 286), as the report records it."""
+    fetch_class = classify_fetch(response.status, response.headers, response.body, response.error).fetch_class
+    return {"requested_at": response.started_at, "status": response.status, "error": response.error,
+            "retry_after_s": retry_after, "waited_s": waited, "fetch_class": fetch_class.value,
+            "server": response.headers.get("server"), "cf_ray": response.headers.get("cf-ray")}
+
+
 def parse_retry_after(value: str | None) -> float | None:
     if value is None:
         return None
@@ -512,16 +520,22 @@ class Crawler:
             response = fetcher.get(url, "page", cfg.max_body_bytes)
             fetches += 1
             retried = False
+            attempts: list[dict] = []
             retry_after = parse_retry_after(response.headers.get("retry-after"))
             # One retry after a 429, or after a 503 that names when to come back (A13), when the wait is within the cap.
-            if response.status in (429, 503) and retry_after is not None and retry_after <= cfg.max_retry_after_s:
+            # The start page's 429 has a longer cap (DECISIONS 286): without it nothing is read at all. Still once.
+            cap = (max(cfg.max_retry_after_s, cfg.start_max_retry_after_s)
+                   if via == "start" and response.status == 429 else cfg.max_retry_after_s)
+            if response.status in (429, 503) and retry_after is not None and retry_after <= cap:
                 if response.status == 503:  # a 429's wait is counted below, with the rate limit
                     total_cooldown_s += retry_after
+                attempts.append(_attempt(response, retry_after, waited=retry_after))
                 fetcher.sleep(retry_after)
                 response = fetcher.get(url, "page", cfg.max_body_bytes)
                 fetches += 1
                 retried = True
                 retry_after = parse_retry_after(response.headers.get("retry-after"))
+                attempts.append(_attempt(response, retry_after, waited=0.0))
 
             classification = classify_fetch(response.status, response.headers, response.body, response.error)
             content_type = response.headers.get("content-type")
@@ -544,6 +558,7 @@ class Crawler:
                 classification_confidence=classification.confidence,
                 classification_evidence=classification.evidence,
                 retried_after_429=retried,
+                attempts=attempts,
                 content_checks_eligible=classification.fetch_class == FetchClass.OK,
             )
             # IDX-1 (DECISIONS 204): an answer that says "OK" and sends nothing stays the site's own answer (fetch_class

@@ -85,6 +85,9 @@ class PageFetch:
     classification_evidence: list[str]
     redirect_location: str | None = None
     retried_after_429: bool = False
+    # Every request for this page when there was more than one (DECISIONS 286): requested_at, status, retry_after_s,
+    # waited_s, fetch_class. Empty when the page was asked for once.
+    attempts: list[dict[str, Any]] = field(default_factory=list)
     # INT-3: "raw" is the HTML Maya's own request received. "provider" is a document a third-party reader returned:
     # it may already hold what JavaScript added, so it says nothing about what a crawler that runs no script receives.
     view: str = "raw"
