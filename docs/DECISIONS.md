@@ -2588,3 +2588,8 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      checkpoint claims no result and points at `docs/IMPLEMENTATION-STATUS.md`. `.gitattributes` now also export-ignores
      `benchmarks/real-sites/` (real sites' expected results; no test reads them); `reviews/`, `.env` and `.claude/` were
      already. No archive is built here. Test: `tests/test_release_metadata.py`.
+     (8) On a page whose HTML was cut off at the fetch-size limit (`body_truncated`), the homepage-outline finding ("The
+     homepage has N visible section heading(s) …") and the long-page finding ("… have no subheadings") no longer fire
+     when the cut body has too few <h2>/<h3>: the rest of the page may hold them. STR-2 lists the page in
+     `evidence.sections_cut_off` and coverage part "pages whose HTML was cut off before their section headings could be
+     counted" (with the reason), so the check is partial, not a pass. Completes the limitation 282 left open.

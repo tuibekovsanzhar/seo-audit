@@ -506,7 +506,7 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
     if not checked:
         return CheckResult("STR-2", title, "not_assessed", "No indexable pages with content in raw HTML.",
                            evidence={"excluded_as_rnd1_root_cause": sorted(gap)})
-    no_h1, long_flat, multi, hidden_h1, cut_off = [], [], [], [], []
+    no_h1, long_flat, multi, hidden_h1, cut_off, sections_cut_off = [], [], [], [], [], []
     # What each source showed, kept apart (INV-03): the raw HTML Maya fetched, and the visible <h1> texts of the rendered
     # page ([] when it was rendered and showed none; None when it was not rendered, so unknown). DECISIONS 281, 282.
     h1_sources: dict[str, dict] = {}
@@ -552,7 +552,10 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
         words = a["visible_words"]
         if a["has_main_region"] and a["visible_chars"]:
             words = round(words * a["main_region_chars"] / a["visible_chars"])
-        if words > cfg.long_page_words and not any(level >= 2 for level in levels):
+        if words > cfg.long_page_words and not any(level >= 2 for level in levels) and getattr(p, "body_truncated", False):
+            # The cut body has no subheading yet; the rest of the page may have them (DECISIONS 283 (8)).
+            sections_cut_off.append(p.url)
+        elif words > cfg.long_page_words and not any(level >= 2 for level in levels):
             long_flat.append({"url": p.url, "content_words": words, "tables_present": len(a.get("tables") or []),
                               "context": "tables may structure this page" if a.get("tables") else "prose/list structure requires review"})
         for h in a["headings"]:
@@ -598,8 +601,14 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
         a = home_page.analysis
         visible_sub = [h for h in a["headings"] if h["level"] in (2, 3) and h["text"].strip() and not h.get("hidden")]
         plain_questions = questions_not_headings(a)
-        if len(visible_sub) < cfg.homepage_min_subheadings and (a["visible_words"] >= cfg.homepage_outline_min_words
-                                                               or plain_questions):
+        short = len(visible_sub) < cfg.homepage_min_subheadings and (a["visible_words"] >= cfg.homepage_outline_min_words
+                                                                     or plain_questions)
+        if short and getattr(home_page, "body_truncated", False):
+            # Counted on the part of the HTML read before the fetch-size limit: the rest may hold the headings
+            # (DECISIONS 283 (8)). Not assessed, not "N visible section headings".
+            if home not in sections_cut_off:
+                sections_cut_off.append(home)
+        elif short:
             findings.append(_finding(
                 "STR-2", f"The homepage has {len(visible_sub)} visible section heading(s) for {a['visible_words']} words",
                 Severity.S2, Confidence.VERIFIED, HEADINGS_DOCUMENTED, PASSAGE_ENGINES, [home],
@@ -674,9 +683,13 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
                                      "moving by headings and a machine reading the outline find it."})
     # A page cut off before any <h1> is not counted as checked here; coverage lists it (DECISIONS 282).
     summary = f"{len(findings)} finding(s)." if findings else f"All {len(checked) - len(cut_off)} page(s) have one <h1> and long pages are sectioned."
+    if sections_cut_off and not findings:
+        summary = (f"All {len(checked) - len(cut_off)} page(s) have one <h1>; {len(sections_cut_off)} page(s) were cut off "
+                   "before their section headings could be counted.")
     return CheckResult("STR-2", title, _status(findings), summary, findings,
                        {"pages_checked": len(checked), "heading_assessments": heading_assessments, "excluded_as_rnd1_root_cause": sorted(gap),
                         "h1_cut_off": cut_off[:40], "h1_cut_off_count": len(cut_off),
+                        "sections_cut_off": sections_cut_off[:40], "sections_cut_off_count": len(sections_cut_off),
                         "not_measured": "whether the <h1> matches the page topic",
                         "hidden_h1_assessed_by": {"rendered_computed_style": computed, "markup_only": len(checked) - computed,
                                                   "markup_only_limit": "an <h1> hidden by a stylesheet class is not seen "

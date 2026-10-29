@@ -400,9 +400,14 @@ def _ans2(ev, obs):
 
 
 def _str2(ev, obs):
-    return _listed(ev, "h1_cut_off", "h1_cut_off_count", "pages whose HTML was cut off before an <h1>",
-                   "the page's HTML was longer than the fetch-size limit and no <h1> appeared before the cut, so whether "
-                   "it has one is unknown")
+    return (_listed(ev, "h1_cut_off", "h1_cut_off_count", "pages whose HTML was cut off before an <h1>",
+                    "the page's HTML was longer than the fetch-size limit and no <h1> appeared before the cut, so whether "
+                    "it has one is unknown")
+            # DECISIONS 283 (8): the homepage outline and the long-page check on a cut body.
+            + _listed(ev, "sections_cut_off", "sections_cut_off_count",
+                      "pages whose HTML was cut off before their section headings could be counted",
+                      "the page's HTML was longer than the fetch-size limit and too few <h2>/<h3> appeared before the cut; "
+                      "the rest of the page may have them, so whether it is sectioned is unknown"))
 
 
 def _str8(ev, obs):

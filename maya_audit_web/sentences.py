@@ -128,6 +128,7 @@ LINE_PATTERNS: tuple[tuple[str, str], ...] = (
     ('rnd5.none', "No walls or unmarked paywalls detected on {n#} English or Turkish page(s); redirect walls checked on every page."),
     ('str1.all', "All {n#} indexable page(s) have distinct, non-generic titles (English placeholder list)."),
     ('str2.all', "All {n#} page(s) have one <h1> and long pages are sectioned."),
+    ('str2.all.sections_cut_off', "All {n#} page(s) have one <h1>; {m#} page(s) were cut off before their section headings could be counted."),
     ('str4.all', "All {values#} structured-data value(s) that could be compared match the visible text, on {pages#} page(s)."),
     ('str4.not_compared', "{n#} value(s) could not be compared (see coverage)."),
     ('str11.none', "No entity is described twice with different values ({repeats#} of {pages#} page(s) describe an entity more than once)."),
