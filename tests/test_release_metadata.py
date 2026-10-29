@@ -27,7 +27,7 @@ def test_snapshot_and_checkpoint_state_the_applications_version():
     assert SNAPSHOT["schema_version"] == SCHEMA_VERSION
     line = f"Release {SNAPSHOT['release']} / application {__version__} / schema {SCHEMA_VERSION}."
     assert line in CHECKPOINT
-    assert re.fullmatch(r"w\d+", SNAPSHOT["release"])
+    assert re.fullmatch(r"w\d+[a-z]?", SNAPSHOT["release"])  # a fix after a release is the next letter (w14b)
 
 
 def test_the_snapshot_lists_no_private_path():
