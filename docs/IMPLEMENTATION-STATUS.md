@@ -363,3 +363,22 @@ under the excluded paths. Zip and `-VERIFICATION.json` copied to the Desktop.
 | ruff, Linux/Windows, live providers | NOT RUN |
 
 VERDICT: PASS.
+
+## v3 client PDFs: saved reports under the 284 rules, offline (DECISIONS 285)
+
+`tools/reassess_saved.py` on the saved Enpara and Adile report.json (sockets refused, sources unchanged), written to
+`reviews/2026-10-29/v3/analysis/<site>/`; then `maya-audit-pro --reanalysis` ("Yeni tarama yapılmadı") into
+`reviews/2026-10-29/v3/`, copied to the Desktop.
+
+| Site | Change | Cards | Gate |
+|---|---|---|---|
+| enpara.com | STR-8-e7c537b5 removed: both grids are in a block named as a calculator (`/krediler/ekpara`, `/sirketim/krediler/ekpara`); problems 12 → 11 | 14 → 13 | PASS, 0 hard; 1 High not re-tested (TSEO-1) |
+| adilesultanevyemekleri.com | STR-2-81543ae6 hidden homepage <h1>: S2 → S3; High 2 → 1 | 19 | PASS, 0 hard; 0 High not re-tested |
+
+Not assessed offline: STR-8's "form control beside the grid" test (the report keeps no page structure). No pricing
+grid was left on either site for it to decide. Nothing else was re-run.
+
+| Command | Result |
+|---|---|
+| full suite after `6573d65` | `1 failed, 2634 passed, 3 skipped` — generated `docs/FIXTURE-MATRIX.md` counts out of date; regenerated |
+| `pytest -q tests/test_fixture_matrix.py tests/test_reassess_rules.py` | passed |
