@@ -721,3 +721,21 @@ class NothingRead(unittest.TestCase):
 def build_tr_stub(r):
     return build.Builder(r, 'tr', render.LABELS['tr'], json.loads((build.REFS / 'sahip_efor.json').read_text()),
                          Wording(), None, 'test', False, None).build()
+
+
+class BlockedOnPages(unittest.TestCase):
+    """DECISIONS 288: Maya's crawler blocked by 429 on pages; the card says AI crawlers may get the same and where to look."""
+
+    def card(self, blocked_by):
+        f = finding('ACC-9-x', 'ACC-9', "Maya's crawler blocked (429 on pages): Cloudflare answered 2 of 2 page request(s) "
+                    'with 429 while robots.txt and the sitemap were served. AI crawlers may get the same treatment', 'S3',
+                    [S + '/'], 'acc9.blocked_429', evidence={'blocked_by': blocked_by})
+        return build_tr(report_of(f))['todos'][0]
+
+    def test_the_card_names_the_blocker_and_ai_crawlers(self):
+        self.assertEqual(self.card([{'name': 'Cloudflare', 'kind': 'rate limit', 'status': 429}])['sub'],
+                         ['Yapay zekâ tarayıcıları da aynı muameleyi görebilir; Cloudflare üzerindeki bot ve hız sınırı '
+                          'kurallarını kontrol edin.'])
+
+    def test_without_a_named_blocker_it_points_at_the_firewall(self):
+        self.assertIn('sitenin güvenlik duvarı üzerindeki', self.card([])['sub'][0])

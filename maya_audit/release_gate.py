@@ -33,7 +33,8 @@ Rules (hard = blocks, soft = conditional):
     RG-11 hard  a card's fixed title topic and each conditional step rests on a finding that meets its condition
     RG-12 hard  a validation count ("9/9 kept") counts only items matched by finding and re-tested (see `checklist`)
     RG-13 soft  no visible card text ends cut off ("+" or "·" with nothing after it)
-    RG-14 hard  the site's content was read: a report with 0 pages read is not delivered as a result (DECISIONS 287)
+    RG-14 hard  the site's content was read: a report with 0 pages read, or with only the homepage read after Maya's crawler
+                was stopped (DECISIONS 288), is not delivered as a result (DECISIONS 287)
 """
 from __future__ import annotations
 
@@ -147,9 +148,16 @@ def check_report(report: dict, affected: dict | None = None) -> list[dict]:
     out: list[dict] = []
     # DECISIONS 287: nothing read is no audit of the site's content; the report is a draft (nihan.com.tr: one 429).
     coverage = (report.get("audit_status") or {}).get("content_coverage") or {}
+    fallback = (((report.get("firecrawl") or {}).get("crawl_blocked") or {}).get("homepage_fallback") or {})
     if "pages_read" in coverage and not coverage.get("pages_read"):
         out.append(violation("RG-14", "site content could not be read: 0 pages were read, so the report is a draft, not a "
                                       "result to deliver", hard=True))
+    elif fallback and not fallback.get("continued"):
+        # DECISIONS 288: Maya's crawler was stopped before any page and the reader read the homepage alone (without the
+        # site owner's approval to read on): one page is no audit of the site's content either.
+        why = fallback.get("maya_blocked") or "Maya's crawler was rate-limited"
+        out.append(violation("RG-14", f"site content could not be read: {why}; only the homepage was read through the "
+                                      "reader, so the report is a draft, not a result to deliver", hard=True))
     by_id = findings_of(report)
     gap_rows = gaps(report)
     unmeasured = {(g.get("element"), u) for g in gap_rows if g.get("element") for u in g.get("urls") or []}

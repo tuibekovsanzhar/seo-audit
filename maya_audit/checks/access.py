@@ -1144,6 +1144,9 @@ def blocker_phrase(blockers: list[dict]) -> str:
     }.get(top["kind"], f"the site or its firewall (HTTP {top['status']}, access denied)")
 
 
+FIX_429 = ('Check the bot and rate-limit rules in {who} that answer page requests with 429 while robots.txt and the sitemap are served: allow the user agent "{token}" and run the audit again. AI crawlers may get the same treatment: check the same rules for OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you.')
+
+
 def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     """What the site did to an automated visitor that says who it is: Maya's own crawler.
 
@@ -1174,26 +1177,40 @@ def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResul
     urls = [p.url for p in impaired]
     start_hit = start is not None and start in impaired
     widespread = start_hit or len(impaired) / len(pages) >= cfg.degraded_threshold
-    finding = Finding(
-        "ACC-9", f"The site blocks or challenges automated visitors: {who} answered {len(impaired)} of {len(pages)} page "
-                 "request(s). AI crawlers may be affected too",
-        Severity.S3 if widespread else Severity.S4, Confidence.INFERRED,
-        "Measured (Maya's own requests) / Hypothesis (what AI crawlers receive)",
-        ["all crawlers that identify themselves", "AI search and live-fetch bots"],
-        scope_for(urls, sitewide=start_hit and read == 0),
-        {"blocked_by": blockers, "pages_requested": len(pages), "pages_read": read, "pages_blocked_or_challenged": len(impaired),
-         "start_url_blocked": start_hit, "robots_or_sitemap_also_refused": support[:10], "user_agent": result.user_agent,
-         "pages": [{"url": p.url, "status": p.status, "why": p.classification_evidence} for p in impaired[:40]],
-         "reproduce": f"curl -i -A {result.user_agent!r} {urls[0]}", "not_measured": "what any AI crawler receives (ACC-4 tests that, on verified sites)"},
-        "a crawler that identifies itself honestly receives the page",
-        f'If you own this site: allow the user agent "{cfg.product_token}" in the firewall or bot-protection rules and run the audit '
-        "again; verify ownership so ACC-4 can test what AI crawlers receive; or try again later if this was a rate limit. Then "
-        "check the same rules for the AI crawlers you want to reach you (OAI-SearchBot, ClaudeBot, PerplexityBot and others).",
-        importance_tier=0 if start_hit else 2,
-        notes=["Measured: Maya's crawler was blocked, challenged or rate-limited. Inferred: bot protection that stops one "
-               "self-identified crawler often stops others, but AI crawlers were not tested here and may be allowed by name.",
-               "This is common on banks, large retailers and sites behind a managed firewall, and is often not deliberate.",
-               "Maya does not try to get past bot protection."])
+    from .. import maya_blocked
+    blocked_429 = maya_blocked.holds(result)  # DECISIONS 288: 429 on every page while the site's files are served
+    name = (blockers[0]["name"] if blockers and blockers[0].get("name") else "the site's firewall")
+    rest = (Severity.S3 if widespread else Severity.S4, Confidence.INFERRED,
+            "Measured (Maya's own requests) / Hypothesis (what AI crawlers receive)",
+            ["all crawlers that identify themselves", "AI search and live-fetch bots"],
+            scope_for(urls, sitewide=start_hit and read == 0),
+            {"blocked_by": blockers, "pages_requested": len(pages), "pages_read": read, "pages_blocked_or_challenged": len(impaired),
+             "start_url_blocked": start_hit, "robots_or_sitemap_also_refused": support[:10], "user_agent": result.user_agent,
+             "maya_blocked": maya_blocked.LABEL if blocked_429 else None,
+             "pages": [{"url": p.url, "status": p.status, "why": p.classification_evidence} for p in impaired[:40]],
+             "reproduce": f"curl -i -A {result.user_agent!r} {urls[0]}", "not_measured": "what any AI crawler receives (ACC-4 tests that, on verified sites)"})
+    # Each title, fix and note is written out in its own call: the wording tests read them from this source.
+    if blocked_429:
+        finding = Finding("ACC-9", f"Maya's crawler blocked (429 on pages): {name} answered {len(impaired)} of {len(pages)} page request(s) with 429 "
+                          "while robots.txt and the sitemap were served. AI crawlers may get the same treatment",
+                          *rest, expected="a crawler that identifies itself honestly receives the page",
+                          how_to_fix=FIX_429.format(who=name, token=cfg.product_token), importance_tier=0 if start_hit else 2,
+                          notes=["Measured: Maya's crawler was blocked, challenged or rate-limited. Inferred: bot protection that stops one "
+                                 "self-identified crawler often stops others, but AI crawlers were not tested here and may be allowed by name.",
+                                 "This is common on banks, large retailers and sites behind a managed firewall, and is often not deliberate.",
+                                 "Maya does not try to get past bot protection."])
+    else:
+        finding = Finding("ACC-9", f"The site blocks or challenges automated visitors: {who} answered {len(impaired)} of {len(pages)} page "
+                          "request(s). AI crawlers may be affected too",
+                          *rest, expected="a crawler that identifies itself honestly receives the page",
+                          how_to_fix=f'If you own this site: allow the user agent "{cfg.product_token}" in the firewall or bot-protection '
+                          "rules and run the audit again; verify ownership so ACC-4 can test what AI crawlers receive; or try again "
+                          "later if this was a rate limit. Then check the same rules for the AI crawlers you want to reach you "
+                          "(OAI-SearchBot, ClaudeBot, PerplexityBot and others).", importance_tier=0 if start_hit else 2,
+                          notes=["Measured: Maya's crawler was blocked, challenged or rate-limited. Inferred: bot protection that stops one "
+                                 "self-identified crawler often stops others, but AI crawlers were not tested here and may be allowed by name.",
+                                 "This is common on banks, large retailers and sites behind a managed firewall, and is often not deliberate.",
+                                 "Maya does not try to get past bot protection."])
     summary = (f"1 finding: {who} answered {len(impaired)} of {len(pages)} page request(s) to Maya's crawler; {read} page(s) "
                "were read.")
     return CheckResult("ACC-9", title, _status([finding]), summary, [finding], {"blocked_by": blockers, "pages_read": read})

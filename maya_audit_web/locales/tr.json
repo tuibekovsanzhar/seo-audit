@@ -932,6 +932,7 @@
  "status.note.direct.readable.impaired": "Maya'nın doğrudan tarayıcısı içeri alındı ({requests} sayfa isteğinden {ok} tanesini sitenin kendisi yanıtladı; {impaired} tanesi engellendi veya hız sınırına takıldı).",
  "status.note.direct.challenged": "Maya'nın doğrudan tarayıcısı {requests} sayfa isteğinden {count} tanesinde doğrulamaya yönlendirildi veya engellendi.",
  "status.note.direct.rate_limited": "Maya'nın doğrudan tarayıcısı {requests} sayfa isteğinden {count} tanesinde hız sınırına takıldı.",
+ "status.note.direct.blocked_429": "Maya'nın tarayıcısı engellendi (sayfalarda 429): {requests} sayfa isteğinden {count} tanesi 429 aldı; robots.txt ve site haritası ise sunuldu.",
  "status.note.direct.unknown": "Maya'nın doğrudan tarayıcısı hiçbir sayfa istemedi; bu yüzden doğrudan erişim bilinmiyor.",
  "status.note.direct.not_reached": "Doğrudan erişim ölçülmedi: siteden bu bilgisayara hiçbir yanıt ulaşmadı.",
  "status.note.coverage.none": "Hiçbir sayfanın içeriği okunamadı.",

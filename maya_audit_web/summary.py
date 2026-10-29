@@ -14,6 +14,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from maya_audit.checks.access import blocker_phrase
+from maya_audit.maya_blocked import LABEL as MAYA_BLOCKED_LABEL
 from maya_audit import allowlist, launch_gate, timeplan
 from maya_audit.classify import describe_blockers, identify_blocker
 from maya_audit.coverage import CRAWL_GAP_NAMES, PAGE_DEPENDENT, clean_on_what_was_read, restated
@@ -609,6 +610,8 @@ def status_notes(report: dict[str, Any]) -> dict[str, Any]:
     if state == "readable":
         said = t("status.note.direct.readable.impaired" if impaired else "status.note.direct.readable", ok=answers.get("ok") or 0,
                  requests=requests, impaired=impaired)
+    elif state == "rate_limited" and str((report.get("crawl") or {}).get("stop_detail") or "").startswith(MAYA_BLOCKED_LABEL):
+        said = t("status.note.direct.blocked_429", count=answers.get("rate_limited") or 0, requests=requests)  # DECISIONS 288
     elif state in ("challenged", "rate_limited"):
         said = t(f"status.note.direct.{state}", count=answers.get("blocked" if state == "challenged" else "rate_limited") or 0, requests=requests)
     else:  # no page was requested: because no answer reached this computer, or for another reason

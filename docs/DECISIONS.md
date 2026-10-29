@@ -2675,3 +2675,26 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      and to every `maya-audit-pro` build (its validator runs the gate afresh). In the client PDF a report with nothing
      read drops the "Orta ve üstü sorunlu sayfa 0 / 0" tile, and the action plan drops the "Öncelikli aksiyonlar" table
      when it has no row. Tests: `tests/test_nothing_read_gate.py`, skill `NothingRead`.
+
+288. **Maya's crawler blocked by 429 on pages: said so, gated, and read on only with the owner's approval (owner's
+     request, agent implementation, 2026-10-29).** The second nihan.com.tr audit read 1 page: every page request from
+     Maya's crawler got Cloudflare's 429 with `Retry-After: 60`, also after the one wait (286), while robots.txt, 26
+     sitemap files and llms.txt came back 200 in the same minutes, and Firecrawl read the homepage at once. That is a
+     rule against this crawler on pages, not "too many requests". `maya_audit/maya_blocked.py` names it: every page
+     asked for answered 429, the start page among them, nothing read, and a robots.txt, sitemap or llms.txt request on
+     the same host answered 200. Then (1) the crawl's stop detail starts "blocked for Maya's crawler (429 on pages):";
+     ACC-9 has its own rule `acc9.blocked_429` ("Maya's crawler blocked (429 on pages): {who} answered N of M page
+     request(s) with 429 while robots.txt and the sitemap were served. AI crawlers may get the same treatment"), a fix
+     that points at the blocker's bot and rate-limit rules instead of "try again later", and `evidence.maya_blocked`;
+     the status note says "blocked (429 on pages)" instead of "rate-limited"; Turkish: "Maya'nın tarayıcısı engellendi
+     (sayfalarda 429)". (2) This relaxes 52 only with the site owner's approval: when it holds and the plan's "site
+     owner approved bypassing bot protection" is ticked, the Firecrawl reader goes on past the homepage as the page
+     reader with the plan's own options (up to its page cap). Without the tick it stops at the homepage, through the
+     basic proxy, as 286 does. A plain rate limit (robots.txt refused too) never goes on, approved or not. (3) The
+     record is saved: `firecrawl.crawl_blocked.homepage_fallback` (`maya_blocked`, `owner_approved_bypass`,
+     `continued`, `proxy`, `pages_asked`, `read`). 286 kept it at the section's top level, where `panel.SECTION_KEYS`
+     dropped it; a new top-level key would change the frozen 1.20 shape, `crawl_blocked` is already one of its keys.
+     (4) Release gate RG-14 is hard also when the homepage alone was read and the reader did not go on: the report is a
+     draft. (5) The client card for `acc9.blocked_429` carries one fixed line: "Yapay zekâ tarayıcıları da aynı
+     muameleyi görebilir; {Cloudflare} üzerindeki bot ve hız sınırı kurallarını kontrol edin." Tests:
+     `tests/test_rate_limited_start.py`, `test_run_clock.py`, skill `BlockedOnPages`.

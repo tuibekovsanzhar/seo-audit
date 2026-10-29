@@ -197,6 +197,8 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "{n:link|links} in {file} [n:points|point] to an address that redirects"),
     ),
     "ACC-9": (
+        ("acc9.blocked_429", "Maya's crawler blocked (429 on pages): {who~:.+?} answered {blocked#} of {requested#} page request(s) with 429 while robots.txt and the sitemap were served. AI crawlers may get the same treatment",
+         "Maya's crawler blocked (429 on pages): {who} answered {blocked} of {requested:page request|page requests} with 429 while robots.txt and the sitemap were served. AI crawlers may get the same treatment"),
         ("acc9.blocked", "The site blocks or challenges automated visitors: {who~:.+?} answered {blocked#} of {requested#} page request(s). AI crawlers may be affected too",
          "The site blocks or challenges automated visitors: {who} answered {blocked} of {requested:page request|page requests}. AI crawlers may be affected too"),
         # The same finding after the pages were read through Firecrawl (maya_audit.firecrawl.reader.note_the_challenge).
@@ -763,6 +765,9 @@ FIX_PATTERNS = _frames((
     ("acc9.allow", "If you own this site: allow the user agent \"{agent}\" in the firewall or bot-protection rules and run the audit again; verify "
                    "ownership so ACC-4 can test what AI crawlers receive; or try again later if this was a rate limit. Then check the same rules "
                    "for the AI crawlers you want to reach you (OAI-SearchBot, ClaudeBot, PerplexityBot and others)."),
+    ("acc9.allow_429", "Check the bot and rate-limit rules in {who~:.+?} that answer page requests with 429 while robots.txt and the sitemap "
+                       "are served: allow the user agent \"{agent}\" and run the audit again. AI crawlers may get the same treatment: check "
+                       "the same rules for OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you."),
     ("str6.set", "Set {kind~:.+?} from the content's real last edit."),
     ("str6.set", "Verify {kind~:.+?} against actual edit records; change date generation only if inaccurate."),
     ("str10.add_description", "Add meta description."),
@@ -890,7 +895,8 @@ TERM_PATTERNS = _frames((
     ("stop.time_limit", "time limit of {seconds#}s reached"),
     ("stop.time_share", "the crawl used its share ({share%}) of the {seconds#}s time limit; the rest is kept for the checks that run after it"),
     ("stop.cooldown", "spent {waited#}s waiting out rate limits, over the {allowed#}s allowed; stopped requesting pages"),
-    ("stop.retry_after", "{url} asked Maya to wait {wait#}s (Retry-After), longer than the {allowed#}s allowed; stopped requesting pages"),
+    ("stop.blocked_429", "blocked for Maya's crawler (429 on pages): {detail~:.+}"),
+    ("stop.retry_after", "{url:https?://\\S+} asked Maya to wait {wait#}s (Retry-After), longer than the {allowed#}s allowed; stopped requesting pages"),
     ("stop.consecutive", "{count#} consecutive rate-limited responses"),
     ("stop.start_failed", "start URL could not be fetched: {error}"),
     ("stop.robots_status", "robots.txt returned {status#}; RFC 9309: assume complete disallow"),

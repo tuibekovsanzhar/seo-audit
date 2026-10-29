@@ -38,6 +38,7 @@
   "acc7.delay": "Crawl-delay: {seconds} sn (robots.txt {line}. satır) şu botlar için geçerli: {tokens}",
   "acc7.capped": "robots.txt, {agent} için istekler arasında {seconds} sn beklenmesini istiyor ({line}. satır); Maya kendi üst sınırı olan {cap} sn'ye uydu",
   "acc8.present": "{file} dosyası mevcut",
+  "acc9.blocked_429": "Maya'nın tarayıcısı engellendi (sayfalarda 429): {who}, {requested} sayfa isteğinden {blocked} tanesine 429 verdi; robots.txt ve site haritası ise sunuldu. Yapay zekâ tarayıcıları da aynı muameleyi görebilir",
   "acc9.blocked": "Site otomatik ziyaretçileri engelliyor veya doğrulamaya yönlendiriyor: {requested} sayfa isteğinden {blocked} tanesini {who} yanıtladı. Yapay zekâ tarayıcıları da etkilenebilir",
   "idx1.5xx": "{n} URL her denemede sunucu hatası (5xx) döndürüyor",
   "idx1.connection": "{n} URL'ye hiçbir denemede bağlantı kurulamıyor",
@@ -550,6 +551,7 @@
   "acc2.training": "Bu kullanıcı aracılarının kullanım amacı: {engines}. Engellemek politikanızla uyuşuyorsa beyan edilen bot politikasına kaydedin; uyuşmuyorsa {line}. satırı değiştirin.",
   "acc2.mismatch": "Bu kullanıcı aracıları için Disallow kuralları ekleyin veya beyan edilen {role} botu politikasını değiştirin.",
   "acc2.precedence": "RFC 9309'a göre bir bot yalnızca kendisine en özgü gruba uyar. {line}. satırın şu botlar için de geçerli olması gerekiyorsa kuralı onların grubunda tekrarlayın: {tokens}.",
+  "acc9.allow_429": "Robots.txt ve site haritası sunulurken sayfa isteklerine 429 veren {who} bot ve hız sınırı kurallarını kontrol edin: \"{agent}\" kullanıcı aracısına izin verin ve denetimi yeniden çalıştırın. Yapay zekâ tarayıcıları da aynı muameleyi görebilir: aynı kuralları OAI-SearchBot, ClaudeBot, PerplexityBot ve size ulaşmasını istediğiniz diğerleri için de kontrol edin.",
   "acc9.allow": "Bu sitenin sahibiyseniz: güvenlik duvarı veya bot koruması kurallarında \"{agent}\" kullanıcı aracısına izin verin ve denetimi yeniden çalıştırın; ACC-4'ün yapay zekâ tarayıcılarının ne aldığını test edebilmesi için site sahipliğini doğrulayın; bu bir hız sınırıysa daha sonra yeniden deneyin. Ardından size ulaşmasını istediğiniz yapay zekâ tarayıcıları (OAI-SearchBot, ClaudeBot, PerplexityBot ve diğerleri) için aynı kuralları kontrol edin.",
   "str6.set": "{kind} değerini içeriğin gerçek son düzenleme tarihinden alın.",
   "str10.add_description": "Meta açıklaması ekleyin.",
@@ -1065,6 +1067,8 @@
   "outcome.single.reader.no_answer": "Tek sayfa denetimi: sayfa Firecrawl aracılığıyla okundu. Maya'nın kendi istekleri bu bilgisayarda yanıt almadı; bu yüzden doğrudan erişim ölçülmedi. Gerçek yapay zekâ tarayıcılarının erişimi ölçülmedi. Sitenin diğer sayfaları kontrol edilmedi; doğrudan istek gerektiren bazı kontroller tamamlanamadı."
  },
  "terms": {
+  "Cloudflare": "Cloudflare",
+  "the site's firewall": "sitenin güvenlik duvarı",
   "search": "arama",
   "live": "canlı getirme",
   "training": "eğitim",
@@ -1299,6 +1303,7 @@
   "stop.time_limit": "{seconds} saniyelik süre sınırına ulaşıldı",
   "stop.time_share": "tarama, {seconds} saniyelik süre sınırından kendisine ayrılan payı ({share}) kullandı; kalan süre taramadan sonra çalışan kontrollere ayrıldı",
   "stop.cooldown": "hız sınırlarının geçmesini beklerken {waited} saniye harcandı; izin verilen süre {allowed} saniyeydi; sayfa istemek durduruldu",
+  "stop.blocked_429": "Maya'nın tarayıcısı engellendi (sayfalarda 429): {detail}",
   "stop.retry_after": "{url}, Maya'dan {wait} saniye beklemesini istedi (Retry-After); bu, izin verilen {allowed} saniyeden uzun; sayfa istemek durduruldu",
   "stop.consecutive": "art arda {count} yanıt hız sınırına takıldı",
   "stop.start_failed": "başlangıç adresi getirilemedi: {error}",

@@ -227,7 +227,7 @@ challenged Maya's crawler, the ACC-9 finding is written as severity `Info` with 
 | `owner_approved_bypass` | True when the person stated, for this audit, that the site owner approved bypassing bot protection. |
 | `zero_data_retention` | `requested`, `applied`, and `status`: `applied`, `not available` (Firecrawl refused; nothing was sent without it) or `waived by the user for this audit`. |
 | `page_cap` | The most pages Firecrawl could read in this audit. |
-| `crawl_blocked` | `blocked` and `why`: whether Maya's own crawl was blocked, by INT-1's rule. |
+| `crawl_blocked` | `blocked` and `why`: whether Maya's own crawl was blocked, by INT-1's rule. May hold `homepage_fallback` (DECISIONS 286, 288): `url`, `why`, `maya_blocked` ("blocked for Maya's crawler (429 on pages)" or null), `owner_approved_bypass`, `continued` (the reader went on past the homepage, only with the owner's approval), `proxy`, `pages_asked`, `read`. Inside `crawl_blocked`, which the frozen shape does not describe, so 1.20 is unchanged. |
 | `robots` | Where the robots.txt rules came from (`Maya's own crawler` or `Firecrawl`) and whether they could be read. `status`, `mode`, and `reason` disclose the applied policy: 4xx except 429 allows all; 429 pauses requests; 5xx/unreachable disallows all. |
 | `pages` | One row per page asked for: `url`, `outcome` (`read`, `blocked`, `error`, `failed`), `status`, `bytes`, `from_cache`. No page content. |
 | `rendered` | The same, for the rendering fallback. |

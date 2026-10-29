@@ -363,6 +363,9 @@ def note_the_challenge(checks: list[CheckResult], pages_read: int) -> None:
 HOMEPAGE_FALLBACK_WHY = ("Maya's crawler was rate-limited before it read any page, also after waiting the Retry-After "
                          "once; the homepage alone was asked for through the reader")
 HOMEPAGE_FALLBACK_PURPOSE = "homepage only, after the site rate-limited Maya's crawler"
+CONTINUED_WHY = ("Maya's crawler was blocked (429 on pages) while robots.txt and the sitemap were served, and the site owner "
+                 "approved bypassing bot protection for this audit; the reader read the site's pages")
+CONTINUED_PURPOSE = "page reader after Maya's crawler was blocked (429 on pages), with the site owner's approval"
 
 
 def start_page_read(result: CrawlResult) -> bool:
@@ -718,24 +721,38 @@ def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, 
                 and not start_page_read(result)):
             # DECISIONS 286: nothing at all was read, not even the start page after its one wait. The homepage alone,
             # once, through the basic reader: no sitemap, no other page, never the bot-protection bypass.
-            one = replace(options, max_pages=1, sitemap_discovery=False, spread_by_section=False, proxy=DEFAULT_PROXY,
-                          owner_approved_bypass=False)
-            home = homepage_url(result)
-            info["homepage_fallback"] = {"why": HOMEPAGE_FALLBACK_WHY, "url": home, "proxy": one.proxy,
-                                         "owner_approved_bypass": False, "pages_asked": 1}
-            # The client carries its own proxy (the plan's): basic for this one request, whatever the plan chose.
-            had = getattr(client, "proxy", None)
-            if had is not None:
-                client.proxy = DEFAULT_PROXY
-            try:
-                checks = read_blocked_site(result, cfg, client, one, info, blocked=True, progress=progress)
-            finally:
+            # DECISIONS 288: when that is a block on Maya's crawler (429 on pages while robots.txt and the sitemap are
+            # served) and the site owner approved bypassing bot protection for this audit, the reader goes on with the
+            # plan's own options, as it does for a challenged site. Without that approval it stops at the homepage.
+            from .. import maya_blocked
+            blocked_429 = maya_blocked.holds(result)
+            go_on = blocked_429 and bool(options.owner_approved_bypass)
+            record = {"why": HOMEPAGE_FALLBACK_WHY, "url": homepage_url(result),
+                      "maya_blocked": maya_blocked.LABEL if blocked_429 else None,
+                      "owner_approved_bypass": bool(options.owner_approved_bypass), "continued": go_on}
+            if go_on:
+                record.update(proxy=options.proxy, pages_asked=options.max_pages, why=CONTINUED_WHY)
+                checks = read_blocked_site(result, cfg, client, options, info, blocked=True, progress=progress,
+                                           ranking_urls=ranking_urls)
+            else:
+                one = replace(options, max_pages=1, sitemap_discovery=False, spread_by_section=False, proxy=DEFAULT_PROXY,
+                              owner_approved_bypass=False)
+                record.update(proxy=one.proxy, pages_asked=1)
+                # The client carries its own proxy (the plan's): basic for this one request, whatever the plan chose.
+                had = getattr(client, "proxy", None)
                 if had is not None:
-                    client.proxy = had
-            info["homepage_fallback"]["read"] = bool(checks)
+                    client.proxy = DEFAULT_PROXY
+                try:
+                    checks = read_blocked_site(result, cfg, client, one, info, blocked=True, progress=progress)
+                finally:
+                    if had is not None:
+                        client.proxy = had
+            record["read"] = bool(checks)
+            # Saved with the section (`crawl_blocked` is one of its keys; a new top-level key would change the 1.20 shape).
+            info["crawl_blocked"]["homepage_fallback"] = record
             if checks:
                 replaced.update({check.check_id: check for check in checks})
-                info.update(used=True, purpose=HOMEPAGE_FALLBACK_PURPOSE, notice=AI_NOTICE)
+                info.update(used=True, purpose=CONTINUED_PURPOSE if go_on else HOMEPAGE_FALLBACK_PURPOSE, notice=AI_NOTICE)
             else:
                 info.update(reason=f"Firecrawl read the homepage only, after the rate limit, and could not read it: {not_now}",
                             stopped_because=not_now)

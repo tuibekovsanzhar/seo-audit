@@ -1658,6 +1658,10 @@ def audit_status(result: CrawlResult, gates: list[GateResult], checks: list[Chec
                    "challenged": f"Maya's direct crawler was challenged or blocked on {by_class['blocked']} of {len(pages)} page request(s).",
                    "rate_limited": f"Maya's direct crawler was rate-limited on {by_class['rate_limited']} of {len(pages)} page request(s).",
                    "unknown": "Maya's direct crawler requested no page, so direct access is unknown."}[direct]
+    from . import maya_blocked
+    if direct == "rate_limited" and maya_blocked.holds(result):  # DECISIONS 288: a block on Maya's crawler, said so
+        direct_note = (f"Maya's direct crawler was blocked (429 on pages) on {by_class['rate_limited']} of {len(pages)} page "
+                       "request(s), while robots.txt and the sitemap were served.")
     if not pages and result.stop_reason.value == "network_problem":
         # No answer reached this computer: said as that, never as something the site did.
         direct_note = f"Direct access was not measured: {result.stop_detail}."

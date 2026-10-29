@@ -175,6 +175,10 @@
   ],
   "ACC-9": [
    [
+    "acc9.blocked_429",
+    "Maya's\\ crawler\\ blocked\\ \\(429\\ on\\ pages\\):\\ (?P<who>.+?)\\ answered\\ (?P<blocked>\\d+(?:\\.\\d+)?)\\ of\\ (?P<requested>\\d+(?:\\.\\d+)?)\\ page\\ request\\(s\\)\\ with\\ 429\\ while\\ robots\\.txt\\ and\\ the\\ sitemap\\ were\\ served\\.\\ AI\\ crawlers\\ may\\ get\\ the\\ same\\ treatment"
+   ],
+   [
     "acc9.blocked",
     "The\\ site\\ blocks\\ or\\ challenges\\ automated\\ visitors:\\ (?P<who>.+?)\\ answered\\ (?P<blocked>\\d+(?:\\.\\d+)?)\\ of\\ (?P<requested>\\d+(?:\\.\\d+)?)\\ page\\ request\\(s\\)\\.\\ AI\\ crawlers\\ may\\ be\\ affected\\ too"
    ],

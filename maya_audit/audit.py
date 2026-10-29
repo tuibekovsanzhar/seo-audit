@@ -225,6 +225,9 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
     # What the time limit cut, named once (DECISIONS 219).
     result.skipped_for_time = timeplan.skipped_for_time(result)
     hooks.emit("checks", pages_fetched=len(result.pages))
+    # 429 on every page while the site's files are served is a block on Maya's crawler, named so (DECISIONS 288).
+    from . import maya_blocked
+    maya_blocked.label(result)
     # INT gates run over the complete request log, including the ACC and IDX requests.
     gates = run_integrity_gates(result, config)
     site_checks: list[CheckResult] = []

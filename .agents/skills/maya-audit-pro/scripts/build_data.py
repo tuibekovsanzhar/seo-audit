@@ -834,6 +834,14 @@ class Builder:
         self.fact(n)
         return f"{fmt_int(n, self.lang)} {unit[0] if n == 1 else unit[1]}"
 
+    def blocked_429_line(self, f):
+        """DECISIONS 288: Maya's crawler blocked by 429 on pages. One line on the card: AI crawlers may be treated the same,
+        and where to look (the blocker the evidence names, else the site's firewall)."""
+        if self.rule_of(f) != "acc9.blocked_429":
+            return []
+        named = next((b.get("name") for b in (f.get("evidence") or {}).get("blocked_by") or [] if b.get("name")), None)
+        return [self.L["blocked_429_line"].format(who=named or self.L["blocked_429_firewall"])]
+
     def merged_lines(self, members):
         """One line per finding of a merged card: severity, scope and the finding's own title (DECISIONS 284 (1))."""
         if len(members) < 2:
@@ -1125,7 +1133,7 @@ class Builder:
                         if isinstance(u, str):
                             url_finding.setdefault(u, m["id"])
                 urls = list(url_finding)
-                sub = self.merged_lines(members) or self.reason_lines(f)
+                sub = self.merged_lines(members) or self.reason_lines(f) or self.blocked_429_line(f)
                 # kartta 4 link (satırlı kartta 2: satırlar yer kaplar); tam liste render.py'nin yazdığı adres listesi CSV'sinde
                 shown = urls[:2 if sub else 4]
                 # listelenip kartta gösterilmeyenler + rapordaki listeye hiç girmeyen sayfalar (problem_summary.not_listed)

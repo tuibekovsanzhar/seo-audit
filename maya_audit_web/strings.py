@@ -432,6 +432,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "status.note.direct.readable.impaired": "Maya's direct crawler was let in ({ok} of {requests:page request|page requests} answered by the site itself; {impaired} blocked or rate-limited).",
         "status.note.direct.challenged": "Maya's direct crawler was challenged or blocked on {count} of {requests:page request|page requests}.",
         "status.note.direct.rate_limited": "Maya's direct crawler was rate-limited on {count} of {requests:page request|page requests}.",
+        "status.note.direct.blocked_429": "Maya's crawler was blocked (429 on pages) on {count} of {requests:page request|page requests}, while robots.txt and the sitemap were served.",
         "status.note.direct.unknown": "Maya's direct crawler requested no page, so direct access is unknown.",
         "status.note.direct.not_reached": "Direct access was not measured: no answer from the site reached this computer.",
         "status.note.coverage.none": "No page content could be read.",

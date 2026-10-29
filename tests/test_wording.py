@@ -214,7 +214,14 @@ BUILT = {
     ("STR-7", "expected", "FORMAT_EXPECTED"): [__import__("maya_audit.evidence_accuracy", fromlist=["FORMAT_EXPECTED"]).FORMAT_EXPECTED],
     ("ACC-9", "fix", None): ['If you own this site: allow the user agent "Maya-Audit" in the firewall or bot-protection rules and run the audit again; verify ownership '
                              "so ACC-4 can test what AI crawlers receive; or try again later if this was a rate limit. Then check the same rules for the AI crawlers "
-                             "you want to reach you (OAI-SearchBot, ClaudeBot, PerplexityBot and others)."],
+                             "you want to reach you (OAI-SearchBot, ClaudeBot, PerplexityBot and others).",
+                             # DECISIONS 288: 429 on pages while the site's files are served (FIX_429), named and unnamed blocker
+                             'Check the bot and rate-limit rules in Cloudflare that answer page requests with 429 while robots.txt and the sitemap '
+                             'are served: allow the user agent "Maya-Audit" and run the audit again. AI crawlers may get the same treatment: check '
+                             "the same rules for OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you.",
+                             "Check the bot and rate-limit rules in the site's firewall that answer page requests with 429 while robots.txt and the "
+                             'sitemap are served: allow the user agent "Maya-Audit" and run the audit again. AI crawlers may get the same treatment: '
+                             "check the same rules for OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you."],
     ("ACC-2", "fix", "_role_how_to_fix(role, engines, line)"): [
         "If ChatGPT search, Perplexity should be able to find and cite these pages, remove or narrow the rule on line 4 for these user agents. If blocking them is deliberate, mark it as intended.",
         "Live fetchers may not follow robots.txt at all (see ACC-4 for what they actually receive). If you want users' AI assistants to read these pages, remove the rule on line 7.",

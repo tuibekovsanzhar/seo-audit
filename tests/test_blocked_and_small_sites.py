@@ -104,7 +104,9 @@ def test_a_plain_403_or_a_rate_limit_is_described_without_inventing_a_vendor(no_
     def limited(request):
         return ROBOTS if request.url.path == "/robots.txt" else httpx.Response(429, headers={**HTML, "retry-after": "3600"}, text="slow down")
     [finding] = run(limited, rate_limit_stop_after=1).by_id["ACC-9"].findings
-    assert "the site's rate limiting (HTTP 429)" in finding.title
+    # robots.txt served while every page got 429: a block on Maya's crawler (DECISIONS 288), still with no vendor made up.
+    assert finding.title.startswith("Maya's crawler blocked (429 on pages): the site's firewall answered 1 of 1 page request(s)")
+    assert finding.evidence["blocked_by"][0]["name"] is None
 
 
 def test_a_site_that_lets_the_audit_in_passes_and_a_few_blocked_pages_are_a_low_finding(no_lookups):

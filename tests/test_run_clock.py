@@ -142,7 +142,8 @@ def test_a_site_that_rate_limited_maya_before_any_page_is_asked_for_its_homepage
     outcome.result.stop_reason = StopReason.RATE_LIMIT
     api = Firecrawl(SITE)
     info = reader.apply(outcome, CFG, client_for(tmp_path, api), MAIN)
-    assert api.urls == ["https://bank.test/"] and info["homepage_fallback"]["read"]
+    fallback = info["crawl_blocked"]["homepage_fallback"]
+    assert api.urls == ["https://bank.test/"] and fallback["read"] and fallback["continued"] is False
 
 
 def test_a_request_is_never_started_with_too_little_time_left_and_its_timeout_fits_what_is_left(tmp_path, no_lookups):
