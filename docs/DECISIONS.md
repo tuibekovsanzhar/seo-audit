@@ -2612,3 +2612,9 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      (3) STR-2's "The homepage's only <h1> is hidden" is Medium (S3), not High: one reading of the page's markup or
      computed style, and the second look has no re-test for it (`verification.RETESTS`), so it is never re-tested. This
      lowers 258's High; the finding's note says why. A saved report keeps the severity it was written with.
+     (4) STR-8 leaves out a `<div>` grid that belongs to a calculator even when no control is inside the grid: a form
+     control (or `role="slider"`) in its parent or grandparent block, settled when the page ends because the input
+     column may come after the result column (`controls_beside`), or a block whose class, id or heading names a
+     calculator (`calculator_named`: calculat, calc, hesapla, simulat, simülasyon, rechner). Enpara's loan calculator
+     showed its computed amounts as "pricing laid out as <div> grids". Body, main and html are too wide to count: a
+     search box elsewhere on the page does not make a price list a calculator (test).

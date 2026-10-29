@@ -2884,7 +2884,7 @@ def str8_semantic_tables(result: CrawlResult, cfg: CrawlConfig, pages: list, key
         # What the rows of the page's real tables (those with header cells) are about.
         in_tables = {_norm(label) for table in p.analysis["tables"] if table.get("has_th") for label in table.get("row_labels") or []}
         for grid in p.analysis["div_grids"]:
-            if grid.get("has_controls"):
+            if grid.get("has_controls") or grid.get("calculator_named"):
                 left_out.append({"url": p.url, "container": grid["container"], "rows": grid["rows"],
                                  **({"selector": grid["selector"]} if grid.get("selector") else {}), "why": CALCULATOR_LEFT_OUT})
                 continue

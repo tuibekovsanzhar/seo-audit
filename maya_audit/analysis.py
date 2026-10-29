@@ -46,6 +46,11 @@ SELECTOR_PART_MAX = 80
 FIRST_ROW_MAX = 120
 # A form control (DECISIONS 223): a grid or a table with one inside, or a <form> around, is a calculator or a form.
 CONTROL_TAGS = frozenset({"input", "select", "textarea", "output"})
+# A block named as a calculator (its class, id or the heading it sits under): its grid shows computed values, not a
+# table of facts (DECISIONS 284). Not a page type: only the block that carries the name.
+CALCULATOR_NAME = re.compile(r"calculat|(?<![a-z])calc(?![a-z])|[-_]calc|hesapla|simulat|simülasyon|rechner", re.I)
+# Blocks too wide to say a control is beside a grid: any control anywhere on the page marks them.
+PAGE_BLOCKS = frozenset({"html", "body", "main"})
 # An empty <table> is in a calculator's block when the table or one of its nearest ancestors (not the page itself:
 # html, body, main, article) holds a control. An agent default.
 CONTROL_BLOCK_LEVELS = 3
@@ -542,7 +547,8 @@ class _Analyzer(HTMLParser):
                                     and len(self.breadcrumbs) < 5):
                                 self.breadcrumbs.append({"links": collector["links"], "items": collector["items"],
                                                          "text": text[:200], "in_chrome": collector["in_chrome"]})
-                    self._close_node(node, self.stack[j - 1][3] if j > 0 else None)
+                    self._close_node(node, self.stack[j - 1][3] if j > 0 else None,
+                                     self.stack[j - 2][3] if j > 1 else None)
                 del self.stack[i:]
                 return
 
@@ -669,8 +675,14 @@ class _Analyzer(HTMLParser):
         for table in self.tables:
             nodes = table.pop("_nodes", [])
             table["has_controls"] = bool(table.pop("_form", False)) or any(node["controls"] for node in nodes)
+        # A grid beside a form control in the same block (a calculator's result column next to its sliders), DECISIONS
+        # 284: the control may come after the grid in the page, so it is settled here.
+        for grid in self.div_grids:
+            near = grid.pop("_near", [])
+            if not grid["has_controls"] and any(n["controls"] or n["form"] for n in near):
+                grid["has_controls"] = grid["controls_beside"] = True
 
-    def _close_node(self, node: dict, parent: dict | None) -> None:
+    def _close_node(self, node: dict, parent: dict | None, grandparent: dict | None = None) -> None:
         self._label_images(node)
         text = _WS.sub(" ", " ".join(node["text"])).strip()
         summary = {"sig": node["sig"], "tag": node["tag"], "text": text[:NODE_TEXT_CAP],
@@ -679,13 +691,15 @@ class _Analyzer(HTMLParser):
                    "cell_texts": [c["text"][:60] for c in node["children"]][:8],
                    "semantic": node["tag"] in SEMANTIC_BLOCKS or any(c["semantic"] for c in node["children"])}
         if node["tag"] in GRID_CONTAINERS and not node["in_chrome"] and len(node["children"]) >= 2:
-            self._detect_grid(node)
+            self._detect_grid(node, [parent, grandparent])
             self._detect_numbered(node)
         if parent is not None and len(parent["children"]) < 200:
             parent["children"].append(summary)
 
-    def _detect_grid(self, node: dict) -> None:
-        """A <div> container whose repeated children all have the same short cells: a table without <table>."""
+    def _detect_grid(self, node: dict, near: list | None = None) -> None:
+        """A <div> container whose repeated children all have the same short cells: a table without <table>.
+        `near` is its parent and grandparent block: a calculator's result column sits beside its input column, so a
+        form control there is settled when the page ends (`finish`, DECISIONS 284)."""
         groups: dict[str, list[dict]] = defaultdict(list)
         for child in node["children"]:
             groups[child["sig"]].append(child)
@@ -712,7 +726,10 @@ class _Analyzer(HTMLParser):
                                    "selector": node["selector"], "first_row": " | ".join(rows[0]["cell_texts"])[:FIRST_ROW_MAX],
                                    "heading": node["heading"], "label": node["label"][:SELECTOR_PART_MAX],
                                    # A calculator or a form: its rows are input fields (DECISIONS 223).
-                                   "has_controls": bool(node["controls"] or node["form"])})
+                                   "has_controls": bool(node["controls"] or node["form"]),
+                                   "calculator_named": bool(CALCULATOR_NAME.search(
+                                       " ".join([node["selector"], node["label"], node["heading"] or ""]))),
+                                   "_near": [n for n in near or [] if n and n["tag"] not in PAGE_BLOCKS]})
 
     def _detect_numbered(self, node: dict) -> None:
         numbered = [c for c in node["children"] if c["tag"] in {"p", "div"} and NUMBERED.match(c["text"])]
