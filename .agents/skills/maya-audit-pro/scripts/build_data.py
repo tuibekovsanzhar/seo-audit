@@ -825,10 +825,14 @@ class Builder:
         members = next((g for g in self.groups() if g[0] is f), [f])
         if len(members) < 2:
             return self.scope_text(f)
-        urls = {u for m in members for u in (m.get("scope") or {}).get("urls") or [] if isinstance(u, str)}
+        # The full address list when the report has one (affected-urls.json); a finding's own list is cut short.
+        lists = [self.affected.get(m["id"]) or (m.get("scope") or {}).get("urls") or [] for m in members]
+        complete = all(len(urls) >= ((m.get("scope") or {}).get("count") or 0) for m, urls in zip(members, lists))
+        n = (len({u for urls in lists for u in urls if isinstance(u, str)}) if complete
+             else sum((m.get("scope") or {}).get("count") or 0 for m in members))
         unit = self.L["scope_units"]["url" if f.get("check_id") in ("IDX-1", "IDX-6", "IDX-3", "IDX-5") else "page"]
-        self.fact(len(urls))
-        return f"{fmt_int(len(urls), self.lang)} {unit[0] if len(urls) == 1 else unit[1]}"
+        self.fact(n)
+        return f"{fmt_int(n, self.lang)} {unit[0] if n == 1 else unit[1]}"
 
     def merged_lines(self, members):
         """One line per finding of a merged card: severity, scope and the finding's own title (DECISIONS 284 (1))."""

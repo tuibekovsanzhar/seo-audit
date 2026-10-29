@@ -601,6 +601,16 @@ class OneCauseOneCard(unittest.TestCase):
         d = self.empty(['/semt/', '/bolge/'])
         self.assertEqual([t['finding_ids'] for t in d['todos'] if t['severity'] != 'Info'], [['IDX-1-r', 'IDX-1-s']])
 
+    def test_a_merged_row_counts_every_address_when_the_lists_are_cut_short(self):
+        rep = finding('IDX-1-r', 'IDX-1', '9 URL(s) returned repeated empty GET responses in the tested client', 'S2',
+                      [S + '/semt/a/'], 'judgment.empty.repeated', verification={'state': 'confirmed'},
+                      evidence={'by_section': [{'section': '/semt/', 'count': 9}]})
+        one = finding('IDX-1-s', 'IDX-1', '57 URL(s) returned an empty response; persistence is unconfirmed', 'S3',
+                      [S + '/semt/b/'], 'judgment.empty.single', verification={'state': 'confirmed'},
+                      evidence={'by_section': [{'section': '/semt/', 'count': 57}]})
+        rep['scope']['count'], one['scope']['count'] = 9, 57  # the report lists one address of each
+        self.assertEqual(build_tr(report_of(rep, one))['findings'][0]['scope'], '66 URL')
+
     def test_empty_answers_on_other_sections_stay_two_cards(self):
         d = self.empty(['/bolge/'])
         self.assertEqual(len([t for t in d['todos'] if t['severity'] != 'Info']), 2)
