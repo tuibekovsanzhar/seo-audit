@@ -115,6 +115,14 @@ def load_final(maya_src=None):
     return None
 
 
+def unread_part_names():
+    """The engine's names for parts that restate the unread addresses; the engine is required (load_final)."""
+    if load_final() is None:
+        raise RuntimeError("Maya Audit motoru (maya_audit) bulunamadı")
+    from maya_audit.coverage import UNREAD_RESTATEMENTS  # type: ignore
+    return UNREAD_RESTATEMENTS
+
+
 def link_rows(cards):
     """A broken link's "what to edit" rows (maya_audit.final.broken_link_cards): page to edit, link text, the address
     it links to, where it ends and that address's status. The new address is never known, so never guessed."""
@@ -411,8 +419,9 @@ class Builder:
 
     def gaps(self):
         """Kontrol edilemeyen kısımlar: maya_audit_web.summary.coverage_gaps'in sadeleştirilmiş eşi
-        (aynı (kısım, neden) bir kez; tarama boşluğu kısmı hariç)."""
-        crawl_gap = {"pages found but not read", "pages not checked because the crawl was incomplete"}
+        (aynı (kısım, neden) bir kez). Okunmayan adresleri yeniden sayan kısımlar hariç: onlar "N URL okunmadı"
+        satırında bir kez sayılır (maya_audit.coverage.UNREAD_RESTATEMENTS, DECISIONS 283 (10))."""
+        crawl_gap = unread_part_names()
         seen = set()
         for chk in (self.r.get("checks") or []) + (self.r.get("answer_engine_panel") or []):
             parts = ((chk.get("coverage") or {}).get("not_assessed")) or []

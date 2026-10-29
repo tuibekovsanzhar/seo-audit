@@ -457,3 +457,24 @@ class AddressList(unittest.TestCase):
         raw = self.write('en')
         self.assertTrue(raw.startswith(b'\xef\xbb\xbf'))
         self.assertEqual(raw.decode('utf-8-sig').splitlines()[0], 'Card,Finding,Severity,Address')
+
+
+class Gaps(unittest.TestCase):
+    """DECISIONS 283 (10): the unread addresses are counted once ("N URL okunmadı"), not again as coverage items."""
+
+    def test_parts_that_restate_the_unread_addresses_are_not_counted_again(self):
+        r = report(['https://sample.example/a'])
+        unread = {'reason': 'the crawl stopped at page_cap', 'count': 2}
+        r['checks'] = [
+            {'check_id': 'STR-2', 'status': 'partial', 'findings': [], 'coverage': {'not_assessed': [
+                {'part': 'pages found but not read', **unread}]}},
+            {'check_id': 'IDX-1', 'status': 'partial', 'findings': [], 'coverage': {'not_assessed': [
+                {'part': 'addresses found but not fetched by the crawl', **unread}]}},
+            {'check_id': 'TSEO-1', 'status': 'findings', 'findings': [], 'coverage': {'not_assessed': [
+                {'part': 'discovered pages not fetched', **unread}, {'part': 'pages found but not read', **unread}]}},
+            {'check_id': 'IDX-7', 'status': 'partial', 'findings': r['checks'][0]['findings'], 'coverage': {'not_assessed': [
+                {'part': 'orphan pages', 'reason': 'needs the full link graph', 'count': None}]}},
+        ]
+        d = build_en(r)
+        gaps = next(row for row in d['coverage']['rows'] if row['label'] == render.LABELS['en']['cov_gaps'])
+        self.assertEqual(gaps['value'], '1')  # only "orphan pages"

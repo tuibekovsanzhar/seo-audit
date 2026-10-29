@@ -2593,3 +2593,9 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      when the cut body has too few <h2>/<h3>: the rest of the page may hold them. STR-2 lists the page in
      `evidence.sections_cut_off` and coverage part "pages whose HTML was cut off before their section headings could be
      counted" (with the reason), so the check is partial, not a pass. Completes the limitation 282 left open.
+     (10) The client PDF's "Değerlendirilmeyen kapsam" count no longer counts the unread addresses again: IDX-1's
+     "addresses found but not fetched by the crawl" and TSEO-1's "discovered pages not fetched" say the same addresses as
+     the report's one "not read" figure, as "pages found but not read" does. `maya_audit.coverage.UNREAD_RESTATEMENTS`
+     names them once; the skill's count leaves them out (partial-crawl fixture: 25 → 23). The web's gap list is
+     unchanged (it lists IDX-1's part with its own reason). (9 was the report-checker review, no change.)
+

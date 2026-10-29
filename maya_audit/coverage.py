@@ -536,6 +536,9 @@ def settle(check, access: dict | None = None, crawl_gap: Part | None = None, ind
 PROBE_SCOPED = frozenset({"IDX-1", "IDX-2", "IDX-5", "IDX-6", "PRF-1", "PRF-2"})
 CRAWL_GAP = "pages found but not read"
 CRAWL_GAP_NAMES = frozenset({CRAWL_GAP, "pages not checked because the crawl was incomplete"})  # the second: reports before 2026-10-07
+# Parts that say again the addresses the report's one "not read" figure already counts: a count of what could not be
+# assessed takes each of them as that figure, never as one more item (DECISIONS 283 (10)).
+UNREAD_RESTATEMENTS = CRAWL_GAP_NAMES | frozenset({"discovered pages not fetched", "addresses found but not fetched by the crawl"})
 
 
 def crawl_gap_part(read: int, unread: int, detail: str) -> Part:
