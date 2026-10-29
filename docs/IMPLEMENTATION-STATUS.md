@@ -22,7 +22,7 @@ Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bi
 | 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown, web PDFs and the `maya-audit-pro` client PDF |
 | 11 Team status vs engine verification | NOT_STARTED | |
 | 12 SEO accuracy measurement | BLOCKED_ON_INPUT | Needs human SEO labels; nothing labelled yet |
-| 13 Integration and release | VERIFIED | w14b (tag `team-preview-w14b`, `57aa9d6`): extracted-archive verification PASS. w14 superseded (FAIL) |
+| 13 Integration and release | IN_PROGRESS | w14c (tag `team-preview-w14c`): archive verification pending. w14b VERIFIED; w14 superseded (FAIL) |
 
 ## Stage 00 — baseline
 
@@ -339,3 +339,9 @@ they show two links (the rest in "+N" and the CSV).
 Fixes 3 and 4 change the engine, so they apply to new audits. A saved report keeps what it was written with: Adile's
 hidden <h1> is still High (S2) and Enpara's loan-calculator STR-8 card is still there in v2. Re-running or re-analysing
 those audits is needed to see them change; not done (no new audits were started).
+
+| Command (checkout, macOS, Python 3.13.1) | Result |
+|---|---|
+| `.venv/bin/python -m pytest -q -rfE` (first run, after the five fixes) | `1 failed, 2629 passed, 3 skipped` — `test_m1_broken_links.py` used the hidden <h1> as a High example; test updated (`f885670`) |
+| same, after the test update | `2630 passed, 3 skipped, 1 warning in 779.81s (0:12:59)` |
+| skill tests `pytest -q .agents/skills/maya-audit-pro/tests` | `50 passed` |
