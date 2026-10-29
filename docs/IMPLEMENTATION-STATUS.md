@@ -312,3 +312,30 @@ addresses. The step was reworded and the gate then passed.
   stop reason is `time_limit` (40 of 51 requests sent). `native_page_records` is 67; whether the cap counted records
   rather than pages read is not checked yet.
 - The stop reason should name the time limit, and `pages_checked` should not exceed the pages read.
+
+## Fixes after the 2026-10-29 client PDFs (DECISIONS 284)
+
+Brand-independent; one commit each, offline tests only.
+
+| # | Fix | Where | Regression test |
+|---|---|---|---|
+| 1 | One card per cause: same `dedup_key` (early-closed <head>, STR-5 names + og:site_name), IDX-1 repeated + single empty on shared sections, identical catalogue titles. A line per finding, the other findings' steps while they fit, one table row counting every address | skill `build_data.py`, `render.py` | `OneCauseOneCard` (7 tests) |
+| 2 | Owner and effort from the engine catalogue: early-closed <head>, hidden <h1>, template markers → Geliştirici | skill `build_data.py`, `sahip_efor.json` | `Owners` (3) |
+| 3 | A hidden homepage <h1> is Medium: nothing re-tests it | `checks/structure.py` | `test_w14c_fixes.py`, `test_w11_homepage.py` |
+| 4 | STR-8 leaves out a calculator's result grid (control in the same block, or a block named as a calculator) | `analysis.py`, `checks/structure.py` | `test_w14c_fixes.py` (3) |
+| 5 | Sitemap review addresses counted by reason on the card and the table row | skill `build_data.py`, `etiketler.json` | `SitemapReasons` (3) |
+
+Cards with the new lines overflowed at first (the render refused the PDF): their steps box now shrinks to its lines and
+they show two links (the rest in "+N" and the CSV).
+
+**v2 client PDFs** (same report.json files, `reviews/2026-10-29/v2/`, copied to the Desktop):
+
+| Site | Cards (v1 → v2) | Pages | Gate |
+|---|---|---|---|
+| carpexonline.com | 20 → 19 (STR-5 merged) | 8 | PASS, 0 violations |
+| enpara.com | 16 → 14 (<head> merged; two generic-link cards merged) | 7 | PASS, 0 hard; 1 High not re-tested (TSEO-1) |
+| adilesultanevyemekleri.com | 20 → 19 (IDX-1 merged) | 8 | PASS, 0 hard; 1 High not re-tested (STR-2 hidden <h1>) |
+
+Fixes 3 and 4 change the engine, so they apply to new audits. A saved report keeps what it was written with: Adile's
+hidden <h1> is still High (S2) and Enpara's loan-calculator STR-8 card is still there in v2. Re-running or re-analysing
+those audits is needed to see them change; not done (no new audits were started).

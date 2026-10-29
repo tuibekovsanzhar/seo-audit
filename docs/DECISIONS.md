@@ -2611,7 +2611,9 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      early-closed <head> and a hidden <h1>; both are template and markup work (Geliştirici), as are template markers.
      (3) STR-2's "The homepage's only <h1> is hidden" is Medium (S3), not High: one reading of the page's markup or
      computed style, and the second look has no re-test for it (`verification.RETESTS`), so it is never re-tested. This
-     lowers 258's High; the finding's note says why. A saved report keeps the severity it was written with.
+     lowers 258's High; the finding's note says why. A saved report keeps the severity it was written with. The
+     page-reader contract test (`test_m1_broken_links.py`) used it as its High example: it is Medium there now and, like
+     any Medium finding without a re-test, carries no re-test record (found by the full suite after the commit).
      (4) STR-8 leaves out a `<div>` grid that belongs to a calculator even when no control is inside the grid: a form
      control (or `role="slider"`) in its parent or grandparent block, settled when the page ends because the input
      column may come after the result column (`controls_beside`), or a block whose class, id or heading names a

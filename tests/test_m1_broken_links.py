@@ -152,7 +152,9 @@ def test_cli_and_web_use_the_same_seal():
 
 def test_a_finding_a_page_reader_replaced_gets_page_types_and_a_retest_state(tmp_path, no_lookups):
     """Maya's crawl sees a visible <h1>; Firecrawl's copy of the homepage hides it. The reader's STR-2 replaces Maya's,
-    and its High finding must leave with the same contract as an engine finding: page kinds and a re-test state."""
+    and its finding must leave with the same contract as an engine finding: page kinds, and the second look run after
+    the reader. Since DECISIONS 284 the hidden homepage <h1> is Medium (nothing re-tests it), so, like any Medium
+    finding without a re-test, it carries no re-test record."""
     import httpx
     from maya_audit.firecrawl import Options, reader
     from test_firecrawl import HTML, ROBOTS_TEXT, Firecrawl, client_for, doc, TEXT
@@ -173,9 +175,9 @@ def test_a_finding_a_page_reader_replaced_gets_page_types_and_a_retest_state(tmp
     info = reader.apply(outcome, cfg, client_for(tmp_path, Firecrawl(read)), Options(read_always=True, max_pages=5))
     assert "STR-2" in info["checks_from_firecrawl"]
     [hidden] = [f for c in outcome.checks for f in c.findings if f.rule_id == "str2.home_hidden_h1"]
-    assert hidden.severity.value in ("S1", "S2")
+    assert hidden.severity.value == "S3"
     assert hidden.page_types  # annotated after the reader, as for Maya's own findings
-    assert hidden.verification["state"] == "not_retested" and hidden.verification["reason"]
+    assert not hidden.verification  # Medium and no re-test exists: no record (a High one says "not_retested")
     assert "after_provider" in outcome.result.verification
     report = final.seal(outcome, firecrawl=info).report
     assert [v for v in release_gate.check_report(report) if v["rule"] in ("RG-5", "RG-7")] == []
