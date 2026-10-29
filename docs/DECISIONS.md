@@ -2580,3 +2580,5 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      no field data (the summary is then three pages; tabs and page numbers follow). Page 1's lab KPI still says "not
      measured", so the absence is stated once instead of filling a page with empty boxes. data.json without a `search`
      key keeps the old four pages.
+     (6) The client PDF's address CSV keeps its UTF-8 byte-order mark and uses ";" as the delimiter in Turkish (Turkish
+     Excel reads "," as the decimal mark and put each row in one cell); English keeps ",".

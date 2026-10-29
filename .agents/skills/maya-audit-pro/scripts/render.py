@@ -589,8 +589,10 @@ def write_address_list(d, out):
             rows.append([t["n"], t["id"], t["severity_label"], note])
     import csv
     path = out.with_name(out.stem + ("-addresses.csv" if en else "-adresler.csv"))
+    # UTF-8 with a byte-order mark so Excel reads Turkish letters; ";" for Turkish, whose Excel takes "," as the decimal
+    # mark and would put a whole row in one cell (DECISIONS 283 (6)).
     with path.open("w", encoding="utf-8-sig", newline="") as fh:
-        csv.writer(fh).writerows([header] + rows)
+        csv.writer(fh, delimiter="," if en else ";").writerows([header] + rows)
     return path
 
 

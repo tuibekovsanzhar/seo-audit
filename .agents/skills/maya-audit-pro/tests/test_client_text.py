@@ -434,3 +434,26 @@ class SearchPage(unittest.TestCase):
         n, html = self.sections(d)
         self.assertEqual(n, 4 + 1)
         self.assertIn(render.e(render.LABELS['en']['p3_title']), html)
+
+
+class AddressList(unittest.TestCase):
+    """DECISIONS 283 (6): the address CSV keeps its byte-order mark; Turkish uses ";" as the delimiter."""
+
+    def write(self, lang):
+        urls = [f'https://sample.example/ş{i}' for i in range(7)]
+        d = build.Builder(report(urls), lang, render.LABELS[lang], json.loads((build.REFS / 'sahip_efor.json').read_text()),
+                          Wording(), None, 'test', False, None).build()
+        with tempfile.TemporaryDirectory() as tmp:
+            return render.write_address_list(d, Path(tmp) / 'r.html').read_bytes()
+
+    def test_turkish_list_uses_semicolons_and_a_bom(self):
+        raw = self.write('tr')
+        self.assertTrue(raw.startswith(b'\xef\xbb\xbf'))
+        lines = raw.decode('utf-8-sig').splitlines()
+        self.assertEqual(lines[0], 'Kart;Bulgu;Önem;Adres')
+        self.assertEqual(lines[1], '1;STR-2-generic;Düşük;https://sample.example/ş0')
+
+    def test_english_list_keeps_commas_and_a_bom(self):
+        raw = self.write('en')
+        self.assertTrue(raw.startswith(b'\xef\xbb\xbf'))
+        self.assertEqual(raw.decode('utf-8-sig').splitlines()[0], 'Card,Finding,Severity,Address')
