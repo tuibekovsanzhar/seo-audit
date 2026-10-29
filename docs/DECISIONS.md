@@ -2573,3 +2573,6 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      now reports it. The name finding's address list is every page a counted name was seen on (as its evidence already
      counted); before, a title-suffix name listed only its first page, so the overlap could not be seen. It stays
      site-wide; severities unchanged.
+     (4) PRF-1's homepage time-to-first-byte finding is Medium (S3), not High: it is one measurement from Maya's own
+     network (the median of its samples in one audit), and the second look never repeats it (272), so it is never
+     re-tested. This lowers 258 (4); the finding's note says why. Test: `tests/test_w11_homepage.py`.

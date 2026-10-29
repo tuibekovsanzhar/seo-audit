@@ -78,8 +78,11 @@ def homepage_ttfb(limit_ms):
     return [f for f in prf1.findings if f.title.startswith("The homepage takes")]
 
 
-def test_a_slow_homepage_is_high_from_its_own_samples_and_a_fast_one_is_not_reported():
+def test_a_slow_homepage_is_medium_from_its_own_samples_and_a_fast_one_is_not_reported():
     [slow] = homepage_ttfb(-1)  # any measured homepage is "slow" against a negative bar
-    assert slow.severity.value == "S2" and slow.confidence.value == "verified"
+    # DECISIONS 283 (4): one measurement from Maya's network, never re-tested, is at most Medium (258 had it High).
+    assert slow.severity.value == "S3" and slow.confidence.value == "verified"
+    assert (slow.verification or {}).get("state") != "confirmed"
+    assert any("not re-tested" in note for note in slow.notes)
     assert slow.evidence["pages"][0]["successful_samples"] >= 3 and slow.importance_tier == 0
     assert homepage_ttfb(800) == []  # the fake homepage answers in a few milliseconds

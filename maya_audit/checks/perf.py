@@ -143,7 +143,9 @@ def prf1_response_time(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
         ms = round(home_row["median_ttfb_ms"])
         findings.append(Finding(
             "PRF-1", f"The homepage takes {ms} ms (median of {home_row['successful_samples']} requests) to start answering",
-            Severity.S2, Confidence.VERIFIED,
+            # DECISIONS 283 (4): one measurement from Maya's network that the second look does not repeat (272) is
+            # at most Medium; 258 had made it High.
+            Severity.S3, Confidence.VERIFIED,
             "Documented (web.dev: a good time to first byte is 0.8 s or less)", LIVE_FETCHERS,
             scope_for([home_row["url"]]), {"pages": [home_row], "threshold_ms": cfg.homepage_ttfb_max_ms,
                                           "egress_region": _egress(cfg)},
@@ -151,8 +153,9 @@ def prf1_response_time(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
             "Ask the platform or host for a page cache, or a CDN rule that caches the homepage HTML; then find what the "
             "server does before it starts answering (uncached rendering, slow queries, upstream calls).",
             importance_tier=0,
-            notes=common_notes + ["High on the homepage by the owner's decision (DECISIONS 258); the threshold is web.dev's "
-                                  "'good' time to first byte. Measured from Maya's network, not real users."]))
+            notes=common_notes + ["Medium: one measurement from Maya's network, not re-tested (the second look does not "
+                                  "repeat it); not real users (DECISIONS 283, which lowers 258's High). The threshold is "
+                                  "web.dev's 'good' time to first byte."]))
     if intermittent:
         urls = [r["url"] for r in intermittent]
         findings.append(Finding(
