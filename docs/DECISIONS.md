@@ -2568,3 +2568,8 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      (2) The client PDF's "pages with problems" headline counts only pages whose worst page-specific problem is Medium
      or higher (`problem_summary.by_page[].worst_severity` S1–S3); the label and sub-line say so ("Orta ve üstü sorunlu
      sayfa", "düşükler sayılmaz"). Carpex showed 145/146 because pages with only Low problems were counted.
+     (3) STR-5's "The brand is named N different ways" and "og:site_name holds the page title" share
+     `dedup_key = "str5.site_name"`: on the same pages they are one cause said twice, and the release gate's RG-9 (soft)
+     now reports it. The name finding's address list is every page a counted name was seen on (as its evidence already
+     counted); before, a title-suffix name listed only its first page, so the overlap could not be seen. It stays
+     site-wide; severities unchanged.

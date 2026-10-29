@@ -1939,6 +1939,9 @@ def _is_this_site(node: dict, page_url: str, home: str, origin: str) -> bool:
     return page_url == home
 
 
+BRAND_NAME_KEY = "str5.site_name"
+
+
 def og_site_names(pages: list) -> tuple[list[tuple[str, str]], list[dict]]:
     """([(page, og:site_name) that names the site], [pages whose og:site_name holds the page's title]).
 
@@ -2121,7 +2124,9 @@ def str5_entity(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
             "alternateName.", key_urls, [CAPPED, "Verified: the same @id is given these different names; no "
                                                  "judgement about spelling is involved."]))
     if len(counted) > 2:
-        urls = sorted({s["url"] for v in counted.values() for s in v})
+        # Every page a counted name was seen on (a title suffix is seen on many pages, not only its first), so a finding
+        # about the same pages' names can be told apart from this one or matched to it (DECISIONS 283 (3)).
+        urls = sorted({u for k in counted for u in seen_on[k]})
         findings.append(_finding(
             "STR-5", f"The brand is named {len(counted)} different ways", Severity.S4, Confidence.ESTIMATED, HYPOTHESIS,
             ["all answer engines that resolve brand entities"], urls,
@@ -2150,6 +2155,11 @@ def str5_entity(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
             "Set og:site_name to the site's name alone on these pages. The page's own title belongs in og:title.", key_urls,
             [CAPPED, "Verified: on these pages the tag's content is the page's own title, or has a title separator in it "
                      "( | , - , – , — , · or : between spaces). These values are not counted as names of the brand."]))
+    # DECISIONS 283 (3): the site's name as these pages give it is one cause; "named N ways" and "og:site_name holds the
+    # page title" on the same pages are one finding said twice, so they share a key and the release gate (RG-9) says so.
+    for f in findings:
+        if f.title.startswith("The brand is named ") or f.title.startswith("og:site_name holds the page title"):
+            f.dedup_key = BRAND_NAME_KEY
     dead, inconclusive = [], []
     for url, found_on in org_urls.items():
         entry = data.links.get(url, {"source": "not_fetched", "reason": "not collected"})
