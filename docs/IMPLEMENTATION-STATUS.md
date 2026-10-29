@@ -288,3 +288,27 @@ Tag `team-preview-w14b` → `57aa9d6` (local, not pushed); supersedes w14. Zip
 | ruff, Linux/Windows, live providers | NOT RUN |
 
 VERDICT: PASS. The w14 zip was removed from the Desktop; its copy stays in `~/Projects/releases`.
+
+## Client reports from the 2026-10-29 web audits (w14b)
+
+`maya-audit-pro` Turkish PDF and address CSV from the saved reports (engine 0.2.8, source `31ad1bc`, w14b). Only
+card text was written; findings, severities and report.json are unchanged. Outputs are in `reviews/2026-10-29/`
+(git-ignored).
+
+| Site | Audit id | Pages read | Cards | PDF pages | Gate |
+|---|---|---|---|---|---|
+| www.carpexonline.com | `cb760167…` | 50 | 20 | 8 | PASS, 0 violations |
+| www.enpara.com | `07297f4d…` | 50 | 16 | 7 | PASS, 0 hard; 1 High not re-tested (TSEO-1) |
+| adilesultanevyemekleri.com | `6f2830d5…` | 37 | 20 | 8 | PASS, 0 hard; 1 High not re-tested (STR-2 hidden `<h1>`) |
+
+None of the three had search, lab or field data, so all three have a 3-page summary. The first Enpara draft was
+BLOCKED by RG-3: a step named `/hakkimizda`, which is the llms.txt redirect's target and is not among the card's
+addresses. The step was reworded and the gate then passed.
+
+**Open: page counts in the Adile report (`6f2830d580134ce3b0239dfa2d398e2b`). No code change yet.**
+- `audit_status.summary` and `content_coverage.pages_read` say 37 pages were read (35 Firecrawl + 2 native), but
+  `page_counts.pages_checked` is 50.
+- `crawl.stop_reason` is `page_cap` ("page cap of 50 reached"), but `crawl.deadline_hit` is true. The reader's own
+  stop reason is `time_limit` (40 of 51 requests sent). `native_page_records` is 67; whether the cap counted records
+  rather than pages read is not checked yet.
+- The stop reason should name the time limit, and `pages_checked` should not exceed the pages read.
