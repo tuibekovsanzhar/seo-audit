@@ -963,8 +963,9 @@ class Builder:
             self.fact(bad, checked, listed)
             kpis.append({"label": L["kpi_sitemap"], "value": fmt_int(bad, lang), "of": fmt_int(checked, lang),
                          "sub": L["kpi_sitemap_sub"].format(conf=L["confidence"].get(f.get("confidence"), "")), "state": "ok"})
-        else:
+        elif pages_read:
             # yalnız gerçekten okunan sayfalar: yoklanıp okunmayan adresler paydayı aşmasın
+            # (DECISIONS 287: nothing read, no "0 / 0" tile; the pages box already says nothing could be read)
             read = self.read_urls()
             # DECISIONS 283 (2): the headline counts pages with a Medium or higher page-specific problem; a page whose
             # only problems are Low is not a "page with problems" there (Carpex showed 145/146).

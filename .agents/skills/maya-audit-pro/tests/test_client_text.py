@@ -695,3 +695,29 @@ class NothingRead(unittest.TestCase):
             pages = d['kpis'][1]
             self.assertEqual((pages['value'], pages['sub'], pages['state']),
                              ('0', render.LABELS[lang]['kpi_pages_sub_none'], 'missing'))
+
+    def test_no_problem_pages_tile_and_no_empty_actions_table(self):
+        """DECISIONS 287: nothing read, so no "0 / 0" tile, and no actions table without actions."""
+        r = report(['https://sample.example/'])
+        r['audit_status']['content_coverage'] = {'pages_read': 0, 'known_urls_not_read': 0, 'level': 'none'}
+        d = build_tr_stub(r)
+        labels = [k['label'] for k in d['kpis']]
+        self.assertNotIn(render.LABELS['tr']['kpi_problem_pages'], labels)
+        self.assertEqual(len(labels), 3)
+        d['actions'] = []
+        self.assertNotIn(render.LABELS['tr']['priority_actions'], render.page4(d, render.LABELS['tr']))
+
+    def test_the_gate_blocks_delivery_when_nothing_was_read(self):
+        r = report(['https://sample.example/'])
+        r['audit_status']['content_coverage'] = {'pages_read': 0, 'known_urls_not_read': 0, 'level': 'none'}
+        d = build_tr_stub(r)
+        fill(d)
+        out = validate(d, r)
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn('RG-14', out.stdout + out.stderr)
+        self.assertIn('Decision: BLOCKED', out.stdout)
+
+
+def build_tr_stub(r):
+    return build.Builder(r, 'tr', render.LABELS['tr'], json.loads((build.REFS / 'sahip_efor.json').read_text()),
+                         Wording(), None, 'test', False, None).build()

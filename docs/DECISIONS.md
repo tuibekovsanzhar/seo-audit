@@ -2662,3 +2662,14 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      restored after) and never the bot-protection bypass. `firecrawl.homepage_fallback` records the URL, proxy, bypass
      (always false) and whether it was read. Once any page was read, 52 holds: no reader request after a rate limit.
      Tests: `tests/test_rate_limited_start.py`; `test_run_clock.py`'s rate-limit test now expects the homepage only.
+
+287. **A report that read no page is a draft, not a delivery (owner's request, agent implementation, 2026-10-29).**
+     The nihan.com.tr report read 0 pages and the gate said PASS. Release gate RG-14 (hard): when
+     `audit_status.content_coverage.pages_read` is 0 the decision is BLOCKED, "site content could not be read". The web
+     app already treats BLOCKED as draft-only (download refused unless asked for as a draft, print view with the draft
+     banner), and `maya-audit-pro` prints no PDF on a blocked gate and keeps the HTML. A report without a coverage
+     record (older ones) is not judged on it. A saved report is judged with the gate it was sealed with
+     (`final.from_report` re-runs the gate only when none was saved), so this applies to reports written from now on
+     and to every `maya-audit-pro` build (its validator runs the gate afresh). In the client PDF a report with nothing
+     read drops the "Orta ve üstü sorunlu sayfa 0 / 0" tile, and the action plan drops the "Öncelikli aksiyonlar" table
+     when it has no row. Tests: `tests/test_nothing_read_gate.py`, skill `NothingRead`.

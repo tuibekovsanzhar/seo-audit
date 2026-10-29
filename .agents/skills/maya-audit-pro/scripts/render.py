@@ -399,6 +399,8 @@ def page4(d, L):
     pv = d["provenance"]
     lines = "".join(f'<p><b>{e(x["k"])}</b> {e(x["v"])}</p>' for x in pv["lines"])
     prov = f'<div class="card prov"><div class="cardhead"><h3>{e(L["provenance"])}</h3></div>{lines}<div class="fn">{e(pv["note"])}</div></div>'
+    if not d["actions"]:
+        acts = ""  # DECISIONS 287: no empty "priority actions" table (a report that read nothing has none)
     return f'<div class="body">{acts}<div class="row4">{follow}{sub}{prov}</div></div>'
 
 
