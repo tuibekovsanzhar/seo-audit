@@ -2618,3 +2618,12 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      calculator (`calculator_named`: calculat, calc, hesapla, simulat, simülasyon, rechner). Enpara's loan calculator
      showed its computed amounts as "pricing laid out as <div> grids". Body, main and html are too wide to count: a
      search box elsewhere on the page does not make a price list a calculator (test).
+     (1) The client PDF makes one card per cause, not per finding (`build_data.Builder.groups`): findings with the same
+     engine `dedup_key` (an early-closed <head> reported for canonical tags and for meta tags, closed by the same
+     element; STR-5's brand names and og:site_name), IDX-1's repeated and single empty answers on overlapping sections,
+     and two findings of one check whose cards would carry the same catalogue title (two "Tıklayınız gibi genel
+     bağlantı" cards). The first in priority order leads (severity, schedule, owner, steps); the card names every
+     finding (`finding_ids`, addresses united, each address's own finding in the address CSV) and shows one line per
+     finding (severity · scope · title, up to " — ") in place of the single evidence line. Findings whose re-test states
+     differ stay apart: a card shows one state, and RG-4 refuses "confirmed" unless all are. The findings table and the
+     action plan list one row per card's lead. The release gate needed no change.

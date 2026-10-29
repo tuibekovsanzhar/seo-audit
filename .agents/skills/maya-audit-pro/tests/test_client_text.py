@@ -511,3 +511,111 @@ class Owners(unittest.TestCase):
         d = build.Builder(r, 'tr', render.LABELS['tr'], json.loads((build.REFS / 'sahip_efor.json').read_text()),
                           build.Wording('tr', None), None, 'test', False, None).build()
         self.assertEqual(d['todos'][0]['owner'], 'İçerik')
+
+
+def finding(fid, cid, title, sev, urls, rule, **extra):
+    return {'id': fid, 'check_id': cid, 'title': title, 'severity': sev, 'confidence': 'verified', 'rule_id': rule,
+            'scope': {'kind': 'page', 'count': len(urls), 'urls': urls}, 'how_to_fix': 'Fix it', 'expected': 'Fixed',
+            'evidence': {}, **extra}
+
+
+def report_of(*findings):
+    urls = sorted({u for f in findings for u in f['scope']['urls']})
+    sev = {}
+    for f in findings:
+        sev[f['severity']] = sev.get(f['severity'], 0) + 1
+    return {'checks': [{'check_id': 'X', 'findings': list(findings)}], 'findings_in_priority_order': [f['id'] for f in findings],
+            'problem_summary': {'problems': len(findings), 'by_severity': sev, 'by_page': [], 'whole_site': {'problems': 0}},
+            'crawl': {'origin': 'https://sample.example', 'started_at': '2026-10-29T00:00:00+00:00',
+                      'pages': [{'url': u, 'status': 200} for u in urls]},
+            'audit_status': {'content_coverage': {'pages_read': len(urls), 'level': 'partial'}}}
+
+
+def build_tr(r):
+    return build.Builder(r, 'tr', render.LABELS['tr'], json.loads((build.REFS / 'sahip_efor.json').read_text()),
+                         build.Wording('tr', None), None, 'test', False, None).build()
+
+
+S = 'https://sample.example'
+HEAD_LOST = '2 page(s) end <head> early: canonical, robots or hreflang tags after it are read as body'
+HEAD_LATER = '1 page(s) end <head> early: meta or Open Graph tags after it are read as body'
+
+
+class OneCauseOneCard(unittest.TestCase):
+    """DECISIONS 284 (1): findings that share a cause are one card with a line per finding (Enpara, Carpex, Adile
+    2026-10-29 showed each twice)."""
+
+    def head(self, **later):
+        key = 'head_closed_early:div#overlay'
+        return report_of(
+            finding('TSEO-1-a', 'TSEO-1', HEAD_LOST, 'S2', [S + '/a', S + '/b'], 'tseo1.head_closed_lost', dedup_key=key,
+                    verification={'state': 'not_retested'},
+                    evidence={'pages': [{'url': S + '/a', 'closed_by': {'tag': 'div', 'id': 'overlay'}, 'canonical_after': 1}]}),
+            finding('TSEO-1-b', 'TSEO-1', HEAD_LATER, 'S3', [S + '/c'], 'tseo1.head_closed_later', dedup_key=key, **later))
+
+    def test_an_early_closed_head_is_one_card_with_a_line_per_finding(self):
+        r = self.head()
+        d = build_tr(r)
+        [card] = [t for t in d['todos'] if 'TSEO-1-a' in t['finding_ids']]
+        self.assertEqual(card['finding_ids'], ['TSEO-1-a', 'TSEO-1-b'])
+        self.assertEqual((card['severity'], card['owner'], card['verification_state']), ('S2', 'Geliştirici', 'not_retested'))
+        self.assertEqual(len(card['sub']), 2)
+        self.assertTrue(card['sub'][0].startswith('Yüksek · 2 sayfa · ') and card['sub'][1].startswith('Orta · 1 sayfa · '))
+        self.assertEqual(card['all_urls'], [S + '/a', S + '/b', S + '/c'])
+        self.assertEqual([f['id'] for f in d['findings']], ['TSEO-1-a'])  # one row in the findings table too
+        self.assertIn('class="todo-sub"', render.todo_pages(d, render.LABELS['tr'])[0])
+        for slot in d['_slots']:  # Turkish text in every model field, so only the merge is under test
+            parts = re.findall(r'[^.\[\]]+', slot['path'])
+            o = d
+            for x in parts[:-1]:
+                o = o[int(x)] if x.isdigit() else o[x]
+            k = int(parts[-1]) if parts[-1].isdigit() else parts[-1]
+            if isinstance(o[k], str):
+                o[k] = 'Sayfayı kontrol edin\nSonra yeniden bakın' if slot.get('lines') else 'Sayfayı kontrol edin'
+        out = validate(d, r)
+        self.assertEqual(out.returncode, 0, out.stdout[-600:])
+
+    def test_findings_whose_re_test_states_differ_stay_apart(self):
+        d = build_tr(self.head(verification={'state': 'confirmed'}))
+        self.assertEqual(len([t for t in d['todos'] if t['finding_ids'][0].startswith('TSEO-1')]), 2)
+
+    def test_the_brand_name_findings_with_one_key_are_one_card(self):
+        d = build_tr(report_of(
+            finding('STR-5-a', 'STR-5', 'og:site_name holds the page title on 2 page(s)', 'S4', [S + '/k'], 'str5.og_site_name',
+                    dedup_key='str5.site_name'),
+            finding('STR-5-b', 'STR-5', 'The brand is named 3 different ways', 'S4', [S + '/', S + '/k'], 'str5.names',
+                    dedup_key='str5.site_name')))
+        self.assertEqual([t['finding_ids'] for t in d['todos'] if t['severity'] != 'Info'], [['STR-5-a', 'STR-5-b']])
+
+    def empty(self, single_sections):
+        rep = finding('IDX-1-r', 'IDX-1', '2 URL(s) returned repeated empty GET responses in the tested client', 'S2',
+                      [S + '/semt/a/', S + '/gun/b/'], 'judgment.empty.repeated', verification={'state': 'confirmed'},
+                      evidence={'by_section': [{'section': '/semt/', 'count': 1}, {'section': '/gun/', 'count': 1}]})
+        one = finding('IDX-1-s', 'IDX-1', '3 URL(s) returned an empty response; persistence is unconfirmed', 'S3',
+                      [S + f'{sec}x/' for sec in single_sections], 'judgment.empty.single', verification={'state': 'confirmed'},
+                      evidence={'by_section': [{'section': sec, 'count': 1} for sec in single_sections]})
+        return build_tr(report_of(rep, one))
+
+    def test_repeated_and_single_empty_answers_on_the_same_sections_are_one_card(self):
+        d = self.empty(['/semt/', '/bolge/'])
+        self.assertEqual([t['finding_ids'] for t in d['todos'] if t['severity'] != 'Info'], [['IDX-1-r', 'IDX-1-s']])
+
+    def test_empty_answers_on_other_sections_stay_two_cards(self):
+        d = self.empty(['/bolge/'])
+        self.assertEqual(len([t for t in d['todos'] if t['severity'] != 'Info']), 2)
+
+    def test_two_cards_with_the_same_title_are_one(self):
+        d = build_tr(report_of(
+            finding('STR-14-a', 'STR-14', '42 generic-text link occurrence(s) recorded; purpose requires contextual review — x',
+                    'S4', [S + '/a'], 'judgment.generic.identity'),
+            finding('STR-14-b', 'STR-14', '8 generic-text link occurrence(s) recorded; purpose requires contextual review — y',
+                    'S4', [S + '/b'], 'judgment.generic.identity'),
+            finding('STR-14-c', 'STR-14', '4 link(s) on 4 page(s) have no text at all', 'S4', [S + '/c'], 'str14.no_text')))
+        cards = [t['finding_ids'] for t in d['todos'] if t['severity'] != 'Info']
+        self.assertEqual(sorted(cards), [['STR-14-a', 'STR-14-b'], ['STR-14-c']])
+        merged = next(t for t in d['todos'] if len(t['finding_ids']) == 2)
+        self.assertFalse(any(' — ' in line for line in merged['sub']))
+        with tempfile.TemporaryDirectory() as tmp:  # the address list names each address's own finding
+            merged['more'] = 1
+            rows = render.write_address_list(d, Path(tmp) / 'r.html').read_text(encoding='utf-8-sig').splitlines()
+        self.assertIn(f'{merged["n"]};STR-14-b;Düşük;{S}/b', rows)

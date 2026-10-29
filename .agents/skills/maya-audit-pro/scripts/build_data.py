@@ -26,6 +26,8 @@ REFS = HERE.parent / "references"
 SEVERITIES = ("S1", "S2", "S3", "S4")
 MEDIUM_UP = ("S1", "S2", "S3")
 MARK = "⟪YAZ: {}⟫"
+# DECISIONS 284 (1): findings with one cause are one card. The empty-response rules (one cause when on the same sections).
+EMPTY_RULES = frozenset({"idx1.empty", "judgment.empty.repeated", "judgment.empty.single"})
 # Evidence-sample rows that fit the box above its note; a fourth row printed over the note (Enpara render).
 EV_ROWS = 3
 # Maya Audit STR-3 «expected type» sayfa türü → müşteriye önerilecek tip
@@ -719,6 +721,65 @@ class Builder:
     def share_card(self, i):
         return self.info_card(i, self.SHARE_INFO, "share_card_status", "Fix share image, video markup and image formats", "developer", "share")
 
+    # -- one card per cause (DECISIONS 284 (1))
+    def rule_of(self, f):
+        return f.get("rule_id") or self._w("rule")(f.get("check_id"), f.get("title"))
+
+    @staticmethod
+    def sections(f):
+        """The site sections a finding is on: the engine's own `by_section`, else each address's first path segment."""
+        rows = (f.get("evidence") or {}).get("by_section") or []
+        if rows:
+            return {r.get("section") for r in rows if r.get("section")}
+        return {"/" + (path_of(u).strip("/").split("/")[0] + "/" if path_of(u).strip("/") else "")
+                for u in (f.get("scope") or {}).get("urls") or [] if isinstance(u, str)}
+
+    def same_cause(self, a, b):
+        """One cause said twice: the engine's own dedup_key; IDX-1's repeated and single empty answers on the same
+        sections; or two findings of one check whose cards would carry the same catalogue title."""
+        if a.get("dedup_key") and a.get("dedup_key") == b.get("dedup_key"):
+            return True
+        ra, rb = self.rule_of(a), self.rule_of(b)
+        if ra in EMPTY_RULES and rb in EMPTY_RULES and self.sections(a) & self.sections(b):
+            return True
+        if a.get("check_id") == b.get("check_id") and bool(a.get("intent")) == bool(b.get("intent")):
+            ta, tb = self._w("action")(ra), self._w("action")(rb)
+            return bool(ta) and ta == tb
+        return False
+
+    @staticmethod
+    def retest_state(f):
+        """A finding's second-look state; no record is "not re-tested" (that is what it means)."""
+        return (f.get("verification") or {}).get("state") or "not_retested"
+
+    def groups(self):
+        """The findings in priority order, one list per card. A finding joins the first earlier card it shares a cause
+        with, and only when both say the same about the re-test (a card shows one re-test state; RG-4)."""
+        if getattr(self, "_groups", None) is None:
+            out = []
+            for f in self.problems:
+                home = next((g for g in out if any(self.same_cause(m, f) for m in g)
+                             and {self.retest_state(m) for m in g} == {self.retest_state(f)}), None)
+                if home is not None:
+                    home.append(f)
+                else:
+                    out.append([f])
+            self._groups = out
+        return self._groups
+
+    def merged_lines(self, members):
+        """One line per finding of a merged card: severity, scope and the finding's own title (DECISIONS 284 (1))."""
+        if len(members) < 2:
+            return []
+        lines = []
+        for m in members:
+            text, _ = self.w.title(m.get("check_id"), m.get("title") or "")
+            self.fact(m.get("title"))
+            # The part before " — " says what was found; the rest lists examples, often in the engine's own words.
+            lines.append(f"{self.L['severity'][m['severity']]} · {self.scope_text(m)} · "
+                         f"{(text or m.get('title') or '').split(' — ')[0].rstrip(' ;,')}")
+        return lines
+
     def owner_effort(self, f):
         cid, title = f.get("check_id"), f.get("title") or ""
         engine = getattr(self.w, "owner", None)
@@ -759,7 +820,7 @@ class Builder:
         words = L["scope_units"][unit]
         return f"{fmt_int(n, self.lang)} {words[0] if n == 1 else words[1]}"
 
-    def status_text(self, f):
+    def status_text(self, f, state=None):
         L = self.L
         ev = f.get("evidence") or {}
         if ev.get("observation_strength") == "repeated_empty":
@@ -768,7 +829,7 @@ class Builder:
             parts = [L["confidence"].get(f.get("confidence"), f.get("confidence") or "")]
         # The engine's second look before the report (Maya Audit 1.19, DECISIONS 272). Since DECISIONS 278 a card also
         # says when it was not re-tested ("not_retested" is not a verdict, and a High card without it hid that).
-        state = (f.get("verification") or {}).get("state")
+        state = state or (f.get("verification") or {}).get("state")
         if state is None and f.get("severity") in ("S1", "S2"):
             state = "not_retested"
         if state in L.get("verification", {}):
@@ -891,7 +952,8 @@ class Builder:
         }
 
         # sayfa 2
-        top = self.problems[:5]
+        leads = [g[0] for g in self.groups()]
+        top = leads[:5]
         findings = [{"id": f["id"], "title": self.title_for(f, f"findings[{i}].title", 70),
                      "scope": self.scope_text(f), "severity": f["severity"], "severity_label": L["severity"][f["severity"]],
                      "status": self.status_text(f)} for i, f in enumerate(top)]
@@ -930,9 +992,9 @@ class Builder:
 
         # sayfa 4
         # kasıtlı olabilecek bulgular haftanın aksiyonlarında en sona alınır (ilk iş "teyit et" olur)
-        week = sorted((f for f in self.problems if self.when(f) == "week"), key=lambda f: bool(f.get("intent")))
-        month = [f for f in self.problems if self.when(f) == "month"]
-        later = [f for f in self.problems if self.when(f) == "later"]
+        week = sorted((f for f in leads if self.when(f) == "week"), key=lambda f: bool(f.get("intent")))
+        month = [f for f in leads if self.when(f) == "month"]
+        later = [f for f in leads if self.when(f) == "later"]
         actions = []
         for f in week:
             if len(actions) >= 5:
@@ -975,17 +1037,22 @@ class Builder:
         todos = []
         not_listed = {row.get("finding_id"): int(row.get("pages") or 0) for row in ps.get("not_listed") or []}
         for when_key in ("week", "month", "later"):
-            group = [f for f in self.problems if self.when(f) == when_key]
-            group.sort(key=lambda f: bool(f.get("intent")))
-            for f in group:
+            bucket = [g for g in self.groups() if self.when(g[0]) == when_key]
+            bucket.sort(key=lambda g: bool(g[0].get("intent")))
+            for members in bucket:
+                f = members[0]  # the card's lead: the first in priority order
                 i = len(todos)
                 owner, effort = self.owner_effort(f)
                 sc = f.get("scope") or {}
-                urls = list(dict.fromkeys(u for u in (sc.get("urls") or []) + self.affected.get(f["id"], [])
-                                          if isinstance(u, str)))
+                url_finding = {}
+                for m in members:
+                    for u in ((m.get("scope") or {}).get("urls") or []) + self.affected.get(m["id"], []):
+                        if isinstance(u, str):
+                            url_finding.setdefault(u, m["id"])
+                urls = list(url_finding)
                 shown = urls[:4]  # kartta 4 link; tam liste render.py'nin yazdığı adres listesi CSV'sinde
                 # listelenip kartta gösterilmeyenler + rapordaki listeye hiç girmeyen sayfalar (problem_summary.not_listed)
-                unlisted = 0 if f["id"] in self.affected else not_listed.get(f["id"], 0)
+                unlisted = max(0 if m["id"] in self.affected else not_listed.get(m["id"], 0) for m in members)
                 more = max(0, len(urls) - len(shown)) + unlisted
                 fx, fx_ok = self.w.fix(f.get("how_to_fix") or "")
                 ex, ex_ok = self.w.expected(f.get("expected") or "")
@@ -993,7 +1060,7 @@ class Builder:
                 rule = f.get("rule_id") or self._w("rule")(f.get("check_id"), f.get("title"))
                 action = self._w("action")(rule)
                 step_rules = getattr(self.w, "step_rules", None)
-                pre_steps, conditional = step_rules(rule, [f]) if step_rules else (self._w("steps")(rule), [])
+                pre_steps, conditional = step_rules(rule, members) if step_rules else (self._w("steps")(rule), [])
                 pre_steps = pre_steps or (steps_from(fx) if fx and (fx_ok or self.lang == "en") else None)
                 pre_verify = first_upper(ex, self.lang).rstrip(".") + "." if ex and (ex_ok or self.lang == "en") else None
                 # Maya Audit P2: bozuk bloğun düzelince de eksik kalacak önerilen alanları (ör. logo, sameAs)
@@ -1004,16 +1071,21 @@ class Builder:
                              else f"Also add {', '.join(lacking)} when fixing")
                     pre_steps = (pre_steps + "\n" + extra) if pre_steps and pre_steps.count("\n") < STEP_LINES - 1 else None
                 self.fact(sc.get("count"), more, pre_steps, pre_verify)
+                states = [(m.get("verification") or {}).get("state") for m in members]
+                state = states[0] if len(set(states)) == 1 else self.retest_state(f)
                 todos.append({
-                    "n": i + 1, "id": f["id"], "finding_ids": [f["id"]],
+                    "n": i + 1, "id": " · ".join(m["id"] for m in members[:2]) + (f" +{len(members) - 2}" if len(members) > 2 else ""),
+                    "finding_ids": [m["id"] for m in members],
                     "severity": f["severity"], "severity_label": L["severity"][f["severity"]],
                     # The release gate (DECISIONS 278) compares what the card shows with the finding's own state.
-                    "verification_state": (f.get("verification") or {}).get("state"),
+                    "verification_state": state,
                     "when": L["when"][when_key], "owner": L["owners"][owner], "effort": L["efforts"][effort],
-                    "status": self.status_text(f),
+                    "status": self.status_text(f, state),
+                    "sub": self.merged_lines(members),
                     "rule_id": rule,
                     "fact": fact_line(self._w("facts")(rule, f.get("evidence")), L),
-                    "known_paths": known_paths(f.get("title"), f.get("scope"), f.get("evidence"), f.get("how_to_fix")),
+                    "known_paths": sorted({p for m in members for p in known_paths(m.get("title"), m.get("scope"), m.get("evidence"),
+                                                                                     m.get("how_to_fix"))}),
                     "title": self.slot(f"todos[{i}].title", "yapılacak işin adı, fiille başlar", f.get("title"), 80, prefill=action),
                     "steps": self.slot(f"todos[{i}].steps", "2-4 somut adım; her adım yeni satırda, en fazla 100 karakter",
                                        fx or f.get("how_to_fix"), 420, lines=4, prefill=pre_steps),
@@ -1022,11 +1094,12 @@ class Builder:
                     "links": [{"href": u, "text": (path_of(u) if path_of(u) not in ("", "/") else urlsplit(u).netloc) or u} for u in shown],
                     "more": more, "sitewide": not shown,
                     "all_urls": urls, "unlisted": unlisted, "step_rules": conditional,
+                    "url_finding": url_finding if len(members) > 1 else {},
                     # DECISIONS 278: a broken link's failing addresses, shown apart from the pages to edit
-                    "target_urls": list((f.get("evidence") or {}).get("target_urls") or []),
+                    "target_urls": list(dict.fromkeys(u for m in members for u in (m.get("evidence") or {}).get("target_urls") or [])),
                     # DECISIONS 283: one row per link to edit, from the final result
-                    "link_rows": link_rows(self.cards.get(f["id"])),
-                    "launch_gated": [g for g in f.get("launch_gated") or [] if re.fullmatch(r"LG-\d+", str(g))],
+                    "link_rows": [row for m in members for row in link_rows(self.cards.get(m["id"]))],
+                    "launch_gated": sorted({g for m in members for g in m.get("launch_gated") or [] if re.fullmatch(r"LG-\d+", str(g))}),
                 })
                 self.fact(todos[-1]["fact"])  # a card may quote its evidence's numbers
         for make in (self.schema_card, self.hygiene_card, self.content_card, self.perf_card, self.share_card):

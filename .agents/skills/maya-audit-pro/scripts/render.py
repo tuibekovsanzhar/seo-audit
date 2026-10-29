@@ -212,6 +212,9 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 .todo-status {font-size:8.3pt;color:var(--muted);margin:2pt 0 0 41pt;line-height:1.2;}
 .todo-fact {font-size:8.3pt;color:var(--ink);margin:2pt 0 0 41pt;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .todo-fact b {color:var(--muted);font-weight:600;}
+.todo-sub {font-size:8.1pt;color:var(--ink);margin:2pt 0 0 41pt;line-height:1.25;}
+.todo-sub div {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.todo-sub div::before {content:'• ';color:var(--faint);}
 .todo .sec { margin-top: 6pt; padding-left: 41pt; }
 .todo .sec .eyebrow { font-size: 7.6pt; }
 .todo ol { margin: 5pt 0 0 0; padding-left: 15pt; font-size: 9.2pt; color: var(--ink); line-height: 1.32; height: 60pt; overflow: hidden; }
@@ -438,6 +441,19 @@ def path_or_host(url):
     return path if path != "/" else (p.netloc or url)
 
 
+SUB_LINES = 3  # lines under a card's status; more are counted, every address is in the address list
+
+
+def sub_lines(t, L):
+    lines = list(t.get("sub") or [])
+    shown = lines[:SUB_LINES] if len(lines) <= SUB_LINES else lines[:SUB_LINES - 1]
+    rest = len(lines) - len(shown)
+    body = "".join(f"<div>{e(x)}</div>" for x in shown)
+    if rest:
+        body += f"<div>{e(L['sub_more'].format(n=rest))}</div>"
+    return f'<div class="todo-sub">{body}</div>'
+
+
 def todo_pages(d, L):
     """Yapılacaklar: sayfa başına 4 kart (2×2). Her kart: onay kutusu, iş, takvim/sorumlu/efor, adımlar, doğrulama, linkler."""
     todos = d.get("todos") or []
@@ -462,7 +478,10 @@ def todo_pages(d, L):
                 # DECISIONS 278: a broken link's failing address and the page to edit are two things, never swapped.
                 # The target line takes the evidence line's place: that line mixes source and target ("/a · /b · 404"),
                 # and a card has room for one such line (two overflowed the Carpex IDX-1 card, w13).
-                + ("" if t.get("link_rows") else
+                # DECISIONS 284: a card for one cause found by several findings (or a sitemap card by reason) lists them
+                # one per line where the single evidence line would be.
+                + (sub_lines(t, L) if t.get("sub") else
+                   "" if t.get("link_rows") else
                    f'<div class="todo-fact"><b>{e(L["todo_targets"])}:</b> {e(target_line(t["target_urls"]))}</div>'
                    if t.get("target_urls") else
                    f'<div class="todo-fact"><b>{e(L["todo_fact"])}:</b> {e(t["fact"])}</div>' if t.get("fact") else "")
@@ -582,7 +601,7 @@ def write_address_list(d, out):
                              ends, r.get("replacement_url") or L["link_unknown"]])
             continue
         for u in t.get("all_urls") or [l["href"] for l in t.get("links") or []]:
-            rows.append([t["n"], t["id"], t["severity_label"], u])
+            rows.append([t["n"], (t.get("url_finding") or {}).get(u, t["id"]), t["severity_label"], u])
         if t.get("unlisted"):
             note = (f"{t['unlisted']} more addresses were not listed in the audit data" if en
                     else f"{t['unlisted']} adres denetim verisinde listelenmedi")
