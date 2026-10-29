@@ -2636,3 +2636,17 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      noindex 1"), instead of "43 addresses need separate review". The label says "error page", not "404": 404 is not
      one of the report's numbers, and a not-found path need not be a 404. The counts add up to the finding's scope. The
      engine's finding and title are unchanged; the reasons come from the decisions it already records.
+
+285. **Rules changed since a report was written, applied offline to its saved findings (owner's request, agent
+     implementation, 2026-10-29).** `maya_audit/reassess_rules.py`, `tools/reassess_saved.py`; test
+     `tests/test_reassess_rules.py`. A saved report keeps the severities and findings it was written with (284). This
+     applies 284 (3) and (4) to the observations the report already holds, on a copy, with sockets refused:
+     the hidden homepage <h1> takes `HOME_HIDDEN_H1_SEVERITY` (now one constant for the check and the reassessment) and
+     its note; an STR-8 pricing grid in a block named as a calculator (`analysis.CALCULATOR_NAME` on the grid's saved
+     selector, label, heading) is left out, and a pricing finding with no grid left is removed. The other 284 (4) test,
+     a form control beside the grid, needs the page structure a report does not keep: not assessed, said in
+     `generation.analysis.not_assessed_offline` and, when a grid is kept, as a coverage part of STR-8. Then the severity
+     policy, priority order, problem summary (findings in priority order, as `build_report` counts them) and release
+     gate are derived again; nothing else is re-run. `judgments.qualify_report` was not used: it re-runs STR-7 and
+     RND-4 on Maya's own page copies, which mixes readers when Firecrawl read the site (Adile's WebP count moved
+     497 → 503) and rewrites every scope. The tool writes a new folder, never the source, never inside `~/.maya-audit`.

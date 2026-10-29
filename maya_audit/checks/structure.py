@@ -498,6 +498,8 @@ def str1_titles(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
 
 HIDDEN_H1_NOTE = ("Hidden by its own markup or an element around it (inline display:none or visibility:hidden, the hidden "
                   "attribute, aria-hidden). A heading hidden by a stylesheet class is seen only on rendered pages.")
+# The severity of a hidden homepage <h1> (DECISIONS 284); `reassess_rules` applies it to saved reports.
+HOME_HIDDEN_H1_SEVERITY = Severity.S3
 HIDDEN_H1_MEDIUM = ("Medium: one reading of the homepage, not re-tested (the second look has no re-test for a hidden "
                     "heading); DECISIONS 284 lowers 258's High.")
 SAME_AS_TITLE_NOTE = "The hidden <h1> repeats the page's <title> word for word."
@@ -591,7 +593,7 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
         # Medium (DECISIONS 284, which lowers 258's High): one reading of the page's markup or computed style, and the
         # second look has no re-test for it (verification.RETESTS), so it is never re-tested.
         findings.append(_finding(
-            "STR-2", "The homepage's only <h1> is hidden", Severity.S3, Confidence.VERIFIED, HEADINGS_DOCUMENTED, PASSAGE_ENGINES,
+            "STR-2", "The homepage's only <h1> is hidden", HOME_HIDDEN_H1_SEVERITY, Confidence.VERIFIED, HEADINGS_DOCUMENTED, PASSAGE_ENGINES,
             [home], {"pages": home_hidden}, "one visible <h1> on the homepage saying what the site is",
             "Show the homepage's <h1> (remove display:none, the hidden attribute or aria-hidden), or replace it with a visible "
             "<h1> that says what the site offers.", key_urls,
