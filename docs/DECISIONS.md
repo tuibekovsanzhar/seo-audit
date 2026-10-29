@@ -2628,8 +2628,9 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      differ stay apart: a card shows one state, and RG-4 refuses "confirmed" unless all are. The findings table and the
      action plan list one row per card's lead. The release gate needed no change.
      (5) The client PDF's sitemap card for addresses under review (`total_review_scope` with `sitemap_decisions`) counts
-     them by reason: redirect to a 404 page (Location ends at /404, not-found or an `aspxerrorpath` error page), redirect
+     them by reason: redirect to an error page (Location at /404, a not-found path or an `aspxerrorpath` page), redirect
      elsewhere, empty again, empty once (unconfirmed), not found, server error, noindex. One line per reason on the card
-     and the reasons with counts in the findings table ("Site haritası: 404'e yönlenen 41, yönlenen 1, noindex 1"),
-     instead of "43 addresses need separate review". The counts add up to the finding's scope. The engine's finding
-     and title are unchanged; the reasons come from the decisions it already records.
+     and the reasons with counts in the findings table ("Site haritası: hata sayfasına yönlenen 41, yönlenen 1,
+     noindex 1"), instead of "43 addresses need separate review". The label says "error page", not "404": 404 is not
+     one of the report's numbers, and a not-found path need not be a 404. The counts add up to the finding's scope. The
+     engine's finding and title are unchanged; the reasons come from the decisions it already records.

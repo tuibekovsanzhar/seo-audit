@@ -627,7 +627,7 @@ def decision(url, state, kind, status, location=None):
 
 class SitemapReasons(unittest.TestCase):
     """DECISIONS 284 (5): the sitemap card says why each address needs review, with counts, not "N addresses need
-    separate review" (Enpara: 41 of 43 redirect to the 404 page)."""
+    separate review" (Enpara: 41 of 43 redirect to an error page)."""
 
     def report(self):
         rows = ([decision(f'{S}/r404-{i}', 'redirect_observed', 'redirect', 302, f'{S}/404?aspxerrorpath=/x{i}') for i in range(3)]
@@ -645,7 +645,7 @@ class SitemapReasons(unittest.TestCase):
     def test_the_card_counts_the_addresses_by_reason(self):
         d = build_tr(self.report())
         [card] = [t for t in d['todos'] if t['finding_ids'] == ['IDX-5-x']]
-        self.assertEqual(card['sub'], ['3 URL · 404 sayfasına yönleniyor', '2 URL · bir kez boş yanıt verdi (teyit edilmedi)',
+        self.assertEqual(card['sub'], ['3 URL · hata sayfasına yönleniyor', '2 URL · bir kez boş yanıt verdi (teyit edilmedi)',
                                        '1 URL · başka bir adrese yönleniyor', '1 URL · bulunamadı (istemci hatası)',
                                        '1 URL · noindex taşıyor'])
         self.assertEqual(sum(int(line.split()[0]) for line in card['sub']), 8)  # adds up to the addresses under review
@@ -654,7 +654,7 @@ class SitemapReasons(unittest.TestCase):
     def test_the_findings_table_row_names_the_reasons(self):
         d = build_tr(self.report())
         title = d['findings'][0]['title']
-        self.assertTrue(title.startswith("Site haritası: 404'e yönlenen 3, bir kez boş 2"), title)
+        self.assertTrue(title.startswith("Site haritası: hata sayfasına yönlenen 3, bir kez boş 2"), title)
         self.assertLessEqual(len(title), 70)
         self.assertNotIn('inceleme', title)
 

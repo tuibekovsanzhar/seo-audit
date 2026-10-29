@@ -28,7 +28,7 @@ MEDIUM_UP = ("S1", "S2", "S3")
 MARK = "⟪YAZ: {}⟫"
 # DECISIONS 284 (1): findings with one cause are one card. The empty-response rules (one cause when on the same sections).
 EMPTY_RULES = frozenset({"idx1.empty", "judgment.empty.repeated", "judgment.empty.single"})
-# DECISIONS 284 (5): why a sitemap address needs review, from the engine's per-address decisions. Order breaks ties.
+# DECISIONS 284 (5): why a sitemap address needs review (an error page: Location /404, not-found or aspxerrorpath), from the engine's per-address decisions. Order breaks ties.
 SITEMAP_REASONS = ("redirect_404", "redirect", "empty_repeated", "empty_single", "not_found", "server_error", "noindex", "other")
 ERROR_PAGE = re.compile(r"/(?:404|not[-_]?found)(?:[/?.#]|$)|aspxerrorpath", re.I)
 # Evidence-sample rows that fit the box above its note; a fourth row printed over the note (Enpara render).
