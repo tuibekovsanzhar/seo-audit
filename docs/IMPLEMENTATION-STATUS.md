@@ -22,7 +22,7 @@ Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bi
 | 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown, web PDFs and the `maya-audit-pro` client PDF |
 | 11 Team status vs engine verification | NOT_STARTED | |
 | 12 SEO accuracy measurement | BLOCKED_ON_INPUT | Needs human SEO labels; nothing labelled yet |
-| 13 Integration and release | IN_PROGRESS | Release metadata (0.2.8 / w14) written from the source; archive exclusions pinned. No archive built |
+| 13 Integration and release | IN_PROGRESS | w14 zip built from tag `team-preview-w14` (`542c67e`); extracted-archive verification FAIL (2 benchmark tests needed the excluded corpus; fixed in `632ab19`, not in the zip) |
 
 ## Stage 00 — baseline
 
@@ -254,3 +254,19 @@ homepage TTFB card now Medium (scheduled later than before).
 | Wheel tests | skipped (no setuptools in `.venv`) |
 
 Skips: two wheel tests, live-run examples. No live or paid calls; nothing pushed.
+
+## w14 release (2026-10-29)
+
+Tag `team-preview-w14` → `542c67e` (local, not pushed). Zip `~/Projects/releases/maya-audit-0.2.8-w14-2026-10-29.zip`,
+SHA-256 `801919a7803414973741f6c6026114f44cb7abf722c8e5fe7ffff23c494d91f9`, 487 files, none under the excluded paths;
+details in the `-VERIFICATION.json` beside it (also on the Desktop).
+
+| Gate (extracted archive, fresh venv, Python 3.13.1, macOS) | Result |
+|---|---|
+| Full suite | `2 failed, 2623 passed, 4 skipped, 1 warning in 746.78s` — **FAIL** |
+| Failures | `test_real_sites_benchmark.py` × 2: read `benchmarks/real-sites/sites.json`, which the archive leaves out. Fixed in `632ab19` (after the tag) |
+| Wheel + `tools/check_installed_package.py --wheel` | PASS; `test_distribution_contract.py` with the wheel: 10 passed |
+| Demo audit (`--demo --port 8791`, demo-kafe.localhost) | finished, COMPLETED; web PDF 200, gate PASS |
+| `maya-audit-pro` Turkish PDF from the demo report | 5 pages, 4 cards, validate + render clean; gate PASS |
+
+Next: a w14b tag and zip from `632ab19` or later, verified the same way (the release rule never moves a tag).
