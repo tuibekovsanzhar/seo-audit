@@ -150,7 +150,13 @@ def test_variant_observation_is_distinct_from_actionable_duplicate_label():
     assert not b.matches(finding, label, report)
 
 
-def test_live_collection_requires_explicit_opt_in():
+def test_live_collection_requires_explicit_opt_in(monkeypatch, tmp_path):
+    with pytest.raises(SystemExit) as error:
+        b.main(["collect"])
+    assert error.value.code == 2
+    # Also without the corpus (a release archive leaves it out): refused before any file is read.
+    monkeypatch.setattr(b, "CORPUS", tmp_path / "absent")
+    monkeypatch.setattr(b, "load_sites", lambda *a, **k: pytest.fail("corpus read before the opt-in check"))
     with pytest.raises(SystemExit) as error:
         b.main(["collect"])
     assert error.value.code == 2
@@ -201,6 +207,7 @@ def test_frozen_response_integrity_and_no_reuse_of_attempts(tmp_path):
         b.frozen_transport(tmp_path, records, []).handle_request(request)
 
 
+@pytest.mark.skipif(not b.CORPUS.exists(), reason="the real-site corpus is not shipped in a release archive (DECISIONS 283 (7))")
 def test_site_manifest_has_ten_distinct_sector_examples_and_pending_labels():
     sites = b.load_sites()
     assert len(sites) == 10 and len({s["id"] for s in sites}) == 10

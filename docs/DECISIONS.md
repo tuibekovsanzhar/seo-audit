@@ -2586,7 +2586,7 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      0.2.8 w13 zip. `tools/release_metadata.py --release w14` writes both from the source (version from
      `maya_audit.__version__`, schema from `schema.py`, files = tracked files without export-ignore, hashed); the
      checkpoint claims no result and points at `docs/IMPLEMENTATION-STATUS.md`. `.gitattributes` now also export-ignores
-     `benchmarks/real-sites/` (real sites' expected results; no test reads them); `reviews/`, `.env` and `.claude/` were
+     `benchmarks/real-sites/` (real sites' expected results); `reviews/`, `.env` and `.claude/` were
      already. No archive is built here. Test: `tests/test_release_metadata.py`.
      (8) On a page whose HTML was cut off at the fetch-size limit (`body_truncated`), the homepage-outline finding ("The
      homepage has N visible section heading(s) …") and the long-page finding ("… have no subheadings") no longer fire
@@ -2598,4 +2598,7 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      the report's one "not read" figure, as "pages found but not read" does. `maya_audit.coverage.UNREAD_RESTATEMENTS`
      names them once; the skill's count leaves them out (partial-crawl fixture: 25 → 23). The web's gap list is
      unchanged (it lists IDX-1's part with its own reason). (9 was the report-checker review, no change.)
+     (11) Correction to (7): two tests did read `benchmarks/real-sites/` and failed in the extracted w14 archive.
+     `real_sites_benchmark.main` now refuses `collect` without `--live` before reading the corpus, and the manifest test
+     skips when the corpus is absent (it is never in a release). Found by the w14 archive verification.
 

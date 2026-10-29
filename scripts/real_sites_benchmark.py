@@ -419,6 +419,9 @@ def main(argv=None):
     parser.add_argument("--output", type=Path)
     parser.add_argument("--after", type=Path)
     args = parser.parse_args(argv)
+    # Refused before anything is read: the opt-in does not depend on the corpus, which a release leaves out.
+    if args.command == "collect" and not args.live:
+        parser.error("Collection makes public requests. Add --live explicitly. Tests must never use it.")
     sites = load_sites()
     if args.site:
         sites = [s for s in sites if s["id"] == args.site]
