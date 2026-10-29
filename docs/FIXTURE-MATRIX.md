@@ -23,7 +23,7 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | ACC-8 | 6 | 10 |  |
 | ACC-9 | 13 | 11 |  |
 | IDX-1 | 36 | 37 |  |
-| IDX-2 | 7 | 7 |  |
+| IDX-2 | 7 | 8 |  |
 | IDX-3 | 15 | 16 |  |
 | IDX-4 | 14 | 9 |  |
 | IDX-5 | 18 | 30 |  |
@@ -40,13 +40,13 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | RND-6 | 2 | 1 |  |
 | RND-7 | 6 | 7 |  |
 | STR-1 | 23 | 20 |  |
-| STR-2 | 19 | 15 |  |
+| STR-2 | 20 | 15 |  |
 | STR-3 | 10 | 8 |  |
 | STR-4 | 13 | 6 |  |
 | STR-5 | 6 | 8 |  |
 | STR-6 | 7 | 2 |  |
 | STR-7 | 23 | 21 |  |
-| STR-8 | 3 | 7 |  |
+| STR-8 | 5 | 7 |  |
 | STR-9 | 15 | 7 |  |
 | STR-10 | 17 | 14 |  |
 | STR-11 | 5 | 1 |  |
@@ -164,7 +164,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 ### IDX-2
 
 - Finds the problem: `test_ai_skills.py::test_a_named_check_must_be_assessed_and_hold_data_and_a_measured_zero_counts`, `test_counts_and_shared_elements.py::test_http_served_beside_https_is_high_and_a_redirect_to_another_http_address_says_where_it_goes`, `test_idx_scenarios.py::test_http_redirect_check_uses_the_audited_path`, `test_idx_scenarios.py::test_tls_and_https_redirect`, `test_single_page.py::test_checks_that_compare_pages_are_set_aside_and_site_level_facts_are_still_checked`, `test_web_app.py::test_every_kind_of_finding_has_its_own_matching_explanation`, `test_web_app.py::test_explanations_are_about_the_finding_they_sit_under`
-- Must not flag: `test_blocked_and_small_sites.py::test_idx2_does_not_report_a_missing_redirect_when_the_http_start_address_redirects_to_https`, `test_blocked_and_small_sites.py::test_idx2_still_reports_a_site_that_serves_http_without_redirecting`, `test_evidence_report_accuracy.py::test_saved_partial_host_coverage_does_not_call_retrieval_error_a_disallow`, `test_firecrawl.py::test_firecrawl_reads_a_blocked_sites_content_and_never_touches_access_results`, `test_idx_scenarios.py::test_unresolvable_www_variant_is_noted_not_silently_skipped`, `test_web_app.py::test_https_is_tried_first_and_http_only_when_https_does_not_answer`, `test_web_firecrawl.py::test_a_challenged_site_is_read_through_firecrawl_with_no_block_headline_and_direct_results_stand`
+- Must not flag: `test_blocked_and_small_sites.py::test_idx2_does_not_report_a_missing_redirect_when_the_http_start_address_redirects_to_https`, `test_blocked_and_small_sites.py::test_idx2_still_reports_a_site_that_serves_http_without_redirecting`, `test_evidence_report_accuracy.py::test_saved_partial_host_coverage_does_not_call_retrieval_error_a_disallow`, `test_firecrawl.py::test_firecrawl_reads_a_blocked_sites_content_and_never_touches_access_results`, `test_idx_scenarios.py::test_unresolvable_www_variant_is_noted_not_silently_skipped`, `test_reassess_rules.py::test_findings_the_changed_rules_do_not_cover_are_left_as_they_were`, `test_web_app.py::test_https_is_tried_first_and_http_only_when_https_does_not_answer`, `test_web_firecrawl.py::test_a_challenged_site_is_read_through_firecrawl_with_no_block_headline_and_direct_results_stand`
 
 ### IDX-3
 
@@ -248,7 +248,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### STR-2
 
-- Finds the problem: `test_distribution_contract.py::test_missing_rule_table_is_explicit_error`, `test_evidence_report_accuracy.py::test_shared_new_audit_reassessment_and_bilingual_exports`, `test_firecrawl.py::test_cli_reads_a_blocked_site_through_firecrawl_and_labels_every_output`, `test_m1_broken_links.py::test_a_finding_a_page_reader_replaced_gets_page_types_and_a_retest_state`, `test_p4_chrome.py::test_the_three_observations_reach_the_report`, `test_page_wording.py::test_each_made_up_finding_reads_as_that_pages_own_fact`, `test_preview16_grouping.py::test_the_same_problem_on_other_pages_is_one_row_of_the_top_problems_and_the_action_plan`, `test_problem_summary.py::test_a_site_wide_problem_is_counted_once_under_the_whole_site_and_notes_appear_nowhere`, `test_revised_results.py::test_refresh_preserves_source_and_noncontent_counts_and_restates_coverage`, `test_single_page.py::test_checks_that_compare_pages_are_set_aside_and_site_level_facts_are_still_checked`, `test_str_scenarios.py::test_titles`, `test_time_limit.py::test_the_report_says_which_checks_the_time_limit_cut_and_why`, `test_w12_drift.py::test_a_reworded_title_is_still_the_same_problem_by_its_rule_id`, `test_w12_rule_ids.py::test_a_finding_gets_its_rule_id_and_a_reworded_saved_title_is_reassigned`, `test_w13_h1_states.py::test_a_saved_mixed_finding_is_reported_by_the_gate_with_its_distribution`, `test_w13_release_gate.py::test_gate_runs_on_an_unknown_brand_report_shape`, `test_w4a_report.py::test_within_a_severity_verified_comes_before_estimated_and_unverified_rules_whatever_their_reach`, `test_w4b_client_report.py::test_the_main_section_holds_one_card_per_check_and_names_the_rest`, `test_w4b_client_report.py::test_two_cards_of_one_repair_stay_rows_and_the_address_is_said_once_per_card`
+- Finds the problem: `test_distribution_contract.py::test_missing_rule_table_is_explicit_error`, `test_evidence_report_accuracy.py::test_shared_new_audit_reassessment_and_bilingual_exports`, `test_firecrawl.py::test_cli_reads_a_blocked_site_through_firecrawl_and_labels_every_output`, `test_m1_broken_links.py::test_a_finding_a_page_reader_replaced_gets_page_types_and_a_retest_state`, `test_p4_chrome.py::test_the_three_observations_reach_the_report`, `test_page_wording.py::test_each_made_up_finding_reads_as_that_pages_own_fact`, `test_preview16_grouping.py::test_the_same_problem_on_other_pages_is_one_row_of_the_top_problems_and_the_action_plan`, `test_problem_summary.py::test_a_site_wide_problem_is_counted_once_under_the_whole_site_and_notes_appear_nowhere`, `test_reassess_rules.py::test_a_saved_hidden_homepage_h1_takes_the_current_medium_severity`, `test_revised_results.py::test_refresh_preserves_source_and_noncontent_counts_and_restates_coverage`, `test_single_page.py::test_checks_that_compare_pages_are_set_aside_and_site_level_facts_are_still_checked`, `test_str_scenarios.py::test_titles`, `test_time_limit.py::test_the_report_says_which_checks_the_time_limit_cut_and_why`, `test_w12_drift.py::test_a_reworded_title_is_still_the_same_problem_by_its_rule_id`, `test_w12_rule_ids.py::test_a_finding_gets_its_rule_id_and_a_reworded_saved_title_is_reassigned`, `test_w13_h1_states.py::test_a_saved_mixed_finding_is_reported_by_the_gate_with_its_distribution`, `test_w13_release_gate.py::test_gate_runs_on_an_unknown_brand_report_shape`, `test_w4a_report.py::test_within_a_severity_verified_comes_before_estimated_and_unverified_rules_whatever_their_reach`, `test_w4b_client_report.py::test_the_main_section_holds_one_card_per_check_and_names_the_rest`, `test_w4b_client_report.py::test_two_cards_of_one_repair_stay_rows_and_the_address_is_said_once_per_card`
 - Must not flag: `test_client_report_app.py::test_notices_editing_cannot_change_comparison_status_or_hide_missing_data`, `test_counts_and_shared_elements.py::test_no_page_row_repeats_a_line_in_any_output`, `test_counts_and_shared_elements.py::test_findings_are_ordered_by_severity_then_by_what_they_stand_in_the_way_of_not_by_page_count`, `test_counts_and_shared_elements.py::test_the_homepage_without_a_main_heading_or_organization_data_is_medium_and_other_pages_stay_low`, `test_m1_h1.py::test_an_h1_only_a_script_adds_is_left_to_rnd2`, `test_nine_corrections.py::test_large_h1_and_subheadings_procedures_are_not_merged`, `test_own_document.py::test_when_30_of_41_page_checks_ran_the_headline_has_no_prefix_and_an_older_report_gets_the_count_when_shown`, `test_problem_summary.py::test_the_full_list_is_used_when_there_is_one_and_pages_not_listed_are_said_never_dropped`, `test_problem_summary.py::test_the_card_view_and_the_printed_table_put_the_whole_site_first_and_carry_the_not_listed_line`, `test_round2_empty_and_googlebot.py::test_an_empty_page_is_reported_by_idx1_and_left_out_of_content_checks_speed_and_the_page_reader`, `test_time_limit.py::test_running_out_of_time_while_rendering_no_longer_costs_the_structure_checks`, `test_time_limit.py::test_running_out_of_time_before_the_structure_step_still_runs_every_check_that_needs_no_request`, `test_w5_llm_brief.py::test_lists_inside_a_check_keep_their_first_items_and_say_how_many_were_left_out`, `test_web_blocked.py::test_firecrawl_can_be_switched_on_afterwards_and_the_website_is_not_asked_again`, `test_web_blocked.py::test_reader_check_ids_are_numeric_and_rendering_does_not_double_count`
 
 ### STR-3
@@ -278,7 +278,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### STR-8
 
-- Finds the problem: `test_clean_on_read.py::test_which_checks_found_nothing_on_what_was_read`, `test_own_document.py::test_the_new_sentences_have_turkish_wording_and_english_says_one_page`, `test_str_scenarios.py::test_images_and_grids`
+- Finds the problem: `test_clean_on_read.py::test_which_checks_found_nothing_on_what_was_read`, `test_own_document.py::test_the_new_sentences_have_turkish_wording_and_english_says_one_page`, `test_reassess_rules.py::test_a_pricing_card_whose_grids_are_all_in_calculator_blocks_is_removed`, `test_reassess_rules.py::test_a_price_list_beside_a_calculator_is_kept_and_its_unchecked_part_is_said`, `test_str_scenarios.py::test_images_and_grids`
 - Must not flag: `test_compact_client.py::test_table_title_uses_explicit_units_without_singular_plural_error`, `test_counts_and_shared_elements.py::test_a_saved_report_whose_five_zero_page_checks_are_partial_says_only_18_of_41_could_run`, `test_false_alarms.py::test_a_page_with_a_real_table_is_not_told_to_use_one_and_its_empty_table_is_reported`, `test_own_document.py::test_with_no_indexable_page_the_checks_that_found_nothing_are_not_assessed_with_the_reason`, `test_own_document.py::test_with_indexable_pages_and_no_news_page_str22_still_passes`, `test_own_document.py::test_a_check_whose_own_evidence_says_it_looked_at_no_page_is_not_assessed_also_in_a_saved_report`, `test_preview16_false_alarms.py::test_a_price_grid_without_controls_is_reported_and_named_by_its_heading`
 
 ### STR-9
