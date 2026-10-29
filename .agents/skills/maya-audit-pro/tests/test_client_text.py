@@ -680,3 +680,18 @@ class SitemapReasons(unittest.TestCase):
     def test_other_findings_get_no_reason_lines(self):
         d = build_tr(report_of(finding('STR-2-x', 'STR-2', '3 page(s) have no <h1>', 'S4', [S + '/a'], 'str2.no_h1')))
         self.assertEqual(d['todos'][0]['sub'], [])
+
+
+class NothingRead(unittest.TestCase):
+    """A site that refused the first request (nihan.com.tr, 2026-10-29: 429): 0 read and 0 unread is not "every
+    discovered page was read"."""
+
+    def test_the_pages_box_says_nothing_could_be_read(self):
+        r = report(['https://sample.example/'])
+        r['audit_status']['content_coverage'] = {'pages_read': 0, 'known_urls_not_read': 0, 'level': 'none'}
+        for lang in ('tr', 'en'):
+            d = build.Builder(r, lang, render.LABELS[lang], json.loads((build.REFS / 'sahip_efor.json').read_text()),
+                              Wording(), None, 'test', False, None).build()
+            pages = d['kpis'][1]
+            self.assertEqual((pages['value'], pages['sub'], pages['state']),
+                             ('0', render.LABELS[lang]['kpi_pages_sub_none'], 'missing'))

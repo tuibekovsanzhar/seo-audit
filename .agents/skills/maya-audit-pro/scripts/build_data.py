@@ -954,7 +954,9 @@ class Builder:
         kpis = [
             {"label": L["kpi_problems"], "value": fmt_int(problems_total, lang), "of": None, "sub": sev_line or "—", "state": "ok"},
             {"label": L["kpi_pages"], "value": fmt_int(pages_read, lang), "of": None,
-             "sub": L["kpi_pages_sub"].format(n=fmt_int(unread, lang)) if unread else L["kpi_pages_sub_all"], "state": "ok"},
+             # Nothing read and nothing left unread is not "every page was read" (nihan.com.tr: 429 on the first request).
+             "sub": L["kpi_pages_sub"].format(n=fmt_int(unread, lang)) if unread else
+             L["kpi_pages_sub_all"] if pages_read else L["kpi_pages_sub_none"], "state": "ok" if pages_read else "missing"},
         ]
         if ratio:
             bad, checked, listed, f = ratio
