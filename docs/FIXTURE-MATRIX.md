@@ -16,14 +16,14 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | ACC-1 | 16 | 11 |  |
 | ACC-2 | 12 | 6 |  |
 | ACC-3 | 14 | 8 |  |
-| ACC-4 | 13 | 7 |  |
+| ACC-4 | 15 | 7 |  |
 | ACC-5 | 5 | 1 |  |
 | ACC-6 | 4 | 2 |  |
 | ACC-7 | 3 | 2 |  |
 | ACC-8 | 6 | 10 |  |
 | ACC-9 | 18 | 12 |  |
 | IDX-1 | 36 | 37 |  |
-| IDX-2 | 7 | 8 |  |
+| IDX-2 | 8 | 8 |  |
 | IDX-3 | 15 | 16 |  |
 | IDX-4 | 14 | 9 |  |
 | IDX-5 | 18 | 30 |  |
@@ -34,7 +34,7 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | IDX-10 | 2 | 1 |  |
 | RND-1 | 14 | 9 |  |
 | RND-2 | 4 | 2 |  |
-| RND-3 | 4 | 4 |  |
+| RND-3 | 5 | 4 |  |
 | RND-4 | 10 | 8 |  |
 | RND-5 | 6 | 1 |  |
 | RND-6 | 2 | 1 |  |
@@ -43,7 +43,7 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | STR-2 | 20 | 15 |  |
 | STR-3 | 10 | 8 |  |
 | STR-4 | 13 | 6 |  |
-| STR-5 | 6 | 8 |  |
+| STR-5 | 7 | 8 |  |
 | STR-6 | 7 | 2 |  |
 | STR-7 | 23 | 21 |  |
 | STR-8 | 5 | 7 |  |
@@ -128,7 +128,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### ACC-4
 
-- Finds the problem: `test_acc_scenarios.py::test_robots_rules_per_role`, `test_acc_scenarios.py::test_waf_differential_on_verified_site`, `test_acc_scenarios.py::test_differential_v2_status_redirect_text_and_a_page_that_changed`, `test_preview16_false_alarms.py::test_googlebot_500_where_the_browser_got_a_real_page_is_still_high`, `test_preview16_measure.py::test_fast_check_gives_the_reduced_caps_and_leaves_the_rest_unchanged`, `test_prf_scenarios.py::test_reliability`, `test_rnd_scenarios.py::test_rendering_safety_seen_from_the_server`, `test_round2_empty_and_googlebot.py::test_googlebot_answered_with_a_server_error_where_a_browser_got_200_is_high_estimated_and_noted`, `test_status_and_identity.py::test_a_limited_probe_and_server_logs_are_named_as_what_they_are`, `test_str_scenarios.py::test_entity_and_links_with_external_checks`, `test_web_app.py::test_a_blocked_audit_leads_with_who_blocked_it_and_what_to_do`, `test_wording.py::test_numbers_and_quoted_values_are_kept_and_one_is_said_as_one_in_both_languages`, `test_wording.py::test_every_fix_and_expected_sentence_in_the_engines_source_has_a_turkish_entry`
+- Finds the problem: `test_acc_scenarios.py::test_robots_rules_per_role`, `test_acc_scenarios.py::test_waf_differential_on_verified_site`, `test_acc_scenarios.py::test_differential_v2_status_redirect_text_and_a_page_that_changed`, `test_preview16_false_alarms.py::test_googlebot_500_where_the_browser_got_a_real_page_is_still_high`, `test_preview16_measure.py::test_fast_check_gives_the_reduced_caps_and_leaves_the_rest_unchanged`, `test_prf_scenarios.py::test_reliability`, `test_reassess_rules.py::test_decisions_290_are_applied_to_a_saved_report`, `test_reassess_rules.py::test_a_googlebot_answered_with_a_5xx_keeps_its_severity`, `test_rnd_scenarios.py::test_rendering_safety_seen_from_the_server`, `test_round2_empty_and_googlebot.py::test_googlebot_answered_with_a_server_error_where_a_browser_got_200_is_high_estimated_and_noted`, `test_status_and_identity.py::test_a_limited_probe_and_server_logs_are_named_as_what_they_are`, `test_str_scenarios.py::test_entity_and_links_with_external_checks`, `test_web_app.py::test_a_blocked_audit_leads_with_who_blocked_it_and_what_to_do`, `test_wording.py::test_numbers_and_quoted_values_are_kept_and_one_is_said_as_one_in_both_languages`, `test_wording.py::test_every_fix_and_expected_sentence_in_the_engines_source_has_a_turkish_entry`
 - Must not flag: `test_acc_scenarios.py::test_ai_friendly_site_passes_everything`, `test_acc_scenarios.py::test_waf_site_without_ownership_gets_no_probes`, `test_owner_cooperation.py::test_ownership_is_checked_only_when_asked_and_a_dns_record_lets_acc4_run`, `test_preview16_false_alarms.py::test_googlebot_500_where_the_browser_got_an_empty_page_is_not_a_firewall_finding`, `test_preview16_pacing.py::test_twenty_clean_answers_in_a_row_narrow_the_gap_down_to_the_floor`, `test_round2_empty_and_googlebot.py::test_identical_answers_make_no_finding_and_an_owned_site_gets_the_full_check`, `test_wording.py::test_a_sentence_with_no_translation_is_shown_whole_in_english_with_a_mark_never_dropped_or_half_translated`
 
 ### ACC-5
@@ -163,7 +163,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### IDX-2
 
-- Finds the problem: `test_ai_skills.py::test_a_named_check_must_be_assessed_and_hold_data_and_a_measured_zero_counts`, `test_counts_and_shared_elements.py::test_http_served_beside_https_is_high_and_a_redirect_to_another_http_address_says_where_it_goes`, `test_idx_scenarios.py::test_http_redirect_check_uses_the_audited_path`, `test_idx_scenarios.py::test_tls_and_https_redirect`, `test_single_page.py::test_checks_that_compare_pages_are_set_aside_and_site_level_facts_are_still_checked`, `test_web_app.py::test_every_kind_of_finding_has_its_own_matching_explanation`, `test_web_app.py::test_explanations_are_about_the_finding_they_sit_under`
+- Finds the problem: `test_ai_skills.py::test_a_named_check_must_be_assessed_and_hold_data_and_a_measured_zero_counts`, `test_counts_and_shared_elements.py::test_http_served_beside_https_is_high_and_a_redirect_to_another_http_address_says_where_it_goes`, `test_idx_scenarios.py::test_http_redirect_check_uses_the_audited_path`, `test_idx_scenarios.py::test_tls_and_https_redirect`, `test_reassess_rules.py::test_decisions_290_are_applied_to_a_saved_report`, `test_single_page.py::test_checks_that_compare_pages_are_set_aside_and_site_level_facts_are_still_checked`, `test_web_app.py::test_every_kind_of_finding_has_its_own_matching_explanation`, `test_web_app.py::test_explanations_are_about_the_finding_they_sit_under`
 - Must not flag: `test_blocked_and_small_sites.py::test_idx2_does_not_report_a_missing_redirect_when_the_http_start_address_redirects_to_https`, `test_blocked_and_small_sites.py::test_idx2_still_reports_a_site_that_serves_http_without_redirecting`, `test_evidence_report_accuracy.py::test_saved_partial_host_coverage_does_not_call_retrieval_error_a_disallow`, `test_firecrawl.py::test_firecrawl_reads_a_blocked_sites_content_and_never_touches_access_results`, `test_idx_scenarios.py::test_unresolvable_www_variant_is_noted_not_silently_skipped`, `test_reassess_rules.py::test_findings_the_changed_rules_do_not_cover_are_left_as_they_were`, `test_web_app.py::test_https_is_tried_first_and_http_only_when_https_does_not_answer`, `test_web_firecrawl.py::test_a_challenged_site_is_read_through_firecrawl_with_no_block_headline_and_direct_results_stand`
 
 ### IDX-3
@@ -218,7 +218,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### RND-3
 
-- Finds the problem: `test_page_wording.py::test_each_made_up_finding_reads_as_that_pages_own_fact`, `test_page_wording.py::test_the_card_and_the_printed_table_say_what_is_wrong_on_each_page_in_the_readers_language`, `test_rnd_scenarios.py::test_content_behind_interaction`, `test_rnd_scenarios.py::test_browser_launch_failure_falls_back_to_raw_heuristics`
+- Finds the problem: `test_page_wording.py::test_each_made_up_finding_reads_as_that_pages_own_fact`, `test_page_wording.py::test_the_card_and_the_printed_table_say_what_is_wrong_on_each_page_in_the_readers_language`, `test_reassess_rules.py::test_decisions_290_are_applied_to_a_saved_report`, `test_rnd_scenarios.py::test_content_behind_interaction`, `test_rnd_scenarios.py::test_browser_launch_failure_falls_back_to_raw_heuristics`
 - Must not flag: `test_evidence_integrity.py::test_rnd3_does_not_pass_a_non_english_page_it_cannot_read`, `test_evidence_integrity.py::test_an_article_loaded_by_infinite_scroll_is_not_content_behind_interaction`, `test_evidence_integrity.py::test_a_menu_opened_by_a_click_is_not_content_behind_interaction`, `test_rnd_scenarios.py::test_noindexed_pages_are_not_reported_as_content_gaps`
 
 ### RND-4
@@ -263,7 +263,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### STR-5
 
-- Finds the problem: `test_brand_independent_b.py::test_unexplained_same_language_same_entity_conflict_remains_detectable`, `test_brand_independent_b.py::test_new_audit_and_explicit_reassessment_share_severity_and_action_decisions`, `test_problem_summary.py::test_a_site_wide_problem_is_counted_once_under_the_whole_site_and_notes_appear_nowhere`, `test_str_scenarios.py::test_titles`, `test_str_scenarios.py::test_entity_and_links_with_external_checks`, `test_str_scenarios.py::test_structured_data_graph_and_entity_identity`
+- Finds the problem: `test_brand_independent_b.py::test_unexplained_same_language_same_entity_conflict_remains_detectable`, `test_brand_independent_b.py::test_new_audit_and_explicit_reassessment_share_severity_and_action_decisions`, `test_problem_summary.py::test_a_site_wide_problem_is_counted_once_under_the_whole_site_and_notes_appear_nowhere`, `test_reassess_rules.py::test_decisions_290_are_applied_to_a_saved_report`, `test_str_scenarios.py::test_titles`, `test_str_scenarios.py::test_entity_and_links_with_external_checks`, `test_str_scenarios.py::test_structured_data_graph_and_entity_identity`
 - Must not flag: `test_brand_independent_b.py::test_declared_same_entity_alias_is_not_an_identity_contradiction`, `test_brand_independent_b.py::test_localized_same_entity_names_preserve_context_without_claiming_a_contradiction`, `test_brand_independent_b.py::test_saved_identity_count_uses_same_locale_qualification_without_guessing_missing_context`, `test_false_alarms.py::test_og_site_name_holding_the_title_is_one_line_not_n_names`, `test_false_alarms.py::test_product_brands_add_no_names_of_the_site`, `test_preview16_false_alarms.py::test_copyright_years_and_branch_names_are_not_other_names_of_the_brand`, `test_round2_external_and_text.py::test_same_as_links_are_asked_even_with_external_links_off_and_other_links_are_not`, `test_str_scenarios.py::test_with_external_links_off_only_the_same_as_links_leave_the_site`
 
 ### STR-6

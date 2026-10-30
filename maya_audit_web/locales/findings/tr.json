@@ -290,6 +290,7 @@
   "tseo1.analytics_twice": "{n} sayfa aynı analiz etiketini birden fazla kez yüklüyor (olası çift sayım)"
  },
  "fixes": {
+  "Check Google Search Console (Settings → Crawl stats, by response) for 403 or 429 answers to the real Googlebot. Maya's request came from Maya's own address, which a firewall may refuse on purpose as a fake Googlebot; change nothing unless the real Googlebot is refused too.": "Google Search Console'da (Ayarlar → Tarama istatistikleri, yanıta göre) gerçek Googlebot'a 403 veya 429 yanıtı verilip verilmediğine bakın. Maya'nın isteği Maya'nın kendi adresinden geldi; güvenlik duvarı bunu bilerek sahte Googlebot sayıp reddetmiş olabilir. Gerçek Googlebot da reddedilmiyorsa hiçbir şeyi değiştirmeyin.",
   "Give each page content that is specific to its place, or keep one page that lists the places and remove or noindex the thin copies.": "Her sayfaya yalnız o yere özgü içerik verin ya da yerleri listeleyen tek bir sayfa bırakıp zayıf kopyaları kaldırın veya noindex yapın.",
   "Make the canonical the page's own address (the one the redirect ends at); fix the template that writes the other address.": "Canonical'ı sayfanın kendi adresi yapın (yönlendirmenin vardığı adres); diğer adresi yazan şablonu düzeltin.",
   "Write the address the redirect ends at as the canonical.": "Canonical olarak yönlendirmenin vardığı adresi yazın.",
@@ -774,6 +775,7 @@
   "tseo1.description_concise": "Mümkün olduğu ölçüde, yaklaşık {low}–{high} karakterlik kısa bir sayfa özeti."
  },
  "notes": {
+  "Low, a check: these pages were not opened in a browser, and the 'load more' button wording is matched in English only. Open one page in a browser to see whether content is really behind the button.": "Düşük, kontrol edilecek: bu sayfalar tarayıcıda açılmadı ve 'daha fazla yükle' düğmesi yalnız İngilizce sözcüklerle aranıyor. İçeriğin gerçekten düğmenin arkasında olup olmadığını görmek için bir sayfayı tarayıcıda açın.",
   "Estimated: similarity is a sketch, and the place name is masked from the address's own words only.": "Tahmini: benzerlik bir örneklem hesabıdır ve yer adı yalnız adresin kendi kelimelerinden çıkarılır.",
   "Medium by policy (DECISIONS 264): many near-identical place pages can be treated as doorway pages.": "Politika gereği Orta (DECISIONS 264): neredeyse aynı çok sayıda yer sayfası doorway sayfası sayılabilir.",
   "The content of the address the redirect ends at is still compared below (same or different).": "Yönlendirmenin vardığı adresin içeriği yine aşağıda karşılaştırılır (aynı ya da farklı).",

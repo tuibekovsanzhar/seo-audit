@@ -40,7 +40,12 @@ UA_CHECK_SUMMARY = ("Firewall blocking was only partly assessed: a browser and G
 UA_CHECK_NOTE = ("Measured with a spoofed user agent from Maya's own address, not by Google, one request each and not "
                  "retried. Some firewalls refuse a fake Googlebot on purpose. Confirm in Google Search Console (Settings "
                  "→ Crawl stats, or URL Inspection → Test live URL).")
-UA_CHECK_SEVERITY = {"server_error": Severity.S2, "refused": Severity.S3, "not_found_for_bot": Severity.S3,
+REFUSED_FIX = ("Check Google Search Console (Settings → Crawl stats, by response) for 403 or 429 answers to the real "
+               "Googlebot. Maya's request came from Maya's own address, which a firewall may refuse on purpose as a fake "
+               "Googlebot; change nothing unless the real Googlebot is refused too.")
+# "refused" (403/429 to Googlebot's user agent from Maya's address) is a note (DECISIONS 290): a firewall that refuses a
+# fake Googlebot on purpose answers exactly so, and a request from Maya cannot tell that from refusing Google.
+UA_CHECK_SEVERITY = {"server_error": Severity.S2, "refused": Severity.INFO, "not_found_for_bot": Severity.S3,
                      "empty_for_bot": Severity.S3, "challenged": Severity.INFO, "size": Severity.INFO}
 RETIRED_FIX = ("Write the same rules for the user agents Anthropic uses now: ClaudeBot for training, Claude-SearchBot for search and "
                "Claude-User for live fetches. The old lines can stay, but they do nothing.")
@@ -872,8 +877,9 @@ def acc4_ua_check(result: CrawlResult, cfg: CrawlConfig, access: AccessData, key
              "confidence_detail": "Verified: one response Maya received. Estimated: that it persists (not retried), and "
                                   "that Google's own crawler is answered the same way."},
             "Googlebot receives the same page a browser does",
-            "Allow Googlebot in your WAF, bot-protection, and rate-limiting rules (verify it by Google's published IP "
-            "ranges rather than trusting the user-agent string). If blocking is deliberate, mark it as intended.",
+            (REFUSED_FIX if outcome == "refused" else
+             "Allow Googlebot in your WAF, bot-protection, and rate-limiting rules (verify it by Google's published IP "
+             "ranges rather than trusting the user-agent string). If blocking is deliberate, mark it as intended."),
             notes=[UA_CHECK_NOTE], importance_tier=_tier(urls, key_urls)))
     # Never a pass: the other AI crawlers were not tested (maya_audit.coverage turns a clean result into "partial").
     return CheckResult("ACC-4", title, _status(findings), summary, findings, evidence)

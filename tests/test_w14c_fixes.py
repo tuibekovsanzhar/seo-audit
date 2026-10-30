@@ -56,3 +56,46 @@ def test_a_price_grid_is_still_reported_when_a_control_is_elsewhere_on_the_page(
     body = '<div class="arama"><form><input name="q"></form></div>' + PRICES
     check = str8_on(body, path="/paketler/")
     assert [f.title for f in check.findings] == ["1 page(s) lay out pricing or spec comparisons as <div> grids instead of <table>"]
+
+
+# ------------------------------------------------------------------ DECISIONS 290: category titles, RND-3 guess
+
+from maya_audit.checks.structure import str5_entity  # noqa: E402
+from maya_audit.structure_data import StructureData  # noqa: E402
+from test_false_alarms import ROOT, ld  # noqa: E402
+
+
+def nihan_pages(category_site_name=False):
+    """A shop named "Nihan" everywhere; two collections whose titles end in "Nihan Women's Coats" / "Nihan Outerwear"."""
+    org = ld({"@type": "Organization", "name": "Nihan", "url": ROOT + "/"})
+    pages = {f"/urun-{n}": html(f"<h1>Ürün {n}</h1><p>{TR}</p>", title=f"Ürün {n} | Nihan",
+                                head='<meta property="og:site_name" content="Nihan">' + org) for n in range(6)}
+    for suffix, paths in (("Nihan Women's Coats", ("/kaban-1", "/kaban-2")), ("Nihan Outerwear", ("/dis-1", "/dis-2"))):
+        for path in paths:
+            site_name = suffix if category_site_name else "Nihan"
+            pages[path] = html(f"<h1>{path}</h1><p>{TR}</p>", title=f"{path.strip('/')} | {suffix}",
+                               head=f'<meta property="og:site_name" content="{site_name}">' + org)
+    pages["/"] = html(f"<h1>Nihan</h1><p>{TR}</p>", title="Nihan", head=org + '<meta property="og:site_name" content="Nihan">')
+    result, made = site(pages)
+    return str5_entity(result, CFG, made, set(), StructureData())
+
+
+def test_category_titles_after_the_brand_are_not_brand_names():
+    check = nihan_pages()
+    assert not [f for f in check.findings if "different ways" in f.title]
+    assert check.evidence["category_titles_not_counted"] == ["Nihan Outerwear", "Nihan Women's Coats"]
+
+
+def test_a_longer_name_the_site_also_gives_as_its_name_is_still_counted():
+    """Counter-example: og:site_name says "Nihan Women's Coats" on those pages, so it is a name the site gives itself."""
+    check = nihan_pages(category_site_name=True)
+    assert check.evidence["category_titles_not_counted"] == []
+
+
+def test_a_raw_html_guess_about_hidden_content_is_low_with_its_check_note():
+    from maya_audit.checks import render
+    from test_evidence_integrity import _rnd3
+    check = _rnd3("<html lang='en'><body><main><h1>Shop</h1><p>Coats and abayas.</p><button>Load more</button></main></body></html>")
+    [guess] = [f for f in check.findings if "raw-HTML heuristics" in f.title]
+    assert guess.severity.value == "S4" and guess.confidence.value == "estimated"
+    assert render.RND3_CHECK_NOTE in guess.notes and "English only" in render.RND3_CHECK_NOTE

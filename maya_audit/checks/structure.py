@@ -2131,6 +2131,11 @@ def str5_entity(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
                 and not (seen_on[key] & {home}) and all(x["url"] != home for x in given)):
             branches[key] = given
     counted = {k: v for k, v in counted.items() if k not in branches}
+    # A category title (DECISIONS 290): the main name and more words, given only by page titles ("Nihan Women's Coats"
+    # on a collection page). The page's subject after the brand, not another name of the brand: listed, not counted.
+    categories = {k for k, given in counted.items()
+                  if main and k != main and k.startswith(main + " ") and all(x["source"] == "title suffix/prefix" for x in given)}
+    counted = {k: v for k, v in counted.items() if k not in categories}
     findings = []
     if id_clashes:
         urls = sorted({u for c in id_clashes for us in c["names"].values() for u in us})
@@ -2213,6 +2218,7 @@ def str5_entity(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
                         "declared_identity_aliases": declared_aliases,
                         "og_site_name_holding_the_title": len(title_in_site_name),
                         "branches_not_counted": [spellings[k].most_common(1)[0][0] for k in sorted(branches)],
+                        "category_titles_not_counted": [spellings[k].most_common(1)[0][0] for k in sorted(categories)],
                         "product_brands": "not read: the brand of a product a shop sells is not a name of the site",
                         "sameAs_not_assessed_or_inconclusive": inconclusive,
                         "organization_schema_on_homepage": has_org or "missing (reported once, under STR-3)",

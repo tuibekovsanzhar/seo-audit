@@ -2740,3 +2740,18 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      and was refused is not one (the PDF said 2 in the headline and 1 elsewhere; Adile's 37 / 50 was the same gap).
      `page_counts` still records what the crawl fetched. Tests: `tests/test_rate_limited_start.py`,
      `tests/test_web_blocked_on_pages.py`, `test_run_clock.py`, skill `BlockedOnPages`.
+
+290. **Three judgments that read as site problems but are not established (owner's decision, agent implementation,
+     2026-10-30).** From the nihan.com.tr audit (`b3198942…`, a Shopify store behind Cloudflare). (1) ACC-4: a request
+     with Googlebot's user agent from Maya's own address answered 403 or 429 where a browser got 200 (`refused`) is a
+     note (Info), not Medium: a firewall that refuses a fake Googlebot on purpose answers exactly so (Cloudflare does by
+     default), and a request from Maya cannot tell that from refusing Google. Its fix (`REFUSED_FIX`) says to check
+     Google Search Console's crawl stats for 403/429 to the real Googlebot and to change nothing otherwise. A 5xx, an
+     empty page or a 404 for the bot keep their severity. (2) RND-3's raw-HTML guess ("N page(s) that were not rendered
+     may hide content behind interaction") is Low (S4), a check: the pages were not opened in a browser and the "load
+     more" wording is matched in English only (`RND3_CHECK_NOTE`); what a browser saw (`rnd3.revealed`) stays Medium.
+     (3) STR-5: a name given only by page titles that is the brand's main name followed by more words ("Nihan Women's
+     Coats", "Nihan Outerwear" on collection pages) is a category title, not another name of the brand: listed in
+     `category_titles_not_counted`, not counted; a longer name the site also gives as og:site_name or Organization
+     name is still counted. `reassess_rules` applies all three to a saved report (DECISIONS 285). Tests:
+     `tests/test_w14c_fixes.py`, `tests/test_reassess_rules.py`, `tests/test_w1_crawler.py`.

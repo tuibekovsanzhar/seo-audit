@@ -352,7 +352,9 @@ def test_googlebot_checks_name_an_empty_page_a_404_and_a_cdn_challenge_apart():
 def test_a_challenge_to_the_unverified_googlebot_is_info_and_an_empty_page_s3():
     from maya_audit.checks.access import UA_CHECK_SEVERITY
 
-    assert UA_CHECK_SEVERITY["challenged"].value == "Info" and UA_CHECK_SEVERITY["refused"].value == "S3"
+    # A refused spoofed Googlebot (403/429 from Maya's address) is a note too (DECISIONS 290): a firewall that refuses a
+    # fake Googlebot on purpose answers exactly so.
+    assert UA_CHECK_SEVERITY["challenged"].value == "Info" and UA_CHECK_SEVERITY["refused"].value == "Info"
     assert UA_CHECK_SEVERITY["empty_for_bot"].value == "S3" and UA_CHECK_SEVERITY["not_found_for_bot"].value == "S3"
 
 

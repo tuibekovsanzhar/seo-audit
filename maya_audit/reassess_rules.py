@@ -10,6 +10,14 @@ the observations the report already holds, on a copy, with no request and no cra
   pattern. The other new test, a form control beside the grid, needs the page's structure, which a report does not
   keep: it is not assessed here and the result says so.
 
+DECISIONS 290 adds three, on the evidence each finding already holds:
+
+- ACC-4 "A request with Googlebot's user agent got 403/429 ... where a browser got 200" (every pair "refused"): a note,
+  with the Search Console fix; the request came from Maya's address, which a firewall may refuse as a fake Googlebot.
+- RND-3 "... may hide content behind interaction (raw-HTML heuristics)": Low, a check, with its note.
+- STR-5 "The brand is named N different ways": a name given only by page titles that starts with the brand's main name
+  ("Nihan Women's Coats") is a category title and is not counted; with two names or fewer left there is no finding.
+
 Then what depends on the findings is derived again as a new report derives it: the severity policy, the priority
 order, the problem summary (findings in priority order) and the release gate. Nothing else is re-run: re-running other
 checks on Maya's own copies of the pages would mix readers when another reader (Firecrawl) read the site.
@@ -90,6 +98,55 @@ def _calculator_grids(report: dict, affected: dict, changes: list[str], unassess
         check["status"] = _status(check["findings"], check.get("review_items") or ())
 
 
+def _set_severity(f: dict, target: str) -> None:
+    f["severity"] = target
+    assessment = (f.get("evidence") or {}).get("severity_assessment")
+    if isinstance(assessment, dict):
+        assessment["source_severity"] = assessment["severity"] = target
+
+
+def _decisions_290(report: dict, affected: dict, changes: list[str]) -> None:
+    from .checks.access import REFUSED_FIX, UA_CHECK_SEVERITY
+    from .checks.render import RND3_CHECK_NOTE
+    for check in report.get("checks") or []:
+        kept = []
+        for f in check.get("findings") or []:
+            rule, sev = f.get("rule_id"), f.get("severity")
+            pairs = (f.get("evidence") or {}).get("pairs") or []
+            if rule == "acc4.ua_check.status" and pairs and all(p.get("outcome") == "refused" for p in pairs) and sev != "Info":
+                changes.append(f"{f['id']}: {sev} -> {UA_CHECK_SEVERITY['refused'].value} (a spoofed Googlebot refused, DECISIONS 290)")
+                _set_severity(f, UA_CHECK_SEVERITY["refused"].value)
+                f["how_to_fix"] = REFUSED_FIX
+            elif rule == "rnd3.maybe" and sev not in ("S4", "Info"):
+                changes.append(f"{f['id']}: {sev} -> S4 (raw-HTML guess, a check, DECISIONS 290)")
+                _set_severity(f, "S4")
+                notes = f.setdefault("notes", [])
+                if RND3_CHECK_NOTE not in notes:
+                    notes.append(RND3_CHECK_NOTE)
+            elif rule == "str5.names":
+                variants = (f.get("evidence") or {}).get("variants") or []
+                main = max(variants, key=lambda v: v.get("pages") or 0, default=None)
+                lead = (main or {}).get("normalized") or ""
+                categories = [v for v in variants if v is not main and lead and str(v.get("normalized", "")).startswith(lead + " ")
+                              and set((v.get("by_source") or {})) == {"title suffix/prefix"}]
+                if categories:
+                    rest = [v for v in variants if v not in categories]
+                    check.setdefault("evidence", {})["category_titles_not_counted"] = sorted(v.get("name") for v in categories)
+                    if len(rest) <= 2:
+                        changes.append(f"{f['id']}: removed; {len(categories)} of {len(variants)} names are category titles "
+                                       f"({', '.join(sorted(v.get('name') for v in categories))}), DECISIONS 290")
+                        affected.pop(f["id"], None)
+                        continue
+                    f["evidence"]["variants"] = rest
+                    f["title"] = re.sub(r"named \d+ different ways", f"named {len(rest)} different ways", f["title"])
+                    changes.append(f"{f['id']}: {len(categories)} category title(s) no longer counted, {len(rest)} names left")
+            kept.append(f)
+        if len(kept) != len(check.get("findings") or []):
+            check["findings"] = kept
+            from .checks.access import _status
+            check["status"] = _status(kept, check.get("review_items") or ())
+
+
 def _order(report: dict) -> list[str]:
     from .findings import Severity, priority_key
     from .models import Confidence
@@ -115,6 +172,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     unassessed: list[str] = []
     _hidden_h1(r, changes)
     _calculator_grids(r, aff, changes, unassessed)
+    _decisions_290(r, aff, changes)
     apply_severity(r.get("checks") or [], r.get("crawl") or {})
     order = _order(r)
     r["findings_in_priority_order"] = order
@@ -127,7 +185,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4) and 290, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,

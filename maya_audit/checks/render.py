@@ -404,6 +404,9 @@ def rnd2_critical_facts(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
 
 # -- RND-3 -------------------------------------------------------------------
 
+RND3_CHECK_NOTE = ("Low, a check: these pages were not opened in a browser, and the 'load more' button wording is matched "
+                   "in English only. Open one page in a browser to see whether content is really behind the button.")
+
 def rnd3_interaction(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     title = "Content behind interaction"
     key_urls = set(key_page_urls(result, cfg))
@@ -482,11 +485,14 @@ def rnd3_interaction(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
         urls = [r["url"] for r in suspected]
         findings.append(Finding(
             "RND-3", f"{len(urls)} page(s) that were not rendered may hide content behind interaction (raw-HTML heuristics)",
-            Severity.S3, Confidence.ESTIMATED, Rationale.MEASURED.value + " (by extension of RND-1)",
+            # Low, a check (DECISIONS 290): a guess from raw HTML on pages no browser opened, and the "load more" wording
+            # is matched in English only.
+            Severity.S4, Confidence.ESTIMATED, Rationale.MEASURED.value + " (by extension of RND-1)",
             NON_RENDERING + ["Google (does not click)"], scope_for(urls), {"pages": suspected[:40]},
             "content that should be cited is in the page without interaction",
             "Render one of these pages to confirm, then include the hidden content in the initial HTML.",
-            importance_tier=_tier(urls, key_urls), notes=["Estimated: empty tab panels or 'load more' buttons in raw HTML."],
+            importance_tier=_tier(urls, key_urls), notes=["Estimated: empty tab panels or 'load more' buttons in raw HTML.",
+                                                          RND3_CHECK_NOTE],
         ))
     summary = (f"{len(findings)} finding(s)." if findings else
                f"No content found behind interaction on {len(rendered)} rendered page(s); other pages checked with "

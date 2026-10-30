@@ -102,3 +102,47 @@ def test_the_tool_refuses_to_write_into_the_maya_home(tmp_path, monkeypatch):
         reassess_saved.main([str(src / "report.json"), "--out", str(tmp_path / ".maya-audit" / "x")])
     assert reassess_saved.main([str(src / "report.json"), "--out", str(tmp_path / "out")]) == 0
     assert json.loads((tmp_path / "out" / "report.json").read_text())["generation"]["analysis"]["requests"] == 0
+
+
+# ------------------------------------------------------------------ DECISIONS 290 on a saved report
+
+
+def nihan_like():
+    acc4 = finding("ACC-4-x", "ACC-4", "A request with Googlebot's user agent got 429 on 2 of 3 URL(s) where a browser got 200",
+                   "S3", [S + "/", S + "/c"], "acc4.ua_check.status",
+                   evidence={"pairs": [{"url": S + "/", "outcome": "refused"}, {"url": S + "/c", "outcome": "refused"}]})
+    rnd3 = finding("RND-3-x", "RND-3", "239 page(s) that were not rendered may hide content behind interaction (raw-HTML heuristics)",
+                   "S3", [S + "/en"], "rnd3.maybe")
+    names = finding("STR-5-x", "STR-5", "The brand is named 3 different ways", "S4", [S + "/", S + "/k"], "str5.names",
+                    evidence={"variants": [
+                        {"normalized": "nihan", "name": "Nihan", "pages": 499, "by_source": {"Organization name": 499, "title suffix/prefix": 66}},
+                        {"normalized": "nihan women's coats", "name": "Nihan Women's Coats", "pages": 3, "by_source": {"title suffix/prefix": 3}},
+                        {"normalized": "nihan outerwear", "name": "Nihan Outerwear", "pages": 2, "by_source": {"title suffix/prefix": 2}}]})
+    other = finding("IDX-2-x", "IDX-2", "http:// redirects to https:// with a temporary redirect on site.example", "S4",
+                    ["http://site.example/"], "idx2.temporary", evidence={"hosts": [{"status": 302}]})
+    checks = [{"check_id": c, "status": "findings", "findings": [f], "evidence": {}} for c, f in
+              (("ACC-4", acc4), ("RND-3", rnd3), ("STR-5", names), ("IDX-2", other))]
+    from maya_audit.severity import apply as apply_severity
+    apply_severity(checks, {})
+    return {"checks": checks, "findings_in_priority_order": ["ACC-4-x", "RND-3-x", "STR-5-x", "IDX-2-x"],
+            "problem_summary": {"pages_checked": 500}, "crawl": {"origin": S, "pages": []}}
+
+
+def test_decisions_290_are_applied_to_a_saved_report():
+    from maya_audit.checks.access import REFUSED_FIX
+    new, aff, record = apply(nihan_like(), {"STR-5-x": [S + "/", S + "/k"]})
+    by = {f["id"]: f for c in new["checks"] for f in c["findings"]}
+    assert by["ACC-4-x"]["severity"] == "Info" and by["ACC-4-x"]["how_to_fix"] == REFUSED_FIX
+    assert by["RND-3-x"]["severity"] == "S4" and any(n.startswith("Low, a check") for n in by["RND-3-x"]["notes"])
+    assert "STR-5-x" not in by and "STR-5-x" not in aff  # only one brand name is left: no finding
+    str5 = next(c for c in new["checks"] if c["check_id"] == "STR-5")
+    assert str5["evidence"]["category_titles_not_counted"] == ["Nihan Outerwear", "Nihan Women's Coats"]
+    assert by["IDX-2-x"]["severity"] == "S4"  # untouched
+    assert len(record["changes"]) == 3
+
+
+def test_a_googlebot_answered_with_a_5xx_keeps_its_severity():
+    r = nihan_like()
+    r["checks"][0]["findings"][0]["evidence"]["pairs"][0]["outcome"] = "server_error"
+    new, _, _ = apply(r, {})
+    assert next(f for c in new["checks"] for f in c["findings"] if f["id"] == "ACC-4-x")["severity"] == "S3"
