@@ -207,7 +207,7 @@ def test_frozen_response_integrity_and_no_reuse_of_attempts(tmp_path):
         b.frozen_transport(tmp_path, records, []).handle_request(request)
 
 
-@pytest.mark.skipif(not b.CORPUS.exists(), reason="the real-site corpus is not shipped in a release archive (DECISIONS 283 (7))")
+@pytest.mark.skipif(not b.CORPUS.exists(), reason="the real-site corpus is kept outside the repository: set MAYA_AUDIT_BENCHMARK_DIR to run this (DECISIONS 291)")
 def test_site_manifest_has_ten_distinct_sector_examples_and_pending_labels():
     sites = b.load_sites()
     assert len(sites) == 10 and len({s["id"] for s in sites}) == 10

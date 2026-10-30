@@ -24,7 +24,10 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-CORPUS = ROOT / "benchmarks" / "real-sites"
+# The real-site corpus (real clients' expected results) lives outside the repository; point to it with
+# MAYA_AUDIT_BENCHMARK_DIR. Without it, the old in-repo place is tried, and tests skip when neither exists.
+CORPUS = (Path(os.environ["MAYA_AUDIT_BENCHMARK_DIR"]).expanduser() if os.environ.get("MAYA_AUDIT_BENCHMARK_DIR")
+          else ROOT / "benchmarks" / "real-sites")
 
 
 def stamp():

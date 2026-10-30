@@ -46,3 +46,19 @@ design-reference/
 
 # Review and error reports name clients and live sites. Never committed, never in the team zip.
 reviews/
+
+# Real-site benchmark corpus: real clients' expected results. Kept outside the repository
+# (~/Projects/maya-audit-private/benchmarks/real-sites); point to it with MAYA_AUDIT_BENCHMARK_DIR.
+benchmarks/real-sites/
+
+# Archives, client PDFs, address lists and saved reports: outputs, never source.
+*.zip
+*.pdf
+*.csv
+report.json
+# ... except the made-up examples and the skills' own assets and examples (examples/live-runs/ and
+# examples/generated-documents/ stay ignored above: they hold real audit output).
+!examples/brands.example.csv
+!examples/professional-synthetic/**
+!.agents/skills/*/assets/**
+!.agents/skills/*/examples/**

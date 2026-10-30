@@ -2755,3 +2755,18 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      `category_titles_not_counted`, not counted; a longer name the site also gives as og:site_name or Organization
      name is still counted. `reassess_rules` applies all three to a saved report (DECISIONS 285). Tests:
      `tests/test_w14c_fixes.py`, `tests/test_reassess_rules.py`, `tests/test_w1_crawler.py`.
+
+291. **Repository ready for a private team GitHub repo (owner's request, agent implementation, 2026-10-30).** Client
+     names stay (private company repo, team-only access) and the full history is kept. (1) The real-site benchmark
+     corpus (`benchmarks/real-sites/`: real clients' expected results) leaves the repository: moved to
+     `~/Projects/maya-audit-private/benchmarks/real-sites/`, untracked with `git rm --cached`, and git-ignored.
+     `scripts/real_sites_benchmark.py` reads it from `MAYA_AUDIT_BENCHMARK_DIR` (else the old in-repo place); the
+     corpus test skips when neither exists. Its 16 files remain in the history of the 50 earlier commits. (2)
+     `.gitignore` also ignores `*.zip`, `*.pdf`, `*.csv` and `report.json`, except the made-up examples
+     (`examples/brands.example.csv`, `examples/professional-synthetic/`) and the skills' assets and examples;
+     `examples/live-runs/` and `examples/generated-documents/` stay ignored. (3) `.env.example` lists every variable the
+     code reads, empty, one comment each ([env] marks those read from the shell only); an empty value is "not set".
+     (4) README has a "New teammate" section (clone, venv, `.[team,dev]`, Chromium, `.env`, start the web app, update
+     with `git pull` and a restart). (5) gitleaks 8.30.1 on all 50 commits: 9 findings, all SHA-256 file hashes in
+     `RELEASE-SNAPSHOT.json` read as generic API keys; `.gitleaks.toml` allows that one generated file, and the re-run
+     finds no leaks. A pattern scan of every blob found no key, token or password either.
