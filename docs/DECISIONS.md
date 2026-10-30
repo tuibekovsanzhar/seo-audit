@@ -2715,3 +2715,28 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      rate-limited Maya's crawler", and a step to check the blocker's bot and rate rules in place of "try again later";
      ACC-9's summary says "{who} blocked Maya's crawler (429 on pages)". Turkish: "Maya'nın tarayıcısı engellendi
      (sayfalarda 429)". The stop code `rate_limit` stays a code. Test: `tests/test_web_blocked_on_pages.py`.
+
+289. **A rate limit stops Maya's own requests, not the page reader; one count of pages read (owner's request, agent
+     implementation, 2026-10-30).** The third nihan.com.tr audit (engine `375ae84`) read 1 page: Maya's crawler got 200
+     on the homepage and 429 (`Retry-After: 60`) on `/en`, the crawl stopped, and Firecrawl, ticked as the page reader,
+     was never started ("the site rate-limited Maya's crawler, so no further page was asked for through a reader").
+     (1) A 429 stops Maya's own page requests, as before; it no longer stops the page reader. When the audit has one,
+     it reads the discovered and sitemap addresses up to the page cap as on any audit: robots.txt allows each address,
+     Maya's pace holds, the proxy is the plan's (basic unless the owner approved bypassing bot protection). Any 429 on
+     pages, not only all of them. This replaces 52's "no reader after a rate limit" and 286 (2)'s homepage-only read;
+     with the reader off nothing changes. `firecrawl.crawl_blocked.after_rate_limit` records it (`maya_stopped`,
+     `maya_blocked`, `proxy`, `owner_approved_bypass`, `page_cap`, `read`, `pages_read`); the older `homepage_fallback`
+     record of saved reports is still read for display. ACC-9 becomes the reader's note ("Cloudflare rate-limited
+     Maya's direct crawler on 1 of 2 request(s). N page(s) were read through Firecrawl instead"), except the 288 block
+     (every page 429 while robots.txt and the sitemap were served), which keeps its own finding and AI-crawler warning.
+     (2) Any 429 is said as what it did to Maya's crawler, in the engine and the web page and PDF alike: ACC-9 has a
+     third rule, `acc9.rate_limited_429` ("Maya's crawler rate-limited (429 on pages): {who} answered N of M page
+     request(s) with 429. AI crawlers may get the same treatment", Turkish "Maya'nın tarayıcısı hız sınırına takıldı
+     (sayfalarda 429)"), with a fix that points at the blocker's bot and rate rules; the blocked box's heading is
+     "Rate-limited for Maya's crawler (429 on pages): Cloudflare", and its "try again later" step is replaced by that
+     rule step for any 429 (it stays for a challenge). The client card's AI-crawler line covers both 429 rules.
+     (3) "N pages read for content" counts the pages read (`report.pages_shown` = `read_counts`), in the engine's
+     `problem_summary.pages_checked`, the web headline and the page box, also for saved reports: a page Maya asked for
+     and was refused is not one (the PDF said 2 in the headline and 1 elsewhere; Adile's 37 / 50 was the same gap).
+     `page_counts` still records what the crawl fetched. Tests: `tests/test_rate_limited_start.py`,
+     `tests/test_web_blocked_on_pages.py`, `test_run_clock.py`, skill `BlockedOnPages`.

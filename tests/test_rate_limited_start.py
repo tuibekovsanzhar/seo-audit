@@ -118,8 +118,9 @@ def rate_limited_audit(slept):
     return audit(handler, max_pages=10)
 
 
-def fallback_of(info):
-    return info["crawl_blocked"]["homepage_fallback"]
+def after_of(info):
+    """DECISIONS 289: what the reader did after Maya's crawler was rate-limited."""
+    return info["crawl_blocked"]["after_rate_limit"]
 
 
 def plain_rate_limited_audit():
@@ -140,16 +141,16 @@ def test_blocked_on_pages_the_reader_goes_on_with_the_basic_proxy_and_no_tick(tm
     api = Firecrawl(SITE)
     client = client_for(tmp_path, api)
     info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client, Options(read_always=True, max_pages=10))
-    fallback = fallback_of(info)
-    assert fallback["continued"] is True and fallback["read"] and fallback["proxy"] == "basic"
-    assert fallback["owner_approved_bypass"] is False and fallback["maya_blocked"] == maya_blocked.LABEL
+    after = after_of(info)
+    assert after["read"] and after["pages_read"] >= 2 and after["proxy"] == "basic"
+    assert after["owner_approved_bypass"] is False and after["maya_blocked"] == maya_blocked.LABEL
     assert {b["proxy"] for b in api.bodies} == {"basic"} and "https://bank.test/about" in api.urls
     assert "https://bank.test/private/accounts" not in api.urls  # robots.txt disallows it
     assert info["purpose"] == reader.MAIN_PURPOSE and info["used"]
     # ACC-9 keeps its own finding, with the AI-crawler warning: not rewritten into a challenge note.
     [acc9] = [f for c in outcome.checks if c.check_id == "ACC-9" for f in c.findings]
     assert acc9.rule_id == "acc9.blocked_429"
-    assert panel.section(info)["crawl_blocked"]["homepage_fallback"] == fallback  # saved with the report
+    assert panel.section(info)["crawl_blocked"]["after_rate_limit"] == after  # saved with the report
 
 
 def test_the_stronger_proxy_is_used_only_with_the_owners_approval(tmp_path, slept, no_lookups):
@@ -158,19 +159,17 @@ def test_the_stronger_proxy_is_used_only_with_the_owners_approval(tmp_path, slep
     client = client_for(tmp_path, api, proxy="enhanced", owner_approved_bypass=True)
     info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client,
                         Options(read_always=True, max_pages=10, proxy="enhanced", owner_approved_bypass=True))
-    assert fallback_of(info)["proxy"] == "enhanced" and fallback_of(info)["owner_approved_bypass"] is True
+    assert after_of(info)["proxy"] == "enhanced" and after_of(info)["owner_approved_bypass"] is True
     assert Options(proxy="enhanced").problem()  # without the tick the plan refuses it before any request
 
 
-def test_a_plain_rate_limit_still_stops_at_the_homepage(tmp_path, slept, no_lookups):
+def test_a_site_whose_robots_txt_cannot_be_read_gets_no_reader_request(tmp_path, slept, no_lookups):
+    """robots.txt refused too: the reader goes on as on any audit, and asks for nothing robots.txt has not allowed."""
     outcome = plain_rate_limited_audit()
     assert not maya_blocked.holds(outcome.result)
     api = Firecrawl(SITE)
-    info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client_for(tmp_path, api),
-                        Options(read_always=True, max_pages=10))
-    assert len(api.bodies) <= 1
-    fallback = (info.get("crawl_blocked") or {}).get("homepage_fallback")
-    assert fallback is None or (fallback["continued"] is False and fallback["proxy"] == "basic")
+    reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client_for(tmp_path, api), Options(read_always=True, max_pages=10))
+    assert [url for url in api.urls if not url.endswith("/robots.txt")] == []
 
 
 def test_a_saved_homepage_only_read_is_named_by_the_crawl_record(tmp_path, slept, no_lookups):
@@ -192,19 +191,37 @@ def test_a_homepage_the_reader_cannot_read_either_is_said_so(tmp_path, slept, no
     api = Firecrawl({})  # every page answers 404 through the reader
     info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client_for(tmp_path, api),
                         Options(read_always=True, max_pages=10))
-    assert len(api.bodies) == 1 and fallback_of(info)["read"] is False and not info["used"]
-    assert "could not read it" in info["reason"]
+    assert after_of(info)["read"] is False and after_of(info)["pages_read"] == 0 and not info["used"]
 
 
-def test_a_site_that_rate_limited_after_pages_were_read_is_not_asked_again(tmp_path, slept, no_lookups):
-    """DECISIONS 52 still holds once anything was read: no reader request after a rate limit."""
-    handler, _ = site([(200, None)], other=lambda r: httpx.Response(429, headers={**HTML, "retry-after": "600"}, text="x"))
+def test_a_site_that_rate_limited_after_a_page_was_read_is_read_on_through_the_reader(tmp_path, slept, no_lookups):
+    """DECISIONS 289, nihan.com.tr (2026-10-30): the homepage answered 200, the next page 429 with Retry-After: 60, and
+    Maya's crawl stopped. Maya stops its own page requests; the reader reads the other pages up to the cap."""
+    handler, _ = site([(200, None)], other=lambda r: httpx.Response(429, headers={**HTML, **CF, "retry-after": "60"}, text="x"))
+    outcome = audit(handler, max_pages=10)
+    assert outcome.result.stop_reason == StopReason.RATE_LIMIT and not maya_blocked.holds(outcome.result)
+    own = [p.url for p in outcome.result.pages]
+    api = Firecrawl(SITE)
+    info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client_for(tmp_path, api), Options(read_always=True, max_pages=10))
+    assert info["used"] and info["purpose"] == reader.MAIN_PURPOSE and info["pages_read"] >= 3
+    assert "https://bank.test/contact" in api.urls and {b["proxy"] for b in api.bodies} == {"basic"}
+    assert "https://bank.test/private/accounts" not in api.urls  # robots.txt
+    after = after_of(info)
+    assert after["read"] and after["maya_blocked"] is None and after["maya_stopped"].startswith("https://bank.test/about asked Maya")
+    assert [p.url for p in outcome.result.pages] == own  # Maya's own crawl record is unchanged: it sent no new request
+    # The rate limit stays on record as the reader's note (ACC-9), not a headline.
+    [acc9] = [f for c in outcome.checks if c.check_id == "ACC-9" for f in c.findings]
+    assert "rate-limited Maya's direct crawler on 1 of 2 request(s)" in acc9.title and acc9.severity.value == "Info"
+
+
+def test_without_a_reader_a_rate_limit_still_stops_the_audit_as_before(slept, no_lookups):
+    """Firecrawl off: nothing changes. Maya stops, and the pages read are the one Maya read."""
+    from maya_audit.report import pages_shown
+    handler, _ = site([(200, None)], other=lambda r: httpx.Response(429, headers={**HTML, "retry-after": "60"}, text="x"))
     outcome = audit(handler, max_pages=10)
     assert outcome.result.stop_reason == StopReason.RATE_LIMIT
-    api = Firecrawl(SITE)
-    info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client_for(tmp_path, api),
-                        Options(read_always=True, max_pages=10))
-    assert api.bodies == [] and "homepage_fallback" not in info.get("crawl_blocked", {}) and "rate-limited Maya's crawler" in info["reason"]
+    # DECISIONS 289 (3): one number for "pages read for content": the refused page is not one (it said 2).
+    assert pages_shown(outcome.result) == 1
 
 
 # ------------------------------------------------------------------ DECISIONS 288: named, worded, gated

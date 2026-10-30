@@ -487,7 +487,7 @@ def test_a_failed_paid_call_is_counted_never_retried_and_leaves_the_audit_whole(
     audit = start(client, made)
     assert audit["state"] == "finished" and audit["paid"]["state"] == "done" and len(client.provider.requests) == 2  # one per call, no retry
     view = get(client, audit, "/summary")
-    assert view["counts"]["pages_checked"] == 50 and view["top"]
+    assert view["counts"]["pages_checked"] == 49 and view["top"]  # pages read: the demo's one error page is not one (289)
     backlinks = view["backlinks"]
     assert not backlinks["available"] and {c["refusal"]["code"] for c in backlinks["checks"]} == {"possibly_billed"}
     assert backlinks["cost_usd"] == pytest.approx(made["paid"]["total_usd"]) == client.ledger.spent_today()
@@ -1153,7 +1153,7 @@ def test_history_is_searched_filtered_paged_kept_on_disk_and_deleted_with_its_fi
     assert not list(folder.glob("**/dataforseo-ledger.jsonl"))  # the spending ledger is not among an audit's files
     web.close(client)
     again = web(folder=folder)  # history is on disk, not in the process
-    assert get(again, shop, "/summary")["counts"]["pages_checked"] == 50
+    assert get(again, shop, "/summary")["counts"]["pages_checked"] == 49  # pages read (DECISIONS 289)
     assert again.delete(f"{API}/audits/{shop['id']}").json() == {"deleted": shop["id"]}
     assert not audit_folder.exists() and again.get(f"{API}/audits").json()["total"] == 1
     error(again.get(f"{API}/audits/{shop['id']}"), 404, "audit_not_found")

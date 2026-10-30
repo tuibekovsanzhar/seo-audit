@@ -338,7 +338,10 @@ def challenged(report: dict[str, Any]) -> dict[str, Any] | None:
         blockers = describe_blockers([b for b in (identify_blocker(p.get("status"), p.get("headers") or {}, p.get("evidence") or [],
                                                                     p.get("fetch_class") or "") for p in impaired) if b])
     on_pages = blocked_on_pages(report)
-    if on_pages:  # DECISIONS 288: not "Cloudflare (rate limit)", which reads as "come back later"
+    # DECISIONS 288/289: a 429 is named as what it did to Maya's crawler, never "Cloudflare (rate limit)", which reads as
+    # "come back later": blocked when every page got it while robots.txt was served, rate-limited when some did.
+    limited = not on_pages and bool(blockers) and blockers[0].get("kind") == "rate limit"
+    if on_pages or limited:
         named = blockers[0]["name"] if blockers and blockers[0].get("name") else None
         who = named or t("blocked.firewall")
     else:
@@ -358,12 +361,12 @@ def challenged(report: dict[str, Any]) -> dict[str, Any] | None:
                                      for block in allowlist.instructions(agent, report["crawl"].get("user_agent") or agent, blockers[0]["name"] if blockers else None)]},
             "sections": {"who": t("blocked.section.who"), "meaning": t("blocked.section.meaning"), "next": t("blocked.next"),
                          "firecrawl": t("blocked.section.firecrawl"), "status": t("blocked.section.status")},
-            "headline": t("blocked.headline.429" if on_pages else "blocked.headline", who=who),
+            "headline": t("blocked.headline.429" if on_pages else "blocked.headline.rate_limited" if limited else "blocked.headline", who=who),
             "lines": [t("blocked.what", who=who, read=read, requested=requested), t("blocked.common"), t("blocked.meaning"),
                       t("blocked.reader", count=through_reader) if through_reader else t("blocked.no_bypass")],
             # "Try again later" is advice for a rate limit; a block on Maya's crawler does not lift by waiting.
             "next_steps": [t("blocked.step.allow", agent=agent), t("blocked.step.verify")]
-                          + ([t("blocked.step.rules_429", who=who)] if on_pages else [t("blocked.step.later")])}
+                          + ([t("blocked.step.rules_429", who=who)] if on_pages or limited else [t("blocked.step.later")])}
 
 
 BLOCK_CHECK = "ACC-9"
@@ -384,8 +387,9 @@ def pages_stat(report: dict[str, Any], block: dict[str, Any] | None, read: int, 
                 "sentence": t("result.pages.sentence", pages=read) + (" " + also if also else ""),
                 "line": t("result.pages.read.line", read=read, how=how)}
     if not block:
-        return {"value": counts["pages_checked"], "label": t("result.pages"), "blocked": False, "also": also,
-                "detail": t("result.pages.detail", checked=counts["pages_checked"], cap=cap, redirects=counts["redirects"])}
+        # The pages read, as the headline counts them (DECISIONS 289): a page that answered with an error is not one.
+        return {"value": read, "label": t("result.pages"), "blocked": False, "also": also,
+                "detail": t("result.pages.detail", checked=read, cap=cap, redirects=counts["redirects"])}
     count = block["blocked_requests"]
     detail = t("result.pages.blocked.one") if count == 1 else t("result.pages.blocked.many", count=count)
     through_reader = reader_pages_read(report)
@@ -796,7 +800,9 @@ def build(report: dict[str, Any], *, outcome: str | None, reason: str | None, ba
         for row in rows:
             row["in_block_card"] = row["check_id"] == BLOCK_CHECK
     stat = pages_stat(report, block, read, how["page_cap"])
-    checked = pages_read(report) if (report.get("firecrawl") or {}).get("pages_read") else report["page_counts"]["pages_checked"]
+    # The pages read for content, the one figure every line prints (DECISIONS 289): a page Maya asked for and was refused
+    # is not "read for content", also in a report saved before the engine counted it so.
+    checked = pages_read(report)
     by_severity = {s: counts.get(s, 0) for s in SEVERITIES}
     totals = problems_of(report, affected, checked)
     shown_reason, reason_ok = wording.outcome(reason)

@@ -199,6 +199,8 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
     "ACC-9": (
         ("acc9.blocked_429", "Maya's crawler blocked (429 on pages): {who~:.+?} answered {blocked#} of {requested#} page request(s) with 429 while robots.txt and the sitemap were served. AI crawlers may get the same treatment",
          "Maya's crawler blocked (429 on pages): {who} answered {blocked} of {requested:page request|page requests} with 429 while robots.txt and the sitemap were served. AI crawlers may get the same treatment"),
+        ("acc9.rate_limited_429", "Maya's crawler rate-limited (429 on pages): {who~:.+?} answered {blocked#} of {requested#} page request(s) with 429. AI crawlers may get the same treatment",
+         "Maya's crawler rate-limited (429 on pages): {who} answered {blocked} of {requested:page request|page requests} with 429. AI crawlers may get the same treatment"),
         ("acc9.blocked", "The site blocks or challenges automated visitors: {who~:.+?} answered {blocked#} of {requested#} page request(s). AI crawlers may be affected too",
          "The site blocks or challenges automated visitors: {who} answered {blocked} of {requested:page request|page requests}. AI crawlers may be affected too"),
         # The same finding after the pages were read through Firecrawl (maya_audit.firecrawl.reader.note_the_challenge).
@@ -765,6 +767,9 @@ FIX_PATTERNS = _frames((
     ("acc9.allow", "If you own this site: allow the user agent \"{agent}\" in the firewall or bot-protection rules and run the audit again; verify "
                    "ownership so ACC-4 can test what AI crawlers receive; or try again later if this was a rate limit. Then check the same rules "
                    "for the AI crawlers you want to reach you (OAI-SearchBot, ClaudeBot, PerplexityBot and others)."),
+    ("acc9.allow_rate_429", "Check the bot and rate-limit rules in {who~:.+?} that answer page requests with 429: allow the user agent "
+                            "\"{agent}\" and run the audit again. AI crawlers may get the same treatment: check the same rules for "
+                            "OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you."),
     ("acc9.allow_429", "Check the bot and rate-limit rules in {who~:.+?} that answer page requests with 429 while robots.txt and the sitemap "
                        "are served: allow the user agent \"{agent}\" and run the audit again. AI crawlers may get the same treatment: check "
                        "the same rules for OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you."),

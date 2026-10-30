@@ -363,6 +363,8 @@ def note_the_challenge(checks: list[CheckResult], pages_read: int) -> None:
 HOMEPAGE_FALLBACK_WHY = ("Maya's crawler was rate-limited before it read any page, also after waiting the Retry-After "
                          "once; the homepage alone was asked for through the reader")
 HOMEPAGE_FALLBACK_PURPOSE = "homepage only, after the site rate-limited Maya's crawler"
+AFTER_RATE_LIMIT_WHY = ("Maya's own crawler was rate-limited and stopped its own page requests; the page reader went on "
+                        "with the discovered and sitemap addresses, up to the page cap, within robots.txt and Maya's pace")
 CONTINUED_WHY = ("Maya's crawler was blocked (429 on pages) while robots.txt and the sitemap were served; the reader read the "
                  "site's pages up to the page cap, within robots.txt and Maya's pace")
 HOMEPAGE_FALLBACK_PURPOSE_429 = "homepage only, after Maya's crawler was blocked (429 on pages)"
@@ -713,63 +715,31 @@ def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, 
             info["crawl_blocked"].update(direct_not_reached=True, why=result.stop_detail)
         not_now = clock.why_not() if clock is not None else None
         rate_limited = not_now is None and result.stop_reason == StopReason.RATE_LIMIT
-        if rate_limited:
-            # The site told Maya's crawler to slow down. Asking for the same pages through a reader in the same run
-            # would be more requests to a site that asked for fewer (DECISIONS 52).
-            not_now = "the site rate-limited Maya's crawler, so no further page was asked for through a reader in this run"
-        if (rate_limited and options.read_blocked and (blocked or options.read_always)
-                and not start_page_read(result)):
-            # DECISIONS 286: nothing at all was read, not even the start page after its one wait. The homepage alone,
-            # once, through the basic reader: no sitemap, no other page, never the bot-protection bypass.
-            # DECISIONS 288 (as changed on 2026-10-30): when that is a block on Maya's crawler (429 on pages while
-            # robots.txt and the sitemap are served), the reader goes on as the page reader up to the plan's page cap, as
-            # it does for a challenged site: robots.txt allows each address, Maya's pace holds, and the proxy is the
-            # plan's, which is basic unless the site owner approved bypassing bot protection (`Options.problem`).
-            # A plain rate limit (robots.txt refused too) stops at the homepage.
-            from .. import maya_blocked
-            blocked_429 = maya_blocked.holds(result)
-            go_on = blocked_429
-            record = {"why": HOMEPAGE_FALLBACK_WHY, "url": homepage_url(result),
-                      "maya_blocked": maya_blocked.LABEL if blocked_429 else None,
-                      "owner_approved_bypass": bool(options.owner_approved_bypass), "continued": go_on}
-            if go_on:
-                record.update(proxy=options.proxy, pages_asked=options.max_pages, why=CONTINUED_WHY)
-                checks = read_blocked_site(result, cfg, client, options, info, blocked=True, progress=progress,
-                                           ranking_urls=ranking_urls)
-            else:
-                one = replace(options, max_pages=1, sitemap_discovery=False, spread_by_section=False, proxy=DEFAULT_PROXY,
-                              owner_approved_bypass=False)
-                record.update(proxy=one.proxy, pages_asked=1)
-                # The client carries its own proxy (the plan's): basic for this one request, whatever the plan chose.
-                had = getattr(client, "proxy", None)
-                if had is not None:
-                    client.proxy = DEFAULT_PROXY
-                try:
-                    checks = read_blocked_site(result, cfg, client, one, info, blocked=True, progress=progress)
-                finally:
-                    if had is not None:
-                        client.proxy = had
-            record["read"] = bool(checks)
-            # Saved with the section (`crawl_blocked` is one of its keys; a new top-level key would change the 1.20 shape).
-            info["crawl_blocked"]["homepage_fallback"] = record
-            if checks:
-                replaced.update({check.check_id: check for check in checks})
-                # Gone on: this audit's main page reader, like any other (ACC-9 keeps its own "blocked (429 on pages)"
-                # finding and its AI-crawler warning; it is not rewritten into a challenge note).
-                info.update(used=True, purpose=MAIN_PURPOSE if go_on else HOMEPAGE_FALLBACK_PURPOSE,
-                            notice=MAIN_NOTICE if go_on else AI_NOTICE)
-            else:
-                info.update(reason=f"Firecrawl read the homepage only, after the rate limit, and could not read it: {not_now}",
-                            stopped_because=not_now)
-        elif not_now and options.read_blocked and (blocked or options.read_always):
+        reading = options.read_blocked and (blocked or options.read_always)
+        from .. import maya_blocked
+        blocked_429 = rate_limited and maya_blocked.holds(result)
+        if rate_limited and reading:
+            # DECISIONS 289 (replaces 52's "no reader after a rate limit" and 286's homepage-only read): a 429 stops
+            # Maya's own page requests, and only those. The reader, when this audit has one, reads the discovered and
+            # sitemap addresses up to the page cap as on any audit: robots.txt allows each one, Maya's pace holds, and
+            # the proxy is the plan's (basic unless the site owner approved bypassing bot protection).
+            info["crawl_blocked"]["after_rate_limit"] = {
+                "why": AFTER_RATE_LIMIT_WHY, "maya_stopped": result.stop_detail,
+                "maya_blocked": maya_blocked.LABEL if blocked_429 else None, "proxy": options.proxy,
+                "owner_approved_bypass": bool(options.owner_approved_bypass), "page_cap": options.max_pages}
+        if not_now and reading:
             info.update(reason=f"Firecrawl was not started: {not_now}", stopped_because=not_now, not_started=True)
-        elif options.read_blocked and (blocked or options.read_always):
+        elif reading:
             checks = read_blocked_site(result, cfg, client, options, info, blocked=blocked, progress=progress, ranking_urls=ranking_urls)
+            if rate_limited:
+                info["crawl_blocked"]["after_rate_limit"].update(read=bool(checks), pages_read=info.get("pages_read") or 0)
             if checks:
                 replaced.update({check.check_id: check for check in checks})
                 if options.read_always:
                     info.update(used=True, purpose=MAIN_PURPOSE, notice=MAIN_NOTICE)
-                    if blocked:
+                    # A block on Maya's crawler (429 on every page while robots.txt and the sitemap were served) keeps
+                    # its own ACC-9 finding and AI-crawler warning (288); any other block becomes the reader's note.
+                    if blocked and not blocked_429:
                         note_the_challenge(outcome.checks, info["pages_read"])
                 else:
                     info.update(used=True, purpose="content reader for a blocked site", notice=AI_NOTICE)

@@ -367,6 +367,7 @@
  "result.coverage.checks": "{count} kontrol",
  "blocked.headline": "Site bu denetimi engelledi: {who}",
  "blocked.headline.429": "Maya'nın tarayıcısı engellendi (sayfalarda 429): {who}",
+ "blocked.headline.rate_limited": "Maya'nın tarayıcısı hız sınırına takıldı (sayfalarda 429): {who}",
  "blocked.firewall": "sitenin güvenlik duvarı",
  "blocked.what": "Web sitesi yerine {who} yanıt verdi. Maya’nın kendi tarayıcısı istediği {requested} sayfadan {read} tanesini okuyabildi.",
  "blocked.common": "Bu durum bankalarda, büyük perakendecilerde ve yönetilen bir güvenlik duvarının arkasındaki sitelerde yaygındır. Genellikle otomatik ziyaretçilere karşı genel bir kuraldır; bu denetime özel bir şey değildir.",

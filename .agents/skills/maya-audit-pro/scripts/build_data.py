@@ -837,7 +837,7 @@ class Builder:
     def blocked_429_line(self, f):
         """DECISIONS 288: Maya's crawler blocked by 429 on pages. One line on the card: AI crawlers may be treated the same,
         and where to look (the blocker the evidence names, else the site's firewall)."""
-        if self.rule_of(f) != "acc9.blocked_429":
+        if self.rule_of(f) not in ("acc9.blocked_429", "acc9.rate_limited_429"):  # DECISIONS 288, 289
             return []
         named = next((b.get("name") for b in (f.get("evidence") or {}).get("blocked_by") or [] if b.get("name")), None)
         return [self.L["blocked_429_line"].format(who=named or self.L["blocked_429_firewall"])]

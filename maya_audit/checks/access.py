@@ -1147,6 +1147,10 @@ def blocker_phrase(blockers: list[dict]) -> str:
 FIX_429 = ('Check the bot and rate-limit rules in {who} that answer page requests with 429 while robots.txt and the sitemap are served: allow the user agent "{token}" and run the audit again. AI crawlers may get the same treatment: check the same rules for OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you.')
 
 
+# DECISIONS 289: some pages answered 429 (not all, or the site's files were refused too): rate-limited, said as that.
+FIX_RATE_429 = ('Check the bot and rate-limit rules in {who} that answer page requests with 429: allow the user agent "{token}" and run the audit again. AI crawlers may get the same treatment: check the same rules for OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you.')
+
+
 def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     """What the site did to an automated visitor that says who it is: Maya's own crawler.
 
@@ -1180,6 +1184,7 @@ def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResul
     from .. import maya_blocked
     blocked_429 = maya_blocked.holds(result)  # DECISIONS 288: 429 on every page while the site's files are served
     name = (blockers[0]["name"] if blockers and blockers[0].get("name") else "the site's firewall")
+    rate_429 = not blocked_429 and bool(blockers) and blockers[0].get("kind") == "rate limit"
     rest = (Severity.S3 if widespread else Severity.S4, Confidence.INFERRED,
             "Measured (Maya's own requests) / Hypothesis (what AI crawlers receive)",
             ["all crawlers that identify themselves", "AI search and live-fetch bots"],
@@ -1199,6 +1204,15 @@ def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResul
                                  "self-identified crawler often stops others, but AI crawlers were not tested here and may be allowed by name.",
                                  "This is common on banks, large retailers and sites behind a managed firewall, and is often not deliberate.",
                                  "Maya does not try to get past bot protection."])
+    elif rate_429:
+        finding = Finding("ACC-9", f"Maya's crawler rate-limited (429 on pages): {name} answered {len(impaired)} of {len(pages)} page request(s) "
+                          "with 429. AI crawlers may get the same treatment",
+                          *rest, expected="a crawler that identifies itself honestly receives the page",
+                          how_to_fix=FIX_RATE_429.format(who=name, token=cfg.product_token), importance_tier=0 if start_hit else 2,
+                          notes=["Measured: Maya's crawler was blocked, challenged or rate-limited. Inferred: bot protection that stops one "
+                                 "self-identified crawler often stops others, but AI crawlers were not tested here and may be allowed by name.",
+                                 "This is common on banks, large retailers and sites behind a managed firewall, and is often not deliberate.",
+                                 "Maya does not try to get past bot protection."])
     else:
         finding = Finding("ACC-9", f"The site blocks or challenges automated visitors: {who} answered {len(impaired)} of {len(pages)} page "
                           "request(s). AI crawlers may be affected too",
@@ -1213,6 +1227,8 @@ def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResul
                                  "Maya does not try to get past bot protection."])
     summary = (f"1 finding: {name} blocked Maya's crawler (429 on pages) on {len(impaired)} of {len(pages)} page request(s); "
                f"Maya's crawler read {read} page(s)." if blocked_429 else
+               f"1 finding: {name} rate-limited Maya's crawler (429 on pages) on {len(impaired)} of {len(pages)} page request(s); "
+               f"Maya's crawler read {read} page(s)." if rate_429 else
                f"1 finding: {who} answered {len(impaired)} of {len(pages)} page request(s) to Maya's crawler; {read} page(s) "
                "were read.")
     return CheckResult("ACC-9", title, _status([finding]), summary, [finding], {"blocked_by": blockers, "pages_read": read})

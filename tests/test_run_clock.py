@@ -135,15 +135,14 @@ def test_provider_requests_keep_mayas_pace_and_cached_pages_do_not_wait(tmp_path
     assert len(api.bodies) == 5 and again_time.slept == [] and again.requests_sent == 0  # served from Maya's own copies
 
 
-def test_a_site_that_rate_limited_maya_before_any_page_is_asked_for_its_homepage_only(tmp_path, no_lookups):
-    """DECISIONS 52, narrowed by 286: nothing at all was read, so the homepage alone is asked for once through the
-    basic reader; the site's other pages are not (the rest stays in `tests/test_rate_limited_start.py`)."""
+def test_a_site_that_rate_limited_maya_is_still_read_through_the_reader(tmp_path, no_lookups):
+    """DECISIONS 52, replaced by 289: a rate limit stops Maya's own page requests only; the page reader, when the audit
+    has one, reads the site's pages as on any audit (the rest stays in `tests/test_rate_limited_start.py`)."""
     outcome = blocked_audit()
     outcome.result.stop_reason = StopReason.RATE_LIMIT
     api = Firecrawl(SITE)
     info = reader.apply(outcome, CFG, client_for(tmp_path, api), MAIN)
-    fallback = info["crawl_blocked"]["homepage_fallback"]
-    assert api.urls == ["https://bank.test/"] and fallback["read"] and fallback["continued"] is False
+    assert len(api.urls) > 1 and info["used"] and info["crawl_blocked"]["after_rate_limit"]["read"]
 
 
 def test_a_request_is_never_started_with_too_little_time_left_and_its_timeout_fits_what_is_left(tmp_path, no_lookups):

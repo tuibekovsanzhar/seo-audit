@@ -5,6 +5,7 @@ site, a fake Firecrawl, the 60-second wait recorded rather than slept."""
 from __future__ import annotations
 
 import json
+from html import unescape
 
 import httpx
 import pytest
@@ -53,8 +54,8 @@ def test_firecrawl_reads_on_with_the_basic_proxy_and_the_report_says_so(web, tmp
     assert reader["used"] and reader["purpose"] == "main page reader" and reader["pages_read"] >= 2
     assert {body["proxy"] for body in api.bodies} == {"basic"} and not reader["owner_approved_bypass"]
     assert f"{ROOT}/private/accounts" not in api.urls  # robots.txt disallows it: never asked for
-    fallback = reader["crawl_blocked"]["homepage_fallback"]
-    assert fallback["continued"] is True and fallback["maya_blocked"] == "blocked for Maya's crawler (429 on pages)"
+    after = reader["crawl_blocked"]["after_rate_limit"]
+    assert after["read"] and after["maya_blocked"] == "blocked for Maya's crawler (429 on pages)"
     note = report["audit_status"]["direct_access"]["note"]
     assert note.startswith("Maya's own crawler was blocked (429 on pages)") and f"{reader['pages_read']} page(s) read through Firecrawl" in note
     # ACC-9 keeps its own finding and the AI-crawler warning.
@@ -85,3 +86,36 @@ def test_the_stealth_proxy_still_needs_the_owners_tick(web, tmp_path):
     client = web(site=Site(respond=blocked_on_pages), firecrawl=services(tmp_path, Firecrawl(PAGES)))
     made = plan(client, firecrawl_proxy="enhanced")
     assert made["firecrawl"]["blocked"]["code"] == "firecrawl_options" and "owner" in made["firecrawl"]["blocked"]["message"]
+
+
+def homepage_then_429(request):
+    """nihan.com.tr on 2026-10-30: the homepage 200, the next page 429 with Retry-After: 60."""
+    if request.url.path == "/robots.txt":
+        return httpx.Response(200, text=ROBOTS, headers={"content-type": "text/plain"})
+    if request.url.path == "/":
+        return httpx.Response(200, headers={"content-type": "text/html"},
+                              text='<html><head><title>Ana sayfa</title></head><body><h1>Ana</h1><p>Metin.</p>'
+                                   '<a href="/about">Hakkında</a></body></html>')
+    if request.url.path.endswith(".xml"):
+        return httpx.Response(404, headers={"content-type": "text/html"}, text="<title>x</title>")
+    return httpx.Response(429, headers={"content-type": "text/html", "server": "cloudflare", "cf-ray": "a5-IST",
+                                        "retry-after": "60"}, text="<html><title>Too many requests</title></html>")
+
+
+def test_the_concise_pdf_names_the_rate_limit_and_counts_one_page(web, tmp_path, no_waits):
+    """DECISIONS 289 (2, 3): no "Cloudflare (rate limit)" or "try again later" in the printed summary, and one number for
+    the pages read for content (it said 2 in the headline and 1 elsewhere)."""
+    client = web(site=Site(respond=homepage_then_429))
+    audit = start(client, plan(client, firecrawl=False))
+    for language, says, never in (
+            ("en", "Rate-limited for Maya's crawler (429 on pages): Cloudflare", ("Cloudflare (rate limit)", "try again later", "2 pages read")),
+            ("tr", "Maya'nın tarayıcısı hız sınırına takıldı (sayfalarda 429): Cloudflare", ("Cloudflare (hız sınırı)", "daha sonra yeniden deneyin"))):
+        assert client.put(f"{API}/session/language", json={"language": language}).status_code == 200
+        printed = unescape(client.get(f"{API}/audits/{audit['id']}/print?lang={language}").text)
+        view = get(client, audit, "/summary")
+        assert says in printed and view["blocked"]["headline"] == says, language
+        for phrase in never:
+            assert phrase not in printed, (language, phrase)
+    assert view["pages_stat"]["value"] == 1 and view["counts"]["pages_checked"] == 1
+    client.put(f"{API}/session/language", json={"language": "en"})
+    assert "1 page read for content" in get(client, audit, "/summary")["headline"]

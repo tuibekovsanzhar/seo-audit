@@ -114,11 +114,10 @@ FILES_COLUMN = "What is wrong with this file"
 
 
 def pages_shown(result: CrawlResult, firecrawl: dict | None = None) -> int:
-    """The number of pages a reader of the report is told were checked: the unique pages read when a page reader
-    read any, otherwise what the page cap counts. The same figure the web cover prints."""
-    section = firecrawl or {}
-    if not section.get("pages_read"):
-        return page_counts(result)[0]
+    """The number of pages a reader of the report is told were read for content: the unique pages read, by Maya's own
+    crawler or a page reader (`read_counts`), the one figure every output prints. A page Maya asked for and was refused
+    (a 429, a 403) was not read and is not counted (DECISIONS 289: nihan.com.tr said "2 pages read for content" in the
+    headline and "1 page" everywhere else). `page_counts` keeps what the crawl fetched."""
     return read_counts(result, firecrawl)["pages"]
 
 

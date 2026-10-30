@@ -737,5 +737,11 @@ class BlockedOnPages(unittest.TestCase):
                          ['Yapay zekâ tarayıcıları da aynı muameleyi görebilir; Cloudflare üzerindeki bot ve hız sınırı '
                           'kurallarını kontrol edin.'])
 
+    def test_a_partial_rate_limit_gets_the_same_line(self):
+        f = finding('ACC-9-y', 'ACC-9', "Maya's crawler rate-limited (429 on pages): Cloudflare answered 1 of 2 page request(s) "
+                    'with 429. AI crawlers may get the same treatment', 'S3', [S + '/en'], 'acc9.rate_limited_429',
+                    evidence={'blocked_by': [{'name': 'Cloudflare', 'kind': 'rate limit', 'status': 429}]})
+        self.assertIn('Cloudflare üzerindeki bot ve hız sınırı', build_tr(report_of(f))['todos'][0]['sub'][0])
+
     def test_without_a_named_blocker_it_points_at_the_firewall(self):
         self.assertIn('sitenin güvenlik duvarı üzerindeki', self.card([])['sub'][0])

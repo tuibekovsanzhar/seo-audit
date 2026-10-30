@@ -221,7 +221,11 @@ BUILT = {
                              "the same rules for OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you.",
                              "Check the bot and rate-limit rules in the site's firewall that answer page requests with 429 while robots.txt and the "
                              'sitemap are served: allow the user agent "Maya-Audit" and run the audit again. AI crawlers may get the same treatment: '
-                             "check the same rules for OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you."],
+                             "check the same rules for OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you.",
+                             # DECISIONS 289: some pages answered 429 (FIX_RATE_429)
+                             'Check the bot and rate-limit rules in Cloudflare that answer page requests with 429: allow the user agent "Maya-Audit" '
+                             "and run the audit again. AI crawlers may get the same treatment: check the same rules for OAI-SearchBot, "
+                             "ClaudeBot, PerplexityBot and the others you want to reach you."],
     ("ACC-2", "fix", "_role_how_to_fix(role, engines, line)"): [
         "If ChatGPT search, Perplexity should be able to find and cite these pages, remove or narrow the rule on line 4 for these user agents. If blocking them is deliberate, mark it as intended.",
         "Live fetchers may not follow robots.txt at all (see ACC-4 for what they actually receive). If you want users' AI assistants to read these pages, remove the rule on line 7.",

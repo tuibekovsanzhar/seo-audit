@@ -970,6 +970,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "result.coverage.checks": "{count} checks",
         "blocked.headline": "The site blocked this audit: {who}",
         "blocked.headline.429": "Blocked for Maya's crawler (429 on pages): {who}",
+        "blocked.headline.rate_limited": "Rate-limited for Maya's crawler (429 on pages): {who}",
         "blocked.firewall": "the site's firewall",
         "blocked.what": "{who} answered instead of the website. Maya’s own crawler could read {read} of the {requested:page|pages} it requested.",
         "blocked.common": "This is common on banks, large retailers and sites behind a managed firewall. It is usually a general "
