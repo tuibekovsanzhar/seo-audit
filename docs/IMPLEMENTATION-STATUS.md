@@ -22,7 +22,7 @@ Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bi
 | 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown, web PDFs and the `maya-audit-pro` client PDF |
 | 11 Team status vs engine verification | NOT_STARTED | |
 | 12 SEO accuracy measurement | BLOCKED_ON_INPUT | Needs human SEO labels; nothing labelled yet |
-| 13 Integration and release | IN_PROGRESS | w14d (tag `team-preview-w14d`): archive verification pending. w14c VERIFIED; w14b superseded; w14 FAIL |
+| 13 Integration and release | VERIFIED | w14d (tag `team-preview-w14d`, `21b54a2`): extracted-archive verification PASS. w14c superseded; w14 FAIL |
 
 ## Stage 00 — baseline
 
@@ -382,3 +382,22 @@ grid was left on either site for it to decide. Nothing else was re-run.
 |---|---|
 | full suite after `6573d65` | `1 failed, 2634 passed, 3 skipped` — generated `docs/FIXTURE-MATRIX.md` counts out of date; regenerated |
 | `pytest -q tests/test_fixture_matrix.py tests/test_reassess_rules.py` | passed |
+
+## w14d release (2026-10-30)
+
+Tag `team-preview-w14d` → `21b54a2` (local, not pushed). Zip `~/Projects/releases/maya-audit-0.2.8-w14d-2026-10-30.zip`,
+SHA-256 `412f83d1ba0fb3c741a0aeccbc9d1cfd077d5c07f78d1d14c3a3e568fe337340`, 496 files, matches `RELEASE-SNAPSHOT.json`, none
+under the excluded paths and no audit output. A git bundle with the full history and all tags is beside it, with
+`TEAM-HANDOFF.md`; both are copied to the Desktop.
+
+| Gate (extracted archive, fresh venv, Python 3.13.1, macOS) | Result |
+|---|---|
+| Checkout suite before the tag | `2663 passed, 4 skipped, 1 warning in 728.26s (0:12:08)` |
+| Full suite (extracted) | `2662 passed, 5 skipped, 1 warning in 738.07s (0:12:18)` — 0 failed |
+| Wheel + `tools/check_installed_package.py --wheel` | PASS; `test_distribution_contract.py` with the wheel: 10 passed |
+| Demo audit (`--demo --port 8791`, demo-kafe.localhost) | finished, COMPLETED; web PDF 200, gate PASS |
+| `maya-audit-pro` Turkish PDF from the demo report | 5 pages, 4 cards, validate + render clean; gate PASS (0 hard; IDX-2 High not re-tested, listed) |
+| gitleaks 8.30.1, full history, `.gitleaks.toml` | no leaks found |
+| ruff, Linux/Windows, live providers | NOT RUN |
+
+VERDICT: PASS.
