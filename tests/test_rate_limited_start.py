@@ -16,7 +16,7 @@ from test_crawl_order import QUIET
 from test_firecrawl import SITE, Firecrawl, client_for, doc, TEXT, no_lookups  # noqa: F401
 
 HTML = {"content-type": "text/html; charset=utf-8"}
-ROBOTS = "User-agent: *\nAllow: /\n"
+ROBOTS = "User-agent: *\nDisallow: /private/\n"
 CF = {"server": "cloudflare", "cf-ray": "a5-IST"}
 
 
@@ -122,62 +122,69 @@ def fallback_of(info):
     return info["crawl_blocked"]["homepage_fallback"]
 
 
-def test_with_nothing_read_the_homepage_alone_is_asked_for_through_the_basic_reader(tmp_path, slept, no_lookups):
-    outcome = rate_limited_audit(slept)
-    api = Firecrawl(SITE)
-    info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client_for(tmp_path, api),
-                        Options(read_always=True, max_pages=10))
-    assert api.urls == ["https://bank.test/"]  # one page, no robots.txt (Maya's policy is used), no sitemap
-    assert api.bodies[0]["proxy"] == "basic"
-    fallback = fallback_of(info)
-    assert fallback["read"] and fallback["proxy"] == "basic" and fallback["owner_approved_bypass"] is False
-    assert fallback["continued"] is False and fallback["maya_blocked"] == maya_blocked.LABEL
-    assert info["used"] and "STR-1" in info["checks_from_firecrawl"]
-    # DECISIONS 288: the record reaches the saved report (inside `crawl_blocked`, one of the section's own keys).
-    assert panel.section(info)["crawl_blocked"]["homepage_fallback"] == fallback
-
-
-def test_without_the_owners_approval_the_bypass_is_never_used(tmp_path, slept, no_lookups):
-    """The plan chose the enhanced proxy but nobody ticked the owner's approval: homepage only, basic."""
-    outcome = rate_limited_audit(slept)
-    api = Firecrawl(SITE)
-    client = client_for(tmp_path, api)
-    info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client,
-                        Options(read_always=True, max_pages=10, owner_approved_bypass=False))
-    assert [b["proxy"] for b in api.bodies] == ["basic"] and fallback_of(info)["continued"] is False
-
-
-def test_with_the_owners_approval_the_reader_goes_on_past_the_homepage(tmp_path, slept, no_lookups):
-    """DECISIONS 288: 429 on pages while robots.txt is served, and the owner approved bypassing bot protection."""
-    outcome = rate_limited_audit(slept)
-    api = Firecrawl(SITE)
-    client = client_for(tmp_path, api, proxy="enhanced", owner_approved_bypass=True)
-    info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client,
-                        Options(read_always=True, max_pages=10, proxy="enhanced", owner_approved_bypass=True))
-    fallback = fallback_of(info)
-    assert fallback["continued"] is True and fallback["read"] and fallback["proxy"] == "enhanced"
-    assert len(api.urls) > 1 and "https://bank.test/about" in api.urls  # the site's other pages, not the homepage alone
-    assert info["purpose"] == reader.CONTINUED_PURPOSE
-    assert client.proxy == "enhanced"
-
-
-def test_approval_does_not_reach_past_a_plain_rate_limit(tmp_path, slept, no_lookups):
-    """Counter-example: robots.txt refused too, so it is not "429 on pages while the files are served"; even with the
-    owner's approval the reader stops at the homepage."""
+def plain_rate_limited_audit():
+    """Every request refused with 429, robots.txt too: a plain rate limit, not a block on Maya's crawler's pages."""
     handler, _ = site([(429, 60), (429, 60)])
 
     def everything_429(request):
         if request.url.path == "/robots.txt":
             return httpx.Response(429, headers={**HTML, "retry-after": "60"}, text="x")
         return handler(request)
-    outcome = audit(everything_429, max_pages=10)
+    return audit(everything_429, max_pages=10)
+
+
+def test_blocked_on_pages_the_reader_goes_on_with_the_basic_proxy_and_no_tick(tmp_path, slept, no_lookups):
+    """DECISIONS 288 (changed 2026-10-30): 429 on pages while robots.txt is served. No owner's approval is needed for the
+    basic proxy: the reader reads on as the page reader, within robots.txt."""
+    outcome = rate_limited_audit(slept)
+    api = Firecrawl(SITE)
+    client = client_for(tmp_path, api)
+    info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client, Options(read_always=True, max_pages=10))
+    fallback = fallback_of(info)
+    assert fallback["continued"] is True and fallback["read"] and fallback["proxy"] == "basic"
+    assert fallback["owner_approved_bypass"] is False and fallback["maya_blocked"] == maya_blocked.LABEL
+    assert {b["proxy"] for b in api.bodies} == {"basic"} and "https://bank.test/about" in api.urls
+    assert "https://bank.test/private/accounts" not in api.urls  # robots.txt disallows it
+    assert info["purpose"] == reader.MAIN_PURPOSE and info["used"]
+    # ACC-9 keeps its own finding, with the AI-crawler warning: not rewritten into a challenge note.
+    [acc9] = [f for c in outcome.checks if c.check_id == "ACC-9" for f in c.findings]
+    assert acc9.rule_id == "acc9.blocked_429"
+    assert panel.section(info)["crawl_blocked"]["homepage_fallback"] == fallback  # saved with the report
+
+
+def test_the_stronger_proxy_is_used_only_with_the_owners_approval(tmp_path, slept, no_lookups):
+    outcome = rate_limited_audit(slept)
+    api = Firecrawl(SITE)
+    client = client_for(tmp_path, api, proxy="enhanced", owner_approved_bypass=True)
+    info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client,
+                        Options(read_always=True, max_pages=10, proxy="enhanced", owner_approved_bypass=True))
+    assert fallback_of(info)["proxy"] == "enhanced" and fallback_of(info)["owner_approved_bypass"] is True
+    assert Options(proxy="enhanced").problem()  # without the tick the plan refuses it before any request
+
+
+def test_a_plain_rate_limit_still_stops_at_the_homepage(tmp_path, slept, no_lookups):
+    outcome = plain_rate_limited_audit()
     assert not maya_blocked.holds(outcome.result)
     api = Firecrawl(SITE)
-    info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client_for(tmp_path, api, proxy="enhanced", owner_approved_bypass=True),
-                        Options(read_always=True, max_pages=10, proxy="enhanced", owner_approved_bypass=True))
-    assert len(api.bodies) <= 1  # the homepage at most, whatever stopped the crawl
+    info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client_for(tmp_path, api),
+                        Options(read_always=True, max_pages=10))
+    assert len(api.bodies) <= 1
     fallback = (info.get("crawl_blocked") or {}).get("homepage_fallback")
-    assert fallback is None or fallback["continued"] is False
+    assert fallback is None or (fallback["continued"] is False and fallback["proxy"] == "basic")
+
+
+def test_a_saved_homepage_only_read_is_named_by_the_crawl_record(tmp_path, slept, no_lookups):
+    """A report written before the reader read on says "homepage only, after the site rate-limited Maya's crawler" and
+    has no fallback record (286 dropped it). Shown with the block's name when its crawl record shows 429 on pages while
+    robots.txt was served; without the crawl record it is left as written."""
+    outcome = rate_limited_audit(slept)
+    api = Firecrawl(SITE)
+    info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 10}), client_for(tmp_path, api), Options(read_always=True, max_pages=10))
+    saved = {**info, "purpose": reader.HOMEPAGE_FALLBACK_PURPOSE,
+             "crawl_blocked": {k: v for k, v in info["crawl_blocked"].items() if k != "homepage_fallback"}}
+    assert any("Used as: homepage only, after Maya's crawler was blocked (429 on pages)." in line
+               for line in panel.summary_lines(saved, outcome.result))
+    assert any("Used as: homepage only, after the site rate-limited Maya's crawler." in line for line in panel.summary_lines(saved))
 
 
 def test_a_homepage_the_reader_cannot_read_either_is_said_so(tmp_path, slept, no_lookups):
@@ -240,11 +247,11 @@ def test_the_turkish_wording_says_mayas_crawler_was_blocked():
     assert ok and "Maya'nın tarayıcısı engellendi (sayfalarda 429)" in stop and "rate" not in stop
 
 
-def test_the_gate_keeps_a_homepage_only_read_as_a_draft_and_lets_an_approved_one_through():
+def test_the_gate_drafts_only_a_report_with_nothing_read():
+    """DECISIONS 288 (changed): pages read through a reader are pages read; only 0 pages read is a draft."""
     from maya_audit import release_gate
-    base = {"checks": [], "audit_status": {"content_coverage": {"pages_read": 1}}}
-    stopped = {**base, "firecrawl": {"crawl_blocked": {"homepage_fallback": {"continued": False, "maya_blocked": maya_blocked.LABEL}}}}
-    went_on = {**base, "firecrawl": {"crawl_blocked": {"homepage_fallback": {"continued": True, "maya_blocked": maya_blocked.LABEL}}}}
-    [v] = [v for v in release_gate.check_report(stopped) if v["rule"] == "RG-14"]
-    assert v["hard"] and v["message"].startswith("site content could not be read: blocked for Maya's crawler (429 on pages)")
-    assert not [v for v in release_gate.check_report(went_on) if v["rule"] == "RG-14"]
+    one_page = {"checks": [], "audit_status": {"content_coverage": {"pages_read": 1}},
+                "firecrawl": {"crawl_blocked": {"homepage_fallback": {"continued": False, "maya_blocked": maya_blocked.LABEL}}}}
+    none = {"checks": [], "audit_status": {"content_coverage": {"pages_read": 0}}}
+    assert not [v for v in release_gate.check_report(one_page) if v["rule"] == "RG-14"]
+    assert [v["hard"] for v in release_gate.check_report(none) if v["rule"] == "RG-14"] == [True]

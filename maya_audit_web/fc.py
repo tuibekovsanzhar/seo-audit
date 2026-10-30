@@ -154,13 +154,13 @@ def offer(services: FirecrawlServices, section: dict[str, Any] | None, state: di
             "waiting": t("fc.offer.waiting")}
 
 
-def view(section: dict[str, Any] | None, state: dict[str, Any]) -> dict[str, Any] | None:
+def view(section: dict[str, Any] | None, state: dict[str, Any], crawl: Any = None) -> dict[str, Any] | None:
     """The Firecrawl part of the results page: the report's section in sentences, and any decision that is waiting."""
     if not section:
         return None
     waiting = section.get("needs_decision") == "zero_data_retention" and state.get("state") == "needs_decision"
     options = options_from({**(state.get("options") or {}), "allow_without_zero_data_retention": True})
-    lines = panel.summary_lines(section)
+    lines = panel.summary_lines(section, crawl)
     said = [wording.line(text) for text in lines]
     return {"used": bool(section.get("used")), "purpose": section.get("purpose"), "notice": section.get("notice"),
             # `lines` and `notice` are the report's own English; a person reads `lines_shown` and `notice_shown`.

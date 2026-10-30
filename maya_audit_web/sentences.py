@@ -68,6 +68,7 @@ LINE_PATTERNS: tuple[tuple[str, str], ...] = (
     ('acc5.logs', "{entries#} log entries; {values#} measured value(s) awaiting thresholds; {n#} finding(s)."),
     ('acc7.none', "No Crawl-delay of {seconds#}s or more applies to AI bots."),
     ('acc9.none', "None of the {n#} page(s) requested answered Maya's crawler with a block, a challenge or a rate limit."),
+    ('acc9.finding_429', "1 finding: {who~:.+?} blocked Maya's crawler (429 on pages) on {blocked#} of {requested#} page request(s); Maya's crawler read {read#} page(s)."),
     ('acc9.finding', "1 finding: {who~:.+?} answered {blocked#} of {requested#} page request(s) to Maya's crawler; {read#} page(s) were read."),
     ('idx1.findings', "{n#} finding(s) across {pages#} fetched URL(s)."),
     ('idx1.none', "No 4xx, persistent 5xx, or persistent transport errors across {pages#} fetched URL(s)."),

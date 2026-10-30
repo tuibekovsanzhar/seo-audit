@@ -1067,6 +1067,8 @@
   "outcome.single.reader.no_answer": "Tek sayfa denetimi: sayfa Firecrawl aracılığıyla okundu. Maya'nın kendi istekleri bu bilgisayarda yanıt almadı; bu yüzden doğrudan erişim ölçülmedi. Gerçek yapay zekâ tarayıcılarının erişimi ölçülmedi. Sitenin diğer sayfaları kontrol edilmedi; doğrudan istek gerektiren bazı kontroller tamamlanamadı."
  },
  "terms": {
+  "homepage only, after Maya's crawler was blocked (429 on pages)": "yalnız ana sayfa; Maya'nın tarayıcısı engellendikten sonra (sayfalarda 429)",
+  "homepage only, after the site rate-limited Maya's crawler": "yalnız ana sayfa; site Maya'nın tarayıcısına hız sınırı uyguladıktan sonra",
   "Cloudflare": "Cloudflare",
   "the site's firewall": "sitenin güvenlik duvarı",
   "search": "arama",
@@ -1910,6 +1912,7 @@
   "acc5.logs": "{entries} günlük kaydı; eşik bekleyen {values} ölçülen değer; {n} bulgu.",
   "acc7.none": "Yapay zekâ botları için {seconds} sn veya daha uzun bir Crawl-delay geçerli değil.",
   "acc9.none": "İstenen {n} sayfanın hiçbiri Maya'nın tarayıcısına engelleme, doğrulama veya hız sınırıyla yanıt vermedi.",
+  "acc9.finding_429": "1 bulgu: Maya'nın tarayıcısı engellendi (sayfalarda 429): {who}, {requested} sayfa isteğinden {blocked} tanesine 429 verdi; Maya'nın tarayıcısı {read} sayfa okudu.",
   "acc9.finding": "1 bulgu: {who}, Maya'nın tarayıcısının {requested} sayfa isteğinden {blocked} tanesine yanıt verdi; {read} sayfa okundu.",
   "idx1.findings": "Getirilen {pages} URL'de {n} bulgu.",
   "idx1.none": "Getirilen {pages} URL'de 4xx, kalıcı 5xx veya kalıcı aktarım hatası yok.",

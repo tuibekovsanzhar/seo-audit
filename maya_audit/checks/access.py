@@ -1211,7 +1211,9 @@ def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResul
                                  "self-identified crawler often stops others, but AI crawlers were not tested here and may be allowed by name.",
                                  "This is common on banks, large retailers and sites behind a managed firewall, and is often not deliberate.",
                                  "Maya does not try to get past bot protection."])
-    summary = (f"1 finding: {who} answered {len(impaired)} of {len(pages)} page request(s) to Maya's crawler; {read} page(s) "
+    summary = (f"1 finding: {name} blocked Maya's crawler (429 on pages) on {len(impaired)} of {len(pages)} page request(s); "
+               f"Maya's crawler read {read} page(s)." if blocked_429 else
+               f"1 finding: {who} answered {len(impaired)} of {len(pages)} page request(s) to Maya's crawler; {read} page(s) "
                "were read.")
     return CheckResult("ACC-9", title, _status([finding]), summary, [finding], {"blocked_by": blockers, "pages_read": read})
 

@@ -890,7 +890,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                              affected=None if "problem_summary" in report else affected(audit["id"]))
         base = f"/api/v1/audits/{audit['id']}"
         reader = fc.view(report.get("firecrawl"), {**audit["firecrawl"], "audit_page_cap": MODES[audit["mode"]]}
-                         if audit["state"] == "finished" else {})
+                         if audit["state"] == "finished" else {}, crawl=report.get("crawl"))
         full = {"audit": audit_view(audit), "demo": engine.demo, **view, "firecrawl": reader,
                 "ownership": summary.ownership_view(report.get("ownership")), "verification": ownership_of(audit["project_id"]),
                 "crux": summary.speed_view(report.get("crux") or crux.unavailable()),

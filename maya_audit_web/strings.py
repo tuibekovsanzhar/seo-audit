@@ -421,6 +421,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "status.direct.readable": "Let in",
         "status.direct.challenged": "Challenged or blocked",
         "status.direct.rate_limited": "Rate-limited",
+        "status.direct.blocked_429": "Blocked for Maya's crawler (429 on pages)",
         "status.direct.unknown": "Unknown",
         "status.coverage.complete_sample": "Every page found was read (a sample)",
         "status.coverage.partial": "Partial",
@@ -433,6 +434,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "status.note.direct.challenged": "Maya's direct crawler was challenged or blocked on {count} of {requests:page request|page requests}.",
         "status.note.direct.rate_limited": "Maya's direct crawler was rate-limited on {count} of {requests:page request|page requests}.",
         "status.note.direct.blocked_429": "Maya's crawler was blocked (429 on pages) on {count} of {requests:page request|page requests}, while robots.txt and the sitemap were served.",
+        "status.note.direct.blocked_429.read": "Maya's own crawler was blocked (429 on pages) on {count} of {requests:page request|page requests}; {read:page|pages} read through Firecrawl.",
         "status.note.direct.unknown": "Maya's direct crawler requested no page, so direct access is unknown.",
         "status.note.direct.not_reached": "Direct access was not measured: no answer from the site reached this computer.",
         "status.note.coverage.none": "No page content could be read.",
@@ -967,6 +969,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "result.first_action.withheld": "Only {read:page|pages} could be read. That is too few to say what to fix first (at least {needed} are needed).",
         "result.coverage.checks": "{count} checks",
         "blocked.headline": "The site blocked this audit: {who}",
+        "blocked.headline.429": "Blocked for Maya's crawler (429 on pages): {who}",
+        "blocked.firewall": "the site's firewall",
         "blocked.what": "{who} answered instead of the website. Maya’s own crawler could read {read} of the {requested:page|pages} it requested.",
         "blocked.common": "This is common on banks, large retailers and sites behind a managed firewall. It is usually a general "
                           "rule against automated visitors, not something aimed at this audit.",
@@ -979,6 +983,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "blocked.step.allow": "If you own the site, allow the user agent “{agent}” in the firewall or bot-protection rules, then run the audit again.",
         "blocked.step.verify": "Verify ownership of the site, so the audit can test what AI crawlers themselves receive (check ACC-4).",
         "blocked.step.later": "If this was a rate limit or a temporary challenge, try again later.",
+        "blocked.step.rules_429": "Check the bot and rate-limit rules in {who} that answer page requests with 429 while robots.txt and the sitemap are served. AI crawlers may get the same treatment.",
         "blocked.next": "What to do next",
         "blocked.gap.part": "Blocked by {who}",
         "blocked.gap.reason": "{checks:check needs direct access from Maya’s crawler and remains|checks need direct access from Maya’s crawler and remain} unavailable "

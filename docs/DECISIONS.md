@@ -2698,3 +2698,20 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      draft. (5) The client card for `acc9.blocked_429` carries one fixed line: "Yapay zekâ tarayıcıları da aynı
      muameleyi görebilir; {Cloudflare} üzerindeki bot ve hız sınırı kurallarını kontrol edin." Tests:
      `tests/test_rate_limited_start.py`, `test_run_clock.py`, skill `BlockedOnPages`.
+     **Changed 2026-10-30 (owner's decision), replacing (2) and (4):** when it holds, the Firecrawl reader goes on as
+     the page reader up to the plan's page cap **without** the owner's tick, as it already does for a site that
+     challenges Maya's crawler: robots.txt is applied to every address (disallowed ones are left out), Maya's pace
+     holds, and the proxy is the plan's, which is basic; the stronger (stealth) proxy still needs "site owner approved
+     bypassing bot protection" (`Options.problem` refuses it in the plan otherwise). So 52 is relaxed for this case
+     with the basic proxy. The read is the audit's main page reader (`purpose` "main page reader", `homepage_fallback`
+     `continued: true`); ACC-9 keeps its `acc9.blocked_429` finding and AI-crawler warning (it is not rewritten into a
+     challenge note); the status line says "Maya's own crawler was blocked (429 on pages) on N of M page request(s);
+     K page(s) read through Firecrawl". RG-14 is back to 0 pages read only: a report read through Firecrawl is judged
+     as usual, PASS or CONDITIONAL. A plain rate limit (robots.txt refused too) still stops at the homepage.
+     The web page names the case from the report's own crawl record (`maya_blocked.holds` on the saved data, so older
+     reports too): heading "Blocked for Maya's crawler (429 on pages): Cloudflare" in place of "The site blocked this
+     audit: Cloudflare (rate limit)", badge "Blocked for Maya's crawler (429 on pages)" in place of "Rate-limited",
+     the reader line "homepage only, after Maya's crawler was blocked (429 on pages)" in place of "… after the site
+     rate-limited Maya's crawler", and a step to check the blocker's bot and rate rules in place of "try again later";
+     ACC-9's summary says "{who} blocked Maya's crawler (429 on pages)". Turkish: "Maya'nın tarayıcısı engellendi
+     (sayfalarda 429)". The stop code `rate_limit` stays a code. Test: `tests/test_web_blocked_on_pages.py`.

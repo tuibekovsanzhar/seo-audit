@@ -363,9 +363,9 @@ def note_the_challenge(checks: list[CheckResult], pages_read: int) -> None:
 HOMEPAGE_FALLBACK_WHY = ("Maya's crawler was rate-limited before it read any page, also after waiting the Retry-After "
                          "once; the homepage alone was asked for through the reader")
 HOMEPAGE_FALLBACK_PURPOSE = "homepage only, after the site rate-limited Maya's crawler"
-CONTINUED_WHY = ("Maya's crawler was blocked (429 on pages) while robots.txt and the sitemap were served, and the site owner "
-                 "approved bypassing bot protection for this audit; the reader read the site's pages")
-CONTINUED_PURPOSE = "page reader after Maya's crawler was blocked (429 on pages), with the site owner's approval"
+CONTINUED_WHY = ("Maya's crawler was blocked (429 on pages) while robots.txt and the sitemap were served; the reader read the "
+                 "site's pages up to the page cap, within robots.txt and Maya's pace")
+HOMEPAGE_FALLBACK_PURPOSE_429 = "homepage only, after Maya's crawler was blocked (429 on pages)"
 
 
 def start_page_read(result: CrawlResult) -> bool:
@@ -721,12 +721,14 @@ def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, 
                 and not start_page_read(result)):
             # DECISIONS 286: nothing at all was read, not even the start page after its one wait. The homepage alone,
             # once, through the basic reader: no sitemap, no other page, never the bot-protection bypass.
-            # DECISIONS 288: when that is a block on Maya's crawler (429 on pages while robots.txt and the sitemap are
-            # served) and the site owner approved bypassing bot protection for this audit, the reader goes on with the
-            # plan's own options, as it does for a challenged site. Without that approval it stops at the homepage.
+            # DECISIONS 288 (as changed on 2026-10-30): when that is a block on Maya's crawler (429 on pages while
+            # robots.txt and the sitemap are served), the reader goes on as the page reader up to the plan's page cap, as
+            # it does for a challenged site: robots.txt allows each address, Maya's pace holds, and the proxy is the
+            # plan's, which is basic unless the site owner approved bypassing bot protection (`Options.problem`).
+            # A plain rate limit (robots.txt refused too) stops at the homepage.
             from .. import maya_blocked
             blocked_429 = maya_blocked.holds(result)
-            go_on = blocked_429 and bool(options.owner_approved_bypass)
+            go_on = blocked_429
             record = {"why": HOMEPAGE_FALLBACK_WHY, "url": homepage_url(result),
                       "maya_blocked": maya_blocked.LABEL if blocked_429 else None,
                       "owner_approved_bypass": bool(options.owner_approved_bypass), "continued": go_on}
@@ -752,7 +754,10 @@ def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, 
             info["crawl_blocked"]["homepage_fallback"] = record
             if checks:
                 replaced.update({check.check_id: check for check in checks})
-                info.update(used=True, purpose=CONTINUED_PURPOSE if go_on else HOMEPAGE_FALLBACK_PURPOSE, notice=AI_NOTICE)
+                # Gone on: this audit's main page reader, like any other (ACC-9 keeps its own "blocked (429 on pages)"
+                # finding and its AI-crawler warning; it is not rewritten into a challenge note).
+                info.update(used=True, purpose=MAIN_PURPOSE if go_on else HOMEPAGE_FALLBACK_PURPOSE,
+                            notice=MAIN_NOTICE if go_on else AI_NOTICE)
             else:
                 info.update(reason=f"Firecrawl read the homepage only, after the rate limit, and could not read it: {not_now}",
                             stopped_because=not_now)

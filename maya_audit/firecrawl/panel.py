@@ -8,6 +8,9 @@ from ..dataforseo.ledger import Ledger, LedgerCorrupt
 from . import settings
 from .settings import Options
 
+from .. import maya_blocked  # noqa: E402
+from .reader import HOMEPAGE_FALLBACK_PURPOSE, HOMEPAGE_FALLBACK_PURPOSE_429  # noqa: E402
+
 # The keys of the report's `firecrawl` section (docs/REPORT-SCHEMA.md).
 SECTION_KEYS = ("source", "enabled", "used", "purpose", "reason", "notice", "options", "proxy", "owner_approved_bypass",
                 "zero_data_retention", "page_cap", "crawl_blocked", "robots", "pages", "rendered", "pages_read",
@@ -82,12 +85,17 @@ def _money(info: dict[str, Any]) -> str:
 from ..findings import check_id_key
 
 
-def summary_lines(info: dict[str, Any]) -> list[str]:
-    """The section as plain sentences, used by the text and Markdown reports and the web page."""
+def summary_lines(info: dict[str, Any], crawl: Any = None) -> list[str]:
+    """The section as plain sentences, used by the text and Markdown reports and the web page. `crawl` (the report's
+    crawl record) lets a homepage-only read say why: Maya's crawler blocked (429 on pages), not a rate limit."""
     zdr = info["zero_data_retention"]["status"]
     lines = []
     if info.get("used"):
-        lines.append(f"Used as: {info['purpose']}. Proxy: {info['proxy']}"
+        purpose = info["purpose"]
+        fallback = (info.get("crawl_blocked") or {}).get("homepage_fallback") or {}
+        if purpose == HOMEPAGE_FALLBACK_PURPOSE and (fallback.get("maya_blocked") or (crawl is not None and maya_blocked.holds(crawl))):
+            purpose = HOMEPAGE_FALLBACK_PURPOSE_429  # DECISIONS 288
+        lines.append(f"Used as: {purpose}. Proxy: {info['proxy']}"
                      + (" (the site owner approved bypassing bot protection)." if info["owner_approved_bypass"] else "."))
         if "pages_read" in info:
             lines.append(f"Pages read through Firecrawl: {info['pages_read']} (cap {info['page_cap']}); {info.get('skipped_by_robots', 0)} "

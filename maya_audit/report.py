@@ -1659,7 +1659,8 @@ def audit_status(result: CrawlResult, gates: list[GateResult], checks: list[Chec
                    "rate_limited": f"Maya's direct crawler was rate-limited on {by_class['rate_limited']} of {len(pages)} page request(s).",
                    "unknown": "Maya's direct crawler requested no page, so direct access is unknown."}[direct]
     from . import maya_blocked
-    if direct == "rate_limited" and maya_blocked.holds(result):  # DECISIONS 288: a block on Maya's crawler, said so
+    blocked_429 = direct == "rate_limited" and maya_blocked.holds(result)  # DECISIONS 288: a block on Maya's crawler
+    if blocked_429:
         direct_note = (f"Maya's direct crawler was blocked (429 on pages) on {by_class['rate_limited']} of {len(pages)} page "
                        "request(s), while robots.txt and the sitemap were served.")
     if not pages and result.stop_reason.value == "network_problem":
@@ -1671,6 +1672,9 @@ def audit_status(result: CrawlResult, gates: list[GateResult], checks: list[Chec
     by, readable = counts["read_by"], counts["pages"]
     through = by["firecrawl"]
     reader_cover = section.get("coverage") or {}
+    if blocked_429 and through:  # said plainly, with what was read instead (DECISIONS 288)
+        direct_note = (f"Maya's own crawler was blocked (429 on pages) on {by_class['rate_limited']} of {len(pages)} page "
+                       f"request(s); {through} page(s) read through Firecrawl.")
     reasons = reader_gaps(section) if through else []
     if result.not_fetched_urls and not through:
         reasons.append(f"{len(result.not_fetched_urls)} discovered URL(s) were not fetched")

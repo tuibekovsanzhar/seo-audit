@@ -14,7 +14,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from maya_audit.checks.access import blocker_phrase
-from maya_audit.maya_blocked import LABEL as MAYA_BLOCKED_LABEL
+from maya_audit import maya_blocked
 from maya_audit import allowlist, launch_gate, timeplan
 from maya_audit.classify import describe_blockers, identify_blocker
 from maya_audit.coverage import CRAWL_GAP_NAMES, PAGE_DEPENDENT, clean_on_what_was_read, restated
@@ -310,6 +310,12 @@ def main_reader(report: dict[str, Any]) -> dict[str, Any] | None:
     return reader if reader.get("used") and reader.get("pages_read") and reader.get("purpose") == MAIN_PURPOSE else None
 
 
+def blocked_on_pages(report: dict[str, Any]) -> bool:
+    """Maya's crawler blocked by 429 on pages while robots.txt and the sitemap were served (DECISIONS 288), read from
+    the report's own crawl record, so a report saved before the engine named it is shown the same way."""
+    return maya_blocked.holds(report.get("crawl") or {})
+
+
 def blocked(report: dict[str, Any]) -> dict[str, Any] | None:
     """The block card of a site that could not be read. A site that challenged Maya's own crawler and was then read
     through Firecrawl is not one: the challenge is a note under AI crawler access (ACC-9), not a headline."""
@@ -331,8 +337,13 @@ def challenged(report: dict[str, Any]) -> dict[str, Any] | None:
     if blockers is None:
         blockers = describe_blockers([b for b in (identify_blocker(p.get("status"), p.get("headers") or {}, p.get("evidence") or [],
                                                                     p.get("fetch_class") or "") for p in impaired) if b])
-    who = blocker_phrase(blockers)
-    who = wording.term(who) or who  # "a bot challenge", "the site or its firewall": in the reader's language
+    on_pages = blocked_on_pages(report)
+    if on_pages:  # DECISIONS 288: not "Cloudflare (rate limit)", which reads as "come back later"
+        named = blockers[0]["name"] if blockers and blockers[0].get("name") else None
+        who = named or t("blocked.firewall")
+    else:
+        who = blocker_phrase(blockers)
+        who = wording.term(who) or who  # "a bot challenge", "the site or its firewall": in the reader's language
     read = live_pages_read(report)
     through_reader = reader_pages_read(report)  # content only: what Maya's own crawler was refused stays the access evidence
     requested = evidence.get("pages_fetched") or len(impaired)
@@ -347,10 +358,12 @@ def challenged(report: dict[str, Any]) -> dict[str, Any] | None:
                                      for block in allowlist.instructions(agent, report["crawl"].get("user_agent") or agent, blockers[0]["name"] if blockers else None)]},
             "sections": {"who": t("blocked.section.who"), "meaning": t("blocked.section.meaning"), "next": t("blocked.next"),
                          "firecrawl": t("blocked.section.firecrawl"), "status": t("blocked.section.status")},
-            "headline": t("blocked.headline", who=who),
+            "headline": t("blocked.headline.429" if on_pages else "blocked.headline", who=who),
             "lines": [t("blocked.what", who=who, read=read, requested=requested), t("blocked.common"), t("blocked.meaning"),
                       t("blocked.reader", count=through_reader) if through_reader else t("blocked.no_bypass")],
-            "next_steps": [t("blocked.step.allow", agent=agent), t("blocked.step.verify"), t("blocked.step.later")]}
+            # "Try again later" is advice for a rate limit; a block on Maya's crawler does not lift by waiting.
+            "next_steps": [t("blocked.step.allow", agent=agent), t("blocked.step.verify")]
+                          + ([t("blocked.step.rules_429", who=who)] if on_pages else [t("blocked.step.later")])}
 
 
 BLOCK_CHECK = "ACC-9"
@@ -586,7 +599,9 @@ def status_view(report: dict[str, Any]) -> dict[str, Any] | None:
     coverage_note = said(coverage["note"] + (" " + reasons[:1].upper() + reasons[1:] + "." if reasons else "")) if english else notes["coverage"]
     return {"title": t("status.title"),
             "rows": [{"id": "direct_access", "label": t("status.direct"), "state": direct["state"],
-                      "state_label": t(f"status.direct.{direct['state']}"), "note": said(direct["note"]) if english else notes["direct"]},
+                      "state_label": t("status.direct.blocked_429" if direct["state"] == "rate_limited" and blocked_on_pages(report)
+                                       else f"status.direct.{direct['state']}"),
+                      "note": said(direct["note"]) if english else notes["direct"]},
                      {"id": "content_coverage", "label": t("status.coverage"), "state": coverage["level"],
                       "state_label": t(f"status.coverage.{coverage['level']}"), "note": coverage_note},
                      {"id": "vendor_crawler_evidence", "label": t("status.vendor"), "state": vendor["state"],
@@ -610,8 +625,10 @@ def status_notes(report: dict[str, Any]) -> dict[str, Any]:
     if state == "readable":
         said = t("status.note.direct.readable.impaired" if impaired else "status.note.direct.readable", ok=answers.get("ok") or 0,
                  requests=requests, impaired=impaired)
-    elif state == "rate_limited" and str((report.get("crawl") or {}).get("stop_detail") or "").startswith(MAYA_BLOCKED_LABEL):
-        said = t("status.note.direct.blocked_429", count=answers.get("rate_limited") or 0, requests=requests)  # DECISIONS 288
+    elif state == "rate_limited" and blocked_on_pages(report):  # DECISIONS 288
+        through = reader_pages_read(report)
+        said = t("status.note.direct.blocked_429.read" if through else "status.note.direct.blocked_429",
+                 count=answers.get("rate_limited") or 0, requests=requests, read=through)
     elif state in ("challenged", "rate_limited"):
         said = t(f"status.note.direct.{state}", count=answers.get("blocked" if state == "challenged" else "rate_limited") or 0, requests=requests)
     else:  # no page was requested: because no answer reached this computer, or for another reason
