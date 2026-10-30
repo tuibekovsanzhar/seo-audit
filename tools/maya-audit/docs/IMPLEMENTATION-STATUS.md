@@ -4,7 +4,10 @@ Tracks `docs/Maya-Audit-Claude-Code-Uygulama-Rehberi-2026-10-28.md` (the guide).
 IN_PROGRESS, VERIFIED, BLOCKED_ON_INPUT. A command that was not run is written NOT RUN, never implied as passed.
 
 Source: `~/Projects/maya-audit`, Git repo created from `maya-audit-0.2.8-w13-2026-10-28.zip`, baseline commit `a40500b`.
-Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bin/python` = CPython 3.13.1 (macOS arm64).
+Since 2026-10-30 the repository is the private GitHub repo **withmaya/seo-audit** (remote `origin`,
+https://github.com/withmaya/seo-audit), branch `main`; this tool is its folder `tools/maya-audit/`, and
+`~/Projects/maya-audit` is the whole repository's root (DECISIONS 292). Pushes to withmaya/seo-audit are allowed when
+the owner asks for them, never otherwise; never force-push. Package 0.2.8. Interpreter `.venv/bin/python` = CPython 3.13.1 (macOS arm64).
 `HANDOVER.md` not available. Call map and code-level findings: `docs/architecture/baseline.md`.
 
 | Stage | Status | Note |
@@ -401,3 +404,28 @@ under the excluded paths and no audit output. A git bundle with the full history
 | ruff, Linux/Windows, live providers | NOT RUN |
 
 VERDICT: PASS.
+
+## Published to withmaya/seo-audit (2026-10-30, DECISIONS 292)
+
+Owner's request: the project goes into `tools/maya-audit/` of the private repository withmaya/seo-audit, keeping its
+first commit (`ba7dc9e`, README) and our full history. Write access confirmed with gh; `main` has no branch protection,
+so `main` was pushed directly (fast-forward, no force).
+
+| Step | Result |
+|---|---|
+| Branch | `master` renamed to `main` |
+| `87ddd72` | the move: 494 pure renames into `tools/maya-audit/`; `.github/` and `.gitleaks.toml` stay at the root |
+| `b54c685` | fixes for the move: CI `working-directory: tools/maya-audit`; source commit found in the repository root above the project (`report.py`, benchmark); release-metadata test asks Git; root `.gitignore`; `.gitleaks.toml` allows the snapshot at old and new path; README "New teammate" (`cd seo-audit/tools/maya-audit`); release/verifier skills archive from `tools/maya-audit` |
+| `00d74c4` | merge of `origin/main` (`--allow-unrelated-histories`); root README keeps its title and description, adds "Contents" |
+| Full suite, `tools/maya-audit`, before the merge and after it | `2663 passed, 4 skipped` both times |
+| Demo web app from `tools/maya-audit` (port 8792, temp `MAYA_AUDIT_HOME`) | page 200, stopped |
+| gitleaks 8.30.1, full history, `.gitleaks.toml` | 55 commits scanned, no leaks found |
+| Pushed | `main` (`ba7dc9e..00d74c4`), tags `team-preview-w14`, `w14b`, `w14c`, `w14d` |
+| GitHub Release | https://github.com/withmaya/seo-audit/releases/tag/team-preview-w14d with the w14d zip and VERIFICATION.json (GitHub's SHA-256 digests match the local ones) |
+
+The w14d zip is built from tag `team-preview-w14d`, before the move, so it has the old layout. Local setup: the
+virtual environment stays at the repository root (`~/Projects/maya-audit/.venv`); `tools/maya-audit/.venv` is a
+symlink to it, and its editable install was pointed at `tools/maya-audit/` (paths only; nothing installed). `.env` was
+moved unopened into `tools/maya-audit/` (the app reads `./.env`). Start the web app:
+`cd ~/Projects/maya-audit/tools/maya-audit && .venv/bin/python -m maya_audit_web`.
+NOT RUN: CI on GitHub for the pushed commit was not checked here; ruff; Linux/Windows.
