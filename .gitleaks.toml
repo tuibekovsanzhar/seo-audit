@@ -1,9 +1,10 @@
 # gitleaks settings for this repository: the default rules, plus one allowance.
-# RELEASE-SNAPSHOT.json (tools/release_metadata.py) lists every shipped file with its SHA-256 hash; gitleaks reads a
+# RELEASE-SNAPSHOT.json (tools/maya-audit/tools/release_metadata.py) lists every shipped file with its SHA-256 hash; gitleaks reads a
 # 64-character hash beside a file name such as "maya_audit/dataforseo/credentials.py" as a generic API key.
 [extend]
 useDefault = true
 
 [allowlist]
 description = "SHA-256 file hashes in the generated release snapshot"
-paths = ['''^RELEASE-SNAPSHOT\.json$''']
+# The file was at the repository root before the move into tools/maya-audit/; both places are in the history.
+paths = ['''^RELEASE-SNAPSHOT\.json$''', '''^tools/maya-audit/RELEASE-SNAPSHOT\.json$''']

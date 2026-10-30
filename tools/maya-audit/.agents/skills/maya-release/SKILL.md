@@ -48,7 +48,9 @@ checkout; in a folder that is not one, only mode B is possible (say so).
    (`.gitattributes` export-ignore; `tests/test_release_metadata.py`).
    If step 2, 3 or 6 changed anything after the verifier ran, run the verifier again on the new source state.
 7. **Archive to the Desktop** (`~/Desktop` on POSIX, `$env:USERPROFILE\Desktop` on Windows).
-   Mode A: `git archive --format=zip --prefix=maya-audit-team-preview-N/ -o <Desktop>/maya-audit-team-preview-N.zip team-preview-N`.
+   Mode A, run in `tools/maya-audit/` (the tool's folder in the withmaya/seo-audit repository; from there
+   `git archive` ships only this folder, with the paths the zip has always had):
+   `git archive --format=zip --prefix=maya-audit-team-preview-N/ -o <Desktop>/maya-audit-team-preview-N.zip team-preview-N`.
    Mode B: a zip of exactly the files in `RELEASE-SNAPSHOT.json` under the prefix `maya-audit-team-preview-N/`.
 8. **Clean-install test of that zip.** Unzip into `<tmp>` and follow TEAM-SETUP.md: a new venv there,
    `pip install -e ".[team]"`, start the demo app on port 8791 with `MAYA_AUDIT_HOME` in `<tmp>`, run one demo audit
@@ -59,5 +61,5 @@ checkout; in a folder that is not one, only mode B is possible (say so).
    them; do not delete them), the release checklist from step 4, what was not verified on real services, and what to
    re-test.
 
-Rules: never push; never read or print `.env`; no real crawls or paid calls (pip is the only network use); never touch
+Rules: push only when the owner asks (the repository is withmaya/seo-audit; never force-push); never read or print `.env`; no real crawls or paid calls (pip is the only network use); never touch
 the branch `pre-0.2.0-snapshot`; update `HANDOVER.md` on disk only where it exists (it is git-ignored and never archived).

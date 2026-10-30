@@ -1,0 +1,14 @@
+# Repository root. Each tool keeps its own .gitignore in its folder (tools/maya-audit/.gitignore).
+# Never commit secrets or local state from the root either.
+.env
+.env.*
+!.env.example
+.venv
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.DS_Store
+reviews/
+benchmarks/real-sites/
+*.zip

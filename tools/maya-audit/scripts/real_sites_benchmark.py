@@ -270,14 +270,11 @@ def source_state():
         for path in sorted((ROOT / name).rglob("*")):
             if path.is_file() and "__pycache__" not in path.parts:
                 files[path.relative_to(ROOT).as_posix()] =hashlib.sha256(path.read_bytes()).hexdigest()
-    head_path = ROOT / ".git" / "HEAD"
+    from maya_audit.report import _checkout_root, _git_head
     manifest = ROOT / "RELEASE-SNAPSHOT.json"
-    head = head_path.read_text().strip() if head_path.is_file() else (
+    # The repository root is above this folder (tools/maya-audit); a copy without .git uses the manifest.
+    head = _git_head(_checkout_root(ROOT)) or (
         read(manifest).get("base_commit", "unavailable") if manifest.is_file() else "unavailable")
-    if head.startswith("ref: "):
-        ref = head[5:]
-        ref_path = ROOT / ".git" / ref
-        head = ref_path.read_text().strip() if ref_path.is_file() else "unavailable"
     runner = ROOT / "scripts" / "real_sites_benchmark.py"
     return {"base_commit": head,
             "base_commit_note": "Reference identity only; files below identify the actual working-tree source",

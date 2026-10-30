@@ -1,10 +1,12 @@
 # Every platform and Python the project claims (pyproject: requires-python >=3.11; the team runs Windows and macOS).
 # Offline only: conftest blocks non-loopback network, isolates ~/.maya-audit and the .env lookup.
-name: ci
+name: maya-audit
 
 on:
   push:
+    paths: ["tools/maya-audit/**", ".github/workflows/ci.yml"]
   pull_request:
+    paths: ["tools/maya-audit/**", ".github/workflows/ci.yml"]
 
 jobs:
   test:
@@ -14,6 +16,10 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python: ["3.11", "3.12", "3.13"]
     runs-on: ${{ matrix.os }}
+    # The tool lives in tools/maya-audit of the withmaya/seo-audit repository; every step runs there.
+    defaults:
+      run:
+        working-directory: tools/maya-audit
     env:
       # Fail on any text read or write that relies on the platform's default encoding.
       PYTHONWARNDEFAULTENCODING: "1"

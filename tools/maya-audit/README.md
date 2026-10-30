@@ -5,10 +5,12 @@ This is the Maya Audit Python package, including the technical SEO check `TSEO-1
 ## New teammate
 
 Requires Python 3.11+ and Git. macOS/Linux commands; on Windows use `.venv\Scripts\python.exe` and `.venv\Scripts\pip.exe`.
+The tool lives in the `tools/maya-audit/` folder of the private repository `withmaya/seo-audit`; every command below
+runs in that folder.
 
 ```sh
-git clone git@github.com:<your-org>/maya-audit.git
-cd maya-audit
+git clone https://github.com/withmaya/seo-audit.git
+cd seo-audit/tools/maya-audit
 python3 -m venv .venv
 .venv/bin/pip install -e ".[team,dev]"
 .venv/bin/python -m playwright install chromium
@@ -19,7 +21,7 @@ cp .env.example .env        # then fill in only the keys you use; never commit .
 Open http://localhost:8770. To try it without any keys or live requests, start `.venv/bin/python -m maya_audit_web --demo`
 instead (a made-up site, nothing is sent anywhere).
 
-To update: `git pull`, then stop the app (Ctrl+C in its terminal) and start it again with
+To update: `git pull` (in `seo-audit/tools/maya-audit`), then stop the app (Ctrl+C in its terminal) and start it again with
 `.venv/bin/python -m maya_audit_web`. If `pyproject.toml` changed, run `.venv/bin/pip install -e ".[team,dev]"` first.
 
 Your audits, reports and spending ledgers live in `~/.maya-audit` on your own computer, never in the repository. The

@@ -64,7 +64,8 @@ B working-tree snapshot) comes from maya-release.
 
 1. Source state as above, the static gates and the full suite in the project.
 2. Build the archive into `<tmp>`, never onto the Desktop, from the same source state:
-   mode A `git archive --format=zip --prefix=maya-audit-verify/ -o <tmp>/verify.zip <tag-or-commit>`; mode B exactly
+   mode A, run in `tools/maya-audit/` so only the tool's folder is archived,
+   `git archive --format=zip --prefix=maya-audit-verify/ -o <tmp>/verify.zip <tag-or-commit>`; mode B exactly
    the files listed in `RELEASE-SNAPSHOT.json`. Check archive member names without opening secrets: no `.env` or secret
    config, no root `HANDOVER.md`, no `design-reference/`, no `.claude/`. If exclusions are missing, FAIL and stop; do
    not silently alter the archive.

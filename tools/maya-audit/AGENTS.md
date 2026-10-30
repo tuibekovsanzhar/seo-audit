@@ -76,5 +76,6 @@ Every `.agents/skills/*/SKILL.md` follows this section instead of repeating it.
 7. **Live network.** Only on an explicit request in this session. Browser identity only, never a search-engine bot's
    user agent; respect robots.txt; no private or loopback addresses (use the engine's guarded transport).
 8. **Shared limits.** Never read, print or search inside `.env`, credentials or authentication files. No real paid
-   calls (Firecrawl, DataForSEO) and no real crawls in tests: fake servers and mock transports only. Never push.
+   calls (Firecrawl, DataForSEO) and no real crawls in tests: fake servers and mock transports only. Push to
+   withmaya/seo-audit only when the owner asks; never force-push.
    Only one agent edits code at a time.

@@ -44,7 +44,13 @@ def test_env_files_are_excluded_but_the_template_is_not():
     assert not release_metadata.excluded("benchmarks/README.md")
 
 
-@pytest.mark.skipif(not (ROOT / ".git").exists() or not shutil.which("git"), reason="not a Git checkout")
+def _in_git_checkout() -> bool:
+    # The repository root is above this folder (tools/maya-audit), so ask Git rather than look for ROOT / ".git".
+    return bool(shutil.which("git")) and subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], cwd=ROOT,
+                                                        capture_output=True, text=True).stdout.strip() == "true"
+
+
+@pytest.mark.skipif(not _in_git_checkout(), reason="not a Git checkout")
 def test_git_archive_leaves_out_every_private_path():
     probes = ["benchmarks/real-sites/sites.json", "reviews/review.pdf", ".env", ".claude/settings.json"]
     out = subprocess.run(["git", "check-attr", "export-ignore", "--", *probes], cwd=ROOT, check=True,

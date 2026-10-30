@@ -2729,6 +2729,15 @@ def _git_head(root: Path) -> str | None:
     return None
 
 
+def _checkout_root(root: Path) -> Path:
+    """The folder holding `.git` for a source tree at `root`. The project lives in a subfolder of its repository
+    (tools/maya-audit), so a source tree (it has pyproject.toml) looks upward; anything else, such as an installed
+    package inside a virtual environment, is only looked at itself, so it never picks up an unrelated repository."""
+    if (root / ".git").exists() or not (root / "pyproject.toml").is_file():
+        return root
+    return next((p for p in root.parents if (p / ".git").exists()), root)
+
+
 def source_provenance(root: Path | None = None) -> dict[str, Any]:
     """Where the engine's code came from (CR-25, C62): the git commit when it runs from a checkout, else the base commit
     and release named in RELEASE-SNAPSHOT.json beside the package, else "not recorded". Read once per process; never
@@ -2746,7 +2755,7 @@ def source_provenance(root: Path | None = None) -> dict[str, Any]:
             out["base_commit"] = snapshot.get("base_commit")
     except (OSError, ValueError):
         pass
-    head = _git_head(root)
+    head = _git_head(_checkout_root(root))
     if head:
         out.update(source_commit=head, source_kind="git checkout (uncommitted changes not recorded)")
     elif out["base_commit"]:

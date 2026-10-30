@@ -2770,3 +2770,17 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      with `git pull` and a restart). (5) gitleaks 8.30.1 on all 50 commits: 9 findings, all SHA-256 file hashes in
      `RELEASE-SNAPSHOT.json` read as generic API keys; `.gitleaks.toml` allows that one generated file, and the re-run
      finds no leaks. A pattern scan of every blob found no key, token or password either.
+
+292. **The tool moves into `tools/maya-audit/` of the private repository withmaya/seo-audit (owner's request, agent
+     implementation, 2026-10-30).** The repository's root holds the team's SEO/GEO research; methodologies and datasets
+     get their own folders. The move is one commit of pure renames (`git mv`), so `git log --follow` reaches each
+     file's earlier history; the branch is `main` (was `master`); the earlier history and tags (`team-preview-w14` to
+     `w14d`) are kept and merged with the repository's first commit. At the root stay `.github/` (GitHub reads
+     workflows only there; `ci.yml` now runs every step in `tools/maya-audit` and only when that folder or the
+     workflow changes), `.gitleaks.toml` (allows `RELEASE-SNAPSHOT.json` at both its old and new path) and a root
+     `.gitignore` for local files there. Every command, the README and the skills now run from `tools/maya-audit/`;
+     `git archive` run there ships only this folder, with the same paths a release zip always had. The source commit
+     in a report (`source_provenance`) and in the real-site benchmark is found in the nearest folder above a source
+     tree (one with `pyproject.toml`) that holds `.git`; an installed package looks only at its own folder, so a
+     virtual environment inside some other repository never lends it a commit. `tests/test_release_metadata.py` asks
+     Git whether it runs in a checkout instead of looking for `.git` beside the project.
