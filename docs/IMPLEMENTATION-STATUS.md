@@ -22,7 +22,7 @@ Branch `master`, no remote, nothing pushed. Package 0.2.8. Interpreter `.venv/bi
 | 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown, web PDFs and the `maya-audit-pro` client PDF |
 | 11 Team status vs engine verification | NOT_STARTED | |
 | 12 SEO accuracy measurement | BLOCKED_ON_INPUT | Needs human SEO labels; nothing labelled yet |
-| 13 Integration and release | VERIFIED | w14c (tag `team-preview-w14c`, `78a27e3`): extracted-archive verification PASS. w14b superseded; w14 FAIL |
+| 13 Integration and release | IN_PROGRESS | w14d (tag `team-preview-w14d`): archive verification pending. w14c VERIFIED; w14b superseded; w14 FAIL |
 
 ## Stage 00 — baseline
 
