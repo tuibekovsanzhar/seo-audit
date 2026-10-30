@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import socket
 import sys
 from pathlib import Path
@@ -38,7 +39,10 @@ def main(argv=None) -> int:
 
 def _run(a) -> int:
     source, out = a.report.resolve(), a.out.resolve()
-    homes = [Path.home() / ".maya-audit"]
+    # The Maya Audit home: ~/.maya-audit, or wherever MAYA_AUDIT_HOME moves it (maya_audit_web/store.py).
+    homes = [(Path.home() / ".maya-audit").resolve()]
+    if os.environ.get("MAYA_AUDIT_HOME"):
+        homes.append(Path(os.environ["MAYA_AUDIT_HOME"]).expanduser().resolve())
     if any(out == h or h in out.parents for h in homes) or out == source.parent:
         raise SystemExit("--out must be a new folder outside the Maya Audit home; the source is never written")
     sys.path.insert(0, str(ROOT))

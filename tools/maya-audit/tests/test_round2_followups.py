@@ -57,7 +57,7 @@ def test_a_batch_uses_the_csv_name_as_the_brand_and_crawl_without_one_takes_the_
         assert cli.main(["batch", brands_file(tmp_path, rows), "--out", str(out), "--max-pages", "5", "--delay", "0", "--no-firecrawl"]) == 0
     finally:
         sites.close()
-    report = json.loads((out / "Demo-Kafe.json").read_text(encoding="utf-8"))
+    report = json.loads((out / "demo-kafe.json").read_text(encoding="utf-8"))
     assert report["brand"] == {"name": "Demo Kafe", "source": "typed", "confirmed": True, "found_in": None, "pages": None}
 
     # Healthy: `crawl` with no --dfs-brand still reads the brand from the site itself.

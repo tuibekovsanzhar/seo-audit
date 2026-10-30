@@ -1,4 +1,6 @@
-# Every platform and Python the project claims (pyproject: requires-python >=3.11; the team runs Windows and macOS).
+# Maya Audit, on every push and pull request: one Linux machine, one Python, the fast test set.
+# Private-repository minutes are shared by the whole Maya organisation, so this stays small (about 9 minutes).
+# The full suite on every platform is the "maya-audit-full" workflow (manual, and on release tags).
 # Offline only: conftest blocks non-loopback network, isolates ~/.maya-audit and the .env lookup.
 name: maya-audit
 
@@ -8,15 +10,15 @@ on:
   pull_request:
     paths: ["tools/maya-audit/**", ".github/workflows/ci.yml"]
 
+# A new push to the same branch cancels the run still going for the older one.
+concurrency:
+  group: maya-audit-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python: ["3.11", "3.12", "3.13"]
-    runs-on: ${{ matrix.os }}
-    # The tool lives in tools/maya-audit of the withmaya/seo-audit repository; every step runs there.
+  fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: tools/maya-audit
@@ -28,20 +30,30 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python }}
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: tools/maya-audit/pyproject.toml
       - name: Install
+        run: python -m pip install -e ".[dev]" ruff
+      - name: Playwright version
+        id: pw
+        run: echo "version=$(python -c 'from importlib.metadata import version; print(version("playwright"))')" >> "$GITHUB_OUTPUT"
+      - name: Cache Chromium
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - name: Chromium (download only when not cached)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: python -m playwright install --with-deps chromium
+      - name: Chromium system libraries (cached browser)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: python -m playwright install-deps chromium
+      - name: Syntax and undefined names
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]" ruff pip-audit
-          python -m playwright install --with-deps chromium
-      - name: Syntax on this Python
-        run: python -m compileall -q maya_audit maya_audit_web maya_audit_web_lite.py tests
-      - name: Undefined names and syntax errors
-        run: python -m ruff check --select E9,F821,F841 maya_audit maya_audit_web maya_audit_web_lite.py
-      - name: Tests
-        run: python -m pytest -q
-      # Separate from the source tests: build the wheel, install it outside the checkout, resolve a rule and an action.
-      - name: Installed package smoke
-        run: python tools/check_installed_package.py
-      - name: Known vulnerabilities in the installed dependencies
-        run: python -m pip_audit --skip-editable
+          python -m compileall -q maya_audit maya_audit_web maya_audit_web_lite.py tests
+          python -m ruff check --select E9,F821,F841 maya_audit maya_audit_web maya_audit_web_lite.py
+      # Leaves out the tests listed in tests/slow_tests.txt (1 s or more each) and the wall-clock ones.
+      - name: Fast tests
+        run: python -m pytest -q -m "not slow and not timing"

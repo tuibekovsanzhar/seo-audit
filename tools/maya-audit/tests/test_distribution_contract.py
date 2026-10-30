@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import re
 import sys
 import tomllib
 from pathlib import Path
@@ -55,12 +56,24 @@ def test_package_data_covers_every_resource_file():
     assert left_out == []
 
 
+def _can_build_wheel_offline() -> bool:
+    """setuptools 70.1+ builds wheels by itself; an older one (the python.org 3.11 installer ships one) needs the
+    `wheel` package for `bdist_wheel`, and without network it cannot fetch it."""
+    if importlib.util.find_spec("setuptools") is None:
+        return False
+    if importlib.util.find_spec("wheel") is not None:
+        return True
+    from importlib.metadata import version
+    parts = [int(p) for p in re.findall(r"\d+", version("setuptools"))[:2]] + [0, 0]
+    return tuple(parts[:2]) >= (70, 1)
+
+
 @pytest.fixture(scope="module")
 def wheel(tmp_path_factory) -> Path:
     if named := os.environ.get("MAYA_AUDIT_WHEEL"):
         return Path(named).resolve()
-    if importlib.util.find_spec("setuptools") is None:
-        pytest.skip("no setuptools here to build a wheel offline; run tools/check_installed_package.py "
+    if not _can_build_wheel_offline():
+        pytest.skip("no setuptools here that can build a wheel offline; run tools/check_installed_package.py "
                     "or set MAYA_AUDIT_WHEEL")
     return dist.build_wheel(tmp_path_factory.mktemp("build"), isolation=False)
 

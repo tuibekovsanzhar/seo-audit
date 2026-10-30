@@ -95,11 +95,15 @@ def test_the_tool_refuses_to_write_into_the_maya_home(tmp_path, monkeypatch):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
     import reassess_saved
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))  # what Path.home() reads on Windows
+    monkeypatch.setenv("MAYA_AUDIT_HOME", str(tmp_path / "moved-home"))
     src = tmp_path / "src" / "artifacts"
     src.mkdir(parents=True)
     (src / "report.json").write_text(json.dumps(report()), encoding="utf-8")
     with pytest.raises(SystemExit):
         reassess_saved.main([str(src / "report.json"), "--out", str(tmp_path / ".maya-audit" / "x")])
+    with pytest.raises(SystemExit):  # a Maya home moved by MAYA_AUDIT_HOME is refused too
+        reassess_saved.main([str(src / "report.json"), "--out", str(tmp_path / "moved-home" / "x")])
     assert reassess_saved.main([str(src / "report.json"), "--out", str(tmp_path / "out")]) == 0
     assert json.loads((tmp_path / "out" / "report.json").read_text())["generation"]["analysis"]["requests"] == 0
 

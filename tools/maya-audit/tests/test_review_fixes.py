@@ -208,7 +208,7 @@ def test_reports_count_pages_checked_and_redirects_separately(monkeypatch, capsy
         [row] = list(csv.DictReader(fh))
     assert (row["pages_checked"], row["redirects"]) == ("3", "1") and "pages_fetched" not in row
     assert "| 3 pages + 1 redirect (of " in (tmp_path / "out" / "summary.md").read_text(encoding="utf-8")
-    assert json.loads((tmp_path / "out" / "Marka.json").read_text(encoding="utf-8"))["page_counts"]["redirects"] == 1
+    assert json.loads((tmp_path / "out" / "marka.json").read_text(encoding="utf-8"))["page_counts"]["redirects"] == 1
 
 
 # 6. IDX-8 ------------------------------------------------------------------------------------------

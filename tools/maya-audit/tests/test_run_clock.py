@@ -122,16 +122,19 @@ def test_provider_requests_keep_mayas_pace_and_cached_pages_do_not_wait(tmp_path
     outcome = blocked_audit()
     outcome.pace_s = 2.0  # as if a robots.txt Crawl-delay or a rate limit had widened Maya's own gap
     api = Firecrawl(SITE)
-    time = FakeTime()
+    # The fake clock starts where the audit started: the audit's deadline is on the real monotonic clock (seconds since
+    # the machine booted), so a fixed start such as 1000 s lies past it on a CI machine that booted minutes ago.
+    time = FakeTime(now=outcome.started_mono)
     client = client_for(tmp_path, api, audit_id="run-one")
     client.clock = clocked(time)
     reader.apply(outcome, CFG, client, MAIN)
     assert len(api.bodies) == 5 and client.clock.pace_s == 2.0
     assert round(sum(time.slept), 3) == 8.0  # four gaps of two seconds between five requests; the first did not wait
-    again_time = FakeTime()
+    second = blocked_audit()
+    again_time = FakeTime(now=second.started_mono)
     again = client_for(tmp_path, api, audit_id="run-one")  # the same audit: a new one reads again (A16, W1)
     again.clock = clocked(again_time)
-    reader.apply(blocked_audit(), CFG, again, MAIN)
+    reader.apply(second, CFG, again, MAIN)
     assert len(api.bodies) == 5 and again_time.slept == [] and again.requests_sent == 0  # served from Maya's own copies
 
 

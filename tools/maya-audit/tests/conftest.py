@@ -191,3 +191,15 @@ def small_cli_limits(monkeypatch):
 
     monkeypatch.setattr(pricing, "APPROVAL_THRESHOLD_USD", 0.50)
     monkeypatch.setenv("MAYA_AUDIT_DATAFORSEO_DAILY_USD", "2")
+
+
+_SLOW_LIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "slow_tests.txt")
+
+
+def pytest_collection_modifyitems(config, items):
+    """Mark the tests named in tests/slow_tests.txt as "slow": the fast CI set runs `-m "not slow and not timing"`."""
+    with open(_SLOW_LIST, encoding="utf-8") as fh:
+        slow = {line.strip() for line in fh if line.strip() and not line.startswith("#")}
+    for item in items:
+        if item.nodeid in slow:
+            item.add_marker(pytest.mark.slow)

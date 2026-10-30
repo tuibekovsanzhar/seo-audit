@@ -123,8 +123,8 @@ def test_batch_can_save_evidence_per_brand_and_the_output_folder_is_git_ignored(
     brands.write_text(f"name,url\nMarka,{site.base_url}/\n", encoding="utf-8")
     out = tmp_path / "batch"
     assert cli.main(["batch", str(brands), "--out", str(out), "--save-evidence", "all", "--delay", "0"]) == 0
-    index, saved = files(out / "Marka-evidence")
-    assert len(saved) == 5 and json.loads((out / "Marka.json").read_text(encoding="utf-8"))["evidence_saved"]["pages"] == 5
+    index, saved = files(out / "marka-evidence")
+    assert len(saved) == 5 and json.loads((out / "marka.json").read_text(encoding="utf-8"))["evidence_saved"]["pages"] == 5
     assert cli.main(["batch", str(brands), "--out", str(out), "--save-evidence", "all", "--delay", "0"]) == 2  # no silent overwrite
     root = cli.Path(cli.__file__).resolve().parent.parent
     inside = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], cwd=root, capture_output=True, text=True)
@@ -132,7 +132,7 @@ def test_batch_can_save_evidence_per_brand_and_the_output_folder_is_git_ignored(
         # An unzipped copy has no Git history, so what .gitignore covers cannot be asked. Everything above still ran.
         pytest.skip("this folder is not a Git repository, so the .gitignore part of this test cannot run")
     assert subprocess.run(["git", "check-ignore", "-q", "output/evidence/example.com/index.json"], cwd=root).returncode == 0
-    assert subprocess.run(["git", "check-ignore", "-q", "output/batch-x/Marka-evidence/index.json"], cwd=root).returncode == 0
+    assert subprocess.run(["git", "check-ignore", "-q", "output/batch-x/marka-evidence/index.json"], cwd=root).returncode == 0
     assert evidence_store.default_folder("https://www.example.com/x", None) == cli.Path("output/evidence/www.example.com")
 
 

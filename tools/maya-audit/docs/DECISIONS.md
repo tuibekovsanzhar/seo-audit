@@ -2784,3 +2784,21 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      tree (one with `pyproject.toml`) that holds `.git`; an installed package looks only at its own folder, so a
      virtual environment inside some other repository never lends it a commit. `tests/test_release_metadata.py` asks
      Git whether it runs in a checkout instead of looking for `.git` beside the project.
+
+293. **Cheap CI on withmaya/seo-audit, and five tests that failed only there (owner's request, agent implementation,
+     2026-10-31).** The first two runs (9 jobs each: Linux, Windows, macOS × Python 3.11–3.13) failed after about 35
+     minutes. (1) Three batch tests asked for `Marka.json`/`Demo-Kafe.json`, but batch names files in lower case
+     (DECISIONS 279): macOS ignores case, Linux does not. The tests now ask for `marka.json` and `demo-kafe.json`. (2)
+     `test_provider_requests_keep_mayas_pace_and_cached_pages_do_not_wait` started its fake clock at 1000 s while the
+     audit's deadline is on the real monotonic clock (seconds since boot, 300 s ahead): on a runner that booted minutes
+     before, the deadline lay before 1000 s and no request was sent. The fake clock now starts at the audit's own start.
+     (3) `tools/reassess_saved.py` found the Maya home only through `Path.home()`, which Windows reads from
+     USERPROFILE, not HOME; it now also refuses the folder MAYA_AUDIT_HOME names, and the test sets both. (4) The
+     wheel tests skip unless setuptools can build a wheel offline (70.1+, or the `wheel` package): the python.org 3.11
+     installers ship an older one without `bdist_wheel`. (5) The 500-page responsiveness test asserts a wall-clock
+     bound: marked `timing`, bound 3 s (a runner took 1.96 s against 1.5 s). CI: `.github/workflows/ci.yml` runs on
+     push and pull request on one Linux machine with Python 3.12, pip and Chromium cached, `timeout-minutes: 20`, a
+     newer push cancelling the older run, and the fast set `-m "not slow and not timing"`; `slow` is every test in
+     `tests/slow_tests.txt` (1 s or more each locally; 130 tests, about 60% of the suite's time). The full suite, the
+     installed-package smoke and pip-audit run in `.github/workflows/full.yml`, by hand and on `team-preview-*` tags,
+     on Linux with Python 3.11 and 3.13, plus Windows and macOS when "all_platforms" is ticked.

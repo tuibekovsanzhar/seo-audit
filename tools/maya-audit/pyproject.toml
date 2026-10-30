@@ -39,3 +39,7 @@ maya_audit_web = ["static/*", "locales/*.json", "locales/catalog/*.json", "local
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "slow: takes more than a few seconds (500-page audits, browser rendering, wheel builds); left out of the fast CI set",
+    "timing: asserts wall-clock speed, which shared CI machines do not guarantee; runs only in the full suite",
+]

@@ -1168,6 +1168,8 @@ def test_history_and_reports_live_outside_the_repository(monkeypatch, tmp_path):
     assert Path(__file__).resolve().parents[1] not in data_home().parents
 
 
+@pytest.mark.timing
+@pytest.mark.slow
 def test_the_api_stays_responsive_while_a_500_page_audit_runs(web):
     site = Site()
     site._inner = demo.site_transport(0.004)
@@ -1182,7 +1184,9 @@ def test_the_api_stays_responsive_while_a_500_page_audit_runs(web):
         polls += 1
     done = get(client, audit)
     assert done["state"] == "finished" and done["counters"]["pages_checked"] == 500 and polls > 3
-    assert slowest < 1.5, f"slowest request while the audit ran: {slowest:.2f}s"
+    # Wall-clock bound: 1.5 s held on a developer Mac, a shared CI runner took 1.96 s once. 3 s still catches a
+    # request that waits for the audit (that took the whole audit, many seconds).
+    assert slowest < 3.0, f"slowest request while the audit ran: {slowest:.2f}s"
     store = client.app.state.store
     assert store._one("SELECT COUNT(*) AS n FROM events WHERE audit_id = ?", (audit["id"],))["n"] <= MAX_EVENTS
     assert len(json.dumps(done)) < 6000 and len(json.dumps(store.audit(audit["id"])["progress"])) < 2000

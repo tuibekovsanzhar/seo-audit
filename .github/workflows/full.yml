@@ -1,0 +1,56 @@
+# Maya Audit, full suite and release checks: only when started by hand (Actions → maya-audit-full → Run workflow)
+# and when a release tag team-preview-* is pushed. Linux with the oldest and newest Python by default; tick
+# "all_platforms" to add Windows and macOS (they cost 2x and 10x the Linux minutes).
+name: maya-audit-full
+
+on:
+  workflow_dispatch:
+    inputs:
+      all_platforms:
+        description: "Also run on Windows and macOS (much more expensive)"
+        type: boolean
+        default: false
+  push:
+    tags: ["team-preview-*"]
+
+concurrency:
+  group: maya-audit-full-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  full:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.all_platforms && '["ubuntu-latest","windows-latest","macos-latest"]' || '["ubuntu-latest"]') }}
+        python: ["3.11", "3.13"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: tools/maya-audit
+    env:
+      PYTHONWARNDEFAULTENCODING: "1"
+      MAYA_AUDIT_FIRECRAWL: "off"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: tools/maya-audit/pyproject.toml
+      - name: Install
+        run: python -m pip install -e ".[dev]" ruff pip-audit
+      - name: Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Syntax and undefined names
+        run: |
+          python -m compileall -q maya_audit maya_audit_web maya_audit_web_lite.py tests
+          python -m ruff check --select E9,F821,F841 maya_audit maya_audit_web maya_audit_web_lite.py
+      - name: Full test suite
+        run: python -m pytest -q
+      # Build the wheel, install it outside the checkout, resolve a rule and an action.
+      - name: Installed package smoke
+        run: python tools/check_installed_package.py
+      - name: Known vulnerabilities in the installed dependencies
+        run: python -m pip_audit --skip-editable
