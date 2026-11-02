@@ -429,3 +429,73 @@ symlink to it, and its editable install was pointed at `tools/maya-audit/` (path
 moved unopened into `tools/maya-audit/` (the app reads `./.env`). Start the web app:
 `cd ~/Projects/maya-audit/tools/maya-audit && .venv/bin/python -m maya_audit_web`.
 NOT RUN: CI on GitHub for the pushed commit was not checked here; ruff; Linux/Windows.
+
+## v0.3 stage 1: where an audit's time goes (2026-11-02, measured offline, no code change)
+
+Read-only from the saved web audits: `report.json` (`crawl.steps`, `generation.native_requests_by_purpose`,
+`audit_status.timing`, `firecrawl.calls`, `content_coverage`) and the web app's event log (`web-v1.db` table `events`,
+opened read-only). No website or provider was contacted. Audits: nihan `b3198942…` (Standard, 500 pages, 2026-10-30),
+adile `6f2830d5…` (Quick, 50, 2026-10-29), enpara `07297f4d…` (Quick, 50, 2026-10-29).
+
+Steps as the request asked; mapped from the engine's steps: access = ACC step (AI-crawler access; enpara also 9.6 s
+before Maya's first request, web worker start, not attributed); sitemap URL checks = `sitemap_check` + `llms_links`;
+checks = `index` + `structure` + `performance` (their seconds) + `other_sites` (requests only: it runs in a pool beside
+them) + "Working out the results" (no request; from the event log, 1 s resolution); Firecrawl = `page_reader`;
+report = from Firecrawl's last answer to `done`. Rows add up to the whole job within 1 s.
+
+| Step | nihan s (min) | req | adile s (min) | req | enpara s (min) | req |
+|---|---|---|---|---|---|---|
+| access | 7.7 | 9 | 13.5 | 9 | 8.6 (+9.6 start) | 8 |
+| sitemap | 30.7 | 27 | 35.7 | 14 | 2.3 | 3 |
+| crawl | 534.7 (8.9) | 523 | 181.1 (3.0) | 103 | 73.1 (1.2) | 60 |
+| sitemap URL checks | 828.6 (13.8) | 1,028 | 534.5 (8.9) | 183 | 293.4 (4.9) | 208 |
+| rendering | 124.8 (2.1) | 560 | 104.5 (1.7) | 286 | 82.8 (1.4) | 139 |
+| checks | 107.0 + 17 results | 115 | 210.8 + 27 results | 155 | 102.8 + 2 results | 88 |
+| Firecrawl | **3,451.3 (57.5)** | 501 calls | 420.2 (7.0) | 40 calls | 209.6 (3.5) | 51 calls |
+| report | ~5 | 0 | ~1 | 0 | ~1 | 0 |
+| **whole job** | **5,106 (85.1)** | 2,262 + 501 | **1,527 (25.5)** | 750 + 40 | **785 (13.1)** | 506 + 51 |
+
+Share of the job: nihan Firecrawl 68 %, sitemap URL checks 16 %, crawl 10 %; adile sitemap URL checks 35 %, Firecrawl
+28 %, checks 16 %; enpara sitemap URL checks 37 %, Firecrawl 27 %, checks 13 %.
+
+**Waiting (Maya's pace on the audited site):** of the sitemap URL checks, 485 s (nihan), 181 s (adile), 193 s (enpara)
+is the gap between requests; nihan's pace narrowed to the 0.5 s floor, adile and enpara stayed at 1.0 s and 0.56–1.0 s.
+Adile's site is slow: 1.9 s network time per light request (nihan 0.3 s, enpara 0.4 s).
+
+**Pages read** (`content_coverage.read_by`):
+
+| | Maya page requests | Firecrawl pages read (calls) | read by both | Firecrawl only | Maya only | pages in report |
+|---|---|---|---|---|---|---|
+| nihan | 500 | 500 (501) | 499 | 1 | 0 | 500 |
+| adile | 50 (17 were redirects) | 35 (40; stopped: time limit) | 35 | 0 | 2 | 37 |
+| enpara | 50 | 50 (51) | 47 | 3 | 0 | 50 |
+
+Firecrawl is the main reader (DECISIONS 131), so it re-reads the pages Maya already read. Its calls go one at a time,
+each after Maya's pace (`runclock.wait_for_turn`): 6.9 s per call on nihan, 10.6 s on adile, 4.1 s on enpara. Adile ran
+out of time: its reader allowance assumes 8 s + pace per page (450 s for 50), and the site's 10.6 s per call needed 530 s,
+so 15 pages were not read.
+
+**Firecrawl concurrency** (https://docs.firecrawl.dev/rate-limits, read 2026-11-02): concurrent browsers Free 2, Hobby 5,
+Standard 25, Growth 50, Scale/Enterprise 100+; jobs above the limit wait in a queue (the wait counts against the
+request's timeout), and only a full queue (50,000 jobs on Free–Standard) or the per-minute limit returns 429. `/scrape`
+per minute: Free 10, Hobby 100, Standard 500, Growth 5,000, Scale 10,000; limits are per team. Our plan is not recorded
+in the repository; the local ledger shows 1,866 credits settled in October 2026, more than Free's 1,000, so the plan is
+at least Hobby (5 at once). To be confirmed by the owner (not looked up: that is a call with the key).
+
+**Three biggest time savings (proposals; none implemented):**
+
+1. **Firecrawl: up to 5 calls in flight** (Hobby's limit; the start of each call still keeps Maya's pace). Per page
+   ≈ call time / 5, not below the pace. Expected: nihan 57.5 → ~11.5 min (**−46 min**), adile 7.0 → ~1.8 min for all 50 pages
+   (−5 min, and no page left unread by the time limit), enpara 3.5 → ~0.9 min (−2.6 min). Owner decision: the audited site then
+   sees up to 5 overlapping reads through Firecrawl instead of one.
+2. **Start Firecrawl right after the crawl, beside rendering, checks and the sitemap URL checks** (postponed by the owner
+   on 2026-10-15, DECISIONS "Part 1": "a later round"). Saves the shorter of the reader and the steps after the crawl.
+   Alone: nihan −18 min, adile −7 min, enpara −3.5 min. With 1: nihan's whole reader (~11.5 min) is hidden behind
+   the ~18 min of later steps. Owner decision: whether the reader's and Maya's requests share one pace on the site
+   (then they slow each other) or each keeps its own (Firecrawl's requests come from Firecrawl's network).
+3. **Smaller sitemap URL check sample**: Standard 1,000 → 300, Quick 200 → 100 (`section_sample` already picks one URL
+   per section in turn). At the measured cost per request (0.81 s nihan, 2.92 s adile, 1.41 s enpara): **nihan −9.5 min,
+   adile −4 min, enpara −2.4 min.** Cost: IDX-5 says "checked a sample" (Estimated) on more sites instead of every URL.
+
+All three together, nihan: about 85 → ~21 min (sitemap and crawl ~9.5, then the reader ~11.5 with the later steps,
+~8.6 after 3, beside it). Estimates from these three runs only; not measured.
