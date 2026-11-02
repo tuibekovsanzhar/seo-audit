@@ -1,7 +1,9 @@
-"""One limit on requests to the audited site, shared by Maya's own requests and the page reader (DECISIONS 294).
+"""One limit on Maya's own requests to the audited site after the crawl (DECISIONS 294, 295).
 
-After Maya's crawl, the page reader (Firecrawl) reads pages while Maya runs its own later steps. Both reach the same
-site, so both go through one `SiteLimiter`:
+After Maya's crawl, Maya's later steps (the sitemap check, rendering, the checks) go through one `SiteLimiter`. The
+page reader (Firecrawl) asks from Firecrawl's network, not this computer's, so since DECISIONS 295 it keeps its own
+pace (maya_audit.firecrawl.pace) and no longer takes a slot here; the reader-related rules below stay for callers that
+still pass `READER`:
 
 - at most `limit` requests are in flight at once (default 5, from 1 to 10);
 - request starts are spaced by the polite gap (the crawler's current delay: the configured one, a Crawl-delay, or the
@@ -210,8 +212,8 @@ class SiteLimiter:
         (Maya's and the reader's requests together) and how many requests each started."""
         return {"configured": self.configured, "final": self.limit, "backed_off": list(self.steps),
                 "max_in_flight": self.max_in_flight, "starts": dict(self.by_who),
-                "rule": "at most this many requests to the audited site at once, Maya's and the page reader's together; "
-                        "request starts at least the polite gap apart"}
+                "rule": "at most this many of Maya's own requests to the audited site at once after the crawl; request starts at "
+                        "least the polite gap apart. The page reader keeps its own pace (firecrawl.concurrency)"}
 
 
 def bad_answer(status: int | None, error: str | None, seconds: float | None, slow_s: float) -> str | None:

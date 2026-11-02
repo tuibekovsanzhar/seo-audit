@@ -169,7 +169,9 @@ def run(scenario: Scenario, flags: dict, folder: Path) -> dict:
     tracemalloc.start()
     began = time.perf_counter()
     outcome = run_audit(HOST + "/", config, scenario.direct())
-    options = Options(read_always=True, max_pages=min(scenario.cap, settings.MAX_PAGES_LIMIT), **flags)
+    # One request at a time: the benchmark measures which pages are read and what they cost, not concurrency, and its
+    # figures stay comparable with those measured before Firecrawl had its own pace (DECISIONS 295).
+    options = Options(read_always=True, max_pages=min(scenario.cap, settings.MAX_PAGES_LIMIT), **{"concurrency": 1, **flags})
     estimate = options.estimate(config.max_pages)
     client = FirecrawlClient(FirecrawlKey("fc-made-up-key"), Ledger(folder / "ledger.jsonl"), None, approved_credits=estimate["max_credits"],
                              max_pages=options.max_pages, transport=scenario.reader(sent))

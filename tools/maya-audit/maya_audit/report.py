@@ -25,15 +25,16 @@ REPORT_VERSION = "0.4"
 
 
 def build_report(result: CrawlResult, gates: list[GateResult], checks: list[CheckResult] | None = None, *,
-                 firecrawl: dict | None = None, all_phases_s: float | None = None,
+                 firecrawl: dict | None = None, all_phases_s: float | None = None, slept_s: float | None = None,
                  brand: dict[str, Any] | None = None) -> dict[str, Any]:
     """The JSON report. `brand` is the audit's brand (`maya_audit.brand.resolve`); by default it is read from the
     crawl's own pages, with no typed name. Outputs use `maya_audit.final.seal`, which also keeps the address lists."""
-    return report_and_affected(result, gates, checks, firecrawl=firecrawl, all_phases_s=all_phases_s, brand=brand)[0]
+    return report_and_affected(result, gates, checks, firecrawl=firecrawl, all_phases_s=all_phases_s, brand=brand,
+                               slept_s=slept_s)[0]
 
 
 def report_and_affected(result: CrawlResult, gates: list[GateResult], checks: list[CheckResult] | None = None, *,
-                        firecrawl: dict | None = None, all_phases_s: float | None = None,
+                        firecrawl: dict | None = None, all_phases_s: float | None = None, slept_s: float | None = None,
                         brand: dict[str, Any] | None = None) -> tuple[dict[str, Any], dict[str, list[str]]]:
     """The JSON report and the full affected-address lists, both from the same qualified checks."""
     from .judgments import qualify_checks
@@ -71,7 +72,7 @@ def report_and_affected(result: CrawlResult, gates: list[GateResult], checks: li
         # Empty unless the time limit was reached: which checks it stopped and which ran without their extra requests.
         "time_limit_cuts": time_limit_cuts(result, checks),
         # Direct access, content coverage and what is known about real AI crawlers, kept apart (schema 1.6).
-        "audit_status": {**audit_status(result, gates, checks, firecrawl), "timing": timing(result, firecrawl, all_phases_s)},
+        "audit_status": {**audit_status(result, gates, checks, firecrawl), "timing": timing(result, firecrawl, all_phases_s, slept_s)},
         "crawl": {**to_jsonable(result), "steps": timeplan.step_rows(getattr(result, "steps", None), firecrawl)},
     }
     # The platform and CDN the pages show, only when one is recognised (H34, maya_audit.site_platform).
@@ -1599,10 +1600,18 @@ def reader_gaps(firecrawl: dict | None) -> list[str]:
                  if name not in ("error_status", "redirect_within_the_site")}
         why = ", ".join(f"{count} {name.replace('_', ' ')}" for name, count in sorted(named.items()))
         gaps.append(f"{failed} requested URL(s) gave no readable document" + (f" ({why})" if why else ""))
+    timeouts = coverage.get("timeouts") or {}
+    if timeouts.get("skipped"):
+        # Calls that timed out (DECISIONS 295): each such page was asked for once more, then skipped; the counts.
+        gaps.append(TIMEOUTS_PHRASE.format(read=int(coverage.get("read") or 0), retried=int(timeouts.get("retried") or 0),
+                                           skipped=int(timeouts["skipped"])))
     missing = coverage.get("key_pages_not_read") or []
     if missing:
         gaps.append(f"{len(missing)} key page(s) were not read")
     return gaps
+
+
+TIMEOUTS_PHRASE = "Firecrawl: {read} page(s) read, {retried} retried after a timeout, {skipped} skipped"
 
 
 def coverage_note(level: str, pages: int) -> str:
@@ -1612,7 +1621,7 @@ def coverage_note(level: str, pages: int) -> str:
                                "the sample this audit could discover, not proof about pages it never found."}[level]
 
 
-_READER_REASONS = re.compile(r"^(?:reading stopped early \(|\d+ more discovered URL\(s\) remain unchecked|\d+ page\(s\) were not read for lack of time|\d+ requested URL\(s\) gave no readable document|"
+_READER_REASONS = re.compile(r"^(?:reading stopped early \(|Firecrawl: \d+ page\(s\) read, |\d+ more discovered URL\(s\) remain unchecked|\d+ page\(s\) were not read for lack of time|\d+ requested URL\(s\) gave no readable document|"
                              r"\d+ key page\(s\) were not read|the page reader used all |\+\d+ address)")
 
 
@@ -1761,20 +1770,40 @@ def cache_note(firecrawl: dict | None) -> str | None:
             f"made {saved[0][:16].replace('T', ' ')} UTC. The site may have changed since; a new audit after a day reads it again.")
 
 
-def duration_line(result: CrawlResult, all_phases_s: float | None) -> str:
-    """The Markdown report's duration: Maya's own crawl, and the whole audit when it was measured."""
+# A wall-clock gap this much larger than the audit's own (awake) time is said as sleep (DECISIONS 295, agent default).
+SLEEP_NOTE_MIN_S = 120.0
+SLEEP_NOTE = ("The computer slept for about {minutes} min during this audit; the durations count only the time it was "
+              "awake.")
+
+
+def sleep_note(slept_s: float | None) -> str | None:
+    """The sentence for a computer that slept during the audit, or None when it did not (or it is not known)."""
+    if slept_s is None or float(slept_s) < SLEEP_NOTE_MIN_S:
+        return None
+    return SLEEP_NOTE.format(minutes=max(1, round(float(slept_s) / 60)))
+
+
+def duration_line(result: CrawlResult, all_phases_s: float | None, slept_s: float | None = None) -> str:
+    """The Markdown report's duration: Maya's own crawl, and the whole audit when it was measured; and, when the
+    computer slept during the audit, how long (DECISIONS 295)."""
     own = f"**Duration:** {result.elapsed_s} seconds for Maya's own crawl and checks"
+    note = sleep_note(slept_s)
     return own + (f"; {round(float(all_phases_s), 1)} seconds for the whole audit, every step included" if all_phases_s is not None
-                  else " (a page reader and paid panels, when used, run after it)")
+                  else " (a page reader and paid panels, when used, run after it)") + (f". {note}" if note else "")
 
 
-def timing(result: CrawlResult, firecrawl: dict | None = None, all_phases_s: float | None = None) -> dict[str, Any]:
+def timing(result: CrawlResult, firecrawl: dict | None = None, all_phases_s: float | None = None,
+           slept_s: float | None = None) -> dict[str, Any]:
     """How long the audit took, by step. `crawl.elapsed_s` is Maya's own crawl and its data collection only; a page
-    reader and the paid panels run after it. `all_phases_s` is the whole job when the caller measured it, else null."""
+    reader and the paid panels run after it. `all_phases_s` is the whole job when the caller measured it, else null.
+    `slept_s` (1.22, DECISIONS 295) is how long the computer slept during the audit: the wall clock less the audit's own
+    clock, which stops while the computer sleeps; null when not measured. `slept_note` says it when it is 2 min or more."""
     reader = ((firecrawl or {}).get("coverage") or {}).get("elapsed_s")
     return {"crawl_and_checks_s": result.elapsed_s, "page_reader_s": reader,
             "all_phases_s": None if all_phases_s is None else round(float(all_phases_s), 3),
-            "note": "crawl.elapsed_s covers Maya's own crawl only; all_phases_s is the whole job, when it was measured"}
+            "slept_s": None if slept_s is None else round(float(slept_s), 1), "slept_note": sleep_note(slept_s),
+            "note": "crawl.elapsed_s covers Maya's own crawl only; all_phases_s is the whole job, when it was measured; "
+                    "neither counts time the computer slept (slept_s)"}
 
 
 def read_through_reader(firecrawl: dict | None) -> int:
@@ -1784,6 +1813,20 @@ def read_through_reader(firecrawl: dict | None) -> int:
     how = firecrawl.get("crawl_blocked") or {}
     # Also when no answer reached this computer and the reader read the site: the reader's pages are the audit's pages.
     return (firecrawl.get("pages_read") or 0) if how.get("blocked") or how.get("direct_not_reached") else 0
+
+
+# Maya's crawler stopped by 429s, and the page reader read pages (DECISIONS 295). The web layer words the cover label
+# through `result.outcome.blocked_read_through`.
+BLOCKED_READ_THROUGH = "Maya's crawler was blocked (429 on pages); {n} page(s) were read through Firecrawl"
+BLOCKED_READ_THROUGH_SENTENCE = re.compile(r"^Maya's crawler was blocked \(429 on pages\); (?P<pages>\d+) page\(s\) were read through Firecrawl")
+
+
+def _read_after_rate_limit(firecrawl: dict | None) -> int:
+    """Pages the page reader read after Maya's crawler was stopped by 429s; 0 when it read none or was not used."""
+    section = firecrawl or {}
+    if not section.get("used"):
+        return 0
+    return int(section.get("pages_read") or 0)
 
 
 # The audit stopped at its page limit and at nothing else (DECISIONS 226). The web layer words the cover label through
@@ -1863,6 +1906,19 @@ def run_outcome(result: CrawlResult, gates: list[GateResult], firecrawl: dict | 
     not_reached = stop == "network_problem"
     if not_reached and through:
         stopped_badly = False  # Maya's own requests got no answer here, and the reader read the site: the content was read
+    read_after_429 = _read_after_rate_limit(firecrawl) if stop == "rate_limit" else 0
+    if read_after_429:
+        # Maya's crawler was stopped by 429s and the page reader read the site's pages (DECISIONS 295): the outcome code
+        # stays DEGRADED (Maya's own requests were refused), but the site is not said to be unreadable. "Could not read
+        # the site properly" stays for a reading of 0 pages.
+        more = [gate for gate in bad_gates if gate != "INT-1"]
+        why = list(reader_gaps(firecrawl))
+        if more:
+            why.append(f"{', '.join(more)} reported degradation, blocking, or an integrity violation")
+        if failed_collectors:
+            why.append(f"{len(failed_collectors)} data collector(s) failed")
+        return (EXIT_DEGRADED, "DEGRADED", BLOCKED_READ_THROUGH.format(n=read_after_429) + ("; " + "; ".join(why) if why else "")
+                + ". Genuine AI-crawler access was not measured. Findings cover only the pages read.")
     if bad_gates or stopped_badly or failed_collectors:
         why = []
         if bad_gates:

@@ -22,12 +22,33 @@ CHECKPOINT = (ROOT / "CHECKPOINT-VERIFICATION.md").read_text(encoding="utf-8")
 PRIVATE = ("benchmarks/real-sites/", "reviews/", ".env", ".claude/")
 
 
+def _on_a_release_tag() -> bool:
+    """Whether this checkout is a release: a `team-preview-*` tag on HEAD (or CI started for one)."""
+    import os
+
+    if os.environ.get("GITHUB_REF_TYPE") == "tag" and os.environ.get("GITHUB_REF_NAME", "").startswith("team-preview-"):
+        return True
+    if not _in_git_checkout():
+        return False
+    found = subprocess.run(["git", "tag", "--points-at", "HEAD", "--list", "team-preview-*"], cwd=ROOT,
+                           capture_output=True, text=True)
+    return bool(found.stdout.strip())
+
+
 def test_snapshot_and_checkpoint_state_the_applications_version():
+    """The snapshot and the checkpoint describe the last release, as release preparation wrote them. Between releases the
+    code's report schema may be ahead of it (DECISIONS 295): never behind, and the release's own frozen schema is kept.
+    On a release tag the two must be equal."""
+    from maya_audit.schema import frozen_path, version_key
+
     assert SNAPSHOT["application_version"] == __version__
-    assert SNAPSHOT["schema_version"] == SCHEMA_VERSION
-    line = f"Release {SNAPSHOT['release']} / application {__version__} / schema {SCHEMA_VERSION}."
+    line = f"Release {SNAPSHOT['release']} / application {__version__} / schema {SNAPSHOT['schema_version']}."
     assert line in CHECKPOINT
     assert re.fullmatch(r"w\d+[a-z]?", SNAPSHOT["release"])  # a fix after a release is the next letter (w14b)
+    assert version_key(SNAPSHOT["schema_version"]) <= version_key(SCHEMA_VERSION)
+    assert frozen_path(SNAPSHOT["schema_version"]).is_file()
+    if _on_a_release_tag():
+        assert SNAPSHOT["schema_version"] == SCHEMA_VERSION
 
 
 def test_the_snapshot_lists_no_private_path():

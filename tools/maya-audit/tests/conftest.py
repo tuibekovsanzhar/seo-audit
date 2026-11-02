@@ -72,6 +72,13 @@ def isolate_dataforseo(monkeypatch, tmp_path_factory):
                  "MAYA_AUDIT_FIRECRAWL_API_KEY", "MAYA_AUDIT_FIRECRAWL", "MAYA_AUDIT_FIRECRAWL_ZERO_DATA_RETENTION",
                  "MAYA_AUDIT_FIRECRAWL_DAILY_CREDITS", "MAYA_AUDIT_FIRECRAWL_USD_PER_CREDIT"):
         monkeypatch.delenv(name, raising=False)
+    # Firecrawl's own gap between request starts (DECISIONS 295) is 0 here, so a made-up reader answers at test speed;
+    # the tests of the gap set it themselves. No test keeps a real Mac awake.
+    monkeypatch.setenv("MAYA_AUDIT_FIRECRAWL_GAP_S", "0")
+    monkeypatch.setenv("MAYA_AUDIT_KEEP_AWAKE", "off")
+    # A made-up Firecrawl that times out is asked again at once, not after the real five seconds.
+    from maya_audit.firecrawl import settings as firecrawl_settings
+    monkeypatch.setattr(firecrawl_settings, "RETRY_WAIT_S", 0)
 
 
 @pytest.fixture(autouse=True)

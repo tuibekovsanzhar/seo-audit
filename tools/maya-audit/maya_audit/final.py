@@ -95,11 +95,11 @@ class FinalAuditResult:
 
 
 def seal(outcome, *, firecrawl: dict | None = None, brand: dict | None = None,
-         all_phases_s: float | None = None) -> FinalAuditResult:
+         all_phases_s: float | None = None, slept_s: float | None = None) -> FinalAuditResult:
     """Build the report and its full address lists once, from the engine's final checks."""
     from .report import report_and_affected
     report, affected = report_and_affected(outcome.result, outcome.gates, outcome.checks, firecrawl=firecrawl,
-                                           all_phases_s=all_phases_s, brand=brand)
+                                           all_phases_s=all_phases_s, brand=brand, slept_s=slept_s)
     return FinalAuditResult(report, affected, digest_of(report))
 
 

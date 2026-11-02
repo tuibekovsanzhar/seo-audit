@@ -36,12 +36,16 @@ class RunClock:
     sleep: Callable[[float], None] = time.sleep
     started_mono: float = field(default_factory=time.monotonic)
     _last_site_request: float | None = None
-    # The audited site's one limit, shared with Maya's own later steps (maya_audit.sitelimit, DECISIONS 294). With it, a
-    # reader's request takes a slot (`take_turn`) and gives it back (`give_back`); the pace is the limit's.
+    # Maya's own limit on the audited site (maya_audit.sitelimit, DECISIONS 294), kept here for the report's figures. A
+    # reader does not take it: it has its own pace (`reader_pace`, DECISIONS 295).
     site_limiter: object | None = None
     # What one request needs to be worth starting: MIN_REQUEST_S until the reader has measured its own calls, then
     # what it measured (DECISIONS 294).
     needs_s: float = MIN_REQUEST_S
+    # The page reader's own pace (maya_audit.firecrawl.pace, DECISIONS 295), set by the reader when it starts.
+    reader_pace: object | None = None
+    # The wall-clock time the audit started, beside `started_mono`: their difference tells a computer that slept.
+    started_wall: float | None = field(default_factory=time.time)
 
     def remaining(self) -> float | None:
         return None if self.deadline_mono is None else self.deadline_mono - self.clock()
@@ -76,27 +80,33 @@ class RunClock:
         self._last_site_request = self.clock()
 
     def take_turn(self):
-        """(slot, None) when a request may be sent now, or (None, why not). Without a site limit, the old single pace:
-        the slot is None and the wait is `wait_for_turn`'s."""
-        limiter = self.site_limiter
-        if limiter is None:
+        """(turn, None) when a reader's request may be sent now, or (None, why not). With the reader's own pace
+        (maya_audit.firecrawl.pace, DECISIONS 295) the turn is its; without one, the old single pace: the turn is None
+        and the wait is `wait_for_turn`'s. Maya's own limit on the site (`site_limiter`) is never taken by a reader."""
+        pace = self.reader_pace
+        if pace is None:
             return None, self.wait_for_turn()
-        from .sitelimit import READER
-
         needs = self.needs_s if self.deadline_mono is not None else 0.0
-        slot = limiter.acquire(READER, should_stop=self.should_stop,
-                               deadline_mono=None if self.deadline_mono is None else self.deadline_mono - needs)
-        if slot is None:
+        turn = pace.acquire(should_stop=self.should_stop,
+                            deadline_mono=None if self.deadline_mono is None else self.deadline_mono - needs)
+        if turn is None:
             return None, self.why_not(needs) or OUT_OF_TIME
         why = self.why_not(needs)
         if why:
-            limiter.release(slot)
+            pace.release(turn)
             return None, why
-        return slot, None
+        return turn, None
 
-    def give_back(self, slot) -> None:
-        if slot is not None and self.site_limiter is not None:
-            self.site_limiter.release(slot)
+    def give_back(self, turn) -> None:
+        if turn is not None and self.reader_pace is not None:
+            self.reader_pace.release(turn)
+
+    def slept_s(self) -> float:
+        """How long the computer slept since the clock started: the wall clock moved on while the monotonic clock (which
+        stops while macOS and Linux sleep) did not. 0 when nothing can be told (DECISIONS 295)."""
+        if self.started_wall is None:
+            return 0.0
+        return round(max(0.0, (time.time() - self.started_wall) - (self.clock() - self.started_mono)), 1)
 
     def elapsed_s(self) -> float:
         return round(self.clock() - self.started_mono, 3)
@@ -141,6 +151,7 @@ def for_outcome(outcome, should_stop: Callable[[], bool] | None = None) -> RunCl
                      site_limiter=getattr(outcome, "site_limiter", None))
     if getattr(outcome, "started_mono", None) is not None:
         clock.started_mono = outcome.started_mono
+        clock.started_wall = getattr(outcome, "started_wall", None)
     return clock
 
 

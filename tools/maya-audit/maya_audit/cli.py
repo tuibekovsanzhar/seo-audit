@@ -149,7 +149,8 @@ def _firecrawl_prepare(args, automatic: bool = False):
                          proxy=args.firecrawl_proxy, owner_approved_bypass=args.firecrawl_owner_approved,
                          allow_without_zero_data_retention=args.firecrawl_allow_without_zdr or not settings.zero_data_retention_wanted(),
                          concurrency=(args.firecrawl_concurrency if getattr(args, "firecrawl_concurrency", None) is not None
-                                      else settings.concurrency()))
+                                      else settings.concurrency()),
+                         gap_s=getattr(args, "firecrawl_gap", None))
     key = fc.load_key()
     ledger, cache = fc.open_stores()
     shown = panel.plan(options, args.max_pages, ledger, key is not None, args.firecrawl_daily_credits)
@@ -320,10 +321,13 @@ def _parser() -> argparse.ArgumentParser:
                        help="most pages Firecrawl may read in this audit (default: the audit's own page cap, at most 500)")
     crawl.add_argument("--firecrawl-concurrency", type=_one_to_ten, default=None, metavar="N",
                        help="Firecrawl requests in flight at once, 1 to 10 (default: MAYA_AUDIT_FIRECRAWL_CONCURRENCY, else 5). "
-                            "Backs off to 2, then 1, on a 429, a 5xx or a slow answer")
+                            "Backs off to 2, then 1, on a 429, a 5xx or a timeout reported for the site")
+    crawl.add_argument("--firecrawl-gap", type=_gap_seconds, default=None, metavar="S",
+                       help="seconds between Firecrawl request starts, 0.2 to 30 (default: MAYA_AUDIT_FIRECRAWL_GAP_S, else 1). "
+                            "Firecrawl's own pace; Maya's crawler keeps its polite gap. Doubles at each back-off step")
     crawl.add_argument("--site-concurrency", type=_one_to_ten, default=None, metavar="N",
-                       help="requests to the audited site in flight at once after the crawl, Maya's and the page reader's "
-                            "together, 1 to 10 (default 5); starts stay the polite gap apart")
+                       help="Maya's own requests to the audited site in flight at once after the crawl, 1 to 10 (default 5); "
+                            "starts stay the polite gap apart. The page reader keeps its own pace")
     crawl.add_argument("--firecrawl-dry-run", action="store_true",
                        help="print the Firecrawl plan and its maximum credits, send nothing, crawl nothing, and exit")
     crawl.add_argument("--firecrawl-approve-up-to", type=float, metavar="CREDITS",
@@ -429,6 +433,19 @@ def _time_limit(args) -> float:
               f"{f' and {len(args.key_page)} key pages' if args.key_page else ''}. The audit will stop early and report "
               f"which checks were cut. Leave --time-limit out to use {default_time_limit_s(**shape):g} s.", file=sys.stderr)
     return args.time_limit
+
+
+def _gap_seconds(text: str) -> float:
+    """Seconds between Firecrawl request starts, 0.2 to 30 (DECISIONS 295)."""
+    from .firecrawl import settings as fc_settings
+
+    try:
+        value = float(text)
+    except ValueError:
+        value = -1.0
+    if not fc_settings.MIN_GAP_S <= value <= fc_settings.MAX_GAP_S:
+        raise argparse.ArgumentTypeError(f"not a number of seconds from {fc_settings.MIN_GAP_S:g} to {fc_settings.MAX_GAP_S:g}: {text[:20]!r}")
+    return value
 
 
 def _one_to_ten(text: str) -> int:
@@ -604,6 +621,16 @@ def main(argv: list[str] | None = None) -> int:
     _tolerant_console()
     parser = _parser()
     args = parser.parse_args(argv)
+    if args.command in ("crawl", "batch"):
+        # An audit keeps a Mac awake while it runs (DECISIONS 295); nothing is started elsewhere.
+        from .keepawake import KeepAwake
+
+        with KeepAwake():
+            return _main(args, parser)
+    return _main(args, parser)
+
+
+def _main(args, parser: argparse.ArgumentParser) -> int:
     if args.command == "migrate-report":
         return _migrate(args.report, args.output)
     if args.command == "brief-check":
@@ -746,7 +773,8 @@ def main(argv: list[str] | None = None) -> int:
         print(panel.render_text(dfs_panel))
     if args.json_path or args.markdown_path or args.markdown_brief_path or args.llm_brief_path:
         from . import final  # one sealed result: the report, its gate and its full address lists (DECISIONS 280)
-        sealed = final.seal(outcome, firecrawl=fc_info, all_phases_s=clock.elapsed_s(), brand=audit_brand)
+        whole_s, slept_s = clock.elapsed_s(), clock.slept_s()  # the whole job, and any time the computer slept (295)
+        sealed = final.seal(outcome, firecrawl=fc_info, all_phases_s=whole_s, brand=audit_brand, slept_s=slept_s)
         report = sealed.report
         if evidence_index is not None:
             report["evidence_saved"] = {key: evidence_index[key] for key in ("mode", "total_bytes", "limits")} | {
@@ -777,6 +805,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"full affected-address lists written to {companion}")
         if args.markdown_path:
             markdown = render_markdown(outcome.result, outcome.gates, outcome.checks, firecrawl=fc_info)
+            from .report import duration_line
+            # Only the sleep is added here: the command line's duration line keeps its wording (the web app's names the whole job).
+            markdown = markdown.replace(duration_line(outcome.result, None), duration_line(outcome.result, None, slept_s), 1)
             markdown += final.cards_markdown(report)  # where each broken link is, from the sealed report
             if dfs_panel is not None:
                 markdown += panel.render_markdown(dfs_panel)

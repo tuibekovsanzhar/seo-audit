@@ -868,6 +868,11 @@ OUTCOMES = _frames((
     ("outcome.not_reached", "The audit could not reach the site from this computer: {detail~:.+}. Nothing is reported against the site. "
                             "Run the audit again when the connection works."),
     ("outcome.degraded", "The audit could not read the site properly: {why~:.+}."),
+    # DECISIONS 295: Maya's crawler stopped by 429s, pages read through Firecrawl.
+    ("outcome.blocked_429.read.gaps", "Maya's crawler was blocked (429 on pages); {n#} page(s) were read through Firecrawl; {gaps~:.+}. "
+                                      "Genuine AI-crawler access was not measured. Findings cover only the pages read."),
+    ("outcome.blocked_429.read", "Maya's crawler was blocked (429 on pages); {n#} page(s) were read through Firecrawl. "
+                                 "Genuine AI-crawler access was not measured. Findings cover only the pages read."),
     ("outcome.reader.partial.challenged", "The audit finished with partial coverage: {n#} page(s) were read through Firecrawl; {gaps~:.+}. "
                                           + _CHALLENGED + " Findings cover only the pages read."),
     ("outcome.reader.partial.no_answer", "The audit finished with partial coverage: {n#} page(s) were read through Firecrawl; {gaps~:.+}. "
@@ -944,6 +949,8 @@ TERM_PATTERNS = _frames((
     ("gap.no_document", "{count#} requested URL(s) gave no readable document"),
     ("gap.cause", "{count#} {cause~:reader challenged|redirect to another site|redirect within the site|empty document|error status|provider could not load|timeout or no answer|credit or request limit|provider refused}"),
     ("gap.key_pages", "{count#} key page(s) were not read"),
+    # DECISIONS 295: pages whose Firecrawl call timed out, asked for once more, then skipped.
+    ("gap.timeouts", "Firecrawl: {read#} page(s) read, {retried#} retried after a timeout, {skipped#} skipped"),
 )) + _frames(_TERM_ROWS)  # and the pieces of the sentences in sentences.py
 _SEPARATORS = ("; ", " / ", ", ")
 

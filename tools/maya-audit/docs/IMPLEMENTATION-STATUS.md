@@ -591,26 +591,51 @@ Owner decision needed: which copy the content checks should judge on a site that
 | `python3.11 -m compileall` | OK |
 | full suite, ruff (not installed), Linux/Windows, live runs | NOT RUN |
 
-## Current state and next step (2026-11-02, handover before an account switch)
+## After the live nihan run: Firecrawl's own pace, timeout retry, keep-awake, RND-6, wording (2026-11-02, DECISIONS 295, 296)
 
-**Stage 2 (speed, DECISIONS 294): done**, commit `1dbdf3d`, not pushed. Fast suite `2551 passed, 1 failed`
-(the release snapshot, see above).
+**The live run** (owner's report, nihan Standard 500 on the stage-2 code; the saved audit was not re-analysed here):
+Maya's crawler blocked after 1 page (429); Firecrawl read 388 of 500; 2,687 s active, wall clock 13:47-15:51 (the Mac
+slept); reading stopped on one Firecrawl `ReadTimeout`.
 
-**Live nihan run after stage 2** (owner's report; the saved audit was not re-analysed here):
-- Maya's own crawler was blocked after 1 page.
-- Firecrawl read 388 of the 500-page cap.
-- About 45 minutes active; the Mac went to sleep during the run.
-- Reading stopped on one Firecrawl `ReadTimeout` (a request with no answer is "possibly billed" and never retried,
-  and the reader stops on it).
-- Not yet examined: why Maya was blocked after one page (concurrency or pace on this site, or the site's own rule),
-  how much of the 45 min the sleep took, and whether the timeout came from the sleep.
+**Changed:** new `maya_audit/firecrawl/pace.py` (Firecrawl's own pace: up to 5 at once, starts at least the gap apart,
+1 s by default, back-off 5 -> 2 -> 1 with the gap doubled, on Firecrawl's 429/5xx, the site's 429/5xx through it, and
+timeouts; a Crawl-delay is a floor); `runclock.py` (`reader_pace`, `started_wall`, `slept_s`); `firecrawl/reader.py`
+(own pace instead of Maya's limit; a timed-out page asked for once more after 5 s, then skipped; 5 failures in a row
+stop; `coverage.timeouts`; RND-6 on Firecrawl's HTML when Maya was blocked); `firecrawl/client.py` (`PossiblyBilled.timed_out`,
+`ProviderTimedOut` for HTTP 408); `firecrawl/settings.py` (`gap_s`, `RETRY_WAIT_S`); new `maya_audit/keepawake.py`
+(`caffeinate -i -w <pid>` on macOS around CLI `crawl`/`batch` and each web job); `report.py` (outcome sentence for a 429
+stop with pages read, the coverage line's timeout counts, `timing.slept_s`/`slept_note`, duration line); `audit.py`,
+`cli.py` (`--firecrawl-gap`), `crawler.py` (`delay_s` in progress events), `sitelimit.py` (docs); web: `runner.py`,
+`app.py`, `summary.py`, `static/app.js`, `fc.py`, `paid.py`, strings EN/TR. Schema 1.22. `tests/test_release_metadata.py`
+no longer fails between releases (DECISIONS 295 (6)). DECISIONS 296 + `docs/BACKLOG.md`: "Firecrawl only where needed"
+is not adopted now.
 
-**Next prompt (owner, to be sent next):**
-1. Firecrawl pacing: review how Firecrawl requests are paced against the site after Maya was blocked.
-2. Retry on timeout: one retry of a `ReadTimeout` instead of stopping the whole reading (needs a rule for "possibly
-   billed" credits).
-3. Keep the Mac awake while an audit runs.
-4. Run the HTML checks on Firecrawl's copy where Maya could not read the page.
-5. Wording updates.
-6. Decide the "read once" question: the "Firecrawl only where needed" proposal above (DECISIONS 131).
-7. Fix the `RELEASE-SNAPSHOT.json` schema mismatch (1.20 vs 1.21) so the fast suite is green.
+**Tests:** new `tests/test_v03_live_fixes.py` (16); updated `test_v03_speed.py`, `test_run_clock.py`,
+`test_firecrawl.py`, `test_coverage_phase2.py` (the old rules they asserted, or one at a time for an exact count),
+schema `1.21` -> `1.22` literals in 8 files; `conftest.py` sets Firecrawl's gap and retry wait to 0 and keep-awake off.
+
+**Verification** (working tree on `57a74fc`, macOS, Python 3.13.1; isolated home, no .env, no providers): see the
+table below.
+
+| Command | Result |
+|---|---|
+| `pytest -q -ra` (full offline suite, all markers) | `2700 passed, 4 skipped, 1 warning in 1304.65s` (skips: 2 wheel builds without setuptools, live-run examples not in git, real-site corpus outside the repo) |
+| `tests/test_v03_live_fixes.py` | `16 passed` |
+| `python3.11 -m compileall -q maya_audit maya_audit_web maya_audit_web_lite.py tests tools` | OK (CPython 3.11) |
+| CLI on a loopback fake site, `--json`/`--markdown` | exit 0; `out.json` schema 1.22, `timing.slept_s` 0.0, no sleep note |
+| `ruff check --select E9,F821,F841` | NOT RUN: ruff is not installed in `.venv` |
+| Linux/Windows, live runs, pip-audit | NOT RUN |
+
+The first full run had 2 failures, both from this change: the coverage benchmark counted requests one at a time (now
+pinned to 1 at once, `scripts/coverage_benchmark.py`), and `docs/FIXTURE-MATRIX.md` was stale (already since stage 2;
+regenerated). The fast suite before that also showed 5 failures from this change (CLI duration line, a test listing
+RND-6 as untouched, schema 1.21 in README and a schema-history test); all fixed before the final run above.
+
+**Not measured:** the effect on a live audit (the next live nihan run will show the time with Firecrawl's own pace,
+and whether timeouts recover on the retry). Why Maya was blocked after one page is not examined.
+
+## Next step
+
+1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).
+2. Push to withmaya/seo-audit when the owner asks.
+3. Backlog: `docs/BACKLOG.md`.

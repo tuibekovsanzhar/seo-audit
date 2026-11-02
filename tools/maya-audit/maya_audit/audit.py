@@ -43,6 +43,8 @@ class AuditOutcome:
     deadline_mono: float | None = None
     pace_s: float = 0.0
     started_mono: float | None = None
+    # The wall-clock start beside it: the difference tells a computer that slept during the audit (DECISIONS 295).
+    started_wall: float | None = None
     # What the re-test used, so it can run again for findings a page reader replaced (maya_audit.final.after_provider).
     transport: Any = field(default=None, repr=False, compare=False)
     hooks: Any = field(default=None, repr=False, compare=False)
@@ -111,7 +113,7 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
     """`hooks` (maya_audit.progress) lets a job runner follow the audit and ask it to stop. Optional.
 
     `reader` (optional, `firecrawl.reader.EarlyReading`) is offered the crawl as soon as it ends: when it starts, it
-    reads pages beside Maya's later steps, through the same site limit (DECISIONS 294)."""
+    reads pages beside Maya's later steps (DECISIONS 294), at its own pace (DECISIONS 295)."""
     hooks = hooks or NO_HOOKS
     # Bound the cumulative resampling wait to 25% of the run budget so later
     # rendering/performance checks retain time even on short audits.
@@ -132,7 +134,7 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
         preflight = network_preflight(start_url)
 
     shared: dict[str, Any] = {"deadline_mono": None, "pace_s": config.request_delay_s, "site_limiter": None}
-    started_mono = time.monotonic()
+    started_mono, started_wall = time.monotonic(), time.time()
 
     # Time is divided before anything runs: Maya's own crawl and data collection get the limit less the reader's
     # reserve, so a long crawl cannot leave a page reader with nothing. A stop ends everything at once.
@@ -325,5 +327,5 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
         result.network = {"preflight": {k: v for k, v in (preflight or {"status": "not_needed"}).items() if k != "addresses"},
                           "dns": resolver.summary()["hosts"]}
     return AuditOutcome(result, gates, site_checks + answer_checks, deadline_mono=shared["deadline_mono"],
-                        pace_s=float(shared["pace_s"] or 0.0), started_mono=started_mono, transport=transport, hooks=hooks,
+                        pace_s=float(shared["pace_s"] or 0.0), started_mono=started_mono, started_wall=started_wall, transport=transport, hooks=hooks,
                         site_limiter=shared["site_limiter"])

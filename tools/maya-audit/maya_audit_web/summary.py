@@ -20,7 +20,7 @@ from maya_audit.classify import describe_blockers, identify_blocker
 from maya_audit.coverage import CRAWL_GAP_NAMES, PAGE_DEPENDENT, clean_on_what_was_read, restated
 from maya_audit.findings import SEVERITY_DEFINITIONS, check_id_key, impact_rank, is_hygiene, page_importance
 from maya_audit.firecrawl.reader import MAIN_PURPOSE, MAIN_WHY
-from maya_audit.report import (PARTIAL_PAGE_CAP_SENTENCE, clean_on_read_sentence, content_coverage_shown, problem_summary, read_counts,
+from maya_audit.report import (BLOCKED_READ_THROUGH_SENTENCE, PARTIAL_PAGE_CAP_SENTENCE, clean_on_read_sentence, content_coverage_shown, problem_summary, read_counts,
                                with_page_items, qualified_group_key, finding_counts)
 from maya_audit.index_data import redirect_verdict
 from maya_audit.schema import unsupported_reason
@@ -615,7 +615,10 @@ def status_view(report: dict[str, Any]) -> dict[str, Any] | None:
             "untranslated": 0 if english else notes["untranslated"],
             "timing": timing,
             "duration_line": (t("status.duration", whole=timing["all_phases_s"], crawl=timing.get("crawl_and_checks_s"))
-                              if timing.get("all_phases_s") is not None else t("status.duration.crawl", crawl=timing.get("crawl_and_checks_s")))}
+                              if timing.get("all_phases_s") is not None else t("status.duration.crawl", crawl=timing.get("crawl_and_checks_s")))
+                             # The computer slept during the audit (DECISIONS 295): said beside the duration.
+                             + ((" " + t("status.slept", minutes=max(1, round(float(timing["slept_s"]) / 60))))
+                                if timing.get("slept_note") and timing.get("slept_s") else "")}
 
 
 def status_notes(report: dict[str, Any]) -> dict[str, Any]:
@@ -766,12 +769,17 @@ def problems_of(report: dict[str, Any], affected: dict[str, list[str]] | None, p
 
 def outcome_label(outcome: str | None, reason: str | None) -> str | None:
     """The cover's word for the audit's outcome. An audit that stopped at its page limit and at nothing else says so:
-    "Partial audit: 50 of 832 pages read (page limit)" (DECISIONS 226), not "Audit incomplete"."""
+    "Partial audit: 50 of 832 pages read (page limit)" (DECISIONS 226), not "Audit incomplete". One whose crawler was
+    stopped by 429s while Firecrawl read pages says that (DECISIONS 295), not "The site could not be read properly"."""
     if not outcome:
         return None
     found = PARTIAL_PAGE_CAP_SENTENCE.match(reason or "") if outcome == "INCOMPLETE" else None
     if found:
         return t("result.outcome.partial_page_cap", read=int(found["read"]), total=int(found["total"]))
+    # Maya's crawler stopped by 429s and pages read through Firecrawl (DECISIONS 295): not "could not be read properly".
+    found = BLOCKED_READ_THROUGH_SENTENCE.match(reason or "") if outcome == "DEGRADED" else None
+    if found:
+        return t("result.outcome.blocked_read_through", pages=int(found["pages"]))
     return t(f"result.outcome.{outcome}")
 
 

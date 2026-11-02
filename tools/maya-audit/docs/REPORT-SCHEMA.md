@@ -1,6 +1,6 @@
 # The JSON report format
 
-Current version: `1.21`
+Current version: `1.22`
 
 Every JSON report the tool writes (`--json`, and one per brand from `batch`) starts with `schema_version`.
 Anything that reads a report, including the web interface, reads that number first.
@@ -385,6 +385,26 @@ page failures. Coverage stop reasons additionally distinguish `provider_timeout`
 credit/request limits. Existing 1.x reports remain readable; absent historical reasons are never invented.
 Keyword intent dimensions live inside open DataForSEO check evidence; originals and provider totals are preserved.
 
+
+## 1.22 — Firecrawl's own pace, timeouts asked again, and time the computer slept (2026-11-02)
+
+Added for DECISIONS 295; nothing was removed or renamed, so 1.x readers keep working.
+
+- `firecrawl.coverage.timeouts`: `{"timed_out", "retried", "read_on_retry", "skipped"}`: pages whose call timed out
+  (no answer, or Firecrawl's own HTTP 408), pages asked for a second time, pages read on that second try, and pages
+  skipped (timed out twice, or never asked again because reading had stopped). A page row (`firecrawl.pages[]`) may
+  carry `retried` (true when its document came from the second request, or it failed after it).
+- `firecrawl.concurrency` (not part of the frozen shape) now describes Firecrawl's own pace, not Maya's site limit:
+  `own_pace`, `gap_s` (seconds between request starts, the setting, at least a robots.txt Crawl-delay), `gap_final_s`,
+  `crawl_delay_s`, and each `backed_off` step adds `gap_from_s` and `gap_to_s`. Reasons are "429 from Firecrawl",
+  "5xx from Firecrawl", "429 from the site", "5xx from the site" and "timeout"; "slow answer" is no longer used.
+  `site_limit` is always false: Firecrawl's requests no longer go through Maya's limit, and `crawl.backoff.site_limit`
+  counts Maya's own requests only.
+- `firecrawl.options.gap_s`: the gap asked for, or `null` for this computer's setting (`MAYA_AUDIT_FIRECRAWL_GAP_S`).
+- `audit_status.timing` adds `slept_s` (how long the computer slept during the audit: wall clock less the audit's own
+  clock, which stops during sleep; `null` when not measured) and `slept_note` (the sentence, when it is 2 min or more).
+- RND-6 may carry `evidence.source` "firecrawl", `evidence.measured_on` and `evidence.pages_measured`: when Maya's
+  crawler was blocked it is measured on the HTML Firecrawl returned.
 
 ## 1.21 — the shared site limit and the reader's measured pace (2026-11-02)
 

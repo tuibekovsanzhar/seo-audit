@@ -127,7 +127,7 @@ def fingerprint(url: str, mode: str, key_pages: list[str], backlinks: bool, rows
     if firecrawl and firecrawl.get("requested"):
         # Requests at once (DECISIONS 294) change neither what is read nor what it costs: left out, so a plan confirmed
         # before the setting existed keeps its fingerprint.
-        shown = {k: v for k, v in (firecrawl["options"] or {}).items() if k != "concurrency"}
+        shown = {k: v for k, v in (firecrawl["options"] or {}).items() if k not in ("concurrency", "gap_s")}
         parts.append(["firecrawl", shown, firecrawl["max_credits"], firecrawl["max_usd"]])
     if extras and any(extras.values()):
         parts.append(["extras", {key: value for key, value in sorted(extras.items()) if value}])

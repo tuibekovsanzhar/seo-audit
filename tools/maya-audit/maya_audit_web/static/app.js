@@ -583,9 +583,13 @@ function auditCard(audit) {
     else if (current.active || current.can_resume || current.state === "failed") {
       parts.push(current.state === "queued" ? el("p", { text: T("job.queued.note") }) : null,
         el("div", { class: "meter", role: "progressbar", "aria-valuemin": 0, "aria-valuemax": c.page_cap, "aria-valuenow": c.pages_checked || 0, "aria-label": T("result.pages") }, bar),
-        c.firecrawl_cap ? el("p", {}, T("job.pages.maya", { checked: num(c.pages_checked), cap: num(c.page_cap) }), " ", el("span", { class: "muted small", text: c.page_cap_note }))
+        c.firecrawl_cap ? el("p", {}, T("job.pages.maya", { checked: num(c.pages_checked), cap: num(c.page_cap) }),
+            c.maya_gap_s != null ? " · " + T("job.pace.maya", { gap: num(c.maya_gap_s) }) : "", " ", el("span", { class: "muted small", text: c.page_cap_note }))
           : el("p", {}, T("job.pages", { checked: num(c.pages_checked), cap: num(c.page_cap) }), " ", el("span", { class: "muted small", text: c.page_cap_note })),
-        c.firecrawl_cap ? el("p", {}, T("job.pages.firecrawl", { read: num(c.firecrawl_read || 0), cap: num(c.firecrawl_cap), at_once: num(c.firecrawl_at_once || 1) })) : null,
+        // Each reader's own pace (DECISIONS 295): Maya's gap from this computer, Firecrawl's requests at once and gap.
+        c.firecrawl_cap ? el("p", {}, c.firecrawl_gap_s != null
+          ? T("job.pace.firecrawl", { read: num(c.firecrawl_read || 0), cap: num(c.firecrawl_cap), at_once: num(c.firecrawl_at_once || 1), gap: num(c.firecrawl_gap_s) })
+          : T("job.pages.firecrawl", { read: num(c.firecrawl_read || 0), cap: num(c.firecrawl_cap), at_once: num(c.firecrawl_at_once || 1) })) : null,
         el("p", { class: "muted small", text: T("job.other", { count: num(c.other_fetches) }) + " · " + T("job.requests", { count: num(c.requests_sent) }) }),
         current.active ? el("p", { class: "small" }, elapsed, current.eta.label ? " · " + current.eta.label : "") : null,
         current.current_url ? el("p", { class: "url muted", text: current.current_url }) : null,

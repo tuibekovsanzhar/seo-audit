@@ -862,7 +862,11 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                          # Pages read by Firecrawl, beside Maya's own (DECISIONS 294); None before it starts.
                          "firecrawl_read": (progress.get("firecrawl") or {}).get("read"),
                          "firecrawl_cap": (progress.get("firecrawl") or {}).get("page_cap"),
-                         "firecrawl_at_once": ((audit["firecrawl"] or {}).get("options") or {}).get("concurrency")},
+                         # Firecrawl's own pace as it reads, else the plan's setting; Maya's own gap (DECISIONS 295).
+                         "firecrawl_at_once": (progress.get("firecrawl") or {}).get("at_once")
+                         or ((audit["firecrawl"] or {}).get("options") or {}).get("concurrency"),
+                         "firecrawl_gap_s": (progress.get("firecrawl") or {}).get("gap_s"),
+                         "maya_gap_s": progress.get("maya_gap_s")},
             "current_url": progress.get("url") if is_active(audit) else None,
             "address_note": progress.get("address_note"),
             "created_at": audit["created_at"], "started_at": audit["started_at"], "finished_at": audit["finished_at"],

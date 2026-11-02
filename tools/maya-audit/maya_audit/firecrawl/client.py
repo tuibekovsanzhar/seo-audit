@@ -2,7 +2,9 @@
 
 `FirecrawlClient.scrape` is the only function that talks to the API, and the guard is inside it: page cap,
 approved credits, daily budget, ledger reservation, cache. A caller cannot reach the network without passing all
-of them. Nothing is retried: a request with no usable answer keeps its reservation, because it may have been charged.
+of them. The client never repeats a request by itself: a request with no usable answer keeps its reservation, because
+it may have been charged. The reader may ask once more for a page whose call timed out (DECISIONS 295); that is a new
+request, through the same guard.
 
 Every request names its proxy and asks for zero data retention, and tells Firecrawl not to keep the page in its own
 cache. If Firecrawl refuses zero data retention, the client stops and says so. It never sends the request again
@@ -90,7 +92,21 @@ class InsufficientCredits(FirecrawlError):
 
 
 class PossiblyBilled(FirecrawlError):
-    """The request was sent and no usable answer came back: it may have been charged, and it is not retried."""
+    """The request was sent and no usable answer came back: it may have been charged. The client does not repeat it.
+    `timed_out` is True when no answer came at all (a read timeout, a dropped connection): the reader may then ask for
+    the page once more (DECISIONS 295)."""
+
+    def __init__(self, message: str, timed_out: bool = False):
+        super().__init__(message)
+        self.timed_out = timed_out
+
+
+class ProviderTimedOut(FirecrawlError):
+    """Firecrawl's own timeout reading the page (HTTP 408): no document, so not charged. The reader may ask for the page
+    once more (DECISIONS 295)."""
+
+    status = 408
+    timed_out = True
 
 
 class ZeroDataRetentionUnavailable(ProviderRetentionRequired, FirecrawlError):
@@ -295,7 +311,7 @@ class FirecrawlClient:
             with self._lock:
                 self.ledger.settle(call_id, "possibly_billed", None, f"no answer ({type(exc).__name__}); not retried")
                 self._failed(url, estimate, estimate, "possibly_billed")
-            raise PossiblyBilled(f"Firecrawl did not answer ({type(exc).__name__}); it may have been charged and was not retried") from None
+            raise PossiblyBilled(f"Firecrawl did not answer ({type(exc).__name__}); it may have been charged", timed_out=True) from None
         try:
             body = response.json()
             if not isinstance(body, dict):
@@ -323,6 +339,8 @@ class FirecrawlClient:
                 raise InsufficientCredits("Firecrawl account credits are insufficient (HTTP 402). This is not Maya's own daily budget.")
             if response.status_code in (401, 403):
                 raise FirecrawlError(f"Firecrawl refused the key or the request (HTTP {response.status_code}): {message}")
+            if response.status_code == 408:
+                raise ProviderTimedOut(f"Firecrawl returned no document (HTTP 408): {message}")
             if response.status_code == 429:
                 raise ProviderRateLimited("Firecrawl's own rate limit was reached (HTTP 429); the request was not repeated")
             if response.status_code >= 500 or "all scraping engines failed" in message.lower():

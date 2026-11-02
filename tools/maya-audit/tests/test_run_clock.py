@@ -105,7 +105,9 @@ def test_a_stop_between_provider_pages_sends_no_next_request_and_keeps_what_was_
     seen = []
     client.clock = RunClock(should_stop=lambda: len(api.bodies) >= 2)  # stop asked for once two pages were requested
 
-    info = reader.apply(outcome, CFG, client, MAIN, progress=seen.append)
+    # One at a time, so the stop falls between two pages (a hand-made clock reads several at once since DECISIONS 295).
+    from dataclasses import replace
+    info = reader.apply(outcome, CFG, client, replace(MAIN, concurrency=1), progress=seen.append)
     section = panel.section(info)
     assert len(api.bodies) == 2 and section["pages_read"] == 2 and section["used"]
     assert section["stopped_because"].startswith(STOPPED) and not [row for row in section["pages"] if row["outcome"] == "failed"]
@@ -118,7 +120,11 @@ def test_a_stop_between_provider_pages_sends_no_next_request_and_keeps_what_was_
     assert report["audit_status"]["timing"]["all_phases_s"] == 12.346 and report["audit_status"]["timing"]["page_reader_s"] is not None
 
 
-def test_provider_requests_keep_mayas_pace_and_cached_pages_do_not_wait(tmp_path, no_lookups):
+def test_provider_requests_keep_firecrawls_own_pace_not_mayas_and_cached_pages_do_not_wait(tmp_path, no_lookups):
+    """DECISIONS 295 replaces this test's old rule (the reader kept Maya's pace): Maya's crawler keeps its polite gap,
+    Firecrawl keeps its own, here one request at a time with starts one second apart."""
+    from dataclasses import replace
+
     outcome = blocked_audit()
     outcome.pace_s = 2.0  # as if a robots.txt Crawl-delay or a rate limit had widened Maya's own gap
     api = Firecrawl(SITE)
@@ -127,9 +133,9 @@ def test_provider_requests_keep_mayas_pace_and_cached_pages_do_not_wait(tmp_path
     time = FakeTime(now=outcome.started_mono)
     client = client_for(tmp_path, api, audit_id="run-one")
     client.clock = clocked(time)
-    reader.apply(outcome, CFG, client, MAIN)
+    reader.apply(outcome, CFG, client, replace(MAIN, concurrency=1, gap_s=1.0))
     assert len(api.bodies) == 5 and client.clock.pace_s == 2.0
-    assert round(sum(time.slept), 3) == 8.0  # four gaps of two seconds between five requests; the first did not wait
+    assert round(sum(time.slept), 3) == 4.0  # four gaps of one second between five requests; Maya's two do not apply
     second = blocked_audit()
     again_time = FakeTime(now=second.started_mono)
     again = client_for(tmp_path, api, audit_id="run-one")  # the same audit: a new one reads again (A16, W1)
@@ -161,19 +167,26 @@ def test_a_request_is_never_started_with_too_little_time_left_and_its_timeout_fi
     assert len(api.bodies) == 1 and client.ledger.spent_today() == 2
 
 
-def test_a_slow_request_that_is_cut_off_is_possibly_billed_and_no_second_one_starts(tmp_path, no_lookups):
-    from maya_audit.firecrawl import PossiblyBilled
+def test_a_slow_request_that_is_cut_off_is_possibly_billed_and_asked_for_once_more(tmp_path, no_lookups, monkeypatch):
+    """DECISIONS 295 replaces this test's old rule (a timeout stopped the reading at once): the page is asked for once
+    more, then skipped. Each call keeps its reservation. (Five failures in a row: tests/test_v03_live_fixes.py.)"""
+    from maya_audit.firecrawl import PossiblyBilled, settings as fc_settings
+    monkeypatch.setattr(fc_settings, "RETRY_WAIT_S", 0)
     sent = []
 
     def slow(request):
-        sent.append(1)
+        sent.append(json.loads(request.content)["url"])
         raise httpx.ReadTimeout("no answer in time")
     outcome = blocked_audit()
     client = client_for(tmp_path, Firecrawl(SITE))
     client._http = httpx.Client(base_url="https://api.firecrawl.dev", transport=httpx.MockTransport(slow))
     info = reader.apply(outcome, CFG, client, MAIN)
-    assert len(sent) == 1 and client.ledger.spent_today() == 2  # the reservation stays: it may have been charged
-    assert client.calls[0]["billing_status"] == "possibly_billed" and "may have been charged" in info["stopped_because"]
+    # Only the start page is known on this blocked site: asked for twice, then skipped; nothing else to read.
+    assert sent == ["https://bank.test/", "https://bank.test/"]
+    assert client.ledger.spent_today() == 4  # both reservations stay: each call may have been charged
+    assert [call["billing_status"] for call in client.calls] == ["possibly_billed", "possibly_billed"]
+    assert info["coverage"]["timeouts"] == {"timed_out": 1, "retried": 1, "read_on_retry": 0, "skipped": 1}
+    assert [(row["outcome"], row["retried"], row["cause"]) for row in info["pages"]] == [("failed", True, "timeout_or_no_answer")]
     assert issubclass(PossiblyBilled, Exception)
 
 

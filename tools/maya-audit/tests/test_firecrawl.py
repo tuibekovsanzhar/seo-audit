@@ -205,9 +205,10 @@ def test_a_timeout_keeps_its_reservation_and_a_refused_connection_costs_nothing(
     def refused(request):
         raise httpx.ConnectError("made up")
     slow = FirecrawlClient(KEY, Ledger(tmp_path / "a" / "l.jsonl"), None, approved_credits=10, daily_credits=10, transport=httpx.MockTransport(timeout))
-    with pytest.raises(PossiblyBilled, match="may have been charged and was not retried"):
+    # The client never repeats a request itself; the reader may ask once more for the page (DECISIONS 295).
+    with pytest.raises(PossiblyBilled, match="may have been charged") as raised:
         slow.scrape("https://shop.test/")
-    assert slow.ledger.spent_today() == 2
+    assert slow.ledger.spent_today() == 2 and raised.value.timed_out is True and slow.requests_sent == 1
     down = FirecrawlClient(KEY, Ledger(tmp_path / "b" / "l.jsonl"), None, approved_credits=10, daily_credits=10, transport=httpx.MockTransport(refused))
     with pytest.raises(FirecrawlError, match="could not be reached"):
         down.scrape("https://shop.test/")
@@ -264,11 +265,12 @@ def test_firecrawl_reads_a_blocked_sites_content_and_never_touches_access_result
 
     # Maya's crawler stays the access test: its verdict, its gates and every access check are exactly as they were.
     assert run_outcome(outcome.result, outcome.gates)[1] == "DEGRADED" and [(g.check_id, g.state, g.summary) for g in outcome.gates] == gates_before
-    untouched = [cid for cid in before if cid not in reader.CONTENT_CHECKS]
+    # RND-6 (HTML weight) is measured on the reader's HTML when Maya was blocked (DECISIONS 295); the rest stays Maya's.
+    untouched = [cid for cid in before if cid not in reader.CONTENT_CHECKS and cid != "RND-6"]
     assert {"ACC-1", "ACC-2", "ACC-9", "IDX-1", "IDX-2", "IDX-3", "IDX-4", "PRF-1", "PRF-2", "RND-1"} <= set(untouched)
     assert all((after[cid].status, after[cid].summary, len(after[cid].findings)) == before[cid] for cid in untouched)
     assert [p.url for p in outcome.result.pages] == ["https://bank.test/"] and outcome.result.pages[0].status == 403  # crawl record unchanged
-    assert set(info["checks_from_firecrawl"]) == set(reader.CONTENT_CHECKS) and not set(info["checks_from_firecrawl"]) & set(untouched)
+    assert set(info["checks_from_firecrawl"]) == {*reader.CONTENT_CHECKS, "RND-6"} and not set(info["checks_from_firecrawl"]) & set(untouched)
 
     # robots.txt was refused to Maya, so it was read through Firecrawl first, and its rules were obeyed.
     assert api.urls[0] == "https://bank.test/robots.txt" and info["robots"]["mode"] == "parsed"
@@ -526,7 +528,7 @@ def test_cli_reads_a_blocked_site_through_firecrawl_and_labels_every_output(monk
     assert section["checks_from_firecrawl"] == sorted(section["checks_from_firecrawl"], key=check_id_key)
     assert section["checks_from_firecrawl"].index("STR-2") < section["checks_from_firecrawl"].index("STR-10")
     assert "**Pages read:** 4 (via Firecrawl)" in md_path.read_text(encoding="utf-8") and client_ledger(tmp_path) == 12  # five pages and the sitemap, asked for once the homepage was read
-    assert report["schema_version"] == "1.21" and section["used"] and section["proxy"] == "basic" and section["pages_read"] == 4
+    assert report["schema_version"] == "1.22" and section["used"] and section["proxy"] == "basic" and section["pages_read"] == 4
     assert section["zero_data_retention"]["status"] == "applied" and section["owner_approved_bypass"] is False
     from maya_audit import schema
     assert set(section) <= set(schema.FIRECRAWL_KEYS) and "view_pages" not in section

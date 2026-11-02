@@ -36,7 +36,8 @@ from maya_audit.firecrawl import panel as firecrawl_panel
 from maya_audit.firecrawl import reader as firecrawl_reader
 from maya_audit.progress import Hooks
 from maya_audit import final
-from maya_audit.report import duration_line, render_markdown, run_outcome
+from maya_audit.report import duration_line, render_markdown, run_outcome, timing
+from maya_audit.keepawake import KeepAwake
 from maya_audit.runclock import for_outcome
 from maya_audit.scratchpad import Scratchpad
 
@@ -277,7 +278,8 @@ class Runner:
                 if self.store.move_audit(audit["id"], ("queued",), "running"):
                     if self._closing.is_set():
                         stop.set()
-                    self._audit(self.store.audit(audit["id"]), stop)
+                    with KeepAwake():  # a Mac stays awake while the audit runs (DECISIONS 295)
+                        self._audit(self.store.audit(audit["id"]), stop)
             except Exception as exc:  # noqa: BLE001  a job must always end in a state the page can show
                 # The person sees the class name only (an exception's text can hold a file path or a fragment of a
                 # page); the whole traceback goes to the server log, the only place it can be read from later.
@@ -345,7 +347,7 @@ class Runner:
             progress.update(pages_checked=event.get("pages_fetched", progress["pages_checked"]),
                             other_fetches=event.get("other_fetches", 0), requests_sent=event.get("requests_sent", 0),
                             discovered=event.get("pages_discovered"), url=(event.get("url") or "")[:MAX_URL_CHARS] or None,
-                            at=now())
+                            maya_gap_s=event.get("delay_s", progress.get("maya_gap_s")), at=now())
             if time.monotonic() - last_write[0] >= PROGRESS_EVERY_S:
                 last_write[0] = time.monotonic()
                 store.update_audit(audit_id, progress=progress)
@@ -361,7 +363,7 @@ class Runner:
             progress.update({**audit["progress"], "continuing": True})
             # The kept result's deadline belongs to the run that made it. This step gets its own, of the same length.
             kept[0].deadline_mono = time.monotonic() + kept[1].time_limit_s
-            kept[0].started_mono = time.monotonic()
+            kept[0].started_mono, kept[0].started_wall = time.monotonic(), time.time()
             return self._finish(audit, kept[0], kept[1], stop=stop, enter=enter, progress=progress, out_dir=out_dir)
         if use.get("continue"):
             self.emit(audit_id, "log", {"message": t("log.firecrawl.no_snapshot")})
@@ -412,10 +414,11 @@ class Runner:
         return self._finish(audit, outcome, config, stop=stop, enter=enter, progress=progress, out_dir=out_dir, early=early)
 
     def _reading(self, audit_id: str, progress: dict[str, Any]) -> Callable[[dict[str, Any]], None]:
-        """Firecrawl's progress, for the progress box: pages read by Firecrawl beside Maya's own (DECISIONS 294)."""
+        """Firecrawl's progress, for the progress box: pages read by Firecrawl beside Maya's own (DECISIONS 294), and its
+        own pace (requests at once, gap between starts; DECISIONS 295)."""
         def reading(event: dict[str, Any]) -> None:
             progress.update(firecrawl={k: event.get(k) for k in ("attempted", "read", "failed", "from_cache", "page_cap",
-                                                                  "in_flight", "seconds_per_page")},
+                                                                  "in_flight", "seconds_per_page", "at_once", "gap_s")},
                             firecrawl_at=now(), at=now())
             self.store.update_audit(audit_id, progress=progress)
             self.emit(audit_id, "progress", {"step": "firecrawl", **progress["firecrawl"], "url": event.get("url")})
@@ -544,9 +547,9 @@ class Runner:
             return text
 
         # The whole job, every step included: known only now, when nothing is left but writing the files.
-        whole = clock.elapsed_s()
-        report["audit_status"]["timing"]["all_phases_s"] = whole
-        markdown = markdown.replace(duration_line(result, None), duration_line(result, whole), 1)
+        whole, slept = clock.elapsed_s(), clock.slept_s()
+        report["audit_status"]["timing"] = timing(result, firecrawl_section, whole, slept)
+        markdown = markdown.replace(duration_line(result, None), duration_line(result, whole, slept), 1)
         write_file(out_dir / REPORT_MD, portable(markdown))
         write_file(out_dir / REPORT_JSON, portable(json.dumps(report, ensure_ascii=False, indent=2)))  # last: its presence means "ready"
         counts = report["page_counts"]

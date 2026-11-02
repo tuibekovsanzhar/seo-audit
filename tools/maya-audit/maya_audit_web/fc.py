@@ -51,7 +51,9 @@ def options_from(requested: dict[str, Any]) -> Options:
                    allow_without_zero_data_retention=bool(requested.get("allow_without_zero_data_retention")),
                    # Requests at once (DECISIONS 294): this computer's setting unless the plan saved one.
                    concurrency=max(settings.MIN_CONCURRENCY, min(settings.MAX_CONCURRENCY,
-                                                                int(requested.get("concurrency") or settings.concurrency()))))
+                                                                int(requested.get("concurrency") or settings.concurrency()))),
+                   # Firecrawl's own gap (DECISIONS 295): the plan's, else this computer's setting when reading starts.
+                   gap_s=float(requested["gap_s"]) if isinstance(requested.get("gap_s"), (int, float)) else None)
 
 
 def plan(services: FirecrawlServices, requested: dict[str, Any] | None, audit_page_cap: int, rendering_wanted: bool) -> dict[str, Any]:

@@ -211,7 +211,7 @@ def page_cause(row: dict[str, Any]) -> str | None:
     reason = (row.get("reason") or "").lower()
     if "could not load the page as a website" in reason:
         return "provider_could_not_load"
-    if "may have been charged" in reason or "did not answer" in reason:
+    if "may have been charged" in reason or "did not answer" in reason or "(http 408)" in reason:
         return "timeout_or_no_answer"
     if "credit" in reason or "approved" in reason or "budget" in reason or "page cap" in reason or "request allowance" in reason:
         return "credit_or_request_limit"
@@ -463,6 +463,16 @@ def read_blocked_site(result: CrawlResult, cfg: CrawlConfig, client: ContentProv
     checks = run_structure_checks(view, cfg, [])
     checks += settle_all([idx8_duplicates(view, cfg)], view)
     checks = [check for check in checks if check.check_id in CONTENT_CHECKS]
+    if blocked or result.stop_reason == StopReason.RATE_LIMIT:
+        # Maya's crawler was blocked: the HTML-weight check (RND-6: page and homepage HTML size, where the main content
+        # starts) is measured on the HTML Firecrawl returned for the pages it read, instead of on the few pages, or
+        # none, Maya got (DECISIONS 295). Labelled with the reader's source like the content checks.
+        from ..checks.render import rnd6_payload
+
+        weight = rnd6_payload(replace(result, pages=pages, render=None), cfg)
+        weight.evidence = {**weight.evidence, "measured_on": "the HTML Firecrawl returned (rawHtml) for the pages it read",
+                           "pages_measured": len(pages)}
+        checks.append(weight)
     if main:
         _label(checks, MAIN_SOURCE, MAIN_WHY, client.identity, notice=None)
     else:
@@ -473,12 +483,39 @@ def read_blocked_site(result: CrawlResult, cfg: CrawlConfig, client: ContentProv
 
 
 
+def _crawl_delay(result: CrawlResult, cfg: CrawlConfig) -> float:
+    """The Crawl-delay the site's robots.txt sets for this audit's product token, as Maya's own crawl honours it (held
+    to `max_crawl_delay_s`); 0 when none."""
+    from ..robots import crawl_delay
+
+    policy = (result.robots_policy_by_origin or {}).get(result.origin)
+    robots = getattr(policy, "robots", None)
+    delay = crawl_delay(robots, cfg.product_token) if robots is not None else None
+    return min(float(delay[0]), cfg.max_crawl_delay_s) if delay else 0.0
+
+
+def _own_pace(client: ContentProvider, options: Options, result: CrawlResult, cfg: CrawlConfig):
+    """The reader's own pace on the site (maya_audit.firecrawl.pace, DECISIONS 295), set on its clock once: Maya's polite
+    gap is for Maya's own requests from this computer. None for a client without a run clock."""
+    clock = getattr(client, "clock", None)
+    if clock is None or not hasattr(clock, "reader_pace"):
+        return None
+    if clock.reader_pace is None:
+        from .pace import ReaderPace
+
+        gap = options.gap_s if options.gap_s is not None else settings.gap_s()
+        clock.reader_pace = ReaderPace(options.concurrency, gap, now=clock.clock, sleep=clock.sleep,
+                                       crawl_delay_s=_crawl_delay(result, cfg))
+    return clock.reader_pace
+
+
 def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, options: Options, info: dict[str, Any], *,
                 blocked: bool, progress=None, ranking_urls=(), inbox=None) -> ReadState | None:
-    """The reading itself: robots.txt, the queue, the requests (up to `options.concurrency` at once, DECISIONS 294) and
-    the coverage record in `info`. None when robots.txt allows nothing. `inbox` (a queue.Queue) may hand it more
-    addresses while it reads (the ranking pages of a paid panel that finished later)."""
+    """The reading itself: robots.txt, the queue, the requests (up to `options.concurrency` at once, DECISIONS 294, at
+    the reader's own pace, 295) and the coverage record in `info`. None when robots.txt allows nothing. `inbox` (a
+    queue.Queue) may hand it more addresses while it reads (the ranking pages of a paid panel that finished later)."""
     origin, home = result.origin, homepage_url(result)
+    pace = _own_pace(client, options, result, cfg)
     allowed = _robots_rules(result, client, info, cfg.product_token)
     if allowed is None:
         info["reason"] = info["robots"]["reason"] + "; no page was requested"
@@ -540,23 +577,37 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
 
     from ..runclock import MIN_REQUEST_S, READER_SECONDS_PER_PAGE
     from ..sitelimit import backed_off
-    from .client import ProviderRateLimited
+    from .client import PossiblyBilled, ProviderRateLimited, ProviderTimedOut
 
     clock = getattr(client, "clock", None)
-    limiter = getattr(clock, "site_limiter", None)
-    # More than one at a time only through the shared site limit, which keeps the starts the polite gap apart; a clock
-    # without one paces a single request at a time, as before.
-    at_once = options.concurrency if limiter is not None else 1
+    # Firecrawl's own pace (DECISIONS 295): its concurrency and gap, not Maya's limit on the site. A client without a run
+    # clock reads one page at a time.
+    at_once = pace.limit if pace is not None else 1
     concurrency = {"configured": options.concurrency, "start": at_once, "final": at_once, "backed_off": [], "max_in_flight": 0,
-                   "site_limit": limiter is not None}
+                   "site_limit": False, "own_pace": pace is not None,
+                   "gap_s": None if pace is None else pace.gap_s, "gap_final_s": None if pace is None else pace.gap_s,
+                   "crawl_delay_s": None if pace is None else (pace.crawl_delay_s or None)}
     info["concurrency"] = concurrency
     in_flight: deque = deque()
     pool = ThreadPoolExecutor(at_once, thread_name_prefix="reader") if at_once > 1 else None
     stop = False
     call_seconds: list[float] = []
     reading_began = time.monotonic()
+    # A page whose call timed out is asked for once more after a short wait (DECISIONS 295): (due, url, via, depth).
+    now = clock.clock if clock is not None and hasattr(clock, "clock") else time.monotonic
+    nap = clock.sleep if clock is not None and hasattr(clock, "sleep") else time.sleep
+    retries: deque = deque()
+    timed_out: set[str] = set()     # pages whose first call timed out
+    sent_again: set[str] = set()    # pages asked for a second time
+    skipped_after_timeout: list[str] = []
 
     def back_off(reason: str) -> None:
+        if pace is not None:
+            step = pace.back_off(reason, len(rows))
+            if step is not None:
+                concurrency["backed_off"].append(step)
+                concurrency.update(final=pace.limit, gap_final_s=pace.gap_s)
+            return
         lower = backed_off(concurrency["final"])
         if lower is not None:
             concurrency["backed_off"].append({"from": concurrency["final"], "to": lower, "reason": reason, "after_answers": len(rows)})
@@ -574,6 +625,10 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
 
     def next_url():
         nonlocal skipped_robots
+        if retries and retries[0][0] <= now():
+            _due, url, via, depth = retries.popleft()
+            sent_again.add(url)
+            return url, via, depth, True
         while len(queue):
             url, via, depth = queue.pop()
             url = normalize_url(url) or url
@@ -589,13 +644,19 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
             if not allowed(url):
                 skipped_robots += 1
                 continue
-            return url, via, depth
+            return url, via, depth, False
         return None
 
     def halt(reason: str) -> None:
         nonlocal stop
         info.setdefault("stopped_because", reason)
         stop = True
+
+    def failed_in_a_row() -> None:
+        # Stop only after several failed answers in a row (DECISIONS 295): a timeout, a provider failure or an
+        # unreadable document each count; a page read sets the count back to 0.
+        if options.stop_after_unreadable and run_unreadable >= options.stop_after_unreadable:
+            halt(f"the last {run_unreadable} pages asked for came back unreadable, so no more were requested")
 
     try:
         while True:
@@ -608,12 +669,21 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
                 item = next_url()
                 if item is None:
                     break
-                url, via, depth = item
-                queue.taken(url)
+                url, via, depth, again = item
+                if not again:
+                    queue.taken(url)
                 job = pool.submit(client.scrape, url) if pool is not None else _Now(client.scrape, url)
                 in_flight.append((url, via, depth, job))
                 concurrency["max_in_flight"] = max(concurrency["max_in_flight"], len(in_flight))
             if not in_flight:
+                if retries and not stop and not info.get("stopped_because") and len(pages) < options.max_pages:
+                    # Only a page waiting for its second try is left: wait for it, unless the audit is stopped or out of time.
+                    why = clock.why_not() if clock is not None else None
+                    if why:
+                        halt(why)
+                        continue
+                    nap(max(0.001, min(0.5, retries[0][0] - now())))
+                    continue
                 break
             url, via, depth, job = in_flight.popleft()
             try:
@@ -630,6 +700,25 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
                 rows.append({"url": url, "outcome": "failed", "reason": str(exc)})
                 back_off("429 from Firecrawl")
                 continue
+            except (PossiblyBilled, ProviderTimedOut) as exc:
+                if not getattr(exc, "timed_out", False):
+                    rows.append({"url": url, "outcome": "failed", "reason": str(exc)})
+                    halt(str(exc))
+                    continue
+                # The call timed out (DECISIONS 295): slower, ask for the page once more after a short wait, then skip
+                # it and go on. The first call stays recorded as possibly billed; the second is a request of its own.
+                asked += 1
+                sent += 1
+                back_off("timeout")
+                run_unreadable += 1
+                if url not in timed_out:
+                    timed_out.add(url)
+                    retries.append((now() + settings.RETRY_WAIT_S, url, via, depth))
+                else:
+                    rows.append({"url": url, "outcome": "failed", "reason": str(exc), "retried": True})
+                    skipped_after_timeout.append(url)
+                failed_in_a_row()
+                continue
             except ContentLoadError as exc:
                 asked += 1
                 sent += 1
@@ -637,11 +726,11 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
                 rows.append({"url": url, "outcome": "failed", "reason": str(exc)})
                 if isinstance(getattr(exc, "status", None), int) and exc.status >= 500:
                     back_off("5xx from Firecrawl")
-                # Try other already-known URLs, never retry this URL or change its proxy.
+                # Try other already-known URLs; this URL is not asked for again and its proxy is not changed.
                 # The client still enforces request count, approval, budget and stop.
                 run_unreadable += 1
-                if pages and options.stop_after_unreadable and run_unreadable >= options.stop_after_unreadable:
-                    halt(f"the last {run_unreadable} pages asked for came back unreadable, so no more were requested")
+                if pages:
+                    failed_in_a_row()
                 continue
             except ContentProviderError as exc:
                 rows.append({"url": url, "outcome": "failed", "reason": str(exc)})
@@ -652,13 +741,10 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
             took = float(getattr(fetched, "seconds", 0.0) or 0.0)
             if not fetched.cached and took > 0:
                 call_seconds.append(took)
-                if took > settings.SLOW_CALL_S:
-                    back_off("slow answer")
             if fetched.status == 429 or (isinstance(fetched.status, int) and fetched.status >= 500):
-                # The site's own answer, seen through the reader: the reader and the shared site limit both slow down.
+                # The site's own answer to Firecrawl: Firecrawl's pace slows down. Maya's own limit is about this
+                # computer's requests, so it is left as it is (DECISIONS 295).
                 back_off(f"{'429' if fetched.status == 429 else '5xx'} from the site")
-                if limiter is not None:
-                    limiter.back_off("429" if fetched.status == 429 else "5xx", "reader")
             media = str(getattr(fetched, 'content_type', '') or '').lower()
             if media.startswith(('audio/', 'video/')):
                 diagnostic = {"url": url, "kind": "media", "source": via, "outcome": "unsupported_resource",
@@ -672,7 +758,9 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
                 progress({"phase": "firecrawl", "url": url, "attempted": len(rows) + 1, "read": len(pages), "page_cap": options.max_pages,
                           "failed": sum(1 for row in rows if row["outcome"] not in ("read", "redirected")),
                           "from_cache": sum(1 for row in rows if row.get("from_cache")) + int(bool(fetched.cached)),
-                          "in_flight": len(in_flight), "seconds_per_page": round((time.monotonic() - reading_began) / max(1, asked), 2)})
+                          "in_flight": len(in_flight), "seconds_per_page": round((time.monotonic() - reading_began) / max(1, asked), 2),
+                          # Firecrawl's own pace now (DECISIONS 295), for the progress box.
+                          "at_once": concurrency["final"], "gap_s": None if pace is None else pace.gap_s})
             relation, landed = where_it_landed(url, getattr(fetched, "final_url", None), origin)
             seen_at = {"status": fetched.status, "status_known": fetched.status is not None, "from_cache": fetched.cached, "observed_at": fetched.fetched_at}
             if relation == "outside":
@@ -718,6 +806,18 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
     finally:
         if pool is not None:
             pool.shutdown(wait=True, cancel_futures=True)
+    # A page that timed out and whose second try was never sent (reading had stopped) is skipped like one that timed out
+    # twice; a page read on its second try says so (DECISIONS 295).
+    for _due, url, _via, _depth in retries:
+        rows.append({"url": url, "outcome": "failed", "retried": False,
+                     "reason": "Firecrawl did not answer in time; the page was not asked for again because reading had stopped"})
+        skipped_after_timeout.append(url)
+    for row in rows:
+        if row["url"] in sent_again and row.get("outcome") in ("read", "redirected", "error", "blocked"):
+            row["retried"] = True
+    timeouts = {"timed_out": len(timed_out), "retried": len(sent_again),
+                "read_on_retry": sum(1 for row in rows if row.get("retried") and row.get("outcome") == "read"),
+                "skipped": len(skipped_after_timeout)}
     # What is still unread when reading ends: addresses known and never asked for (the cap, a stop, a provider limit),
     # and addresses asked for that gave no readable document.
     # Addresses Maya's own crawl found and did not fetch are known too, whether or not a page the reader read links to them:
@@ -775,7 +875,12 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
                           "seconds_per_page_measured": round((time.monotonic() - reading_began) / asked, 2) if asked else None,
                           "call_seconds_measured": None if not call_seconds else round(_median(call_seconds), 2),
                           "seconds_per_page_assumed": READER_SECONDS_PER_PAGE,
-                          "skipped_for_time": len(waiting) if why_waiting == "time_limit" else 0})
+                          "skipped_for_time": len(waiting) if why_waiting == "time_limit" else 0,
+                          # Calls that timed out (DECISIONS 295): pages asked for once more, read on that second try,
+                          # and skipped (timed out twice, or never asked again because reading had stopped).
+                          "timeouts": timeouts})
+    if pace is not None:
+        concurrency.update(final=pace.limit, gap_final_s=pace.gap_s)
     return ReadState(pages, rows, queue, seen)
 
 
@@ -843,7 +948,7 @@ class EarlyReading:
 
     It starts only where the reader would read the same pages anyway after Maya's steps: the main page reader of a site
     Maya's crawler read (not blocked, not rate-limited, not stopped, the network answered). Everything else keeps the
-    old order. Its requests share the audited site's one limit with Maya's own (maya_audit.sitelimit)."""
+    old order. Its requests keep Firecrawl's own pace (maya_audit.firecrawl.pace, DECISIONS 295), not Maya's limit."""
 
     def __init__(self, client: FirecrawlClient, options: Options, *, progress=None, on_start=None) -> None:
         import queue
@@ -873,7 +978,7 @@ class EarlyReading:
             return False
         if deadline_mono is not None:
             clock.deadline_mono = deadline_mono
-        clock.site_limiter = limiter
+        clock.site_limiter = limiter  # Maya's own limit, kept for the report's figures; the reader does not take it
         if clock.why_not():
             return False
         if self.on_start is not None:
@@ -1023,9 +1128,9 @@ def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, 
         final.settle(outcome.checks, result)
     info.setdefault("coverage", {})["elapsed_s"] = (early.elapsed_s if early is not None and early.started
                                                      else round(time.monotonic() - began, 3))
-    limiter = getattr(clock, "site_limiter", None) or getattr(outcome, "site_limiter", None)
+    limiter = getattr(outcome, "site_limiter", None) or getattr(clock, "site_limiter", None)
     if limiter is not None and isinstance(getattr(result, "backoff", None), dict):
-        result.backoff["site_limit"] = limiter.summary()  # the final figures, the reader's requests included
+        result.backoff["site_limit"] = limiter.summary()  # Maya's own requests after the crawl (DECISIONS 295)
     used = sum(call["credits"] for call in client.calls)
     rate = settings.usd_per_credit()
     info.update(calls=client.calls, requests_sent=client.requests_sent,

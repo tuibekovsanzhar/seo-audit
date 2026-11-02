@@ -471,7 +471,9 @@ class Crawler:
                                 pages_discovered=sum(frontier.counts().values()), url=url,
                                 # Beside the pages the cap counts: this session's redirect hops and repeats after a 429,
                                 # and every request sent so far (robots.txt and sitemaps included).
-                                other_fetches=fetches - pages_counted, requests_sent=len(fetcher.log))
+                                other_fetches=fetches - pages_counted, requests_sent=len(fetcher.log),
+                                # Maya's own gap between requests now, for the progress box (DECISIONS 295).
+                                delay_s=round(float(fetcher.delay_s or 0.0), 2))
         fetch_budget = cfg.max_pages * 3  # redirects are not pages but must stay bounded
         fetches = 0
         consecutive_rate_limited = 0

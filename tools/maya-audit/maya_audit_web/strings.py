@@ -447,6 +447,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "status.note.cache": "Saved copies: {saved} of the {read:page|pages} read through Firecrawl came from Maya's own saved copies, the oldest made {oldest} UTC. The site may have changed since; a new audit after a day reads it again.",
         "status.duration": "Whole audit, every step: {whole} seconds (Maya's own crawl and checks: {crawl} seconds).",
         "status.duration.crawl": "Maya's own crawl and checks took {crawl} seconds; the whole audit's time was not recorded for this report.",
+        # DECISIONS 295: the wall clock moved on much more than the audit's own clock.
+        "status.slept": "The computer slept for about {minutes} min during this audit; the durations count only the time it was awake.",
         "status.spend.dataforseo": "DataForSEO: ${cost} charged, of at most ${estimate} estimated; {possibly:request|requests} possibly billed; {cached} served from saved copies.",
         "status.spend.firecrawl": "Firecrawl: {credits:credit|credits} used or reserved, of at most {estimate}; {possibly:request|requests} possibly billed; {cached} served from saved copies; zero data retention: {zdr}. {usd}",
         "status.spend.usd.known": "About ${usd}.",
@@ -871,6 +873,9 @@ STRINGS: dict[str, dict[str, str]] = {
         "job.requests": "{count} requests sent in all",
         "job.pages.maya": "Maya: {checked} of up to {cap} pages read",
         "job.pages.firecrawl": "Firecrawl: {read} of up to {cap} pages read ({at_once} at a time)",
+        # Each reader's own pace (DECISIONS 295): Maya's polite gap from this computer, Firecrawl's from its network.
+        "job.pace.maya": "one request every {gap} s",
+        "job.pace.firecrawl": "Firecrawl: {read} of up to {cap} pages read ({at_once} at a time, starts at least {gap} s apart)",
         "job.elapsed": "Elapsed: {time}",
         "job.http_fallback": "{https} did not answer at all, so {http} was audited instead.",
         "log.http_fallback": "https:// did not answer; trying {url}",
@@ -946,6 +951,8 @@ STRINGS: dict[str, dict[str, str]] = {
         # Stopped at the page limit and at nothing else (DECISIONS 226).
         "result.outcome.partial_page_cap": "Partial audit: {read} of {total} pages read (page limit)",
         "result.outcome.DEGRADED": "The site could not be read properly",
+        # Maya's crawler stopped by 429s while Firecrawl read pages (DECISIONS 295).
+        "result.outcome.blocked_read_through": "Maya's crawler was blocked (429 on pages); read through Firecrawl: {pages:page|pages}",
         "result.partial_note": "Content findings apply only to pages read; separate URL probes do not establish content coverage.",
         "result.sampled_note": "The pages checked are evidence about those pages, not proof about every page of the site.",
         "result.summary_line": "{pages:page|pages} checked. {gaps:part|parts} could not be checked.",

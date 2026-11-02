@@ -28,7 +28,7 @@ from .index_data import HTTP_REDIRECT_LINES
 from .models import (Confidence, CrawlResult, FetchClass, GateResult, PageFetch, RequestRecord, SitemapDoc, SkippedUrl,
                      StopReason)
 
-SCHEMA_VERSION = "1.21"
+SCHEMA_VERSION = "1.22"
 
 # Always present.
 REPORT_KEYS = ("generation", "schema_version", "report_version", "status_meanings", "scope", "gates", "checks", "answer_engine_panel",
@@ -77,7 +77,9 @@ FIRECRAWL_COVERAGE_KEYS = ("attempted", "read", "page_cap", "cap_reached", "know
                            # 1.21 (DECISIONS 294): the reader's measured pace, the assumed one, the pages the time limit
                            # left unread, and whether it read beside Maya's own steps.
                            "seconds_per_page_measured", "call_seconds_measured", "seconds_per_page_assumed", "skipped_for_time",
-                           "ran_beside_maya")
+                           "ran_beside_maya",
+                           # 1.22 (DECISIONS 295): calls that timed out: pages asked for once more, read on that try, skipped.
+                           "timeouts")
 # Why known addresses were not asked for. "request_allowance_used" (1.11): the audit's request allowance was spent
 # before the pages read reached the cap. None when nothing was left.
 NOT_REQUESTED_BECAUSE = ("page_cap", "time_limit", "stopped_on_request", "reader_kept_failing", "request_allowance_used",

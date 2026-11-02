@@ -2860,3 +2860,76 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      time limit), else "at most {m} min (the audit's time limit)". Firecrawl's progress events no longer overwrite Maya's
      counters. Not changed: what is read and checked, severities, ranking, the spending limits, the reader's flow for
      blocked sites, batch (it keeps the old order, with the concurrency setting). Tests: `tests/test_v03_speed.py`.
+
+295. **After the live nihan Standard 500 audit of 2026-11-02: Firecrawl's own pace, a timed-out page asked for once more,
+     the Mac kept awake, RND-6 on Firecrawl's HTML, and the outcome wording (Owner, 2026-11-02; the details marked
+     "agent" are agent defaults).** The run on the stage-2 code: Maya's crawler was blocked after 1 page (429), Firecrawl
+     read 388 of 500, 2,687 s active but 13:47-15:51 on the wall clock because the Mac slept, and the reading stopped
+     after one Firecrawl `ReadTimeout`.
+     (1) *Firecrawl's own pace* (`maya_audit/firecrawl/pace.py`). Owner: Maya's crawler keeps its polite gap (the
+     requests come from this computer's address); Firecrawl gets its own pace: up to `Options.concurrency` in flight
+     (5), request starts at least `Options.gap_s` apart (a setting: 1 s by default, 0.2 to 30; `MAYA_AUDIT_FIRECRAWL_GAP_S`,
+     `--firecrawl-gap`, a plan's `gap_s`), backing off 5 -> 2 -> 1 with a longer gap only on what Firecrawl reports for
+     the site: its own 429 or 5xx, the site's 429 or 5xx seen through it, and a call that timed out. This replaces 294
+     (1)'s shared limit for the reader and its "slow answer" back-off: the reader no longer takes a slot of Maya's
+     `SiteLimiter`, no longer keeps Maya's widened gap, and never steps Maya's limit down. Agent: each step doubles the
+     gap, to at most four times the setting; a robots.txt Crawl-delay (as Maya honours it) is a floor and makes it one at
+     a time; a hand-made clock gets the same pace (294's "one at a time without the shared limit" is gone); this
+     computer's setting may be 0 only through the environment (the test suite sets it, so made-up readers answer at test
+     speed). The plan fingerprint leaves `gap_s` out, as it does `concurrency`. `firecrawl.concurrency` records
+     `own_pace`, `gap_s`, `gap_final_s`, `crawl_delay_s` and each step's gap. The progress box shows both paces: "Maya:
+     N of up to M pages read · one request every {gap} s" and "Firecrawl: N of up to M pages read ({k} at a time,
+     starts at least {gap} s apart)" (Turkish beside them); the crawl's progress events carry `delay_s`, the reader's
+     `at_once` and `gap_s`.
+     (2) *Timeouts.* Owner: a timed-out page is asked for once more after a short wait, then skipped, and the reading
+     goes on; it stops only after several failures in a row (5, `Options.stop_after_unreadable`), said in the coverage
+     line with counts. A timeout is an `httpx` timeout or dropped answer (`PossiblyBilled.timed_out`) or Firecrawl's own
+     HTTP 408 (new `ProviderTimedOut`, not charged). Agent: the wait is `RETRY_WAIT_S` (5 s); the client itself still
+     never repeats a request, the reader asks again; **the rule for possibly billed credits:** the first call keeps its
+     reservation as possibly billed, the second is a new request with its own reservation, inside the audit's request
+     allowance and the confirmed credits, so a page retried after a timeout may cost twice and the guard still stops at
+     the confirmed amount. Every timed-out answer, a provider failure and an unreadable document count towards the 5 in a
+     row (timeouts also before the first page is read); a page read resets the count. A page whose second try was never
+     sent because reading had stopped is skipped too. `firecrawl.coverage.timeouts` = `timed_out`, `retried`,
+     `read_on_retry`, `skipped` (schema 1.22); a page row has `retried`. When a page was skipped the coverage line adds
+     "Firecrawl: {read} page(s) read, {retried} retried after a timeout, {skipped} skipped" (Turkish: "Firecrawl: {read}
+     sayfa okundu, {retried} sayfa zaman aşımından sonra yeniden istendi, {skipped} sayfa atlandı"); a stop keeps
+     "reading stopped early (the last 5 pages asked for came back unreadable, ...)".
+     (3) *Mac sleep* (`maya_audit/keepawake.py`). Owner: while an audit runs on macOS, `caffeinate -i -w <pid>` keeps the
+     Mac from idle sleep (CLI `crawl` and `batch`, and each web job); it is ended when the audit ends, and ends by itself
+     if the process dies. Nothing elsewhere; `MAYA_AUDIT_KEEP_AWAKE=off` switches it off (the test suite does). A lid
+     closed still sleeps. Agent: the audit records its wall-clock start beside the monotonic one (`started_wall`); the
+     difference is the time the computer slept (the monotonic clock stops in sleep on macOS and Linux; on Windows it may
+     not, and then nothing is said). `audit_status.timing.slept_s`, and `slept_note` from 2 min up: "The computer slept
+     for about {n} min during this audit; the durations count only the time it was awake." in the Markdown duration
+     line, the web page and the PDF (Turkish beside it).
+     (4) *RND-6 when Maya was blocked.* Owner: when Maya's crawler was blocked (INT-1's rule, or a crawl stopped by a
+     rate limit) and Firecrawl read pages, RND-6 (page and homepage HTML size, where the main content starts) is measured
+     on the HTML Firecrawl returned (`rawHtml`) for the pages it read and replaces Maya's RND-6, labelled like the
+     content checks ("Source: Firecrawl" as the main reader), with `evidence.measured_on` and `pages_measured`. When
+     Maya read the site, its own RND-6 stands.
+     (5) *Wording.* Owner: when Firecrawl read pages after Maya's crawler was stopped by 429s, the summary no longer
+     says "The site could not be read properly": the outcome sentence is "Maya's crawler was blocked (429 on pages); N
+     page(s) were read through Firecrawl[; what was left unread]. Genuine AI-crawler access was not measured. Findings
+     cover only the pages read." and the cover label "Maya's crawler was blocked (429 on pages); read through Firecrawl:
+     N pages" (Turkish "Maya'nın tarayıcısı engellendi (sayfalarda 429); …"). "Could not be read" stays for 0 pages.
+     Agent: the outcome code stays DEGRADED and the exit code 1, because Maya's own requests were refused (the CLI exit
+     codes keep their meaning); the owner's wording "blocked (429 on pages)" is used for every 429 stop with pages read,
+     also where ACC-9 says "rate-limited" (289).
+     (6) *RELEASE-SNAPSHOT.* Owner: the expected failure is resolved without a release. Agent:
+     `test_snapshot_and_checkpoint_state_the_applications_version` now checks that the snapshot and the checkpoint
+     describe the last release (w14d, schema 1.20), that the code's schema is not behind it and that the release's frozen
+     schema is kept; on a `team-preview-*` tag (or CI run for one) the two schemas must still be equal.
+     Not changed: the spending guard, the request allowance, zero data retention, the proxy rule, the cache rule (A16),
+     Maya's own crawl and its pace, INT-4, what Firecrawl reads (every page, 131 and 296). Schema 1.22. Tests:
+     `tests/test_v03_live_fixes.py`; updated `test_v03_speed.py`, `test_run_clock.py`, `test_firecrawl.py` (the old rules
+     they asserted: the reader on Maya's limit and pace, a timeout stopping the reading), `test_release_metadata.py`.
+
+296. **"Firecrawl only where needed" is not adopted now: Firecrawl keeps reading every page by default (Owner,
+     2026-11-02).** The proposal (IMPLEMENTATION-STATUS, "Double reading") would let Firecrawl read a page only where
+     Maya could not, or where the page depends on JavaScript. Measured offline on the nihan report (`b3198942…`, 499
+     pages read by both), the content checks judge differently on the two copies: thin pages (STR-15) 162 on Maya's copy,
+     13 on Firecrawl's; heading jumps (TSEO-1) 214 vs 47; STR-12 (declared language vs the language written, Medium) only
+     on Firecrawl's copy (47 pages), none on Maya's; totals 15 S4 + 5 Info vs 1 S3 + 20 S4 + 6 Info. Which copy the
+     content checks should judge on a site that reads fine without JavaScript is left open; DECISIONS 131 stands
+     unchanged. In the backlog (`docs/BACKLOG.md`).

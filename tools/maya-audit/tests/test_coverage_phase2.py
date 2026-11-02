@@ -154,7 +154,9 @@ def test_a_reader_that_starts_being_turned_away_stops_after_five_in_a_row_and_ea
         return None
     api = Firecrawl(pages, turned_away_later)
     outcome = blocked_audit()
-    info = reader.apply(outcome, CFG, client_for(tmp_path, api), Options(read_always=True, max_pages=50))
+    # One at a time, so the count is exact (a hand-made clock reads several at once since DECISIONS 295; requests
+    # already in flight when the stop fires are recorded, 294).
+    info = reader.apply(outcome, CFG, client_for(tmp_path, api), Options(read_always=True, max_pages=50, concurrency=1))
     section = panel.section(info)
     cover = section["coverage"]
     assert section["pages_read"] == 3 and count["pages"] == 8  # three read, five refused in a row, then no more: 22 requests were not paid for

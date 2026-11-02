@@ -279,20 +279,24 @@ def test_firecrawl_reads_up_to_five_at_once_through_the_site_limit_and_says_so(t
     assert section["concurrency"]["backed_off"] == [] and section["concurrency"]["max_in_flight"] <= 5
     assert section["coverage"]["seconds_per_page_measured"] > 0 and section["coverage"]["call_seconds_measured"] >= 0.05
     assert section["coverage"]["seconds_per_page_assumed"] == 8.0 and section["coverage"]["skipped_for_time"] == 0
-    assert outcome.result.backoff["site_limit"]["starts"].get(READER) == 12  # the reader's starts went through the limit
+    # Firecrawl keeps its own pace (DECISIONS 295): none of its starts went through Maya's limit on the site.
+    assert READER not in outcome.result.backoff["site_limit"]["starts"] and section["concurrency"]["own_pace"] is True
     assert sorted(row["url"] for row in section["pages"]) == sorted(api.urls)
     report = build_report(outcome.result, outcome.gates, outcome.checks, firecrawl=section)
-    assert report["schema_version"] == "1.21" and report["crawl"]["backoff"]["site_limit"]["configured"] == 5
+    assert report["schema_version"] == "1.22" and report["crawl"]["backoff"]["site_limit"]["configured"] == 5
 
 
-def test_without_a_site_limit_the_reader_reads_one_page_at_a_time(tmp_path, no_lookups):
+def test_without_mayas_site_limit_the_reader_keeps_its_own_pace(tmp_path, no_lookups):
+    """DECISIONS 295 replaces this test's old rule (one page at a time without the shared limit): a clock of its own still
+    reads several at once, at Firecrawl's own pace."""
     pages = _pages(5)
     outcome = run_audit(KAFE + "/", CrawlConfig(**{**QUIET, "max_pages": 6}), httpx.MockTransport(_site(pages)))
     api = SlowFirecrawl(pages, seconds=0.02)
     client = client_for(tmp_path, api)
-    client.clock = RunClock()  # a clock of its own, no shared limit: nothing spaces overlapping starts
+    client.clock = RunClock()  # a clock of its own, no limit of Maya's
     info = reader.apply(outcome, CrawlConfig(**{**QUIET, "max_pages": 6}), client, Options(read_always=True, max_pages=6))
-    assert api.most == 1 and info["concurrency"]["start"] == 1 and info["concurrency"]["site_limit"] is False
+    assert 2 <= api.most <= 5 and info["concurrency"]["start"] == 5 and info["concurrency"]["site_limit"] is False
+    assert info["concurrency"]["own_pace"] is True and info["pages_read"] == 6
 
 
 @pytest.mark.parametrize("trouble, reason", [
@@ -312,8 +316,9 @@ def test_firecrawl_backs_off_to_two_then_one_and_goes_on_reading(tmp_path, no_lo
     steps = info["concurrency"]["backed_off"]
     assert [(s["from"], s["to"], s["reason"]) for s in steps] == [(5, 2, reason), (2, 1, reason)]
     assert info["concurrency"]["final"] == 1 and info["used"] and info["pages_read"] >= 9  # it went on, more slowly
-    if reason == "5xx from the site":  # the site's own answer slows the shared site limit too
-        assert outcome.result.backoff["site_limit"]["backed_off"][0]["seen_by"] == "reader"
+    # Firecrawl's pace widens its gap at each step; Maya's own limit is not touched by what Firecrawl saw (DECISIONS 295).
+    assert [s["gap_to_s"] > s["gap_from_s"] or s["gap_from_s"] == 0 for s in steps] == [True, True]
+    assert outcome.result.backoff["site_limit"]["backed_off"] == []
 
 
 def test_the_concurrency_setting_is_one_to_ten(monkeypatch, tmp_path):
@@ -360,7 +365,7 @@ def test_the_reader_starts_when_the_crawl_ends_and_reads_beside_mayas_own_steps(
     assert info["used"] and info["pages_read"] == 6 and info["coverage"]["ran_beside_maya"] is True
     assert info["coverage"]["elapsed_s"] is not None
     assert next(g for g in outcome.gates if g.check_id == "INT-4").state == "compliant"
-    assert outcome.result.backoff["site_limit"]["starts"].get(READER) == 6
+    assert READER not in outcome.result.backoff["site_limit"]["starts"]  # Firecrawl's own pace (DECISIONS 295)
 
 
 def test_a_challenged_crawl_does_not_start_the_reader_early_and_it_reads_after_the_audit(tmp_path, no_lookups):
