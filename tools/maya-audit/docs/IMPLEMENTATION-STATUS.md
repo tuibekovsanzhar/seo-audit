@@ -590,3 +590,27 @@ Owner decision needed: which copy the content checks should judge on a site that
 | `tests/test_v03_speed.py` | `20 passed` |
 | `python3.11 -m compileall` | OK |
 | full suite, ruff (not installed), Linux/Windows, live runs | NOT RUN |
+
+## Current state and next step (2026-11-02, handover before an account switch)
+
+**Stage 2 (speed, DECISIONS 294): done**, commit `1dbdf3d`, not pushed. Fast suite `2551 passed, 1 failed`
+(the release snapshot, see above).
+
+**Live nihan run after stage 2** (owner's report; the saved audit was not re-analysed here):
+- Maya's own crawler was blocked after 1 page.
+- Firecrawl read 388 of the 500-page cap.
+- About 45 minutes active; the Mac went to sleep during the run.
+- Reading stopped on one Firecrawl `ReadTimeout` (a request with no answer is "possibly billed" and never retried,
+  and the reader stops on it).
+- Not yet examined: why Maya was blocked after one page (concurrency or pace on this site, or the site's own rule),
+  how much of the 45 min the sleep took, and whether the timeout came from the sleep.
+
+**Next prompt (owner, to be sent next):**
+1. Firecrawl pacing: review how Firecrawl requests are paced against the site after Maya was blocked.
+2. Retry on timeout: one retry of a `ReadTimeout` instead of stopping the whole reading (needs a rule for "possibly
+   billed" credits).
+3. Keep the Mac awake while an audit runs.
+4. Run the HTML checks on Firecrawl's copy where Maya could not read the page.
+5. Wording updates.
+6. Decide the "read once" question: the "Firecrawl only where needed" proposal above (DECISIONS 131).
+7. Fix the `RELEASE-SNAPSHOT.json` schema mismatch (1.20 vs 1.21) so the fast suite is green.
