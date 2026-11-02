@@ -154,6 +154,7 @@ class Fetcher:
         self._gap_by_host: dict[str, float] = {}
         self._host_locks: dict[str, threading.Lock] = {}
         self._hosts_guard = threading.Lock()
+        self._pace_lock = threading.Lock()
         # Adaptive pacing of the audited site (only with per-host gaps): see `_pace_after`.
         self.adaptive = False
         self.min_delay_s = 0.5
@@ -185,6 +186,11 @@ class Fetcher:
         # Marks the threads of the other-site pool (maya_audit.other_sites): their requests, waiting and refusals for
         # the time limit are the pool's own row of the step timing table, not the step running on the audit's thread.
         self._local = threading.local()
+        # After the crawl, the audited site's requests share one limit with the page reader (maya_audit.sitelimit,
+        # DECISIONS 294): set by run_audit, None before (the crawl itself is sequential, as always).
+        self.site_limiter = None
+        # Seconds above which an answer from the audited site counts as slow for the shared limit's back-off.
+        self.slow_answer_s = 2.0
         self._client = httpx.Client(
             follow_redirects=False,
             timeout=timeout_s,
@@ -216,6 +222,7 @@ class Fetcher:
         self.pacing_factor = cfg.pacing_factor
         self.pacing_clean_ttfb_ms = cfg.pacing_clean_ttfb_ms
         self.pacing_reset_ttfb_ms = cfg.pacing_reset_ttfb_ms
+        self.slow_answer_s = cfg.pacing_reset_ttfb_ms / 1000
 
     @property
     def in_pool(self) -> bool:
@@ -494,24 +501,52 @@ class Fetcher:
         host = (urlsplit(url).hostname or "").lower() or None
         if paced:
             self.send_due(purpose)
-        # With per-host gaps, the wait and the request to one host hold that host's lock: two threads never ask one
-        # host at once, and each keeps the gap after the other's request (DECISIONS 219 part 2).
-        with (self._host_lock(host) if paced and self.per_host and host else nullcontext()):
-            if paced:
-                self.wait_politely(host)
-            response = self._request(url, purpose, max_bytes, user_agent, extra_headers, method, cookie, host)
+        limiter = self.site_limiter
+        if paced and limiter is not None and host is not None and host == self.site_host:
+            # The audited site after the crawl: one shared limit with the page reader (DECISIONS 294). The audit's own
+            # thread always takes slot 0, so its requests keep the gap after its own last one; other threads (the
+            # sitemap check's workers) take any free slot. Starts stay at least the gap apart.
+            from .sitelimit import MAYA, bad_answer
+
+            slot = limiter.acquire(MAYA, main=threading.get_ident() == self._owner and not self.in_pool,
+                                   should_stop=self.poll_stop, deadline_mono=self.deadline_mono)
+            if slot is None:
+                self.hit_deadline()
+                return RawResponse(url, None, {}, b"", False, 0.0, "audit_deadline_skipped", utc_now(), None)
+            if not self.in_pool:
+                self.waited_s += slot.waited_s
+            try:
+                response = self._request(url, purpose, max_bytes, user_agent, extra_headers, method, cookie, host, slot.index,
+                                         slot.started_mono)
+            finally:
+                limiter.release(slot)
+            reason = bad_answer(response.status, response.error,
+                                None if response.ttfb_ms is None else response.ttfb_ms / 1000, self.slow_answer_s)
+            if reason is not None:
+                limiter.back_off(reason, "maya")
+        else:
+            # With per-host gaps, the wait and the request to one host hold that host's lock: two threads never ask one
+            # host at once, and each keeps the gap after the other's request (DECISIONS 219 part 2).
+            with (self._host_lock(host) if paced and self.per_host and host else nullcontext()):
+                if paced:
+                    self.wait_politely(host)
+                response = self._request(url, purpose, max_bytes, user_agent, extra_headers, method, cookie, host)
         if paced:
             from .classify import empty_response
             # A HEAD answer never has a body, so it is never "empty" here.
             empty = method != "HEAD" and empty_response(response.status, response.headers.get("content-type"),
                                                        response.body, response.truncated)
-            self._pace_after(host, purpose, response.status, response.error, response.ttfb_ms, empty)
+            with self._pace_lock:  # the sitemap check's workers answer from several threads (DECISIONS 294)
+                self._pace_after(host, purpose, response.status, response.error, response.ttfb_ms, empty)
         return response
 
     def _request(self, url: str, purpose: str, max_bytes: int, user_agent: str | None,
-                 extra_headers: dict[str, str] | None, method: str, cookie: str | None, host: str | None) -> RawResponse:
+                 extra_headers: dict[str, str] | None, method: str, cookie: str | None, host: str | None,
+                 slot: int | None = None, slot_started: float | None = None) -> RawResponse:
         started_at = utc_now()
-        start = time.monotonic()
+        # A request through the shared site limit starts when the limit let it (the spacing the limit kept is the spacing
+        # the log shows, whatever the threads did in between).
+        start = time.monotonic() if slot_started is None else slot_started
         status: int | None = None
         headers: dict[str, str] = {}
         chunks: list[bytes] = []
@@ -627,6 +662,7 @@ class Fetcher:
                     ttfb_ms=ttfb_ms,
                     started_mono=start,
                     ended_mono=ended,
+                    slot=slot,
                 )
             )
         return RawResponse(url, status, headers, b"".join(chunks), truncated, elapsed_ms, error, started_at, ttfb_ms,
@@ -647,7 +683,18 @@ def gaps_by_host(records) -> tuple[dict[str, list[float]], str]:
     for host, rows in by_host.items():
         if all(r.started_mono is not None and r.ended_mono is not None for r in rows):
             rows = sorted(rows, key=lambda r: (r.started_mono, r.seq))
-            out[host] = [max(0.0, (b.started_mono - a.ended_mono) * 1000) for a, b in zip(rows, rows[1:])]
+            # Each slot of the shared site limit (DECISIONS 294) is one sequence: the gap from the end of its last request
+            # to its next start. A request with no slot (the crawl, another host) is slot 0, the audit's own thread.
+            gaps: list[float] = []
+            by_slot: dict[int, list] = {}
+            for record in rows:
+                by_slot.setdefault(getattr(record, "slot", None) or 0, []).append(record)
+            for sequence in by_slot.values():
+                gaps += [max(0.0, (b.started_mono - a.ended_mono) * 1000) for a, b in zip(sequence, sequence[1:])]
+            if len(by_slot) > 1:
+                # Requests overlapped: their starts are also at least the gap apart, whoever sent them.
+                gaps += [max(0.0, (b.started_mono - a.started_mono) * 1000) for a, b in zip(rows, rows[1:])]
+            out[host] = gaps
             continue
         clock = "wall clock (monotonic stamps missing)"  # a report from before monotonic stamps existed
         gaps = []

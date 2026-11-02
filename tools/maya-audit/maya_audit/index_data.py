@@ -481,7 +481,7 @@ BLOCKED_IN_A_ROW = 3
 # page and "disallowed" was not asked: both are listed beside the share, not in it.
 NOT_LIVE_KINDS = ("redirect", "not_found", "server_error", "empty", "noindex")
 NOT_CHECKED_REASONS = {
-    "cap": "not asked: the cap of light requests was reached (a sample spread over the site's sections was asked)",
+    "cap": "not asked: the cap of light requests was reached (a sample spread evenly over the sitemap files was asked)",
     "rate_limit": "not asked: the site answered 429 (too many requests), so no further light request was sent",
     "blocked": f"not asked: the site blocked {BLOCKED_IN_A_ROW} light requests in a row, so no further one was sent",
     "time_limit": "not asked: the audit's time limit was reached before the request could be sent",
@@ -502,7 +502,13 @@ class SitemapCheck:
     read_by_crawl: int = 0
     disallowed: list[str] = field(default_factory=list)
     wanted: int = 0  # URLs that needed a light request
-    sampled: bool = False  # the cap left some of them out: the ones asked are a sample spread over the sections
+    sampled: bool = False  # the cap left some of them out: the ones asked are a sample spread evenly over the files
+    # The sitemap files the wanted URLs came from, and how many URLs of each were asked (DECISIONS 294).
+    sample_files: int = 0
+    asked_by_file: dict[str, int] = field(default_factory=dict)
+    # Light requests in flight at once at most (through the shared site limit), and the 429s that made it back off.
+    workers: int = 1
+    rate_limited: int = 0
     rows: list[dict[str, Any]] = field(default_factory=list)
     # ACC-8's own light requests to the links of llms.txt (purpose `llms_link_check`): IDX-1 counts their empty answers.
     llms_rows: list[dict[str, Any]] = field(default_factory=list)
@@ -594,42 +600,142 @@ def section_sample(urls: list[str], cap: int) -> list[str]:
     return out
 
 
-class LightRequests:
-    """Light requests through the crawl's fetcher, with the stopping rules both the sitemap check and ACC-8 use: a
-    429 stops them, so do 3 blocked answers in a row, and so does the time limit. robots.txt is obeyed."""
+def file_sample(urls: list[str], cap: int, file_of: dict[str, str] | None = None) -> list[str]:
+    """At most `cap` of `urls`, spread evenly over the sitemap files that listed them (DECISIONS 294): the files take
+    turns, and within a file the URLs taken are evenly spaced through its own order. A URL whose file is not known is
+    in one group of its own. The same list every run for the same sitemap. Without any file map it is
+    `section_sample`'s spread over the site's sections, as before."""
+    if not file_of:
+        return section_sample(urls, cap)
+    groups: dict[str, list[str]] = {}
+    for url in urls:
+        groups.setdefault(file_of.get(url, ""), []).append(url)
+    if len(groups) == 1:
+        [only] = groups.values()
+        return section_sample(only, cap)
+    # Each file's share: equal turns, a file with fewer URLs gives its unused turns to the others.
+    share = {name: 0 for name in groups}
+    left = cap
+    while left > 0:
+        open_files = [name for name in groups if share[name] < len(groups[name])]
+        if not open_files:
+            break
+        for name in open_files:
+            if left == 0:
+                break
+            share[name] += 1
+            left -= 1
+    out: list[str] = []
+    picks = {name: _evenly(groups[name], share[name]) for name in groups}
+    depth = 0
+    while any(depth < len(p) for p in picks.values()):  # the files take turns in the order asked
+        for name in groups:
+            if depth < len(picks[name]):
+                out.append(picks[name][depth])
+        depth += 1
+    return out
 
-    def __init__(self, fetcher: Fetcher, cfg: CrawlConfig, policy, purpose: str) -> None:
+
+def _evenly(items: list[str], n: int) -> list[str]:
+    """`n` of `items`, evenly spaced from the first (all of them when there are no more than `n`)."""
+    if n >= len(items):
+        return list(items)
+    if n <= 0:
+        return []
+    step = len(items) / n
+    return [items[int(i * step)] for i in range(n)]
+
+
+class LightRequests:
+    """Light requests through the crawl's fetcher, with the stopping rules both the sitemap check and ACC-8 use: 3
+    blocked answers in a row stop them, and so does the time limit. robots.txt is obeyed.
+
+    A 429 stops them at once (ACC-8, as decided in DECISIONS 52), unless `rate_limit_stop_after` allows more: the
+    sitemap check then backs off instead (DECISIONS 294), widening the gap on the site each time, and stops at the
+    `rate_limit_stop_after`-th 429. Safe to call from several threads."""
+
+    def __init__(self, fetcher: Fetcher, cfg: CrawlConfig, policy, purpose: str, rate_limit_stop_after: int = 1) -> None:
+        import threading
+
         self.fetcher, self.cfg, self.policy, self.purpose = fetcher, cfg, policy, purpose
+        self.rate_limit_stop_after = max(1, int(rate_limit_stop_after))
         self.stopped_because: str | None = None
+        self.rate_limited = 0
         self._blocked = 0
+        self._lock = threading.Lock()
 
     def ask(self, url: str) -> dict[str, Any] | None:
         """The row, or None when nothing was sent (`stopped_because` then says why)."""
         if self.stopped_because:
             return None
         if self.fetcher.deadline_mono is not None and time.monotonic() >= self.fetcher.deadline_mono:
-            self.stopped_because = "time_limit"
+            with self._lock:
+                self.stopped_because = self.stopped_because or "time_limit"
             return None
         row = light_request(self.fetcher, url, self.purpose, self.cfg)
-        if row["error"] == "audit_deadline_skipped":
-            self.stopped_because = "time_limit"
-            return None
-        if row["fetch_class"] == FetchClass.RATE_LIMITED.value:
-            self.stopped_because = "rate_limit"
-        elif row["fetch_class"] == FetchClass.BLOCKED.value:
-            self._blocked += 1
-            if self._blocked >= BLOCKED_IN_A_ROW:
-                self.stopped_because = "blocked"
-        else:
-            self._blocked = 0
+        with self._lock:
+            if row["error"] == "audit_deadline_skipped":
+                self.stopped_because = self.stopped_because or "time_limit"
+                return None
+            if row["fetch_class"] == FetchClass.RATE_LIMITED.value:
+                self.rate_limited += 1
+                if self.rate_limited >= self.rate_limit_stop_after:
+                    self.stopped_because = self.stopped_because or "rate_limit"
+                else:
+                    # Back off: a wider gap for every later request to the site (the shared limit has stepped down too).
+                    self.fetcher.widen_delay(self.cfg.rate_limit_backoff_factor, self.cfg.max_request_delay_s)
+            elif row["fetch_class"] == FetchClass.BLOCKED.value:
+                self._blocked += 1
+                if self._blocked >= BLOCKED_IN_A_ROW:
+                    self.stopped_because = self.stopped_because or "blocked"
+            else:
+                self._blocked = 0
         return row
+
+
+# Light requests of the sitemap check in flight at once at most (Owner, 2026-11-02; DECISIONS 294).
+SITEMAP_CHECK_WORKERS = 4
+
+
+def _ask_together(requests: "LightRequests", asked: list[str], answered: dict[int, dict[str, Any]], workers: int) -> None:
+    """Ask `asked` with up to `workers` threads; each answer is kept under its place in `asked`. Stops taking new URLs
+    once `requests` has a reason to stop. The shared site limit spaces the starts (maya_audit.sitelimit)."""
+    import threading
+
+    lock = threading.Lock()
+    position = iter(range(len(asked)))
+
+    def work() -> None:
+        while not requests.stopped_because:
+            with lock:
+                i = next(position, None)
+            if i is None:
+                return
+            row = requests.ask(asked[i])
+            if row is None:
+                return
+            with lock:
+                answered[i] = row
+
+    threads = [threading.Thread(target=work, name=f"sitemap-check-{n}", daemon=True) for n in range(workers)]
+    for thread in threads:
+        thread.start()
+    # Meanwhile the audit's own thread sends what has come due (ACC-1's robots.txt samples, DECISIONS 12 and 219): only
+    # it may, and they are not left to be waited for after the last step.
+    fetcher = requests.fetcher
+    while any(thread.is_alive() for thread in threads):
+        fetcher.send_due("sitemap_check")
+        threads[0].join(0.05) if threads[0].is_alive() else next(t for t in threads if t.is_alive()).join(0.05)
+    for thread in threads:
+        thread.join()
 
 
 def check_sitemap_urls(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig) -> SitemapCheck:
     """IDX-5 (DECISIONS 206): every sitemap URL, not only those the crawl read. A URL the crawl read is judged from the
     crawl (no request); a file (a nested sitemap, an image, a PDF) is left out; a URL robots.txt disallows is counted
     as disallowed and not asked; every other one is asked once with `light_request`, at most `sitemap_check_max`, a
-    sample spread over the site's sections when there are more."""
+    sample spread evenly over the sitemap files when there are more (DECISIONS 294), up to SITEMAP_CHECK_WORKERS at once
+    through the shared site limit."""
     policy = result.robots_policy_by_origin.get(result.origin)
     check = SitemapCheck(cap=max(0, cfg.sitemap_check_max), listed=len(result.sitemap_urls))
     read = {p.url for p in result.pages}
@@ -652,18 +758,40 @@ def check_sitemap_urls(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig) 
             check.not_checked[why_none] = len(wanted)
             check.not_checked_sample = [{"url": u, "reason": NOT_CHECKED_REASONS[why_none]} for u in wanted[:20]]
         return check
-    asked = section_sample(wanted, check.cap) if len(wanted) > check.cap else wanted
+    file_of = getattr(result, "_sitemap_file_of", None) or {}
+    asked = file_sample(wanted, check.cap, file_of) if len(wanted) > check.cap else wanted
     check.sampled = len(asked) < len(wanted)
-    requests = LightRequests(fetcher, cfg, policy, "sitemap_check")
+    check.sample_files = len({file_of.get(u, "") for u in wanted}) if file_of else 0
     for url in asked:
-        row = requests.ask(url)
-        if row is None:
+        name = file_of.get(url) or "unknown"
+        check.asked_by_file[name] = check.asked_by_file.get(name, 0) + 1
+    requests = LightRequests(fetcher, cfg, policy, "sitemap_check", rate_limit_stop_after=cfg.rate_limit_stop_after)
+    limiter = getattr(fetcher, "site_limiter", None)
+    # At most SITEMAP_CHECK_WORKERS at once, and never more than the shared site limit allows (DECISIONS 294).
+    check.workers = max(1, min(SITEMAP_CHECK_WORKERS, limiter.limit if limiter is not None else 1))
+    answered: dict[int, dict[str, Any]] = {}
+    if check.workers == 1:
+        for i, url in enumerate(asked):
+            row = requests.ask(url)
+            if row is None:
+                break
+            answered[i] = row
+            if requests.stopped_because:
+                break
+    else:
+        _ask_together(requests, asked, answered, check.workers)
+    # In the order asked, up to the first URL that got no request: what follows it is "not asked" (its reason).
+    for i in range(len(asked)):
+        if i not in answered:
             break
-        check.rows.append(row)
-        if requests.stopped_because:
-            break
+        check.rows.append(answered[i])
+    # A worker may have had an answer for a later URL when an earlier one was refused: kept, in the order asked.
+    late = [answered[i] for i in sorted(answered) if i >= len(check.rows)]
+    check.rows += late
     check.stopped_because = requests.stopped_because
-    unsent = asked[len(check.rows):]
+    check.rate_limited = requests.rate_limited
+    asked_urls = {row["url"] for row in check.rows}
+    unsent = [u for u in asked if u not in asked_urls]
     chosen = set(asked)
     capped = [u for u in wanted if u not in chosen]
     if unsent:

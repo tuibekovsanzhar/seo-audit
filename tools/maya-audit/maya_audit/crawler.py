@@ -179,7 +179,10 @@ def pacing_record(fetcher: Fetcher, cfg: CrawlConfig) -> dict:
             "narrowed": list(fetcher.narrowings), "floor_s": round(floor, 3) if floor is not None else None,
             "narrowing_stopped": fetcher.narrowing_stopped, "site_host": fetcher.site_host,
             "host_gaps_s": {host: gap for host, gap in sorted(fetcher._gap_by_host.items())
-                            if abs(gap - cfg.request_delay_s) > 1e-9}}
+                            if abs(gap - cfg.request_delay_s) > 1e-9},
+            # The limit Maya's later steps and the page reader shared on the audited site (DECISIONS 294); None when
+            # nothing ran after the crawl.
+            "site_limit": fetcher.site_limiter.summary() if getattr(fetcher, "site_limiter", None) is not None else None}
 
 
 def load_robots(fetcher: Fetcher, origin: str, cfg: CrawlConfig) -> RobotsPolicy:
@@ -315,6 +318,7 @@ class Crawler:
         self._lastmods: dict[str, str | None] = {}
         # Where each sitemap file was named (robots.txt, a sitemap index, or not named: the /sitemap.xml guess).
         self._sitemap_named_in: dict[str, str] = {}
+        self._sitemap_file_of: dict[str, str] = {}
         self._key_urls = {u for u in (normalize_url(k, start) for k in cfg.key_pages) if u}
         fetcher = Fetcher(cfg.user_agent, cfg.request_timeout_s, cfg.request_delay_s, self._transport, cfg.ca_bundle,
                           block_loopback=cfg.block_loopback)
@@ -729,6 +733,7 @@ class Crawler:
             sitemap_lastmods=dict(self._lastmods),
             sitemap_notes=list(self._sitemap_notes),
             _sitemap_named_in=dict(self._sitemap_named_in),
+            _sitemap_file_of=dict(self._sitemap_file_of),
             sessions=session_rows,
             render_discovery=discovery.summary(),
             backoff={"configured_delay_s": cfg.request_delay_s, "final_delay_s": fetcher.delay_s,
@@ -747,7 +752,7 @@ class Crawler:
         deadline = self._t0 + cfg.time_limit_s * cfg.sitemap_time_share
         docs, urls, notes = discover_sitemap_urls(
             fetcher, policy, origin, cfg.product_token, cfg.max_sitemap_docs, cfg.max_sitemap_depth,
-            cfg.max_sitemap_bytes, skipped, self._lastmods, deadline, self._sitemap_named_in,
+            cfg.max_sitemap_bytes, skipped, self._lastmods, deadline, self._sitemap_named_in, self._sitemap_file_of,
         )
         self._sitemap_notes.extend(notes)
         return docs, urls

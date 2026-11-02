@@ -44,6 +44,15 @@ ZERO_DATA_RETENTION_EXTRA_CREDITS = 1
 USD_PER_CREDIT: float | None = None
 # Pages Firecrawl may read in one audit unless the person chooses otherwise.
 DEFAULT_MAX_PAGES = 50
+# Firecrawl requests in flight at once (DECISIONS 294; Owner, 2026-11-02: the plan is Standard, 25 concurrent browsers).
+# The setting is 1 to 10; on a 429, a 5xx or a slow answer it backs off to 2, then 1. The shared site limit
+# (maya_audit.sitelimit) caps it too.
+CONCURRENCY_VAR = "MAYA_AUDIT_FIRECRAWL_CONCURRENCY"
+DEFAULT_CONCURRENCY = 5
+MIN_CONCURRENCY, MAX_CONCURRENCY = 1, 10
+# A Firecrawl answer that took longer than this counts as slow for the back-off (agent default: the three saved
+# audits of 2026-10-29/30 averaged 4 to 11 s a call).
+SLOW_CALL_S = 30.0
 MAX_PAGES_LIMIT = 500
 # Credits that may be spent or reserved in one UTC day (the ledger's day). Firecrawl reads every audit's pages, so this
 # is a guard against a runaway, not a budget: ten Standard audits with zero data retention. MAYA_AUDIT_FIRECRAWL_DAILY_CREDITS changes it.
@@ -125,6 +134,17 @@ def main_reader_on(environ: Mapping[str, str] | None = None) -> bool:
     return (environ.get(OFF_VAR) or from_file.get(OFF_VAR) or "on").strip().lower() not in _NO
 
 
+def concurrency(environ: Mapping[str, str] | None = None) -> int:
+    """Firecrawl requests in flight at once on this computer: MAYA_AUDIT_FIRECRAWL_CONCURRENCY, 1 to 10, else 5."""
+    environ, from_file = _environment(environ)
+    raw = environ.get(CONCURRENCY_VAR) or from_file.get(CONCURRENCY_VAR)
+    try:
+        value = int(raw) if raw else DEFAULT_CONCURRENCY
+    except ValueError:
+        return DEFAULT_CONCURRENCY
+    return max(MIN_CONCURRENCY, min(MAX_CONCURRENCY, value))
+
+
 def credits_per_page(zero_data_retention: bool = True) -> int:
     return CREDITS_PER_PAGE + (ZERO_DATA_RETENTION_EXTRA_CREDITS if zero_data_retention else 0)
 
@@ -149,6 +169,7 @@ class Options:
     proxy: str = DEFAULT_PROXY
     owner_approved_bypass: bool = False   # "The site owner has approved bypassing bot protection"
     allow_without_zero_data_retention: bool = False  # explicit, per audit, after Firecrawl refused it
+    concurrency: int = DEFAULT_CONCURRENCY  # requests in flight at once, 1 to 10 (DECISIONS 294)
 
     def problem(self) -> str | None:
         """Why these options may not be used, or None."""
@@ -159,6 +180,8 @@ class Options:
                     "owner has approved that for this audit")
         if not 1 <= self.max_pages <= MAX_PAGES_LIMIT:
             return f"the Firecrawl page cap must be between 1 and {MAX_PAGES_LIMIT}"
+        if not MIN_CONCURRENCY <= self.concurrency <= MAX_CONCURRENCY:
+            return f"Firecrawl requests at once must be between {MIN_CONCURRENCY} and {MAX_CONCURRENCY}"
         return None
 
     def estimate(self, audit_page_cap: int) -> dict[str, Any]:
@@ -175,4 +198,4 @@ class Options:
         return {"read_blocked": self.read_blocked, "read_always": self.read_always, "spread_by_section": self.spread_by_section,
                 "sitemap_discovery": self.sitemap_discovery, "stop_after_unreadable": self.stop_after_unreadable, "render_fallback": self.render_fallback, "max_pages": self.max_pages,
                 "proxy": self.proxy, "owner_approved_bypass": self.owner_approved_bypass,
-                "allow_without_zero_data_retention": self.allow_without_zero_data_retention}
+                "allow_without_zero_data_retention": self.allow_without_zero_data_retention, "concurrency": self.concurrency}

@@ -499,3 +499,94 @@ at least Hobby (5 at once). To be confirmed by the owner (not looked up: that is
 
 All three together, nihan: about 85 → ~21 min (sitemap and crawl ~9.5, then the reader ~11.5 with the later steps,
 ~8.6 after 3, beside it). Estimates from these three runs only; not measured.
+
+## v0.3 stage 2: speed (2026-11-02, DECISIONS 294)
+
+**Changed:** new `maya_audit/sitelimit.py` (one limit on the audited site after the crawl, Maya's and the reader's
+requests together: 5 at once, starts the polite gap apart, back-off 5 → 2 → 1); `fetcher.py` (requests to the site go
+through it; `RequestRecord.slot`; INT-4 gaps per slot and between overlapping starts); `audit.py` (`run_audit(reader=)`,
+the limit, Maya's steps get the whole deadline when the reader runs beside them); `firecrawl/reader.py` (reading split
+from the checks; up to `Options.concurrency` at once, one at a time until the first page; back-off; measured pace;
+`EarlyReading`); `firecrawl/client.py` (thread-safe guard and records, a slot per request, call time,
+`ProviderRateLimited`); `firecrawl/settings.py` (`concurrency`, `MAYA_AUDIT_FIRECRAWL_CONCURRENCY`, `SLOW_CALL_S`);
+`runclock.py` (`take_turn`/`give_back`, `needs_s` from measured calls, reserve ÷ requests at once); `index_data.py`
+(sample over the sitemap files, 4 at a time, back-off on 429), `sitemap.py`/`crawler.py` (which file listed each URL);
+`checks/index.py`, `checks/integrity.py`, `report.py` (sample and time-skip sentences); `cli.py`
+(`--firecrawl-concurrency`, `--site-concurrency`, caps 300/100, early start); `maya_audit_web/runner.py`, `app.py`,
+`fc.py`, `paid.py`, `static/app.js`, strings EN/TR (early start, progress box, estimate). Schema 1.21
+(`docs/report-schema-1.21.json`, REPORT-SCHEMA.md). Tests: `tests/test_v03_speed.py` (new), updated
+`test_round2_sitemap_and_llms.py` (429 backs off; caps 100/300), `test_time_limit.py` (smaller default limit),
+`test_firecrawl.py` (test helper passes `reader`).
+
+**Found and fixed while verifying:** (a) tests that patch `time.monotonic`/`time.sleep` hung, because the limit had
+captured the real clock; it now reads the time module at each call and waits out a gap with `time.sleep`. (b) The
+first request after the crawl skipped the polite gap (the limit knew nothing of the crawl's last request); the limit is
+now seeded with it (`test_the_first_request_through_the_limit_keeps_the_gap_after_the_crawls_last_one`). (c) Maya's own
+thread waiting for its gap blocked the reader entirely; the reader may now start when that does not delay Maya's next
+request. (d) robots.txt samples were not sent while the sitemap check ran on worker threads; the audit's own thread now
+sends them meanwhile.
+
+**Expected times** (estimates from the stage-1 measurements, not measured; Firecrawl assumed to keep its single-call
+time at 5 at once):
+
+| Run | Before | Expected | Where the time goes |
+|---|---|---|---|
+| nihan, Standard 500 | 85.1 min | ~24-25 min | crawl 9.4 min unchanged; then Firecrawl ~12-15 min (500 × 6.9 s ÷ 4-5 at once), with Maya's later steps (~7-8 min, sitemap check 300 URLs) beside it |
+| Quick 50, fast site (enpara) | 13.1 min | ~6 min | crawl 1.4 min; Maya's later steps ~4.7 min (sitemap check 100 URLs); Firecrawl ~1 min, hidden beside them |
+| Quick 50, slow site (adile) | 25.5 min | ~11-12 min | crawl 3.6 min; Maya's later steps ~7.8 min; Firecrawl ~2.2 min, hidden; all 50 pages read (35 before) |
+
+If Firecrawl backs off to 1 at a time, nihan's reader takes ~60 min again and the time limit (about 72 min for
+Standard with the reader) may leave pages unread; the report then counts them ("not read for lack of time").
+
+## Double reading (DECISIONS 131): what Firecrawl's copy changes on nihan (offline, 2026-11-02; no code change)
+
+DECISIONS 131 (Owner, 2026-10-08) made Firecrawl the page reader of every audit when a key is set; the repository records
+the decision, not a reason. What the code does with it: Maya's own request decides status, headers, timing and whether
+a page may be indexed (DECISIONS 167); Firecrawl's document replaces the page content for the content checks (IDX-8,
+STR-1 to STR-23, TSEO-1), the same way on blocked and open sites. The report's own notice says Firecrawl's document "may
+already hold what JavaScript added, so it does not show what a crawler that runs no JavaScript receives".
+
+Method: the nihan report (`b3198942…`, engine `065f0b9`, the version that wrote it) was rebuilt from `report.json`
+(Maya's 500 page records with full analysis) and the content checks were run on Maya's own reading, sockets refused; the
+result was compared rule by rule with the report's checks, which ran on Firecrawl's reading of the same pages (499 read
+by both). Per page (`evidence/` vs `evidence-firecrawl/`): title, canonical, H1, JSON-LD blocks and `<html lang>` are
+identical on all 499 pages; Firecrawl's main text is longer (median 617 vs 545 words, +14%). The local browser's render
+sample (20 pages) found the same word count as the raw HTML, so the extra text is not JavaScript content: Firecrawl
+received visitor-specific blocks (e.g. headings "Cart 0 items", "Henüz favoriniz yok.").
+
+| Rule | Maya's reading | Firecrawl's reading |
+|---|---|---|
+| 7 rules | same | same |
+| STR-1 shared titles (S4) | 9 titles on 18 pages | 6 titles on 12 pages (the other pages fall under IDX-8's copies) |
+| STR-14 links without text (S4) | 4 links / 4 pages; shared-link groups on 80-88 pages | 3 links / 3 pages; different groups |
+| STR-15 thin pages (Info) | 162 pages | 13 pages |
+| STR-19 links without address (S4) | grouped by Maya's copy | grouped differently |
+| TSEO-1 heading jumps (S4) | 214; repeated "Secure Shopping" H3 | 47; repeated "Cart 0 items" H3, "Henüz favoriniz yok." H4 |
+| IDX-8 near copies (S4) | — | 6 groups, 12 pages |
+| STR-12 language mismatch (**S3**) | — (169 pages "too little main content to tell") | 47 pages declared English, written mostly in Turkish |
+| STR-9 lang mismatch (S4) | — | 6 pages |
+| STR-3 FAQ without FAQPage (Info) | — | 10 pages |
+| STR-20 message in video (S4) | 2 pages | — |
+
+Totals: Maya's reading 15 S4 + 5 Info; Firecrawl's 1 S3 + 20 S4 + 6 Info. The only S3 (STR-12) exists only in
+Firecrawl's copy.
+
+**Proposal (not implemented; waits for the owner): "Firecrawl only where needed".** Firecrawl reads a page only when
+(a) Maya could not read it (blocked, challenged, 429, empty to Maya, no answer), or (b) its template depends on
+JavaScript: the render sample shows rendered text well above raw (rendered > 1.5 × raw + 50 words, RND-1/RND-2), or the
+raw page is an app shell (a mount node with under 50 raw words). Every other page keeps Maya's own reading, which is
+also what a crawler that runs no JavaScript receives. On the three saved audits that is 0 pages (Maya read every page;
+the 20-page render samples showed no JavaScript content), so: credits 501 / 51 / 40 → 0 per run; time, after stage 2,
+nihan ~24-25 → ~17 min (the reader is what ends the run there), Quick runs ~0 min (the reader is already hidden) but
+no credits. Findings: the rows above in Firecrawl's column would follow Maya's copy (the STR-12 S3 would disappear).
+Owner decision needed: which copy the content checks should judge on a site that reads fine without JavaScript.
+
+**Verification of stage 2** (working tree on `c22a0b0`+, macOS, Python 3.13.1; isolated home, no .env, no providers):
+
+| Command | Result |
+|---|---|
+| `pytest -q -m "not slow and not timing"` (fast suite) | `1 failed, 2551 passed, 4 skipped, 132 deselected, 1 warning in 400.78s` |
+| the one failure | `test_release_metadata.py::test_snapshot_and_checkpoint_state_the_applications_version`: `RELEASE-SNAPSHOT.json` records the w14d release (schema 1.20); it is rewritten only by release preparation (`tools/release_metadata.py`), not done here. Expected until the next release |
+| `tests/test_v03_speed.py` | `20 passed` |
+| `python3.11 -m compileall` | OK |
+| full suite, ruff (not installed), Linux/Windows, live runs | NOT RUN |

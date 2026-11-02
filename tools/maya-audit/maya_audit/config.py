@@ -190,6 +190,9 @@ def estimated_duration_s(max_pages: int, key_pages: int = 0, delay_s: float = 1.
 # Fast check (DECISIONS 219): what each optional request cap becomes. Rendered pages are decision 27's template slots.
 FAST_RENDER_BUDGET = 6
 FAST_SITEMAP_CHECK_MAX = 50
+# The sitemap check's sample (Owner, 2026-11-02; DECISIONS 294; were 1,000 and 200).
+STANDARD_SITEMAP_CHECK_MAX = 300
+QUICK_SITEMAP_CHECK_MAX = 100
 FAST_LLMS_LINK_CHECKS_MAX = 20
 FAST_IMAGE_CHECKS_MAX = 10
 FAST_KEY_IMAGE_CHECKS_MAX = 15
@@ -235,6 +238,10 @@ class CrawlConfig:
     # Part of the time limit kept for a page reader that runs after Maya's own crawl (maya_audit.runclock). The crawl
     # stops this long before the limit; the reader and the paid panels may use the rest.
     reader_reserve_s: float = 0.0
+    # Requests to the audited site in flight at once after the crawl, Maya's own and the page reader's together
+    # (maya_audit.sitelimit, DECISIONS 294): 1 to 10. Starts stay at least the polite gap apart. 1 when robots.txt sets
+    # a Crawl-delay or the crawl was rate-limited.
+    site_concurrency: int = 5
     # The crawl stops fetching new pages once it has used this share of the time limit. 1.0 (DECISIONS 219; was 0.6):
     # page reading is never cut to make room for the checks; the later steps lose their optional requests instead
     # (other-site links first, then llms.txt links, the sitemap check, the performance rounds and rendering).
@@ -372,10 +379,10 @@ class CrawlConfig:
     sitemap_bad_share: float = 0.10
     sitemap_required_above_pages: int = 50
     # IDX-5 (DECISIONS 206, LG-78): the sitemap URLs the crawl did not read are each asked once with a light request
-    # (at most 64 KB read, no redirect followed), at most this many. The command line sets 200 for up to 499 pages
-    # (Quick), 1,000 from 500 (Standard) and 0 for a single page. Above the cap a sample spread over the site's
-    # sections is asked, the same every run.
-    sitemap_check_max: int = 200
+    # (at most 64 KB read, no redirect followed), at most this many. The command line sets 100 for up to 499 pages
+    # (Quick), 300 from 500 (Standard) and 0 for a single page (DECISIONS 294; were 200 and 1,000). Above the cap a
+    # sample spread evenly over the sitemap files is asked, the same every run, 4 at a time through the site limit.
+    sitemap_check_max: int = 100
     # Fast check (DECISIONS 219, --fast, the web app's "Fast check" switch): fewer optional requests, the FAST_* caps.
     # Pages read, robots.txt samples, ACC-4, redirect re-checks, the page reader and paid data are unchanged.
     fast_check: bool = False

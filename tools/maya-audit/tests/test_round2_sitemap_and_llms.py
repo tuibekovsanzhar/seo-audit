@@ -2,8 +2,9 @@
 the links of llms.txt are followed (DECISIONS 206, 208; LG-78, LG-79, LG-80).
 
 - IDX-5 judges every sitemap URL: the crawl's for free, the rest with one light request each (at most 64 KB, no
-  redirect followed), at most 200 (Quick) or 1,000 (Standard), a sample spread over the site's sections above that,
-  the same every run. A 429 stops the light requests; the rest is said as not checked.
+  redirect followed), at most 100 (Quick) or 300 (Standard) since DECISIONS 294, a sample spread over the sitemap files
+  (one file: over the site's sections) above that, the same every run. A 429 backs off (DECISIONS 294); the third stops
+  the light requests and the rest is said as not checked.
 - A sitemap file named in robots.txt or a sitemap index that cannot be loaded is S3; the /sitemap.xml guess is not.
 - An address with a "?" where a letter was lost, or a space, is S3, with the word it probably is; an address with
   letters that are not percent-encoded is Info.
@@ -107,16 +108,28 @@ def test_a_cap_above_the_sitemap_checks_every_url_and_says_of_n(no_lookups):
                                                                    "single_probe_or_missing_corroboration"}
 
 
-def test_a_429_stops_the_light_requests_and_the_rest_is_not_checked(no_lookups):
+def test_one_429_backs_off_and_the_light_requests_go_on(no_lookups):
+    # DECISIONS 294 (Owner, 2026-11-02; replaces "a 429 stops them" for the sitemap check): the gap widens, the shared
+    # site limit steps down, and the other URLs are still asked.
     paths = ["/"] + [f"/sayfa/{n}" for n in range(1, 21)]
     routes = {p: OK for p in paths} | {"/sayfa/12": httpx.Response(429, text="slow down")}
     outcome = audited(routes, sitemap=paths, max_pages=3)
     asked = light(outcome)
-    assert asked[-1] == "/sayfa/12" and len(asked) < 20
+    assert "/sayfa/12" in asked and len(asked) == len(set(asked)) == 18
     data = outcome.result.index.sitemap_check
-    assert data.stopped_because == "rate_limit" and data.not_checked["rate_limit"] == 8
+    assert data.stopped_because is None and data.rate_limited == 1 and "rate_limit" not in data.not_checked
+    limit = outcome.result.backoff["site_limit"]
+    assert limit["final"] < limit["configured"] and limit["backed_off"][0]["reason"] == "429"
+
+
+def test_three_429s_stop_the_light_requests_and_the_rest_is_not_checked(no_lookups):
+    paths = ["/"] + [f"/sayfa/{n}" for n in range(1, 21)]
+    routes = {p: OK for p in paths} | {f"/sayfa/{n}": httpx.Response(429, text="slow down") for n in (6, 9, 12)}
+    outcome = audited(routes, sitemap=paths, max_pages=3)
+    data = outcome.result.index.sitemap_check
+    assert data.stopped_because == "rate_limit" and data.rate_limited == 3 and data.not_checked["rate_limit"] >= 1
     parts = outcome.by_id["IDX-5"].coverage["not_assessed"]
-    assert any("429" in p["reason"] and p["count"] == 8 for p in parts)
+    assert any("429" in p["reason"] and p["count"] == data.not_checked["rate_limit"] for p in parts)
     assert outcome.by_id["IDX-5"].status == "partial"
 
 
@@ -183,12 +196,13 @@ def caps(*argv):
     return cli._crawl_config(cli._parser().parse_args(["crawl", KAFE + "/", *argv]))
 
 
-def test_the_cap_is_200_quick_1000_standard_0_single_page_and_the_estimate_grows_with_it():
-    assert caps().sitemap_check_max == 200 and caps("--max-pages", "500").sitemap_check_max == 1000
+def test_the_cap_is_100_quick_300_standard_0_single_page_and_the_estimate_grows_with_it():
+    # DECISIONS 294 (Owner, 2026-11-02): 300 in Standard and 100 in Quick (were 1,000 and 200).
+    assert caps().sitemap_check_max == 100 and caps("--max-pages", "500").sitemap_check_max == 300
     assert caps("--single-page").sitemap_check_max == 0 and caps("--sitemap-check-max", "7").sitemap_check_max == 7
     assert estimated_duration_s(50, sitemap_check=200) - estimated_duration_s(50) == 200 * 1.3
     engine = SimpleNamespace(overrides={}, overrides_for=None, allow_loopback=True)
-    for mode, cap in (("single", 0), ("quick", 200), ("standard", 1000)):
+    for mode, cap in (("single", 0), ("quick", 100), ("standard", 300)):
         config = runner.crawl_config(engine, {"url": KAFE + "/", "mode": mode, "key_pages": []}, None, resume=False)
         assert config.sitemap_check_max == cap, mode
     import pytest

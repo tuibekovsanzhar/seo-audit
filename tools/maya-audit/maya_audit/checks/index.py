@@ -1028,6 +1028,8 @@ def sitemap_judgments(result: CrawlResult, cfg: CrawlConfig) -> dict:
                       "checked_by_crawl": by_crawl, "checked_by_light_request": by_light,
                       "disallowed": len(out["disallowed"]), "not_checked": len(out["not_checked"]),
                       "not_checked_because": reasons, "sampled": bool(check is not None and check.sampled),
+                      "sample_files": getattr(check, "sample_files", 0) if check is not None else 0,
+                      "wanted": check.wanted if check is not None else None,
                       "cap": check.cap if check is not None else None,
                       "stopped_because": check.stopped_because if check is not None else None,
                       "not_checked_sample": (check.not_checked_sample if check is not None else [])[:20],
@@ -1197,7 +1199,9 @@ def idx5_sitemap(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
             if summary_of["sampled"]:
                 notes.append(f"The sitemap lists {len(listed)} URLs; {len(assessed)} were checked ({summary_of['checked_by_crawl']} read "
                              f"by the crawl, {summary_of['checked_by_light_request']} with one light request each, a sample spread "
-                             "over the site's sections). The share is of the URLs checked and is an estimate for the whole sitemap.")
+                             + (f"evenly over {summary_of['sample_files']} sitemap file(s)" if (summary_of.get("sample_files") or 0) > 1
+                                else "over the site's sections")
+                             + "). The share is of the URLs checked and is an estimate for the whole sitemap.")
             else:
                 notes.append(f"{len(unknown)} listed URL(s) were not checked ({judged['why_not_checked']}), so the share is an "
                              "estimate from the URLs that were.")
@@ -1255,6 +1259,13 @@ def idx5_sitemap(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
                else f"{len(usable)} sitemap document(s), {len(listed)} URL(s); {len(assessed)} of them fetched and none "
                     f"failing thresholds" + (f"; {len(unknown)} listed URL(s) not fetched, so not judged." if unknown
                                              else "."))
+    sampled_of = (judged or {}).get("summary") or {} if listed else {}
+    if sampled_of.get("sampled"):
+        # Said whether or not there is a finding: the light requests were a sample, and how many (DECISIONS 294).
+        files = sampled_of.get("sample_files") or 0
+        summary += (f" A sample was checked: {sampled_of.get('checked_by_light_request', 0)} of the {sampled_of.get('wanted') or 0} "
+                    "sitemap URL(s) the crawl did not read, spread "
+                    + (f"evenly over {files} sitemap file(s)." if files > 1 else "over the site's sections."))
     from ..evidence_accuracy import scope_sentence
     scope_note = scope_sentence("IDX-5", evidence)
     if scope_note: summary += " " + scope_note

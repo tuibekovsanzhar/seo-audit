@@ -469,8 +469,15 @@ def int4_crawler_identity(result: CrawlResult, cfg: CrawlConfig) -> GateResult:
         if smallest is not None and smallest + tolerance_ms < need:
             slow_hosts.append((host, smallest, need))
     min_gap_ms = round(min(gaps), 1) if gaps else None
+    # The shared site limit (DECISIONS 294): Maya's own requests to the site never had more in flight than it allowed.
+    site_limit = (backoff or {}).get("site_limit") or None
+    own_in_flight = most_in_flight([r for r in requests if r.purpose != "render_subresource"
+                                    and (urlsplit(r.url).hostname or "").lower() == site_host])
 
     problems = []
+    if site_limit and own_in_flight > int(site_limit.get("configured") or 1):
+        problems.append(f"{own_in_flight} of Maya's requests to {site_host} were in flight at once, above the site limit "
+                        f"of {site_limit.get('configured')}")
     if agents and agents != [cfg.user_agent]:
         problems.append(f"requests used user agents {agents}, expected only {cfg.user_agent!r}")
     if out_of_order:
@@ -578,10 +585,28 @@ def int4_crawler_identity(result: CrawlResult, cfg: CrawlConfig) -> GateResult:
                 "narrowing_stopped": (backoff or {}).get("narrowing_stopped"),
                 "by_host": by_host[:40],
                 "hosts": len(by_host),
+                # The shared limit on the audited site after the crawl, and the most of Maya's own requests to it that
+                # were in flight at once (the page reader's are not in this log; the limit counts both).
+                "site_limit": site_limit,
+                "max_in_flight_own": own_in_flight,
             },
         },
         None if not problems else "This is a defect in Maya's crawler, not in the audited site.",
     )
+
+
+def most_in_flight(records) -> int:
+    """The most requests in flight at one moment, from their monotonic start and end (0 when none have them)."""
+    edges = []
+    for r in records:
+        if r.started_mono is None or r.ended_mono is None:
+            continue
+        edges += [(r.started_mono, 1), (max(r.ended_mono, r.started_mono), -1)]
+    most = now = 0
+    for _, step in sorted(edges, key=lambda e: (e[0], e[1])):  # an end before a start at the same moment
+        now += step
+        most = max(most, now)
+    return most
 
 
 def run_integrity_gates(result: CrawlResult, cfg: CrawlConfig) -> list[GateResult]:

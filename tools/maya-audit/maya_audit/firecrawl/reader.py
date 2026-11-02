@@ -18,8 +18,10 @@ only when the audit records that the site owner approved it.
 from __future__ import annotations
 
 import re
+import threading
 import time
-from dataclasses import replace
+from collections import deque
+from dataclasses import dataclass, replace
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -376,15 +378,106 @@ def start_page_read(result: CrawlResult) -> bool:
                for page in result.pages)
 
 
+@dataclass
+class ReadState:
+    """What a reading left for the content checks: the pages read, one row per address asked for, the queue and the
+    addresses already taken."""
+    pages: list[PageFetch]
+    rows: list[dict[str, Any]]
+    queue: ReadingQueue
+    seen: set[str]
+
+
+class _Now:
+    """A call made at once, held like a future: the sequential reader (one request at a time) needs no thread."""
+
+    def __init__(self, function, *args) -> None:
+        self._value = self._error = None
+        try:
+            self._value = function(*args)
+        except BaseException as exc:  # handed back by result(), exactly as a thread's future would
+            self._error = exc
+
+    def result(self):
+        if self._error is not None:
+            raise self._error
+        return self._value
+
+
+def _median(values: list[float]) -> float | None:
+    ordered = sorted(values)
+    if not ordered:
+        return None
+    middle = len(ordered) // 2
+    return ordered[middle] if len(ordered) % 2 else (ordered[middle - 1] + ordered[middle]) / 2
+
+
 def read_blocked_site(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, options: Options,
-                      info: dict[str, Any], *, blocked: bool = True, progress=None, ranking_urls=()) -> list[CheckResult] | None:
+                      info: dict[str, Any], *, blocked: bool = True, progress=None, ranking_urls=(),
+                      early: "EarlyReading | None" = None) -> list[CheckResult] | None:
     """Read the site's content through Firecrawl and run the content checks on it. None when nothing was read.
 
     `blocked` False is Firecrawl as the reader of a site Maya's own crawler could read too: the same pages are asked
-    for, and each page keeps Maya's own status, headers and timing with the content Firecrawl read."""
+    for, and each page keeps Maya's own status, headers and timing with the content Firecrawl read. `early` is a
+    reading that already started beside Maya's own steps (DECISIONS 294): it is finished, not started again."""
     from ..checks.index import idx8_duplicates
     from ..checks.structure import run_structure_checks
 
+    if early is not None:
+        state = early.finish(info, ranking_urls)
+    else:
+        state = _read_pages(result, cfg, client, options, info, blocked=blocked, progress=progress, ranking_urls=ranking_urls)
+    if state is None:
+        return None
+    pages, rows, queue, seen = state.pages, state.rows, state.queue, state.seen
+    own = {} if blocked else {page.url: page for page in result.pages}
+    if not pages and info.get("errors"):
+        info["reason"] = f"{client.identity.name} could not load the page as a website; see provider errors below"
+        return None
+    if not pages and info.get("stopped_because") and not rows:
+        info["reason"] = f"Firecrawl read nothing: {info['stopped_because']}"
+        return None
+    if not pages:
+        info["reason"] = "there was no page robots.txt allows"
+        if rows:
+            info["reason"] = (f"Firecrawl {options.proxy} was also blocked: " + _unread_counts(rows)) if also_blocked(info) \
+                else "Firecrawl could not read the site either"
+        return None
+    # The same result, seen through the pages Firecrawl read. Maya's own structure data (its link and image
+    # requests) does not apply to these pages and is left out; the checks then report what they could not test.
+    unread_urls = [row["url"] for row in rows if row["outcome"] != "read"]
+    unread_urls += [url for url in queue.waiting() if url not in seen]
+    main = options.read_always
+    if blocked:
+        view = replace(result, pages=pages, structure=None, render=None,
+                       not_fetched_urls=list(dict.fromkeys(unread_urls))[:1000])
+    else:
+        # Maya's crawl stands, page for page; what Firecrawl read replaces the content, and adds any page only it reached.
+        through = {page.url: page for page in pages}
+        disagreements: list[dict[str, Any]] = []
+        both = [_merged(page, through[page.url], disagreements) if page.url in through else page for page in result.pages]
+        both += [page for page in pages if page.url not in own]
+        info["coverage"].update(indexability_disagreements=disagreements[:DISAGREEMENTS_LISTED],
+                                indexability_disagreements_count=len(disagreements))
+        view = replace(result, pages=both)
+    checks = run_structure_checks(view, cfg, [])
+    checks += settle_all([idx8_duplicates(view, cfg)], view)
+    checks = [check for check in checks if check.check_id in CONTENT_CHECKS]
+    if main:
+        _label(checks, MAIN_SOURCE, MAIN_WHY, client.identity, notice=None)
+    else:
+        _label(checks, client.identity.source("Maya's crawler was blocked"), "Maya's crawler was blocked", client.identity)
+    info["view_pages"] = pages  # for saving evidence; removed before the report is written
+    return checks
+
+
+
+
+def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, options: Options, info: dict[str, Any], *,
+                blocked: bool, progress=None, ranking_urls=(), inbox=None) -> ReadState | None:
+    """The reading itself: robots.txt, the queue, the requests (up to `options.concurrency` at once, DECISIONS 294) and
+    the coverage record in `info`. None when robots.txt allows nothing. `inbox` (a queue.Queue) may hand it more
+    addresses while it reads (the ranking pages of a paid panel that finished later)."""
     origin, home = result.origin, homepage_url(result)
     allowed = _robots_rules(result, client, info, cfg.product_token)
     if allowed is None:
@@ -439,101 +532,192 @@ def read_blocked_site(result: CrawlResult, cfg: CrawlConfig, client: ContentProv
         for address in found["urls"]:
             queue.add(address, "sitemap", None)
 
-    while len(queue) and len(pages) < options.max_pages and not info.get("stopped_because"):
-        url, via, depth = queue.pop()
-        url = normalize_url(url) or url
-        if non_page_kind(url):
-            info.setdefault("unsupported_resources", []).append({"url": url, "kind": non_page_kind(url),
-                                                                  "source": via, "outcome": "skipped_without_request"})
-            continue  # never charged or counted in a failure streak
-        if url in seen or not same_origin(url, origin):
-            continue
-        seen.add(url)
-        if url in own and not _usable(own[url]):
-            continue  # a redirect or an error page in Maya's own crawl: its status is the finding, there is no content to read
-        if not allowed(url):
-            skipped_robots += 1
-            continue
-        queue.taken(url)
-        try:
-            fetched = client.scrape(url)
-        except ProviderLimitReached as exc:
-            info["stopped_because"] = str(exc)
-            break
-        except ProviderRetentionRequired:
-            raise
-        except ContentLoadError as exc:
-            asked += 1
-            sent += 1
-            info.setdefault("errors", []).append(exc.diagnostic(url))
-            rows.append({"url": url, "outcome": "failed", "reason": str(exc)})
-            # Try other already-known URLs, never retry this URL or change its proxy.
-            # The client still enforces request count, approval, budget and stop.
-            run_unreadable += 1
-            if pages and options.stop_after_unreadable and run_unreadable >= options.stop_after_unreadable:
-                info["stopped_because"] = (f"the last {run_unreadable} pages asked for came back unreadable, so no more were requested")
-                break
-            continue
-        except ContentProviderError as exc:
-            rows.append({"url": url, "outcome": "failed", "reason": str(exc)})
-            info["stopped_because"] = str(exc)
-            break  # an error from the service (no credit, budget, stop) is not something to push through
-        asked += 1
-        sent += not fetched.cached
-        media = str(getattr(fetched, 'content_type', '') or '').lower()
-        if media.startswith(('audio/', 'video/')):
-            diagnostic = {"url": url, "kind": "media", "source": via, "outcome": "unsupported_resource",
-                          "content_type": media, "observed_at": fetched.fetched_at, "from_cache": fetched.cached}
-            info.setdefault('unsupported_resources', []).append(diagnostic)
-            rows.append(diagnostic)
-            continue  # a response identifying non-page media is not a website-reader failure
-        # Where the reader ended up decides whose document this is. Another site's page is never analysed as this one's,
-        # and a page of this site reached by a redirect is recorded under its own address, with the address asked for.
-        if progress is not None:  # each step of the reading, for whoever is watching the audit
-            progress({"phase": "firecrawl", "url": url, "attempted": len(rows) + 1, "read": len(pages), "page_cap": options.max_pages,
-                      "failed": sum(1 for row in rows if row["outcome"] not in ("read", "redirected")),
-                      "from_cache": sum(1 for row in rows if row.get("from_cache")) + int(bool(fetched.cached))})
-        relation, landed = where_it_landed(url, getattr(fetched, "final_url", None), origin)
-        seen_at = {"status": fetched.status, "status_known": fetched.status is not None, "from_cache": fetched.cached, "observed_at": fetched.fetched_at}
-        if relation == "outside":
-            rows.append({"url": url, "outcome": "redirected_out_of_scope", "final_url": landed, **seen_at,
-                         "reason": "the reader was sent to an address outside the audited site, so its document was not analysed"})
-            unread += 1
-            continue
-        if relation == "moved":
-            if landed in seen or not allowed(landed):
-                rows.append({"url": url, "outcome": "redirected", "final_url": landed, **seen_at,
-                             "reason": "redirects to an address that robots.txt disallows" if not allowed(landed)
-                             else "redirects to an address that is read under its own name"})
+    # Up to `options.concurrency` requests at once (DECISIONS 294), one at a time until the first page is read: a site
+    # or a reader that turns every request away costs what it did when the reader asked one page at a time. Answers are
+    # handled in the order the requests were sent, so the report is the same whatever answers first.
+    from concurrent.futures import ThreadPoolExecutor
+    from queue import Empty
+
+    from ..runclock import MIN_REQUEST_S, READER_SECONDS_PER_PAGE
+    from ..sitelimit import backed_off
+    from .client import ProviderRateLimited
+
+    clock = getattr(client, "clock", None)
+    limiter = getattr(clock, "site_limiter", None)
+    # More than one at a time only through the shared site limit, which keeps the starts the polite gap apart; a clock
+    # without one paces a single request at a time, as before.
+    at_once = options.concurrency if limiter is not None else 1
+    concurrency = {"configured": options.concurrency, "start": at_once, "final": at_once, "backed_off": [], "max_in_flight": 0,
+                   "site_limit": limiter is not None}
+    info["concurrency"] = concurrency
+    in_flight: deque = deque()
+    pool = ThreadPoolExecutor(at_once, thread_name_prefix="reader") if at_once > 1 else None
+    stop = False
+    call_seconds: list[float] = []
+    reading_began = time.monotonic()
+
+    def back_off(reason: str) -> None:
+        lower = backed_off(concurrency["final"])
+        if lower is not None:
+            concurrency["backed_off"].append({"from": concurrency["final"], "to": lower, "reason": reason, "after_answers": len(rows)})
+            concurrency["final"] = lower
+
+    def take_inbox() -> None:
+        while inbox is not None:
+            try:
+                urls = inbox.get_nowait()
+            except Empty:
+                return
+            for address in urls:
+                if _in_scope(address, origin):
+                    queue.add(address, "ranking_page", 1)
+
+    def next_url():
+        nonlocal skipped_robots
+        while len(queue):
+            url, via, depth = queue.pop()
+            url = normalize_url(url) or url
+            if non_page_kind(url):
+                info.setdefault("unsupported_resources", []).append({"url": url, "kind": non_page_kind(url),
+                                                                      "source": via, "outcome": "skipped_without_request"})
+                continue  # never charged or counted in a failure streak
+            if url in seen or not same_origin(url, origin):
                 continue
-            seen.add(landed)
-            rows.append({"url": url, "outcome": "redirected", "final_url": landed, **seen_at, "reason": "its document is recorded under the address it redirects to"})
-            url, via = landed, "redirect"
-        page, outcome = _page_from(url, fetched, origin, cfg, via, depth, client.identity.name, document_url=landed if relation == "alias" else None)
-        rows.append({"url": url, "outcome": outcome, "bytes": page.body_bytes, **seen_at,
-                     **({"final_url": landed, "host_alias": True} if relation == "alias" else {})})
-        if outcome != "read":
-            unread += 1
-            # An error status is the site's own answer (a dead link): it does not mean the reader is being turned away.
-            turned_away = not (outcome == "error" and isinstance(fetched.status, int) and fetched.status >= 400)
-            run_unreadable = run_unreadable + 1 if turned_away else run_unreadable
-            if not pages and unread >= GIVE_UP_AFTER_UNREAD:
-                info["stopped_because"] = (f"the first {unread} pages asked for came back unreadable, so no more were requested")
+            seen.add(url)
+            if url in own and not _usable(own[url]):
+                continue  # a redirect or an error page in Maya's own crawl: its status is the finding, there is no content to read
+            if not allowed(url):
+                skipped_robots += 1
+                continue
+            return url, via, depth
+        return None
+
+    def halt(reason: str) -> None:
+        nonlocal stop
+        info.setdefault("stopped_because", reason)
+        stop = True
+
+    try:
+        while True:
+            take_inbox()
+            while (not stop and not info.get("stopped_because") and len(pages) + len(in_flight) < options.max_pages
+                   and len(in_flight) < (concurrency["final"] if pages else 1)):
+                if clock is not None and len(call_seconds) >= 3:
+                    # The time a request needs is what the calls so far took, not an assumed figure (DECISIONS 294).
+                    clock.needs_s = max(0.5, round(1.25 * (_median(call_seconds) or MIN_REQUEST_S), 3))
+                item = next_url()
+                if item is None:
+                    break
+                url, via, depth = item
+                queue.taken(url)
+                job = pool.submit(client.scrape, url) if pool is not None else _Now(client.scrape, url)
+                in_flight.append((url, via, depth, job))
+                concurrency["max_in_flight"] = max(concurrency["max_in_flight"], len(in_flight))
+            if not in_flight:
                 break
-            if pages and options.stop_after_unreadable and run_unreadable >= options.stop_after_unreadable:
-                # The reader was getting pages and now is not: the site has started turning it away, or the provider is
-                # failing. Each further request would be paid for and thrown away.
-                info["stopped_because"] = (f"the last {run_unreadable} pages asked for came back unreadable, so no more were requested")
-                break
-            continue
-        run_unreadable = 0
-        pages.append(page)
-        if wants_sitemap and len(pages) == 1:
-            ask_for_the_sitemap()
-        # A page Maya found only in the sitemap has no click depth; a link from it has none either, rather than a made-up one.
-        for edge in page.outlinks:
-            if not cfg.single_page:  # a single-page audit reads the page and follows nothing from it
-                queue.add(edge["target"], "link", None if depth is None else depth + 1, bool(edge.get("nav")))
+            url, via, depth, job = in_flight.popleft()
+            try:
+                fetched = job.result()
+            except ProviderLimitReached as exc:
+                halt(str(exc))
+                continue
+            except ProviderRetentionRequired:
+                raise
+            except ProviderRateLimited as exc:
+                # Firecrawl's own limit, not the site's answer: fewer requests at once, and the reading goes on.
+                asked += 1
+                sent += 1
+                rows.append({"url": url, "outcome": "failed", "reason": str(exc)})
+                back_off("429 from Firecrawl")
+                continue
+            except ContentLoadError as exc:
+                asked += 1
+                sent += 1
+                info.setdefault("errors", []).append(exc.diagnostic(url))
+                rows.append({"url": url, "outcome": "failed", "reason": str(exc)})
+                if isinstance(getattr(exc, "status", None), int) and exc.status >= 500:
+                    back_off("5xx from Firecrawl")
+                # Try other already-known URLs, never retry this URL or change its proxy.
+                # The client still enforces request count, approval, budget and stop.
+                run_unreadable += 1
+                if pages and options.stop_after_unreadable and run_unreadable >= options.stop_after_unreadable:
+                    halt(f"the last {run_unreadable} pages asked for came back unreadable, so no more were requested")
+                continue
+            except ContentProviderError as exc:
+                rows.append({"url": url, "outcome": "failed", "reason": str(exc)})
+                halt(str(exc))
+                continue  # an error from the service (no credit, budget, stop) is not something to push through
+            asked += 1
+            sent += not fetched.cached
+            took = float(getattr(fetched, "seconds", 0.0) or 0.0)
+            if not fetched.cached and took > 0:
+                call_seconds.append(took)
+                if took > settings.SLOW_CALL_S:
+                    back_off("slow answer")
+            if fetched.status == 429 or (isinstance(fetched.status, int) and fetched.status >= 500):
+                # The site's own answer, seen through the reader: the reader and the shared site limit both slow down.
+                back_off(f"{'429' if fetched.status == 429 else '5xx'} from the site")
+                if limiter is not None:
+                    limiter.back_off("429" if fetched.status == 429 else "5xx", "reader")
+            media = str(getattr(fetched, 'content_type', '') or '').lower()
+            if media.startswith(('audio/', 'video/')):
+                diagnostic = {"url": url, "kind": "media", "source": via, "outcome": "unsupported_resource",
+                              "content_type": media, "observed_at": fetched.fetched_at, "from_cache": fetched.cached}
+                info.setdefault('unsupported_resources', []).append(diagnostic)
+                rows.append(diagnostic)
+                continue  # a response identifying non-page media is not a website-reader failure
+            # Where the reader ended up decides whose document this is. Another site's page is never analysed as this one's,
+            # and a page of this site reached by a redirect is recorded under its own address, with the address asked for.
+            if progress is not None:  # each step of the reading, for whoever is watching the audit
+                progress({"phase": "firecrawl", "url": url, "attempted": len(rows) + 1, "read": len(pages), "page_cap": options.max_pages,
+                          "failed": sum(1 for row in rows if row["outcome"] not in ("read", "redirected")),
+                          "from_cache": sum(1 for row in rows if row.get("from_cache")) + int(bool(fetched.cached)),
+                          "in_flight": len(in_flight), "seconds_per_page": round((time.monotonic() - reading_began) / max(1, asked), 2)})
+            relation, landed = where_it_landed(url, getattr(fetched, "final_url", None), origin)
+            seen_at = {"status": fetched.status, "status_known": fetched.status is not None, "from_cache": fetched.cached, "observed_at": fetched.fetched_at}
+            if relation == "outside":
+                rows.append({"url": url, "outcome": "redirected_out_of_scope", "final_url": landed, **seen_at,
+                             "reason": "the reader was sent to an address outside the audited site, so its document was not analysed"})
+                unread += 1
+                continue
+            if relation == "moved":
+                if landed in seen or not allowed(landed):
+                    rows.append({"url": url, "outcome": "redirected", "final_url": landed, **seen_at,
+                                 "reason": "redirects to an address that robots.txt disallows" if not allowed(landed)
+                                 else "redirects to an address that is read under its own name"})
+                    continue
+                seen.add(landed)
+                rows.append({"url": url, "outcome": "redirected", "final_url": landed, **seen_at, "reason": "its document is recorded under the address it redirects to"})
+                url, via = landed, "redirect"
+            page, outcome = _page_from(url, fetched, origin, cfg, via, depth, client.identity.name, document_url=landed if relation == "alias" else None)
+            rows.append({"url": url, "outcome": outcome, "bytes": page.body_bytes, **seen_at,
+                         **({"final_url": landed, "host_alias": True} if relation == "alias" else {})})
+            if outcome != "read":
+                unread += 1
+                # An error status is the site's own answer (a dead link): it does not mean the reader is being turned away.
+                turned_away = not (outcome == "error" and isinstance(fetched.status, int) and fetched.status >= 400)
+                run_unreadable = run_unreadable + 1 if turned_away else run_unreadable
+                if not pages and unread >= GIVE_UP_AFTER_UNREAD:
+                    halt(f"the first {unread} pages asked for came back unreadable, so no more were requested")
+                    continue
+                if pages and options.stop_after_unreadable and run_unreadable >= options.stop_after_unreadable:
+                    # The reader was getting pages and now is not: the site has started turning it away, or the provider is
+                    # failing. Each further request would be paid for and thrown away.
+                    halt(f"the last {run_unreadable} pages asked for came back unreadable, so no more were requested")
+                continue
+            run_unreadable = 0
+            if len(pages) >= options.max_pages:
+                continue  # an answer still in flight when the cap was reached: asked for and recorded, not a page over the cap
+            pages.append(page)
+            if wants_sitemap and len(pages) == 1:
+                ask_for_the_sitemap()
+            # A page Maya found only in the sitemap has no click depth; a link from it has none either, rather than a made-up one.
+            for edge in page.outlinks:
+                if not cfg.single_page:  # a single-page audit reads the page and follows nothing from it
+                    queue.add(edge["target"], "link", None if depth is None else depth + 1, bool(edge.get("nav")))
+    finally:
+        if pool is not None:
+            pool.shutdown(wait=True, cancel_futures=True)
     # What is still unread when reading ends: addresses known and never asked for (the cap, a stop, a provider limit),
     # and addresses asked for that gave no readable document.
     # Addresses Maya's own crawl found and did not fetch are known too, whether or not a page the reader read links to them:
@@ -584,45 +768,15 @@ def read_blocked_site(result: CrawlResult, cfg: CrawlConfig, client: ContentProv
                           "key_pages_not_read": [u for u in key if u not in read_urls][:50],
                           # Pages whose two copies (Maya's own, the reader's) disagree on noindex; Maya's own is used.
                           "indexability_disagreements": [], "indexability_disagreements_count": 0,
-                          "examples_not_requested": waiting[:10]})
-    if not pages and info.get("errors"):
-        info["reason"] = f"{client.identity.name} could not load the page as a website; see provider errors below"
-        return None
-    if not pages and info.get("stopped_because") and not rows:
-        info["reason"] = f"Firecrawl read nothing: {info['stopped_because']}"
-        return None
-    if not pages:
-        info["reason"] = "there was no page robots.txt allows"
-        if rows:
-            info["reason"] = (f"Firecrawl {options.proxy} was also blocked: " + _unread_counts(rows)) if also_blocked(info) \
-                else "Firecrawl could not read the site either"
-        return None
-    # The same result, seen through the pages Firecrawl read. Maya's own structure data (its link and image
-    # requests) does not apply to these pages and is left out; the checks then report what they could not test.
-    unread_urls = [row["url"] for row in rows if row["outcome"] != "read"]
-    unread_urls += [url for url in queue.waiting() if url not in seen]
-    main = options.read_always
-    if blocked:
-        view = replace(result, pages=pages, structure=None, render=None,
-                       not_fetched_urls=list(dict.fromkeys(unread_urls))[:1000])
-    else:
-        # Maya's crawl stands, page for page; what Firecrawl read replaces the content, and adds any page only it reached.
-        through = {page.url: page for page in pages}
-        disagreements: list[dict[str, Any]] = []
-        both = [_merged(page, through[page.url], disagreements) if page.url in through else page for page in result.pages]
-        both += [page for page in pages if page.url not in own]
-        info["coverage"].update(indexability_disagreements=disagreements[:DISAGREEMENTS_LISTED],
-                                indexability_disagreements_count=len(disagreements))
-        view = replace(result, pages=both)
-    checks = run_structure_checks(view, cfg, [])
-    checks += settle_all([idx8_duplicates(view, cfg)], view)
-    checks = [check for check in checks if check.check_id in CONTENT_CHECKS]
-    if main:
-        _label(checks, MAIN_SOURCE, MAIN_WHY, client.identity, notice=None)
-    else:
-        _label(checks, client.identity.source("Maya's crawler was blocked"), "Maya's crawler was blocked", client.identity)
-    info["view_pages"] = pages  # for saving evidence; removed before the report is written
-    return checks
+                          "examples_not_requested": waiting[:10],
+                          # The reader's own pace, measured (DECISIONS 294): wall time per page asked for (with the
+                          # requests in flight at once), the time one call took (median), what was assumed before
+                          # anything was measured, and the pages left unread because the time limit came first.
+                          "seconds_per_page_measured": round((time.monotonic() - reading_began) / asked, 2) if asked else None,
+                          "call_seconds_measured": None if not call_seconds else round(_median(call_seconds), 2),
+                          "seconds_per_page_assumed": READER_SECONDS_PER_PAGE,
+                          "skipped_for_time": len(waiting) if why_waiting == "time_limit" else 0})
+    return ReadState(pages, rows, queue, seen)
 
 
 def render_fallback(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, options: Options,
@@ -682,7 +836,89 @@ def browser_unavailable(result: CrawlResult) -> bool:
     return render is None or (getattr(render, "mode", None) == "raw_html_only" and "disabled in configuration" not in (render.reason or ""))
 
 
-def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, *, progress=None, ranking_urls=()) -> dict[str, Any]:
+class EarlyReading:
+    """The page reader started the moment Maya's crawl ends, beside Maya's own later steps (Owner, 2026-11-02;
+    DECISIONS 294). `run_audit` offers it the crawl (`start`); `apply` finishes it (`finish`) and runs the content checks
+    as it always did.
+
+    It starts only where the reader would read the same pages anyway after Maya's steps: the main page reader of a site
+    Maya's crawler read (not blocked, not rate-limited, not stopped, the network answered). Everything else keeps the
+    old order. Its requests share the audited site's one limit with Maya's own (maya_audit.sitelimit)."""
+
+    def __init__(self, client: FirecrawlClient, options: Options, *, progress=None, on_start=None) -> None:
+        import queue
+
+        self.client, self.options, self.progress = client, options, progress
+        # Called once, just before the reading starts (the web app marks the approval as being spent then).
+        self.on_start = on_start
+        self.started = False
+        self.info: dict[str, Any] = {}
+        self.began: float | None = None
+        self.ended: float | None = None
+        self._state: ReadState | None = None
+        self._error: BaseException | None = None
+        self._thread: threading.Thread | None = None
+        self._inbox: queue.Queue = queue.Queue()
+
+    def start(self, result: CrawlResult, cfg: CrawlConfig, limiter, deadline_mono: float | None) -> bool:
+        """Start reading now when this audit's reader would read Maya's pages anyway. True when it started."""
+        if not (self.options.read_blocked and self.options.read_always) or cfg.single_page:
+            return False
+        if result.stop_reason in (StopReason.RATE_LIMIT, StopReason.NETWORK, StopReason.STOPPED, StopReason.ROBOTS_DISALLOWED):
+            return False
+        if crawl_was_blocked(result, cfg)[0]:
+            return False
+        clock = getattr(self.client, "clock", None)
+        if clock is None:
+            return False
+        if deadline_mono is not None:
+            clock.deadline_mono = deadline_mono
+        clock.site_limiter = limiter
+        if clock.why_not():
+            return False
+        if self.on_start is not None:
+            self.on_start()
+        self.started, self.began = True, time.monotonic()
+        self._thread = threading.Thread(target=self._run, args=(result, cfg), name="early-reader", daemon=True)
+        self._thread.start()
+        return True
+
+    def _run(self, result: CrawlResult, cfg: CrawlConfig) -> None:
+        try:
+            self._state = _read_pages(result, cfg, self.client, self.options, self.info, blocked=False,
+                                      progress=self.progress, inbox=self._inbox)
+        except BaseException as exc:  # handed to `finish`, which raises it where apply would have
+            self._error = exc
+        finally:
+            self.ended = time.monotonic()
+
+    def add(self, urls) -> None:
+        """More addresses to read, while it reads (a paid panel's ranking pages that arrived later)."""
+        urls = list(urls or [])
+        if urls:
+            self._inbox.put(urls)
+
+    def finish(self, info: dict[str, Any], ranking_urls=()) -> ReadState | None:
+        """Wait for the reading to end, put what it recorded into `info`, and hand back what it read."""
+        self.add(ranking_urls)
+        if self._thread is not None:
+            self._thread.join()
+        info.update(self.info)
+        coverage = info.setdefault("coverage", {})
+        coverage["ran_beside_maya"] = True
+        if self._error is not None:
+            raise self._error
+        return self._state
+
+    @property
+    def elapsed_s(self) -> float | None:
+        if self.began is None:
+            return None
+        return round((self.ended or time.monotonic()) - self.began, 3)
+
+
+def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, *, progress=None, ranking_urls=(),
+          early: EarlyReading | None = None) -> dict[str, Any]:
     """Use Firecrawl for this audit where its conditions hold. Changes `outcome.checks` in place; returns the report section.
 
     Access results are never among the checks replaced. The section says what was asked for, what happened, what it
@@ -727,10 +963,12 @@ def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, 
                 "why": AFTER_RATE_LIMIT_WHY, "maya_stopped": result.stop_detail,
                 "maya_blocked": maya_blocked.LABEL if blocked_429 else None, "proxy": options.proxy,
                 "owner_approved_bypass": bool(options.owner_approved_bypass), "page_cap": options.max_pages}
-        if not_now and reading:
+        started_early = early is not None and early.started
+        if not_now and reading and not started_early:
             info.update(reason=f"Firecrawl was not started: {not_now}", stopped_because=not_now, not_started=True)
-        elif reading:
-            checks = read_blocked_site(result, cfg, client, options, info, blocked=blocked, progress=progress, ranking_urls=ranking_urls)
+        elif reading or started_early:
+            checks = read_blocked_site(result, cfg, client, options, info, blocked=blocked, progress=progress, ranking_urls=ranking_urls,
+                                       early=early if started_early else None)
             if rate_limited:
                 info["crawl_blocked"]["after_rate_limit"].update(read=bool(checks), pages_read=info.get("pages_read") or 0)
             if checks:
@@ -783,7 +1021,11 @@ def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, 
         final.after_provider(outcome, cfg)
     else:
         final.settle(outcome.checks, result)
-    info.setdefault("coverage", {})["elapsed_s"] = round(time.monotonic() - began, 3)
+    info.setdefault("coverage", {})["elapsed_s"] = (early.elapsed_s if early is not None and early.started
+                                                     else round(time.monotonic() - began, 3))
+    limiter = getattr(clock, "site_limiter", None) or getattr(outcome, "site_limiter", None)
+    if limiter is not None and isinstance(getattr(result, "backoff", None), dict):
+        result.backoff["site_limit"] = limiter.summary()  # the final figures, the reader's requests included
     used = sum(call["credits"] for call in client.calls)
     rate = settings.usd_per_credit()
     info.update(calls=client.calls, requests_sent=client.requests_sent,

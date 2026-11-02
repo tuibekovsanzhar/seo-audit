@@ -57,6 +57,9 @@ class RequestRecord:
     # intervals are measured on the clock that cannot be stepped by NTP mid-crawl (INT-4).
     started_mono: float | None = None
     ended_mono: float | None = None
+    # Which slot of the shared site limit carried the request (maya_audit.sitelimit, DECISIONS 294): 0 is the audit's
+    # own thread, 1-9 the sitemap check's workers; None before the limit existed (the crawl) or for another host.
+    slot: int | None = None
 
 
 @dataclass
@@ -226,6 +229,8 @@ class CrawlResult:
     # The re-test of the most serious findings (maya_audit.verification, DECISIONS 272): its requests, cap and states.
     verification: dict[str, Any] | None = None
     _sitemap_named_in: dict[str, str] = field(default_factory=dict, repr=False)
+    # In memory only: the sitemap file that listed each sitemap URL, for the sitemap check's sample (DECISIONS 294).
+    _sitemap_file_of: dict[str, str] = field(default_factory=dict, repr=False)
     # The sitemap check's data while the audit runs (maya_audit.index_data.check_sitemap_urls); written under
     # `crawl.index.sitemap_check`.
     _sitemap_check: Any = field(default=None, repr=False)

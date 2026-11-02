@@ -36,6 +36,12 @@ class RunClock:
     sleep: Callable[[float], None] = time.sleep
     started_mono: float = field(default_factory=time.monotonic)
     _last_site_request: float | None = None
+    # The audited site's one limit, shared with Maya's own later steps (maya_audit.sitelimit, DECISIONS 294). With it, a
+    # reader's request takes a slot (`take_turn`) and gives it back (`give_back`); the pace is the limit's.
+    site_limiter: object | None = None
+    # What one request needs to be worth starting: MIN_REQUEST_S until the reader has measured its own calls, then
+    # what it measured (DECISIONS 294).
+    needs_s: float = MIN_REQUEST_S
 
     def remaining(self) -> float | None:
         return None if self.deadline_mono is None else self.deadline_mono - self.clock()
@@ -64,10 +70,33 @@ class RunClock:
                 if blocked:
                     return blocked
                 self.sleep(min(0.5, max(0.0, until - self.clock())))
-        return self.why_not(MIN_REQUEST_S if self.deadline_mono is not None else 0.0)
+        return self.why_not(self.needs_s if self.deadline_mono is not None else 0.0)
 
     def site_was_asked(self) -> None:
         self._last_site_request = self.clock()
+
+    def take_turn(self):
+        """(slot, None) when a request may be sent now, or (None, why not). Without a site limit, the old single pace:
+        the slot is None and the wait is `wait_for_turn`'s."""
+        limiter = self.site_limiter
+        if limiter is None:
+            return None, self.wait_for_turn()
+        from .sitelimit import READER
+
+        needs = self.needs_s if self.deadline_mono is not None else 0.0
+        slot = limiter.acquire(READER, should_stop=self.should_stop,
+                               deadline_mono=None if self.deadline_mono is None else self.deadline_mono - needs)
+        if slot is None:
+            return None, self.why_not(needs) or OUT_OF_TIME
+        why = self.why_not(needs)
+        if why:
+            limiter.release(slot)
+            return None, why
+        return slot, None
+
+    def give_back(self, slot) -> None:
+        if slot is not None and self.site_limiter is not None:
+            self.site_limiter.release(slot)
 
     def elapsed_s(self) -> float:
         return round(self.clock() - self.started_mono, 3)
@@ -91,17 +120,25 @@ def reader_seconds_per_page(environ=None) -> float:
     return value if 1.0 <= value <= 120.0 else READER_SECONDS_PER_PAGE
 
 
-def reader_allowance_s(pages: int, delay_s: float, per_page_s: float | None = None) -> float:
-    """Time set aside, up front, for a page reader to read the audit's pages: per page, the pace plus an assumed answer
-    time. It is added to the audit's time limit and kept for the reader: Maya's own crawl cannot use it up."""
+def reader_allowance_s(pages: int, delay_s: float, per_page_s: float | None = None, at_once: int = 1) -> float:
+    """Time set aside, up front, for a page reader to read the audit's pages. It is added to the audit's time limit and
+    kept for the reader: Maya's own crawl cannot use it up.
+
+    One request at a time: per page, the pace plus an assumed answer time. With `at_once` requests in flight (DECISIONS
+    294): per page, the assumed answer time shared by the requests in flight, never less than the pace (starts stay the
+    gap apart). The assumed time is only the plan: while reading, the reader measures its own calls and uses those."""
     per_page = reader_seconds_per_page() if per_page_s is None else per_page_s
-    return round(max(0, pages) * (max(0.0, delay_s) + per_page), 1)
+    if at_once <= 1:
+        return round(max(0, pages) * (max(0.0, delay_s) + per_page), 1)
+    return round(max(0, pages) * max(max(0.0, delay_s), per_page / at_once), 1)
 
 
 def for_outcome(outcome, should_stop: Callable[[], bool] | None = None) -> RunClock:
     """The clock for the steps that follow `run_audit`: its deadline, its pace, and when it started."""
     clock = RunClock(deadline_mono=getattr(outcome, "deadline_mono", None), should_stop=should_stop,
-                     pace_s=float(getattr(outcome, "pace_s", 0.0) or 0.0))
+                     pace_s=float(getattr(outcome, "pace_s", 0.0) or 0.0),
+                     # The audit's one limit on the site (DECISIONS 294): a reader after the audit uses it too.
+                     site_limiter=getattr(outcome, "site_limiter", None))
     if getattr(outcome, "started_mono", None) is not None:
         clock.started_mono = outcome.started_mono
     return clock

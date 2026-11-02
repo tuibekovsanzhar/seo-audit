@@ -7,8 +7,8 @@ never changes an access, robots.txt, header, redirect or timing result.
 """
 
 from .client import (ApprovalRequired, FirecrawlClient, FirecrawlError, FirecrawlPage, InsufficientCredits, NoKey,
-                     PossiblyBilled, ZeroDataRetentionUnavailable)
+                     PossiblyBilled, ProviderRateLimited, ZeroDataRetentionUnavailable)
 from .settings import FirecrawlKey, Options, load_key, open_stores
 
 __all__ = ["ApprovalRequired", "FirecrawlClient", "FirecrawlError", "FirecrawlKey", "FirecrawlPage", "InsufficientCredits",
-           "NoKey", "Options", "PossiblyBilled", "ZeroDataRetentionUnavailable", "load_key", "open_stores"]
+           "NoKey", "Options", "PossiblyBilled", "ProviderRateLimited", "ZeroDataRetentionUnavailable", "load_key", "open_stores"]

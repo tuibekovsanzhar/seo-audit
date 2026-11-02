@@ -10,7 +10,7 @@ from .audit import NetworkPreflightFailed, run_audit
 from .botinfo import BotInfoPageNotReady
 from .config import (FAST_EXTERNAL_LINK_CHECKS_MAX, FAST_IMAGE_CHECKS_MAX, FAST_KEY_IMAGE_CHECKS_MAX,
                      FAST_LLMS_LINK_CHECKS_MAX, FAST_RENDER_BUDGET,
-                     FAST_SITEMAP_CHECK_MAX, CrawlConfig, default_time_limit_s, estimated_duration_s, external_link_cap)
+                     FAST_SITEMAP_CHECK_MAX, QUICK_SITEMAP_CHECK_MAX, STANDARD_SITEMAP_CHECK_MAX, CrawlConfig, default_time_limit_s, estimated_duration_s, external_link_cap)
 from .runclock import for_outcome, reader_allowance_s
 from .crawler import ConcurrentCrawlError, HostNotAllowed
 from .intent import DeclaredPolicy, IntentMarking
@@ -147,7 +147,9 @@ def _firecrawl_prepare(args, automatic: bool = False):
     cap = args.firecrawl_max_pages if args.firecrawl_max_pages is not None else max(1, min(args.max_pages, settings.MAX_PAGES_LIMIT))
     options = fc.Options(read_blocked=True, read_always=True, sitemap_discovery=True, render_fallback=args.firecrawl_render, max_pages=cap,
                          proxy=args.firecrawl_proxy, owner_approved_bypass=args.firecrawl_owner_approved,
-                         allow_without_zero_data_retention=args.firecrawl_allow_without_zdr or not settings.zero_data_retention_wanted())
+                         allow_without_zero_data_retention=args.firecrawl_allow_without_zdr or not settings.zero_data_retention_wanted(),
+                         concurrency=(args.firecrawl_concurrency if getattr(args, "firecrawl_concurrency", None) is not None
+                                      else settings.concurrency()))
     key = fc.load_key()
     ledger, cache = fc.open_stores()
     shown = panel.plan(options, args.max_pages, ledger, key is not None, args.firecrawl_daily_credits)
@@ -316,6 +318,12 @@ def _parser() -> argparse.ArgumentParser:
                        help="also allow Firecrawl to render the sampled pages, only if the local browser cannot start")
     crawl.add_argument("--firecrawl-max-pages", type=int, default=None, metavar="N",
                        help="most pages Firecrawl may read in this audit (default: the audit's own page cap, at most 500)")
+    crawl.add_argument("--firecrawl-concurrency", type=_one_to_ten, default=None, metavar="N",
+                       help="Firecrawl requests in flight at once, 1 to 10 (default: MAYA_AUDIT_FIRECRAWL_CONCURRENCY, else 5). "
+                            "Backs off to 2, then 1, on a 429, a 5xx or a slow answer")
+    crawl.add_argument("--site-concurrency", type=_one_to_ten, default=None, metavar="N",
+                       help="requests to the audited site in flight at once after the crawl, Maya's and the page reader's "
+                            "together, 1 to 10 (default 5); starts stay the polite gap apart")
     crawl.add_argument("--firecrawl-dry-run", action="store_true",
                        help="print the Firecrawl plan and its maximum credits, send nothing, crawl nothing, and exit")
     crawl.add_argument("--firecrawl-approve-up-to", type=float, metavar="CREDITS",
@@ -400,7 +408,10 @@ def _reader_reserve(args) -> float:
     command line the reserve comes out of it (at most half); without one it is added to the default limit."""
     if not getattr(args, "reader_planned", False):
         return 0.0
-    wanted = reader_allowance_s(min(args.max_pages, 500), args.delay, getattr(args, "reader_seconds_per_page", None))
+    from .firecrawl import settings as fc_settings
+
+    at_once = getattr(args, "firecrawl_concurrency", None) or fc_settings.concurrency()
+    wanted = reader_allowance_s(min(args.max_pages, 500), args.delay, getattr(args, "reader_seconds_per_page", None), at_once)
     return wanted if args.time_limit is None else min(wanted, max(0.0, args.time_limit) / 2)
 
 
@@ -418,6 +429,17 @@ def _time_limit(args) -> float:
               f"{f' and {len(args.key_page)} key pages' if args.key_page else ''}. The audit will stop early and report "
               f"which checks were cut. Leave --time-limit out to use {default_time_limit_s(**shape):g} s.", file=sys.stderr)
     return args.time_limit
+
+
+def _one_to_ten(text: str) -> int:
+    """A whole number from 1 to 10 (requests in flight at once, DECISIONS 294)."""
+    try:
+        value = int(text)
+    except ValueError:
+        value = 0
+    if not 1 <= value <= 10:
+        raise argparse.ArgumentTypeError(f"not a number from 1 to 10: {text[:20]!r}")
+    return value
 
 
 def _sitemap_check_max(text: str) -> int:
@@ -442,13 +464,13 @@ def render_budget(args) -> int:
 
 
 def sitemap_check_cap(args) -> int:
-    """How many sitemap URLs IDX-5 may ask with a light request (DECISIONS 206): the value given, else 0 for a single
-    page, 1,000 from 500 pages (the web app's Standard), 200 below (Quick, and the command line's default). At most 50
-    with --fast (DECISIONS 219)."""
+    """How many sitemap URLs IDX-5 may ask with a light request (DECISIONS 206, 294): the value given, else 0 for a
+    single page, 300 from 500 pages (the web app's Standard), 100 below (Quick, and the command line's default). At most
+    50 with --fast (DECISIONS 219)."""
     given = getattr(args, "sitemap_check_max", None)
     if getattr(args, "single_page", False):
         return 0
-    cap = given if given is not None else 1000 if args.max_pages >= 500 else 200
+    cap = given if given is not None else STANDARD_SITEMAP_CHECK_MAX if args.max_pages >= 500 else QUICK_SITEMAP_CHECK_MAX
     return min(cap, FAST_SITEMAP_CHECK_MAX) if fast(args) else cap
 
 
@@ -520,6 +542,7 @@ def _crawl_config(args) -> CrawlConfig:
         soft_404_probe=not args.no_soft_404_probe,
         sitemap_check_max=sitemap_check_cap(args),
         fast_check=fast(args),
+        **({"site_concurrency": args.site_concurrency} if getattr(args, "site_concurrency", None) is not None else {}),
         **({"llms_link_checks_max": min(defaults.llms_link_checks_max, FAST_LLMS_LINK_CHECKS_MAX),
             "image_checks_max": min(defaults.image_checks_max, FAST_IMAGE_CHECKS_MAX),
             "key_image_checks_max": min(defaults.key_image_checks_max, FAST_KEY_IMAGE_CHECKS_MAX),
@@ -554,7 +577,8 @@ def _batch_command(args, parser: argparse.ArgumentParser) -> int:
         if fc_settings.main_reader_on() and fc.load_key() is not None:
             def open_firecrawl(config: CrawlConfig):
                 options = fc.Options(read_blocked=True, read_always=True, sitemap_discovery=True, max_pages=max(1, min(config.max_pages, fc_settings.MAX_PAGES_LIMIT)),
-                                     allow_without_zero_data_retention=not fc_settings.zero_data_retention_wanted())
+                                     allow_without_zero_data_retention=not fc_settings.zero_data_retention_wanted(),
+                                     concurrency=fc_settings.concurrency())
                 ledger, cache = fc.open_stores()
                 return fc.FirecrawlClient(fc.load_key(), ledger, cache, approved_credits=options.estimate(config.max_pages)["max_credits"],
                                           max_pages=options.max_pages, proxy=options.proxy,
@@ -631,8 +655,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: the evidence folder already holds files: {evidence_dir}; choose another with --evidence-dir, "
               "pass --overwrite, or --save-evidence none", file=sys.stderr)
         return 2
+    # The page reader starts the moment Maya's crawl ends, beside Maya's own later steps (DECISIONS 294), unless a paid
+    # panel's ranking pages are still to come (then it reads after the audit, as before).
+    early = None
+    if fc_client is not None and dfs_client is None:
+        from .firecrawl.reader import EarlyReading
+
+        early = EarlyReading(fc_client, fc_options)
     try:
-        outcome = run_audit(args.url, config)
+        outcome = run_audit(args.url, config, **({"reader": early} if early is not None else {}))
     except NetworkPreflightFailed as exc:
         # Nothing was requested from the site and nothing was spent: there is no report and no finding.
         for client in (dfs_client, fc_client):
@@ -662,12 +693,13 @@ def main(argv: list[str] | None = None) -> int:
         finally:
             dfs_client.close()
     if fc_client is not None:
-        fc_client.clock = clock
+        if early is None or not early.started:
+            fc_client.clock = clock  # a reading that started early keeps the clock it reads with
         from .firecrawl import panel as fc_panel
         from .firecrawl import reader as fc_reader
 
         try:  # after Maya's own crawl, which stays the access test; before anything is printed or written
-            fc_raw = fc_reader.apply(outcome, config, fc_client, fc_options, ranking_urls=ranking_urls)
+            fc_raw = fc_reader.apply(outcome, config, fc_client, fc_options, ranking_urls=ranking_urls, early=early)
             fc_pages = fc_raw.get("view_pages") or []
             fc_info = fc_panel.section(fc_raw)
         finally:

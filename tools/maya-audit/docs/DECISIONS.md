@@ -2802,3 +2802,61 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      `tests/slow_tests.txt` (1 s or more each locally; 130 tests, about 60% of the suite's time). The full suite, the
      installed-package smoke and pip-audit run in `.github/workflows/full.yml`, by hand and on `team-preview-*` tags,
      on Linux with Python 3.11 and 3.13, plus Windows and macOS when "all_platforms" is ticked.
+
+294. **Speed, v0.3 stage 2: one shared site limit, Firecrawl several at a time and started when the crawl ends, a smaller
+     sitemap sample, a measured time budget, and the progress box (Owner, 2026-11-02; the details marked "agent" are
+     agent defaults).** Measured first (IMPLEMENTATION-STATUS, "v0.3 stage 1"): on nihan's 500 pages Firecrawl took 57.5 of
+     85 minutes, one call at a time; the sitemap URL checks took 13.8.
+     (1) *Shared site limit* (`maya_audit/sitelimit.py`). After the crawl, Maya's own requests to the audited site and
+     the page reader's go through one `SiteLimiter`: at most `site_concurrency` (default 5, 1 to 10; `--site-concurrency`)
+     in flight. The owner chose, when asked, that request **starts** stay at least the polite gap apart, Maya's and the
+     reader's counted together, so the site never sees a higher rate than one crawler (docs/BOT.md, "about one request a
+     second", unchanged). Agent: each slot also keeps the gap after its own last request; slot 0 is the audit's own
+     thread, so its sequential requests keep exactly the old gap; while Maya's steps run the reader never takes slot 0 and
+     a waiting request of Maya's goes first, while the reader may start as long as that does not push the next start of
+     Maya's own thread later; the first request through the limit keeps the gap after the crawl's last request. A 429, a 5xx, a failed connection or a first byte over
+     `pacing_reset_ttfb_ms` (2 s) steps the limit down to 2, then 1 (recorded in `crawl.backoff.site_limit`). A robots.txt
+     Crawl-delay, a widened gap or a rate-limited crawl make the limit 1. The crawl itself stays sequential. INT-4 now
+     measures the gap per slot (`crawl.requests[].slot`, schema 1.21) and between starts where requests overlapped, and
+     is a violation when more of Maya's requests were in flight than the limit.
+     (2) *Firecrawl concurrency.* `Options.concurrency` (default 5, 1 to 10; `MAYA_AUDIT_FIRECRAWL_CONCURRENCY`,
+     `--firecrawl-concurrency`). The owner's plan is Standard (25 concurrent browsers, 100,000 credits a month).
+     Requests go through the shared limit; without one (a clock made by hand) the reader reads one at a time, as before.
+     Agent: one at a time until the first page is read, so a site or reader that turns everything away costs what it
+     did; answers are handled in the order sent, so rows and pages do not depend on which answered first; a request
+     already in flight when a stop rule fires is recorded, never a page over the cap. Back-off to 2, then 1: Firecrawl's
+     own 429 (new `ProviderRateLimited`: not charged, not repeated, reading goes on), a Firecrawl 5xx, the site's 429 or
+     5xx seen through Firecrawl (which also steps the site limit down), or a call over `SLOW_CALL_S` (30 s, agent: the
+     saved audits averaged 4 to 11 s). Recorded in `firecrawl.concurrency` (schema 1.21). The client keeps its guard,
+     reservation and records under one lock; only the request runs outside it. The plan fingerprint leaves
+     `concurrency` out (it changes neither what is read nor its cost), so plans confirmed before keep theirs.
+     (3) *Started when the crawl ends.* `firecrawl.reader.EarlyReading`: `run_audit(reader=...)` offers it the crawl
+     right after the crawl; it reads in its own thread beside rendering, the checks and the sitemap check, and
+     `reader.apply(..., early=...)` finishes it and runs the content checks as before (owner's postponement of
+     2026-10-15, DECISIONS 219 part 1, is lifted). Agent: it starts only for the main page reader of a site Maya's crawler
+     read (not blocked, not rate-limited, not stopped, the network answered, not a single page) and only when no
+     DataForSEO panel is planned (its ranking pages would come too late; then the old order stays). Blocked and
+     rate-limited sites keep the old order. In the web app the approval is marked "attempted" only when it really
+     starts. When it runs early, Maya's own steps no longer leave it the reserve: both end by the one time limit.
+     `firecrawl.coverage.ran_beside_maya` says so.
+     (4) *Sitemap URL check.* Owner: cap 300 in Standard and 100 in Quick (were 1,000 and 200), sampled evenly across
+     the sitemap files, 4 at a time, back-off on 429, the report says it is a sample and how many were checked. Owner,
+     when asked: one light GET per URL, no HEAD (75 to 100% of the URLs checked on nihan, enpara and adile answered 200,
+     and a 200 needs the body for meta robots, the canonical and the empty-page rule, so HEAD first would nearly double
+     the requests). Agent: the files take turns, each file's URLs evenly spaced through its own order, a file with fewer
+     URLs gives its turns to the others; with one sitemap file the old spread over the site's sections stays (and its
+     wording). A 429 widens the gap (×`rate_limit_backoff_factor`) and the site limit steps down; the third 429
+     (`rate_limit_stop_after`) stops the check as before (ACC-8's llms.txt links keep "a 429 stops", DECISIONS 52). New
+     sentences, English and Turkish: "A sample was checked: {n} of the {m} sitemap URL(s) the crawl did not read, spread
+     evenly over {f} sitemap file(s)." in IDX-5's summary, and the share note names the files.
+     (5) *Time budget.* The plan's reserve for the reader is pages × max(gap, 8 s ÷ requests at once) (was pages ×
+     (gap + 8 s)); 8 s stays only as the figure before anything is measured. While reading, after three calls a request
+     is started only if 1.25 × the median call time measured so far (at least 0.5 s, agent) is left, instead of the
+     fixed 5 s. Pages the time limit left unread are `firecrawl.coverage.skipped_for_time` with
+     `seconds_per_page_measured`, `call_seconds_measured` and `seconds_per_page_assumed` (schema 1.21), and the coverage
+     line says "{n} page(s) were not read for lack of time (the page reader measured {s} s a page)" (Turkish beside it).
+     (6) *Progress box.* "Maya: {n} of up to {cap} pages read" and "Firecrawl: {n} of up to {cap} pages read ({k} at a
+     time)" side by side; after the crawl the estimate is Firecrawl's measured pace × the pages left (never past the
+     time limit), else "at most {m} min (the audit's time limit)". Firecrawl's progress events no longer overwrite Maya's
+     counters. Not changed: what is read and checked, severities, ranking, the spending limits, the reader's flow for
+     blocked sites, batch (it keeps the old order, with the concurrency setting). Tests: `tests/test_v03_speed.py`.

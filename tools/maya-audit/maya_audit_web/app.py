@@ -808,6 +808,21 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         if at and (datetime.now(timezone.utc) - datetime.fromisoformat(at)).total_seconds() > STALE_AFTER_S:
             return {"kind": "waiting", "label": t("eta.waiting")}
         if progress.get("step") != "crawling":
+            # After the crawl (DECISIONS 294): Firecrawl's measured pace, when it is reading; else the time limit's bound.
+            reader = progress.get("firecrawl") or {}
+            limit, started = (audit["config"] or {}).get("time_limit_s"), audit.get("started_at")
+            limit_left = None
+            if limit and started:
+                limit_left = max(0, round(float(limit) - (datetime.now(timezone.utc) - datetime.fromisoformat(started)).total_seconds()))
+            pace = reader.get("seconds_per_page")
+            if pace and reader.get("page_cap") and (reader.get("read") or 0) < reader["page_cap"]:
+                seconds = round((reader["page_cap"] - (reader.get("read") or 0)) * float(pace))
+                if limit_left is not None:
+                    seconds = min(seconds, limit_left)
+                return {"kind": "estimate", "max_seconds": seconds,
+                        "label": t("eta.reader", minutes=max(1, round(seconds / 60)), seconds=f"{float(pace):.1f}")}
+            if limit_left is not None:
+                return {"kind": "limit", "max_seconds": limit_left, "label": t("eta.limit", minutes=max(1, round(limit_left / 60)))}
             return {"kind": "unknown", "label": t("eta.unknown")}
         done = (progress.get("pages_checked") or 0) - (progress.get("session_pages_start") or 0)
         spent = (progress.get("elapsed_s") or 0) - (progress.get("crawl_started_s") or 0)
@@ -843,7 +858,11 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             "counters": {"pages_checked": progress.get("pages_checked", 0), "page_cap": cap,
                          "page_cap_note": t("job.cap_note", cap=cap), "redirects": progress.get("redirects"),
                          "other_fetches": progress.get("other_fetches", 0), "requests_sent": progress.get("requests_sent", 0),
-                         "discovered": progress.get("discovered")},
+                         "discovered": progress.get("discovered"),
+                         # Pages read by Firecrawl, beside Maya's own (DECISIONS 294); None before it starts.
+                         "firecrawl_read": (progress.get("firecrawl") or {}).get("read"),
+                         "firecrawl_cap": (progress.get("firecrawl") or {}).get("page_cap"),
+                         "firecrawl_at_once": ((audit["firecrawl"] or {}).get("options") or {}).get("concurrency")},
             "current_url": progress.get("url") if is_active(audit) else None,
             "address_note": progress.get("address_note"),
             "created_at": audit["created_at"], "started_at": audit["started_at"], "finished_at": audit["finished_at"],

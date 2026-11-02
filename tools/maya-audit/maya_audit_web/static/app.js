@@ -583,7 +583,9 @@ function auditCard(audit) {
     else if (current.active || current.can_resume || current.state === "failed") {
       parts.push(current.state === "queued" ? el("p", { text: T("job.queued.note") }) : null,
         el("div", { class: "meter", role: "progressbar", "aria-valuemin": 0, "aria-valuemax": c.page_cap, "aria-valuenow": c.pages_checked || 0, "aria-label": T("result.pages") }, bar),
-        el("p", {}, T("job.pages", { checked: num(c.pages_checked), cap: num(c.page_cap) }), " ", el("span", { class: "muted small", text: c.page_cap_note })),
+        c.firecrawl_cap ? el("p", {}, T("job.pages.maya", { checked: num(c.pages_checked), cap: num(c.page_cap) }), " ", el("span", { class: "muted small", text: c.page_cap_note }))
+          : el("p", {}, T("job.pages", { checked: num(c.pages_checked), cap: num(c.page_cap) }), " ", el("span", { class: "muted small", text: c.page_cap_note })),
+        c.firecrawl_cap ? el("p", {}, T("job.pages.firecrawl", { read: num(c.firecrawl_read || 0), cap: num(c.firecrawl_cap), at_once: num(c.firecrawl_at_once || 1) })) : null,
         el("p", { class: "muted small", text: T("job.other", { count: num(c.other_fetches) }) + " · " + T("job.requests", { count: num(c.requests_sent) }) }),
         current.active ? el("p", { class: "small" }, elapsed, current.eta.label ? " · " + current.eta.label : "") : null,
         current.current_url ? el("p", { class: "url muted", text: current.current_url }) : null,
@@ -618,7 +620,12 @@ function auditCard(audit) {
     state.ticker = setInterval(tick, 1000);
     const on = (name, handler) => source.addEventListener(name, (event) => { let data = {}; try { data = JSON.parse(event.data); } catch (error) { return; } handler(data); });
     on("snapshot", (data) => { current = data.audit; draw(); });
-    on("progress", (data) => { Object.assign(current.counters, { pages_checked: data.pages_checked, other_fetches: data.other_fetches, requests_sent: data.requests_sent }); current.current_url = data.url; refreshSoon(); });
+    on("progress", (data) => {
+      // Firecrawl's progress and Maya's own arrive side by side (DECISIONS 294): each updates only its own counters.
+      if (data.step === "firecrawl") Object.assign(current.counters, { firecrawl_read: data.read, firecrawl_cap: data.page_cap });
+      else { Object.assign(current.counters, { pages_checked: data.pages_checked, other_fetches: data.other_fetches, requests_sent: data.requests_sent }); current.current_url = data.url; }
+      refreshSoon();
+    });
     on("step", refresh); on("state", refresh);
     on("log", (data) => addLog(data.message));
     on("done", refresh);

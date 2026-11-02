@@ -1,6 +1,6 @@
 # The JSON report format
 
-Current version: `1.20`
+Current version: `1.21`
 
 Every JSON report the tool writes (`--json`, and one per brand from `batch`) starts with `schema_version`.
 Anything that reads a report, including the web interface, reads that number first.
@@ -385,6 +385,24 @@ page failures. Coverage stop reasons additionally distinguish `provider_timeout`
 credit/request limits. Existing 1.x reports remain readable; absent historical reasons are never invented.
 Keyword intent dimensions live inside open DataForSEO check evidence; originals and provider totals are preserved.
 
+
+## 1.21 — the shared site limit and the reader's measured pace (2026-11-02)
+
+Added for DECISIONS 294; nothing was removed or renamed, so 1.x readers keep working.
+
+- A request record (`crawl.requests[]`) has `slot`: which slot of the shared site limit carried it (`0` the audit's own
+  thread, `1`-`9` the sitemap check's workers), or `null` for a request made before the limit existed (the crawl) or
+  to another host. INT-4 measures the polite gap per slot, and between starts where slots overlapped.
+- `firecrawl.concurrency`: `configured` (the setting, 1 to 10), `start` (what was used: 1 without a shared site limit),
+  `final`, `backed_off` (each step down: `from`, `to`, `reason` such as "429 from Firecrawl", "5xx from the site" or
+  "slow answer", `after_answers`), `max_in_flight`, `site_limit` (whether the shared limit spaced the starts).
+- `firecrawl.coverage` adds `seconds_per_page_measured` (wall time per page asked for, with the requests in flight),
+  `call_seconds_measured` (the median time one call took), `seconds_per_page_assumed` (the planning figure, 8),
+  `skipped_for_time` (pages known and allowed but not asked for because the time limit came first; 0 otherwise) and
+  `ran_beside_maya` (true when the reader started as soon as Maya's crawl ended).
+- Inside `crawl.backoff` (not part of the frozen shape): `site_limit` with the limit's `configured` and `final` values,
+  `backed_off` steps, `max_in_flight` and `starts` by who asked. Inside `crawl.index.sitemap_check`: `sample_files`,
+  `asked_by_file`, `workers` and `rate_limited`.
 
 ## 1.20 — the finding contract and the release gate (2026-10-27)
 

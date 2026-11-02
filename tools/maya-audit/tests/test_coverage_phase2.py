@@ -204,13 +204,14 @@ def test_the_readers_share_of_the_time_is_kept_up_front_and_the_assumption_can_b
     without = cli._crawl_config(args)
     args.reader_planned = True
     with_reader = cli._crawl_config(args)
-    assert without.reader_reserve_s == 0 and with_reader.reader_reserve_s == 450.0 and with_reader.time_limit_s == without.time_limit_s + 450.0
+    # 5 requests at once (DECISIONS 294): 50 pages x max(1 s gap, 8 s / 5) = 80 s (one at a time it was 50 x 9 = 450 s).
+    assert without.reader_reserve_s == 0 and with_reader.reader_reserve_s == 80.0 and with_reader.time_limit_s == without.time_limit_s + 80.0
     slower = cli._parser().parse_args(["crawl", "https://example.com/", "--max-pages", "50", "--reader-seconds-per-page", "20"])
     slower.reader_planned = True
-    assert cli._crawl_config(slower).reader_reserve_s == 1050.0
+    assert cli._crawl_config(slower).reader_reserve_s == 200.0  # 50 x max(1, 20 / 5)
     given = cli._parser().parse_args(["crawl", "https://example.com/", "--max-pages", "50", "--time-limit", "400"])
     given.reader_planned = True
-    assert cli._crawl_config(given).time_limit_s == 400 and cli._crawl_config(given).reader_reserve_s == 200  # at most half of a limit that was given
+    assert cli._crawl_config(given).time_limit_s == 400 and cli._crawl_config(given).reader_reserve_s == 80  # its own 80 s, at most half of a limit that was given
 
 
 def test_the_time_split_shows_what_the_assumption_buys():

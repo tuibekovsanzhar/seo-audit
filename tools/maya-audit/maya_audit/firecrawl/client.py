@@ -13,6 +13,7 @@ that audit) leaves it out.
 from __future__ import annotations
 
 import re
+import threading
 import time
 import uuid
 from dataclasses import dataclass
@@ -77,6 +78,13 @@ class Stopped(ProviderStopped, FirecrawlError):
     """A stop or the audit's deadline arrived before this request: nothing was reserved or sent."""
 
 
+class ProviderRateLimited(FirecrawlError):
+    """Firecrawl's own rate limit (HTTP 429): the account's limit, not the audited site's answer. Not charged, not
+    repeated; the reader backs off its concurrency (DECISIONS 294)."""
+
+    status = 429
+
+
 class InsufficientCredits(FirecrawlError):
     """Firecrawl said the account has no credit (HTTP 402). Not Maya's own daily budget."""
 
@@ -101,6 +109,8 @@ class FirecrawlPage:
     fetched_at: str
     proxy: str
     zero_data_retention: bool
+    # How long the call took, from the moment it was sent (0 for a saved copy): the reader's measured pace (DECISIONS 294).
+    seconds: float = 0.0
 
 
 class FirecrawlClient:
@@ -133,6 +143,9 @@ class FirecrawlClient:
         self.zdr_refused = False
         # What was asked and what it cost, for the report. Never headers, never the key, never page content.
         self.calls: list[dict[str, Any]] = []
+        # Several requests may be in flight at once (DECISIONS 294): the guard, the reservation and the records are kept
+        # under one lock; only the request itself runs outside it.
+        self._lock = threading.RLock()
         self._http = httpx.Client(base_url=settings.BASE_URL, timeout=settings.TIMEOUT_S, trust_env=False,
                                   transport=transport or TRANSPORT or PublicTransport(allow_loopback=False))
 
@@ -192,33 +205,43 @@ class FirecrawlClient:
                                   at=datetime.fromtimestamp(stored_at, timezone.utc).isoformat(timespec="seconds"))
                 self._record(page, estimate, "cache")
                 return page
-        # A request to the provider is a request to the audited site at one remove: it waits its turn like Maya's own,
-        # and it is not started with too little time left to read the answer (it could be billed and thrown away).
-        blocked = self.clock.wait_for_turn()
+        # A request to the provider is a request to the audited site at one remove: it waits its turn like Maya's own (a
+        # slot of the shared site limit when there is one, DECISIONS 294), and it is not started with too little time
+        # left to read the answer (it could be billed and thrown away).
+        slot, blocked = self.clock.take_turn()
         if blocked:
             raise Stopped(f"{blocked}; no further Firecrawl request was sent")
-        if self.requests_sent >= self.max_pages + 1:  # + robots.txt
-            # What is counted, and paid for, is requests: one that leads to a page already read still counts.
-            raise PageCapReached(f"the Firecrawl request allowance of {self.max_pages + 1} for this audit is used "
-                                 f"({self.max_pages} plus one bootstrap reserve). No request was sent.")
-        if round(self.reserved_this_audit + estimate, 6) > round(self.approved_credits, 6):
-            raise ApprovalRequired(f"this audit's Firecrawl requests would reach {self.reserved_this_audit + estimate:g} credits, "
-                                   f"above the {self.approved_credits:g} confirmed. No request was sent.")
         try:
-            call_id = self.ledger.reserve(settings.SCRAPE, url, self.audit_id, estimate, self.daily_credits)
-        except BudgetExceeded as exc:
-            raise FirecrawlError(str(exc).replace("DataForSEO daily budget", "Firecrawl daily budget").replace("$", "")
-                                 + " (amounts are credits)") from None
-        self.reserved_this_audit = round(self.reserved_this_audit + estimate, 6)
-        limit = self.clock.timeout(settings.TIMEOUT_S)
-        payload["timeout"] = max(1000, int(limit * 1000) - 5000)  # the provider's own limit, inside ours
-        self.clock.site_was_asked()
-        body = self._send(url, payload, call_id, estimate, limit)
-        self.ledger.settle(call_id, "settled", float(estimate))
-        if self.cache is not None:
-            self.cache.put(settings.SCRAPE, cache_payload, {**body, settings.CACHE_AUDIT_FIELD: self.audit_id})
-        page = self._page(url, body, cached=False, credits=estimate, at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
-        self._record(page, estimate, "charged")
+            with self._lock:
+                if self.requests_sent >= self.max_pages + 1:  # + robots.txt
+                    # What is counted, and paid for, is requests: one that leads to a page already read still counts.
+                    raise PageCapReached(f"the Firecrawl request allowance of {self.max_pages + 1} for this audit is used "
+                                         f"({self.max_pages} plus one bootstrap reserve). No request was sent.")
+                if round(self.reserved_this_audit + estimate, 6) > round(self.approved_credits, 6):
+                    raise ApprovalRequired(f"this audit's Firecrawl requests would reach {self.reserved_this_audit + estimate:g} credits, "
+                                           f"above the {self.approved_credits:g} confirmed. No request was sent.")
+                try:
+                    call_id = self.ledger.reserve(settings.SCRAPE, url, self.audit_id, estimate, self.daily_credits)
+                except BudgetExceeded as exc:
+                    raise FirecrawlError(str(exc).replace("DataForSEO daily budget", "Firecrawl daily budget").replace("$", "")
+                                         + " (amounts are credits)") from None
+                self.reserved_this_audit = round(self.reserved_this_audit + estimate, 6)
+                self.requests_sent += 1
+            limit = self.clock.timeout(settings.TIMEOUT_S)
+            payload["timeout"] = max(1000, int(limit * 1000) - 5000)  # the provider's own limit, inside ours
+            self.clock.site_was_asked()
+            began = time.monotonic()
+            body = self._send(url, payload, call_id, estimate, limit)
+            seconds = round(time.monotonic() - began, 3)
+        finally:
+            self.clock.give_back(slot)
+        with self._lock:
+            self.ledger.settle(call_id, "settled", float(estimate))
+            if self.cache is not None:
+                self.cache.put(settings.SCRAPE, cache_payload, {**body, settings.CACHE_AUDIT_FIELD: self.audit_id})
+            page = self._page(url, body, cached=False, credits=estimate, at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
+            page.seconds = seconds
+            self._record(page, estimate, "charged")
         return page
 
     def _page(self, url: str, body: dict[str, Any], *, cached: bool, credits: int, at: str) -> FirecrawlPage:
@@ -246,7 +269,6 @@ class FirecrawlClient:
         limit = settings.TIMEOUT_S if limit is None else limit
         end = time.monotonic() + limit
         try:
-            self.requests_sent += 1
             with self._http.stream("POST", settings.SCRAPE, headers=headers, json=payload, timeout=limit) as incoming:
                 chunks, size = [], 0
                 for chunk in incoming.iter_bytes():
@@ -258,18 +280,21 @@ class FirecrawlClient:
                     chunks.append(chunk)
                 response = httpx.Response(incoming.status_code, content=b"".join(chunks))
         except UnsafeTargetError:
-            self.requests_sent -= 1
-            self.ledger.settle(call_id, "failed", 0.0, "unsafe destination; no connection made")
-            self._failed(url, estimate, 0, "failed")
+            with self._lock:
+                self.requests_sent -= 1
+                self.ledger.settle(call_id, "failed", 0.0, "unsafe destination; no connection made")
+                self._failed(url, estimate, 0, "failed")
             raise FirecrawlError("the Firecrawl address failed network safety checks; no request was sent") from None
         except httpx.ConnectError as exc:
-            self.ledger.settle(call_id, "failed", 0.0, f"not sent ({type(exc).__name__})")
-            self._failed(url, estimate, 0, "failed")
+            with self._lock:
+                self.ledger.settle(call_id, "failed", 0.0, f"not sent ({type(exc).__name__})")
+                self._failed(url, estimate, 0, "failed")
             raise FirecrawlError(f"Firecrawl could not be reached ({type(exc).__name__})") from None
         except httpx.HTTPError as exc:
             # Sent, no usable answer: it may have done the work and charged for it. The reservation stays.
-            self.ledger.settle(call_id, "possibly_billed", None, f"no answer ({type(exc).__name__}); not retried")
-            self._failed(url, estimate, estimate, "possibly_billed")
+            with self._lock:
+                self.ledger.settle(call_id, "possibly_billed", None, f"no answer ({type(exc).__name__}); not retried")
+                self._failed(url, estimate, estimate, "possibly_billed")
             raise PossiblyBilled(f"Firecrawl did not answer ({type(exc).__name__}); it may have been charged and was not retried") from None
         try:
             body = response.json()
@@ -277,16 +302,18 @@ class FirecrawlClient:
                 raise ValueError("not a JSON object")
         except ValueError:
             if response.status_code < 400:
-                self.ledger.settle(call_id, "possibly_billed", None, f"HTTP {response.status_code}, no usable response; not retried")
-                self._failed(url, estimate, estimate, "possibly_billed")
+                with self._lock:
+                    self.ledger.settle(call_id, "possibly_billed", None, f"HTTP {response.status_code}, no usable response; not retried")
+                    self._failed(url, estimate, estimate, "possibly_billed")
                 raise PossiblyBilled(f"Firecrawl answered HTTP {response.status_code} with no usable response; it may have been charged") from None
             body = {"error": response.text}
         if response.status_code >= 400 or body.get("success") is False:
             # Firecrawl returned no document: by its own billing rules this is not charged.
             message = self._clean(str(body.get("error") or body.get("message") or body.get("code") or ""))
-            self.ledger.settle(call_id, "failed", 0.0, f"HTTP {response.status_code}: {message[:120]}")
-            self._failed(url, estimate, 0, "failed")
-            self.reserved_this_audit = round(self.reserved_this_audit - estimate, 6)
+            with self._lock:
+                self.ledger.settle(call_id, "failed", 0.0, f"HTTP {response.status_code}: {message[:120]}")
+                self._failed(url, estimate, 0, "failed")
+                self.reserved_this_audit = round(self.reserved_this_audit - estimate, 6)
             if self.zero_data_retention and _ZDR.search(message):
                 self.zdr_refused = True
                 raise ZeroDataRetentionUnavailable(
@@ -297,12 +324,13 @@ class FirecrawlClient:
             if response.status_code in (401, 403):
                 raise FirecrawlError(f"Firecrawl refused the key or the request (HTTP {response.status_code}): {message}")
             if response.status_code == 429:
-                raise FirecrawlError("Firecrawl's own rate limit was reached (HTTP 429); the request was not repeated")
+                raise ProviderRateLimited("Firecrawl's own rate limit was reached (HTTP 429); the request was not repeated")
             if response.status_code >= 500 or "all scraping engines failed" in message.lower():
                 raise WebsiteLoadError(response.status_code, message)
             raise FirecrawlError(f"Firecrawl returned no document (HTTP {response.status_code}): {message}")
         if not isinstance((body.get("data") or {}).get("rawHtml"), str):
-            self.ledger.settle(call_id, "possibly_billed", None, "answer without rawHtml; not retried")
-            self._failed(url, estimate, estimate, "possibly_billed")
+            with self._lock:
+                self.ledger.settle(call_id, "possibly_billed", None, "answer without rawHtml; not retried")
+                self._failed(url, estimate, estimate, "possibly_billed")
             raise PossiblyBilled("Firecrawl answered without the page's HTML; it may have been charged and was not retried")
         return body

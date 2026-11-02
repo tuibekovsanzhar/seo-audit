@@ -28,7 +28,7 @@ from .index_data import HTTP_REDIRECT_LINES
 from .models import (Confidence, CrawlResult, FetchClass, GateResult, PageFetch, RequestRecord, SitemapDoc, SkippedUrl,
                      StopReason)
 
-SCHEMA_VERSION = "1.20"
+SCHEMA_VERSION = "1.21"
 
 # Always present.
 REPORT_KEYS = ("generation", "schema_version", "report_version", "status_meanings", "scope", "gates", "checks", "answer_engine_panel",
@@ -73,7 +73,11 @@ FIRECRAWL_COVERAGE_KEYS = ("attempted", "read", "page_cap", "cap_reached", "know
                            "requested_without_a_readable_document", "causes", "sections_sampled", "sitemap_addresses_found",
                            "sitemap_addresses_known", "page_requests", "requests_without_a_new_page", "unread_left_out",
                            "answered_with_an_error_status", "status_unknown", "from_cache", "key_pages_not_read",
-                           "indexability_disagreements", "indexability_disagreements_count", "examples_not_requested", "elapsed_s")
+                           "indexability_disagreements", "indexability_disagreements_count", "examples_not_requested", "elapsed_s",
+                           # 1.21 (DECISIONS 294): the reader's measured pace, the assumed one, the pages the time limit
+                           # left unread, and whether it read beside Maya's own steps.
+                           "seconds_per_page_measured", "call_seconds_measured", "seconds_per_page_assumed", "skipped_for_time",
+                           "ran_beside_maya")
 # Why known addresses were not asked for. "request_allowance_used" (1.11): the audit's request allowance was spent
 # before the pages read reached the cap. None when nothing was left.
 NOT_REQUESTED_BECAUSE = ("page_cap", "time_limit", "stopped_on_request", "reader_kept_failing", "request_allowance_used",
@@ -97,7 +101,9 @@ EVIDENCE_SAVED_KEYS = ("folder", "mode", "pages", "not_saved", "total_bytes")
 FIRECRAWL_KEYS = ("source", "enabled", "used", "purpose", "reason", "notice", "options", "proxy", "owner_approved_bypass",
                   "zero_data_retention", "page_cap", "crawl_blocked", "robots", "pages", "rendered", "pages_read",
                   "skipped_by_robots", "pages_blocked_for_firecrawl_too", "checks_from_firecrawl", "needs_decision",
-                  "stopped_because", "errors", "calls", "requests_sent", "credits", "usd", "coverage", "sitemap", "unsupported_resources")
+                  "stopped_because", "errors", "calls", "requests_sent", "credits", "usd", "coverage", "sitemap", "unsupported_resources",
+                  # 1.21 (DECISIONS 294): requests in flight at once, and each step down after a 429, a 5xx or a slow answer.
+                  "concurrency")
 # Archived copies (maya_audit.archives): a free fallback when nothing could read the live site.
 ARCHIVES_KEYS = ("enabled", "cost_usd", "page_cap", "sources", "notice", "requests_sent", "downloaded_bytes", "fetched_at")
 # Core Web Vitals from the Chrome UX Report (maya_audit.crux). Not every key is in every report.

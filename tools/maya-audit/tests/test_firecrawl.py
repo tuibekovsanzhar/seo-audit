@@ -478,7 +478,8 @@ def cli_run(monkeypatch, tmp_path, argv, api=None, site=challenged, key=True):
     env.write_text(f"MAYA_AUDIT_FIRECRAWL_API_KEY={KEY.value}\n" if key else "")
     monkeypatch.setenv("MAYA_AUDIT_ENV_FILE", str(env))
     monkeypatch.setattr(client_module, "TRANSPORT", httpx.MockTransport(api or Firecrawl(SITE)))
-    monkeypatch.setattr(cli, "run_audit", lambda url, cfg: run_audit(url, CrawlConfig(**{**QUIET, "max_pages": cfg.max_pages}), httpx.MockTransport(site)))
+    monkeypatch.setattr(cli, "run_audit", lambda url, cfg, reader=None: run_audit(url, CrawlConfig(**{**QUIET, "max_pages": cfg.max_pages}),
+                                                                             httpx.MockTransport(site), reader=reader))
     return cli.main(["crawl", "https://bank.test/", "--max-pages", "10", *argv])
 
 
@@ -525,7 +526,7 @@ def test_cli_reads_a_blocked_site_through_firecrawl_and_labels_every_output(monk
     assert section["checks_from_firecrawl"] == sorted(section["checks_from_firecrawl"], key=check_id_key)
     assert section["checks_from_firecrawl"].index("STR-2") < section["checks_from_firecrawl"].index("STR-10")
     assert "**Pages read:** 4 (via Firecrawl)" in md_path.read_text(encoding="utf-8") and client_ledger(tmp_path) == 12  # five pages and the sitemap, asked for once the homepage was read
-    assert report["schema_version"] == "1.20" and section["used"] and section["proxy"] == "basic" and section["pages_read"] == 4
+    assert report["schema_version"] == "1.21" and section["used"] and section["proxy"] == "basic" and section["pages_read"] == 4
     assert section["zero_data_retention"]["status"] == "applied" and section["owner_approved_bypass"] is False
     from maya_audit import schema
     assert set(section) <= set(schema.FIRECRAWL_KEYS) and "view_pages" not in section

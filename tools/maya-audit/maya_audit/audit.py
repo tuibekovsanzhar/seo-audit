@@ -46,10 +46,12 @@ class AuditOutcome:
     # What the re-test used, so it can run again for findings a page reader replaced (maya_audit.final.after_provider).
     transport: Any = field(default=None, repr=False, compare=False)
     hooks: Any = field(default=None, repr=False, compare=False)
+    # The limit Maya's later steps shared with the page reader on the audited site (maya_audit.sitelimit, DECISIONS 294).
+    site_limiter: Any = field(default=None, repr=False, compare=False)
 
     def __getstate__(self) -> dict:
-        # A saved result (maya_audit_web.snapshot) holds data only: the live transport and hooks stay out of it.
-        return {k: v for k, v in self.__dict__.items() if k not in ("transport", "hooks")}
+        # A saved result (maya_audit_web.snapshot) holds data only: the live transport, hooks and locks stay out of it.
+        return {k: v for k, v in self.__dict__.items() if k not in ("transport", "hooks", "site_limiter")}
 
 
 class NetworkPreflightFailed(Exception):
@@ -90,9 +92,26 @@ def _effective_robots_sample_interval(config: CrawlConfig) -> float:
     return max(0.0, min(config.robots_sample_interval_s, config.time_limit_s / (resamples * 4)))
 
 
+def site_limit_for(config: CrawlConfig, fetcher, crawl: CrawlResult) -> int:
+    """How many requests to the audited site may be in flight at once after the crawl (DECISIONS 294): the setting, or 1
+    when robots.txt sets a Crawl-delay (a site that asks for spacing gets one request at a time) or when the crawl was
+    rate-limited or had to widen its gap."""
+    from .models import StopReason
+    from .sitelimit import clamp
+
+    if getattr(fetcher, "crawl_delay_floor_s", 0) or any(r.get("crawl_delay") for r in crawl.robots or []):
+        return 1
+    if fetcher.delay_widenings or crawl.stop_reason == StopReason.RATE_LIMIT:
+        return 1
+    return clamp(config.site_concurrency)
+
+
 def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTransport | None = None,
-              hooks: Hooks | None = None) -> AuditOutcome:
-    """`hooks` (maya_audit.progress) lets a job runner follow the audit and ask it to stop. Optional."""
+              hooks: Hooks | None = None, reader=None) -> AuditOutcome:
+    """`hooks` (maya_audit.progress) lets a job runner follow the audit and ask it to stop. Optional.
+
+    `reader` (optional, `firecrawl.reader.EarlyReading`) is offered the crawl as soon as it ends: when it starts, it
+    reads pages beside Maya's later steps, through the same site limit (DECISIONS 294)."""
     hooks = hooks or NO_HOOKS
     # Bound the cumulative resampling wait to 25% of the run budget so later
     # rendering/performance checks retain time even on short audits.
@@ -112,7 +131,7 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
         resolver.reset()
         preflight = network_preflight(start_url)
 
-    shared: dict[str, float | None] = {"deadline_mono": None, "pace_s": config.request_delay_s}
+    shared: dict[str, Any] = {"deadline_mono": None, "pace_s": config.request_delay_s, "site_limiter": None}
     started_mono = time.monotonic()
 
     # Time is divided before anything runs: Maya's own crawl and data collection get the limit less the reader's
@@ -123,6 +142,22 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
     def post_crawl(fetcher, crawl):
         whole = fetcher.deadline_mono if fetcher.deadline_mono is None or fetcher.stopped else fetcher.deadline_mono + reserve
         shared.update(deadline_mono=whole, pace_s=fetcher.delay_s)
+        # From here on the audited site has one limit, shared with a page reader (DECISIONS 294).
+        from .sitelimit import SiteLimiter
+
+        limiter = SiteLimiter(limit=site_limit_for(config, fetcher, crawl), gap=lambda: fetcher.delay_s)
+        site = (fetcher.site_host or "").lower()
+        last = next((r for r in reversed(fetcher.log) if r.purpose != "render_subresource"
+                     and (urlsplit(r.url).hostname or "").lower() == site), None)
+        if last is not None:  # the crawl's last request to the site: the first one through the limit keeps the gap after it
+            limiter.seed(last.started_mono, last.ended_mono)
+        fetcher.site_limiter = limiter
+        shared["site_limiter"] = limiter
+        if reader is not None and not fetcher.stopped and reader.start(crawl, config, limiter, whole):
+            # The reader reads beside Maya's own steps, so they no longer leave it the reserve: both end by the
+            # audit's one time limit.
+            if fetcher.deadline_mono is not None:
+                fetcher.deadline_mono = whole
 
         def out_of_time():
             return fetcher.deadline_mono is not None and time.monotonic() >= fetcher.deadline_mono
@@ -169,6 +204,7 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
                 pool.join()
                 crawl._other_sites = None  # threads and locks: never kept on the result (a saved snapshot pickles it)
             fetcher.end_step()
+            limiter.maya_done()  # Maya's own steps are over: a reader still reading may use every slot
 
     def steps_after_crawl(fetcher, crawl, collect, pool):
         collect("access", "access", lambda: collect_access_data(fetcher, crawl, config))
@@ -289,4 +325,5 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
         result.network = {"preflight": {k: v for k, v in (preflight or {"status": "not_needed"}).items() if k != "addresses"},
                           "dns": resolver.summary()["hosts"]}
     return AuditOutcome(result, gates, site_checks + answer_checks, deadline_mono=shared["deadline_mono"],
-                        pace_s=float(shared["pace_s"] or 0.0), started_mono=started_mono, transport=transport, hooks=hooks)
+                        pace_s=float(shared["pace_s"] or 0.0), started_mono=started_mono, transport=transport, hooks=hooks,
+                        site_limiter=shared["site_limiter"])

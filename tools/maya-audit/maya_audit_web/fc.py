@@ -48,7 +48,10 @@ def options_from(requested: dict[str, Any]) -> Options:
                    max_pages=int(requested.get("max_pages") or settings.DEFAULT_MAX_PAGES),
                    proxy=requested.get("proxy") or settings.DEFAULT_PROXY,
                    owner_approved_bypass=bool(requested.get("owner_approved_bypass")),
-                   allow_without_zero_data_retention=bool(requested.get("allow_without_zero_data_retention")))
+                   allow_without_zero_data_retention=bool(requested.get("allow_without_zero_data_retention")),
+                   # Requests at once (DECISIONS 294): this computer's setting unless the plan saved one.
+                   concurrency=max(settings.MIN_CONCURRENCY, min(settings.MAX_CONCURRENCY,
+                                                                int(requested.get("concurrency") or settings.concurrency()))))
 
 
 def plan(services: FirecrawlServices, requested: dict[str, Any] | None, audit_page_cap: int, rendering_wanted: bool) -> dict[str, Any]:

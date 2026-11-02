@@ -154,13 +154,13 @@ def test_the_cli_uses_the_scaled_default_and_warns_when_a_given_limit_looks_too_
     monkeypatch.setattr(cli, "run_audit", fake)
     keys = [flag for i in range(12) for flag in ("--key-page", f"/k{i}")]
     assert cli.main(["crawl", "https://example.com/", "--max-pages", "40", *keys]) == 2
-    # 518 s for the pages, plus (1 + 0.3) s for each of the sitemap check's 200 light requests (DECISIONS 206) and for
-    # each of the at most 20 + 40 requests to other sites (DECISIONS 211).
-    assert seen["limit"] == 1080 and "warning" not in capsys.readouterr().err
+    # 518 s for the pages, plus (1 + 0.3) s for each of the sitemap check's 100 light requests (DECISIONS 206; 100 in
+    # Quick since DECISIONS 294) and for each of the at most 20 + 40 requests to other sites (DECISIONS 211).
+    assert seen["limit"] == 930 and "warning" not in capsys.readouterr().err
     assert cli.main(["crawl", "https://example.com/", "--max-pages", "40", *keys, "--time-limit", "300"]) == 2
     err = capsys.readouterr().err
     assert seen["limit"] == 300
-    assert "warning: --time-limit 300 is below the estimated 856 s for 40 pages and 12 key pages" in err and "use 1080 s" in err
+    assert "warning: --time-limit 300 is below the estimated 726 s for 40 pages and 12 key pages" in err and "use 930 s" in err
     assert cli.main(["crawl", "https://example.com/", "--max-pages", "10", "--time-limit", "600"]) == 2
     assert "warning" not in capsys.readouterr().err
 

@@ -823,6 +823,9 @@ NOTE_PATTERNS = _frames((
     ("idx5.estimate", "{n#} listed URL(s) were not fetched (page cap or blocked), so the share is an estimate from the URLs that were."),
     ("idx5.sample", "The sitemap lists {n#} URLs; {checked#} were checked ({crawled#} read by the crawl, {light#} with one light request each, "
                     "a sample spread over the site's sections). The share is of the URLs checked and is an estimate for the whole sitemap."),
+    ("idx5.sample.files", "The sitemap lists {n#} URLs; {checked#} were checked ({crawled#} read by the crawl, {light#} with one light request "
+                          "each, a sample spread evenly over {files#} sitemap file(s)). The share is of the URLs checked and is an "
+                          "estimate for the whole sitemap."),
     ("idx5.not_checked", "{n#} listed URL(s) were not checked ({why~:.+?}), so the share is an estimate from the URLs that were."),
     ("idx5.guess", "“{fragment}” is probably “{word}”; the sitemap is probably not written in UTF-8."),
     ("acc8.first_line", "First line: “{line}”."),
@@ -934,6 +937,9 @@ TERM_PATTERNS = _frames((
     ("gap.remaining.cap", "{count#} more discovered URL(s) remain unchecked (the page cap of {cap#} was reached)"),
     ("gap.remaining.because", "{count#} more discovered URL(s) remain unchecked ({because~:the time limit was reached|the audit was stopped|the reader kept getting unreadable answers|a credit or request limit was reached})"),
     ("gap.remaining", "{count#} more discovered URL(s) remain unchecked"),
+    # DECISIONS 294: the pages the time limit left to the reader, and its measured pace.
+    ("gap.time.measured", "{count#} page(s) were not read for lack of time (the page reader measured {seconds#} s a page)"),
+    ("gap.time", "{count#} page(s) were not read for lack of time"),
     ("gap.no_document.why", "{count#} requested URL(s) gave no readable document ({why~:.+})"),
     ("gap.no_document", "{count#} requested URL(s) gave no readable document"),
     ("gap.cause", "{count#} {cause~:reader challenged|redirect to another site|redirect within the site|empty document|error status|provider could not load|timeout or no answer|credit or request limit|provider refused}"),

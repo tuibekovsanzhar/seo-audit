@@ -86,6 +86,8 @@ LINE_PATTERNS: tuple[tuple[str, str], ...] = (
     ('idx5.findings', "{n#} finding(s) for {listed#} listed URL(s)."),
     ('idx5.ok', "{docs#} sitemap document(s), {listed#} URL(s); {assessed#} of them fetched and none failing thresholds."),
     ('idx5.ok.unknown', "{docs#} sitemap document(s), {listed#} URL(s); {assessed#} of them fetched and none failing thresholds; {unknown#} listed URL(s) not fetched, so not judged."),
+    ('idx5.sample.summary', "A sample was checked: {light#} of the {wanted#} sitemap URL(s) the crawl did not read, spread evenly over {files#} sitemap file(s)."),
+    ('idx5.sample.summary.sections', "A sample was checked: {light#} of the {wanted#} sitemap URL(s) the crawl did not read, spread over the site's sections."),
     ('idx6.broken', "{broken#} broken target(s) behind {links#} internal link(s)."),
     ('idx6.misplaced', "{n#} link(s) to another site use the path of a page on this one."),
     ('idx6.tagged', "{n#} internal link(s) carry tracking parameters."),
@@ -367,6 +369,8 @@ TERM_PATTERNS: tuple[tuple[str, str], ...] = (
     ('int4.gap', "smallest gap between requests was {gap#}ms, below the required {required#}ms"),
     # Measured per host since team-preview-16 (DECISIONS 219 part 2); the line above is for saved reports.
     ('int4.gap_host', "smallest gap between requests to {host} was {gap#}ms, below the required {required#}ms"),
+    # The shared site limit (DECISIONS 294).
+    ('int4.in_flight', "{n#} of Maya's requests to {host} were in flight at once, above the site limit of {limit#}"),
     ('int4.ua_over_cap', "{n#} user-agent check requests exceeded the cap of {cap#}"),
     ('int4.ua_untagged', "{n#} user-agent check request(s) lacked the {header} header"),
     ('int4.ua_agents', "user-agent check requests used other user agents {agents}"),

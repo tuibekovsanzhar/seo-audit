@@ -15,7 +15,8 @@ from .reader import HOMEPAGE_FALLBACK_PURPOSE, HOMEPAGE_FALLBACK_PURPOSE_429  # 
 SECTION_KEYS = ("source", "enabled", "used", "purpose", "reason", "notice", "options", "proxy", "owner_approved_bypass",
                 "zero_data_retention", "page_cap", "crawl_blocked", "robots", "pages", "rendered", "pages_read",
                 "skipped_by_robots", "pages_blocked_for_firecrawl_too", "checks_from_firecrawl", "needs_decision",
-                "stopped_because", "errors", "calls", "requests_sent", "credits", "usd", "coverage", "sitemap", "unsupported_resources")
+                "stopped_because", "errors", "calls", "requests_sent", "credits", "usd", "coverage", "sitemap", "unsupported_resources",
+                "concurrency")
 
 
 ENHANCED_NEEDS_APPROVAL = ("The enhanced proxy tries to get past bot protection. It is used only when you tick that the site owner "

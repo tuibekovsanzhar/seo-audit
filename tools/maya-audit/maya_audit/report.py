@@ -1577,7 +1577,13 @@ def reader_gaps(firecrawl: dict | None) -> list[str]:
     elif section.get("stopped_because"):
         gaps.append(f"reading stopped early ({provider_reason(section['stopped_because'])})")
     waiting = coverage.get("known_urls_not_requested") or 0
-    if waiting and not allowance:
+    skipped = coverage.get("skipped_for_time") or 0
+    if skipped and not allowance:
+        # The time limit came first (DECISIONS 294): how many, and the pace the reader measured, not an assumed one.
+        pace = coverage.get("seconds_per_page_measured")
+        gaps.append(f"{skipped} page(s) were not read for lack of time" + (
+            f" (the page reader measured {float(pace):.1f} s a page)" if pace else ""))
+    elif waiting and not allowance:
         because = {"time_limit": "the time limit was reached", "stopped_on_request": "the audit was stopped",
                    "reader_kept_failing": "the reader kept getting unreadable answers",
                    "credit_or_request_limit": "a credit or request limit was reached"}.get(coverage.get("not_requested_because") or "")
@@ -1606,7 +1612,7 @@ def coverage_note(level: str, pages: int) -> str:
                                "the sample this audit could discover, not proof about pages it never found."}[level]
 
 
-_READER_REASONS = re.compile(r"^(?:reading stopped early \(|\d+ more discovered URL\(s\) remain unchecked|\d+ requested URL\(s\) gave no readable document|"
+_READER_REASONS = re.compile(r"^(?:reading stopped early \(|\d+ more discovered URL\(s\) remain unchecked|\d+ page\(s\) were not read for lack of time|\d+ requested URL\(s\) gave no readable document|"
                              r"\d+ key page\(s\) were not read|the page reader used all |\+\d+ address)")
 
 

@@ -55,6 +55,7 @@ def discover_sitemap_urls(
     lastmods: dict[str, str | None] | None = None,
     deadline: float | None = None,
     named_in: dict[str, str] | None = None,
+    file_of: dict[str, str] | None = None,
 ) -> tuple[list[SitemapDoc], list[str], list[str]]:
     """Fetch sitemaps named in robots.txt plus /sitemap.xml; same-origin only.
 
@@ -165,6 +166,8 @@ def discover_sitemap_urls(
             for loc, lastmod in entries:
                 if loc and same_origin(loc, origin):
                     page_urls.setdefault(loc, None)
+                    if file_of is not None:  # the first sitemap file that listed it (the sitemap check's sample, DECISIONS 294)
+                        file_of.setdefault(loc, url)
                     if lastmods is not None:
                         lastmods.setdefault(loc, lastmod)
             stamps = Counter(lastmod for loc, lastmod in entries if loc and same_origin(loc, origin) and lastmod)

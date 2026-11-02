@@ -365,9 +365,13 @@ class Runner:
             return self._finish(audit, kept[0], kept[1], stop=stop, enter=enter, progress=progress, out_dir=out_dir)
         if use.get("continue"):
             self.emit(audit_id, "log", {"message": t("log.firecrawl.no_snapshot")})
+        # Firecrawl starts the moment Maya's crawl ends, beside Maya's own later steps, when it would read the same pages
+        # anyway (DECISIONS 294).
+        early = self._early_reader(audit, stop, progress)
         transport = engine.transport_factory() if engine.transport_factory else None
         try:
-            outcome = run_audit(audit["url"], config, transport, Hooks(on_progress=on_progress, should_stop=stop.is_set))
+            outcome = run_audit(audit["url"], config, transport, Hooks(on_progress=on_progress, should_stop=stop.is_set),
+                                reader=early)
             fallback = self._http_fallback(audit, outcome, resume)
             if fallback and not stop.is_set():
                 # https:// did not answer at all. The address was typed without https://, so http:// is tried once.
@@ -378,20 +382,26 @@ class Runner:
                 db_path.unlink(missing_ok=True)
                 config = crawl_config(engine, audit, db_path, resume=False)
                 transport = engine.transport_factory() if engine.transport_factory else None
-                outcome = run_audit(audit["url"], config, transport, Hooks(on_progress=on_progress, should_stop=stop.is_set))
+                outcome = run_audit(audit["url"], config, transport, Hooks(on_progress=on_progress, should_stop=stop.is_set),
+                                    reader=early if early is not None and not early.started else None)
         except ConcurrentCrawlError:
+            self._close_early(early)
             return self._fail(audit_id, "site_busy", t("job.busy"))
         except NetworkPreflightFailed as exc:
             # Before anything was requested or spent: this computer could not look anything up, or the address does not
             # exist. The audit has no report and no findings.
+            self._close_early(early)
             host = (exc.detail or {}).get("host") or ""
             return self._fail(audit_id, exc.status, t("job.failed.network") if exc.status == "local_network_problem"
                               else t("job.failed.no_such_host", host=host))
         except HostNotAllowed as exc:
+            self._close_early(early)
             return self._fail(audit_id, "host_not_allowed", str(exc)[:300])
         except BotInfoPageNotReady as exc:
+            self._close_early(early)
             return self._fail(audit_id, "bot_info_page", str(exc)[:300])
         except ValueError as exc:  # the engine's own refusals: a resume that does not match the saved crawl
+            self._close_early(early)
             return self._fail(audit_id, "resume_mismatch" if resume else "invalid_settings", str(exc)[:300])
 
         # Kept before Firecrawl touches anything: what Maya's own crawl found, for a later decision about a blocked site.
@@ -399,21 +409,49 @@ class Runner:
             snapshot.save(state_dir, outcome, config)
         else:
             snapshot.remove(state_dir)
-        return self._finish(audit, outcome, config, stop=stop, enter=enter, progress=progress, out_dir=out_dir)
+        return self._finish(audit, outcome, config, stop=stop, enter=enter, progress=progress, out_dir=out_dir, early=early)
+
+    def _reading(self, audit_id: str, progress: dict[str, Any]) -> Callable[[dict[str, Any]], None]:
+        """Firecrawl's progress, for the progress box: pages read by Firecrawl beside Maya's own (DECISIONS 294)."""
+        def reading(event: dict[str, Any]) -> None:
+            progress.update(firecrawl={k: event.get(k) for k in ("attempted", "read", "failed", "from_cache", "page_cap",
+                                                                  "in_flight", "seconds_per_page")},
+                            firecrawl_at=now(), at=now())
+            self.store.update_audit(audit_id, progress=progress)
+            self.emit(audit_id, "progress", {"step": "firecrawl", **progress["firecrawl"], "url": event.get("url")})
+        return reading
+
+    def _early_reader(self, audit: dict[str, Any], stop: threading.Event, progress: dict[str, Any]):
+        """An EarlyReading for this audit, or None: only Firecrawl's first, approved run as the main page reader, and
+        only without a paid panel whose ranking pages it would wait for. Nothing is sent or marked until it starts."""
+        state = audit.get("firecrawl") or {}
+        if state.get("state") != "pending" or state.get("continue") or audit.get("backlinks"):
+            return None
+        options = fc.options_from(state.get("options") or {})
+        if not options.read_always:
+            return None
+
+        def mark() -> None:  # marked before the first request: a resume must not spend the approval twice
+            self.store.update_audit(audit["id"], firecrawl={**state, "state": "attempted"})
+
+        client = fc.open_client(self.engine.firecrawl, options, approved_credits=float(state.get("approved_credits") or 0),
+                                audit_id=audit["id"][:12], should_stop=stop.is_set)
+        return firecrawl_reader.EarlyReading(client, options, progress=self._reading(audit["id"], progress), on_start=mark)
+
+    @staticmethod
+    def _close_early(early) -> None:
+        if early is not None:
+            early.client.close()
 
     def _finish(self, audit: dict[str, Any], outcome: Any, config: CrawlConfig, *, stop: threading.Event,
-                enter: Callable[[str], None], progress: dict[str, Any], out_dir: Path) -> None:
+                enter: Callable[[str], None], progress: dict[str, Any], out_dir: Path, early=None) -> None:
         """Everything after Maya's own crawl and checks: Firecrawl when asked for, the paid figures, the report files."""
         store, audit_id = self.store, audit["id"]
         result = outcome.result
         # After Maya's own crawl, which stays the access test, and before anything is judged or written.
         # One deadline, one stop request and one pace for every step that follows (maya_audit.runclock).
         clock = for_outcome(outcome, stop.is_set)
-
-        def reading(event: dict[str, Any]) -> None:
-            progress.update(firecrawl={k: event[k] for k in ("attempted", "read", "failed", "from_cache", "page_cap")}, url=event.get("url"), at=now())
-            store.update_audit(audit_id, progress=progress)
-            self.emit(audit_id, "progress", {"step": "firecrawl", **progress["firecrawl"], "url": event.get("url")})
+        reading = self._reading(audit_id, progress)
 
         # The already-approved search sample chooses reader coverage, not site judgments.
         # Same calls, credits, deadline and resume ledger; no supplementary reader phase.
@@ -424,7 +462,7 @@ class Runner:
         reader_cap = ((audit.get("firecrawl") or {}).get("options") or {}).get("max_pages", config.max_pages)
         ranking_urls = insights.ranking_landing_pages(dfs_panel, result.origin, min(reader_cap, config.max_pages))
         firecrawl_section, firecrawl_pages = self._firecrawl(store.audit(audit_id), outcome, config, stop=stop, enter=enter,
-                                                             clock=clock, reading=reading, ranking_urls=ranking_urls)
+                                                             clock=clock, reading=reading, ranking_urls=ranking_urls, early=early)
         # The stored sentence counts the checks that could not run (H18), when the engine's run_outcome takes them (W4a).
         counted = {"checks": outcome.checks} if "checks" in inspect.signature(run_outcome).parameters else {}
         _code, label, sentence = run_outcome(result, outcome.gates, firecrawl_section, **counted)
@@ -524,7 +562,7 @@ class Runner:
                                      "pages_checked": counts["pages_checked"]})
 
     def _firecrawl(self, audit: dict[str, Any], outcome: Any, config: CrawlConfig, *, stop: threading.Event,
-                   enter: Callable[[str], None], clock=None, reading=None, ranking_urls=()) -> tuple[dict[str, Any] | None, list]:
+                   enter: Callable[[str], None], clock=None, reading=None, ranking_urls=(), early=None) -> tuple[dict[str, Any] | None, list]:
         """The Firecrawl step: only when switched on for this audit, only with the credits confirmed for this run.
 
         "pending" spends up to the confirmed credits. "done" (a resumed audit that already used it) is given no credits
@@ -532,6 +570,11 @@ class Runner:
         """
         state = audit.get("firecrawl") or {}
         status = state.get("state", "none")
+        if early is not None and early.started:
+            # Already reading beside Maya's own steps (DECISIONS 294): its approval was marked when it started.
+            return self._firecrawl_apply(audit, outcome, config, early.client, early.options, state, "pending",
+                                         float(state.get("approved_credits") or 0), enter, reading, ranking_urls, early)
+        self._close_early(early)
         if status == "none" or outcome.result.stopped:
             return None, []
         if status == "needs_decision":
@@ -547,11 +590,16 @@ class Runner:
         if status == "pending":
             # Marked before the first request: if the app dies mid-way, a resume must not spend the approval twice.
             self.store.update_audit(audit["id"], firecrawl={**state, "state": "attempted"})
-        enter("firecrawl")
         client = fc.open_client(self.engine.firecrawl, options, approved_credits=approved, audit_id=audit["id"][:12],
                                 should_stop=stop.is_set, clock=clock)
+        return self._firecrawl_apply(audit, outcome, config, client, options, state, status, approved, enter, reading,
+                                     ranking_urls, None)
+
+    def _firecrawl_apply(self, audit, outcome, config, client, options, state, status, approved, enter, reading, ranking_urls,
+                         early) -> tuple[dict[str, Any] | None, list]:
+        enter("firecrawl")
         try:
-            info = firecrawl_reader.apply(outcome, config, client, options, progress=reading, ranking_urls=ranking_urls)
+            info = firecrawl_reader.apply(outcome, config, client, options, progress=reading, ranking_urls=ranking_urls, early=early)
         finally:
             client.close()
         never_started = (status == "pending" and client.requests_sent == 0 and not client.calls

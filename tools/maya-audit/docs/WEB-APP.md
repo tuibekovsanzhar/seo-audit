@@ -263,8 +263,9 @@ a real site takes (roughly 30 to 50 minutes at one request a second) or how much
 - **Saved page evidence stops at 500 records**, and a redirect counts as a record. The report states how many were
   not saved.
 - **PDF needs Chromium.** Without it the app says so and offers a printable page. Fonts are the system's.
-- **No hreflang in headers or sitemaps, no concurrent fetching.** Neither was added: nothing measured here showed
-  the need, and both would change how the engine reads a site.
+- **No hreflang in headers or sitemaps.** Not added: nothing measured here showed the need. Since DECISIONS 294 the
+  audited site gets up to 5 requests at once after the crawl (Maya's and Firecrawl's together), with request starts
+  still the polite gap apart; the crawl itself reads one page at a time.
 - **One user, no login.** See `docs/DASHBOARD-INTEGRATION.md`.
 - **After restarting the app, the page reloads itself once** to pick up the new session.
 - **The command line and the web app ask for approval above the same $2 per audit, and stop one audit at the same $5.**

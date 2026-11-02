@@ -111,7 +111,11 @@ def paced(result):
 
 def test_robots_samples_are_sent_when_due_between_other_requests_with_no_idle_gap(clock):
     # At the fixed 1 s pace (adaptive pacing off, DECISIONS 219 part 2): a narrower gap ends Maya's steps sooner.
-    outcome = audit(site(clock, pages=40, sitemap_only=220), max_pages=60, adaptive_pacing=False)
+    # 200 sitemap URLs asked (the cap is 100 in Quick since DECISIONS 294): Maya's steps last long enough for both samples.
+    # One request at a time (site_concurrency 1): this fake clock moves on every sleep, so threads waiting together would
+    # move it several times over; the shared limit has its own tests (tests/test_v03_speed.py).
+    outcome = audit(site(clock, pages=40, sitemap_only=220), max_pages=60, adaptive_pacing=False, sitemap_check_max=200,
+                    site_concurrency=1)
     result = outcome.result
     log = paced(result)
     robots = [r for r in log if r.purpose in ("robots", "robots_sample") and r.url == f"{KAFE}/robots.txt"]
@@ -151,7 +155,9 @@ def test_healthy_with_fast_check_off_the_request_log_is_todays_order_apart_from_
     def order(samples):
         result = audit(site(clock, pages=12, sitemap_only=30, llms=5, images=4), max_pages=20, robots_samples=samples).result
         # The soft-404 probe asks a new made-up address each run: compared without its random part.
-        return [(r.purpose, r.url.split("no-such-page-")[0]) for r in result.requests if r.purpose != "robots_sample"], result
+        rows = [(r.purpose, r.url.split("no-such-page-")[0]) for r in result.requests if r.purpose != "robots_sample"]
+        # The sitemap check asks 4 at a time (DECISIONS 294): its requests are compared as a set, the rest in order.
+        return [row for row in rows if row[0] != "sitemap_check"] + sorted(row for row in rows if row[0] == "sitemap_check"), result
 
     three, with_samples = order(3)
     one, _ = order(1)
@@ -209,14 +215,14 @@ def config(*argv):
 def test_fast_check_gives_the_reduced_caps_and_leaves_the_rest_unchanged():
     normal, fast = config(), config("--fast")
     assert (normal.render_budget, normal.sitemap_check_max, normal.llms_link_checks_max, normal.image_checks_max,
-            normal.external_link_checks_max, normal.fast_check) == (20, 200, 50, 30, 100, False)
+            normal.external_link_checks_max, normal.fast_check) == (20, 100, 50, 30, 100, False)  # 100 in Quick (DECISIONS 294)
     assert (fast.render_budget, fast.sitemap_check_max, fast.llms_link_checks_max, fast.image_checks_max,
             fast.external_link_checks_max, fast.fast_check) == (6, 50, 20, 10, 30, True)
     # Unchanged: the page cap, robots.txt samples, ACC-4, redirect re-checks.
     for name in ("max_pages", "robots_samples", "robots_sample_interval_s", "ua_check_urls", "probes_enabled",
                  "redirect_recheck_attempts", "request_delay_s"):
         assert getattr(fast, name) == getattr(normal, name), name
-    assert config("--fast", "--max-pages", "500").sitemap_check_max == 50 and config("--max-pages", "500").sitemap_check_max == 1000
+    assert config("--fast", "--max-pages", "500").sitemap_check_max == 50 and config("--max-pages", "500").sitemap_check_max == 300  # DECISIONS 294
     # The estimate takes the smaller caps.
     assert fast.time_limit_s < normal.time_limit_s
     assert estimated_duration_s(50, 0, 1.0, True, 6, True, 50, external_link_cap(30, 20, 50)) < \
