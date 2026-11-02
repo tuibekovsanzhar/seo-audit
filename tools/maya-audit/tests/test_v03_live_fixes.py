@@ -320,5 +320,6 @@ def test_the_gap_setting_is_this_computers_unless_a_plan_or_the_command_line_say
 
 def test_the_report_schema_is_1_22_with_the_timeout_counts():
     from maya_audit import schema
-    assert schema.SCHEMA_VERSION == "1.22" and "timeouts" in schema.FIRECRAWL_COVERAGE_KEYS
-    assert json.loads(schema.frozen_path().read_text(encoding="utf-8"))["schema_version"] == "1.22"
+    # 1.23 (DECISIONS 297) adds the page grouping on top; the 1.22 copy stays frozen.
+    assert "timeouts" in schema.FIRECRAWL_COVERAGE_KEYS
+    assert json.loads(schema.frozen_path("1.22").read_text(encoding="utf-8"))["schema_version"] == "1.22"

@@ -2933,3 +2933,51 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      on Firecrawl's copy (47 pages), none on Maya's; totals 15 S4 + 5 Info vs 1 S3 + 20 S4 + 6 Info. Which copy the
      content checks should judge on a site that reads fine without JavaScript is left open; DECISIONS 131 stands
      unchanged. In the backlog (`docs/BACKLOG.md`).
+
+297. **Page grouping, v0.3 stage 3: template key, page type, internal link score, click depth and importance per page
+     (Owner, 2026-11-02, the five values and the seven page types; every rule and number below is an agent default).**
+     New `maya_audit/page_groups.py`, run in `final.settle` after `annotate_page_types`, so also again after a page
+     reader. It sends no request and is Estimated throughout. **It is not read by any check, severity, confidence,
+     finding order or the release gate** (`test_the_grouping_never_changes_a_finding_or_a_severity`).
+     (1) *Template key.* The URL pattern, built from every same-site address the audit knew (pages read, links found,
+     sitemap): the first folder (and the one after a language folder such as `/en`) stays as it is; below it a folder
+     with 2+ different children, or one of the known item folders (`products`, `collections`, `pages`, `policies`,
+     `blogs`, `blog`, the STR-3 product/article/category words...), becomes `*`; an id-looking segment is `*`; the query
+     is not part of it. So `/products/*`, `/en/products/*`, `/collections/*/products/*`. The layout fingerprint is a
+     6-character hash of og:type, the template-level structured-data types (Product, CollectionPage, BreadcrumbList,
+     BlogPosting...; not FAQPage, Answer, Person, which follow the text), the main-region kinds, breadcrumbs and the
+     form targets with the language folder removed. The key adds ` ~ <layout>` where one pattern holds two layouts of 2+
+     pages each, and flat one-segment pages (a WordPress site's `/hikayemiz`, `/iletisim`) that share a folder and a
+     layout are one template `/* ~ <layout>` (adile: 31 templates for 36 pages before, 16 after).
+     (2) *Page type*: `home`, `category`, `product`, `blog_article`, `policy`, `utility` (search, cart, account,
+     checkout, login, wishlist; English and Turkish address words, or SearchResultsPage/CheckoutPage/ProfilePage markup),
+     `other`. Order: the homepage and its language versions (a single language folder the homepage's hreflang lists, or
+     whose `<html lang>` is that language), utility, policy (a `/policies/`-type folder, a policy word in the last
+     segment such as `privacy`, `kvkk`, `sozlesmesi`, `aydinlatma`, or a policy name in the title), a product inside a
+     collection (`/collections/<c>/products/<p>`), an article folder (`blogs` included), then STR-3's `page_kind`.
+     Whole-site rules after that: og:type=article on half or more of the pages read is a site builder's default (adile),
+     so a page typed an article only by it is `other` unless it has the layout of the posts in an article folder; a
+     template of 3+ typed pages, 80% one type, lends it to its `other` pages; a page with links of its own (outside menu
+     and footer) to 3+ articles or products (by page, or by the pattern of the ones typed) is a `category`; a page whose
+     folder holds 2+ pages read and which links to 2+ pages under it (menu links count) is a `category` (a section page:
+     enpara's `/odemeler`). Every type carries `page_type_basis`. **Not changed:** STR-3's `page_kind`, which still
+     calls Shopify's `/collections/<c>/products/<p>` a listing (on nihan 323 product pages); that affects `page_types`
+     on findings and the release gate's content advice, and is for the owner to decide.
+     (3) *Internal link score*: PageRank (damping 0.85) over the links between the pages read, redirects followed, a
+     link to a duplicate counted for the page its canonical names when that page was read; a link found only in the
+     footer weighs 0.25 against 1.0 (reasonable-surfer). Shown 0-100 on a log scale against the site's best-linked page;
+     `inlinks` counts the pages read that link to it.
+     (4) *Click depth*: fewest link steps from the homepage over the pages read, links as clicked (canonicals not
+     followed); the homepage's hreflang alternates count as one step, said per page (`click_depth_basis` "links and the
+     homepage's hreflang"): on nihan the language switcher is a form, so without it the whole `/en` half (241 pages)
+     would have no depth. Not reached: `null` with "not reached from the homepage through the pages read", never 0. A
+     depth is an upper bound: a shorter path through a page not read is not seen (said in `page_grouping.basis`).
+     (5) *Importance 0-100*: 50% link score + 25% depth score (0: 100, 1: 85, 2: 70, 3: 55, 4: 40, 5: 25, deeper: 10, not
+     reached: 0) + 25% type weight (home 100, category 80, product 70, blog_article 60, other 50, policy 15, utility 0),
+     rounded; at most 20 for a page that is not indexable (noindex, canonical elsewhere: `indexable_pages`) and for a
+     utility page however well linked (`importance_parts.capped` says which).
+     (6) *Report*: `PageFetch.grouping` and `CrawlResult.page_grouping` (method, weights, counts per type and template),
+     schema **1.23**: the frozen shape lists every page and crawl field (`maya_audit/schema.py`), so a new field on
+     either needs a bump; additions only, 1.x readers keep working. A page not read has `{"not_scored": "redirect" | "not
+     a readable HTML page"}`. A 1.22 report gets nothing invented: `tools/page_groups_saved.py <report.json>` works the
+     grouping out offline and prints it, without changing the file. Tests: `tests/test_page_groups.py`.

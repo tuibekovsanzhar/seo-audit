@@ -41,6 +41,9 @@ def settle(checks, result) -> None:
     attach(checks)
     # Page kinds for the site checks, as before; the answer-engine panel never had them.
     annotate_page_types([c for c in checks if not _get(c, "check_id").startswith("ANS")], result)
+    # Templates, page types, link scores, click depth, importance (DECISIONS 297): stored, never a severity.
+    from .page_groups import annotate as annotate_groups
+    annotate_groups(result)
 
 
 def verify(checks, result, cfg, transport=None, hooks=None, pace_s: float | None = None, *,

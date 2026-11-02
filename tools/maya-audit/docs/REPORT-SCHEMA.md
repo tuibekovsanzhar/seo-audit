@@ -1,6 +1,6 @@
 # The JSON report format
 
-Current version: `1.22`
+Current version: `1.23`
 
 Every JSON report the tool writes (`--json`, and one per brand from `batch`) starts with `schema_version`.
 Anything that reads a report, including the web interface, reads that number first.
@@ -160,6 +160,7 @@ A `pass` with anything in `coverage.not_assessed` is written as `partial`, never
 | `backoff`, `sessions` | Rate-limit slowdowns, and one row per crawl session (more than one after a resume). |
 | `steps` | The step timing table (1.14, team-preview-16): one row per step in order, `step` (`sitemap`, `crawl`, `access`, `index`, `structure`, `render`, `performance`, `sitemap_check`, `llms_links`, `citations`, `citation_domains`, `robots_wait`, `other_sites` (the pool of requests to other sites, beside the other steps) and `other_sites_wait`, and `page_reader` for the Firecrawl page reader), `started_at` (null for the reader), `seconds`, `requests` and `waiting_s` (the part of the time spent waiting: the gap between requests, Retry-After, the performance rounds' pauses; null for the reader). |
 | `skipped_for_time` | The optional steps the time limit cut (1.14, team-preview-16), in the order they give way: `other_site_links`, `llms_links`, `sitemap_check`, `performance`, `rendering`. Empty when nothing was cut or the audit was stopped. |
+| `page_grouping` | The page grouping's summary (1.23, DECISIONS 297), or null in a report that has none: `method_version`, `confidence` ("Estimated"), `pages_scored`, `pages_not_scored`, `page_types` (count per type), `templates` (the 40 largest template keys with their page counts), `templates_total`, `not_reached_from_homepage`, `reached_through_hreflang`, `weights`, `type_weights`, `footer_link_weight`, `not_indexable_cap`, `basis`. Its inner keys are not covered by the version. |
 | `access`, `index`, `render`, `structure`, `perf`, `citations`, `citation_domains` | Not covered by the version. |
 
 ## Page record
@@ -180,6 +181,7 @@ A `pass` with anything in `coverage.not_assessed` is written as `partial`, never
 | `view` | `raw`: the record describes the HTML the server sent. |
 | `content_checks_eligible` | False when the tool could not read the page. |
 | `links_found`, `outlinks`, `external_links` | The count of links, the links to this site, and the links to other sites (capped; the caps are in `config`). Each link has its target, every anchor text used for it, how many links go there, and how many of those have no text. A link found only in the rendered page is marked `rendered`. |
+| `grouping` | The page grouping (1.23, DECISIONS 297), Estimated, never used for a severity; null in a report that has none. For a page read: `template_key` (the URL pattern such as `/products/*`, with ` ~ <layout>` where a pattern holds two layouts, or for flat pages grouped by layout), `url_pattern`, `layout` (a 6-character layout fingerprint), `page_type` (`home`, `category`, `product`, `blog_article`, `policy`, `utility` for search/cart/account, `other`), `page_type_basis` (why), `internal_link_score` (0-100, weighted PageRank over the links between pages read, log scale against the site's best-linked page), `inlinks` (pages read that link to it), `click_depth` (link steps from the homepage over the pages read, the homepage's hreflang alternates one step; null when not reached, never 0), `click_depth_basis`, `importance` (0-100) and `importance_parts` (`internal_link_score`, `click_depth`, `page_type`, `capped`: false, "not indexable" or "utility page"). For a page not read: `{"not_scored": "redirect" \| "not a readable HTML page"}`. |
 | `analysis` | Not covered by the version. |
 
 ## Request, sitemap and skipped-URL records
@@ -385,6 +387,16 @@ page failures. Coverage stop reasons additionally distinguish `provider_timeout`
 credit/request limits. Existing 1.x reports remain readable; absent historical reasons are never invented.
 Keyword intent dimensions live inside open DataForSEO check evidence; originals and provider totals are preserved.
 
+
+## 1.23 — page grouping (2026-11-02)
+
+Added for DECISIONS 297; nothing was removed or renamed, so 1.x readers keep working.
+
+- A page record has `grouping` (see "Page record"): template key, URL pattern, layout fingerprint, page type and its
+  basis, internal link score, inlinks, click depth and its basis, importance and its parts.
+- The crawl record has `page_grouping`: the method's weights and the counts per page type and template.
+- Both are Estimated and are not used by any check, severity, confidence or the release gate. A 1.22 report has
+  neither; they are not invented for it (`tools/page_groups_saved.py` works them out offline for a saved report).
 
 ## 1.22 — Firecrawl's own pace, timeouts asked again, and time the computer slept (2026-11-02)
 

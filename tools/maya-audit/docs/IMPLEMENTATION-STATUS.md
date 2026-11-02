@@ -19,7 +19,7 @@ the owner asks for them, never otherwise; never force-push. Package 0.2.8. Inter
 | 04 Shared finalization | IN_PROGRESS | `final.settle`/`verify` in `run_audit` and after a page reader; batch not moved |
 | 05 Shared service (CLI/batch/web) | IN_PROGRESS | CLI and web use `final.seal`; the `maya-audit-pro` skill reads through `final.from_report`; batch not moved |
 | 06 Output generations | NOT_STARTED | |
-| 07 Source/page type/scope/render | IN_PROGRESS | H1: raw vs rendered per page (`h1_sources`); a page cut off at the size limit is not assessed for its <h1> or its section headings |
+| 07 Source/page type/scope/render | IN_PROGRESS | H1: raw vs rendered per page (`h1_sources`); a page cut off at the size limit is not assessed for its <h1> or its section headings; page grouping per page (v0.3 stage 3, DECISIONS 297) |
 | 08 Rule contract + catalogue | IN_PROGRESS | Missing catalogue is an error; actions for idx6.broken and every H1 rule |
 | 09 One publication gate | IN_PROGRESS | Every web report download and the final client export gated; CLI writes and warns; batch not gated |
 | 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown, web PDFs and the `maya-audit-pro` client PDF |
@@ -633,6 +633,39 @@ RND-6 as untouched, schema 1.21 in README and a schema-history test); all fixed 
 
 **Not measured:** the effect on a live audit (the next live nihan run will show the time with Firecrawl's own pace,
 and whether timeouts recover on the retry). Why Maya was blocked after one page is not examined.
+
+## v0.3 stage 3: page grouping (2026-11-02, DECISIONS 297)
+
+**Changed:** new `maya_audit/page_groups.py` (template key = URL pattern + layout fingerprint; page type home /
+category / product / blog_article / policy / utility / other with its basis; internal link score = weighted PageRank,
+footer-only links 0.25, links to a duplicate counted for its canonical; click depth from the homepage, its hreflang
+alternates one step, `null` when not reached; importance 0-100 = 50% link + 25% depth + 25% type, capped at 20 for
+non-indexable and utility pages), run in `final.settle`; `models.py` (`PageFetch.grouping`, `CrawlResult.page_grouping`);
+schema **1.23** (`docs/report-schema-1.23.json`, REPORT-SCHEMA.md, README; the frozen shape lists page and crawl fields,
+so new fields need a bump); new `tools/page_groups_saved.py` (offline, read-only, for saved reports). Not read by any
+check, severity or the release gate. Tests: new `tests/test_page_groups.py` (9); schema literals 1.22 -> 1.23 in 9 test files.
+
+**Saved audits, offline** (copies of `report.json` in a temp folder; `~/.maya-audit/web` untouched, byte-compared):
+
+| Audit | Scored / not | Templates | Page types | Not reached from home |
+|---|---|---|---|---|
+| nihan `b3198942` | 498 / 2 (an image, agents.md) | 18 | product 331, category 149, policy 6, utility 4, blog_article 4, home 2, other 2 | 0 (241 via the homepage's hreflang) |
+| adile `6f2830d5` | 36 / 31 (17 redirects, 14 empty 200s or files) | 16 | other 22, policy 6, blog_article 4, category 3, home 1 | 4 |
+| enpara `07297f4d` | 50 / 1 (redirect) | 19 | other 45, category 4, home 1 | 0 |
+
+nihan: 329 of 331 product pages are `/collections/*/products/*` copies whose canonical is `/products/*` (capped at 20);
+only 8 canonical `/products/*` pages were read. Found on the way, not changed: STR-3's `page_kind` calls those 323
+`/collections/<c>/products/<p>` pages listings ("category"), which feeds `page_types` on findings and the release gate.
+
+**Verification** (working tree on `762ac12`, macOS, Python 3.13.1; isolated home, no .env, no providers):
+
+| Command | Result |
+|---|---|
+| `pytest -q -m "not slow and not timing"` | `1 failed, 2576 passed, 4 skipped, 132 deselected, 1 warning in 996.51s`; the failure was this change's own edit of the schema-history test (an inline comment cut a line); fixed, then the three affected files: `39 passed in 3.54s` |
+| `tests/test_page_groups.py` | `9 passed` |
+| `python3.11 -m compileall` (changed files) | OK |
+| CLI `crawl` on a loopback fake site (`healthy`), `--json`/`--markdown` | exit 0; `out.json` schema 1.23, `grouping` on every page, release gate PASS |
+| full suite, ruff (not installed), Linux/Windows, live runs | NOT RUN |
 
 ## Next step
 

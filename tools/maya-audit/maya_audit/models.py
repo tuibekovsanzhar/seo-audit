@@ -108,6 +108,9 @@ class PageFetch:
     ttfb_ms: float | None = None
     # Bytes that came over the network (compressed, as sent), beside `body_bytes` decoded (A10). None: not measured.
     wire_bytes: int | None = None
+    # Template, page type, internal link score, click depth and importance (maya_audit.page_groups, DECISIONS 297,
+    # schema 1.23). Estimated; never used for a severity. None until the audit's finalization sets it.
+    grouping: dict[str, Any] | None = None
     # A server error message printed into the page, with the server's file path ({"marker", "line"}, the account
     # folder masked; maya_audit.classify.error_disclosure). Kept in memory for IDX-1; never written to a report.
     _error_text: dict[str, str] | None = field(default=None, repr=False)
@@ -228,6 +231,8 @@ class CrawlResult:
     skipped_for_time: list[str] = field(default_factory=list)
     # The re-test of the most serious findings (maya_audit.verification, DECISIONS 272): its requests, cap and states.
     verification: dict[str, Any] | None = None
+    # The page grouping's method and counts (maya_audit.page_groups, DECISIONS 297, schema 1.23).
+    page_grouping: dict[str, Any] | None = None
     _sitemap_named_in: dict[str, str] = field(default_factory=dict, repr=False)
     # In memory only: the sitemap file that listed each sitemap URL, for the sitemap check's sample (DECISIONS 294).
     _sitemap_file_of: dict[str, str] = field(default_factory=dict, repr=False)
