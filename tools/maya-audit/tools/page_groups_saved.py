@@ -3,7 +3,8 @@
     .venv/bin/python tools/page_groups_saved.py <report.json> [--top 20] [--json out.json]
 
 Rebuilds the page records from `crawl.pages`, runs `maya_audit.page_groups.annotate` and prints the page-type counts,
-the templates and the most important pages. `--json` writes {url: grouping} and the summary to a file of your choice.
+the templates and the most important pages, in `importance_rank` order, with the canonicals scored
+from their aliases. `--json` writes {url: grouping} and the summary to a file of your choice.
 """
 from __future__ import annotations
 
@@ -41,13 +42,18 @@ def main(argv=None) -> int:
           f"{summary['not_reached_from_homepage']} not reached from the homepage")
     print("page types:", json.dumps(summary["page_types"]))
     print("templates:", json.dumps(dict(list(summary["templates"].items())[:15]), ensure_ascii=False))
-    scored = sorted((p for p in result.pages if p.grouping and "importance" in p.grouping),
-                    key=lambda p: (-p.grouping["importance"], -p.grouping["internal_link_score"], p.url))
-    print(f"\n{'imp':>3} {'link':>4} {'in':>4} {'dep':>3}  {'type':<12} {'template':<28} url")
-    for p in scored[:args.top]:
-        g = p.grouping
-        print(f"{g['importance']:>3} {g['internal_link_score']:>4} {g['inlinks']:>4} {str(g['click_depth']):>3}  "
-              f"{g['page_type']:<12} {g['template_key'][:28]:<28} {p.url}")
+    # The pages read and the canonicals scored from their aliases, in `importance_rank` order (DECISIONS 298).
+    scored = sorted([(p.url, p.grouping) for p in result.pages if p.grouping and "importance" in p.grouping]
+                    + list(summary["canonical_pages"].items()), key=lambda row: row[1]["importance_rank"])
+    print(f"{summary['aliases']} aliases; {summary['canonical_pages_scored']} canonicals not read, scored from them")
+    products = [g["importance"] for _, g in scored if g["page_type"] == "product" and not g["importance_parts"]["capped"]]
+    if products:
+        print(f"products (not capped): {len(products)}, importance {min(products)}-{max(products)}")
+    print(f"\n{'#':>4} {'imp':>3} {'link':>4} {'in':>4} {'dep':>3} {'list':>4}  {'type':<12} {'template':<28} url")
+    for url, g in scored[:args.top]:
+        print(f"{g['importance_rank']:>4} {g['importance']:>3} {g['internal_link_score']:>4} {g['inlinks']:>4} "
+              f"{str(g['click_depth']):>3} {g['tie_break']['products_listed']:>4}  {g['page_type']:<12} "
+              f"{g['template_key'][:28]:<28} {url}{'  (not read)' if g.get('read') is False else ''}")
     if args.json:
         Path(args.json).write_text(json.dumps({"summary": summary, "pages": {p.url: p.grouping for p in result.pages}},
                                               ensure_ascii=False, indent=1), encoding="utf-8")

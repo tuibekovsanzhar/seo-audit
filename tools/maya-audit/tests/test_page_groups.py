@@ -178,7 +178,7 @@ def test_the_grouping_is_written_per_page_in_report_json_under_schema_1_23():
                          "inlinks", "click_depth", "click_depth_basis", "importance", "importance_parts"}
     missing = pages[SHOP + "/nowhere"]["grouping"] if SHOP + "/nowhere" in pages else {"not_scored": "x"}
     assert "importance" not in missing
-    assert report["crawl"]["page_grouping"]["method_version"] == 1
+    assert report["crawl"]["page_grouping"]["method_version"] == 2
     json.dumps(report)  # plain JSON
 
 
@@ -248,3 +248,120 @@ def test_the_offline_tool_reads_a_saved_report_and_leaves_it_unchanged(tmp_path)
     annotate(again)
     assert {p.url: p.grouping for p in again.pages} == saved["pages"]
     assert isinstance(pages[0], PageFetch)
+
+
+# -- stage 3b (DECISIONS 298) ----------------------------------------------------------------------------------------
+
+def _bare(url):
+    return SimpleNamespace(url=url, outlinks=[], analysis={"og": {}, "title": "", "structured_data": {"types": []}})
+
+
+def test_str3_page_kind_takes_a_product_inside_a_collection_for_a_product_not_a_listing():
+    from maya_audit.checks.structure import page_kind
+    home = SHOP + "/"
+    for path in ("/collections/elbise/products/kirmizi", "/en/collections/elbise/products/kirmizi",
+                 "/kategori/elbise/urun/kirmizi"):
+        kind, basis = page_kind(_bare(SHOP + path), home)
+        assert kind == "product" and basis.startswith("path /"), path
+    for path in ("/collections/elbise", "/collections/products/kirmizi", "/collections/elbise/products",
+                 "/collections/elbise/products/kirmizi/yorumlar"):
+        assert page_kind(_bare(SHOP + path), home)[0] == "category", path
+
+
+def test_a_canonical_that_was_not_read_is_scored_from_the_links_to_its_aliases():
+    outcome = _audit()
+    result = outcome.result
+    # As on nihan: the duplicate under the collection was read, the /products/ page it names was not.
+    result.pages = [p for p in result.pages if p.url != SHOP + "/products/kirmizi-elbise"]
+    summary = annotate(result)
+    canonical = SHOP + "/products/kirmizi-elbise"
+    assert summary["aliases"] == 1 and summary["canonical_pages_scored"] == 1
+    row = summary["canonical_pages"][canonical]
+    assert row["read"] is False and row["indexable"] is None and row["page_type"] == "product"
+    assert row["template_key"] == "/products/*" and row["aliases"] == 1 and "not read" in row["basis"]
+    # Both links count for it: /collections/elbise links to the alias, /collections/canta to the address itself.
+    assert row["inlinks"] == 2 and row["importance_parts"]["capped"] is False
+    assert row["click_depth"] == 2 and row["click_depth_basis"] == "links"  # /collections/canta links to it
+    alias = _by_path(result)["/collections/elbise/products/kirmizi-elbise"]
+    assert alias["canonical"] == canonical and alias["canonical_importance"] == row["importance"]
+    assert alias["importance"] <= 20 < row["importance"]
+    # Ranked with the pages read.
+    ranks = sorted([g["importance_rank"] for g in _by_path(result).values() if "importance_rank" in g]
+                   + [row["importance_rank"]])
+    assert ranks == list(range(1, len(ranks) + 1))
+    # Linked only through its alias: as deep as the alias, and it says so.
+    result.pages = [p for p in result.pages if p.url != SHOP + "/collections/canta"]
+    alone = annotate(result)["canonical_pages"][canonical]
+    assert alone["click_depth"] == 2 and alone["click_depth_basis"] == (
+        f"through its alias {SHOP}/collections/elbise/products/kirmizi-elbise")
+    assert alone["inlinks"] == 1
+
+
+def test_a_canonical_not_read_that_names_another_item_is_not_followed():
+    """Every page canonical to one address (a known CMS mistake) does not make that address a page of the site."""
+    pages = _shop()
+    pages["/collections/elbise/products/kirmizi-elbise"] = pages["/collections/elbise/products/kirmizi-elbise"].replace(
+        "/products/kirmizi-elbise", "/products/baska")
+    outcome = _audit(pages)
+    assert SHOP + "/products/baska" not in outcome.result.page_grouping["canonical_pages"]
+
+
+def test_a_policy_page_linked_only_from_footers_is_capped_at_35_and_one_in_the_menu_is_not():
+    outcome = _audit()
+    footer_only = _by_path(outcome.result)["/policies/privacy-policy"]
+    assert footer_only["importance"] <= 35
+    assert footer_only["importance_parts"]["capped"] == "policy page linked only from footers or sitewide blocks"
+    menu = MENU.replace("</nav>", '<a href="/policies/privacy-policy">Gizlilik</a></nav>')
+    pages = {path: html.replace(MENU, menu) for path, html in _shop().items()}
+    in_menu = _by_path(_audit(pages).result)["/policies/privacy-policy"]
+    assert in_menu["importance_parts"]["capped"] is False
+    # The same link in the content of every page (a cookie banner) is a sitewide block: still capped.
+    banner = {path: html.replace("</main>", '<p>Çerezler: <a href="/policies/privacy-policy">politika</a></p></main>')
+              for path, html in _shop().items()}
+    assert _by_path(_audit(banner).result)["/policies/privacy-policy"]["importance_parts"]["capped"] \
+        == "policy page linked only from footers or sitewide blocks"
+
+
+def test_ties_are_broken_by_products_listed_then_sitemap_order_never_by_address():
+    menu = ('<header><nav><a href="/">Ev</a><a href="/collections/armut">Armut</a><a href="/collections/zeytin">Zeytin</a>'
+            '<a href="/collections/incir">İncir</a></nav></header>')
+    pages = {"/": _doc("Ev", "", menu=menu),
+             # Equal links in: zeytin lists three products, armut and incir two each.
+             "/collections/zeytin": _doc("Zeytin", '<a href="/products/z1">1</a><a href="/products/z2">2</a>'
+                                                   '<a href="/products/z3?variant=7">3</a><a href="/products/z3">3</a>', menu=menu),
+             # And one other page each, so that every category links to as many pages (the same link score).
+             "/collections/armut": _doc("Armut", '<a href="/products/a1">1</a><a href="/products/a2">2</a>'
+                                                 '<a href="/pages/hakkimizda">Biz</a>', menu=menu),
+             "/collections/incir": _doc("İncir", '<a href="/products/i1">1</a><a href="/products/i2">2</a>'
+                                                 '<a href="/pages/hakkimizda">Biz</a>', menu=menu),
+             "/pages/hakkimizda": _doc("Biz", "", menu=menu)}
+    for slug in ("z1", "z2", "z3", "a1", "a2", "i1", "i2"):
+        pages[f"/products/{slug}"] = _doc(slug, "", og="product", menu=menu)
+    order = ["/", "/collections/incir", "/collections/armut"]  # incir before armut in the sitemap
+    sitemap = ('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+               + "".join(f"<url><loc>{SHOP}{p}</loc></url>" for p in order) + "</urlset>")
+    base = _respond(pages)
+
+    def respond(request):
+        if request.url.path == "/sitemap.xml":
+            return httpx.Response(200, text=sitemap, headers={"content-type": "application/xml"})
+        return base(request)
+    config = CrawlConfig(**{**QUIET, "max_pages": 40, "sitemap_check_max": 5})
+    g = _by_path(run_audit(SHOP + "/", config, httpx.MockTransport(respond)).result)
+    cats = {path: g[path] for path in ("/collections/zeytin", "/collections/armut", "/collections/incir")}
+    assert len({row["importance"] for row in cats.values()}) == 1  # a tie
+    assert cats["/collections/zeytin"]["tie_break"]["products_listed"] == 3  # one product, whatever its ?variant=
+    ranked = sorted(cats, key=lambda path: cats[path]["importance_rank"])
+    assert ranked == ["/collections/zeytin", "/collections/incir", "/collections/armut"]  # not alphabetical
+
+
+def test_blog_articles_are_flagged_citable_content_and_the_flag_changes_no_score():
+    outcome = _audit()
+    g = _by_path(outcome.result)
+    assert g["/blogs/news/sezon-rehberi"]["citable_content"] is True
+    assert g["/products/mavi-elbise"]["citable_content"] is False and g["/blogs/news"]["citable_content"] is False
+    article = g["/blogs/news/sezon-rehberi"]
+    parts = article["importance_parts"]
+    assert article["importance"] == round(0.5 * parts["internal_link_score"] + 0.25 * parts["click_depth"]
+                                          + 0.25 * parts["page_type"])
+    assert outcome.result.page_grouping["citable_content_pages"] == 2

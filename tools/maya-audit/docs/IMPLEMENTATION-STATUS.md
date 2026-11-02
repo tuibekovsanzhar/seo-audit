@@ -19,7 +19,7 @@ the owner asks for them, never otherwise; never force-push. Package 0.2.8. Inter
 | 04 Shared finalization | IN_PROGRESS | `final.settle`/`verify` in `run_audit` and after a page reader; batch not moved |
 | 05 Shared service (CLI/batch/web) | IN_PROGRESS | CLI and web use `final.seal`; the `maya-audit-pro` skill reads through `final.from_report`; batch not moved |
 | 06 Output generations | NOT_STARTED | |
-| 07 Source/page type/scope/render | IN_PROGRESS | H1: raw vs rendered per page (`h1_sources`); a page cut off at the size limit is not assessed for its <h1> or its section headings; page grouping per page (v0.3 stage 3, DECISIONS 297) |
+| 07 Source/page type/scope/render | IN_PROGRESS | H1: raw vs rendered per page (`h1_sources`); a page cut off at the size limit is not assessed for its <h1> or its section headings; page grouping per page (v0.3 stage 3, DECISIONS 297; importance fixes 298) |
 | 08 Rule contract + catalogue | IN_PROGRESS | Missing catalogue is an error; actions for idx6.broken and every H1 rule |
 | 09 One publication gate | IN_PROGRESS | Every web report download and the final client export gated; CLI writes and warns; batch not gated |
 | 10 URL-level report | IN_PROGRESS | Broken-link cards (page, link text, target, status, replacement unknown) in Markdown, web PDFs and the `maya-audit-pro` client PDF |
@@ -666,6 +666,39 @@ only 8 canonical `/products/*` pages were read. Found on the way, not changed: S
 | `python3.11 -m compileall` (changed files) | OK |
 | CLI `crawl` on a loopback fake site (`healthy`), `--json`/`--markdown` | exit 0; `out.json` schema 1.23, `grouping` on every page, release gate PASS |
 | full suite, ruff (not installed), Linux/Windows, live runs | NOT RUN |
+
+## v0.3 stage 3b: page importance fixes (2026-11-03, DECISIONS 298)
+
+**Changed:** STR-3 `page_kind` takes `/collections/<c>/products/<p>` (also after a language folder) for a `product`, not
+a listing (`checks/structure.nested_product`). Page grouping (method 2): a page whose canonical names another same-site
+address is its alias; links to it, and its own links, count for the canonical, and a canonical not read but ending in
+the same item is scored from its aliases (`page_grouping.canonical_pages`); policy pages linked only from footers or a
+sitewide block are capped at 35; `importance_rank` breaks ties by body links in, products listed, sitemap order, crawl
+order (never the address); `citable_content` on blog and article pages (no score change). No schema bump: 1.23 is not
+pushed and the new keys are inside free-form objects. `tools/page_groups_saved.py` lists in rank order with the
+canonicals. Tests: `tests/test_page_groups.py` 9 -> 15; `docs/FIXTURE-MATRIX.md` regenerated.
+
+**STR-3 before/after, saved audits offline:** nihan 323 pages category -> product, 1,322 `page_types` labels on 25
+findings; no finding, severity or confidence changes; release gate PASS before and after. adile, enpara: no change.
+
+**Importance after, saved audits offline** (`~/.maya-audit/web` untouched, byte-compared):
+
+| Audit | Aliases / canonicals scored unread | Products (not capped) | Policies | Read pages whose importance changed |
+|---|---|---|---|---|
+| nihan | 329 / 283 | 285 at 24-52 (TR 28-52 median 40; EN 24-35 median 33); before: 8 at 28-46 | 6 at 35 (were 53/41) | 81 (`/en` half -1 or -2, policies) |
+| adile | 0 / 0 | none | 3 newly capped at 35 (74, 74, 54); `/kvkk` 56 (one body link) | 3 |
+| enpara | 0 / 0 | none | none | 0 |
+
+**Verification** (working tree on `f338bb5`, macOS, Python 3.13.1; no .env, no providers, no live requests):
+
+| Command | Result |
+|---|---|
+| `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` (fast suite) | `2583 passed, 4 skipped, 132 deselected, 1 warning in 972.83s (0:16:12)` |
+| `pytest -q -rfEs -p no:cacheprovider` (full suite) | `1 failed, 2714 passed, 4 skipped, 1 warning in 1313.23s (0:21:53)`: `test_fixture_matrix` (generated matrix out of date after the new tests); regenerated, then `tests/test_fixture_matrix.py`: `3 passed` |
+| `tests/test_page_groups.py` + the 7 other `page_kind` test files | `197 passed` |
+| `python3.11 -m compileall` (changed files) | OK |
+| CLI `crawl` on a loopback fake site (`healthy`) | exit 0; schema 1.23, `page_grouping.method_version` 2, `grouping` on every page, release gate PASS |
+| full suite re-run after the matrix regeneration, ruff (not installed), Linux/Windows, live runs | NOT RUN |
 
 ## Next step
 

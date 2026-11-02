@@ -143,6 +143,17 @@ def pagination_signals(page, segments: list[str]) -> list[str]:
     return signals
 
 
+def nested_product(segments: list[str]) -> str | None:
+    """The basis when a folded path is a product inside a list (`/collections/<c>/products/<p>`, also after a language
+    folder): a product folder after a category word, with exactly one segment, the product, after it. None otherwise."""
+    if len(segments) < 4 or segments[-2] not in PRODUCT_SEGMENTS:
+        return None
+    category = next((i for i, s in enumerate(segments[:-2]) if s in CATEGORY_WORDS), None)
+    if category is None or category >= len(segments) - 3:
+        return None
+    return f"path /{segments[category]}/…/{segments[-2]}/…"
+
+
 def page_kind(page, home: str, template: dict[str, str] | None = None) -> tuple[str | None, str | None]:
     """Estimated page kind from the URL path (English and Turkish words), og:type, and for products the page's own
     price with a buy button (`template`, from `product_template`). Never from the structured data being checked:
@@ -153,6 +164,11 @@ def page_kind(page, home: str, template: dict[str, str] | None = None) -> tuple[
     og_type = (page.analysis["og"].get("og:type") or [""])[0].casefold()
     segments = [fold(s) for s in urlsplit(page.url).path.split("/") if s]
     listing = bool(set(segments) & CATEGORY_WORDS)  # a category, a tag, a collection or a brand: a list of pages
+    nested = nested_product(segments)
+    if nested:
+        # Shopify's /collections/<c>/products/<p> (DECISIONS 298): one product shown inside a collection, not the
+        # collection.
+        return "product", nested
     if not listing and (og_type == "product" or (len(segments) >= 2 and segments[0] in PRODUCT_SEGMENTS)):
         return "product", f"og:type={og_type!r}" if og_type == "product" else f"path /{segments[0]}/…"
     if not listing and template and page.url in template:

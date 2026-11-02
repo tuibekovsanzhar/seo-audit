@@ -17,7 +17,14 @@ release gate: the values are stored on each page record (`PageFetch.grouping`) a
   alternates counting as one step (said per page); None when no chain of read pages reaches it (never 0, never a
   guess).
 - *Importance*: 50% link score, 25% click depth, 25% page type; at most 20 for a page that is not indexable and for
-  a utility page.
+  a utility page, at most 35 for a policy page linked only from footers.
+- *Aliases* (DECISIONS 298): a page read whose canonical names another same-site address is an alias of it. Links to
+  the alias count for the canonical. A canonical that was not read but ends in the same item as its aliases
+  (`/collections/x/products/y` -> `/products/y`) is scored too, from its aliases' links, and listed in
+  `page_grouping.canonical_pages`.
+- *Order*: `importance_rank` breaks equal importance by body links in, then products listed, then sitemap order,
+  then crawl order. Never by address.
+- *Citable content*: a flag on blog and article pages, for weighting by business type later. It changes no score.
 """
 from __future__ import annotations
 
@@ -29,7 +36,7 @@ from urllib.parse import unquote, urlsplit
 
 from .page_words import ARTICLE_FOLDERS, CATEGORY_WORDS, PRODUCT_FOLDERS, fold
 
-METHOD_VERSION = 1
+METHOD_VERSION = 2
 PAGE_TYPES = ("home", "category", "product", "blog_article", "policy", "utility", "other")
 
 # -- URL pattern ---------------------------------------------------------------------------------------------------
@@ -187,7 +194,7 @@ def _home_language_versions(pages, home: str) -> set[str]:
 
 def page_type(page, home: str, homes: set[str], products: dict) -> tuple[str, str]:
     """(type, basis). The order: home, utility, policy, then the STR-3 page kind (`structure.page_kind`)."""
-    from .checks.structure import page_kind
+    from .checks.structure import nested_product, page_kind
     if page.url == home:
         return "home", "the start address's final page"
     if page.url in homes:
@@ -204,12 +211,10 @@ def page_type(page, home: str, homes: set[str], products: dict) -> tuple[str, st
         return "policy", f"path /{body[0]}/…"
     if body and _words(body[-1]) & POLICY_WORDS and body[0] not in (PRODUCT_FOLDERS | CATEGORY_WORDS | ARTICLE_FOLDERS):
         return "policy", f"policy word in the address ({sorted(_words(body[-1]) & POLICY_WORDS)[0]})"
-    nested = next((i for i, s in enumerate(body) if i >= 1 and s in PRODUCT_FOLDERS and i + 1 < len(body)
-                   and body[0] in CATEGORY_WORDS), None)
-    if nested is not None:
-        # Shopify's /collections/<c>/products/<p>: a product shown inside a collection, not the collection
-        # (STR-3's page_kind calls it a listing; left as it is there).
-        return "product", f"path /{body[0]}/…/{body[nested]}/…"
+    nested = nested_product(segs)
+    if nested:
+        # Shopify's /collections/<c>/products/<p>: a product shown inside a collection (STR-3's rule, DECISIONS 298).
+        return "product", nested
     if len(body) >= 2 and body[0] in ARTICLE_FOLDERS_GROUPING and not set(body) & CATEGORY_WORDS and (
             len(body) >= 3 or body[0] in ARTICLE_FOLDERS):
         return "blog_article", f"path /{body[0]}/…"
@@ -234,16 +239,58 @@ FOOTER_WEIGHT = 0.25
 DEPTH_SCORE = {0: 100, 1: 85, 2: 70, 3: 55, 4: 40, 5: 25}
 DEPTH_SCORE_DEEPER = 10
 NOT_INDEXABLE_CAP = 20
+# A policy or legal page linked only from footers (DECISIONS 298): above a product it would mislead.
+POLICY_FOOTER_CAP = 35
+# A link outside the menu and footer on at least this share of the pages read (and this many pages) is a sitewide block.
+SITEWIDE_BLOCK_SHARE = 0.5
+SITEWIDE_BLOCK_MIN_PAGES = 4
+POLICY_FOOTER_ONLY = "policy page linked only from footers or sitewide blocks"
 WEIGHTS = {"internal_link_score": 0.5, "click_depth": 0.25, "page_type": 0.25}
 
 
-def _resolver(pages, nodes: set[str] = frozenset(), canonicals: bool = True):
-    """Where a link to an address ends up: its redirects followed, then, when it is a page read whose canonical names
-    another page read, that page (links to a duplicate are counted for the page it names, as search engines merge
-    them). A canonical to a page that was not read is not followed: the duplicate keeps its links."""
+def _last_segment(url: str) -> str:
+    segs = _segments(url)
+    return fold(segs[-1]) if segs else ""
+
+
+def _product_key(url: str) -> str:
+    """One key per product: `/collections/x/products/y` and `/products/y` (language folder kept) are the same one."""
+    from .checks.structure import nested_product
+    segs = [fold(x) for x in _segments(url)]
+    if nested_product(segs):
+        lead = next(i for i, x in enumerate(segs) if x in CATEGORY_WORDS)
+        segs = segs[:lead] + segs[-2:]
+    return "/" + "/".join(segs)
+
+
+def canonical_aliases(read, nodes: set[str], origin: str = "", fetched: set[str] = frozenset()) -> dict[str, str]:
+    """{alias: canonical} for the pages read whose canonical names another same-site address (DECISIONS 298): a page
+    read, or an address not read that ends in the same item as the alias (`/collections/x/products/y` names
+    `/products/y`). A canonical not read that names another item (every page canonical to one address, a known CMS
+    mistake), or that was fetched and is not a readable page (a redirect, an error), is not followed: the page keeps its
+    links."""
+    from .index_data import canonical_target
+    from .urls import same_origin
+    out = {}
+    for p in read:
+        target = canonical_target(p)
+        if not target or target == p.url or (origin and not same_origin(target, origin)) or (
+                target in fetched and target not in nodes):
+            continue
+        if target in nodes or (_last_segment(target) and _last_segment(target) == _last_segment(p.url)):
+            out[p.url] = target
+    return out
+
+
+def _resolver(pages, nodes: set[str] = frozenset(), canonicals: bool = True, aliases: dict[str, str] | None = None):
+    """Where a link to an address ends up: its redirects followed, then, when it is an alias (`canonical_aliases`), its
+    canonical (links to a duplicate are counted for the page it names, as search engines merge them). Without
+    `aliases`, a page read whose canonical names another page read."""
     from .index_data import canonical_target
     hops = {p.url: p.redirect_location for p in pages if p.redirect_location and p.status and 300 <= p.status < 400}
-    for p in pages if canonicals else ():
+    if canonicals and aliases is not None:
+        hops.update(aliases)
+    for p in pages if canonicals and aliases is None else ():
         if p.url in nodes:
             target = canonical_target(p)
             if target and target != p.url and target in nodes:
@@ -258,11 +305,14 @@ def _resolver(pages, nodes: set[str] = frozenset(), canonicals: bool = True):
     return resolve
 
 
-def link_graph(pages, nodes: set[str], canonicals: bool = True) -> dict[str, dict[str, float]]:
-    """{source: {target: weight}} between the pages in `nodes`, redirects followed and, with `canonicals`, links to a
-    duplicate counted for the page read its canonical names (`_resolver`); self-links left out. The link score uses
-    the merged graph; click depth the links as a visitor clicks them."""
-    resolve = _resolver(pages, nodes, canonicals)
+def link_graph(pages, nodes: set[str], canonicals: bool = True,
+               aliases: dict[str, str] | None = None) -> dict[str, dict[str, float]]:
+    """{source: {target: weight}} between the pages in `nodes`, redirects followed and, with `canonicals`, links to an
+    alias counted for its canonical (`_resolver`) and the alias's own links moved to its canonical; self-links left
+    out. A canonical that was not read (in `nodes`, not among the pages) has only the links of its aliases. The link
+    score uses the merged graph; click depth the links as a visitor clicks them (an unread canonical then links where
+    its aliases do)."""
+    resolve = _resolver(pages, nodes, canonicals, aliases)
     graph: dict[str, dict[str, float]] = {}
     for p in pages:
         if p.url not in nodes:
@@ -275,6 +325,17 @@ def link_graph(pages, nodes: set[str], canonicals: bool = True) -> dict[str, dic
             weight = FOOTER_WEIGHT if edge.get("footer") and not edge.get("nav") else 1.0
             out[target] = max(out.get(target, 0.0), weight)
         graph[p.url] = out
+    for u in nodes - set(graph):
+        graph[u] = {}
+    if canonicals:
+        # An alias's own links are its canonical's (one page to a search engine): moved, not copied, so a duplicate
+        # passes on no more than one page would.
+        for alias, canonical in (aliases or {}).items():
+            if alias in graph and canonical in graph:
+                for v, w in graph[alias].items():
+                    if v != canonical:
+                        graph[canonical][v] = max(graph[canonical].get(v, 0.0), w)
+                graph[alias] = {}
     return graph
 
 
@@ -453,7 +514,8 @@ def annotate(result) -> dict:
     origin = getattr(result, "origin", None) or ""
     known = [u for u in [p.url for p in pages] + list(result.discovered_urls or []) + list(result.sitemap_urls or [])
              if isinstance(u, str) and (not origin or same_origin(u, origin))]
-    patterns = url_patterns(known)
+    aliases = canonical_aliases(read, nodes, origin, {p.url for p in pages})
+    patterns = url_patterns(known + list(aliases.values()))
     layouts = {p.url: layout_fingerprint(p.analysis) for p in read}
     keys = template_keys(read, patterns, layouts)
     try:
@@ -464,39 +526,139 @@ def annotate(result) -> dict:
     types = {p.url: page_type(p, home, homes, products) for p in read}
     refine_types(read, types, keys, layouts, patterns)
 
-    graph = link_graph(pages, nodes)
+    unread = {c for c in aliases.values() if c not in nodes}  # canonicals scored from their aliases
+    by_canonical: dict[str, list[str]] = defaultdict(list)
+    for alias, canonical in aliases.items():
+        by_canonical[canonical].append(alias)
+    for canonical in unread:
+        kinds = Counter(types[a][0] for a in by_canonical[canonical])
+        kind = kinds.most_common(1)[0][0]
+        types[canonical] = (kind, f"not read; the type of its {len(by_canonical[canonical])} alias(es)")
+        layouts[canonical] = layouts[by_canonical[canonical][0]]
+        keys[canonical] = patterns.get(canonical, "/")
+    scored_urls = nodes | unread
+
+    graph = link_graph(pages, scored_urls, aliases=aliases)
     rank = pagerank(graph)
     link_score = _log_scale(rank)
     home_page = next((p for p in read if p.url == home), None)
-    resolve = _resolver(pages, nodes)
+    resolve = _resolver(pages, scored_urls, aliases=aliases)
     alternates = {resolve(h.get("href") or "") for h in ((home_page.analysis or {}).get("hreflang") or [])} if home_page else set()
-    depth, via_hreflang = click_depths(link_graph(pages, nodes, canonicals=False), home, alternates - {home})
-    inlinks: Counter = Counter(v for u in graph for v in graph[u])
+    depth, via_hreflang = click_depths(link_graph(pages, scored_urls, canonicals=False, aliases=aliases), home,
+                                       alternates - {home})
+    # A canonical not read is as close as the nearest of its aliases (the same content), or its own links if closer.
+    via_alias: dict[str, str] = {}
+    for canonical in unread:
+        reached = [(depth[a], a) for a in by_canonical[canonical] if a in depth]
+        if reached and (canonical not in depth or min(reached)[0] < depth[canonical]):
+            depth[canonical], via_alias[canonical] = min(reached)
+            if via_alias[canonical] in via_hreflang:
+                via_hreflang.add(canonical)
     indexable = {p.url for p in indexable_pages(result)}
 
-    for p in pages:
-        if p.url not in nodes:
-            p.grouping = {"not_scored": "redirect" if p.redirect_location else "not a readable HTML page"}
-            continue
-        kind, why = types[p.url]
-        d = depth.get(p.url)
+    # Where each page is linked from, over the merged links: body (outside menu and footer), menu, footer only.
+    linked_from: dict[str, set[str]] = defaultdict(set)  # pages read that link to it (to it or to an alias of it)
+    body_in: dict[str, set[str]] = defaultdict(set)
+    in_menu: set[str] = set()
+    listed_products: dict[str, set[str]] = defaultdict(set)
+    product_patterns = {patterns.get(u) for u, (k, _) in types.items() if k == "product"} - {None, "/"}
+    for p in read:
+        for edge in p.outlinks or []:
+            target = resolve(edge.get("target") or "")
+            if not edge.get("footer") and not edge.get("nav"):
+                # Products listed: links in the page's own content to product pages, read or not (by their pattern),
+                # one per product whatever its ?variant= (DECISIONS 298).
+                item = resolve((edge.get("target") or "").split("#")[0].split("?")[0])
+                if item != p.url and ((item in types and types[item][0] == "product")
+                                      or patterns.get(item) in product_patterns):
+                    listed_products[p.url].add(_product_key(item))
+            if target not in scored_urls or target == p.url:
+                continue
+            linked_from[target].add(p.url)
+            # A link record says only whether *any* link to the target sits in a menu or a footer: one in the menu
+            # and one in the footer is menu-and-footer when there are 2+ links; a single one in a <nav> in the
+            # footer is the footer's. A footer with two links to it (nihan) is still the footer's only.
+            if edge.get("nav") and (not edge.get("footer") or (edge.get("links") or 1) >= 2):
+                in_menu.add(target)
+            elif not edge.get("nav") and not edge.get("footer"):
+                body_in[target].add(p.url)
+    # A policy linked from the menu, or from the content of some pages, is not footer-only. A content link on most
+    # pages read is a sitewide block (a cookie banner, a newsletter form's consent line) and counts as a footer.
+    sitewide_body = SITEWIDE_BLOCK_SHARE * len(read) if len(read) >= SITEWIDE_BLOCK_MIN_PAGES else math.inf
+    menu_or_body = in_menu | {u for u, sources in body_in.items() if len(sources) < sitewide_body}
+    sitemap_at: dict[str, int] = {}
+    for i, u in enumerate(result.sitemap_urls or []):
+        if isinstance(u, str):
+            sitemap_at.setdefault(u, i)
+            sitemap_at.setdefault(u.rstrip("/") if urlsplit(u).path not in ("", "/") else u, i)
+    crawl_at = {p.url: i for i, p in enumerate(pages)}
+
+    def grouping(url: str) -> dict:
+        kind, why = types[url]
+        d = depth.get(url)
         d_score = DEPTH_SCORE.get(d, DEPTH_SCORE_DEEPER) if d is not None else 0
-        score = (WEIGHTS["internal_link_score"] * link_score[p.url] + WEIGHTS["click_depth"] * d_score
+        score = (WEIGHTS["internal_link_score"] * link_score[url] + WEIGHTS["click_depth"] * d_score
                  + WEIGHTS["page_type"] * TYPE_WEIGHT[kind])
         # Not indexable (noindex, canonical elsewhere) or a search/cart/account page: at most 20, whatever its links.
-        capped = "not indexable" if p.url not in indexable else "utility page" if kind == "utility" else False
-        importance = min(round(score), NOT_INDEXABLE_CAP) if capped else round(score)
-        p.grouping = {
-            "template_key": keys[p.url], "url_pattern": patterns.get(p.url, "/"), "layout": layouts[p.url],
+        # A policy page linked only from footers: at most 35 (DECISIONS 298). A canonical not read: its indexability
+        # is not known, so no cap is applied for it and it says so.
+        if url in unread:
+            capped = False
+        elif url not in indexable:
+            capped = "not indexable"
+        elif kind == "utility":
+            capped = "utility page"
+        elif kind == "policy" and url not in menu_or_body:
+            capped = POLICY_FOOTER_ONLY
+        else:
+            capped = False
+        cap = POLICY_FOOTER_CAP if capped == POLICY_FOOTER_ONLY else NOT_INDEXABLE_CAP
+        importance = min(round(score), cap) if capped else round(score)
+        if d is None:
+            depth_basis = "not reached from the homepage through the pages read"
+        elif url in via_alias:
+            depth_basis = f"through its alias {via_alias[url]}" + (" (and the homepage's hreflang)" if url in via_hreflang else "")
+        else:
+            depth_basis = "links and the homepage's hreflang" if url in via_hreflang else "links"
+        out = {
+            "template_key": keys[url], "url_pattern": patterns.get(url, keys[url]), "layout": layouts[url],
             "page_type": kind, "page_type_basis": why,
-            "internal_link_score": link_score[p.url], "inlinks": inlinks[p.url],
-            "click_depth": d,
-            "click_depth_basis": ("not reached from the homepage through the pages read" if d is None else
-                                  "links and the homepage's hreflang" if p.url in via_hreflang else "links"),
+            "internal_link_score": link_score[url], "inlinks": len(linked_from[url]),
+            "click_depth": d, "click_depth_basis": depth_basis,
             "importance": importance,
-            "importance_parts": {"internal_link_score": link_score[p.url], "click_depth": d_score,
+            "importance_parts": {"internal_link_score": link_score[url], "click_depth": d_score,
                                  "page_type": TYPE_WEIGHT[kind], "capped": capped},
+            "tie_break": {"body_inlinks": len(body_in[url]), "products_listed": len(listed_products[url]),
+                          "sitemap_position": sitemap_at.get(url)},
+            "citable_content": kind == "blog_article",
         }
+        if url in aliases:
+            out["canonical"] = aliases[url]
+        if url in by_canonical:
+            out["aliases"] = len(by_canonical[url])
+        if url in unread:
+            out["read"] = False
+            out["indexable"] = None
+            out["basis"] = (f"not read: scored from the links to its {len(by_canonical[url])} alias(es), which name it "
+                            "as their canonical")
+        return out
+
+    groupings = {url: grouping(url) for url in scored_urls}
+
+    def order(url: str):
+        g, first = groupings[url], min([crawl_at.get(a, len(pages)) for a in by_canonical.get(url, [])] or [len(pages)])
+        tb = g["tie_break"]
+        return (-g["importance"], -tb["body_inlinks"], -tb["products_listed"],
+                tb["sitemap_position"] if tb["sitemap_position"] is not None else math.inf, crawl_at.get(url, first))
+    for i, url in enumerate(sorted(scored_urls, key=order), 1):
+        groupings[url]["importance_rank"] = i
+    for url, g in groupings.items():
+        if "canonical" in g:
+            g["canonical_importance"] = groupings.get(g["canonical"], {}).get("importance")
+
+    for p in pages:
+        p.grouping = groupings[p.url] if p.url in nodes else {
+            "not_scored": "redirect" if p.redirect_location else "not a readable HTML page"}
     scored = [p for p in pages if p.url in nodes]
     summary = {
         "method_version": METHOD_VERSION, "confidence": "Estimated",
@@ -506,8 +668,13 @@ def annotate(result) -> dict:
         "templates_total": len({keys[p.url] for p in scored}),
         "not_reached_from_homepage": sum(1 for p in scored if p.url not in depth),
         "reached_through_hreflang": sum(1 for p in scored if p.url in via_hreflang),
+        "aliases": len(aliases),
+        "canonical_pages_scored": len(unread),
+        "canonical_pages": {url: groupings[url] for url in sorted(unread, key=order)},
+        "citable_content_pages": sum(1 for p in scored if groupings[p.url]["citable_content"]),
         "weights": WEIGHTS, "type_weights": TYPE_WEIGHT, "footer_link_weight": FOOTER_WEIGHT,
-        "not_indexable_cap": NOT_INDEXABLE_CAP,
+        "not_indexable_cap": NOT_INDEXABLE_CAP, "policy_footer_cap": POLICY_FOOTER_CAP,
+        "order": "importance, then body links in, then products listed, then sitemap order, then crawl order",
         "basis": "Links and click depth are measured over the pages read only; a page reached through a page that "
                  "was not read may be closer to the homepage than shown.",
     }

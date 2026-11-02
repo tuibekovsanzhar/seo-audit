@@ -41,7 +41,7 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | RND-7 | 6 | 7 |  |
 | STR-1 | 23 | 20 |  |
 | STR-2 | 20 | 15 |  |
-| STR-3 | 10 | 8 |  |
+| STR-3 | 10 | 9 |  |
 | STR-4 | 13 | 6 |  |
 | STR-5 | 7 | 8 |  |
 | STR-6 | 7 | 2 |  |
@@ -254,7 +254,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 ### STR-3
 
 - Finds the problem: `test_arjava_regression.py::test_the_same_broken_organization_block_on_another_page_is_one_finding`, `test_brand_neutral.py::test_news_video_video_named_video_is_an_unfilled_default_str3`, `test_gx3_noise.py::test_hygiene_notes_are_listed_after_the_notes_and_capped`, `test_problem_summary.py::test_a_site_wide_problem_is_counted_once_under_the_whole_site_and_notes_appear_nowhere`, `test_round2_followups.py::test_a_note_and_a_top_problem_carry_the_unverified_label_in_print_in_both_languages`, `test_single_page.py::test_checks_that_compare_pages_are_set_aside_and_site_level_facts_are_still_checked`, `test_str_scenarios.py::test_structured_data_presence`, `test_str_scenarios.py::test_structured_data_graph_and_entity_identity`, `test_w4b_report_length.py::test_the_top_problems_name_each_check_once_in_priority_order`, `test_web_app.py::test_explanations_are_about_the_finding_they_sit_under`
-- Must not flag: `test_arjava_regression.py::test_a_broken_organization_block_is_reported_as_broken_not_missing`, `test_brand_neutral.py::test_tarif_sube_recipe_without_image_misses_a_required_property_str3`, `test_brand_neutral.py::test_local_wp_dentist_without_address_misses_a_required_property_str3`, `test_brand_neutral.py::test_shopify_product_without_offers_misses_a_required_property_str3`, `test_brand_neutral.py::test_news_video_todays_named_video_is_not_a_default_str3`, `test_counts_and_shared_elements.py::test_the_homepage_without_a_main_heading_or_organization_data_is_medium_and_other_pages_stay_low`, `test_page_wording.py::test_a_finding_with_no_rule_of_its_own_says_whose_figure_its_title_carries`, `test_w13_page_kind.py::test_unknown_page_type_gets_no_content_advice_from_the_gate`
+- Must not flag: `test_arjava_regression.py::test_a_broken_organization_block_is_reported_as_broken_not_missing`, `test_brand_neutral.py::test_tarif_sube_recipe_without_image_misses_a_required_property_str3`, `test_brand_neutral.py::test_local_wp_dentist_without_address_misses_a_required_property_str3`, `test_brand_neutral.py::test_shopify_product_without_offers_misses_a_required_property_str3`, `test_brand_neutral.py::test_news_video_todays_named_video_is_not_a_default_str3`, `test_counts_and_shared_elements.py::test_the_homepage_without_a_main_heading_or_organization_data_is_medium_and_other_pages_stay_low`, `test_page_groups.py::test_str3_page_kind_takes_a_product_inside_a_collection_for_a_product_not_a_listing`, `test_page_wording.py::test_a_finding_with_no_rule_of_its_own_says_whose_figure_its_title_carries`, `test_w13_page_kind.py::test_unknown_page_type_gets_no_content_advice_from_the_gate`
 
 ### STR-4
 

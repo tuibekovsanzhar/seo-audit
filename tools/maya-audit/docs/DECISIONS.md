@@ -2981,3 +2981,53 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      either needs a bump; additions only, 1.x readers keep working. A page not read has `{"not_scored": "redirect" | "not
      a readable HTML page"}`. A 1.22 report gets nothing invented: `tools/page_groups_saved.py <report.json>` works the
      grouping out offline and prints it, without changing the file. Tests: `tests/test_page_groups.py`.
+298. **Page importance, v0.3 stage 3b: STR-3 takes a product inside a collection for a product; canonical aliases;
+     footer-only policies at most 35; ties broken without the address; a citable-content flag (Owner, 2026-11-03;
+     the rules below are agent defaults).**
+     (1) *STR-3 `page_kind`* (`checks/structure.py`, `nested_product`): a path with a category word, then later a
+     product folder with exactly one segment after it (`/collections/<c>/products/<p>`, also after a language folder,
+     `/kategori/<c>/urun/<p>`) is a `product` ("path /collections/…/products/…"), before the listing rule. Not changed:
+     `/collections/products/<p>` (no collection between) and anything deeper than the product. This replaces the note in
+     297 that the rule was left for the owner; page grouping now uses the same rule. `product_template` is unchanged.
+     *Before/after on the saved audits, offline* (page kinds rebuilt from `report.json`, release gate re-run with the new
+     `page_types`): **nihan**: 323 pages `category` -> `product`; 1,322 `page_types` labels change on 25 findings (ACC-6
+     x5, IDX-4, RND-3, RND-6 x2, RND-7, STR-2, STR-5, STR-14 x4, STR-16, STR-19 x2, TSEO-1 x5, PRF-1). No finding
+     appears or goes, no severity or confidence changes: the STR-3 "page kind expects a type" list gains nothing, since
+     all 323 pages carry Product markup; STR-6 (articles) and the maybe-product note (pages of no kind) are untouched.
+     No RG-7 violation: none of the 25 findings gives content advice limited by page type. Release gate PASS before and
+     after. **adile** and **enpara**: no page changes kind; nothing changes.
+     (2) *Canonical aliases* (`page_groups.canonical_aliases`): a page read whose canonical names another same-site
+     address is an alias of it when that address was read, or when it was not fetched at all and ends in the same item
+     (last path segment) as the alias. A canonical that names another item (every page canonical to one address, a CMS
+     mistake) or that was fetched and is not a readable page is not followed. Links to an alias count for its canonical;
+     the alias's own links move to the canonical (moved, not copied: a duplicate passes on no more than one page). A
+     canonical not read is scored like a page: its type is its aliases' type, its click depth that of its nearest alias
+     unless its own links reach it sooner (`click_depth_basis` "through its alias <url>"), `inlinks` the pages read that
+     link to it or to an alias of it; it is not capped (its indexability is not known: `indexable: null`, `read: false`,
+     and a `basis` that says it was scored from its aliases). Those records are in `page_grouping.canonical_pages`; an
+     alias carries `canonical` and `canonical_importance`, and stays capped at 20 (not indexable). nihan: 329 aliases,
+     283 canonicals scored without being read; products (not capped) 24-52 (Turkish 28-52, median 40; English 24-35,
+     median 33), against 8 products read at 28-46 before.
+     (3) *Policies linked only from footers*: a `policy` page is capped at 35 unless a page read links to it from the
+     menu or from its content. A link record says only whether *any* link to a target is in a menu or a footer, so a
+     menu link that is also in the footer counts as a menu link when there are 2+ links; a single link in a `<nav>`
+     inside the footer is the footer's; a footer with two links to it is still the footer's (nihan has 171 such
+     records). A content link found on half or more of the pages read (4+ pages) is a sitewide block (cookie banner,
+     newsletter form consent line) and counts as a footer. nihan: refund, privacy and mesafeli satış 53/41 -> 35.
+     adile: `/bulten-kvkk` and `/cerez-politikasi-aydinlatma-metni` 74 -> 35 (a consent line and a cookie banner on
+     every page), `/sosyal-medya-aydinlatma-metni` 54 -> 35; `/kvkk` stays 56 (one content link, from `/franchising`,
+     through the redirect `/aydinlatma-metni`).
+     (4) *Order* (`importance_rank`, 1 = first, over the pages read and the canonicals scored): importance, then body
+     links in (pages read linking from their content), then products listed (`tie_break.products_listed`: distinct
+     product pages a page links to from its content, read or not, by the pattern of the pages typed product, one per
+     product whatever its `?variant=` and whether linked as `/collections/<c>/products/<p>` or `/products/<p>`), then
+     the position in the sitemap, then crawl order. Never the address. nihan: the 8 categories at 91 now run kadin-ceket
+     (60 products listed), kadin-pantolon (58), kadin-bluz and kadin-tunik (50)...; body links in are 0 for every
+     category there (the mega-menu is all `<nav>`).
+     (5) *Citable content*: `citable_content: true` on `blog_article` pages, false otherwise
+     (`page_grouping.citable_content_pages` counts them). For weighting by business type later; no score changes now.
+     (6) *Schema*: no bump. 1.23 has not been pushed, and `grouping` and `page_grouping` are free-form objects in it
+     (`dict[str, Any]`): the new keys (`tie_break`, `importance_rank`, `citable_content`, `canonical`,
+     `canonical_importance`, `aliases`, `read`, `indexable`, `basis`; summary `aliases`, `canonical_pages_scored`,
+     `canonical_pages`, `citable_content_pages`, `policy_footer_cap`, `order`) do not change the frozen shape.
+     `page_grouping.method_version` is 2. Tests: `tests/test_page_groups.py` (15).
