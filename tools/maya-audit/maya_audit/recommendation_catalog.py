@@ -51,6 +51,8 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"Group precedence", "seo", "S", "A crawler with its own section in robots.txt ignores the general (*) rules. A rule you thought applied to everyone may not apply to it."),
     ),
     "ACC-3": (
+        # The checklist's quick checks (DECISIONS 304).
+        (r"carry noindex but robots\.txt blocks", "seo", "S", "A crawler that robots.txt keeps out never reads the page, so it never sees the noindex either, and the address can stay in the index from links to it."),
         (r"internal search or cart page\(s\) can be indexed", "developer", "S", "A site's own search results and cart are not pages to find in search: indexed, they spend crawl time and can show as thin or duplicate results."),
     ),
     "ACC-7": (
@@ -90,6 +92,9 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"noindex and declare a canonical", "seo", "S", "noindex says to leave the page out; a canonical to another page says to fold it into that one. Together they are mixed signals, and the engine chooses."),
     ),
     "IDX-5": (
+        # The checklist's quick checks (DECISIONS 304).
+        (r"lists no images although", "developer", "S", "Image entries in the sitemap help engines find and index the images of a site with many, including ones loaded late or by a script."),
+        (r"lists no videos although", "developer", "S", "A video sitemap tells engines where each video is, what it is about and which thumbnail to show, so the videos can appear in video results."),
         (r"No usable XML sitemap", "developer", "S", "A sitemap is the list of pages you want found. On a larger site, pages that are not well linked are found late or not at all without one."),
         # Reports saved before the sitemap check (`SAVED_ONLY`).
         (r"non-200 or noindex", "developer", "S", "A sitemap that lists missing or blocked pages is trusted less, and crawlers spend visits on pages that cannot be used."),
@@ -108,6 +113,8 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"does not open with", "content", "S", "The llms.txt proposal opens the file with the site's name as a “# ” title. A tool that reads the file that way may not find the name."),
     ),
     "IDX-6": (
+        # The checklist's quick checks (DECISIONS 304).
+        (r"whose canonical is another page", "developer", "S", "A link to a duplicate address sends crawlers to a page they then fold into another one: visits are spent twice and the canonical page gets its links second-hand."),
         (r"external destination.*GET redirect cycle", "developer", "M", "An observed redirect cycle prevents that request from reaching its destination; other client contexts may differ."),
         (r"Link target returns", "content", "S", "A broken link sends visitors and crawlers to nothing."),
         (r"tracking parameters", "developer", "S", "Internal links with tracking parameters create a second address for the same page, which splits its signals and wastes crawler visits."),
@@ -119,6 +126,9 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"Cloudflare e-mail obfuscation", "developer", "S", "Cloudflare swaps the address for a placeholder that a script turns back into the address. A crawler or assistant that runs no script sees no contact address."),
     ),
     "IDX-7": (
+        # The checklist's quick checks (DECISIONS 304).
+        (r"do not link to their next page", "developer", "S", "Crawlers follow <a href> links, not buttons or scrolling: without a link to the next page, the items listed only there are found late or not at all."),
+        (r"no breadcrumb or link to a category", "seo", "S", "A link from each product back to its category tells engines how the catalogue is organised and passes the product's visits on to the category."),
         (r"listed only in the sitemap", "seo", "M", "A page that nothing links to is found only through the sitemap, and engines treat pages nobody links to as less important."),
         (r"clicks from the homepage", "seo", "M", "Pages many clicks deep are crawled later and less often, and are treated as less important."),
     ),
@@ -192,6 +202,9 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"more than one <h1>", "content", "S", "Several main headings make it less clear which one names the page's topic. This is a small matter."),
     ),
     "STR-3": (
+        # The checklist's quick checks (DECISIONS 304).
+        (r"name no author", "content", "S", "A named author with a page of their own is one of the signals engines use to judge who stands behind advice and how far to trust it."),
+        (r"Product markup without a GTIN or MPN", "developer", "S", "A GTIN or MPN lets Google match the product to the same item elsewhere, which its shopping results and merchant listings rely on."),
         (r"Organization block does not parse", "developer", "S", "A block that does not parse is ignored whole, so the Organization it describes is not read at all."),
         (r"Organization structured data has no", "developer", "S", "A logo and profile links let engines tie the site to the brand's other official pages."),
         (r"VideoObject that looks like an unfilled default", "content", "S", "A placeholder name or date tells engines nothing true about the video and can make the markup look unreliable."),
@@ -280,6 +293,9 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"in the footer look like links", "content", "S", "Footer entries with no address behind them promise pages that cannot be reached. To visitors and engines the site looks unfinished."),
     ),
     "TSEO-1": (
+        # The checklist's quick checks (DECISIONS 304).
+        (r"decomposed character", "developer", "S", "A letter written as two code points makes a second address for the same word: links typed or copied with the normal letter lead elsewhere, and the address looks garbled when shared."),
+        (r"unclear slug", "developer", "S", "A short address made of words tells visitors and engines what the page is before they open it; ids and symbols say nothing."),
         (r"end <head> early: canonical", "developer", "S", "Google stops reading the head at the first element that cannot stand in it, so a canonical, robots or hreflang tag after it is ignored."),
         (r"end <head> early: meta", "developer", "S", "Tags after an element that ends the head early are read as body; previews and some crawlers then miss them."),
         (r"no viewport meta tag", "developer", "S", "Google indexes the mobile version of a page; without a viewport phones show a shrunken desktop layout."),
@@ -289,6 +305,10 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"script\(s\) in <head> without defer or async", "developer", "M", "Scripts that block the first render make every visitor wait for code before seeing the page."),
         (r"guidance band", "content", "S", "Character bands are editorial guidance, not Google limits or proof of a technical failure. Review clarity and usefulness in context."),
         (r".", "content", "S", "Titles, descriptions and headings are the basics every search engine reads to decide what a page is about and how to show it."),
+    ),
+    "STR-15": (
+        # The checklist's quick checks (DECISIONS 304).
+        (r"list no product or almost none", "content", "S", "An indexable list page with nothing in it can be treated as a soft 404, and a visitor who lands on it from search finds nothing to buy."),
     ),
 }
 

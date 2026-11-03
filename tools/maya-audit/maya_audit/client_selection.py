@@ -163,9 +163,23 @@ def _result_from_report(report: dict):
 
 
 def grouping(report: dict) -> tuple[dict[str, dict], dict]:
-    """({url: grouping record}, summary) from the report's page grouping; for a report saved before it (schema below
-    1.23), from `page_groups.annotate` on the saved page records (offline, the report is not changed)."""
+    """({url: grouping record}, summary) from the report's page grouping (or the page reader's, `reader_page_grouping`,
+    1.24); for a report saved before it (schema below 1.23), from `page_groups.annotate` on the saved page records
+    (offline, the report is not changed)."""
     crawl = report.get("crawl") or {}
+    reader = crawl.get("reader_page_grouping")
+    if isinstance(reader, dict) and reader.get("pages"):
+        # Maya's crawler was blocked and a page reader read the site (DECISIONS 304, schema 1.24): the grouping of the
+        # reader's pages, worked out while their links were in memory. Maya's own scored pages fill any gap.
+        out = {u: g for u, g in reader["pages"].items() if isinstance(g, dict) and "importance" in g}
+        for p in crawl.get("pages") or []:
+            g = p.get("grouping") if isinstance(p, dict) else None
+            if isinstance(g, dict) and "importance" in g:
+                out.setdefault(p.get("url"), g)
+        for url, g in (reader.get("canonical_pages") or {}).items():
+            if isinstance(g, dict) and "importance" in g:
+                out.setdefault(url, g)
+        return out, {k: v for k, v in reader.items() if k != "pages"}
     records = {p.get("url"): p.get("grouping") for p in crawl.get("pages") or [] if isinstance(p, dict)}
     summary = crawl.get("page_grouping")
     if not any(isinstance(g, dict) and "importance" in g for g in records.values()) or not isinstance(summary, dict):

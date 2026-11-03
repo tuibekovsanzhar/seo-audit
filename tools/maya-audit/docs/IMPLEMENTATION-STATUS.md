@@ -912,6 +912,56 @@ Top cards (score, severity, cause):
 Final nihan pro report (fields filled, validated, gate PASS, no overflow): 7 pages, 10 cards (8 problem + 2 Not), XLSX
 appendix with all 48 findings. Outputs: `reviews/2026-11-03/rebuild-301/` (git-ignored).
 
+## The checklist's quick checks, Product fields, Firecrawl pages' importance (DECISIONS 304, 2026-11-03)
+
+Global rules; nihan, adile and enpara are test cases only. What changed: (1) when Maya's crawler is blocked, Firecrawl's
+pages are grouped while their links are in memory (`crawl.reader_page_grouping`), so key pages and reach work for a
+blocked site; (2) ten new rules (`maya_audit/checks/quick_rules.py`): SEO-061 links to an alias, SEO-099 empty
+collections, decomposed characters in addresses, SEO-031 noindex behind robots.txt, SEO-046 next page not linked,
+SEO-093 product with no category link, SEO-036 image/video sitemap, SEO-067 unclear slugs, SEO-078 article author,
+SEO-097 GTIN/MPN; (3) the key Product fields in report.json. Schema 1.24. Details in DECISIONS 304.
+
+**nihan, adile, enpara rebuilt offline** (copies in the scratchpad; `~/.maya-audit/web` untouched, sha1 compared;
+sockets refused). Before = commit `aa68c0b` exported with `git archive`, after = this tree, both through
+`tools/reassess_saved.py`, then `client_selection.select` (nihan with its review file: STR-12 confirmed by the owner).
+PDFs were not rendered. Outputs: `reviews/2026-11-03/rebuild-304/` (git-ignored).
+
+| Audit | New finding | Severity, confidence | Count | Placement |
+|---|---|---|---|---|
+| nihan | TSEO-1 decomposed character (`tseo1.url_decomposed`) | Low, verified | 1,689 addresses (68 read, 704 in the sitemap) | card 3 (30.9) |
+| nihan | IDX-6 links to an alias (`idx6.alias_links`) | Low, verified | 1,112 links on 141 pages, to 324 aliases (`/collections/x/products/y`) | card 4 (28.5) |
+| nihan | STR-15 empty or near-empty collections (`str15.empty_collections`) | Low, estimated, LG-102 | 7 collection pages, TR and EN (perfume: 2 products; outlet sweater, jumpsuit, t-shirt: 1-2) | Teyit edin |
+| nihan | IDX-7 product with no category link (`idx7.product_no_category`) | Low, estimated, LG-102 | 1 product (`/products/aksesuar-detayli-kap-lacivert-1`, no breadcrumb) | Teyit edin |
+| adile | none | | | |
+| enpara | none | | | |
+
+No finding, measured: nihan SEO-097 (331 product pages; every one has an MPN, a GTIN on each offer and a brand), SEO-078
+(nihan's 4 and adile's 4 articles name an author), SEO-046 (collections link `?page=2`), SEO-067. Not assessed offline,
+said in `generation.analysis`: SEO-031 (no robots.txt text in a saved report), SEO-036 (no sitemap media counts before
+1.24). Release gate PASS -> PASS on all three.
+
+Top cards: nihan changes (8 -> 10 cards; confirm 9 -> 11): before RND-6 html_weight 93.4 · STR-12 67.3 · TSEO-1
+heading_levels 22.9 · template_meta 19.4 · STR-2 12.5 · STR-14 11.0 · IDX-5 9.8 · ACC-3 7.9; after the same with the
+two new Low cards at 3 and 4 (no card dropped; both Medium cards stay first). The decomposed-address card ranks above
+the heading jumps by reach: 1,689 addresses, each unscored one counted 10 (DECISIONS 300 (2)). adile and enpara: no
+change.
+
+**Checklist mapping** (`reviews/checklist/mapping.xlsx`, git-ignored): done 101 -> 109 of 165 (61% -> 66%), full 53 ->
+57 (32% -> 35%). Full: SEO-061, -078, -097, -099. Partial: SEO-031, -036, -046, -067, -093 (what is missing is in the
+row). Missing-automatable 17 -> 9.
+
+**Verification** (working tree on `aa68c0b`, macOS, Python 3.13.1; no .env, no providers, no live requests):
+
+| Command | Result |
+|---|---|
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2644 passed, 4 skipped, 131 deselected, 1 warning in 494.90s (0:08:14)` (the first run failed 1: the decomposed-address fix began with "Rename", not an action verb the action sentence knows; reworded to "Change") |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `2775 passed, 4 skipped, 1 warning in 783.84s (0:13:03)` (skips: 2 wheel builds without setuptools, live-run examples not in git, real-site corpus outside the repo) |
+| pro skill tests (outside `testpaths`) | `56 passed` |
+| `ruff check --isolated --select E9,F821,F841` (maya_audit, maya_audit_web, tools, new test) | `All checks passed!` |
+| `python3.11 -m compileall` | OK |
+| CLI `crawl` on a loopback fake site (`healthy`) | exit 0; schema 1.24, gate PASS, `image_entries`/`video_entries` on sitemap records, `grouping` on 5/5 pages |
+| Linux/Windows, live runs, PDFs of the rebuilt audits | NOT RUN |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

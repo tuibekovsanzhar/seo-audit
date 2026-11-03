@@ -130,6 +130,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("acc2.retired", "robots.txt has rules for {tokens}, which no longer have any effect", "robots.txt has rules for {tokens}, which no longer have any effect"),
     ),
     "ACC-3": (
+        # The checklist's quick checks (DECISIONS 304).
+        ("acc3.robots_noindex", "{n#} page(s) carry noindex but robots.txt blocks search crawlers from reading it",
+         "{n:page carries|pages carry} noindex but robots.txt blocks search crawlers from reading it"),
         ("acc3.noindex", "noindex via {where}[[review: (page intent should be reviewed)]] on {n#} page(s)", "noindex via {where}{review} on {n:page|pages}"),
         ("acc3.noindex_utility", "noindex via {where} on {n#} utility page(s) (such as a QR menu or a print page): check that this is intended",
          "noindex via {where} on {n:utility page|utility pages} (such as a QR menu or a print page): check that this is intended"),
@@ -294,6 +297,11 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "{n:page is|pages are} noindex and [n:declares|declare] a canonical to another URL"),
     ),
     "IDX-5": (
+        # The checklist's quick checks (DECISIONS 304).
+        ("idx5.no_image_sitemap", "The sitemap lists no images although the pages read show {n#} different images",
+         "The sitemap lists no images although the pages read show {n} different images"),
+        ("idx5.no_video_sitemap", "The sitemap lists no videos although {n#} pages read show a video",
+         "The sitemap lists no videos although {n:page read shows|pages read show} a video"),
         ("idx5.bad_share", "{bad#} of {assessed#} checked sitemap URLs ({share%}) are non-200 or noindex",
          "{bad} of {assessed} checked sitemap URLs ({share}) are non-200 or noindex"),
         ("idx5.identical", "All {n#} sitemap <lastmod> values are identical ({date})", "All {n} sitemap <lastmod> values are identical ({date})"),
@@ -338,6 +346,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "{n:sitemap URL has|sitemap URLs have} letters that are not percent-encoded"),
     ),
     "IDX-6": (
+        # The checklist's quick checks (DECISIONS 304).
+        ("idx6.alias_links", "{links#} internal link(s) on {pages#} page(s) point to an address whose canonical is another page",
+         "{links:internal link|internal links} on {pages:page|pages} [links:points|point] to an address whose canonical is another page"),
         ("idx6.external_cycle", "{n#} external destination(s) produced a GET redirect cycle for the recorded client", "{n} external destinations produced a GET redirect cycle for the recorded client"),
         ("idx6.broken", "Link target returns {status#}, linked from {n#} page(s): {target}", "Link target returns {status}, linked from {n:page|pages}: {target}"),
         # Cloudflare's e-mail obfuscation (review H09).
@@ -361,6 +372,11 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "the other address could not be checked"),
     ),
     "IDX-7": (
+        # The checklist's quick checks (DECISIONS 304).
+        ("idx7.pagination_unlinked", "{n#} list page(s) do not link to their next page with an <a href> link",
+         "{n:list page does|list pages do} not link to [n:its|their] next page with an <a href> link"),
+        ("idx7.product_no_category", "{n#} product page(s) have no breadcrumb or link to a category in their content",
+         "{n:product page has|product pages have} no breadcrumb or link to a category in [n:its|their] content"),
         ("idx7.deep", "{n#} page(s) are {depth#}+ clicks from the homepage", "{n:page is|pages are} {depth}+ clicks from the homepage"),
         ("idx7.orphan", "{n#} page(s) are listed only in the sitemap, with no internal links to them",
          "{n:page is|pages are} listed only in the sitemap, with no internal links to [n:it|them]"),
@@ -496,6 +512,11 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("str2.many_h1", "{n#} page(s) have more than one <h1>", "{n:page has|pages have} more than one <h1>"),
     ),
     "STR-3": (
+        # The checklist's quick checks (DECISIONS 304).
+        ("str3.article_no_author", "{n#} article page(s) name no author (no byline or author markup)",
+         "{n:article page names|article pages name} no author (no byline or author markup)"),
+        ("str3.product_no_identifier", "{n#} product page(s) have Product markup without a GTIN or MPN",
+         "{n:product page has|product pages have} Product markup without a GTIN or MPN"),
         ("str3.unparsed", "{n#} page(s) have JSON-LD that does not parse", "{n:page has|pages have} JSON-LD that does not parse"),
         ("str3.no_organization", "The homepage has no Organization structured data", "The homepage has no Organization structured data"),
         ("str3.organization_broken", "The homepage's Organization block does not parse",
@@ -646,6 +667,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "Shared template: links to {pattern} have no text (on {n:page|pages}{section}), for example {href}"),
     ),
     "STR-15": (
+        # The checklist's quick checks (DECISIONS 304).
+        ("str15.empty_collections", "{n#} indexable collection or category page(s) list no product or almost none",
+         "{n:indexable collection or category page lists|indexable collection or category pages list} no product or almost none"),
         ("str15.thin", "{n#} content page(s) have fewer than {words#} words of their own text",
          "{n:content page has|content pages have} fewer than {words} words of [n:its|their] own text"),
     ),
@@ -708,6 +732,11 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "{engine} cited {mentions} domain-mentions on this topic and none from this site"),
     ),
     "TSEO-1": (
+        # The checklist's quick checks (DECISIONS 304).
+        ("tseo1.url_decomposed", "{n#} address(es) contain a decomposed character (a letter followed by a combining mark)",
+         "{n:address contains|addresses contain} a decomposed character (a letter followed by a combining mark)"),
+        ("tseo1.url_slug_unclear", "{n#} page address(es) have an unclear slug (an id only, over 100 characters, or spaces and symbols)",
+         "{n:page address has|page addresses have} an unclear slug (an id only, over 100 characters, or spaces and symbols)"),
         # H30, H32 (maya_audit.checks.page_markup).
         ("tseo1.no_viewport", "{n#} page(s) have no viewport meta tag", "{n:page has|pages have} no viewport meta tag"),
         # DECISIONS 260: a body element inside <head> ends it early.

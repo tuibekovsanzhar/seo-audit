@@ -3541,7 +3541,7 @@ def run_structure_checks(result: CrawlResult, cfg: CrawlConfig, render_checks: l
     gap = _rendering_gap(render_checks) & {p.url for p in pages}
     data = result.structure if result.structure is not None else StructureData()
     str4, str4_date_pages = str4_consistency(result, cfg, pages, key_urls, gap)
-    return settle_all([
+    checks = [
         str1_titles(result, cfg, pages, key_urls),
         str2_headings(result, cfg, pages, key_urls, gap),
         str3_structured_data(result, cfg, pages, key_urls),
@@ -3561,7 +3561,10 @@ def run_structure_checks(result: CrawlResult, cfg: CrawlConfig, render_checks: l
         str17_dead_ends(result, cfg, pages, key_urls, gap),
         *run_small_site_checks(result, cfg, pages, key_urls, gap),
         run_traditional_seo_quality_check(result, pages, key_urls, gap),
-    ], result)
+    ]
+    from .quick_rules import extend  # the checklist's quick checks (DECISIONS 304): STR-3, STR-15, TSEO-1
+    extend(checks, result, cfg)
+    return settle_all(checks, result)
 
 
 def annotate_page_types(checks, result: CrawlResult) -> None:

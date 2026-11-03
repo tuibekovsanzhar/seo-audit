@@ -1286,7 +1286,7 @@ def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResul
 
 def run_access_checks(result: CrawlResult, cfg: CrawlConfig) -> list[CheckResult]:
     acc4 = acc4_ua_differential(result, cfg)
-    return settle_all([
+    checks = [
         acc1_robots_availability(result, cfg),
         acc2_robots_rules(result, cfg),
         acc3_page_controls(result, cfg),
@@ -1296,4 +1296,7 @@ def run_access_checks(result: CrawlResult, cfg: CrawlConfig) -> list[CheckResult
         acc7_crawl_delay(result, cfg, acc4),
         acc8_llms_txt(result, cfg),
         acc9_automated_visitors(result, cfg),
-    ], result)
+    ]
+    from .quick_rules import extend  # the checklist's quick checks (DECISIONS 304): ACC-3
+    extend(checks, result, cfg)
+    return settle_all(checks, result)

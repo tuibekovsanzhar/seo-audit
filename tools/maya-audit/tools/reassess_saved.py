@@ -22,6 +22,21 @@ def _no_network(*args, **kwargs):
     raise RuntimeError("reassess_saved makes no network request")
 
 
+def _saved_jsonld(folder: Path) -> dict[str, list[str]]:
+    """{url: [JSON-LD block text]} from the audit's saved evidence copies (`evidence/*.json`, Maya's own reading), for
+    the Product fields and authors a report saved before schema 1.24 does not hold (DECISIONS 304). {} when none."""
+    out: dict[str, list[str]] = {}
+    for path in sorted((folder / "evidence").glob("*.json")):
+        try:
+            saved = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        blocks = saved.get("json_ld_blocks") if isinstance(saved, dict) else None
+        if isinstance(saved, dict) and isinstance(saved.get("url"), str) and isinstance(blocks, list):
+            out[saved["url"]] = [b for b in blocks if isinstance(b, str)]
+    return out
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("report", type=Path)
@@ -51,7 +66,7 @@ def _run(a) -> int:
     affected_path = source.with_name("affected-urls.json")
     affected = json.loads(affected_path.read_text(encoding="utf-8")) if affected_path.exists() else None
     audit_id = source.parent.parent.name if source.parent.name == "artifacts" else None
-    new, aff, record = apply(report, affected, source_audit_id=audit_id)
+    new, aff, record = apply(report, affected, source_audit_id=audit_id, jsonld_by_url=_saved_jsonld(source.parent))
     out.mkdir(parents=True, exist_ok=True)
     (out / "report.json").write_text(json.dumps(new, ensure_ascii=False, indent=1), encoding="utf-8")
     if affected is not None:

@@ -330,20 +330,22 @@ def test_a_saved_1_9_report_without_items_gets_them_derived_and_its_file_is_not_
 
 
 def test_schema_1_16_is_frozen_and_adds_without_breaking_older_1_x_reports():
-    assert schema.SCHEMA_VERSION == "1.23"
+    assert schema.SCHEMA_VERSION == "1.24"
     frozen = json.loads(schema.frozen_path().read_text(encoding="utf-8"))
-    assert schema.frozen_path().name == "report-schema-1.23.json" and schema.differences(frozen, schema.shape()) == []
+    assert schema.frozen_path().name == "report-schema-1.24.json" and schema.differences(frozen, schema.shape()) == []
     # 1.13 is kept, 1.14 only adds to it (the start address that failed; the audit's brand and where it came from), and a
     # 1.13 report is still read.
     thirteenth = json.loads(schema.frozen_path("1.13").read_text(encoding="utf-8"))
     assert schema.differences({k: v for k, v in thirteenth.items() if k != "schema_version"}, {k: v for k, v in frozen.items() if k != "schema_version"}) == [
         # team-preview-16, run 3 (DECISIONS 219): the step timing table and what the time limit cut.
-        "brand: added", "crawl: added ['steps', 'skipped_for_time', 'verification', 'page_grouping']", "finding: added ['rule_id', 'verification', 'page_types', 'measurement', 'remediation', 'dedup_key']", "firecrawl: added ['unsupported_resources', 'concurrency']",
+        "brand: added", "crawl: added ['steps', 'skipped_for_time', 'verification', 'page_grouping', 'reader_page_grouping']", "finding: added ['rule_id', 'verification', 'page_types', 'measurement', 'remediation', 'dedup_key']", "firecrawl: added ['unsupported_resources', 'concurrency']",
         # 1.21 (DECISIONS 294): the reader's measured pace and the shared site limit's slot of each request.
         # 1.22 (DECISIONS 295): the timeout counts. 1.23 (DECISIONS 297): the page grouping (page, crawl).
         "firecrawl_coverage: added ['seconds_per_page_measured', 'call_seconds_measured', 'seconds_per_page_assumed', 'skipped_for_time', 'ran_beside_maya', 'timeouts']",
         "page: added ['wire_bytes', 'grouping']", "problem_start_address: added", "problem_summary: added ['start_address']", "report.optional: added ['platform']", "report.required: added ['generation', 'brand', 'release_gate']",
-        "request: added ['slot']", "review_item: added ['rule_id']",  # 1.18, DECISIONS 269; 1.19 adds `verification` (DECISIONS 272); 1.20 the contract fields and `release_gate` (278)
+        "request: added ['slot']", "review_item: added ['rule_id']",
+        # 1.24 (DECISIONS 304): the page reader's page grouping; the sitemap's image and video counts.
+        "sitemap_doc: added ['image_entries', 'video_entries']",  # 1.18, DECISIONS 269; 1.19 adds `verification` (DECISIONS 272); 1.20 the contract fields and `release_gate` (278)
         "vocabulary.brand_found_in: added", "vocabulary.brand_source: added", "vocabulary.check_status: added ['not_applicable']", "vocabulary.not_requested_because: added ['provider_timeout', 'provider_error']"]
     assert frozen["brand"] == ["name", "source", "confirmed", "found_in", "pages"]
     assert frozen["problem_start_address"] == ["entered", "status", "audited_from"] and schema.unsupported_reason({"schema_version": "1.13"}) is None

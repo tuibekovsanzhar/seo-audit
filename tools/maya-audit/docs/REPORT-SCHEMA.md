@@ -1,6 +1,6 @@
 # The JSON report format
 
-Current version: `1.23`
+Current version: `1.24`
 
 Every JSON report the tool writes (`--json`, and one per brand from `batch`) starts with `schema_version`.
 Anything that reads a report, including the web interface, reads that number first.
@@ -161,6 +161,7 @@ A `pass` with anything in `coverage.not_assessed` is written as `partial`, never
 | `steps` | The step timing table (1.14, team-preview-16): one row per step in order, `step` (`sitemap`, `crawl`, `access`, `index`, `structure`, `render`, `performance`, `sitemap_check`, `llms_links`, `citations`, `citation_domains`, `robots_wait`, `other_sites` (the pool of requests to other sites, beside the other steps) and `other_sites_wait`, and `page_reader` for the Firecrawl page reader), `started_at` (null for the reader), `seconds`, `requests` and `waiting_s` (the part of the time spent waiting: the gap between requests, Retry-After, the performance rounds' pauses; null for the reader). |
 | `skipped_for_time` | The optional steps the time limit cut (1.14, team-preview-16), in the order they give way: `other_site_links`, `llms_links`, `sitemap_check`, `performance`, `rendering`. Empty when nothing was cut or the audit was stopped. |
 | `page_grouping` | The page grouping's summary (1.23, DECISIONS 297), or null in a report that has none: `method_version`, `confidence` ("Estimated"), `pages_scored`, `pages_not_scored`, `page_types` (count per type), `templates` (the 40 largest template keys with their page counts), `templates_total`, `not_reached_from_homepage`, `reached_through_hreflang`, `aliases`, `canonical_pages_scored`, `canonical_pages` ({url: grouping} for canonicals scored from their aliases without being read, DECISIONS 298), `citable_content_pages`, `weights`, `type_weights`, `footer_link_weight`, `not_indexable_cap`, `policy_footer_cap`, `order`, `basis`. Its inner keys are not covered by the version. |
+| `reader_page_grouping` | The same grouping for the pages a page reader (Firecrawl) read when Maya's crawler was blocked or rate-limited (1.24, DECISIONS 304), or null: the keys of `page_grouping` plus `reader` (its name) and `pages` ({url: grouping record}, as a page record's `grouping`). Worked out while the reader's pages and their links were in memory; Maya's own page records hold no content then. `{"reader", "error"}` when the grouping failed. |
 | `access`, `index`, `render`, `structure`, `perf`, `citations`, `citation_domains` | Not covered by the version. |
 
 ## Page record
@@ -182,14 +183,15 @@ A `pass` with anything in `coverage.not_assessed` is written as `partial`, never
 | `content_checks_eligible` | False when the tool could not read the page. |
 | `links_found`, `outlinks`, `external_links` | The count of links, the links to this site, and the links to other sites (capped; the caps are in `config`). Each link has its target, every anchor text used for it, how many links go there, and how many of those have no text. A link found only in the rendered page is marked `rendered`. |
 | `grouping` | The page grouping (1.23, DECISIONS 297), Estimated, never used for a severity; null in a report that has none. For a page read: `template_key` (the URL pattern such as `/products/*`, with ` ~ <layout>` where a pattern holds two layouts, or for flat pages grouped by layout), `url_pattern`, `layout` (a 6-character layout fingerprint), `page_type` (`home`, `category`, `product`, `blog_article`, `policy`, `utility` for search/cart/account, `other`), `page_type_basis` (why), `internal_link_score` (0-100, weighted PageRank over the links between pages read, log scale against the site's best-linked page), `inlinks` (pages read that link to it), `click_depth` (link steps from the homepage over the pages read, the homepage's hreflang alternates one step; null when not reached, never 0), `click_depth_basis`, `importance` (0-100), `importance_parts` (`internal_link_score`, `click_depth`, `page_type`, `capped`: false, "not indexable", "utility page" or "policy page linked only from footers or sitewide blocks"), `importance_rank` (1 = first; ties broken by `tie_break`: `body_inlinks`, `products_listed`, `sitemap_position`, then crawl order, never the address), `citable_content` (true on blog and article pages; no score effect), and on an alias `canonical` and `canonical_importance` (DECISIONS 298). For a page not read: `{"not_scored": "redirect" \| "not a readable HTML page"}`. |
-| `analysis` | Not covered by the version. |
+| `analysis` | Not covered by the version. Since 1.24 (DECISIONS 304) it may hold `structured_data.products` (per Product node, at most 5: `type`, `gtin` {key: value}, `mpn`, `sku`, `brand`, `offers` [at most 5: `price`, `priceCurrency`, `availability`, any `gtin`/`mpn`/`sku`], `has_variant`, `variant_identifiers`, `in_list`), `pagination_links` (`next`/`prev` hrefs as written) and `author_signals` (where the page names an author). |
 
 ## Request, sitemap and skipped-URL records
 
 - Request: `seq`, `url`, `purpose`, `user_agent`, `started_at`, `status`, `error`, `elapsed_ms`, `ttfb_ms`,
   `extra_headers`, `started_mono`, `ended_mono`.
 - Sitemap document: `url`, `status`, `error`, `kind`, `urls_found`, `lastmod_count`, `lastmod_distinct`,
-  `lastmod_top`, `lastmod_top_count`.
+  `lastmod_top`, `lastmod_top_count`, and (1.24) `image_entries`, `video_entries`: the `<image:image>` and
+  `<video:video>` entries of a urlset (0 for an index or a file that was not read).
 - Skipped URL: `url`, `discovered_via`, `decision`.
 
 ## Backlinks panel (`dataforseo`)
@@ -387,6 +389,23 @@ page failures. Coverage stop reasons additionally distinguish `provider_timeout`
 credit/request limits. Existing 1.x reports remain readable; absent historical reasons are never invented.
 Keyword intent dimensions live inside open DataForSEO check evidence; originals and provider totals are preserved.
 
+
+## 1.24 — the page reader's grouping, sitemap media counts, Product fields (2026-11-03)
+
+Added for DECISIONS 304; nothing was removed or renamed, so 1.x readers keep working. Why a new version: two records
+gained fields (`crawl.reader_page_grouping`; the sitemap document's `image_entries`, `video_entries`), and a 1.23
+reader that took their absence as "no grouping" or "no image sitemap" would be wrong for a 1.24 report.
+
+- `crawl.reader_page_grouping`: when Maya's crawler was blocked (or rate-limited) and Firecrawl read the pages, the
+  page grouping (templates, page types, importance) of Firecrawl's pages, computed while their links were in memory.
+  Before 1.24 such an audit had no importance at all (DECISIONS 303). The client reports read it first.
+- Sitemap document `image_entries`, `video_entries` (SEO-036). A 1.23 report has neither; the image and video sitemap
+  rule says "not assessed" for it, never "no image sitemap".
+- Inside `analysis` (not covered by the version, listed for readers): `structured_data.products` (the key Product
+  fields: identifiers, brand, offers), `pagination_links`, `author_signals`.
+- New finding kinds (rule ids, no shape change): `idx6.alias_links`, `str15.empty_collections`, `tseo1.url_decomposed`,
+  `acc3.robots_noindex`, `idx7.pagination_unlinked`, `idx7.product_no_category`, `idx5.no_image_sitemap`,
+  `idx5.no_video_sitemap`, `tseo1.url_slug_unclear`, `str3.article_no_author`, `str3.product_no_identifier`.
 
 ## 1.23 — page grouping (2026-11-02)
 

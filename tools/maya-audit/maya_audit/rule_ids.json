@@ -43,6 +43,10 @@
   ],
   "ACC-3": [
    [
+    "acc3.robots_noindex",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ carry\\ noindex\\ but\\ robots\\.txt\\ blocks\\ search\\ crawlers\\ from\\ reading\\ it"
+   ],
+   [
     "acc3.noindex",
     "noindex\\ via\\ (?P<where>.+?)(?P<review>\\ \\(page\\ intent\\ should\\ be\\ reviewed\\))?\\ on\\ (?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)"
    ],
@@ -401,6 +405,14 @@
   ],
   "IDX-5": [
    [
+    "idx5.no_image_sitemap",
+    "The\\ sitemap\\ lists\\ no\\ images\\ although\\ the\\ pages\\ read\\ show\\ (?P<n>\\d+(?:\\.\\d+)?)\\ different\\ images"
+   ],
+   [
+    "idx5.no_video_sitemap",
+    "The\\ sitemap\\ lists\\ no\\ videos\\ although\\ (?P<n>\\d+(?:\\.\\d+)?)\\ pages\\ read\\ show\\ a\\ video"
+   ],
+   [
     "idx5.bad_share",
     "(?P<bad>\\d+(?:\\.\\d+)?)\\ of\\ (?P<assessed>\\d+(?:\\.\\d+)?)\\ checked\\ sitemap\\ URLs\\ \\((?P<share>\\d+(?:\\.\\d+)?%)\\)\\ are\\ non\\-200\\ or\\ noindex"
    ],
@@ -479,6 +491,10 @@
   ],
   "IDX-6": [
    [
+    "idx6.alias_links",
+    "(?P<links>\\d+(?:\\.\\d+)?)\\ internal\\ link\\(s\\)\\ on\\ (?P<pages>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ point\\ to\\ an\\ address\\ whose\\ canonical\\ is\\ another\\ page"
+   ],
+   [
     "idx6.external_cycle",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ external\\ destination\\(s\\)\\ produced\\ a\\ GET\\ redirect\\ cycle\\ for\\ the\\ recorded\\ client"
    ],
@@ -520,6 +536,14 @@
    ]
   ],
   "IDX-7": [
+   [
+    "idx7.pagination_unlinked",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ list\\ page\\(s\\)\\ do\\ not\\ link\\ to\\ their\\ next\\ page\\ with\\ an\\ <a\\ href>\\ link"
+   ],
+   [
+    "idx7.product_no_category",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ product\\ page\\(s\\)\\ have\\ no\\ breadcrumb\\ or\\ link\\ to\\ a\\ category\\ in\\ their\\ content"
+   ],
    [
     "idx7.deep",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ are\\ (?P<depth>\\d+(?:\\.\\d+)?)\\+\\ clicks\\ from\\ the\\ homepage"
@@ -863,6 +887,10 @@
   ],
   "STR-15": [
    [
+    "str15.empty_collections",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ indexable\\ collection\\ or\\ category\\ page\\(s\\)\\ list\\ no\\ product\\ or\\ almost\\ none"
+   ],
+   [
     "str15.thin",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ content\\ page\\(s\\)\\ have\\ fewer\\ than\\ (?P<words>\\d+(?:\\.\\d+)?)\\ words\\ of\\ their\\ own\\ text"
    ]
@@ -986,6 +1014,14 @@
    ]
   ],
   "STR-3": [
+   [
+    "str3.article_no_author",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ article\\ page\\(s\\)\\ name\\ no\\ author\\ \\(no\\ byline\\ or\\ author\\ markup\\)"
+   ],
+   [
+    "str3.product_no_identifier",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ product\\ page\\(s\\)\\ have\\ Product\\ markup\\ without\\ a\\ GTIN\\ or\\ MPN"
+   ],
    [
     "str3.unparsed",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ have\\ JSON\\-LD\\ that\\ does\\ not\\ parse"
@@ -1220,6 +1256,14 @@
    ]
   ],
   "TSEO-1": [
+   [
+    "tseo1.url_decomposed",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ address\\(es\\)\\ contain\\ a\\ decomposed\\ character\\ \\(a\\ letter\\ followed\\ by\\ a\\ combining\\ mark\\)"
+   ],
+   [
+    "tseo1.url_slug_unclear",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\ address\\(es\\)\\ have\\ an\\ unclear\\ slug\\ \\(an\\ id\\ only,\\ over\\ 100\\ characters,\\ or\\ spaces\\ and\\ symbols\\)"
+   ],
    [
     "tseo1.no_viewport",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ have\\ no\\ viewport\\ meta\\ tag"

@@ -480,6 +480,11 @@ def read_blocked_site(result: CrawlResult, cfg: CrawlConfig, client: ContentProv
                            "measured_on": "the rendered HTML Firecrawl returned (rawHtml: its browser's page after "
                                           "JavaScript) for the pages it read; not comparable with Maya's raw size"}
         checks.append(weight)
+    if blocked or result.stop_reason == StopReason.RATE_LIMIT:
+        # DECISIONS 304: Maya's own page records hold no content (or few pages) here, so the page grouping (templates,
+        # page types, importance) is worked out on the pages the reader read, with their links, while they are in
+        # memory, and kept with the report (`crawl.reader_page_grouping`); the saved copies keep no links.
+        reader_page_grouping(result, view, client.identity.name)
     if main:
         _label(checks, MAIN_SOURCE, MAIN_WHY, client.identity, notice=None)
     else:
@@ -488,6 +493,19 @@ def read_blocked_site(result: CrawlResult, cfg: CrawlConfig, client: ContentProv
     return checks
 
 
+
+
+def reader_page_grouping(result: CrawlResult, view: CrawlResult, reader: str) -> dict[str, Any] | None:
+    """Group the pages of `view` (the reader's pages, with their links) and keep it on `result` (DECISIONS 304)."""
+    from ..page_groups import annotate
+    try:
+        summary = annotate(view)
+    except Exception as exc:  # grouping is ordering data, never a reason for the reading to fail; said so
+        result.reader_page_grouping = {"reader": reader, "error": f"page grouping failed: {type(exc).__name__}"}
+        return result.reader_page_grouping
+    pages = {p.url: p.grouping for p in view.pages if isinstance(p.grouping, dict) and "importance" in p.grouping}
+    result.reader_page_grouping = {"reader": reader, **summary, "pages": pages}
+    return result.reader_page_grouping
 
 
 def _crawl_delay(result: CrawlResult, cfg: CrawlConfig) -> float:

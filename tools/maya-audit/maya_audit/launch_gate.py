@@ -96,6 +96,12 @@ LABELS: tuple[Row, ...] = (
     Row("STR-14", r"generic text", ("LG-44",)),
     Row("STR-15", None, ("LG-44",)),
     Row("STR-11", None, ("LG-38",)),
+    # The checklist's quick checks whose thresholds or word lists are agent defaults (DECISIONS 304).
+    Row("STR-15", r"list no product or almost none", ("LG-102",)),
+    Row("IDX-7", r"do not link to their next page|no breadcrumb or link to a category", ("LG-102",)),
+    Row("IDX-5", r"lists no (?:images|videos) although", ("LG-102",)),
+    Row("TSEO-1", r"unclear slug", ("LG-102",)),
+    Row("STR-3", r"name no author", ("LG-102",)),
     # Every problem one shared element causes, whatever its check: the 60% bar and the section rule.
     Row(None, None, ("LG-61",), shared=True),
     # Rendering: client-render signals, interaction growth, walls, iframes and canvases, main-content share.

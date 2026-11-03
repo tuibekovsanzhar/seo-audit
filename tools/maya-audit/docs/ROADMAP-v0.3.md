@@ -21,7 +21,7 @@ The owner's plan for v0.3 (2026-11-03). Each stage records its status here; the 
 | 4 | Business-type field and profiles | Next week. Input: the "Uygulanabilirlik" mapping in `reviews/checklist/mapping.xlsx` (sheet "Profiles (Stage 4)", and the profile columns of "Mapping") |
 | 5 | Smart sampling (about 150 pages, under 10 minutes) | Planned |
 | 6 | Priority score, 10-page client report, XLSX appendix, release-gate rule | Done, not pushed (DECISIONS 300-302) |
-| 7 | Type-specific checks | Planned |
+| 7 | Type-specific checks | Planned. Done ahead: the checklist's quick checks (DECISIONS 304; mapping 61% -> 66% done) |
 | 8 | Screaming Frog borrowings: redirect chains, image weight and size, mixed content, URL parameters, rich-result schema rules, key-pages list mode, PageSpeed key | Planned |
 | 9 | Benchmark and release w15; delete the deprecated `maya-audit-rapor` report (DECISIONS 302) | Planned |
 

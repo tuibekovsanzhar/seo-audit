@@ -1212,6 +1212,176 @@
      "Keep these pages out of the sitemap"
     ]
    }
+  },
+  "idx6.alias_links": {
+   "en": "Link to each page's canonical address",
+   "tr": "İç bağlantıları kanonik adrese yönlendirin",
+   "steps": {
+    "tr": [
+     "Kopya adrese bağlantı yazan şablonu bulun",
+     "Şablonun kanonik adresi yazmasını sağlayın",
+     "Shopify'da: ürün kartı bağlantısından \"within: collection\" kaldırın"
+    ],
+    "en": [
+     "Find the template that writes the alias links",
+     "Make it write the canonical address instead",
+     "On Shopify: remove \"within: collection\" from product card links"
+    ]
+   }
+  },
+  "str15.empty_collections": {
+   "en": "Fill, merge or hide empty collections",
+   "tr": "Boş koleksiyonları doldurun, birleştirin ya da gizleyin",
+   "steps": {
+    "tr": [
+     "Her koleksiyonu doldurun ya da ilgili bir koleksiyonla birleştirin",
+     "Birleştirilen koleksiyonu kalıcı olarak yönlendirin",
+     "Boş kaldıkça: noindex ekleyin, menüden ve site haritasından çıkarın"
+    ],
+    "en": [
+     "Fill each collection, or merge it into a related one",
+     "Redirect a merged collection permanently to the other",
+     "While one is empty: noindex, out of the menu and sitemap"
+    ]
+   }
+  },
+  "tseo1.url_decomposed": {
+   "en": "Rewrite addresses with composed letters",
+   "tr": "Adresleri birleşik harflerle yeniden yazın",
+   "steps": {
+    "tr": [
+     "Her kısa adı birleşik ya da düz biçimine çevirin",
+     "Her eski adresi kalıcı olarak yenisine yönlendirin",
+     "Bağlantıları ve site haritasını güncelleyin"
+    ],
+    "en": [
+     "Rename each handle to its composed or plain form",
+     "Redirect each old address permanently to the new one",
+     "Update the links and the sitemap"
+    ]
+   }
+  },
+  "acc3.robots_noindex": {
+   "en": "Let crawlers see the noindex, or drop it",
+   "tr": "Tarayıcıların noindex'i görmesini sağlayın ya da kaldırın",
+   "steps": {
+    "tr": [
+     "Her sayfa için karar verin: dizinden çıksın mı, taranmasın mı",
+     "Dizinden çıkarmak için: şimdilik robots.txt'de izin verin",
+     "Taranmasın istiyorsanız: noindex'i kaldırın"
+    ],
+    "en": [
+     "Decide per page: leave the index, or stay uncrawled",
+     "To leave the index: allow it in robots.txt for now",
+     "To stay uncrawled: remove the noindex"
+    ]
+   }
+  },
+  "idx7.pagination_unlinked": {
+   "en": "Link each list page to the next one",
+   "tr": "Her liste sayfasını sonrakine bağlayın",
+   "steps": {
+    "tr": [
+     "Listenin HTML'ine sonraki sayfalara <a href> bağlantıları ekleyin",
+     "\"Daha fazla yükle\" ya da kaydırma bağlantıların yanında kalabilir"
+    ],
+    "en": [
+     "Add <a href> links to the next pages in the list's HTML",
+     "Keep \"load more\" or scrolling beside the links"
+    ]
+   }
+  },
+  "idx7.product_no_category": {
+   "en": "Link each product back to its category",
+   "tr": "Her ürünü kategorisine geri bağlayın",
+   "steps": {
+    "tr": [
+     "Ürün şablonuna bağlantılı bir içerik yolu (breadcrumb) ekleyin",
+     "Ya da içerikte ürünün ana kategorisine bağlantı verin",
+     "İçerik yolunu BreadcrumbList ile işaretleyin"
+    ],
+    "en": [
+     "Add a breadcrumb trail with links to the product template",
+     "Or link to the product's main category in its content",
+     "Mark the trail up with BreadcrumbList"
+    ]
+   }
+  },
+  "idx5.no_image_sitemap": {
+   "en": "List the main images in the sitemap",
+   "tr": "Ana görselleri site haritasında listeleyin",
+   "steps": {
+    "tr": [
+     "Her sayfanın ana görselleri için <image:image> kayıtları ekleyin",
+     "Ya da bir görsel site haritası ekleyip robots.txt'de belirtin"
+    ],
+    "en": [
+     "Add <image:image> entries for each page's main images",
+     "Or add an image sitemap and name it in robots.txt"
+    ]
+   }
+  },
+  "idx5.no_video_sitemap": {
+   "en": "List the videos in a video sitemap",
+   "tr": "Videoları bir video site haritasında listeleyin",
+   "steps": {
+    "tr": [
+     "<video:video> kayıtları ekleyin: başlık, açıklama, küçük resim",
+     "Ya da bir video site haritası ekleyip robots.txt'de belirtin"
+    ],
+    "en": [
+     "Add <video:video> entries: title, description, thumbnail",
+     "Or add a video sitemap and name it in robots.txt"
+    ]
+   }
+  },
+  "tseo1.url_slug_unclear": {
+   "en": "Give pages short, readable addresses",
+   "tr": "Sayfalara kısa, okunabilir adresler verin",
+   "steps": {
+    "tr": [
+     "Her kısa adı birkaç kelimeyle yazın",
+     "Her eski adresi kalıcı olarak yenisine yönlendirin",
+     "Bağlantıları güncelleyin"
+    ],
+    "en": [
+     "Write each slug as a few words",
+     "Redirect each old address permanently to the new one",
+     "Update the links"
+    ]
+   }
+  },
+  "str3.article_no_author": {
+   "en": "Name the author of each article",
+   "tr": "Her makalenin yazarını belirtin",
+   "steps": {
+    "tr": [
+     "Her makalede yazarın adını gösterin",
+     "Adı bir yazar sayfasına bağlayın",
+     "Article işaretlemesine author (bir Person) ekleyin"
+    ],
+    "en": [
+     "Show the author's name on each article",
+     "Link it to an author page",
+     "Add author (a Person) to the Article markup"
+    ]
+   }
+  },
+  "str3.product_no_identifier": {
+   "en": "Add GTIN or MPN to the Product markup",
+   "tr": "Product işaretlemesine GTIN ya da MPN ekleyin",
+   "steps": {
+    "tr": [
+     "GTIN'i (barkod), yoksa MPN'i ekleyin",
+     "Markayı da ekleyin",
+     "Shopify'da: her varyantın barkod alanını doldurun"
+    ],
+    "en": [
+     "Add the GTIN (barcode), or the MPN when there is none",
+     "Add the brand too",
+     "On Shopify: fill each variant's barcode field"
+    ]
+   }
   }
  }
 }

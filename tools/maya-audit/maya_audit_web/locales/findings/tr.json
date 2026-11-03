@@ -291,7 +291,18 @@
   "tseo1.no_zoom": "{n} sayfa okurların yakınlaştırmasını engelliyor (user-scalable=no ya da maximum-scale=1)",
   "tseo1.mixed": "{n} https sayfası kaynakları düz http:// üzerinden yüklüyor (karışık içerik)",
   "tseo1.analytics_twice": "{n} sayfa aynı analiz etiketini birden fazla kez yüklüyor (olası çift sayım)",
-  "acc3.utility_indexable": "{n} site içi arama veya sepet sayfası dizine eklenebiliyor (noindex yok)"
+  "acc3.utility_indexable": "{n} site içi arama veya sepet sayfası dizine eklenebiliyor (noindex yok)",
+  "acc3.robots_noindex": "{n} sayfa noindex taşıyor ama robots.txt arama tarayıcılarının onu okumasını engelliyor",
+  "idx5.no_image_sitemap": "Okunan sayfalarda {n} farklı görsel olmasına rağmen site haritası hiç görsel listelemiyor",
+  "idx5.no_video_sitemap": "Okunan {n} sayfada video olmasına rağmen site haritası hiç video listelemiyor",
+  "idx6.alias_links": "{pages} sayfadaki {links} iç bağlantı, kanonik adresi başka bir sayfa olan bir adrese gidiyor",
+  "idx7.pagination_unlinked": "{n} liste sayfası sonraki sayfasına <a href> bağlantısıyla bağlanmıyor",
+  "idx7.product_no_category": "{n} ürün sayfasının içeriğinde içerik yolu (breadcrumb) ya da bir kategoriye bağlantı yok",
+  "str3.article_no_author": "{n} makale sayfası yazar belirtmiyor (yazar satırı ya da yazar işaretlemesi yok)",
+  "str3.product_no_identifier": "{n} ürün sayfasının Product işaretlemesinde GTIN ya da MPN yok",
+  "str15.empty_collections": "{n} dizine eklenebilir koleksiyon veya kategori sayfasında hiç ya da neredeyse hiç ürün yok",
+  "tseo1.url_decomposed": "{n} adreste ayrışık bir karakter var (bir harf ve ardından gelen birleşik bir işaret)",
+  "tseo1.url_slug_unclear": "{n} sayfa adresinin kısa adı (slug) anlaşılır değil (yalnızca bir kimlik, 100 karakterden uzun ya da boşluk ve simge içeriyor)"
  },
  "fixes": {
   "Check Google Search Console (Settings → Crawl stats, by response) for 403 or 429 answers to the real Googlebot. Maya's request came from Maya's own address, which a firewall may refuse on purpose as a fake Googlebot; change nothing unless the real Googlebot is refused too.": "Google Search Console'da (Ayarlar → Tarama istatistikleri, yanıta göre) gerçek Googlebot'a 403 veya 429 yanıtı verilip verilmediğine bakın. Maya'nın isteği Maya'nın kendi adresinden geldi; güvenlik duvarı bunu bilerek sahte Googlebot sayıp reddetmiş olabilir. Gerçek Googlebot da reddedilmiyorsa hiçbir şeyi değiştirmeyin.",
@@ -550,7 +561,18 @@
   "Remove user-scalable=no and maximum-scale=1 from the viewport meta tag.": "Viewport meta etiketinden user-scalable=no ve maximum-scale=1 değerlerini kaldırın.",
   "Change each http:// address listed to https:// (or a relative address) in the page or template.": "Listelenen her http:// adresini sayfada ya da şablonda https:// (veya göreli bir adres) yapın.",
   "Confirm with Tag Assistant (or the browser's network panel) which tags fire, then remove the duplicate snippet, or the direct gtag when the same property is also set up inside Tag Manager.": "Hangi etiketlerin çalıştığını Tag Assistant ile (ya da tarayıcının ağ panelinden) doğrulayın; sonra yinelenen kod parçasını ya da aynı mülk Tag Manager içinde de kuruluysa doğrudan gtag'i kaldırın.",
-  "Add a noindex robots meta tag to the internal search and cart pages and keep them out of the sitemap; on Shopify, add it in the theme's <head> for the search and cart templates.": "Site içi arama ve sepet sayfalarına noindex robots meta etiketi ekleyin ve onları site haritasının dışında tutun; Shopify'da bunu temanın <head> bölümüne arama ve sepet şablonları için ekleyin."
+  "Add a noindex robots meta tag to the internal search and cart pages and keep them out of the sitemap; on Shopify, add it in the theme's <head> for the search and cart templates.": "Site içi arama ve sepet sayfalarına noindex robots meta etiketi ekleyin ve onları site haritasının dışında tutun; Shopify'da bunu temanın <head> bölümüne arama ve sepet şablonları için ekleyin.",
+  "Change the links to name the canonical address. When a template builds them (on Shopify, product links inside a collection, /collections/<c>/products/<p>), change it there: remove \"within: collection\" from the product card's link so it points to /products/<p>.": "Bağlantıları kanonik adresi gösterecek şekilde değiştirin. Bağlantıları bir şablon üretiyorsa (Shopify'da bir koleksiyonun içindeki ürün bağlantıları, /collections/<c>/products/<p>) değişikliği orada yapın: ürün kartının bağlantısından \"within: collection\" kısmını kaldırın; böylece bağlantı /products/<p> adresine gider.",
+  "Fill these collections or merge each into a related one with a 301 redirect; while one is empty, add noindex to it and take it out of the menu and the sitemap.": "Bu koleksiyonları doldurun ya da her birini 301 yönlendirmesiyle ilgili bir koleksiyonla birleştirin; boş kaldığı sürece koleksiyona noindex ekleyin, menüden ve site haritasından çıkarın.",
+  "Change these handles to their composed or plain form (the evidence gives each one, for example etbi̇s -> etbis), redirect each old address to the new one with a 301, and update the links and the sitemap. The combining dot usually comes from lowercasing a capital İ in the tool that wrote the slug.": "Bu kısa adları birleşik ya da düz biçimlerine çevirin (kanıt her birini veriyor, örneğin etbi̇s -> etbis), her eski adresi 301 ile yenisine yönlendirin, bağlantıları ve site haritasını güncelleyin. Birleşik nokta genellikle kısa adı yazan aracın büyük İ harfini küçültmesinden kaynaklanır.",
+  "Choose one per page. To take it out of the index, allow it in robots.txt so crawlers can read the noindex, and block it only after it has dropped out. To keep crawlers out, remove the noindex and rely on robots.txt, knowing the address can still be indexed from links to it.": "Her sayfa için birini seçin. Dizinden çıkarmak için robots.txt'de taramaya izin verin ki tarayıcılar noindex'i okuyabilsin; sayfayı ancak dizinden düştükten sonra engelleyin. Tarayıcıları uzak tutmak için noindex'i kaldırıp robots.txt'ye güvenin; adresin kendisine verilen bağlantılardan yine de dizine girebileceğini bilerek.",
+  "Add plain <a href> links to the next pages (numbered pages or a \"next\" link) in the list's HTML. A \"load more\" button or infinite scroll can stay for visitors, with the links beside it.": "Listenin HTML'ine sonraki sayfalara düz <a href> bağlantıları ekleyin (numaralı sayfalar ya da bir \"sonraki\" bağlantısı). Ziyaretçiler için \"daha fazla yükle\" düğmesi ya da sonsuz kaydırma, bağlantılar yanında olmak koşuluyla kalabilir.",
+  "Add a breadcrumb trail with links (Home > Category > Product), or a link to the product's main category, to the product template, and mark the trail up with BreadcrumbList.": "Ürün şablonuna bağlantılı bir içerik yolu (Ana Sayfa > Kategori > Ürün) ya da ürünün ana kategorisine bir bağlantı ekleyin ve içerik yolunu BreadcrumbList ile işaretleyin.",
+  "Add image entries (<image:image> with the image address) for each page's main images to the sitemap, or a separate image sitemap named in robots.txt.": "Her sayfanın ana görselleri için site haritasına görsel kayıtları (görsel adresiyle <image:image>) ekleyin ya da robots.txt'de adı geçen ayrı bir görsel site haritası kullanın.",
+  "Add video entries (<video:video> with a title, description, thumbnail and the video's address) to the sitemap, or a separate video sitemap named in robots.txt.": "Site haritasına video kayıtları (başlık, açıklama, küçük resim ve video adresiyle <video:video>) ekleyin ya da robots.txt'de adı geçen ayrı bir video site haritası kullanın.",
+  "Give these pages short slugs made of words (for example /products/linen-shirt-white), redirect each old address to the new one with a 301 and update the links.": "Bu sayfalara kelimelerden oluşan kısa adlar verin (örneğin /products/keten-gomlek-beyaz), her eski adresi 301 ile yenisine yönlendirin ve bağlantıları güncelleyin.",
+  "Show the author's name on each article, linked to an author page, and add author (a Person with name and url) to the article's Article or BlogPosting markup.": "Her makalede yazarın adını, bir yazar sayfasına bağlantıyla gösterin ve makalenin Article ya da BlogPosting işaretlemesine author (name ve url taşıyan bir Person) ekleyin.",
+  "Add the product's GTIN (its barcode: gtin13 for an EAN) or, when it has none, its MPN, and the brand, to the Product markup. On Shopify, fill each variant's barcode field so the theme writes it.": "Ürünün GTIN'ini (barkodu: EAN için gtin13) ya da yoksa MPN'ini ve markasını Product işaretlemesine ekleyin. Shopify'da her varyantın barkod alanını doldurun; tema bunu yazar."
  },
  "fix_patterns": {
   "acc2.search": "{engines} bu sayfaları bulup atıf yapabilsin istiyorsanız, {line}. satırdaki kuralı bu kullanıcı aracıları için kaldırın veya daraltın. Engelleme bilinçli bir tercihse “kasıtlı” olarak işaretleyin.",
@@ -762,7 +784,18 @@
   "every image, script, style and frame of an https page asked over https": "https bir sayfanın her görseli, script'i, stili ve çerçevesi https üzerinden istenir",
   "a viewport meta tag in every page's <head>": "her sayfanın <head> bölümünde bir viewport meta etiketi",
   "each tag-manager container and analytics property loaded once per page": "her Tag Manager kapsayıcısı ve analiz mülkü sayfa başına bir kez yüklenir",
-  "internal search and cart pages carry noindex": "site içi arama ve sepet sayfaları noindex taşıyor"
+  "internal search and cart pages carry noindex": "site içi arama ve sepet sayfaları noindex taşıyor",
+  "internal links point to each page's canonical address": "iç bağlantılar her sayfanın kanonik adresini gösterir",
+  "every indexable collection or category page lists products": "dizine eklenebilir her koleksiyon veya kategori sayfası ürün listeler",
+  "every address is written with composed characters (Unicode NFC) or plain letters": "her adres birleşik karakterlerle (Unicode NFC) ya da düz harflerle yazılır",
+  "a page meant to leave the index can be crawled, so its noindex is seen": "dizinden çıkması istenen bir sayfa taranabilir, böylece noindex'i görülür",
+  "each page of a list links to the next one with an <a href> link": "bir listenin her sayfası sonrakine bir <a href> bağlantısıyla bağlanır",
+  "each product page links back to its category": "her ürün sayfası kategorisine geri bağlanır",
+  "a site with many images lists them in its sitemap (<image:image>)": "çok görseli olan bir site görsellerini site haritasında listeler (<image:image>)",
+  "a site with many videos lists them in a video sitemap (<video:video>)": "çok videosu olan bir site videolarını bir video site haritasında listeler (<video:video>)",
+  "page addresses are short and made of readable words": "sayfa adresleri kısadır ve okunabilir kelimelerden oluşur",
+  "each article names its author, on the page and in its markup": "her makale yazarını hem sayfada hem işaretlemesinde belirtir",
+  "Product markup carries a GTIN or an MPN, and a brand": "Product işaretlemesi bir GTIN ya da MPN ve bir marka taşır"
  },
  "expected_patterns": {
   "acc2.declared": "robots.txt, beyan edildiği gibi {role} botlarını engeller",
@@ -1022,7 +1055,11 @@
   "Without it a phone lays the page out at desktop width and shrinks it; Google indexes the mobile version of a page.": "Bu etiket olmadan telefon sayfayı masaüstü genişliğinde dizip küçültür; Google bir sayfanın mobil sürümünü dizine ekler.",
   "WCAG 1.4.4 asks that text can be resized to 200%; some browsers ignore the setting, others obey it.": "WCAG 1.4.4 metnin %200'e kadar büyütülebilmesini ister; bazı tarayıcılar bu ayarı yok sayar, bazıları uyar.",
   "Browsers block http:// scripts, styles and frames on an https page and may upgrade or flag images; the page then breaks or shows as not fully secure.": "Tarayıcılar https bir sayfadaki http:// script, stil ve çerçeveleri engeller, görselleri yükseltebilir ya da işaretleyebilir; sayfa o zaman bozulur ya da tam güvenli görünmez.",
-  "Read from the markup: whether a visit is really counted twice depends on how the container is set up, which only Tag Assistant or the analytics property can show.": "İşaretlemeden okundu: bir ziyaretin gerçekten iki kez sayılıp sayılmadığı kapsayıcının nasıl kurulduğuna bağlıdır; bunu yalnız Tag Assistant ya da analiz mülkü gösterebilir."
+  "Read from the markup: whether a visit is really counted twice depends on how the container is set up, which only Tag Assistant or the analytics property can show.": "İşaretlemeden okundu: bir ziyaretin gerçekten iki kez sayılıp sayılmadığı kapsayıcının nasıl kurulduğuna bağlıdır; bunu yalnız Tag Assistant ya da analiz mülkü gösterebilir.",
+  "Estimated: the products are counted from the links in each page's own HTML (one per product). A list that loads its products with JavaScript shows none here: confirm in a browser.": "Tahmini: ürünler her sayfanın kendi HTML'indeki bağlantılardan sayılır (ürün başına bir). Ürünlerini JavaScript ile yükleyen bir liste burada hiç ürün göstermez: bir tarayıcıda doğrulayın.",
+  "Estimated: page types are worked out from addresses, links and markup (page grouping), and a link counts when it sits in the page's content or in a breadcrumb trail, not in the menu or the footer.": "Tahmini: sayfa türleri adreslerden, bağlantılardan ve işaretlemeden çıkarılır (sayfa gruplama); bir bağlantı menüde ya da altbilgide değil, sayfanın içeriğinde ya da bir içerik yolunda duruyorsa sayılır.",
+  "Estimated: an author counts when the page has a byline element (a class or id such as author or byline), rel=author, itemprop=author, a meta author tag or an author in its structured data.": "Tahmini: sayfada bir yazar satırı öğesi (author ya da byline gibi bir class veya id), rel=author, itemprop=author, bir meta author etiketi ya da yapılandırılmış verisinde bir yazar varsa yazar sayılır.",
+  "Read from a saved report, which keeps the meta tags, the structured data and the page's saved JSON-LD but no byline element: confirm on the page.": "Kayıtlı bir rapordan okundu; rapor meta etiketlerini, yapılandırılmış veriyi ve sayfanın kayıtlı JSON-LD'sini tutar ama yazar satırı öğesini tutmaz: sayfada doğrulayın."
  },
  "note_patterns": {
   "source.firecrawl": "Kaynak: Firecrawl",

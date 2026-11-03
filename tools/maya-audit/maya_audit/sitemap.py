@@ -245,8 +245,10 @@ def discover_sitemap_urls(
                         lastmods.setdefault(loc, lastmod)
             stamps = Counter(lastmod for loc, lastmod in entries if loc and same_origin(loc, origin) and lastmod)
             top, top_count = stamps.most_common(1)[0] if stamps else (None, 0)
+            media = Counter(_local(child.tag) for element in root if _local(element.tag) == "url" for child in element
+                            if _local(child.tag) in ("image", "video"))
             docs.append(SitemapDoc(url, response.status, None, kind, len(locs), sum(stamps.values()), len(stamps),
-                                   top, top_count))
+                                   top, top_count, media["image"], media["video"]))
         else:
             docs.append(SitemapDoc(url, response.status, f"unexpected root element <{kind}>", None, 0))
 

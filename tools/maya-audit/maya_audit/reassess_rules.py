@@ -27,6 +27,12 @@ DECISIONS 300 adds two, on what the report already holds:
 - ACC-3 "internal search or cart page(s) can be indexed (no noindex)", from the saved page records' meta robots,
   X-Robots-Tag and canonical (`checks.access.utility_indexable_findings`).
 
+DECISIONS 304 adds the checklist's quick checks (`checks.quick_rules`), run on the saved page records with the
+engine's own functions; a rule whose data the report does not keep (robots.txt's text for SEO-031, the sitemap's image
+and video counts before schema 1.24) is listed as not assessed offline. The Product fields and an author in the
+page's JSON-LD (schema 1.24) are read from the audit's saved evidence copies when the caller hands them in
+(`saved_jsonld`, `tools/reassess_saved.py`).
+
 Then what depends on the findings is derived again as a new report derives it: the severity policy, the priority
 order, the problem summary (findings in priority order) and the release gate. Nothing else is re-run: re-running other
 checks on Maya's own copies of the pages would mix readers when another reader (Firecrawl) read the site.
@@ -177,6 +183,65 @@ def _decisions_300(report: dict, affected: dict, changes: list[str]) -> None:
         acc3["status"] = _status(acc3["findings"], acc3.get("review_items") or ())
 
 
+def saved_jsonld(report: dict, blocks_by_url: dict[str, list[str]]) -> int:
+    """Put the Product fields and a JSON-LD author, read from each page's saved JSON-LD blocks (the audit's evidence
+    copies), on the copy's page records (`analysis.structured_data.products`, `analysis.author_signals`), as a report
+    written by schema 1.24 holds them. Returns how many pages got Product fields. A block that does not parse is skipped."""
+    import json
+    from .analysis import jsonld_author, product_fields
+    with_products = 0
+    for record in (report.get("crawl") or {}).get("pages") or []:
+        analysis = record.get("analysis") if isinstance(record, dict) else None
+        raw = blocks_by_url.get(record.get("url")) if isinstance(analysis, dict) else None
+        if not raw:
+            continue
+        values = []
+        for block in raw:
+            try:
+                values.append(json.loads(block))
+            except ValueError:
+                try:
+                    values.append(json.loads(block, strict=False))
+                except ValueError:
+                    continue
+        products = product_fields(values)
+        if products:
+            analysis.setdefault("structured_data", {})["products"] = products
+            with_products += 1
+        if jsonld_author([{"data": v} for v in values]):
+            analysis["author_signals"] = sorted(set(analysis.get("author_signals") or []) | {"JSON-LD author"})
+    return with_products
+
+
+def _decisions_304(report: dict, affected: dict, changes: list[str], unassessed: list[dict]) -> None:
+    from types import SimpleNamespace
+    from .checks.access import _status
+    from .checks.quick_rules import findings as quick_findings
+    from .launch_gate import items_of
+    from .models import page_from_record, to_jsonable
+    crawl = report.get("crawl") or {}
+    pages = [page_from_record(p) for p in crawl.get("pages") or [] if isinstance(p, dict)]
+    result = SimpleNamespace(pages=pages, start_url=crawl.get("start_url") or "", origin=crawl.get("origin"),
+                             discovered_urls=crawl.get("discovered_urls") or [], sitemap_urls=crawl.get("sitemap_urls") or [],
+                             sitemap_docs=crawl.get("sitemap_docs") or [], page_grouping=None)
+    checks = {c.get("check_id"): c for c in report.get("checks") or [] if c.get("status") != "not_assessed"}
+    made, missing = quick_findings(result, check_ids=set(checks), saved=True)
+    unassessed.extend(missing)
+    for check_id, new in made.items():
+        check = checks[check_id]
+        have = {f.get("rule_id") for f in check.get("findings") or []}
+        for finding in new:
+            if finding.rule_id in have:
+                continue
+            finding.launch_gated = items_of(check_id, finding)[0]
+            urls = list(finding.scope.get("_all_urls") or finding.scope.get("urls") or [])
+            record = to_jsonable(finding)
+            check.setdefault("findings", []).append(record)
+            affected[record["id"]] = urls
+            changes.append(f"{record['id']}: added: {record['title']} ({record['severity']}, {record['confidence']}; DECISIONS 304)")
+        check["status"] = _status(check.get("findings") or [], check.get("review_items") or ())
+
+
 def _order(report: dict) -> list[str]:
     from .findings import Severity, priority_key
     from .models import Confidence
@@ -191,9 +256,11 @@ def _order(report: dict) -> list[str]:
     return [f["id"] for f in sorted(findings, key=key)]
 
 
-def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | None = None) -> tuple[dict, dict, dict]:
+def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | None = None,
+          jsonld_by_url: dict[str, list[str]] | None = None) -> tuple[dict, dict, dict]:
     """(report, affected, record) for a copy of `report` with the changed rules applied. `record` lists every change
-    and what could not be assessed offline; it is also written to `generation.analysis`."""
+    and what could not be assessed offline; it is also written to `generation.analysis`. `jsonld_by_url`: each page's
+    saved JSON-LD blocks (the audit's evidence copies), for the Product fields and authors (DECISIONS 304)."""
     from . import release_gate
     from .report import problem_summary
     from .severity import apply as apply_severity
@@ -204,6 +271,11 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _calculator_grids(r, aff, changes, unassessed)
     _decisions_290(r, aff, changes)
     _decisions_300(r, aff, changes)
+    quick_unassessed: list[dict] = []
+    if jsonld_by_url:
+        n = saved_jsonld(r, jsonld_by_url)
+        changes.append(f"Product fields read from the saved JSON-LD of {n} page(s) (DECISIONS 304)")
+    _decisions_304(r, aff, changes, quick_unassessed)
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -219,13 +291,13 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300 and 301, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301 and 304, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
                                    "pages": sorted(set(unassessed))}] if unassessed else
                                  [{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
-                                   "pages": [], "effect": "no pricing grid left to assess"}]),
+                                   "pages": [], "effect": "no pricing grid left to assess"}]) + quick_unassessed,
         "unchanged": "every other finding, observation, time and count is the source report's",
     }
     r.setdefault("generation", {})["analysis"] = record

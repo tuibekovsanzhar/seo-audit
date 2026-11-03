@@ -170,7 +170,7 @@ def test_a_made_up_shop_gets_templates_types_depths_and_importance_on_every_page
 def test_the_grouping_is_written_per_page_in_report_json_under_schema_1_23():
     outcome = _audit()
     report = build_report(outcome.result, outcome.gates, outcome.checks)
-    assert report["schema_version"] == "1.23"
+    assert report["schema_version"] == "1.24"
     pages = {p["url"]: p for p in report["crawl"]["pages"]}
     home = pages[SHOP + "/"]["grouping"]
     assert home["page_type"] == "home" and home["importance"] >= 80 and home["template_key"] == "/"

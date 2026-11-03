@@ -206,6 +206,9 @@ class _Analyzer(HTMLParser):
         self.insecure_refs: list[dict] = []
         self.pdf_links: list[dict] = []
         self.breadcrumbs: list[dict] = []  # P2: visible breadcrumb trails, {"links", "text", "in_chrome"}
+        # SEO-046 (DECISIONS 304): <link rel="next"/"prev"> as written; SEO-078: where the page names an author.
+        self.pagination_links: dict[str, str] = {}
+        self.author_signals: set[str] = set()
         self.scripts: list[dict] = []
         self.noscript_parts: list[str] = []
         self.html_lang: str | None = None
@@ -267,6 +270,15 @@ class _Analyzer(HTMLParser):
         if own and tag == "meta" and attr.get("property"):
             self.properties.append({"property": attr["property"].strip().lower(), "content": attr.get("content", "").strip()})
         self._structured_start(tag, attr)
+        if tag == "link" and attr.get("href") and {"next", "prev", "previous"} & set(rel):
+            key = "next" if "next" in rel else "prev"
+            self.pagination_links.setdefault(key, attr["href"].strip()[:500])
+        if "author" in rel:
+            self.author_signals.add("rel=author")
+        if "author" in attr.get("itemprop", "").lower().split():
+            self.author_signals.add("itemprop=author")
+        if tag != "html" and tag != "body" and AUTHOR_CLASS.search(f'{attr.get("class", "")} {attr.get("id", "")}'):
+            self.author_signals.add("byline element")
         if tag == "link" and "canonical" in attr.get("rel", "").lower().split() and attr.get("href"):
             if own:
                 self.canonicals.append(attr["href"].strip())
@@ -939,6 +951,94 @@ def _jsonld(scripts: list[dict]) -> tuple[list[dict], list]:
     return blocks, values
 
 
+# A byline in the markup: a class or id naming the author ("post-author", "byline", "yazar"); SEO-078 (DECISIONS 304).
+AUTHOR_CLASS = re.compile(r"(?:^|[\s_-])(?:author|byline|yazar|article-author|post-author)(?:$|[\s_-])", re.IGNORECASE)
+PRODUCT_TYPES = frozenset({"Product", "ProductGroup", "ProductModel", "IndividualProduct", "Vehicle", "Book"})
+GTIN_KEYS = ("gtin", "gtin8", "gtin12", "gtin13", "gtin14", "isbn")
+MAX_PRODUCTS = 5
+MAX_OFFERS = 5
+
+
+def _text(value) -> str | None:
+    """A short plain value: a string or number as text, a node's name or @id; None when empty."""
+    if isinstance(value, list):
+        value = next((v for v in value if v not in (None, "", [], {})), None)
+    if isinstance(value, dict):
+        value = value.get("name") or value.get("@id") or value.get("value")
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        value = str(value)
+    if isinstance(value, str) and value.strip():
+        return value.strip()[:120]
+    return None
+
+
+def _offers(value) -> list[dict]:
+    out = []
+    for offer in value if isinstance(value, list) else [value]:
+        if not isinstance(offer, dict):
+            continue
+        nested = offer.get("offers")
+        if "AggregateOffer" in node_types(offer) and isinstance(nested, (list, dict)):
+            out += _offers(nested)
+            continue
+        price = _text(offer.get("price")) or _text(offer.get("lowPrice"))
+        out.append({"price": price, "priceCurrency": _text(offer.get("priceCurrency")),
+                    "availability": (_text(offer.get("availability")) or "").rsplit("/", 1)[-1] or None,
+                    **({"gtin": g} if (g := next((_text(offer.get(k)) for k in GTIN_KEYS if _text(offer.get(k))), None)) else {}),
+                    **({"mpn": m} if (m := _text(offer.get("mpn"))) else {}),
+                    **({"sku": k} if (k := _text(offer.get("sku"))) else {})})
+    return out[:MAX_OFFERS]
+
+
+def product_fields(values) -> list[dict]:
+    """The key fields of each Product (or ProductGroup) node in parsed structured data, for the product checks
+    (DECISIONS 304): `type`, `gtin` ({key: value} of gtin, gtin8/12/13/14, isbn), `mpn`, `sku`, `brand`, `offers` (at most
+    5, each `price`, `priceCurrency`, `availability` and any identifier it carries), `has_variant` (how many) and
+    `variant_identifiers` (variants with a gtin or mpn), `in_list` (a Product inside an ItemList, as category pages list
+    them). At most 5 nodes; a Product nested in another Product (a variant) is counted on its group, not listed."""
+    out = []
+    for value in values:
+        for node, nested in _product_nodes(value, False, False):
+            types = set(node_types(node))
+            gtin = {k: _text(node.get(k)) for k in GTIN_KEYS if _text(node.get(k))}
+            variants = [v for v in (node.get("hasVariant") if isinstance(node.get("hasVariant"), list)
+                                    else [node.get("hasVariant")]) if isinstance(v, dict)]
+            record = {"type": sorted(types & PRODUCT_TYPES)[0] if types & PRODUCT_TYPES else sorted(types)[0],
+                      "gtin": gtin, "mpn": _text(node.get("mpn")), "sku": _text(node.get("sku")),
+                      "brand": _text(node.get("brand")), "offers": _offers(node.get("offers")),
+                      "has_variant": len(variants),
+                      "variant_identifiers": sum(1 for v in variants if _text(v.get("mpn")) or any(_text(v.get(k)) for k in GTIN_KEYS)
+                                                 or any(o.get("gtin") or o.get("mpn") for o in _offers(v.get("offers")))),
+                      "in_list": nested}
+            out.append(record)
+            if len(out) >= MAX_PRODUCTS:
+                return out
+    return out
+
+
+def _product_nodes(value, in_list: bool, in_product: bool):
+    """(node, in a list) for each Product-typed node not nested inside another Product."""
+    if isinstance(value, dict):
+        types = set(node_types(value)) if value.get("@type") else set()
+        is_product = bool(types & PRODUCT_TYPES)
+        if is_product and not in_product:
+            yield value, in_list
+        for key, child in value.items():
+            if key in ("@context", "hasVariant", "isVariantOf"):
+                continue
+            yield from _product_nodes(child, in_list or "ItemList" in types or key == "itemListElement",
+                                      in_product or is_product)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _product_nodes(child, in_list, in_product)
+
+
+def jsonld_author(items) -> bool:
+    """Whether any typed node of the page's structured data names an author (a Person or an Organization)."""
+    return any(_text(node.get("author")) or (isinstance(node.get("author"), dict) and node["author"].get("@type"))
+               for item in items for node, _ in iter_typed_nodes(item["data"]) if node.get("author"))
+
+
 def iter_typed_nodes(value, nested: bool = False):
     """Yield (node, nested) for every dict with an @type, including @graph members and nested values."""
     if isinstance(value, dict):
@@ -1204,6 +1304,11 @@ def analyze_html(html: str, page_url: str | None = None) -> dict:
                       "hidden": c["hidden"], "role": c["role"], "hint": c["hint"]} for c in parser.canvases],
         "pdf_links": parser.pdf_links,
         "breadcrumbs": parser.breadcrumbs,
+        # SEO-046 (DECISIONS 304, schema 1.24): <link rel="next"> / <link rel="prev"> hrefs as written, when present.
+        **({"pagination_links": parser.pagination_links} if parser.pagination_links else {}),
+        # SEO-078: where the page names an author (byline element, rel/itemprop author, JSON-LD author, meta author).
+        "author_signals": sorted(parser.author_signals | ({"JSON-LD author"} if jsonld_author(items) else set())
+                                 | ({"meta author"} if any(m["name"] == "author" and m["content"] for m in parser.meta) else set())),
         "accessible_for_free": _accessible_for_free(parser.scripts),
         "html_lang": parser.html_lang,
         "hreflang": parser.hreflang,
@@ -1212,6 +1317,8 @@ def analyze_html(html: str, page_url: str | None = None) -> dict:
             "jsonld_blocks": blocks,
             "formats": sorted({item["format"] for item in items}),
             "types": types,
+            # The key Product fields (DECISIONS 304, schema 1.24): identifiers, brand and offers, per Product node.
+            **({"products": products} if (products := product_fields([item["data"] for item in items])) else {}),
         },
         "footer_text": _WS.sub(" ", " ".join(parser.footer_parts)).strip()[:1000],
         "logo_alts": parser.logo_alts,

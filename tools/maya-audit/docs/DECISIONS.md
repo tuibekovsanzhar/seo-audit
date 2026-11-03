@@ -3212,3 +3212,55 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      importance is computed from links. The XLSX sheet, the web PDF and the pro report then say so in one line
      (`key_pages_reason`: `reader_only` or `no_pages`). New audits of a blocked site have the same gap; grouping
      Firecrawl's pages at run time is in `docs/BACKLOG.md`.
+304. **The checklist's quick checks, Product fields in report.json, page importance for pages read through Firecrawl
+     (Owner, 2026-11-03: the request and its items, from `docs/BACKLOG.md` and `reviews/checklist/mapping.xlsx`; the
+     thresholds, severities, check placement and wording are agent defaults, LG-102).** Global rules for every audit;
+     nihan, adile and enpara were only test cases.
+     (1) *Firecrawl's pages get importance.* When Maya's crawler was blocked (or rate-limited) and Firecrawl read the
+     pages, `page_groups.annotate` runs on Firecrawl's pages while their links are in memory
+     (`firecrawl.reader.reader_page_grouping`) and the result is kept as `crawl.reader_page_grouping` (the summary keys of
+     `page_grouping`, `reader`, and `pages` {url: grouping}). `client_selection.grouping` reads it first, so the key
+     pages, reach and priority work for a blocked site; Maya's own scored pages fill any gap. A report saved before
+     still says why it has none (DECISIONS 303).
+     (2) *Ten rules* in `maya_audit/checks/quick_rules.py`, each an ordinary finding in its check, run by the access,
+     index and structure runners before `settle_all` (so a page reader's content view gets the content ones), on page
+     types, aliases and products listed from the page grouping; no request:
+     SEO-061 `idx6.alias_links` (IDX-6, Low, verified): links to a page read whose canonical names another address (a
+     canonical differing only in percent-encoding case, `%CC` / `%cc`, is the page itself);
+     SEO-099 `str15.empty_collections` (STR-15, Low, estimated): an indexable category page listing 2 products or fewer
+     on a site with 3+ product pages; left out: a hub with 2+ subcategories in its content, the index of all collections
+     (`/collections`), a blog's list, a page with a query;
+     decomposed characters `tseo1.url_decomposed` (TSEO-1, Low, verified): a known same-site address whose decoded path
+     holds a combining character; the fix given per address is NFC with "i + U+0307" written "i";
+     SEO-031 `acc3.robots_noindex` (ACC-3, Low, verified): a page Maya read with noindex (all, Googlebot or Bingbot)
+     that robots.txt disallows for Googlebot or Bingbot;
+     SEO-046 `idx7.pagination_unlinked` (IDX-7, Low): a page's `<link rel="next">` (new in the analysis, verified), or
+     a page-2 address of the same list found elsewhere (estimated), is not the target of any link on it;
+     SEO-093 `idx7.product_no_category` (IDX-7, Low, estimated): a product (one per canonical) with no breadcrumb trail
+     of 2+ links and no content link (outside menu and footer) to a category page, on a site with 3+ category pages;
+     SEO-036 `idx5.no_image_sitemap` / `idx5.no_video_sitemap` (IDX-5, Low, verified): no `<image:image>` /
+     `<video:video>` in any sitemap file read, on a site with 200+ different content images / 10+ pages with a video
+     (`<video>` or a YouTube/Vimeo/Wistia frame); the sitemap records count them now;
+     SEO-067 `tseo1.url_slug_unclear` (TSEO-1, Low, verified): an indexable page's last segment over 100 characters,
+     with a space or symbol, or only an id (digits, hex, a uuid, or digits with no run of 3 letters);
+     SEO-078 `str3.article_no_author` (STR-3, Low, estimated): an indexable article page with no byline class/id
+     (author, byline, yazar), rel/itemprop author, meta author, JSON-LD author or Person markup;
+     SEO-097 `str3.product_no_identifier` (STR-3, Low, verified): a product page whose Product markup (the node, its
+     offers or variants) has no gtin, gtin8/12/13/14, isbn or mpn; brand kept in the evidence.
+     The threshold rules (SEO-099, -046, -093, -036, -067, -078) carry LG-102 ("Unverified check", so they go to
+     "Teyit edin"); every new finding has its English/Turkish title, fix, expected result, "why it matters" note and
+     action-plan steps.
+     (3) *Product fields kept* (`analysis.structured_data.products`, at most 5 nodes a page): type, gtin {key: value},
+     mpn, sku, brand, offers (price, priceCurrency, availability, any identifier; at most 5), has_variant,
+     variant_identifiers, in_list. Also kept: `analysis.pagination_links`, `analysis.author_signals`.
+     (4) *Schema 1.24*: `crawl.reader_page_grouping` and the sitemap document's `image_entries`, `video_entries` are new
+     fields of covered records (why the version moves: a 1.23 reader would take their absence as "no grouping" or "no
+     image sitemap"); the analysis keys are documented, not covered.
+     (5) *Offline* (`reassess_rules._decisions_304`, `tools/reassess_saved.py`): the same functions on the saved page
+     records; the Product fields and a JSON-LD author are read from the audit's saved evidence copies
+     (`evidence/*.json`, `json_ld_blocks`). Not assessed offline, and said so: SEO-031 (no robots.txt text in a report),
+     SEO-036 (no media counts before 1.24). Applying it twice adds nothing twice.
+     (6) Found on the way, not changed: `page_groups.canonical_aliases` still takes a canonical that differs only in
+     percent-encoding case for another address (nihan: `/pages/etbi%CC%87s`), which splits that page's links between
+     two nodes in the importance graph; the new SEO-061 rule compares decoded addresses. Backlog.
+     Schema: 1.24. Tests: `tests/test_quick_checks.py` (17).

@@ -14,40 +14,25 @@ vs 47; STR-12 (Medium) only on Firecrawl's copy. Evidence: `docs/IMPLEMENTATION-
 
 ## From the 165-item checklist mapping (2026-11-03, `reviews/checklist/mapping.xlsx`, offline)
 
-### (a) A "quick checks" batch
-
-The nine missing-automatable items sized S, plus SEO-061, each a rule over data Maya already reads (sheet
-"Missing-automatable"):
+Done in DECISIONS 304: SEO-031, -036, -046, -061, -067, -078, -093, -097, -099, the Product JSON-LD fields in
+report.json and the decomposed "İ" in addresses. Left from the quick-checks batch:
 
 | Item | Rule | Data it uses |
 |---|---|---|
-| SEO-027 | An internal search page that is indexable (200, no noindex, self-canonical, allowed by robots.txt) | page_grouping `utility`, meta robots, canonicals |
-| SEO-031 | Pages meant to leave the index that robots.txt blocks (their noindex cannot be seen) | skipped_robots, sitemap, links |
-| SEO-036 | No image/video/news sitemap on a media or news site | sitemap documents, media, page types |
-| SEO-046 | List pages whose next pages are not linked (only `<link rel>` or JavaScript) | pagination signals, links |
-| SEO-067 | Unclear slugs: ids, very long, encoded characters | URLs, URL patterns |
-| SEO-078 | Article pages with no author byline or Person markup (expertise content) | page types, JSON-LD types |
-| SEO-093 | Products with too few links from categories; categories listing few products | inlinks (aliases merged), products listed |
-| SEO-097 | Product markup without gtin / mpn / brand | Product JSON-LD fields (see (b)) |
-| SEO-099 | Indexable collections that list no product | products listed, indexability |
-| SEO-061 | Internal links to a URL whose canonical is another page (nihan: 825 links on 498 pages) | canonical aliases, links |
+| SEO-027 | An internal search page that is indexable (200, no noindex, self-canonical, allowed by robots.txt); ACC-3's `acc3.utility_indexable` covers `/search` and `/cart` by name only | page_grouping `utility`, meta robots, canonicals |
 
-### (b) Keep the key Product JSON-LD fields in report.json
+Parts of done items that stay open: SEO-031 when robots.txt blocks every crawler (nobody can read the noindex); SEO-036
+news sitemaps; SEO-046 infinite scroll with no `rel=next` and no page-2 address; SEO-067 mixed-language slugs; SEO-093
+products with too few links from categories.
 
-A saved report keeps the JSON-LD types of a page, not their fields, so GTIN and price checks cannot be run offline on
-it (nihan's scorecard row SEO-097 is "Veri eksik" for this reason). Keep, per page with Product/ProductGroup markup:
-`gtin*`, `mpn`, `sku`, `brand`, and for each offer `price`, `priceCurrency`, `availability` (and `hasVariant` count).
-A change to the report's shape: needs a schema bump.
+## Percent-encoding case in canonical aliases (DECISIONS 304 (6), 2026-11-03)
 
-### (c) A decomposed Unicode "İ" in URLs as a TSEO finding
+`page_groups.canonical_aliases` compares the canonical and the page's address as written, so `/pages/etbi%CC%87s` with
+the canonical `/pages/etbi%cc%87s` is an alias of an unread "other" page; its links are split between two nodes in the
+importance graph (nihan: the ETBİS pages, linked from about 250 pages each). Compare decoded addresses there too; this
+changes importance figures, so it waits for the owner.
 
-No check reports it today (the page-word folding only removes U+0307 for matching). nihan: 68 page addresses carry
-`i` + `%CC%87` (a combining dot), e.g. `/pages/etbi%CC%87s`, where the slug was meant as "etbis"/"etbiş". Proposed
-TSEO-1 finding: addresses with a combining character (not in NFC), with the NFC or plain-ASCII form as the fix.
+## Key pages for sites that blocked Maya's crawler — done (DECISIONS 304)
 
-## Key pages for sites that blocked Maya's crawler (DECISIONS 303, 2026-11-03)
-
-Page grouping (DECISIONS 297) runs on Maya's own page records. When Maya's crawler is blocked and Firecrawl reads the
-pages, those records hold no content, so no page gets an importance and the client reports' key pages say why instead
-of listing them (2 Nov nihan Quick 50). Firecrawl's pages do carry their links while the audit runs (`view_pages`):
-run `page_groups.annotate` on them and keep the result with the report (a change to the report's shape: schema bump).
+Firecrawl's pages are grouped while the audit runs and kept as `crawl.reader_page_grouping` (schema 1.24). Saved
+audits from before stay without importance (their copies keep no links).

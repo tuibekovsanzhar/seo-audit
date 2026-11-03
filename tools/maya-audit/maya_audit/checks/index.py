@@ -1984,7 +1984,7 @@ def idx10_bing_index(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
 
 
 def run_index_checks(result: CrawlResult, cfg: CrawlConfig) -> list[CheckResult]:
-    return settle_all([
+    checks = [
         idx1_http_status(result, cfg),
         idx2_tls(result, cfg),
         idx3_redirects(result, cfg),
@@ -1995,7 +1995,10 @@ def run_index_checks(result: CrawlResult, cfg: CrawlConfig) -> list[CheckResult]
         idx8_duplicates(result, cfg),
         idx9_google_index(result, cfg),
         idx10_bing_index(result, cfg),
-    ], result)
+    ]
+    from .quick_rules import extend  # the checklist's quick checks (DECISIONS 304): IDX-5, IDX-6, IDX-7
+    extend(checks, result, cfg)
+    return settle_all(checks, result)
 
 
 BROKEN_LINK_NOTE = ("The affected addresses are the pages whose links lead to an error, and the sitemap entries that "
