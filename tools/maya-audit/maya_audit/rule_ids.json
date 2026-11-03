@@ -59,6 +59,10 @@
     "The\\ sitemap\\ lists\\ (?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ that\\ carry\\ noindex"
    ],
    [
+    "acc3.utility_indexable",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ internal\\ search\\ or\\ cart\\ page\\(s\\)\\ can\\ be\\ indexed\\ \\(no\\ noindex\\)"
+   ],
+   [
     "acc3.unavailable_passed",
     "unavailable_after\\ \\(date\\ passed\\)\\ via\\ (?P<where>.+?)(?P<review>\\ \\(page\\ intent\\ should\\ be\\ reviewed\\))?\\ on\\ (?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)"
    ],

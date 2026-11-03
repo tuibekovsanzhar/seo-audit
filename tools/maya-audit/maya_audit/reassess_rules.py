@@ -18,6 +18,15 @@ DECISIONS 290 adds three, on the evidence each finding already holds:
 - STR-5 "The brand is named N different ways": a name given only by page titles that starts with the brand's main name
   ("Nihan Women's Coats") is a category title and is not counted; with two names or fewer left there is no finding.
 
+DECISIONS 300 adds two, on what the report already holds:
+
+- Findings seen only in Firecrawl's copy (`double_reading.mark_report`): when Firecrawl's reading judged the content
+  checks and Maya's own copies of the same pages are in `crawl.pages`, the same content checks run on Maya's copies,
+  only to compare; a finding with no counterpart there is marked (`evidence.reading`, estimated, a note). Which copy
+  the checks judge does not change.
+- ACC-3 "internal search or cart page(s) can be indexed (no noindex)", from the saved page records' meta robots,
+  X-Robots-Tag and canonical (`checks.access.utility_indexable_findings`).
+
 Then what depends on the findings is derived again as a new report derives it: the severity policy, the priority
 order, the problem summary (findings in priority order) and the release gate. Nothing else is re-run: re-running other
 checks on Maya's own copies of the pages would mix readers when another reader (Firecrawl) read the site.
@@ -147,6 +156,27 @@ def _decisions_290(report: dict, affected: dict, changes: list[str]) -> None:
             check["status"] = _status(kept, check.get("review_items") or ())
 
 
+def _decisions_300(report: dict, affected: dict, changes: list[str]) -> None:
+    from .double_reading import mark_report
+    for fid in mark_report(report):
+        changes.append(f"{fid}: seen only in Firecrawl's copy, not in Maya's own reading: estimated, confirm first "
+                       "(DECISIONS 300)")
+    from .checks.access import utility_indexable_findings
+    from .models import page_from_record, to_jsonable
+    acc3 = next((c for c in report.get("checks") or [] if c.get("check_id") == "ACC-3"), None)
+    if acc3 is None or any(f.get("rule_id") == "acc3.utility_indexable" for f in acc3.get("findings") or []):
+        return
+    pages = [page_from_record(p) for p in (report.get("crawl") or {}).get("pages") or []
+             if isinstance(p, dict) and p.get("content_checks_eligible") is not False and p.get("analysis")]
+    agent = (report.get("crawl") or {}).get("user_agent") or ""
+    for finding in to_jsonable(utility_indexable_findings(pages, set(), agent)):
+        acc3.setdefault("findings", []).append(finding)
+        affected[finding["id"]] = list((finding.get("scope") or {}).get("urls") or [])
+        changes.append(f"{finding['id']}: added: {finding['title']} (DECISIONS 300)")
+        from .checks.access import _status
+        acc3["status"] = _status(acc3["findings"], acc3.get("review_items") or ())
+
+
 def _order(report: dict) -> list[str]:
     from .findings import Severity, priority_key
     from .models import Confidence
@@ -173,6 +203,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _hidden_h1(r, changes)
     _calculator_grids(r, aff, changes, unassessed)
     _decisions_290(r, aff, changes)
+    _decisions_300(r, aff, changes)
     apply_severity(r.get("checks") or [], r.get("crawl") or {})
     order = _order(r)
     r["findings_in_priority_order"] = order
@@ -185,7 +216,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4) and 290, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290 and 300, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,

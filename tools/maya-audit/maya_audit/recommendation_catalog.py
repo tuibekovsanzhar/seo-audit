@@ -50,6 +50,9 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"which no longer have any effect", "seo", "S", "Rules for a crawler name that is no longer used do nothing. A block the site meant to keep may not be in place for the crawler that replaced it."),
         (r"Group precedence", "seo", "S", "A crawler with its own section in robots.txt ignores the general (*) rules. A rule you thought applied to everyone may not apply to it."),
     ),
+    "ACC-3": (
+        (r"internal search or cart page\(s\) can be indexed", "developer", "S", "A site's own search results and cart are not pages to find in search: indexed, they spend crawl time and can show as thin or duplicate results."),
+    ),
     "ACC-7": (
         (r"Crawl-delay: .* applies to", "developer", "S", "A long crawl delay means a crawler reads only a small part of the site in each visit, so new and changed pages are picked up late."),
         (r"asks .* to wait", "developer", "S", "The site asked this audit to slow down. The audit obeyed, which limited how many pages it could read in the time it had."),

@@ -463,6 +463,12 @@ def read_blocked_site(result: CrawlResult, cfg: CrawlConfig, client: ContentProv
     checks = run_structure_checks(view, cfg, [])
     checks += settle_all([idx8_duplicates(view, cfg)], view)
     checks = [check for check in checks if check.check_id in CONTENT_CHECKS]
+    if not blocked and any(_usable(page) for page in result.pages):
+        # DECISIONS 300 (9): the same content checks on Maya's own copies of the pages; a finding with no counterpart
+        # there was seen only in Firecrawl's copy, and is marked (estimated, "confirm first"). No request is made.
+        from ..double_reading import mark, own_content_checks
+        marked = mark(checks, own_content_checks(result, cfg))
+        info.setdefault("coverage", {})["firecrawl_only_findings"] = len(marked)
     if blocked or result.stop_reason == StopReason.RATE_LIMIT:
         # Maya's crawler was blocked: the HTML-weight check (RND-6: page and homepage HTML size, where the main content
         # starts) is measured on the HTML Firecrawl returned for the pages it read, instead of on the few pages, or

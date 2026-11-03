@@ -106,19 +106,24 @@ def test_the_concise_report_says_each_shared_sentence_once_and_keeps_every_findi
         assert text.count(sentence) <= 2, sentence
     assert "repeating the recorded check" in text or "kayıtlı kontrolü aynı" in text  # said once, at the head of the section
     assert repeated_sentences(page) == {}  # no sentence of the report itself is said more than twice
-    assert finding_ids(report) <= set(re.findall(r"[A-Z]{2,4}-\d{1,2}-[0-9a-f]{8}", text))  # every finding, by ID
-    # A finding detailed in the priority section is one "↑" cell in the inventory, not a second card (CR-15).
-    priority = page.split("<h2>")[3]
-    detailed = set(re.findall(r'<section class="issue" id="([^"]+)"', priority))
-    assert detailed and all(page.count(f'id="{fid}"') == 1 for fid in detailed)
-    assert text.count("↑") >= len(detailed)
-    # Notes are one line each, never cards (CR-06).
+    # DECISIONS 300: the PDF has at most 15 cards; every finding is in the appendix (XLSX), which the PDF names with
+    # its count, and the gate checks the appendix holds them all (RG-17).
+    from maya_audit import client_appendix, client_selection
+    selection = client_selection.select(report)
+    assert finding_ids(report) <= set(selection["by_finding"])
+    appendix = client.get(f"{API}/audits/{audit_id}/downloads/xlsx?lang={language}")
+    assert appendix.status_code == 200 and finding_ids(report) <= client_appendix.finding_ids(appendix.content)
+    assert re.search(r"maya-audit-[\w.-]+-appendix\.xlsx", text)
+    # One card per root cause, each once; at most 15.
+    detailed = re.findall(r'<section class="issue" id="(card-\d+)"', page)
+    assert detailed and len(detailed) == len(set(detailed)) <= 15
+    # Notes are never cards (CR-06).
     notes = [f for check in report["checks"] for f in check["findings"] if f["severity"] == "Info"]
-    assert notes and not any(f'<section class="issue" id="{f["id"]}"' in page for f in notes)
-    # The unread-pages line, and every other coverage gap, is said once (CR-05).
-    limits = page.split("<h2>")[-3]
-    lines = re.findall(r'<p class="small wrap">(.*?)</p>', limits)
-    assert len(lines) == len(set(line.split(" · ", 1)[-1] for line in lines))
+    assert notes and all(selection["by_finding"][f["id"]]["placement"] != "card" for f in notes)
+    # Every coverage gap is said once (CR-05).
+    limits = page.split("<h2>")[2]
+    lines = re.findall(r'<li class="small wrap">(.*?)</li>', limits)
+    assert len(lines) == len(set(lines))
 
 
 def test_the_sentence_counter_finds_a_repeated_sentence():

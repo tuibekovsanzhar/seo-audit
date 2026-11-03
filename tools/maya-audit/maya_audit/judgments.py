@@ -164,7 +164,8 @@ def qualify(finding, *, sitemap=None):
         status='diagnostic_concern';owner,effort='content','M'
         action='Review the reading outline and content structure. Tables and lists may already structure the information; add meaningful headings where they improve navigation. Heading levels alone do not prove a ranking or accessibility failure.'
         interpretation='Heading structure is measured; usability requires context, not a threshold alone.'
-    if cid=='ACC-3' and ('noindex' in title.lower() or 'no-snippet' in title.lower() or 'nosnippet' in title.lower()):
+    # A search or cart page that lacks noindex (DECISIONS 300) is the opposite case: not a directive to interpret.
+    if cid=='ACC-3' and f.get('rule_id')!='acc3.utility_indexable' and ('noindex' in title.lower() or 'no-snippet' in title.lower() or 'nosnippet' in title.lower()):
         status='intentional_configuration' if f.get('intent') else 'owner_context_required'
         decision=not bool(f.get('intent'))
         from .evidence_accuracy import NOINDEX_ACTION

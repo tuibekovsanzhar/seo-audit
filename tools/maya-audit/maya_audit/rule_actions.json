@@ -133,6 +133,22 @@
      "Take lastmod from each page's last edit date",
      "If that is not possible, consider leaving lastmod out"
     ]
+   },
+   "steps_by_platform": {
+    "Shopify": {
+     "tr": [
+      "Shopify site haritasını kendisi üretir; lastmod elle düzenlenmez",
+      "lastmod, ürün ve koleksiyonun son güncellenme zamanıdır",
+      "Toplu güncelleyen uygulamaları (stok, fiyat, çeviri) belirleyin",
+      "Gereksiz toplu kaydetmeleri durdurun; gerekirse uygulama ayarını değiştirin"
+     ],
+     "en": [
+      "Shopify writes the sitemap itself; lastmod cannot be edited by hand",
+      "lastmod is when the product or collection was last updated",
+      "Find the apps that update everything at once (stock, price, translation)",
+      "Stop needless bulk saves; change the app's setting if needed"
+     ]
+    }
    }
   },
   "str1.no_title": {
@@ -1138,6 +1154,22 @@
     "en": [
      "Write what the site offers into the empty <h1>",
      "If the template leaves the <h1> empty, fill it there"
+    ]
+   }
+  },
+  "acc3.utility_indexable": {
+   "en": "Keep internal search and cart pages out of the index",
+   "tr": "Site içi arama ve sepet sayfalarını dizin dışında tutun",
+   "steps": {
+    "tr": [
+     "Arama ve sepet sayfalarına noindex robots etiketi ekleyin",
+     "Shopify'da: temanın <head> bölümünde arama ve sepet şablonları için",
+     "Bu sayfaları site haritasına almayın"
+    ],
+    "en": [
+     "Add a noindex robots tag to the search and cart pages",
+     "On Shopify: in the theme's <head>, for the search and cart templates",
+     "Keep these pages out of the sitemap"
     ]
    }
   }

@@ -55,7 +55,8 @@ class ClientText(unittest.TestCase):
         d = build_en(report(['https://sample.example/a']))
         t = d['todos'][0]
         self.assertNotIn('LG-', t['status'])
-        self.assertIn('not yet validated on live sites', t['status'])
+        # DECISIONS 300 (7): not on a client card (such a finding goes to "Teyit edin"); the LG code stays in the data.
+        self.assertNotIn('not yet validated on live sites', t['status'])
         self.assertEqual(t['launch_gated'], ['LG-42'])
 
     def test_more_addresses_point_at_a_written_address_list(self):
@@ -330,7 +331,7 @@ def broken_link_report():
     r['schema_version'] = '1.20'
     r['crawl']['pages'] += [{'url': base + '/bulunamadi', 'status': 404}]
     f = r['checks'][0]['findings'][0]
-    f.update(check_id='IDX-1', severity='S2', rule_id='idx1.4xx.referenced.linked', confidence='verified',
+    f.update(check_id='IDX-1', severity='S2', rule_id='idx1.4xx.referenced.linked', confidence='verified', launch_gated=[],
              title='1 URL(s) return a client error (4xx), linked internally or listed in the sitemap; linked from 1 page(s)',
              evidence={'pages': [{'url': base + '/bulunamadi', 'status': 404, 'in_sitemap': False}],
                        'target_urls': [base + '/bulunamadi'],

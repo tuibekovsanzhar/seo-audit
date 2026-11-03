@@ -30,7 +30,7 @@
 | `findings[]` (≤5) | S | `findings_in_priority_order` içindeki ilk 5 sorun (Info hariç) |
 | `findings[].title` (≤70) | S→M / M | EN: motor başlığı; TR: motor çevirisi varsa o, yoksa M |
 | `findings[].scope` | S | `scope.count` + birim (URL / sayfa / dosya / tüm site); IDX-5 paylı bulguda başlıktaki oran |
-| `findings[].status` | S | `confidence` + "niyet doğrulanmadı" (`intent`) + "kontrol canlı sitelerde henüz doğrulanmadı" (`LG-xx` kodu yazılmaz; `todos[].launch_gated`'da kalır) |
+| `findings[].status` | S | `confidence` + "niyet doğrulanmadı" (`intent`); "kontrol canlı sitelerde henüz doğrulanmadı" yazılmaz (DECISIONS 300: öyle bir bulgu "Teyit edin"e gider; `LG-xx` `todos[].launch_gated`'da iz olarak kalır) |
 | `evidence_sample` | S | 1. bulgunun kanıtı: `attempts` varsa istek/saat/HTTP/gövde; yoksa adres listesi |
 | `next_action.lead` (≤60), `.text` (≤200), `.caveat` (≤170) | M | 1. bulgunun düzeltmesi (`src`) ve kanıt sınırı |
 
@@ -58,7 +58,7 @@
 - `_facts`: metinde kullanılabilecek sayılar (report.json'dan). Başka sayı → hata.
 - `_engine_wording`: motor çevirisi kullanıldı mı.
 
-## Sayfa 5+ — Yapılacaklar (sayfa başına 4 kart)
+## Sayfa 5+ — Yapılacaklar (sayfa başına 4 kart, en çok 15 kart, öncelik puanı sırasıyla; DECISIONS 300)
 | Alan | Kim | Kaynak / kural |
 |---|---|---|
 | sıra | S | bütün sorunlar (Info hariç), takvim sırasıyla (bu hafta → bu ay → sonra); kasıtlı olabilecekler (`intent`) kendi grubunun sonunda; en sonda, varsa, tek **yapısal veri kartı** (`severity: Info`, STR-3 Info bulguları + `homepage with no WebSite structured data` gözlemi; `schema_additions`), sonra tek **küçük düzeltmeler kartı** (`hygiene_items`: ACC-8 yönlenen llms linkleri, IDX-3/STR-10/IDX-6 hijyen gözlemleri), en son tek **içerik ve dil kartı** (`content_items`: STR-9 menü dili, STR-2 başlıksız sorular, STR-14 adres yazımı; sorumlu İçerik), sonra **sayfa yükleme ve etiket kartı** (`PERF_INFO`: PRF-1 CDN önbelleği, TSEO-1 defer'siz script ve çift analitik etiketi, STR-7 boyutsuz görsel, image/jpg preload, WebP/AVIF) ve **paylaşım ve şema kartı** (`SHARE_INFO`: STR-3 varsayılan VideoObject, STR-10 küçük paylaşım görseli, STR-7 biçim uyuşmazlığı) |
@@ -74,3 +74,21 @@
 | `todos[].verify` (≤150) | S→M | motorun "beklenen" cümlesi; Not kartlarında sabit metin; yoksa M |
 
 Sayfa sayısı = 4 + ⌈kart sayısı / 4⌉; render bunu PDF'te denetler.
+
+## DECISIONS 300 — müşteri seçimi, son sayfa ve ek
+
+Hepsi S (script): `maya_audit.client_selection.select` ve `build_data.py`. Model yalnız `confirm[].title` yazar.
+
+| Alan | Kim | Kaynak |
+|---|---|---|
+| `todos[].priority`, `todos[].confidence_class` | S | grubun öncelik puanı (önem × güven × erişim × iş önemi) ve güven sınıfı; puan önemi değiştirmez |
+| `todos[].platform_steps` | S | adımlar `rule_actions.json` `steps_by_platform`'dan geldiyse platform adı (ör. Shopify); kapı rapordaki `platform.name` ile karşılaştırır (RG-11) |
+| `todos[].links` | S | önce her dilden bir örnek adres (grubun `examples`), sonra diğerleri |
+| `actions[]` | S→M | öncelik puanına göre ilk 5 kart (`actions_schedule` = "Öncelik puanına göre ilk kartlar") |
+| `own_limits[]` | S | Maya'nın sınırları: sayfa sınırı, süre sınırı, okuma yolu (`acc9.reader*`), değerlendirilemeyen kısım sayısı |
+| `confirm[]` (≤10), `confirm_more` | S, `title` M (≤90) | "Teyit edin": önem, kapsam, neden (`confirm_reasons`); fazlası sayılır |
+| `key_pages[]` | S | sayfa önemi sırasıyla ilk 10 okunan sayfa: tür, önem (0-100), kartlar, en yüksek önem, teyit sayısı |
+| `quick_wins[]` | S | küçük eforlu kartların numaraları (en çok 4); aksiyon planı sayfasında "Sonraki inceleme" kutusunun yerinde |
+| `appendix.finding_ids`, `appendix.counts`, `appendix.line` | S | ekin listelediği bulgular (kapı RG-17 hepsini ister) ve sayıları |
+| `_confirmations` | S | `--confirm` / `--reject` ile verilen elle kontroller (kural ya da bulgu kimliği); `render.py` eki aynı seçimle yazar |
+

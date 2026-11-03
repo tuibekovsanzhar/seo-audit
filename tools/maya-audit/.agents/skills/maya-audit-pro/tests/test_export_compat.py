@@ -28,7 +28,7 @@ class Compatibility(unittest.TestCase):
  def test_absent_measurements_remain_missing(self):
   d=data([]);self.assertIsNone(d['lab']);self.assertIsNone(d['field']);self.assertEqual(d['search']['state'],'missing');self.assertEqual(d['kpis'][3]['state'],'missing');self.assertIn('No lab test',d['limits']['text']);self.assertIn('Not measured',render.page3(d,render.LABELS['en']))
  def test_uncertainty_visible_on_action_card(self):
-  d=data([]);t=d['todos'][0];t.update(title='Review heading',steps='Inspect source\nConfirm purpose',verify='Check the heading tree');self.assertIn('Estimated; check not yet validated on live sites',render.todo_pages(d,render.LABELS['en'])[0])
+  d=data([]);t=d['todos'][0];t.update(title='Review heading',steps='Inspect source\nConfirm purpose',verify='Check the heading tree');page=render.todo_pages(d,render.LABELS['en'])[0];self.assertIn('>Estimated<',page);self.assertNotIn('not yet validated',page)  # DECISIONS 300 (7)
  def test_sitemap_probe_units_are_urls_not_content_pages(self):
   b=build.Builder({},'en',render.LABELS['en'],{},Wording(),None,'test')
   f={'check_id':'IDX-5','title':'Sitemap URL observations','scope':{'kind':'template','count':30}}

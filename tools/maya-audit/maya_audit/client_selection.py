@@ -1,0 +1,445 @@
+"""What a client report shows, and in which order (v0.3 stage 6, DECISIONS 300).
+
+One selection for every client output (the web app's concise PDF, the `maya-audit-pro` report and their XLSX
+appendix), made from the final report. It never changes a finding, a severity or a confidence in the report: it reads
+them, merges the findings that share one root cause, scores each group, and places it.
+
+*Root cause.* Findings of one rule (`rule_id`; the engine's `dedup_key` where it has one) are one cause with one
+remedy, whatever template or language copy they were found on: `/products/*` and `/en/products/*`, the Turkish and
+the English header ("Sepet 0 ürün" and "Cart 0 items"). They become one card, with an example from each language.
+Findings that differ in what a card states about them stay apart: one that may be intentional (`intent`), one that
+needs confirming first, a different re-test state (a card shows one, RG-4).
+
+*Priority* = severity weight x confidence weight x reach x business relevance, rounded to one decimal:
+
+    severity    Blocker (S1) 100, High (S2) 40, Medium (S3) 15, Low (S4) 5, Info 0
+    confidence  measured 1.0, estimated 0.6, inferred 0.5, unverified 0.4
+    reach       the summed importance (page grouping, 0-100) of the pages it affects, in units of 100 (the homepage),
+                at most 5; a finding with no page address reaches the homepage (1.0)
+    business    1.0 until business-type profiles exist (stage 4)
+
+"Measured" is the engine's `verified`; "unverified" is a finding from a rule not yet validated on real sites (the
+launch gate's `LG-` items), whatever its confidence. Effort is shown on a card and never used here. The ranking never
+changes a severity: every Blocker and High card is kept, however it scores.
+
+*Placement.* Each group goes to exactly one place:
+
+    card       the top cards, at most 15, in priority order (every Blocker/High one first, then the highest scores)
+    confirm    "Teyit edin": a confidence weight of 0.5 or less, a finding that may be intentional, one seen only in
+               Firecrawl's copy of the pages (`evidence.reading`), and 403/429 answers to Maya's request with
+               Googlebot's user agent (a spoofed Googlebot); unless the owner's manual check confirmed it
+    note       Info findings (no action implied)
+    own_limit  Maya's own limits (how the pages were read); said in the coverage section, never as a client problem
+    appendix   a problem that did not fit on the cards
+
+Every finding of the report is in the appendix (the XLSX), with its group, placement and score. Nothing here sends a
+request: page importance comes from the report's page grouping or, for a report saved before it existed, from
+`page_groups.annotate` run on the saved page records.
+"""
+from __future__ import annotations
+
+import re
+from types import SimpleNamespace
+from typing import Any
+from urllib.parse import urlsplit
+
+SEVERITY_WEIGHT = {"S1": 100, "S2": 40, "S3": 15, "S4": 5, "Info": 0}
+SEVERITY_NAME = {"S1": "Blocker", "S2": "High", "S3": "Medium", "S4": "Low", "Info": "Info"}
+CONFIDENCE_WEIGHT = {"measured": 1.0, "estimated": 0.6, "inferred": 0.5, "unverified": 0.4}
+ENGINE_CONFIDENCE = {"verified": "measured", "estimated": "estimated", "inferred": "inferred", "not_assessed": "unverified"}
+CONFIRM_AT_OR_BELOW = 0.5
+REACH_UNIT = 100
+REACH_CAP = 5.0
+UNSCORED_IMPORTANCE = 10  # a page the grouping did not score (not read, a file): counted, but small
+BUSINESS_RELEVANCE = 1.0
+from .release_gate import CLIENT_MAX_CARDS as MAX_CARDS, CLIENT_MAX_PAGES as MAX_PAGES  # noqa: E402
+KEY_PAGES = 10
+CONFIRM_LINES = 12  # "Teyit edin" lines a client report prints; the rest are counted and in the appendix
+HIGH = ("S1", "S2")
+PROBLEM = ("S1", "S2", "S3", "S4")
+# How Maya read the pages: the reader's own note, not a problem of the site (DECISIONS 288 keeps acc9.blocked_429 and
+# acc9.rate_limited_429, which warn that AI crawlers may be refused too, as the site's).
+OWN_LIMIT_RULES = frozenset({"acc9.reader", "acc9.reader.counted", "acc9.reader.site", "acc9.reader.site.counted"})
+# One cause found by two rules (the pro report's merged empty-page cards, DECISIONS 284).
+RULE_FAMILY = {"judgment.empty.repeated": "idx1.empty", "judgment.empty.single": "idx1.empty"}
+CONFIRM_REASONS = ("unverified_check", "low_confidence", "intent", "firecrawl_only", "spoofed_googlebot")
+LG = re.compile(r"^LG-\d+$")
+
+
+# ---------------------------------------------------------------- one finding
+
+def severity(f: dict) -> str:
+    s = f.get("severity")
+    return getattr(s, "value", s) or "Info"
+
+
+def manual(f: dict, confirmations: dict | None) -> dict | None:
+    """The owner's manual check of this finding, by finding id or by rule id: {"result": "confirmed"|"rejected", ...}."""
+    if not confirmations:
+        return None
+    return confirmations.get(f.get("id")) or confirmations.get(f.get("rule_id"))
+
+
+def confidence_class(f: dict, confirmations: dict | None = None) -> str:
+    """measured / estimated / inferred / unverified, as the priority score weighs it."""
+    check = manual(f, confirmations)
+    if check and check.get("result") == "confirmed":
+        return "measured"
+    if any(LG.match(str(g)) for g in f.get("launch_gated") or []):
+        return "unverified"
+    reading = (f.get("evidence") or {}).get("reading") or {}
+    if reading.get("seen_in") == "firecrawl_only":
+        return "estimated"
+    return ENGINE_CONFIDENCE.get(f.get("confidence") or "", "unverified")
+
+
+def spoofed_googlebot(f: dict) -> bool:
+    """403/429 to Maya's request with Googlebot's user agent where a browser got 200 (ACC-4, DECISIONS 290): the
+    firewall may refuse a fake Googlebot and serve the real one."""
+    if f.get("rule_id") != "acc4.ua_check.status":
+        return False
+    pairs = (f.get("evidence") or {}).get("pairs") or []
+    return bool(pairs) and all(p.get("outcome") == "refused" for p in pairs if isinstance(p, dict))
+
+
+def confirm_reason(f: dict, confirmations: dict | None = None) -> str | None:
+    """Why the finding goes to "Teyit edin" before anyone acts on it, or None."""
+    check = manual(f, confirmations)
+    if check and check.get("result") == "confirmed":
+        return None
+    if spoofed_googlebot(f):
+        return "spoofed_googlebot"
+    if ((f.get("evidence") or {}).get("reading") or {}).get("seen_in") == "firecrawl_only":
+        return "firecrawl_only"
+    if f.get("intent"):
+        return "intent"
+    cls = confidence_class(f, confirmations)
+    if cls == "unverified":
+        return "unverified_check"
+    if CONFIDENCE_WEIGHT[cls] <= CONFIRM_AT_OR_BELOW:
+        return "low_confidence"
+    return None
+
+
+def own_limit(f: dict) -> bool:
+    return f.get("rule_id") in OWN_LIMIT_RULES
+
+
+# ---------------------------------------------------------------- page importance
+
+def _result_from_report(report: dict):
+    from .models import page_from_record
+    crawl = report.get("crawl") or {}
+    pages = [page_from_record(record) for record in crawl.get("pages") or [] if isinstance(record, dict)]
+    return SimpleNamespace(pages=pages, start_url=crawl.get("start_url") or "", origin=crawl.get("origin"),
+                           discovered_urls=crawl.get("discovered_urls") or [], sitemap_urls=crawl.get("sitemap_urls") or [],
+                           page_grouping=None)
+
+
+def grouping(report: dict) -> tuple[dict[str, dict], dict]:
+    """({url: grouping record}, summary) from the report's page grouping; for a report saved before it (schema below
+    1.23), from `page_groups.annotate` on the saved page records (offline, the report is not changed)."""
+    crawl = report.get("crawl") or {}
+    records = {p.get("url"): p.get("grouping") for p in crawl.get("pages") or [] if isinstance(p, dict)}
+    summary = crawl.get("page_grouping")
+    if not any(isinstance(g, dict) and "importance" in g for g in records.values()) or not isinstance(summary, dict):
+        try:
+            from .page_groups import annotate
+            result = _result_from_report(report)
+            if not result.pages:
+                return {}, {}
+            summary = annotate(result)
+            records = {p.url: p.grouping for p in result.pages}
+        except Exception as exc:  # a report too old or too damaged to group: importance unknown, said so
+            return {}, {"error": f"page grouping could not be worked out: {type(exc).__name__}"}
+    out = {u: g for u, g in records.items() if isinstance(g, dict) and "importance" in g}
+    for url, g in ((summary or {}).get("canonical_pages") or {}).items():
+        if isinstance(g, dict) and "importance" in g:
+            out.setdefault(url, g)
+    return out, summary or {}
+
+
+def _home(report: dict) -> str:
+    crawl = report.get("crawl") or {}
+    return crawl.get("start_url") or crawl.get("origin") or ""
+
+
+def language_of(url: str, default: str | None) -> str | None:
+    """The language folder of an address (`/en/...`), else the site's default language."""
+    from .page_groups import is_locale
+    first = (urlsplit(url).path or "/").strip("/").split("/")[0]
+    return first.lower() if first and is_locale(first) else default
+
+
+def default_language(report: dict) -> str | None:
+    home = _home(report).rstrip("/")
+    for p in (report.get("crawl") or {}).get("pages") or []:
+        if isinstance(p, dict) and (p.get("url") or "").rstrip("/") == home:
+            lang = ((p.get("analysis") or {}).get("html_lang") or "").split("-")[0].lower()
+            return lang or None
+    return None
+
+
+# ---------------------------------------------------------------- groups
+
+def all_findings(report: dict) -> list[dict]:
+    """Every finding of the report (the gate's set), in the report's priority order, then the rest as found."""
+    from .release_gate import findings_of
+    by_id = findings_of(report)
+    order = [i for i in report.get("findings_in_priority_order") or [] if isinstance(i, str) and i in by_id]
+    return [by_id[i] for i in order] + [f for i, f in by_id.items() if i not in set(order)]
+
+
+def affected(f: dict, lists: dict | None) -> list[str]:
+    from .release_gate import affected_urls
+    return affected_urls(f, lists)
+
+
+def retest_state(f: dict) -> str:
+    return (f.get("verification") or {}).get("state") or "not_retested"
+
+
+def group_key(f: dict, confirmations: dict | None = None) -> tuple:
+    cause = f.get("dedup_key") or RULE_FAMILY.get(f.get("rule_id") or "", f.get("rule_id")) or \
+        f"{f.get('check_id')}:{re.sub(r'[0-9]+', '#', f.get('title') or '')}"
+    reason = confirm_reason(f, confirmations)
+    return (f.get("check_id"), cause, bool(f.get("intent")), bool(reason), retest_state(f), severity(f) == "Info")
+
+
+def _weight(sev: str) -> int:
+    return SEVERITY_WEIGHT.get(sev, 0)
+
+
+def _score(sev: str, conf: str, reach: float) -> float:
+    return round(_weight(sev) * CONFIDENCE_WEIGHT[conf] * reach * BUSINESS_RELEVANCE, 1)
+
+
+def _reach(urls: list[str], importance: dict[str, dict], home_importance: int) -> tuple[float, int, int]:
+    """(reach, summed importance, pages counted). Each address once; a duplicate's own score (capped at 20) is used."""
+    pages = [u for u in dict.fromkeys(urls) if isinstance(u, str) and u.startswith(("http://", "https://"))]
+    if not pages:
+        return 1.0, home_importance, 0
+    total = sum(int((importance.get(u) or {}).get("importance", UNSCORED_IMPORTANCE)) for u in pages)
+    return round(min(total / REACH_UNIT, REACH_CAP), 2), total, len(pages)
+
+
+def _examples(urls: list[str], members: list[dict], lists: dict | None, importance: dict[str, dict],
+              default_lang: str | None, limit_per_language: int = 1) -> list[dict]:
+    """One example address per language (the most important page of that language that is not a search, cart or other
+    utility page, unless only such pages are affected), with the finding it comes from."""
+    by_url: dict[str, dict] = {}
+    for m in members:
+        for u in affected(m, lists):
+            by_url.setdefault(u, m)
+    pages = [u for u in dict.fromkeys(urls) if u in by_url]
+
+    def utility(u):
+        return (importance.get(u) or {}).get("page_type") == "utility"
+
+    def rank(u):
+        g = importance.get(u) or {}
+        return (utility(u), -(g.get("importance") or 0), g.get("importance_rank") or 10**9)
+
+    out: list[dict] = []
+    seen: dict[str | None, int] = {}
+    for u in sorted(pages, key=rank):
+        lang = language_of(u, default_lang)
+        if seen.get(lang, 0) >= limit_per_language:
+            continue
+        if utility(u) and any(not utility(v) and language_of(v, default_lang) == lang for v in pages):
+            continue
+        seen[lang] = seen.get(lang, 0) + 1
+        m = by_url[u]
+        out.append({"url": u, "language": lang, "finding_id": m.get("id"), "title": m.get("title"),
+                    "page_type": (importance.get(u) or {}).get("page_type")})
+    return out
+
+
+def groups(report: dict, lists: dict | None = None, confirmations: dict | None = None,
+           importance: dict[str, dict] | None = None) -> list[dict]:
+    """Every finding in exactly one group, each group scored. In the report's priority order (the lead is its first)."""
+    if importance is None:
+        importance, _ = grouping(report)
+    home = _home(report)
+    home_importance = int((importance.get(home) or {}).get("importance", REACH_UNIT))
+    default_lang = default_language(report)
+    out: dict[tuple, dict] = {}
+    for f in all_findings(report):
+        key = group_key(f, confirmations)
+        g = out.get(key)
+        if g is None:
+            g = out[key] = {"key": key, "members": []}
+        g["members"].append(f)
+    rows = []
+    for g in out.values():
+        members = g["members"]
+        sev = max((severity(m) for m in members), key=_weight)
+        classes = [confidence_class(m, confirmations) for m in members]
+        conf = min(classes, key=lambda c: CONFIDENCE_WEIGHT[c])
+        urls = list(dict.fromkeys(u for m in members for u in affected(m, lists)))
+        reach, total, counted = _reach(urls, importance, home_importance)
+        lead = members[0]
+        reasons = [r for r in (confirm_reason(m, confirmations) for m in members) if r]
+        languages = sorted({language_of(u, default_lang) or "" for u in urls} - {""})
+        rows.append({
+            "finding_ids": [m.get("id") for m in members], "members": members, "lead": lead,
+            "check_id": lead.get("check_id"), "rule_id": lead.get("rule_id"), "title": lead.get("title"),
+            "severity": sev, "severity_name": SEVERITY_NAME.get(sev, sev),
+            "confidence": conf, "confidence_weight": CONFIDENCE_WEIGHT[conf],
+            "reach": reach, "importance_sum": total, "pages_counted": counted, "urls": urls,
+            "priority": _score(sev, conf, reach),
+            "parts": {"severity": _weight(sev), "confidence": CONFIDENCE_WEIGHT[conf], "reach": reach,
+                      "business": BUSINESS_RELEVANCE},
+            "intent": bool(lead.get("intent")), "confirm_reason": reasons[0] if reasons else None,
+            "own_limit": all(own_limit(m) for m in members),
+            "languages": languages,
+            "templates": sorted({(importance.get(u) or {}).get("template_key") for u in urls} - {None}),
+            "examples": _examples(urls, members, lists, importance, default_lang),
+            "manual": next((manual(m, confirmations) for m in members if manual(m, confirmations)), None),
+        })
+    return rows
+
+
+def _order(rows: list[dict]) -> list[dict]:
+    """Highest priority first; ties: higher severity, then the report's own order (its first finding)."""
+    return sorted(rows, key=lambda g: (-g["priority"], -_weight(g["severity"]), g["_index"]))
+
+
+def select(report: dict, lists: dict | None = None, confirmations: dict | None = None, *,
+           max_cards: int = MAX_CARDS) -> dict:
+    """The selection a client report prints: cards, "Teyit edin", notes, own limits, appendix, key pages, counts."""
+    importance, summary = grouping(report)
+    rows = groups(report, lists, confirmations, importance)
+    for i, g in enumerate(rows):
+        g["_index"] = i
+    rejected = [g for g in rows if (g["manual"] or {}).get("result") == "rejected"]
+    for g in rows:
+        if g in rejected:
+            g["placement"] = "rejected"
+        elif g["own_limit"]:
+            g["placement"] = "own_limit"
+        elif g["confirm_reason"] and (g["severity"] in PROBLEM or g["confirm_reason"] in ("spoofed_googlebot", "firecrawl_only")):
+            # An Info note implies no action, so there is nothing to confirm before acting: it stays a note. The
+            # exceptions are the two the owner named (DECISIONS 300 (9)): the spoofed Googlebot's 403/429, and a finding
+            # seen only in Firecrawl's copy (a client report may otherwise turn a note into advice).
+            g["placement"] = "confirm"
+        elif g["severity"] not in PROBLEM:
+            g["placement"] = "note"
+        else:
+            g["placement"] = None
+    candidates = _order([g for g in rows if g["placement"] is None])
+    # Every Blocker and High group is a card, whatever it scores (nothing S1/S2 is ever cut, preamble 4); the rest by
+    # score while there is room. More than 15 High groups make more than 15 cards: the gate then blocks (RG-16).
+    must = [g for g in candidates if g["severity"] in HIGH]
+    rest = [g for g in candidates if g["severity"] not in HIGH]
+    chosen = must + rest[:max(0, max_cards - len(must))]
+    chosen_ids = {id(g) for g in chosen}
+    cards = _order(chosen)
+    for n, g in enumerate(cards, 1):
+        g["placement"], g["card"] = "card", n
+    for g in candidates:
+        if id(g) not in chosen_ids:
+            g["placement"] = "appendix"
+    confirm = _order([g for g in rows if g["placement"] == "confirm"])
+    notes = _order([g for g in rows if g["placement"] == "note"])
+    limits = [g for g in rows if g["placement"] == "own_limit"]
+    appendix_only = _order([g for g in rows if g["placement"] == "appendix"])
+    for g in rows:
+        g.pop("_index", None)
+    by_finding = {fid: g for g in rows for fid in g["finding_ids"]}
+    return {
+        "method": {"severity_weight": SEVERITY_WEIGHT, "confidence_weight": CONFIDENCE_WEIGHT,
+                   "reach": f"summed page importance / {REACH_UNIT}, at most {REACH_CAP}; no page address = 1.0",
+                   "business_relevance": BUSINESS_RELEVANCE, "max_cards": max_cards, "max_pages": MAX_PAGES,
+                   "confirm_at_or_below": CONFIRM_AT_OR_BELOW,
+                   "importance": "page grouping (DECISIONS 297, 298)" if importance else "not available"},
+        "cards": cards, "confirm": confirm, "notes": notes, "own_limits": limits, "appendix_only": appendix_only,
+        "rejected": [g for g in rows if g["placement"] == "rejected"],
+        "groups": rows, "by_finding": by_finding,
+        "key_pages": key_pages(report, rows, importance),
+        "coverage": coverage(report, limits),
+        "counts": {"findings": len(by_finding), "groups": len(rows), "cards": len(cards), "confirm": len(confirm),
+                   "notes": len(notes), "own_limits": len(limits), "appendix_only": len(appendix_only),
+                   "rejected": len([g for g in rows if g["placement"] == "rejected"]),
+                   "problems": sum(1 for g in rows for m in g["members"] if severity(m) in PROBLEM)},
+        "grouping_summary": {k: summary.get(k) for k in ("method_version", "pages_scored", "page_types") if k in summary},
+        "platform": (report.get("platform") or {}).get("name"),
+    }
+
+
+def platform_steps(rule_id: str | None, platform: str | None, lang: str) -> list[str] | None:
+    """The catalogue's steps for this rule on this platform (`steps_by_platform`, e.g. Shopify writes its own sitemap,
+    DECISIONS 300 (7)), or None. The release gate checks the platform against the report's (RG-11)."""
+    if not rule_id or not platform:
+        return None
+    from .facts import _catalogue
+    entry = (_catalogue().get(rule_id) or {}).get("steps_by_platform") or {}
+    return ((entry.get(platform) or {}).get(lang)) or None
+
+
+# ---------------------------------------------------------------- key pages and coverage
+
+def key_pages(report: dict, rows: list[dict], importance: dict[str, dict], limit: int = KEY_PAGES) -> list[dict]:
+    """The most important pages read (importance rank), with what the cards and the confirm list say about each."""
+    read = [(u, g) for u, g in importance.items() if g.get("read") is not False]
+    read.sort(key=lambda kv: (kv[1].get("importance_rank") or 10**9, -(kv[1].get("importance") or 0)))
+    out = []
+    for url, g in read[:limit]:
+        cards = [x for x in rows if x.get("placement") == "card" and url in x["urls"]]
+        confirm = [x for x in rows if x.get("placement") == "confirm" and url in x["urls"]]
+        worst = max((x["severity"] for x in cards), key=_weight, default=None)
+        out.append({"url": url, "page_type": g.get("page_type"), "importance": g.get("importance"),
+                    "rank": g.get("importance_rank"), "cards": sorted(x["card"] for x in cards),
+                    "worst": worst, "confirm": len(confirm)})
+    return out
+
+
+def coverage(report: dict, limits: list[dict]) -> dict:
+    """What Maya read and what it could not, for the coverage section: our limits, never a client problem."""
+    crawl = report.get("crawl") or {}
+    status = (report.get("audit_status") or {}).get("content_coverage") or {}
+    counts = report.get("page_counts") or {}
+    cfg = crawl.get("config") or {}
+    lines: list[dict] = []
+    if crawl.get("stop_reason") == "page_cap":
+        lines.append({"kind": "page_cap", "pages": cfg.get("max_pages"),
+                      "not_read": status.get("known_urls_not_read") or len(crawl.get("not_fetched_urls") or [])})
+    if crawl.get("deadline_hit") or report.get("time_limit_cuts"):
+        cuts = report.get("time_limit_cuts")
+        lines.append({"kind": "time_budget", "seconds": cfg.get("time_limit_s"),
+                      "cut": len(cuts) if isinstance(cuts, list) else cuts or None})
+    for g in limits:
+        lines.append({"kind": "reader", "finding_ids": g["finding_ids"], "title": g["title"]})
+    gaps: dict[str, list[str]] = {}
+    for check in report.get("checks") or []:
+        for part in (check.get("coverage") or {}).get("not_assessed") or []:
+            text = f"{part.get('part') or ''}: {part.get('reason') or ''}".strip(": ")
+            gaps.setdefault(text, []).append(check.get("check_id"))
+        if check.get("status") == "not_assessed" and not (check.get("coverage") or {}).get("not_assessed"):
+            gaps.setdefault(check.get("summary") or "", []).append(check.get("check_id"))
+    for text, checks in gaps.items():
+        if text:
+            lines.append({"kind": "not_assessed", "text": text, "checks": list(dict.fromkeys(checks))})
+    reader = report.get("firecrawl") or {}
+    return {"pages_read": status.get("pages_read", counts.get("pages_checked")),
+            "known_not_read": status.get("known_urls_not_read"),
+            "discovered": len(crawl.get("discovered_urls") or []) or None,
+            "read_by": status.get("read_by"), "level": status.get("level"),
+            "reader": reader.get("purpose") if reader.get("used") or reader.get("pages_read") else None,
+            "lines": lines}
+
+
+# ---------------------------------------------------------------- appendix rows
+
+def appendix_rows(selection: dict, lists: dict | None = None) -> list[dict]:
+    """One row per finding of the report: its group, placement, scores and every affected address."""
+    out = []
+    for g in selection["groups"]:
+        for m in g["members"]:
+            out.append({"finding_id": m.get("id"), "check_id": m.get("check_id"), "rule_id": m.get("rule_id"),
+                        "severity": severity(m), "confidence": m.get("confidence"),
+                        "confidence_class": g["confidence"], "priority": g["priority"], "placement": g["placement"],
+                        "card": g.get("card"), "group_lead": g["finding_ids"][0], "confirm_reason": g["confirm_reason"],
+                        "title": m.get("title"), "how_to_fix": m.get("how_to_fix"),
+                        "scope_count": (m.get("scope") or {}).get("count"), "urls": affected(m, lists)})
+    return out

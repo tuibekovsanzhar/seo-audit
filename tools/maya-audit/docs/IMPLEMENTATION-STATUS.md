@@ -784,6 +784,72 @@ measured live.
 
 **CI of `8015f0d`** (run [41599353639](https://github.com/withmaya/seo-audit/actions/runs/41599353639)): **success**; whole run 9m51s (07:53:45 to 08:03:36 UTC), "Fast tests" step 9m05s (17m11s on the two runs before; 8m48s on 2026-10-30).
 
+## v0.3 stage 6: client report — priority, 10 pages, 15 cards, XLSX appendix, gate (2026-11-03, DECISIONS 300)
+
+**Changed:** one client selection for the web concise PDF and the `maya-audit-pro` report (`maya_audit/client_selection.py`):
+root-cause groups (one rule = one card, an example per language), priority = severity × confidence × reach ×
+business (1.0), placement into cards (≤15, every Blocker/High kept), "Teyit edin", notes, Maya's own limits
+(coverage), appendix-only. XLSX appendix (`client_appendix.py`, stdlib `xlsx.py`): web `downloads/xlsx`, pro
+`<name>-ek.xlsx`. Gate RG-15 (>10 pages), RG-16 (>15 cards), RG-17 (appendix missing a finding), all hard. Web concise
+rewritten (summary, coverage and own limits, search/performance sample, cards, "Teyit edin", key pages scorecard, plan
+and quick wins, appendix pointer; max 10 pages). Pro: cards in priority order, a last page "Kapsam ve ek", quick wins
+on the plan page, `--confirm`/`--reject` for the owner's manual checks. Nihan text fixes: no "kontrol canlı sitelerde
+henüz doğrulanmadı" on client cards; Shopify-aware IDX-5 lastmod steps (`steps_by_platform`, RG-11 checks the
+platform); new ACC-3 rule `acc3.utility_indexable` (search/cart pages without noindex, Low); empty columns dropped;
+numbers labelled. Findings seen only in Firecrawl's copy are marked (`double_reading.py`: engine and offline
+reassessment) and go to "Teyit edin"; so do 403/429 to a spoofed Googlebot. Skill `SKILL.md` and
+`references/veri_sozlesmesi.md` updated. Tests: new `tests/test_v03_client_report.py` (23); 13 existing tests moved to
+the new contract (every finding ID in the appendix, not in the PDF; summary heading; 10-page cap); 5 pro-skill tests.
+
+**nihan `b3198942`, rebuilt offline** (sockets refused; copies in a temp folder; `~/.maya-audit/web` untouched).
+`tools/reassess_saved.py` → 13 changes: ACC-4 S3 → Info and RND-3 maybe S3 → S4 (290); STR-5 removed (290, category
+titles); 9 findings marked Firecrawl-only (IDX-8, STR-3, STR-9, STR-12, STR-19 ×1, TSEO-1 ×4); ACC-3
+`acc3.utility_indexable` added (4 pages: `/search`, `/cart`, `/en/search`, `/en/cart`); gate PASS. Outputs in
+`reviews/2026-11-03/nihan/` (git-ignored).
+
+| Output | Before (stage 3b) | After |
+|---|---|---|
+| Web concise PDF (tr, en) | 13 pages | **5 pages**, 10 cards, gate PASS |
+| Pro report (tr) | 9 pages, ~20 cards | **7 pages**, 12 cards (10 problem + 2 Not), gate PASS, 0 overflow |
+| Appendix | CSV of card addresses (434 lines) | XLSX: 48 findings, 3,065 address rows, key pages, coverage, method |
+
+48 findings → 32 groups: 10 cards, 10 "Teyit edin", 12 note groups, 0 appendix-only, 0 own-limit findings (the page cap
+and 23 not-assessed parts are coverage lines).
+
+| Card | Score | Severity | Finding(s) |
+|---|---|---|---|
+| 1 | 25.0 | Low | STR-16 3 shared meta descriptions on 26 pages |
+| 2 | 25.0 | Low | RND-6 main content after 500 KB on 494 pages |
+| 3 | 25.0 | Low | TSEO-1 47 heading level jumps |
+| 4 | 25.0 | Low | STR-1 6 shared titles on 12 pages |
+| 5 | 25.0 | Low | RND-6 192 pages above 1000 KB |
+| 6 | 17.5 | Low | STR-2 8 pages without `<h1>` |
+| 7 | 14.4 | Medium | RND-6 homepage HTML 885 KB |
+| 8 | 11.7 | Low | STR-14 3 links without text |
+| 9 | 8.0 | Low | IDX-5 16 sitemaps with one lastmod (Shopify steps) |
+| 10 | 4.0 | Low | ACC-3 4 search/cart pages indexable |
+
+"Teyit edin": STR-12 47 `/en` pages mostly Turkish (Medium, Firecrawl-only, 30.0); STR-19 ×3, TSEO-1 shared ×5, IDX-8,
+STR-9, STR-3 FAQ (Firecrawl-only); STR-14 shared ×4, RND-3 ×2 (unverified check); ACC-4 429 to a spoofed Googlebot.
+Moved off the old cards: those 10 groups, and STR-5 (removed by 290). The owner's manual check of nihan's `/en` pages
+was not given (placeholder in the request): STR-12 stays in "Teyit edin" until `--confirm str12.language` or `--reject`.
+
+**Verification** (working tree on `a25fe76`, macOS, Python 3.13.1; no .env, no providers, no live requests):
+
+| Command | Result |
+|---|---|
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | first run `20 failed, 2597 passed` (old concise contract, two title corpora); after the fixes `2617 passed, 4 skipped, 131 deselected, 1 warning in 409.77s (0:06:49)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | first run `3 failed, 2745 passed` (concise contract); after the fixes `2748 passed, 4 skipped, 1 warning in 750.12s (0:12:30)` (skips: 2 wheel builds, live-run examples, real-site corpus) |
+| pro skill tests, `pytest -q .agents/skills/maya-audit-pro/tests` (outside `testpaths`) | `56 passed` |
+| `ruff check --select E9,F821,F841` (CI paths) | `All checks passed!` (it caught a 3.12-only f-string, fixed) |
+| `python3.11 -m compileall` (maya_audit, maya_audit_web, pro scripts) | OK |
+| `docs/FIXTURE-MATRIX.md` | regenerated |
+| Linux/Windows, live runs | NOT RUN |
+
+**Not done:** the third client report (`maya-audit-rapor`, `client_reports`) keeps its 50-page limit; the web UI has no
+button for the XLSX (the route and the companion line exist); manual confirmations are a pro-report flag only (the web
+app has none); reach cap 5 makes broad Low findings tie at 25.0 (ties broken by severity, then report order).
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

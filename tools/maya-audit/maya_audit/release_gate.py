@@ -35,6 +35,9 @@ Rules (hard = blocks, soft = conditional):
     RG-13 soft  no visible card text ends cut off ("+" or "·" with nothing after it)
     RG-14 hard  the site's content was read: a report with 0 pages read is not delivered as a result (DECISIONS 287);
                 pages read through a reader count (DECISIONS 288)
+    RG-15 hard  a client PDF has at most 10 pages (DECISIONS 300)
+    RG-16 hard  a client PDF has at most 15 cards
+    RG-17 hard  the client report's appendix (the XLSX) holds every finding of the report
 """
 from __future__ import annotations
 
@@ -56,6 +59,8 @@ CARD_REFERENCE = re.compile(r"(?<!\d)(\d{1,2})\.\s*(?:iş|işle|işte|işin|işi
 # A site address written in a text field ("/en", "/about/team"); not "a/b", "500 KB/s" or "<h2>/<h3>".
 PATH = re.compile(r"(?<![\w:/.<>])/[A-Za-z0-9][\w\-.%{}]*(?:/[\w\-.%{}]+)*/?")
 CUT_OFF = re.compile(r"(?:·|\+)\s*$")
+# A client report's budget (DECISIONS 300): over it, the PDF is blocked; the appendix carries everything else.
+CLIENT_MAX_PAGES, CLIENT_MAX_CARDS = 10, 15
 
 
 def violation(rule: str, message: str, *, hard: bool, finding_id: str | None = None, card: int | None = None) -> dict:
@@ -318,6 +323,10 @@ def check_cards(data: dict, report: dict, affected: dict | None = None) -> list[
             if not [i for i in topic.get("ids") or [] if i in ids_known]:
                 out.append(violation("RG-11", f"card {n} title names {topic.get('topic')!r}, which no finding of this "
                                                "report supports", hard=True, card=n))
+        platform = card.get("platform_steps")
+        if platform and platform != ((report.get("platform") or {}).get("name")):
+            out.append(violation("RG-11", f"card {n} gives {platform} steps, but the report does not name {platform} as "
+                                           "the site's platform", hard=True, card=n))
         for step in card.get("step_rules") or []:
             if step.get("shown") and not condition_met(step.get("when") or {}, mine):
                 out.append(violation("RG-11", f"card {n} step {step.get('text')!r} is shown, but its condition "
@@ -327,6 +336,26 @@ def check_cards(data: dict, report: dict, affected: dict | None = None) -> list[
             if text and any(CUT_OFF.search(line) for line in text.split("\n")):
                 out.append(violation("RG-13", f"card {n} {field} ends cut off: {text.splitlines()[-1][-40:]!r}",
                                      hard=False, card=n))
+    appendix = data.get("appendix")
+    out += check_client_output(report, cards=len(cards),
+                               appendix_ids=appendix.get("finding_ids") if isinstance(appendix, dict) else None)
+    return out
+
+
+def check_client_output(report: dict, *, pages: int | None = None, cards: int | None = None,
+                        appendix_ids: Iterable[str] | None = None) -> list[dict]:
+    """A client report's budget and completeness (DECISIONS 300): at most 10 pages and 15 cards, and an appendix that
+    holds every finding. A value not given (pages before the PDF exists) is not checked here; the renderer checks it."""
+    out: list[dict] = []
+    if pages is not None and pages > CLIENT_MAX_PAGES:
+        out.append(violation("RG-15", f"the client PDF has {pages} pages; at most {CLIENT_MAX_PAGES}", hard=True))
+    if cards is not None and cards > CLIENT_MAX_CARDS:
+        out.append(violation("RG-16", f"the client report has {cards} cards; at most {CLIENT_MAX_CARDS}", hard=True))
+    if appendix_ids is not None:
+        missing = sorted(set(findings_of(report)) - set(appendix_ids))
+        if missing:
+            out.append(violation("RG-17", f"the appendix leaves out {len(missing)} finding(s), first {missing[0]}",
+                                 hard=True, finding_id=missing[0]))
     return out
 
 
@@ -379,6 +408,9 @@ SUMMARY_ROWS = (
     ("RG-10", "Silent measurement gap", "must be 0"),
     ("RG-11", "Fixed title or step without a finding", "must be 0"),
     ("RG-14", "Site content could not be read", "must be 0"),
+    ("RG-15", "Client PDF over 10 pages", "must be 0"),
+    ("RG-16", "Client report over 15 cards", "must be 0"),
+    ("RG-17", "Finding missing from the appendix", "must be 0"),
 )
 
 

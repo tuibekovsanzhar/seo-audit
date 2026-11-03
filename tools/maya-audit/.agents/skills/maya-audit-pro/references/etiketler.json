@@ -7,7 +7,8 @@
    "Bulgular ve kanıt",
    "Arama ve performans",
    "Aksiyon planı",
-   "Yapılacaklar"
+   "Yapılacaklar",
+   "Kapsam ve ek"
   ],
   "p1_title": "Denetim özeti",
   "p1_sub": "Teknik bulgular, kanıt kapsamı ve öncelikli aksiyonlar.",
@@ -198,13 +199,13 @@
   ],
   "prov_note_cache": "{saved} / {read} sayfanın içeriği Maya'nın kayıtlı kopyalarından okundu; site o tarihten beri değişmiş olabilir.",
   "p5_title": "Yapılacaklar",
-  "p5_sub": "Bütün sorunlar, takvim sırasıyla: ne yapılacak, kim yapacak, nasıl doğrulanacak.",
+  "p5_sub": "Önceliğe göre en çok 15 kart: ne yapılacak, kim yapacak, nasıl doğrulanacak.",
   "todo_steps": "ADIMLAR",
   "todo_verify": "DOĞRULAMA",
   "todo_links": "ETKİLENEN ADRESLER",
   "todo_sources": "ETKİLENEN KAYNAK SAYFA",
   "todo_targets": "Hatalı hedef URL",
-  "todo_more": "+{n} adres daha (tam liste ekteki adres listesi dosyasında)",
+  "todo_more": "+{n} adres daha (tam liste ekteki XLSX dosyasında)",
   "todo_sitewide": "Tüm siteyi ilgilendiriyor; tek tek adres yok.",
   "todo_count": "{n} yapılacak iş",
   "todo_fact": "Kanıt",
@@ -214,16 +215,104 @@
   "sitemap_part": "{label} {n}",
   "blocked_429_line": "Yapay zekâ tarayıcıları da aynı muameleyi görebilir; {who} üzerindeki bot ve hız sınırı kurallarını kontrol edin.",
   "blocked_429_firewall": "sitenin güvenlik duvarı",
-  "sitemap_reasons": {"redirect_404": ["hata sayfasına yönlenen", "hata sayfasına yönleniyor"], "redirect": ["yönlenen", "başka bir adrese yönleniyor"], "empty_repeated": ["tekrar boş", "tekrar tekrar boş yanıt veriyor"], "empty_single": ["bir kez boş", "bir kez boş yanıt verdi (teyit edilmedi)"], "not_found": ["bulunamayan", "bulunamadı (istemci hatası)"], "server_error": ["sunucu hatası", "sunucu hatası veriyor"], "noindex": ["noindex", "noindex taşıyor"], "other": ["diğer", "başka bir durum"]},
+  "sitemap_reasons": {
+   "redirect_404": [
+    "hata sayfasına yönlenen",
+    "hata sayfasına yönleniyor"
+   ],
+   "redirect": [
+    "yönlenen",
+    "başka bir adrese yönleniyor"
+   ],
+   "empty_repeated": [
+    "tekrar boş",
+    "tekrar tekrar boş yanıt veriyor"
+   ],
+   "empty_single": [
+    "bir kez boş",
+    "bir kez boş yanıt verdi (teyit edilmedi)"
+   ],
+   "not_found": [
+    "bulunamayan",
+    "bulunamadı (istemci hatası)"
+   ],
+   "server_error": [
+    "sunucu hatası",
+    "sunucu hatası veriyor"
+   ],
+   "noindex": [
+    "noindex",
+    "noindex taşıyor"
+   ],
+   "other": [
+    "diğer",
+    "başka bir durum"
+   ]
+  },
   "link_title": "DÜZENLENECEK BAĞLANTILAR",
-  "link_cols": ["Düzenlenecek sayfa", "Bağlantı metni", "Bağlantının adresi", "Vardığı yer", "Yeni adres"],
+  "link_cols": [
+   "Düzenlenecek sayfa",
+   "Bağlantı metni",
+   "Bağlantının adresi",
+   "Vardığı yer",
+   "Yeni adres"
+  ],
   "link_unknown": "bilinmiyor",
   "link_sitemap": "sitemap.xml kaydı",
   "link_more": "+{n} bağlantı daha (tam liste ekteki adres listesi dosyasında)",
   "link_note": "Doğru yeni adresi Maya bilmez: bağlantının gitmesi gereken sayfayı seçin ya da bağlantıyı kaldırın.",
-  "verification": {"confirmed": "Yeniden sınandı: doğrulandı", "changed": "Yeniden sınandı: değişti", "not_reproduced": "Yeniden sınandı: tekrarlanmadı", "not_retested": "Yeniden sınanmadı"},
+  "verification": {
+   "confirmed": "Yeniden sınandı: doğrulandı",
+   "changed": "Yeniden sınandı: değişti",
+   "not_reproduced": "Yeniden sınandı: tekrarlanmadı",
+   "not_retested": "Yeniden sınanmadı"
+  },
   "fact_limit": "sınır",
-  "footer_left_src": "Kaynak: {source} · denetim {audit_id}"
+  "footer_left_src": "Kaynak: {source} · denetim {audit_id}",
+  "p6_title": "Kapsam, teyit ve ek",
+  "p6_sub": "Maya'nın kendi sınırları, önce teyit edilecek bulgular, kilit sayfalar ve ekteki tam liste.",
+  "own_title": "Bu denetimin sınırları",
+  "own_note": "Bunlar Maya'nın sınırlarıdır (sayfa sınırı, süre, bağlantılar, okuma yolu), sitenin sorunu değildir.",
+  "own_page_cap": "Sayfa sınırı: en çok {pages} sayfa okundu; bilinen {not_read} adres okunmadı.",
+  "own_time": "Süre sınırı: {seconds} saniye; bazı adımlar bu yüzden kısa kesildi.",
+  "own_gaps": "Değerlendirilemeyen {n} kısım: ekte (Kapsam sayfası).",
+  "confirm_title": "Teyit edin",
+  "confirm_note": "Harekete geçmeden önce normal bir tarayıcıda ya da Search Console'da teyit edin.",
+  "confirm_more": "Teyit edilecek {n} grup daha: ekte.",
+  "confirm_none": "Teyit bekleyen bulgu yok.",
+  "confirm_reasons": {
+   "unverified_check": "kontrol henüz gerçek sitelerde doğrulanmadı",
+   "low_confidence": "düşük güven",
+   "intent": "kasıtlı olabilir",
+   "firecrawl_only": "yalnız Firecrawl kopyasında görüldü",
+   "spoofed_googlebot": "Googlebot kimliğiyle yapılan isteğe 403/429"
+  },
+  "kp_title": "Kilit sayfalar karnesi",
+  "kp_cols": [
+   "Sıra",
+   "Sayfa",
+   "Tür",
+   "Önem (0-100)",
+   "Kartlar",
+   "En yüksek",
+   "Teyit (sayı)"
+  ],
+  "page_types": {
+   "home": "ana sayfa",
+   "category": "kategori",
+   "product": "ürün",
+   "blog_article": "makale",
+   "policy": "politika",
+   "utility": "yardımcı",
+   "other": "diğer"
+  },
+  "quick_title": "Hızlı kazanımlar",
+  "quick_none": "Kartlar arasında küçük eforlu iş yok.",
+  "appendix_title": "Ek",
+  "appendix_file": "ek (XLSX)",
+  "appendix_line": "{file}: {findings} bulgunun tamamı ve etkilenen her adres. Bu raporda {cards} kart; teyit edilecek {confirm} grup; {notes} not grubu; yalnız ekte {appendix} sorun grubu. Maya'nın sınırları soldaki kutuda ve ekin Kapsam sayfasındadır.",
+  "todo_priority": "Öncelik puanı {score}",
+  "schedule_priority": "Öncelik puanına göre ilk kartlar"
  },
  "en": {
   "doc_kind": "WEBSITE AUDIT",
@@ -232,7 +321,8 @@
    "Findings & evidence",
    "Search & performance",
    "Action plan",
-   "To-do list"
+   "To-do list",
+   "Coverage and appendix"
   ],
   "p1_title": "Audit overview",
   "p1_sub": "Technical findings, evidence coverage and priority actions.",
@@ -423,13 +513,13 @@
   ],
   "prov_note_cache": "Content for {saved} of {read} pages came from Maya's saved copies; the site may have changed since.",
   "p5_title": "To-do list",
-  "p5_sub": "Every issue, in schedule order: what to do, who does it, how to verify it.",
+  "p5_sub": "At most 15 cards, by priority: what to do, who does it, how to verify it.",
   "todo_steps": "STEPS",
   "todo_verify": "HOW TO VERIFY",
   "todo_links": "AFFECTED ADDRESSES",
   "todo_sources": "AFFECTED SOURCE PAGES",
   "todo_targets": "Failing target URL",
-  "todo_more": "+{n} more (full list in the attached address list)",
+  "todo_more": "+{n} more addresses (full list in the attached XLSX appendix)",
   "todo_sitewide": "Applies to the whole site; no individual addresses.",
   "todo_count": "{n} to-do items",
   "todo_fact": "Evidence",
@@ -439,15 +529,103 @@
   "sitemap_part": "{n} {label}",
   "blocked_429_line": "AI crawlers may get the same treatment; check the bot and rate-limit rules in {who}.",
   "blocked_429_firewall": "the site's firewall",
-  "sitemap_reasons": {"redirect_404": ["redirect to an error page", "redirect to an error page"], "redirect": ["redirect", "redirect to another address"], "empty_repeated": ["empty again", "answer empty again and again"], "empty_single": ["empty once", "answered empty once (unconfirmed)"], "not_found": ["not found", "not found (client error)"], "server_error": ["server error", "return a server error"], "noindex": ["noindex", "carry noindex"], "other": ["other", "another state"]},
+  "sitemap_reasons": {
+   "redirect_404": [
+    "redirect to an error page",
+    "redirect to an error page"
+   ],
+   "redirect": [
+    "redirect",
+    "redirect to another address"
+   ],
+   "empty_repeated": [
+    "empty again",
+    "answer empty again and again"
+   ],
+   "empty_single": [
+    "empty once",
+    "answered empty once (unconfirmed)"
+   ],
+   "not_found": [
+    "not found",
+    "not found (client error)"
+   ],
+   "server_error": [
+    "server error",
+    "return a server error"
+   ],
+   "noindex": [
+    "noindex",
+    "carry noindex"
+   ],
+   "other": [
+    "other",
+    "another state"
+   ]
+  },
   "link_title": "LINKS TO EDIT",
-  "link_cols": ["Page to edit", "Link text", "Links to", "Ends at", "Replacement"],
+  "link_cols": [
+   "Page to edit",
+   "Link text",
+   "Links to",
+   "Ends at",
+   "Replacement"
+  ],
   "link_unknown": "unknown",
   "link_sitemap": "sitemap.xml entry",
   "link_more": "+{n} more links (full list in the attached address list)",
   "link_note": "Maya does not know the right new address: choose the page the link should point to, or remove the link.",
-  "verification": {"confirmed": "Checked again: confirmed", "changed": "Checked again: changed", "not_reproduced": "Checked again: not reproduced", "not_retested": "Not re-tested"},
+  "verification": {
+   "confirmed": "Checked again: confirmed",
+   "changed": "Checked again: changed",
+   "not_reproduced": "Checked again: not reproduced",
+   "not_retested": "Not re-tested"
+  },
   "fact_limit": "limit",
-  "footer_left_src": "Source: {source} · audit {audit_id}"
+  "footer_left_src": "Source: {source} · audit {audit_id}",
+  "p6_title": "Coverage, confirm first, appendix",
+  "p6_sub": "Maya's own limits, findings to confirm first, the key pages and the full list in the appendix.",
+  "own_title": "Limits of this audit",
+  "own_note": "These are Maya's limits (page cap, time, connections, reading path), not problems of the site.",
+  "own_page_cap": "Page cap: at most {pages} pages read; {not_read} known addresses not read.",
+  "own_time": "Time budget: {seconds} seconds; some steps were cut short by it.",
+  "own_gaps": "{n} parts not assessed: in the appendix (Coverage sheet).",
+  "confirm_title": "Confirm first",
+  "confirm_note": "Confirm in a normal browser or Search Console before acting.",
+  "confirm_more": "{n} more groups to confirm: in the appendix.",
+  "confirm_none": "No finding waits for confirmation.",
+  "confirm_reasons": {
+   "unverified_check": "check not yet validated on real sites",
+   "low_confidence": "low confidence",
+   "intent": "may be intentional",
+   "firecrawl_only": "seen only in Firecrawl's copy",
+   "spoofed_googlebot": "403/429 to a request with Googlebot's user agent"
+  },
+  "kp_title": "Key pages scorecard",
+  "kp_cols": [
+   "Rank",
+   "Page",
+   "Type",
+   "Importance (0-100)",
+   "Cards",
+   "Highest",
+   "To confirm"
+  ],
+  "page_types": {
+   "home": "home",
+   "category": "category",
+   "product": "product",
+   "blog_article": "article",
+   "policy": "policy",
+   "utility": "utility",
+   "other": "other"
+  },
+  "quick_title": "Quick wins",
+  "quick_none": "No small-effort job among the cards.",
+  "appendix_title": "Appendix",
+  "appendix_file": "appendix (XLSX)",
+  "appendix_line": "{file}: all {findings} findings and every affected address. In this report {cards} cards; {confirm} groups to confirm; {notes} note groups; {appendix} problem groups only in the appendix. Maya's own limits are in the box on the left and in the appendix's Coverage sheet.",
+  "todo_priority": "Priority score {score}",
+  "schedule_priority": "First cards by priority score"
  }
 }

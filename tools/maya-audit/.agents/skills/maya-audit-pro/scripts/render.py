@@ -1,4 +1,4 @@
-"""data.json -> 4 sayfalık yatay HTML + PDF (Maya profesyonel denetim raporu).
+"""data.json -> yatay HTML + PDF (Maya profesyonel denetim raporu): en çok 10 sayfa, 15 kart ve XLSX ek (DECISIONS 300).
 
 Kullanım:
   python render.py data.json -o rapor.html --pdf rapor.pdf [--png KLASÖR]
@@ -235,6 +235,23 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 
 .rp .eyebrow, .diag .eyebrow { font-size: 8.4pt !important; font-weight: 600 !important; color: var(--faint) !important; display: block !important; margin-top: 0 !important; }
 .prov p b { font-weight: 600; color: var(--muted); }
+/* DECISIONS 300: the last page (coverage, confirm first, key pages, appendix) */
+.p6 { display: grid; grid-template-columns: 1fr 1fr; gap: 18pt; height: 540pt; }
+.p6 .card { padding: 14pt 18pt; overflow: hidden; }
+.p6 .card h3 { font-size: 11.5pt; }
+.p6 ul { margin: 7pt 0 0 0; padding-left: 13pt; font-size: 8.8pt; line-height: 1.32; color: var(--ink); }
+.p6 li { margin-top: 3pt; }
+.p6 .why { color: var(--muted); }
+.p6 .note { font-size: 8.4pt; color: var(--faint); margin-top: 6pt; line-height: 1.3; }
+.p6 table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 7pt; font-size: 8.4pt; }
+.p6 th { text-align: left; color: var(--faint); font-weight: 600; padding: 0 4pt 3pt 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p6 td { padding: 3pt 4pt 2pt 0; border-top: .5pt solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p6 th:nth-child(1) { width: 6%; } .p6 th:nth-child(2) { width: 31%; } .p6 th:nth-child(3) { width: 11%; }
+.p6 th:nth-child(4) { width: 14%; } .p6 th:nth-child(5) { width: 14%; } .p6 th:nth-child(6) { width: 11%; }
+.p6 .left, .p6 .right { display: flex; flex-direction: column; gap: 18pt; }
+.p6 .app p { font-size: 9.6pt; line-height: 1.4; margin-top: 7pt; }
+.quick .q { font-size: 9.2pt; color: var(--ink); margin-top: 9pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quick .q b { color: var(--accent); margin-right: 6pt; }
 """
 
 
@@ -246,6 +263,11 @@ def has_search_or_performance(d):
     return (d.get("search") or {}).get("state") not in (None, "missing") or bool(d.get("lab")) or bool(d.get("field"))
 
 
+def has_client_page(d):
+    """DECISIONS 300: data.json from a selection has the last page (coverage, confirm first, key pages, appendix)."""
+    return "appendix" in d
+
+
 def summary_pages(d):
     """The summary pages' tab indexes (0..3); 2 is "search and performance"."""
     return [0, 1, 2, 3] if has_search_or_performance(d) else [0, 1, 3]
@@ -254,7 +276,7 @@ def summary_pages(d):
 def header(d, L, idx, title, sub):
     m = d["meta"]
     logo = base64.b64encode((ROOT / "assets" / "maya_logo.png").read_bytes()).decode()
-    shown = summary_pages(d) + [4]
+    shown = summary_pages(d) + [4] + ([5] if has_client_page(d) else [])
     tabs = "".join(f'<div class="tab{" on" if i == idx else ""}">{e(L["tabs"][i])}</div>' for i in shown)
     date = e(m["date"]) + (f" &nbsp;/&nbsp; {e(m['revision'])}" if m.get("revision") else "")
     ok = " ok" if m["coverage_level"] == "complete_sample" else ""
@@ -396,6 +418,12 @@ def page4(d, L):
     later = "".join(f'<div class="lr"><b>{e(x["count"])}</b><span data-slot="later[{i}].label">{e(x["label"])}</span></div>' for i, x in enumerate(d["later"])) or '<div class="lr"><span>—</span></div>'
     sub = (f'<div class="card later"><div class="cardhead"><h3>{e(L["subsequent"])}</h3></div>'
            f'<div class="eyebrow">{e(L["schedule_caps"].format(when=L["when"]["later"].upper()))}</div>{later}</div>')
+    if has_client_page(d):
+        # DECISIONS 300: the action plan carries the quick wins (cards with a small effort) in place of "later".
+        todos = {t["n"]: t for t in d.get("todos") or []}
+        rows = "".join(f'<div class="q"><b>{n:02d}</b>{e(todos[n]["title"])}</div>' for n in d.get("quick_wins") or [] if n in todos)
+        sub = (f'<div class="card quick"><div class="cardhead"><h3>{e(L["quick_title"])}</h3></div>'
+               + (rows or f'<div class="q">{e(L["quick_none"])}</div>') + '</div>')
     pv = d["provenance"]
     lines = "".join(f'<p><b>{e(x["k"])}</b> {e(x["v"])}</p>' for x in pv["lines"])
     prov = f'<div class="card prov"><div class="cardhead"><h3>{e(L["provenance"])}</h3></div>{lines}<div class="fn">{e(pv["note"])}</div></div>'
@@ -476,7 +504,9 @@ def todo_pages(d, L):
                 f'<div class="card todo{" sub" if t.get("sub") else ""}"><div class="th"><span class="box"></span><span class="tn">{t["n"]:02d}</span>'
                 f'<b data-slot="todos[{i}].title">{e(t["title"])}</b></div>'
                 f'<div class="tm"><span class="sev {e(t["severity"])}">{e(t["severity_label"])}</span> {e(t["when"])} · {e(t["owner"])} · '
-                f'{e(L["col_effort"].title() if d["lang"] == "en" else "Efor")}: {e(t["effort"])} · <span class="mono">{e(t["id"])}</span></div>'
+                f'{e(L["col_effort"].title() if d["lang"] == "en" else "Efor")}: {e(t["effort"])}'
+                + (f' · {e(L["todo_priority"].format(score=t["priority"]))}' if t.get("priority") is not None else "")
+                + f' · <span class="mono">{e(t["id"])}</span></div>'
                 f'<div class="todo-status">{e(t["status"])}</div>'
                 # DECISIONS 278: a broken link's failing address and the page to edit are two things, never swapped.
                 # The target line takes the evidence line's place: that line mixes source and target ("/a · /b · 404"),
@@ -498,6 +528,27 @@ def todo_pages(d, L):
     return pages
 
 
+def page6(d, L):
+    """DECISIONS 300: Maya's own limits (never as the client's problems), "Teyit edin", key pages, the appendix."""
+    own = "".join(f"<li>{e(x)}</li>" for x in d.get("own_limits") or []) or "<li>—</li>"
+    limits = (f'<div class="card"><div class="cardhead"><h3>{e(L["own_title"])}</h3></div><ul>{own}</ul>'
+              f'<div class="note">{e(L["own_note"])}</div></div>')
+    rows = "".join(f'<li><span data-slot="confirm[{i}].title">{e(c["title"])}</span> · {e(c["severity_label"])} · {e(c["scope"])}'
+                   f' <span class="why">· {e(c["reason"])}</span></li>' for i, c in enumerate(d.get("confirm") or []))
+    if d.get("confirm_more"):
+        rows += f'<li class="why">{e(L["confirm_more"].format(n=d["confirm_more"]))}</li>'
+    confirm = (f'<div class="card"><div class="cardhead"><h3>{e(L["confirm_title"])}</h3></div>'
+               f'<div class="note">{e(L["confirm_note"])}</div><ul>{rows or "<li>" + e(L["confirm_none"]) + "</li>"}</ul></div>')
+    head = "".join(f"<th>{e(c)}</th>" for c in L["kp_cols"])
+    body = "".join("<tr>" + "".join(f"<td>{e(v)}</td>" for v in (p["rank"], p["path"], p["type"], p["importance"], p["cards"],
+                                                                  p["worst"], p["confirm"])) + "</tr>" for p in d.get("key_pages") or [])
+    pages = (f'<div class="card"><div class="cardhead"><h3>{e(L["kp_title"])}</h3></div>'
+             f'<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>')
+    app = (f'<div class="card app"><div class="cardhead"><h3>{e(L["appendix_title"])}</h3></div>'
+           f'<p>{e(d["appendix"]["line"])}</p></div>')
+    return f'<div class="body"><div class="p6"><div class="left">{limits}{confirm}</div><div class="right">{pages}{app}</div></div></div>'
+
+
 def build_html(d):
     L = LABELS[d["lang"]]
     nf = len(d["findings"])
@@ -510,6 +561,8 @@ def build_html(d):
     pages = [(tab, summary[tab][0], summary[tab][1], summary[tab][2]()) for tab in summary_pages(d)]
     for content in todo_pages(d, L):
         pages.append((4, L["p5_title"], L["p5_sub"], content))
+    if has_client_page(d):
+        pages.append((5, L["p6_title"], L["p6_sub"], page6(d, L)))
     total = len(pages)
     body = "".join(f'<section class="page">{header(d, L, tab, t, s)}{content}{footer(d, L, i + 1, total)}</section>'
                    for i, (tab, t, s, content) in enumerate(pages))
@@ -567,17 +620,50 @@ def check_pdf(pdf_path, d):
     else:
         doc = fitz.open(str(pdf_path))
         texts = [pg.get_text() for pg in doc]
-    expected = len(summary_pages(d)) + -(-len(d.get("todos") or []) // 4)
+    expected = len(summary_pages(d)) + -(-len(d.get("todos") or []) // 4) + (1 if has_client_page(d) else 0)
     if len(doc) != expected:
         problems.append(f"HATA: PDF {len(doc)} sayfa; {expected} olmalı (bir bölüm taştı)")
-    if len(doc) > 50:
-        problems.append("HATA: professional PDF exceeds the 50-page maximum")
+    # DECISIONS 300: the client PDF has at most 10 pages and 15 cards (release gate RG-15, RG-16).
+    from validate_data import load_gate
+    gate = load_gate(d)
+    if gate is not None:
+        for v in gate.check_client_output({}, pages=len(doc), cards=len(d.get("todos") or [])):
+            problems.append(f"HATA: {v['rule']}: {v['message']}")
+    elif len(doc) > 10 or len(d.get("todos") or []) > 15:
+        problems.append("HATA: client PDF over 10 pages or 15 cards")
     text = "".join(texts)
     if d["lang"] == "tr" and not any(ch in text for ch in "ğüşıöçİĞÜŞÖÇ"):
         problems.append("HATA: PDF metninde Türkçe karakter yok; font gömülmemiş olabilir")
     if "⟪" in text:
         problems.append("HATA: PDF'te ⟪YAZ⟫ işareti var")
     return problems
+
+
+def write_appendix(d, out):
+    """DECISIONS 300 (4): the appendix, an XLSX with every finding and every affected address, from the same selection
+    the cards came from (Maya Audit's client_selection, rebuilt from the report the gate reads). RG-17 is checked on
+    the written file: every finding of the report must be in it. Returns (path, problems)."""
+    from validate_data import load_gate
+    if load_gate(d) is None or not d.get("_report_path"):
+        return None, ["HATA: ek (XLSX) yazılamadı: Maya Audit motoru ya da report.json bulunamadı"]
+    from maya_audit import client_appendix, client_selection, final  # type: ignore
+    report = json.loads(Path(d["_report_path"]).read_text(encoding="utf-8"))
+    affected = json.loads(Path(d["_affected_path"]).read_text(encoding="utf-8")) if d.get("_affected_path") else None
+    sealed = final.from_report(report, affected)
+    selection = client_selection.select(sealed.report, sealed.affected, d.get("_confirmations") or {})
+    wording = {}
+    try:
+        from maya_audit_web import wording as w  # type: ignore
+        wording = {"title": lambda cid, text: w.title(cid, text, d["lang"])[0], "fix": lambda text: w.fix(text, d["lang"])[0]}
+    except Exception:
+        pass
+    content = client_appendix.build(selection, d["lang"], sealed.affected, **wording)
+    path = out.with_name(out.stem + ("-appendix.xlsx" if d["lang"] == "en" else "-ek.xlsx"))
+    path.write_bytes(content)
+    from maya_audit import release_gate  # type: ignore
+    problems = [f"HATA: {v['rule']}: {v['message']}" for v in
+                release_gate.check_client_output(sealed.report, appendix_ids=client_appendix.finding_ids(content))]
+    return path, problems
 
 
 def write_address_list(d, out):
@@ -672,9 +758,18 @@ def main():
     print(f"HTML: {out}")
     if not has_search_or_performance(d):
         print("Arama ve performans sayfası basılmadı: bu denetimde arama, laboratuvar ve saha verisi yok.")
-    addresses = write_address_list(d, out)
-    if addresses:
-        print(f"Adres listesi (rapora eklenir): {addresses}")
+    if has_client_page(d):
+        appendix, problems = write_appendix(d, out)
+        for line in problems:
+            print(line)
+        if problems and pdf and not a.force:
+            sys.exit(1)
+        if appendix:
+            print(f"Ek (XLSX, rapora eklenir): {appendix}")
+    else:
+        addresses = write_address_list(d, out)
+        if addresses:
+            print(f"Adres listesi (rapora eklenir): {addresses}")
     over = render(out, pdf)
     if over:
         print("TAŞMA: şu alanlar kutusuna sığmıyor, kısaltın:")

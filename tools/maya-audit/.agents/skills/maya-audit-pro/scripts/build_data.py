@@ -33,6 +33,17 @@ SITEMAP_REASONS = ("redirect_404", "redirect", "empty_repeated", "empty_single",
 ERROR_PAGE = re.compile(r"/(?:404|not[-_]?found)(?:[/?.#]|$)|aspxerrorpath", re.I)
 # Evidence-sample rows that fit the box above its note; a fourth row printed over the note (Enpara render).
 EV_ROWS = 3
+CONFIRM_SHOWN = 10  # "Teyit edin" lines the last page has room for; the rest are counted and in the appendix
+MAX_CARDS = 15  # DECISIONS 300: a client report has at most 15 cards (release gate RG-16)
+
+
+def platform_steps(rule, platform, lang):
+    """The engine catalogue's steps for this rule on this platform (DECISIONS 300 (7)), or None."""
+    try:
+        from maya_audit.client_selection import platform_steps as steps  # type: ignore
+        return steps(rule, platform, lang)
+    except Exception:
+        return None
 # Maya Audit STR-3 «expected type» sayfa türü → müşteriye önerilecek tip
 KIND_SCHEMA = {"product": "Product", "article": "Article", "pricing": "Product + Offer", "faq": "FAQPage"}
 LAB_LABELS = {
@@ -364,8 +375,14 @@ def english(text):
 
 # ---------------------------------------------------------------- çekirdek
 class Builder:
-    def __init__(self, report, lang, labels, catalog, wording, rev, audit_id, reanalysis=False, affected=None, cards=None):
+    def __init__(self, report, lang, labels, catalog, wording, rev, audit_id, reanalysis=False, affected=None, cards=None,
+                 selection=None):
         self.r, self.lang, self.L, self.cat, self.w = report, lang, labels, catalog, wording
+        # DECISIONS 300: the cards, their order and what goes to "Teyit edin" or the appendix come from Maya Audit's one
+        # client selection (maya_audit.client_selection), the same one the web app's concise PDF uses.
+        self.sel = selection
+        self.held = {fid for g in (selection or {}).get("groups") or [] if g.get("placement") in ("confirm", "rejected")
+                     for fid in g["finding_ids"]}
         self.rev, self.audit_id, self.reanalysis = rev, audit_id, reanalysis
         self.slots, self.facts = [], set()
         self.affected = affected or {}
@@ -466,6 +483,8 @@ class Builder:
                 if o.get("metric") == "homepage with no WebSite structured data":
                     rows.append(("WebSite", list(o.get("examples") or [])[:1], ["STR-3"]))
             for f in chk.get("findings") or []:
+                if f.get("id") in self.held:  # DECISIONS 300: under "Teyit edin", not on a Note card
+                    continue
                 if f.get("severity") != "Info":
                     continue
                 title, urls = f.get("title") or "", [u for u in (f.get("scope") or {}).get("urls") or [] if isinstance(u, str)]
@@ -529,6 +548,8 @@ class Builder:
         for chk in self.r.get("checks") or []:
             cid = chk.get("check_id")
             for f in chk.get("findings") or []:
+                if f.get("id") in self.held:  # DECISIONS 300: under "Teyit edin", not on a Note card
+                    continue
                 if cid == "ACC-8" and f.get("severity") == "Info" and "redirects" in (f.get("title") or ""):
                     moved = (f.get("evidence") or {}).get("redirecting") or []
                     ex = [path_of(m.get("url") if isinstance(m, dict) else m) for m in moved[:3]]
@@ -673,6 +694,8 @@ class Builder:
         rows = []
         for cid, pattern, label in table:
             for f in self.findings.values():
+                if f.get("id") in self.held:  # DECISIONS 300: under "Teyit edin", not on a Note card
+                    continue
                 if f.get("check_id") != cid or f.get("severity") != "Info" or not re.search(pattern, f.get("title") or ""):
                     continue
                 sc = f.get("scope") or {}
@@ -758,6 +781,8 @@ class Builder:
     def groups(self):
         """The findings in priority order, one list per card. A finding joins the first earlier card it shares a cause
         with, and only when both say the same about the re-test (a card shows one re-test state; RG-4)."""
+        if getattr(self, "_groups", None) is None and self.sel is not None:
+            self._groups = [g["members"] for g in self.sel["cards"]]
         if getattr(self, "_groups", None) is None:
             out = []
             for f in self.problems:
@@ -887,7 +912,7 @@ class Builder:
         L, sc = self.L, f.get("scope") or {}
         ratio = self.sitemap_ratio()
         if ratio and ratio[3] is f:
-            return f"{fmt_int(ratio[0], self.lang)} / {fmt_int(ratio[1], self.lang)}"
+            return f"{fmt_int(ratio[0], self.lang)} / {fmt_int(ratio[1], self.lang)} {self.L['scope_units']['url'][1]}"
         n = sc.get("count") or 0
         cid, title = f.get("check_id"), f.get("title") or ""
         if sc.get("kind") == "sitewide" and n <= 1:
@@ -913,8 +938,9 @@ class Builder:
             parts.append(L["verification"][state])
         if f.get("intent"):
             parts.append(L["intent_unverified"])
-        if any(re.fullmatch(r"LG-\d+", str(g)) for g in f.get("launch_gated") or []):
-            parts.append(L["gated"])  # the LG codes stay in todos[].launch_gated, never in client text
+        # DECISIONS 300 (7): no "kontrol canlı sitelerde henüz doğrulanmadı" on a client card. A finding from a rule not
+        # yet validated on real sites goes to "Teyit edin" (maya_audit.client_selection); the LG codes stay in
+        # todos[].launch_gated as a trace, never in client text.
         return "; ".join(p for p in parts if p)
 
     def title_for(self, f, path, maxlen):
@@ -995,7 +1021,9 @@ class Builder:
         # öncelikler: en önemli 3 kontrol grubu; mobil lab zayıfsa 3. sırayı alır
         # "kasıtlı olabilir" (intent) işaretli bulgular öncelik listesine girmez: önce teyit edilmeleri gerekir.
         groups, seen = [], set()
-        for f in self.problems:
+        # DECISIONS 300: the priorities are the first cards (a finding to confirm first is never a priority).
+        source = [g["lead"] for g in self.sel["cards"] if g["severity"] in SEVERITIES] if self.sel is not None else self.problems
+        for f in source:
             if f.get("intent") or f["check_id"] in seen:
                 continue
             seen.add(f["check_id"])
@@ -1027,7 +1055,7 @@ class Builder:
             "badge": L["badge_saved"] if saved else L["badge_live"],
             "rows": [
                 {"label": L["cov_gaps"], "value": fmt_int(gaps, lang)},
-                {"label": L["cov_saved"], "value": f"{saved} / {read_fc}" if read_fc else "—"},
+                {"label": L["cov_saved"], "value": f"{saved} / {read_fc} {L['scope_units']['page'][1]}" if read_fc else "—"},
                 {"label": L["cov_notes"], "value": fmt_int(ps.get("notes", 0), lang)},
                 {"label": L["cov_blockers"], "value": fmt_int(sev.get("S1", 0), lang)},
             ],
@@ -1076,6 +1104,9 @@ class Builder:
         # sayfa 4
         # kasıtlı olabilecek bulgular haftanın aksiyonlarında en sona alınır (ilk iş "teyit et" olur)
         week = sorted((f for f in leads if self.when(f) == "week"), key=lambda f: bool(f.get("intent")))
+        if self.sel is not None:
+            # DECISIONS 300: the action table is the first five cards in priority order, whatever their week.
+            week = [f for f in leads if f.get("severity") in SEVERITIES]
         month = [f for f in leads if self.when(f) == "month"]
         later = [f for f in leads if self.when(f) == "later"]
         actions = []
@@ -1113,17 +1144,28 @@ class Builder:
             if not prefill:
                 act = self._w("action")(f.get("rule_id") or self._w("rule")(f.get("check_id"), f.get("title")))
                 prefill = act if act and len(act) <= 55 else None
-            later_rows.append({"count": fmt_int(cnt, lang),
+            unit = L["scope_units"]["url" if f.get("check_id") in ("IDX-1", "IDX-6", "IDX-3", "IDX-5") else "page"]
+            later_rows.append({"count": f"{fmt_int(cnt, lang)} {unit[0] if cnt == 1 else unit[1]}",
                                "label": self.slot(f"later[{i}].label", "kısa etiket, sayı olmadan", f.get("title"), 55, prefill=prefill)})
 
         # yapılacaklar (ek sayfalar): bütün sorunlar, takvim sırasıyla; kasıtlı olabilecekler kendi grubunun sonunda
         todos = []
         not_listed = {row.get("finding_id"): int(row.get("pages") or 0) for row in ps.get("not_listed") or []}
-        for when_key in ("week", "month", "later"):
-            bucket = [g for g in self.groups() if self.when(g[0]) == when_key]
-            bucket.sort(key=lambda g: bool(g[0].get("intent")))
-            for members in bucket:
+        # DECISIONS 300: one card per root cause, in priority order (severity x confidence x reach x business), at most
+        # 15; the order is the selection's. Without a selection (an engine before 300), by "when" as before.
+        if self.sel is not None:
+            ordered = [(self.when(m[0]), m) for m in self.groups()]
+        else:
+            ordered = []
+            for when_key in ("week", "month", "later"):
+                bucket = [g for g in self.groups() if self.when(g[0]) == when_key]
+                bucket.sort(key=lambda g: bool(g[0].get("intent")))
+                ordered += [(when_key, g) for g in bucket]
+        by_lead = {g["finding_ids"][0]: g for g in (self.sel or {}).get("cards") or []}
+        for when_key, members in ordered:
+            if True:
                 f = members[0]  # the card's lead: the first in priority order
+                group = by_lead.get(f["id"]) or {}
                 i = len(todos)
                 owner, effort = self.owner_effort(f)
                 sc = f.get("scope") or {}
@@ -1132,7 +1174,9 @@ class Builder:
                     for u in ((m.get("scope") or {}).get("urls") or []) + self.affected.get(m["id"], []):
                         if isinstance(u, str):
                             url_finding.setdefault(u, m["id"])
-                urls = list(url_finding)
+                # One example per language first (TR and EN on one card, DECISIONS 300 (1)), then the rest.
+                examples = [x["url"] for x in group.get("examples") or [] if x.get("url") in url_finding]
+                urls = examples + [u for u in url_finding if u not in examples]
                 sub = self.merged_lines(members) or self.reason_lines(f) or self.blocked_429_line(f)
                 # kartta 4 link (satırlı kartta 2: satırlar yer kaplar); tam liste render.py'nin yazdığı adres listesi CSV'sinde
                 shown = urls[:2 if sub else 4]
@@ -1147,6 +1191,11 @@ class Builder:
                 step_rules = getattr(self.w, "step_rules", None)
                 pre_steps, conditional = step_rules(rule, members) if step_rules else (self._w("steps")(rule), [])
                 pre_steps = pre_steps or (steps_from(fx) if fx and (fx_ok or self.lang == "en") else None)
+                # Shopify writes its own sitemap, so the lastmod card's steps say what to do there (DECISIONS 300 (7)).
+                platform = (self.sel or {}).get("platform")
+                on_platform = platform_steps(rule, platform, self.lang) if self.sel is not None else None
+                if on_platform:
+                    pre_steps, conditional = "\n".join(on_platform), []
                 # DECISIONS 284 (1): a merged card also takes the other findings' own catalogue steps, while they fit.
                 for m in members[1:]:
                     other = self.rule_of(m)
@@ -1170,8 +1219,13 @@ class Builder:
                 self.fact(sc.get("count"), more, pre_steps, pre_verify)
                 states = [(m.get("verification") or {}).get("state") for m in members]
                 state = states[0] if len(set(states)) == 1 else self.retest_state(f)
+                if group:
+                    self.fact(group.get("priority"))
                 todos.append({
                     "n": i + 1, "id": " · ".join(m["id"] for m in members[:2]) + (f" +{len(members) - 2}" if len(members) > 2 else ""),
+                    # DECISIONS 300: the card's place and score in Maya Audit's client selection (shown, never a severity)
+                    "priority": group.get("priority"), "confidence_class": group.get("confidence"),
+                    "platform_steps": platform if on_platform else None,
                     "finding_ids": [m["id"] for m in members],
                     "severity": f["severity"], "severity_label": L["severity"][f["severity"]],
                     # The release gate (DECISIONS 278) compares what the card shows with the finding's own state.
@@ -1200,9 +1254,13 @@ class Builder:
                 })
                 self.fact(todos[-1]["fact"])  # a card may quote its evidence's numbers
         for make in (self.schema_card, self.hygiene_card, self.content_card, self.perf_card, self.share_card):
+            if self.sel is not None and len(todos) >= MAX_CARDS:
+                break  # DECISIONS 300: at most 15 cards; the notes are in the appendix in any case
             card = make(len(todos))
             if card:
                 todos.append(card)
+
+        extra = self.client_page(todos) if self.sel is not None else {}
 
         listed = ratio[2] if ratio else None
         checked = ratio[1] if ratio else None
@@ -1231,10 +1289,11 @@ class Builder:
             "commercial": FIXED["commercial"][lang],
             "limits": limits,
             "actions": actions,
-            "actions_schedule": L["schedule_label"].format(when=L["when"]["week"]),
+            "actions_schedule": L["schedule_priority"] if self.sel is not None else L["schedule_label"].format(when=L["when"]["week"]),
             "followup": followup,
             "later": later_rows,
             "todos": todos,
+            **extra,
             "provenance": {"lines": prov, "note": L["prov_note_saved"] if self.reanalysis else
                            (L["prov_note_cache"].format(saved=saved, read=read_fc) if saved else L["prov_note_live"])},
         }
@@ -1243,6 +1302,57 @@ class Builder:
         data["_facts"] = sorted(self.facts)
         data["_engine_wording"] = self.w.mod is not None
         return data
+
+    def client_page(self, todos):
+        """DECISIONS 300: the last page's content — Maya's own limits (coverage), "Teyit edin", the key pages scorecard,
+        the quick wins and the appendix pointer with its counts. Every number comes from the selection."""
+        L, lang, sel = self.L, self.lang, self.sel
+        c = sel["counts"]
+        cov = sel["coverage"]
+        limits = []
+        for line in cov["lines"]:
+            if line["kind"] == "page_cap":
+                limits.append(L["own_page_cap"].format(pages=fmt_int(line.get("pages") or 0, lang),
+                                                       not_read=fmt_int(line.get("not_read") or 0, lang)))
+                self.fact(line.get("pages"), line.get("not_read"))
+            elif line["kind"] == "time_budget":
+                limits.append(L["own_time"].format(seconds=fmt_int(int(line.get("seconds") or 0), lang)))
+                self.fact(int(line.get("seconds") or 0))
+            elif line["kind"] == "reader":
+                text, _ = self.w.title(None, line.get("title") or "")
+                limits.append(text or line.get("title"))
+                self.fact(line.get("title"))
+        gaps = sum(1 for line in cov["lines"] if line["kind"] == "not_assessed")
+        if gaps:
+            limits.append(L["own_gaps"].format(n=fmt_int(gaps, lang)))
+            self.fact(gaps)
+        confirm = []
+        for i, g in enumerate(sel["confirm"][:CONFIRM_SHOWN]):
+            f = g["lead"]
+            text, engine = self.w.title(f.get("check_id"), f.get("title") or "")
+            self.fact(f.get("title"))
+            title = self.slot(f"confirm[{i}].title", "teyit edilecek bulgunun kısa adı", f.get("title"), 90,
+                              prefill=_short(text) if text and (engine or lang == "en") and len(_short(text)) <= 90 else None)
+            confirm.append({"title": title, "severity": g["severity"], "severity_label": L["severity"].get(g["severity"], g["severity"]),
+                            "reason": L["confirm_reasons"][g["confirm_reason"]], "finding_ids": g["finding_ids"],
+                            "scope": self.group_scope(f) if g["severity"] != "Info" else self.scope_text(f)})
+        more_confirm = max(0, len(sel["confirm"]) - CONFIRM_SHOWN)
+        pages = []
+        for p in sel["key_pages"]:
+            self.fact(p["rank"], p["importance"], p["confirm"], *p["cards"])
+            pages.append({"rank": p["rank"], "path": path_of(p["url"]) or urlsplit(p["url"]).netloc, "url": p["url"],
+                          "type": L["page_types"].get(str(p["page_type"]), "—"), "importance": p["importance"],
+                          "cards": ", ".join(f"{n:02d}" for n in p["cards"]) or "—",
+                          "worst": L["severity"].get(p["worst"], "—") if p["worst"] else "—", "confirm": p["confirm"]})
+        quick = [t["n"] for t in todos if t.get("effort") == L["efforts"]["S"] and t.get("finding_ids")][:4]
+        name = L["appendix_file"]
+        self.fact(*c.values(), more_confirm)
+        return {"own_limits": limits, "confirm": confirm, "confirm_more": more_confirm, "key_pages": pages,
+                "quick_wins": quick,
+                "appendix": {"file": name, "finding_ids": sorted(sel["by_finding"]), "counts": c,
+                             "line": L["appendix_line"].format(file=name, findings=c["findings"], cards=len(todos),
+                                                               confirm=c["confirm"], notes=c["notes"],
+                                                               appendix=c["appendix_only"], limits=c["own_limits"])}}
 
     def worst(self, row):
         """A by_page row's worst severity; from its findings when a saved row lacks it."""
@@ -1372,6 +1482,11 @@ def main():
     ap.add_argument("--reanalysis", action="store_true",
                     help="Kayıtlı kanıtın çevrimdışı yeniden analizi (yeni tarama yapılmadı). Yalnız gerçekten öyleyse ver.")
     ap.add_argument("--maya-src", default=None, help="maya_audit_web içeren Maya Audit kaynak klasörü (Türkçe başlıklar için)")
+    ap.add_argument("--confirm", action="append", default=[],
+                    help="Sahibin elle teyit ettiği bulgu (kural kimliği ya da bulgu kimliği, ör. str12.language); "
+                         "'Teyit edin' listesinden kartlara geçer (DECISIONS 300)")
+    ap.add_argument("--reject", action="append", default=[],
+                    help="Sahibin elle kontrolde yanlış bulduğu bulgu; PDF'te gösterilmez, ekte 'reddedildi' olarak kalır")
     a = ap.parse_args()
     report = load(a.report)
     side = Path(a.report).resolve().parent / "dataforseo.json"
@@ -1402,8 +1517,17 @@ def main():
         sys.exit("HATA: Maya Audit motoru (maya_audit.final) bulunamadı; --maya-src ile verin. "
                  "Ortak son sonuç ve yayın kapısı olmadan taslak üretilmez.")
     sealed = final.from_report(report, affected or None)
+    # DECISIONS 300: the owner's manual checks ("--confirm STR-12" after looking in a normal browser), by rule or id.
+    confirmations = {key: {"result": "confirmed", "by": "owner"} for key in a.confirm or []}
+    confirmations.update({key: {"result": "rejected", "by": "owner"} for key in a.reject or []})
+    try:
+        from maya_audit import client_selection  # type: ignore
+        selection = client_selection.select(sealed.report, affected or None, confirmations)
+    except ImportError:
+        sys.exit("HATA: Maya Audit motorunda client_selection yok (DECISIONS 300); güncel motoru --maya-src ile verin.")
     data = Builder(sealed.report, a.lang, labels, catalog, w, a.rev, audit_id, a.reanalysis, affected,
-                   cards=sealed.cards).build()
+                   cards=sealed.cards, selection=selection).build()
+    data["_confirmations"] = confirmations
     data["_digest"] = sealed.digest
     data["_gate_decision"] = sealed.decision
     data["meta"]["source"] = a.source

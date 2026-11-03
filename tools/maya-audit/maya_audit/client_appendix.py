@@ -1,0 +1,127 @@
+"""The client report's appendix: every finding and every affected address, as one XLSX (DECISIONS 300 (4)).
+
+Built from `client_selection.select`, so it lists exactly the groups and placements the PDF used. The release gate
+(RG-17) checks that it holds every finding of the report. A column with nothing in any row is left out (DECISIONS 300
+(7): no empty evidence columns). Turkish or English headers; finding titles and fixes are the engine's, or worded by
+the caller (`title`, `fix`: callables taking (check_id, text) and (text,), returning text).
+"""
+from __future__ import annotations
+
+from typing import Callable
+
+from . import xlsx
+from .client_selection import CONFIDENCE_WEIGHT, SEVERITY_NAME, SEVERITY_WEIGHT, appendix_rows
+
+WORDS = {
+    "tr": {"findings": "Bulgular", "urls": "Etkilenen adresler", "key_pages": "Kilit sayfalar", "coverage": "Kapsam",
+           "method_sheet": "Yöntem",
+           "cols": ["Bulgu kimliği", "Kontrol", "Kural", "Önem", "Güven (motor)", "Güven sınıfı", "Öncelik puanı",
+                    "Yer", "Kart", "Grubun ilk bulgusu", "Teyit nedeni", "Bulgu", "Ne yapılmalı", "Kapsam (sayı)",
+                    "Etkilenen adres sayısı"],
+           "url_cols": ["Bulgu kimliği", "Yer", "Önem", "Adres"],
+           "page_cols": ["Sıra", "Adres", "Sayfa türü", "Önem puanı (0-100)", "Kartlar", "En yüksek önem",
+                         "Teyit edilecek bulgu sayısı"],
+           "cov_cols": ["Tür", "Açıklama", "Kontroller"], "method_cols": ["Bileşen", "Değer"],
+           "placement": {"card": "Kart", "confirm": "Teyit edin", "appendix": "Yalnız ekte", "note": "Not",
+                         "own_limit": "Maya'nın sınırı (kapsam)", "rejected": "Elle kontrolde reddedildi"},
+           "severity": {"S1": "Engelleyici", "S2": "Yüksek", "S3": "Orta", "S4": "Düşük", "Info": "Bilgi"},
+           "class": {"measured": "Ölçüldü", "estimated": "Tahmini", "inferred": "Çıkarım", "unverified": "Doğrulanmamış kontrol"},
+           "reason": {"unverified_check": "kontrol gerçek sitelerde doğrulanmadı", "low_confidence": "düşük güven",
+                      "intent": "kasıtlı olabilir", "firecrawl_only": "yalnız Firecrawl kopyasında görüldü",
+                      "spoofed_googlebot": "Googlebot kimliğiyle yapılan isteğe 403/429"},
+           "kind": {"page_cap": "Sayfa sınırı", "time_budget": "Süre sınırı", "reader": "Okuma yolu",
+                    "not_assessed": "Değerlendirilmedi"},
+           "method": [("Önem ağırlığı", "Engelleyici 100, Yüksek 40, Orta 15, Düşük 5, Bilgi 0"),
+                      ("Güven ağırlığı", "ölçüldü 1,0 · tahmini 0,6 · çıkarım 0,5 · doğrulanmamış 0,4"),
+                      ("Erişim", "etkilenen sayfaların önem puanı toplamı / 100, en çok 5; adressiz bulgu 1,0"),
+                      ("İş önemi", "1,0 (iş türü profilleri gelene kadar)"),
+                      ("Öncelik puanı", "önem x güven x erişim x iş önemi; efor gösterilir, puana girmez"),
+                      ("Kartlar", "en çok 15: bütün Engelleyici/Yüksek gruplar, sonra en yüksek puanlar")]},
+    "en": {"findings": "Findings", "urls": "Affected URLs", "key_pages": "Key pages", "coverage": "Coverage",
+           "method_sheet": "Method",
+           "cols": ["Finding ID", "Check", "Rule", "Severity", "Confidence (engine)", "Confidence class",
+                    "Priority score", "Placement", "Card", "Group lead", "Confirm because", "Finding", "What to do",
+                    "Scope (count)", "Affected URLs (count)"],
+           "url_cols": ["Finding ID", "Placement", "Severity", "URL"],
+           "page_cols": ["Rank", "URL", "Page type", "Importance (0-100)", "Cards", "Highest severity",
+                         "Findings to confirm (count)"],
+           "cov_cols": ["Kind", "What", "Checks"], "method_cols": ["Part", "Value"],
+           "placement": {"card": "Card", "confirm": "Confirm first", "appendix": "Appendix only", "note": "Note",
+                         "own_limit": "Maya's own limit (coverage)", "rejected": "Rejected by manual check"},
+           "severity": SEVERITY_NAME,
+           "class": {"measured": "Measured", "estimated": "Estimated", "inferred": "Inferred", "unverified": "Unverified check"},
+           "reason": {"unverified_check": "check not yet validated on real sites", "low_confidence": "low confidence",
+                      "intent": "may be intentional", "firecrawl_only": "seen only in Firecrawl's copy",
+                      "spoofed_googlebot": "403/429 to a request with Googlebot's user agent"},
+           "kind": {"page_cap": "Page cap", "time_budget": "Time budget", "reader": "How pages were read",
+                    "not_assessed": "Not assessed"},
+           "method": [("Severity weight", "Blocker 100, High 40, Medium 15, Low 5, Info 0"),
+                      ("Confidence weight", "measured 1.0 · estimated 0.6 · inferred 0.5 · unverified 0.4"),
+                      ("Reach", "summed importance of the affected pages / 100, at most 5; no address = 1.0"),
+                      ("Business relevance", "1.0 (until business-type profiles exist)"),
+                      ("Priority score", "severity x confidence x reach x business; effort is shown, not scored"),
+                      ("Cards", "at most 15: every Blocker/High group, then the highest scores")]},
+}
+
+
+def _drop_empty_columns(header: list[str], rows: list[list]) -> tuple[list[str], list[list]]:
+    keep = [i for i in range(len(header)) if any(i < len(r) and r[i] not in (None, "", []) for r in rows)]
+    return [header[i] for i in keep], [[r[i] if i < len(r) else "" for i in keep] for r in rows]
+
+
+def coverage_text(line: dict, lang: str) -> str:
+    W = WORDS[lang]
+    kind = line["kind"]
+    if kind == "page_cap":
+        return (f"Sayfa sınırı {line.get('pages')} sayfa; bilinen ama okunmayan adres: {line.get('not_read')}" if lang == "tr"
+                else f"Page cap {line.get('pages')} pages; addresses known but not read: {line.get('not_read')}")
+    if kind == "time_budget":
+        return (f"Süre sınırı {line.get('seconds')} sn; süre yüzünden atlanan adım: {line.get('cut') or '—'}" if lang == "tr"
+                else f"Time budget {line.get('seconds')} s; steps cut by time: {line.get('cut') or '—'}")
+    if kind == "reader":
+        return f"{line.get('title')} ({', '.join(line.get('finding_ids') or [])})"
+    return line.get("text") or W["kind"].get(kind, kind)
+
+
+def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
+           title: Callable[[str, str], str] | None = None, fix: Callable[[str], str] | None = None) -> list[dict]:
+    W = WORDS[lang]
+    rows, urls = [], []
+    for r in appendix_rows(selection, lists):
+        t = (title(r["check_id"], r["title"]) if title else None) or r["title"]
+        x = (fix(r["how_to_fix"]) if fix and r["how_to_fix"] else None) or r["how_to_fix"]
+        placement = W["placement"].get(r["placement"], r["placement"])
+        rows.append([r["finding_id"], r["check_id"], r["rule_id"], W["severity"].get(r["severity"], r["severity"]),
+                     r["confidence"], W["class"].get(r["confidence_class"], r["confidence_class"]), r["priority"],
+                     placement, r["card"], r["group_lead"] if r["group_lead"] != r["finding_id"] else "",
+                     W["reason"].get(r["confirm_reason"], r["confirm_reason"]) if r["confirm_reason"] else "",
+                     t, x, r["scope_count"], len(r["urls"])])
+        for u in r["urls"]:
+            urls.append([r["finding_id"], placement, W["severity"].get(r["severity"], r["severity"]), u])
+    pages = [[p["rank"], p["url"], p["page_type"], p["importance"], ", ".join(str(c) for c in p["cards"]),
+              W["severity"].get(p["worst"], "") if p["worst"] else "", p["confirm"]] for p in selection["key_pages"]]
+    cov = [[W["kind"].get(line["kind"], line["kind"]), coverage_text(line, lang), ", ".join(line.get("checks") or [])]
+           for line in selection["coverage"]["lines"]]
+    out = []
+    for name, header, body, widths in ((W["findings"], W["cols"], rows, [16, 8, 22, 11, 11, 16, 9, 16, 6, 16, 26, 70, 70, 9, 9]),
+                                       (W["urls"], W["url_cols"], urls, [16, 16, 11, 90]),
+                                       (W["key_pages"], W["page_cols"], pages, [6, 70, 12, 10, 14, 12, 10]),
+                                       (W["coverage"], W["cov_cols"], cov, [18, 110, 40]),
+                                       (W["method_sheet"], W["method_cols"], [list(m) for m in W["method"]], [22, 100])):
+        h, b = _drop_empty_columns(header, body) if body else (header, body)
+        keep = [header.index(c) for c in h]
+        out.append({"name": name, "header": h, "rows": b, "widths": [widths[i] for i in keep]})
+    return out
+
+
+def build(selection: dict, lang: str = "tr", lists: dict | None = None, **wording) -> bytes:
+    return xlsx.workbook(sheets(selection, lang, lists, **wording))
+
+
+def finding_ids(data: bytes, lang: str = "tr") -> set[str]:
+    """The finding ids an appendix file lists (its first sheet's first column), for RG-17 on the written file."""
+    first = next(iter(xlsx.read(data).values()), [])
+    return {row[0] for row in first[1:] if row and row[0]}
+
+
+assert set(SEVERITY_WEIGHT) == set(WORDS["tr"]["severity"]) and set(CONFIDENCE_WEIGHT) == set(WORDS["tr"]["class"])

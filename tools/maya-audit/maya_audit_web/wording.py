@@ -137,6 +137,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("acc3.noindex_listed", "noindex via {where} on {n#} page(s) the sitemap lists: check that this is intended",
          "noindex via {where} on {n:page|pages} the sitemap lists: check that this is intended"),
         ("acc3.sitemap_noindex", "The sitemap lists {n#} page(s) that carry noindex", "The sitemap lists {n:page that carries|pages that carry} noindex"),
+        # The site's own search results and cart answer 200 with no noindex (DECISIONS 300).
+        ("acc3.utility_indexable", "{n#} internal search or cart page(s) can be indexed (no noindex)",
+         "{n:internal search or cart page|internal search or cart pages} can be indexed (no noindex)"),
         # unavailable_after: a date that has passed works like noindex; one to come is a note (B06).
         ("acc3.unavailable_passed", "unavailable_after (date passed) via {where}[[review: (page intent should be reviewed)]] on {n#} page(s)",
          "unavailable_after (date passed) via {where}{review} on {n:page|pages}"),

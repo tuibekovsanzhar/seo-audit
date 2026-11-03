@@ -147,11 +147,14 @@ def test_the_first_action_comes_within_the_first_lines_of_the_markdown(outputs):
 def test_the_first_action_comes_within_the_first_lines_of_the_concise_print(outputs):
     from maya_audit_web.strings import t
     lines = html_lines(outputs.concise)
-    # The executive summary's "First five actions": the line after its heading is the first action, or the sentence
-    # that says there is none.
-    heading = lines.index(t("pdf.exec.actions"))
-    assert heading + 1 < FIRST_ACTION_LINE, lines[:FIRST_ACTION_LINE]
-    assert lines[heading + 1] != "" and not lines[heading + 1].startswith(t("pdf.exec.opps"))
+    # The summary's "First, by priority score" (DECISIONS 300): the line after it is the first card's title; a report
+    # with no card says so under the cards' heading instead.
+    if t("c6.first") in lines:
+        heading = lines.index(t("c6.first"))
+        assert heading + 1 < FIRST_ACTION_LINE, lines[:FIRST_ACTION_LINE]
+        assert lines[heading + 1] != "" and t("c6.score", score="") not in lines[heading + 1][:3]
+    else:
+        assert t("result.actions.none") in lines
 
 
 def test_the_repeat_counter_finds_a_line_said_three_times_about_different_pages():

@@ -60,25 +60,30 @@ def test_no_serious_finding_is_missing_from_the_first_fixes_or_what_to_fix_first
 
 
 def test_the_web_first_list_and_the_concise_print_name_every_serious_finding(site):
+    from maya_audit import client_selection
     from maya_audit_web import pdf, practical, summary
     view = summary.build(site.report, outcome="COMPLETE", reason="")
     rows = summary.search(site.report, limit=100_000)["items"]
     built = practical.build(view, rows, site.report, None)
+    selection = client_selection.select(site.report)
     html = pdf.render_html(view, rows=rows, plan=summary.action_plan(site.report), generated_at="2026-10-22",
-                           practical=built, concise=True)
+                           practical=built, concise=True, selection=selection)
     text = R_text(html)
     executive = built["executive"]["problems"]
     shown = " ".join(p["title"] + " " + (p.get("also") or "") for p in executive)
     for row in rows:
         if row["severity"] in SERIOUS:
-            assert row["id"] in text
+            # DECISIONS 300: a serious finding is on a card (named by its ID) unless it must be confirmed first, when
+            # its title is in the "Confirm first" list; never cut.
+            group = selection["by_finding"][row["id"]]
+            assert group["placement"] in ("card", "confirm"), row["id"]
+            if group["placement"] == "card" and group["finding_ids"].index(row["id"]) < 3:
+                assert row["id"] in text
             if len(executive) < practical.TOP:  # the five-row list is not cut: every serious problem is named in it
                 assert (row.get("title_shown") or row["title"]) in shown, row["title"]
-    # Every finding ID still appears, hygiene ones included (the concise report's promise).
-    assert all(row["id"] in text for row in rows)
-    hygiene = [row for row in rows if row.get("hygiene")]
-    part = html.split("<h2>Hygiene</h2>")[1].split("<h2>")[0] if hygiene else ""
-    assert len(re.findall(r"<li[^>]*>", part)) <= HYGIENE_LINES + 1  # the capped lines, and "N more, by ID"
+    # Every finding is in the appendix (RG-17), hygiene ones included; the PDF says how many.
+    assert {row["id"] for row in rows} <= set(selection["by_finding"])
+    assert str(selection["counts"]["findings"]) in text
 
 
 def test_the_client_compact_report_names_the_other_serious_findings_of_a_check(site):

@@ -490,6 +490,48 @@ def acc2_robots_rules(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
 
 # -- ACC-3 -------------------------------------------------------------------
 
+# ACC-3 (DECISIONS 300, the owner's review of the nihan report): the site's own search results and cart are utility
+# pages a search engine should not index. One that answers 200 with no noindex (meta robots or X-Robots-Tag, for all
+# crawlers or Googlebot) and no canonical to another address is a Low finding. The last path segment decides
+# (`/search`, `/en/cart`, `/arama?q=`), never a segment further up (`/search-tips/...`).
+INDEXABLE_UTILITY_SEGMENTS = frozenset({"search", "arama", "ara", "cart", "sepet", "sepetim", "basket"})
+UTILITY_INDEXABLE_EXPECTED = "internal search and cart pages carry noindex"
+UTILITY_INDEXABLE_FIX = ("Add a noindex robots meta tag to the internal search and cart pages and keep them out of the "
+                         "sitemap; on Shopify, add it in the theme's <head> for the search and cart templates.")
+
+
+def indexable_utility_page(page) -> str | None:
+    """The segment (`search`, `cart`, ...) when `page` is the site's search or cart page and may be indexed."""
+    if page.analysis is None or page.status is None or not 200 <= page.status < 300:
+        return None
+    segments = [s for s in urlsplit(page.url).path.lower().split("/") if s]
+    last = segments[-1].rsplit(".", 1)[0] if segments else ""
+    if last not in INDEXABLE_UTILITY_SEGMENTS:
+        return None
+    for d in page_directives(page):
+        if d["directive"] in ("noindex", "none") and d["scope"] in ("*", "googlebot"):
+            return None
+    own = page.url.split("#", 1)[0].split("?", 1)[0].rstrip("/")
+    for canonical in (page.analysis or {}).get("canonicals") or []:
+        if isinstance(canonical, str) and canonical.split("?", 1)[0].rstrip("/") != own:
+            return None
+    return last
+
+
+def utility_indexable_findings(pages, key_urls: set[str], user_agent: str) -> list[Finding]:
+    found = {p.url: seg for p in pages if (seg := indexable_utility_page(p))}
+    if not found:
+        return []
+    urls = list(found)
+    return [Finding("ACC-3", f"{len(urls)} internal search or cart page(s) can be indexed (no noindex)",
+        Severity.S4, Confidence.VERIFIED,
+        "Documented (Google: internal search result pages)", [GOOGLE, COPILOT], scope_for(urls),
+        {"pages": [{"url": u, "segment": found[u], "noindex": False} for u in urls[:40]],
+         "rule": "the last path segment is the site's search or cart page; no noindex; no canonical to another address",
+         "reproduce": [f"{_curl(u, user_agent)} | grep -i -E 'robots|canonical'" for u in urls[:3]]},
+        UTILITY_INDEXABLE_EXPECTED, UTILITY_INDEXABLE_FIX, importance_tier=_tier(urls, key_urls))]
+
+
 def acc3_page_controls(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     title = "Page-level AI controls (meta robots, X-Robots-Tag, snippet controls)"
     key_urls = set(key_page_urls(result, cfg))
@@ -645,6 +687,8 @@ def acc3_page_controls(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
             importance_tier=_tier(urls, key_urls),
             notes=["Verified: the tag is in the HTML after the body starts. Not established: which crawlers act on a robots "
                    "tag there. This audit does not treat the page as noindex because of it."]))
+
+    findings += utility_indexable_findings(pages, key_urls, cfg.user_agent)
 
     evidence = {"pages_checked": len(pages), "non_html_documents_checked": len(documents),
                 "non_html_documents": [{"url": d.url, "content_type": d.content_type,

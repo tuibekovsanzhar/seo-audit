@@ -122,7 +122,10 @@ def test_normal_routes_and_client_cards_agree_on_qualifying_links(demo_app, monk
     assert '1 link names its target only with generic text' in text
     assert '2 links name their target only with generic text' not in text
     seen=[];monkeypatch.setattr(pdf,'to_pdf',lambda text,**kw:seen.append(text) or b'%PDF-test')
-    assert demo_app.get(base+'/downloads/pdf').status_code==200 and '1 link names its target' in seen[-1]
+    # DECISIONS 300: the concise PDF has no problems-by-page table (the key pages scorecard took its place); its card
+    # gives the one occurrence, and the stale count of two is said nowhere.
+    assert demo_app.get(base+'/downloads/pdf').status_code==200 and '1 generic-text link occurrence' in seen[-1]
+    assert '2 links name their target' not in seen[-1]
     work=demo_app.post(base+'/client-report',json={}).json()
     card=next(c for c in C.all_cards(work['data'])if c['maya']['check_id']=='STR-14')
     assert card['counting']['occurrences']==1 and card['counting']['affected_pages']==1

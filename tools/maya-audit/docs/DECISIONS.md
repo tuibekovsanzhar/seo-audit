@@ -3085,3 +3085,62 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      request (~250 s), where they ended before too. Estimated whole audit **about 4.2 min** (was 5.8-6.0), now set by
      the robots.txt re-sample wait, not Firecrawl. Not measured live.
      Tests: `tests/test_v03_speed_followup.py` (11).
+300. **v0.3 stage 6: one client selection — root-cause cards, a priority score, "Teyit edin", Maya's own limits as
+     coverage — a 10-page/15-card client report with an XLSX appendix, and a gate on both (Owner, 2026-11-03: the
+     items, weights, page and card budget; the rules below that the owner did not name are agent defaults).**
+     New `maya_audit/client_selection.py`, read by the web app's concise PDF and the `maya-audit-pro` report. It never
+     changes a finding, a severity or a confidence in the report.
+     (1) *Root cause.* Findings of one rule (`dedup_key`, else `rule_id`; the pro report's two empty-page rules are one
+     family) are one card whatever template or language copy they were found on; findings that may be intentional,
+     that need confirming first, that carry another re-test state (RG-4) or are Info stay apart. A card shows one
+     example per language (`/a` and `/en/a`), the most important page of that language, never a utility page (search,
+     cart) while another page is affected. nihan: the 5 TSEO-1 shared heading jumps, 4 STR-14 shared links, 3 STR-19
+     blocks are one group each.
+     (2) *Priority* = severity weight (Blocker 100, High 40, Medium 15, Low 5, Info 0) × confidence (measured =
+     engine `verified` 1.0, estimated 0.6, inferred 0.5, unverified 0.4) × reach × business relevance (1.0 until
+     stage 4's profiles). "Unverified" is a finding from a rule not yet validated on real sites (an `LG-` item),
+     whatever its confidence. *Reach* (agent default): the summed page importance (DECISIONS 297/298; a page not scored
+     counts 10) of the affected addresses ÷ 100, at most 5; a finding with no address reaches the homepage (1.0). A
+     report saved before page grouping gets it from `page_groups.annotate` on its page records, offline. Effort is shown
+     on a card, never scored. Ties: higher severity, then the report's own order. The score never changes a severity,
+     and every Blocker/High group is a card however it scores (preamble 4).
+     (3) *Client report budget:* at most 10 pages and 15 cards: summary, coverage, top cards, key pages scorecard (10
+     most important pages read: type, importance, the cards that concern each, how many to confirm), action plan with
+     quick wins (cards of small effort), appendix pointer with counts. Web concise PDF (`concise_report.render`,
+     `<meta name="maya-concise" content="10">`, `to_pdf` max 10 pages) and the pro report (summary pages, ≤15 cards in
+     priority order, a new last page "Kapsam ve ek"; Not cards only while there is room).
+     (4) *Appendix:* `maya_audit/client_appendix.py` writes one XLSX (stdlib writer `maya_audit/xlsx.py`; no new
+     dependency): every finding with its group, placement, card, score and confirm reason; every affected address; key
+     pages; coverage; method. Turkish or English headers. Web: `GET /audits/{id}/downloads/xlsx` (named
+     `…-appendix.xlsx`, listed among the companions); pro: `render.py` writes `<name>-ek.xlsx` / `-appendix.xlsx` in
+     place of the CSV address list.
+     (5) *"Teyit edin":* a group whose confidence weight is 0.5 or less, one that may be intentional, one seen only in
+     Firecrawl's copy, and 403/429 to a request with Googlebot's user agent (ACC-4 `refused` pairs) goes to a
+     one-line-each list, not to the cards, unless the owner's manual check confirmed it (`build_data.py --confirm
+     <rule or finding id>`; `--reject` keeps it out of the PDF, "rejected" in the appendix). An Info group stays a
+     note (nothing to act on), except the spoofed Googlebot and Firecrawl-only ones.
+     (6) *Gate:* `release_gate.check_client_output`: RG-15 a client PDF over 10 pages, RG-16 over 15 cards, RG-17 an
+     appendix that leaves out any finding of the report: all hard (BLOCKED). `check_cards` runs RG-16/17 on a pro
+     data.json; `render.py` runs RG-15/16 on the printed PDF and RG-17 on the written XLSX; the web app refuses a
+     concise PDF over 10 pages (`pdf_page_limit`). The other client report (`maya-audit-rapor`, `client_reports`)
+     keeps its 50-page limit: not in this request.
+     (7) *Nihan text fixes:* no "kontrol canlı sitelerde henüz doğrulanmadı" on a client card (those findings are in
+     "Teyit edin"); IDX-5 "same lastmod" on Shopify takes the catalogue's `steps_by_platform.Shopify` (Shopify writes
+     the sitemap; lastmod is the product's last update; find the apps that update everything at once), checked against
+     `platform.name` (RG-11); new ACC-3 rule `acc3.utility_indexable` (Low, verified): the site's own search or cart
+     page (last path segment `search`, `arama`, `ara`, `cart`, `sepet`, `sepetim`, `basket`) answers 200 with no
+     noindex and no canonical elsewhere, fix: add noindex (Shopify: theme `<head>` for those templates); excluded from
+     the generic noindex judgment; no empty evidence columns (evidence samples and the appendix drop a column empty in
+     every row); every number labelled (scope ratios, "later" counts, saved-copy counts carry their unit).
+     (8) *Maya's own limits* — page cap, time budget, parts not assessed (missing connections, logs), how the pages
+     were read (`acc9.reader*` findings) — are in the coverage section, never a client problem card.
+     (9) *Firecrawl-only findings* (`maya_audit/double_reading.py`): when Firecrawl read the content of a site Maya's
+     crawler also read, the content checks run again on Maya's own copies (no request) only to compare; a finding with
+     no counterpart (same rule, same title without numbers and example lists) gets `evidence.reading.seen_in =
+     "firecrawl_only"`, confidence verified → estimated, a note; which copy the checks judge does not change. In the
+     engine (`firecrawl.reader.read_blocked_site`, `firecrawl.coverage.firecrawl_only_findings`) and for saved reports
+     in `reassess_rules` (with the ACC-3 rule above). STR-12 on nihan: marked Firecrawl-only and listed under "Teyit
+     edin"; the owner's manual check of the `/en` pages was not given in the request (placeholder left), so it stays
+     there until `--confirm str12.language` or `--reject`.
+     Schema: no bump (new keys inside `evidence` and `firecrawl.coverage`, free-form; a new rule id). Tests:
+     `tests/test_v03_client_report.py`.

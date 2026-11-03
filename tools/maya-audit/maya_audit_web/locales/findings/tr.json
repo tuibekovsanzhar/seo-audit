@@ -290,7 +290,8 @@
   "tseo1.no_viewport": "{n} sayfada viewport meta etiketi yok",
   "tseo1.no_zoom": "{n} sayfa okurların yakınlaştırmasını engelliyor (user-scalable=no ya da maximum-scale=1)",
   "tseo1.mixed": "{n} https sayfası kaynakları düz http:// üzerinden yüklüyor (karışık içerik)",
-  "tseo1.analytics_twice": "{n} sayfa aynı analiz etiketini birden fazla kez yüklüyor (olası çift sayım)"
+  "tseo1.analytics_twice": "{n} sayfa aynı analiz etiketini birden fazla kez yüklüyor (olası çift sayım)",
+  "acc3.utility_indexable": "{n} site içi arama veya sepet sayfası dizine eklenebiliyor (noindex yok)"
  },
  "fixes": {
   "Check Google Search Console (Settings → Crawl stats, by response) for 403 or 429 answers to the real Googlebot. Maya's request came from Maya's own address, which a firewall may refuse on purpose as a fake Googlebot; change nothing unless the real Googlebot is refused too.": "Google Search Console'da (Ayarlar → Tarama istatistikleri, yanıta göre) gerçek Googlebot'a 403 veya 429 yanıtı verilip verilmediğine bakın. Maya'nın isteği Maya'nın kendi adresinden geldi; güvenlik duvarı bunu bilerek sahte Googlebot sayıp reddetmiş olabilir. Gerçek Googlebot da reddedilmiyorsa hiçbir şeyi değiştirmeyin.",
@@ -548,7 +549,8 @@
   "Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> to the <head> of the page template.": "Sayfa şablonunun <head> bölümüne <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> ekleyin.",
   "Remove user-scalable=no and maximum-scale=1 from the viewport meta tag.": "Viewport meta etiketinden user-scalable=no ve maximum-scale=1 değerlerini kaldırın.",
   "Change each http:// address listed to https:// (or a relative address) in the page or template.": "Listelenen her http:// adresini sayfada ya da şablonda https:// (veya göreli bir adres) yapın.",
-  "Confirm with Tag Assistant (or the browser's network panel) which tags fire, then remove the duplicate snippet, or the direct gtag when the same property is also set up inside Tag Manager.": "Hangi etiketlerin çalıştığını Tag Assistant ile (ya da tarayıcının ağ panelinden) doğrulayın; sonra yinelenen kod parçasını ya da aynı mülk Tag Manager içinde de kuruluysa doğrudan gtag'i kaldırın."
+  "Confirm with Tag Assistant (or the browser's network panel) which tags fire, then remove the duplicate snippet, or the direct gtag when the same property is also set up inside Tag Manager.": "Hangi etiketlerin çalıştığını Tag Assistant ile (ya da tarayıcının ağ panelinden) doğrulayın; sonra yinelenen kod parçasını ya da aynı mülk Tag Manager içinde de kuruluysa doğrudan gtag'i kaldırın.",
+  "Add a noindex robots meta tag to the internal search and cart pages and keep them out of the sitemap; on Shopify, add it in the theme's <head> for the search and cart templates.": "Site içi arama ve sepet sayfalarına noindex robots meta etiketi ekleyin ve onları site haritasının dışında tutun; Shopify'da bunu temanın <head> bölümüne arama ve sepet şablonları için ekleyin."
  },
  "fix_patterns": {
   "acc2.search": "{engines} bu sayfaları bulup atıf yapabilsin istiyorsanız, {line}. satırdaki kuralı bu kullanıcı aracıları için kaldırın veya daraltın. Engelleme bilinçli bir tercihse “kasıtlı” olarak işaretleyin.",
@@ -759,7 +761,8 @@
   "a viewport that lets readers zoom": "okurların yakınlaştırmasına izin veren bir viewport",
   "every image, script, style and frame of an https page asked over https": "https bir sayfanın her görseli, script'i, stili ve çerçevesi https üzerinden istenir",
   "a viewport meta tag in every page's <head>": "her sayfanın <head> bölümünde bir viewport meta etiketi",
-  "each tag-manager container and analytics property loaded once per page": "her Tag Manager kapsayıcısı ve analiz mülkü sayfa başına bir kez yüklenir"
+  "each tag-manager container and analytics property loaded once per page": "her Tag Manager kapsayıcısı ve analiz mülkü sayfa başına bir kez yüklenir",
+  "internal search and cart pages carry noindex": "site içi arama ve sepet sayfaları noindex taşıyor"
  },
  "expected_patterns": {
   "acc2.declared": "robots.txt, beyan edildiği gibi {role} botlarını engeller",

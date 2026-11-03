@@ -1,5 +1,6 @@
 """Evidence-strength and concise export contracts, independent of a customer's domain."""
 import copy
+import re
 import io
 from types import SimpleNamespace as NS
 import pytest
@@ -150,17 +151,20 @@ def test_actual_concise_route_preserves_ids_and_full_companions(demo_app,monkeyp
     path=demo_app.app.state.runner.artifacts(one['id'])/'report.json';before=path.read_bytes()
     r=json.loads(before);ids={f['id']for c in r['checks']for f in c['findings']}
     concise=demo_app.get(base+'/print?full=false');assert concise.status_code==200
-    assert all(fid in concise.text for fid in ids)
+    # DECISIONS 300: the concise report has at most 15 cards; every finding ID is in the XLSX appendix it names.
+    from maya_audit import client_appendix
+    appendix=demo_app.get(base+'/downloads/xlsx');assert appendix.status_code==200
+    assert ids<=client_appendix.finding_ids(appendix.content) and '-appendix.xlsx' in concise.text
     assert 'maya-concise' in concise.text and 'Demonstration:' in concise.text
     full=demo_app.get(base+'/print?full=true');assert full.status_code==200 and 'maya-concise' not in full.text
     assert demo_app.get(base+'/downloads/json').json()==r
     assert demo_app.get(base+'/downloads/evidence').status_code==200
     captured=[]
     def bounded(text,**kw):
-        captured.append(kw['max_pages']);raise pdf.PdfPageLimit('Concise PDF has 51 pages; maximum 50')
+        captured.append(kw['max_pages']);raise pdf.PdfPageLimit('Concise PDF has 11 pages; maximum 10')
     monkeypatch.setattr(pdf,'to_pdf',bounded)
-    response=demo_app.get(base+'/downloads/pdf');assert response.status_code==422 and 'maximum 50' in response.text
-    assert captured==[50] and path.read_bytes()==before
+    response=demo_app.get(base+'/downloads/pdf');assert response.status_code==422 and 'maximum 10' in response.text
+    assert captured==[10] and path.read_bytes()==before  # the client PDF's budget (RG-15)
 
 
 def test_incomplete_headers_cannot_authorize_unrelated_columns_or_tables():
@@ -225,10 +229,17 @@ def test_large_synthetic_audit_rejects_oversize_concise_without_losing_findings(
     r['checks'][0]['findings']+=added;r['findings_in_priority_order'] += [f['id']for f in added]
     path.write_text(json.dumps(r));before=path.read_bytes()
     text=demo_app.get(base+'/print?full=false').text
-    assert all(f['id']in text for f in added) and '<thead>' in text
+    # DECISIONS 300: 120 findings of one cause are one card, not 120; none is lost: all are in the appendix (RG-17).
+    from maya_audit import client_appendix
+    appendix=demo_app.get(base+'/downloads/xlsx');assert appendix.status_code==200
+    assert {f['id'] for f in added}<=client_appendix.finding_ids(appendix.content)
+    assert len(re.findall(r'<section class="issue"',text))<=15 and str(len(added)+1) not in re.findall(r'id="card-(\d+)"',text)
     response=demo_app.get(base+'/downloads/pdf')
     if response.status_code==503:pytest.skip('Chromium unavailable for oversized audit PDF check')
-    assert response.status_code==422 and 'pdf_page_limit' in response.text
+    assert response.status_code==200  # the cards fit the client's 10 pages; the rest is in the appendix
+    from pypdf import PdfReader
+    import io
+    assert len(PdfReader(io.BytesIO(response.content)).pages)<=10
     assert path.read_bytes()==before and demo_app.get(base+'/downloads/json').json()==r
 
 

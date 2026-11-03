@@ -541,7 +541,10 @@ def render_full_html(view: dict[str, Any], *, rows: list[dict[str, Any]], plan: 
 
 def to_pdf(html: str, *, footer_title: str = "", max_pages: int | None = None) -> bytes:
     """Print `html` to PDF with headless Chromium. PdfUnavailable when there is no browser to do it."""
-    if ('name="maya-concise"' in html or 'name="maya-client-compact"' in html) and max_pages is None:
+    if 'name="maya-concise"' in html and max_pages is None:
+        from maya_audit.release_gate import CLIENT_MAX_PAGES
+        max_pages = CLIENT_MAX_PAGES  # the client's concise PDF (RG-15, DECISIONS 300)
+    elif 'name="maya-client-compact"' in html and max_pages is None:
         max_pages = 50
     try:
         from playwright.sync_api import Error as PlaywrightError
@@ -603,8 +606,9 @@ class PdfPageLimit(PdfUnavailable):
     pass
 
 
-def render_html(view, *, rows, plan, generated_at, demo=False, practical=None, concise=False, companions=None):
+def render_html(view, *, rows, plan, generated_at, demo=False, practical=None, concise=False, companions=None,
+                selection=None):
     if not concise:
         return render_full_html(view, rows=rows, plan=plan, generated_at=generated_at, demo=demo, practical=practical)
     from .concise_report import render
-    return render(view, rows, generated_at, practical, companions or {}, demo=demo)
+    return render(view, rows, generated_at, practical, companions or {}, demo=demo, selection=selection)

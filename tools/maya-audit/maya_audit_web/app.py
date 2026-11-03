@@ -56,7 +56,9 @@ COUNTRY_BY_LANGUAGE = {"tr": "Türkiye", "tr-tr": "Türkiye", "de": "Germany", "
 PLAN_LIFETIME_S = 30 * 60
 STALE_AFTER_S = 20
 DOWNLOAD_NAMES = {"json": ("json", "application/json"), "markdown": ("md", "text/markdown; charset=utf-8"),
-                  "pdf": ("pdf", "application/pdf"), "evidence": ("zip", "application/zip")}
+                  "pdf": ("pdf", "application/pdf"), "evidence": ("zip", "application/zip"),
+                  # The client report's appendix: every finding and affected address (DECISIONS 300).
+                  "xlsx": ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
 _PROJECT_ID = re.compile(r"[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?")
 
 
@@ -1295,8 +1297,25 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
     def companion_files(audit: dict[str, Any]) -> dict[str, str]:
         """The files that travel with a printed report, by the names they download under. A client reads a file name;
         a link into this app (127.0.0.1) works only on the owner's computer, so the report never prints one (D-08)."""
-        return {"json": download_name(audit, "json"), "evidence": download_name(audit, "zip").replace(".zip", "-evidence.zip"),
-                "markdown": download_name(audit, "md")}
+        return {"xlsx": appendix_name(audit), "json": download_name(audit, "json"),
+                "evidence": download_name(audit, "zip").replace(".zip", "-evidence.zip"), "markdown": download_name(audit, "md")}
+
+    def appendix_name(audit: dict[str, Any]) -> str:
+        return download_name(audit, "xlsx").replace(".xlsx", "-appendix.xlsx")
+
+    def client_selection_of(audit: dict[str, Any], report: dict[str, Any]) -> dict[str, Any]:
+        """What the client report shows and the appendix lists (DECISIONS 300): one selection for both."""
+        from maya_audit import client_selection
+        return client_selection.select(report, affected(audit["id"]))
+
+    def appendix_xlsx(audit: dict[str, Any]) -> bytes:
+        from maya_audit import client_appendix
+        from . import wording
+        report = load_report(audit)
+        lang = current_language()
+        return client_appendix.build(client_selection_of(audit, report), lang, affected(audit["id"]),
+                                     title=lambda check_id, text: wording.title(check_id, text, lang)[0],
+                                     fix=lambda text: wording.fix(text, lang)[0])
 
     def report_language(audit: dict[str, Any], lang: str | None) -> str:
         """The language a printed report or PDF is written in: an explicit `?lang=` first, then the language the audit
@@ -1325,7 +1344,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         view = result_view(audit, report)
         rows = summary.search(report, limit=100_000)["items"]
         return pdf.render_html(view, rows=rows, plan=summary.action_plan(report), generated_at=now(), demo=engine.demo,
-                               practical=practical_view(audit, view), concise=not full, companions=companion_files(audit)), view
+                               practical=practical_view(audit, view), concise=not full, companions=companion_files(audit),
+                               selection=None if full else client_selection_of(audit, report)), view
 
     @api.get("/audits/{audit_id}/print", summary="The report as one printable page: compact unless full=true", response_class=HTMLResponse)
     def printable(audit_id: str, full: bool = False, lang: str | None = Query(default=None, pattern="^[a-z]{2}$")) -> Response:
@@ -1357,7 +1377,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                         archive.write(path, name)
         return buffer.getvalue()
 
-    @api.get("/audits/{audit_id}/downloads/{format}", summary="pdf, markdown, json, or evidence (a zip)")
+    @api.get("/audits/{audit_id}/downloads/{format}", summary="pdf, markdown, json, xlsx (the appendix), or evidence (a zip)")
     def download(audit_id: str, format: str, full: bool = False, lang: str | None = Query(default=None, pattern="^[a-z]{2}$"),
                  draft: bool = False) -> Response:
         audit = need_audit(audit_id)
@@ -1381,14 +1401,23 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             if blocked:
                 html = pdf.draft_banner(html)
             try:
+                # The concise PDF is the client's: at most 10 pages, or no PDF (RG-15, DECISIONS 300).
                 content = pdf.to_pdf(html, footer_title=("DRAFT · " if blocked else "") + f"{t('app.title')} · {view['host']}",
-                                     max_pages=None if full else 50)
+                                     max_pages=None if full else release_gate.CLIENT_MAX_PAGES)
             except pdf.PdfPageLimit as exc:
                 raise ApiError(422, "pdf_page_limit", str(exc)) from None
             except pdf.PdfUnavailable:
                 raise ApiError(503, "pdf_unavailable", t("result.pdf_unavailable"),
                                print_url=f"/api/v1/audits/{audit['id']}/print") from None
             return Response(content, media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{name}"', **gate})
+        if format == "xlsx":
+            report_language(audit, lang)
+            if blocked:
+                name = name.replace("-draft.xlsx", "-appendix-draft.xlsx")
+            else:
+                name = appendix_name(audit)
+            return Response(appendix_xlsx(audit), media_type=media_type,
+                            headers={"Content-Disposition": f'attachment; filename="{name}"', **gate})
         if format == "evidence":
             return Response(evidence_zip(audit), media_type=media_type,
                             headers={"Content-Disposition": f'attachment; filename="{name.replace(".zip", "-evidence.zip")}"'})
