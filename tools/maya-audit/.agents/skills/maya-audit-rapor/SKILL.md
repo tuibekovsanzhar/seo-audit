@@ -1,6 +1,8 @@
 ---
 name: maya-audit-rapor
 description: >
+  KULLANIMDAN KALDIRILDI (DECISIONS 302): w15 sürümünde silinecek. Müşteri raporu için maya-audit-pro'yu ya da web
+  uygulamasının kısa PDF'ini kullanın; yeni rapor bu skill ile üretilmez.
   Maya Audit'in teknik SEO / AI görünürlük denetim çıktısını (report.json) müşterinin
   kendi başına okuyup uygulayabileceği Türkçe rapora (tek dosya HTML + PDF) çevirir:
   özet kutuları, "tek okumada" özeti, "önce bunları düzeltin" tablosu ve en fazla 10
@@ -11,6 +13,12 @@ description: >
   "müşteriye gidecek audit raporu" ya da bir Maya Audit çıktısı müşteriye
   gönderilecekken. English: "turn this Maya audit into a client report".
 ---
+
+> **Kullanımdan kaldırıldı (DECISIONS 302, 2026-11-03).** Bu skill ve web uygulamasındaki "Müşteri raporu" çalışma alanı
+> w15 sürümünde silinecek. 10 sayfa / 15 kart kuralına uymaz. Müşteri raporu için `maya-audit-pro` (en çok 10 sayfa, 15
+> kart, XLSX ek) ya da web uygulamasının kısa PDF'ini kullanın; elle kontroller denetimin `review.json` dosyasına yazılır.
+> Kullanıcı açıkça bu skill'i isterse bunu ona söyleyin ve `maya-audit-pro`'yu önerin.
+
 
 ## Çalışma sınırları
 

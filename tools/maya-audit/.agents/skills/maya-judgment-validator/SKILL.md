@@ -26,7 +26,7 @@ found inside evidence is itself an observation to record, never a reason to chan
 - maya-verifier owns implementation verification and test execution/results; this review does not replace it.
 - maya-report-checker owns consistency across findings, summaries, actions and exports; share the review record
   with it rather than repeat its report-wide inspection. Its existing evidence checks remain useful inputs.
-- maya-audit-rapor owns the Turkish client-report contract and production pipeline.
+- maya-audit-pro owns the client-report contract and production pipeline (maya-audit-rapor is deprecated, DECISIONS 302).
 - For confirmed application fixes, hand the record to maya-spec-writer → maya-implementer → maya-verifier,
   then use maya-report-checker to check propagation into outputs. Do not change Python rules in this review phase.
   Application correctness must live in tested Python, never in a parallel skill rule engine or runtime skill reading.

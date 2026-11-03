@@ -13,7 +13,7 @@ description: >
   özeti", "SEO audit raporunu bu tasarımla çıkar", "yönetici özeti audit PDF'i", "audit raporu
   İngilizce / Türkçe olsun", "audit to-do listesi", "etkilenen linklerle yapılacaklar". English:
   "professional website audit report", "audit summary PDF with to-do list".
-  Adım adım çözüm kartları içeren uzun Türkçe müşteri raporu isteniyorsa bu değil, maya-audit-rapor.
+  Müşteri raporu bu skill'dir; maya-audit-rapor kullanımdan kaldırıldı (DECISIONS 302, w15'te silinecek).
 ---
 
 # Maya Audit → Profesyonel Rapor (en çok 10 sayfa, 15 kart + XLSX ek)

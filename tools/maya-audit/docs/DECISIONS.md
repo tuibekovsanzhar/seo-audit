@@ -3189,3 +3189,13 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      (7) *Web:* the results page lists the XLSX appendix among the downloads ("pdf", "xlsx", ...).
      Schema: no bump (`evidence.regions` is inside free-form evidence; the review file is not part of the report).
      Tests: `tests/test_v03_client_report.py` 23 -> 31.
+302. **maya-audit-rapor deprecated now, deleted in release w15 (Owner, 2026-11-03, on the agent's recommendation in
+     DECISIONS 301 (6)).** The third client report (`maya_audit/client_reporting/`, `maya_audit_web/client_reports.py`,
+     the web "Client report" workspace, the `maya-audit-rapor` skill) has its own grouping, score and wording and does not
+     follow the 10-page/15-card rule; the concise PDF and `maya-audit-pro` replace it, and the review file (301 (1))
+     replaces its reviewer sign-off. Now: the web results page no longer shows its button (`static/app.js`); its API
+     routes, `showClientReport` and its tests stay until w15 so nothing breaks in between; the skill's `SKILL.md` says
+     it is deprecated and points to `maya-audit-pro`; `AGENTS.md`, `maya-judgment-validator` and `maya-audit-pro` name
+     `maya-audit-pro` as the client report. In w15 (roadmap stage 9): delete the package, the web module and routes,
+     the JS workspace, the skill folder and their tests (about 2,170 lines and 14 test files), in one commit with a
+     note in this file.

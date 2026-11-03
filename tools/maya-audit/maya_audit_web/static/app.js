@@ -1009,10 +1009,9 @@ function resultView(view, context) {
       source.notes.length ? el("details", { class: "quiet-details" }, el("summary", { text: T("result.archives.notes") }), el("ul", { class: "list" }, (source.notes_shown || source.notes).slice(0, 20).map((note) => el("li", { class: "small", text: note })))) : null)));
   if (view.suggested_key_pages.length) add(out, el("p", { class: "muted small", text: T("result.suggest_key_pages") }), el("ul", { class: "list" }, view.suggested_key_pages.map((address) => el("li", {}, link(address)))));
 
-  const clientSlot = el("section", { class: "client-workspace", hidden: true });
-  add(out, el("div", { class: "row" },
-    el("button", { class: "button primary", type: "button", onclick: () => { clientSlot.hidden = false; if (!clientSlot.dataset.opened) { clientSlot.dataset.opened = "1"; showClientReport(clientSlot, view.audit.id); } } }, T("client.action")),
-    profileForm(view.audit.project_id, "saved-" + view.audit.id)), clientSlot);
+  // The "Client report" (maya-audit-rapor) button is hidden: that report is deprecated and goes in release w15
+  // (DECISIONS 302). Its API and showClientReport stay until then; the concise PDF and the pro report replace it.
+  add(out, el("div", { class: "row" }, profileForm(view.audit.project_id, "saved-" + view.audit.id)));
   // "Teyit edin": the owner's manual checks, written to this audit's review file (DECISIONS 301).
   const reviewSlot = el("section", { class: "review-list" });
   add(out, reviewSlot);
