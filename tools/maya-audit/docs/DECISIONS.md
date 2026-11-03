@@ -3144,3 +3144,48 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      there until `--confirm str12.language` or `--reject`.
      Schema: no bump (new keys inside `evidence` and `firecrawl.coverage`, free-form; a new rule id). Tests:
      `tests/test_v03_client_report.py`.
+301. **Report-quality rules for every audit: a review file for manual checks, language regions, banded ranking with
+     logarithmic reach, a root-cause merge table, one source for counts, the XLSX button (Owner, 2026-11-03: the items
+     and the nihan STR-12 confirmation; the rules below the owner did not name are agent defaults).**
+     (1) *Review file* (`maya_audit/manual_review.py`): `review.json` beside the audit's report.json (web artifacts
+     folder; a CLI report's `<report>.review.json`): per finding id `confirmed`/`rejected`, who, date, what was seen,
+     an optional note shown on the card; a later entry replaces an earlier one (kept under `replaced`); the report is
+     never changed, so its digest and gate are the report's. Confirmed = "measured, confirmed by manual check (who,
+     date)", competes for the cards; rejected = out of the PDF, "rejected" in the appendix. Written by the web app's
+     "Teyit edin" panel (`GET/POST /audits/{id}/review`, buttons on the results page) and by `build_data.py --confirm|
+     --reject <finding or rule id> --by --seen [--note]` (`--review` names another file). nihan: STR-12-c792bc34
+     confirmed by the owner (the `/en` pages are mostly Turkish in a normal browser; note: "Üst Giyim" translated as
+     "Outerwear").
+     (2) *Language regions* (`maya_audit/language_regions.py`, `evidence.regions` on `str12.language`,
+     `str12.headings`, `str9.lang_mismatch`; set when a report is written and by the offline reassessment): menu,
+     breadcrumbs, product/item titles, buttons/labels, banners, footer, body text. A string is in the other language
+     when it has that language's letters or a stopword of only that language, or (menu, breadcrumbs, titles, buttons;
+     4+ letters) when it is identical on the page's other-language version (hreflang); the brand and language-switcher
+     names are never counted. A region is "in the other language" at a quarter of its strings, or 2 per page read.
+     Advice from the regions found, in `rule_actions.json` (`region_steps`), with the platform's tool first
+     (`platform_steps_language`: Shopify Translate & Adapt, WordPress WPML/Polylang). Filter tabs are not a region of
+     their own: Maya's raw copy keeps no filter markup (they count as buttons when they are buttons). nihan `/en`: menu
+     39%, item titles 70%, body 98% in Turkish.
+     (3) *Ranking:* cards by severity band first, then priority within the band (a Medium is never below a Low). Reach
+     = 1 + ln(1 + summed importance / 100), at most 10 (no cap is reached in practice); scores kept to 3 decimals,
+     printed with one ("93,4" in Turkish). A finding with no address reaches the homepage's importance.
+     (4) *Merge table* (`client_selection.MERGE_GROUPS`, `merge_table()`): rule ids -> root cause -> one title and one
+     fix (tr/en); grouped findings are one card (still split by confirm-first, intent, re-test state, Info), examples
+     the worst pages where the evidence measures them (`worst_by`). Groups: `html_weight` (rnd6.home_large, .large, .late
+     and their `_fc` forms), `empty_pages` (idx1.empty, idx1.empty.bot, judgment.empty.repeated/.single),
+     `heading_levels` (tseo1.heading_jumps, shared.heading_jump, shared.heading_jump_varied), `links_without_text`
+     (str14.no_text, shared.link_no_text, shared.block_links_no_text, shared.link_no_text_pattern),
+     `links_without_address` (str19.no_target, str19.lead_nowhere, shared.link_no_address, shared.links_no_address),
+     `language_mismatch` (str12.language, str12.headings, str9.lang_mismatch), `sitemap_lastmod` (idx5.stamped,
+     .identical, .future), `template_meta` (str1.shared, str16.shared). Every finding id stays in the appendix
+     (column "Root-cause group").
+     (5) *One source for counts:* `client_selection.select(...)["counts"]` (findings, problems, by severity, cards,
+     confirm, notes, appendix-only, addresses) feeds the web PDF tiles and lines, the pro KPI and coverage box, and the
+     XLSX; `tests/test_v03_client_report.py::test_web_pdf_pro_pdf_xlsx_and_markdown_print_the_same_counts` checks them
+     and the Markdown headline against each other on two demo audits.
+     (6) *maya-audit-rapor* (the third client report: `maya_audit/client_reporting`, `maya_audit_web/client_reports.py`,
+     the web "client report" workspace): not changed; the agent's recommendation to the owner is to retire it (see
+     IMPLEMENTATION-STATUS). Owner's decision pending.
+     (7) *Web:* the results page lists the XLSX appendix among the downloads ("pdf", "xlsx", ...).
+     Schema: no bump (`evidence.regions` is inside free-form evidence; the review file is not part of the report).
+     Tests: `tests/test_v03_client_report.py` 23 -> 31.

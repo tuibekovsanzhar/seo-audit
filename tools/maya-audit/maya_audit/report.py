@@ -79,6 +79,9 @@ def report_and_affected(result: CrawlResult, gates: list[GateResult], checks: li
     from .site_platform import recognise
     if (platform := recognise(result)) is not None:
         report["platform"] = platform
+    # DECISIONS 301 (2): which page regions of a language-mismatch finding are in the other language.
+    from .language_regions import attach as attach_regions
+    attach_regions(report)
     # G1 (DECISIONS 278): the release gate's decision on the report itself, last; it never changes a finding.
     from .release_gate import run as release_gate
     affected = affected_urls(checks)  # site and answer-engine findings, as the companion file always listed them

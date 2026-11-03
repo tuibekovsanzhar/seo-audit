@@ -17,7 +17,7 @@ WORDS = {
            "method_sheet": "Yöntem",
            "cols": ["Bulgu kimliği", "Kontrol", "Kural", "Önem", "Güven (motor)", "Güven sınıfı", "Öncelik puanı",
                     "Yer", "Kart", "Grubun ilk bulgusu", "Teyit nedeni", "Bulgu", "Ne yapılmalı", "Kapsam (sayı)",
-                    "Etkilenen adres sayısı"],
+                    "Etkilenen adres sayısı", "Kök neden grubu", "Elle kontrol"],
            "url_cols": ["Bulgu kimliği", "Yer", "Önem", "Adres"],
            "page_cols": ["Sıra", "Adres", "Sayfa türü", "Önem puanı (0-100)", "Kartlar", "En yüksek önem",
                          "Teyit edilecek bulgu sayısı"],
@@ -33,15 +33,17 @@ WORDS = {
                     "not_assessed": "Değerlendirilmedi"},
            "method": [("Önem ağırlığı", "Engelleyici 100, Yüksek 40, Orta 15, Düşük 5, Bilgi 0"),
                       ("Güven ağırlığı", "ölçüldü 1,0 · tahmini 0,6 · çıkarım 0,5 · doğrulanmamış 0,4"),
-                      ("Erişim", "etkilenen sayfaların önem puanı toplamı / 100, en çok 5; adressiz bulgu 1,0"),
+                      ("Erişim", "1 + ln(1 + etkilenen sayfaların önem puanı toplamı / 100), en çok 10; adressiz bulgu: ana sayfa"),
+                      ("Sıra", "önce önem bandı, sonra bant içinde öncelik puanı"),
+                      ("Kök neden grupları", "aynı nedeni ve tek düzeltmeyi paylaşan kurallar tek kart (sütun: Kök neden grubu)"),
                       ("İş önemi", "1,0 (iş türü profilleri gelene kadar)"),
                       ("Öncelik puanı", "önem x güven x erişim x iş önemi; efor gösterilir, puana girmez"),
-                      ("Kartlar", "en çok 15: bütün Engelleyici/Yüksek gruplar, sonra en yüksek puanlar")]},
+                      ("Kartlar", "en çok 15: bütün Engelleyici/Yüksek gruplar, sonra bant ve puan sırasıyla")]},
     "en": {"findings": "Findings", "urls": "Affected URLs", "key_pages": "Key pages", "coverage": "Coverage",
            "method_sheet": "Method",
            "cols": ["Finding ID", "Check", "Rule", "Severity", "Confidence (engine)", "Confidence class",
                     "Priority score", "Placement", "Card", "Group lead", "Confirm because", "Finding", "What to do",
-                    "Scope (count)", "Affected URLs (count)"],
+                    "Scope (count)", "Affected URLs (count)", "Root-cause group", "Manual check"],
            "url_cols": ["Finding ID", "Placement", "Severity", "URL"],
            "page_cols": ["Rank", "URL", "Page type", "Importance (0-100)", "Cards", "Highest severity",
                          "Findings to confirm (count)"],
@@ -57,10 +59,12 @@ WORDS = {
                     "not_assessed": "Not assessed"},
            "method": [("Severity weight", "Blocker 100, High 40, Medium 15, Low 5, Info 0"),
                       ("Confidence weight", "measured 1.0 · estimated 0.6 · inferred 0.5 · unverified 0.4"),
-                      ("Reach", "summed importance of the affected pages / 100, at most 5; no address = 1.0"),
+                      ("Reach", "1 + ln(1 + summed importance of the affected pages / 100), at most 10; no address: the homepage"),
+                      ("Order", "severity band first, then priority score within the band"),
+                      ("Root-cause groups", "rules sharing one cause and one fix are one card (column: Root-cause group)"),
                       ("Business relevance", "1.0 (until business-type profiles exist)"),
                       ("Priority score", "severity x confidence x reach x business; effort is shown, not scored"),
-                      ("Cards", "at most 15: every Blocker/High group, then the highest scores")]},
+                      ("Cards", "at most 15: every Blocker/High group, then by band and score")]},
 }
 
 
@@ -95,7 +99,7 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
                      r["confidence"], W["class"].get(r["confidence_class"], r["confidence_class"]), r["priority"],
                      placement, r["card"], r["group_lead"] if r["group_lead"] != r["finding_id"] else "",
                      W["reason"].get(r["confirm_reason"], r["confirm_reason"]) if r["confirm_reason"] else "",
-                     t, x, r["scope_count"], len(r["urls"])])
+                     t, x, r["scope_count"], len(r["urls"]), r.get("merge_group") or "", r.get("manual") or ""])
         for u in r["urls"]:
             urls.append([r["finding_id"], placement, W["severity"].get(r["severity"], r["severity"]), u])
     pages = [[p["rank"], p["url"], p["page_type"], p["importance"], ", ".join(str(c) for c in p["cards"]),
@@ -103,7 +107,7 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
     cov = [[W["kind"].get(line["kind"], line["kind"]), coverage_text(line, lang), ", ".join(line.get("checks") or [])]
            for line in selection["coverage"]["lines"]]
     out = []
-    for name, header, body, widths in ((W["findings"], W["cols"], rows, [16, 8, 22, 11, 11, 16, 9, 16, 6, 16, 26, 70, 70, 9, 9]),
+    for name, header, body, widths in ((W["findings"], W["cols"], rows, [16, 8, 22, 11, 11, 16, 9, 16, 6, 16, 26, 70, 70, 9, 9, 20, 60]),
                                        (W["urls"], W["url_cols"], urls, [16, 16, 11, 90]),
                                        (W["key_pages"], W["page_cols"], pages, [6, 70, 12, 10, 14, 12, 10]),
                                        (W["coverage"], W["cov_cols"], cov, [18, 110, 40]),

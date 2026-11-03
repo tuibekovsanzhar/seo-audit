@@ -36,26 +36,38 @@ def report(findings, pages=None, **extra):
 # ---------------------------------------------------------------- priority
 
 def test_priority_is_severity_times_confidence_times_reach_times_business():
+    import math
     r = report([finding("A", "r.a", "S2", "verified", [SITE + "/a", SITE + "/en/a"]),
                 finding("B", "r.b", "S3", "estimated", [SITE + "/a"]),
                 finding("C", "r.c", "S4", "verified", [])])
     by = {g["finding_ids"][0]: g for g in cs.select(r)["groups"]}
-    assert by["A"]["priority"] == round(40 * 1.0 * 1.4 * 1.0, 1)        # reach (80 + 60) / 100
-    assert by["B"]["priority"] == round(15 * 0.6 * 0.8, 1)
-    assert by["C"]["reach"] == 1.0 and by["C"]["priority"] == 5.0          # no address: the homepage
+    assert by["A"]["priority"] == round(40 * 1.0 * (1 + math.log1p(140 / 100)), 3)   # reach 1 + ln(1 + (80 + 60) / 100)
+    assert by["B"]["priority"] == round(15 * 0.6 * (1 + math.log1p(0.8)), 3)
+    assert by["C"]["reach"] == round(1 + math.log1p(1.0), 6)                            # no address: the homepage (100)
     assert cs.CONFIDENCE_WEIGHT == {"measured": 1.0, "estimated": 0.6, "inferred": 0.5, "unverified": 0.4}
     assert cs.SEVERITY_WEIGHT["S1"] == 100 and cs.SEVERITY_WEIGHT["S4"] == 5
 
 
-def test_reach_is_capped_and_ranking_never_changes_a_severity():
-    many = [page(f"{SITE}/p{i}", 90) for i in range(20)]
-    r = report([finding("L", "r.l", "S4", urls=[p["url"] for p in many]), finding("M", "r.m", "S3", urls=[SITE + "/a"])],
-               pages=[page(SITE + "/", 100, "home", 1)] + many + [page(SITE + "/a", 80)])
+def test_a_medium_is_never_below_a_low_and_ranking_never_changes_a_severity():
+    many = [page(f"{SITE}/p{i}", 90) for i in range(200)]
+    r = report([finding("L", "r.l", "S4", urls=[p["url"] for p in many]), finding("M", "r.m", "S3", urls=[SITE + "/a"]),
+                finding("M2", "r.m2", "S3", "inferred", [SITE + "/a"], launch_gated=[]),
+                finding("H", "r.h", "S2", "estimated", [SITE + "/en/a"])],
+               pages=[page(SITE + "/", 100, "home", 1)] + many + [page(SITE + "/a", 80), page(SITE + "/en/a", 60)])
     sel = cs.select(r)
-    low = next(g for g in sel["cards"] if g["finding_ids"] == ["L"])
-    assert low["reach"] == cs.REACH_CAP and low["priority"] == 25.0
-    assert [g["finding_ids"][0] for g in sel["cards"]] == ["L", "M"]  # a broad Low may outrank a narrow Medium
-    assert low["severity"] == "S4" and r["checks"][0]["findings"][0]["severity"] == "S4"  # nothing rewritten
+    low = next(g for g in sel["groups"] if g["finding_ids"] == ["L"])
+    medium = next(g for g in sel["groups"] if g["finding_ids"] == ["M"])
+    assert low["priority"] > medium["priority"]                      # a broad Low may score higher ...
+    assert [g["finding_ids"][0] for g in sel["cards"]] == ["H", "M", "L"]  # ... but bands come first (DECISIONS 301)
+    assert r["checks"][0]["findings"][0]["severity"] == "S4"         # nothing rewritten
+
+
+def test_different_reach_never_gives_identical_scores():
+    totals = [0, 10, 90, 100, 101, 500, 2000, 2050, 15000, 15090, 40000, 49000]
+    reaches = [cs.reach_of(t) for t in totals]
+    assert len(set(reaches)) == len(reaches) and reaches == sorted(reaches) and max(reaches) < cs.REACH_CAP
+    scores = {cs._score(sev, "measured", x) for x in reaches for sev in ("S4",)}
+    assert len(scores) == len(reaches)
 
 
 def test_unverified_check_weighs_point_four_whatever_its_engine_confidence():
@@ -227,3 +239,154 @@ def test_search_and_cart_pages_without_noindex_are_one_low_finding():
     from maya_audit.judgments import qualify
     assert "owner decision" not in json.dumps(qualify({"check_id": "ACC-3", "rule_id": f.rule_id, "title": f.title,
                                                        "severity": "S4", "evidence": {}, "scope": f.scope}))
+
+
+# ---------------------------------------------------------------- DECISIONS 301
+
+def test_merge_table_puts_every_html_size_finding_on_one_card_with_the_worst_pages():
+    rows = [finding("H1", "rnd6.home_large", "S3", urls=[SITE + "/"], check="RND-6",
+                    evidence={"pages": [{"url": SITE + "/", "bytes": 885_000}]}),
+            finding("H2", "rnd6.large", "S4", urls=[SITE + "/a", SITE + "/en/a"], check="RND-6",
+                    evidence={"pages": [{"url": SITE + "/a", "bytes": 1_300_000}, {"url": SITE + "/en/a", "bytes": 1_100_000}]}),
+            finding("H3", "rnd6.late", "S4", urls=[SITE + "/a"], check="RND-6",
+                    evidence={"pages": [{"url": SITE + "/a", "main_offset_bytes": 700_000}]})]
+    sel = cs.select(report(rows))
+    [card] = sel["cards"]
+    assert card["finding_ids"] == ["H1", "H2", "H3"] and card["severity"] == "S3" and card["merge_group"] == "html_weight"
+    assert [x["url"] for x in card["examples"]] == [SITE + "/a", SITE + "/en/a", SITE + "/"]  # largest first
+    assert set(sel["by_finding"]) == {"H1", "H2", "H3"}                                     # all in the appendix
+    table = {g["id"]: g["rules"] for g in cs.merge_table()}
+    assert "rnd6.late" in table["html_weight"] and len({r for rules in table.values() for r in rules}) == sum(map(len, table.values()))
+
+
+def test_review_file_confirms_a_finding_which_then_competes_for_the_cards(tmp_path):
+    from maya_audit import manual_review
+    fc = finding("FC", "str12.language", "S3", "estimated", [SITE + "/en/a"], check="STR-12",
+                 evidence={"reading": {"seen_in": "firecrawl_only"}})
+    path = manual_review.path_for(tmp_path / "artifacts" / "report.json")
+    assert path.name == "review.json"
+    manual_review.record(path, manual_review.entry("FC", "rejected", by="A", seen="first look"))
+    manual_review.record(path, manual_review.entry("FC", "confirmed", by="Owner", seen="menu and titles in Turkish",
+                                                   note="“Üst Giyim” is translated as “Outerwear”", when="2026-11-03"))
+    review = manual_review.load(path)
+    assert [e["result"] for e in review["entries"]] == ["confirmed"] and review["replaced"][0]["result"] == "rejected"
+    sel = cs.select(report([fc]), confirmations=manual_review.confirmations(review))
+    [card] = sel["cards"]
+    assert card["confidence"] == "measured" and card["manual"]["note"].endswith("“Outerwear”")
+    with pytest.raises(ValueError):
+        manual_review.entry("FC", "maybe", by="x", seen="y")
+    with pytest.raises(ValueError):
+        manual_review.entry("FC", "confirmed", by="x", seen="")
+
+
+def _record(url, menu, titles, lang, alt=None):
+    return {"url": url, "status": 200,
+            "outlinks": [{"target": SITE + "/c", "anchor": m, "nav": True} for m in menu]
+                        + [{"target": SITE + "/products/" + str(i), "anchor": t} for i, t in enumerate(titles)],
+            "analysis": {"html_lang": lang, "hreflang": [{"hreflang": "tr", "href": alt}] if alt else [],
+                         "buttons": [{"text": "Add to cart"}], "breadcrumbs": [], "images": [], "h1_elements": []}}
+
+
+def test_language_finding_names_the_regions_in_the_other_language_and_advises_on_them():
+    from maya_audit import language_regions
+    tr = _record(SITE + "/kaban", ["Kaban", "Mont", "Ferace"], ["Deri Tüylü Kaban", "Yün Kaban"], "tr")
+    en = _record(SITE + "/en/kaban", ["Coats", "Mont", "Ferace"], ["Deri Tüylü Kaban", "Yün Kaban"], "en", alt=SITE + "/kaban")
+    r = {"crawl": {"pages": [tr, en]}, "brand": {"name": "Shop"}, "platform": {"name": "Shopify"},
+         "checks": [{"check_id": "STR-12", "findings": [finding("L", "str12.language", "S3", "estimated", [en["url"]], check="STR-12",
+                    evidence={"pages": [{"url": en["url"], "declared": "en", "main_content_language": "tr", "foreign_share": 0.9}]})]}]}
+    assert language_regions.attach(r) == ["L"] and language_regions.attach(r) == []
+    found = r["checks"][0]["findings"][0]["evidence"]["regions"]
+    regions = {t["region"]: t for t in found["regions"]}
+    assert regions["menu"]["foreign"] == 2 and regions["menu"]["in_other_language"]       # "Mont", "Ferace": identical
+    assert regions["titles"]["foreign"] == 2 and "buttons" not in regions                   # "Add to cart" is English
+    assert found["pages_compared_with_other_version"] == 1
+    steps = language_regions.advice(found, "Shopify", "tr")
+    assert steps[0].startswith("Shopify'da Translate & Adapt") and any("Menü" in x for x in steps)
+    assert "WPML" in language_regions.advice(found, "WordPress", "en")[0]
+    assert language_regions.line(found, {"menu": "menu", "titles": "titles", "body": "body"}).startswith("menu 67%")
+
+
+def test_one_source_for_every_count():
+    rows = [finding("A", "r.a", "S2", urls=[SITE + "/a"]), finding("B", "r.b", "S4", urls=[SITE + "/a"]),
+            finding("C", "r.c", "Info", urls=[SITE + "/a"]), finding("D", "r.d", "S4", "inferred", [SITE + "/en/a"])]
+    sel = cs.select(report(rows))
+    c = sel["counts"]
+    assert c["by_severity"] == {"S1": 0, "S2": 1, "S3": 0, "S4": 2, "Info": 1}
+    assert c["problems"] == 3 and c["findings"] == 4 == sum(c["by_severity"].values())
+    data = client_appendix.build(sel, "en")
+    assert len(xlsx.read(data)["Findings"]) - 1 == c["findings"]
+
+
+# ---------------------------------------------------------------- every output prints the same numbers (DECISIONS 301 (5))
+
+from test_report_agreement import demo_app  # noqa: E402,F401  (fixture)
+
+
+@pytest.mark.parametrize("site_name", ["SHOP", "BANK"])
+def test_web_pdf_pro_pdf_xlsx_and_markdown_print_the_same_counts(demo_app, site_name, tmp_path):  # noqa: F811
+    import re
+    import subprocess
+    import sys
+    from pathlib import Path
+    from html import unescape
+    from maya_audit_web import demo
+    from test_report_agreement import audit
+    one = audit(demo_app, getattr(demo, site_name))
+    base = f"/api/v1/audits/{one['id']}"
+    folder = demo_app.app.state.runner.artifacts(one["id"])
+    report = json.loads((folder / "report.json").read_text(encoding="utf-8"))
+    affected = json.loads((folder / "affected-urls.json").read_text(encoding="utf-8")) if (folder / "affected-urls.json").exists() else None
+    sel = cs.select(report, affected)
+    c = sel["counts"]
+    # Web concise print: the severity tiles and the summary line.
+    text = re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", demo_app.get(base + "/print?lang=en").text)))
+    for level, name in (("S1", "Blocker"), ("S2", "High"), ("S3", "Medium"), ("S4", "Low"), ("Info", "Note")):
+        assert re.search(rf"\b{c['by_severity'][level]} {name}", text), (level, text[:600])
+    assert f"{c['findings']} finding" in text and f"{c['cards']} card" in text
+    # XLSX appendix: one row per finding, by severity.
+    sheets = xlsx.read(demo_app.get(base + "/downloads/xlsx?lang=en").content)
+    rows = sheets["Findings"][1:]
+    assert len(rows) == c["findings"]
+    for level, name in cs.SEVERITY_NAME.items():
+        assert sum(1 for r in rows if r[3] == name) == c["by_severity"][level]
+    # Markdown: "N problems across assessed scope ... + M notes".
+    md = demo_app.get(base + "/downloads/markdown").text
+    head = re.search(r"\*\*(\d+) problems? across assessed scope.*?\+ (\d+) notes?\*\*", md)
+    assert head, md[:400]
+    assert (int(head.group(1)), int(head.group(2))) == (c["problems"], c["by_severity"]["Info"])
+    # Pro report data: the KPI and the coverage box.
+    skill = Path(__file__).resolve().parents[1] / ".agents" / "skills" / "maya-audit-pro" / "scripts" / "build_data.py"
+    out = tmp_path / "data.json"
+    run = subprocess.run([sys.executable, str(skill), str(folder / "report.json"), "--lang", "en", "-o", str(out),
+                          "--maya-src", str(Path(__file__).resolve().parents[1])], capture_output=True, text=True)
+    assert run.returncode == 0, run.stderr
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["kpis"][0]["value"] == str(c["problems"])
+    assert data["appendix"]["counts"]["findings"] == c["findings"]
+    assert data["coverage"]["rows"][2]["value"] == str(c["by_severity"]["Info"])
+
+
+def test_web_review_buttons_write_the_audits_review_file_and_the_card_says_so(demo_app):  # noqa: F811
+    from maya_audit import manual_review
+    from maya_audit_web import demo
+    from test_report_agreement import audit
+    one = audit(demo_app, demo.SHOP)
+    base = f"/api/v1/audits/{one['id']}"
+    view = demo_app.get(base + "/summary").json()
+    assert [d["format"] for d in view["downloads"]][:2] == ["pdf", "xlsx"]          # the appendix has its own button
+    folder = demo_app.app.state.runner.artifacts(one["id"])
+    report = json.loads((folder / "report.json").read_text(encoding="utf-8"))
+    target = next(f for c in report["checks"] for f in c.get("findings") or [] if f["severity"] in ("S2", "S3", "S4"))
+    token = {"x-maya-token": demo_app.headers.get("x-maya-token", "")}
+    bad = demo_app.post(base + "/review", json={"finding_id": "NOPE-1", "result": "confirmed", "by": "A", "seen": "B"}, headers=token)
+    assert bad.status_code == 404
+    ok = demo_app.post(base + "/review", json={"finding_id": target["id"], "result": "confirmed", "by": "Owner",
+                                              "seen": "seen in a browser", "note": "checked on the live page"}, headers=token)
+    assert ok.status_code == 200, ok.text
+    entries = manual_review.load(folder / "review.json")["entries"]
+    assert entries[-1]["finding_id"] == target["id"] and entries[-1]["by"] == "Owner"
+    assert any(target["id"] in r["finding_ids"] for r in ok.json()["reviewed"])
+    printed = demo_app.get(base + "/print?lang=en").text
+    if f'{target["id"]}' in printed:  # on a card: the card says who confirmed it, and the note
+        assert "confirmed by manual check (Owner," in printed and "checked on the live page" in printed
+    assert json.loads((folder / "report.json").read_text(encoding="utf-8")) == report  # the report itself is never changed

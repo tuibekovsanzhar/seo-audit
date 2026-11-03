@@ -18,7 +18,7 @@ import zipfile
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Annotated, Any, Iterator
+from typing import Annotated, Any, Iterator, Literal
 from urllib.parse import urlsplit
 
 from fastapi import Depends, APIRouter, FastAPI, Query, Request
@@ -140,6 +140,15 @@ class ClientReviewIn(Strict):
     revision: int = Field(ge=1)
     reviewer: str = Field(min_length=1, max_length=120)
     reason: str = Field(min_length=1, max_length=2000)
+
+
+class ManualCheckIn(Strict):
+    """The owner's manual check of one finding in the "Teyit edin" list (DECISIONS 301 (1))."""
+    finding_id: str = Field(min_length=3, max_length=80)
+    result: Literal["confirmed", "rejected"]
+    by: str = Field(min_length=1, max_length=120)
+    seen: str = Field(min_length=1, max_length=1000)
+    note: str | None = Field(default=None, max_length=1000)
 
 
 class PlanIn(Strict):
@@ -926,9 +935,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                 "downloads": [{"format": fmt, "url": f"{base}/downloads/{fmt}" + ("?draft=true" if draft else ""),
                                "label": t("result.download.draft", label=t(f"result.download.{fmt}")) if draft
                                else t(f"result.download.{fmt}")}
-                              for fmt in ("pdf", "markdown", "json", "evidence")
+                              for fmt in ("pdf", "xlsx", "markdown", "json", "evidence")
                               for draft in [fmt != "evidence" and gate_decision(report) == release_gate.BLOCKED]],
-                "print_url": f"{base}/print", "has_previous": not audit.get("analysis") and store.previous_audit(audit) is not None}
+                "print_url": f"{base}/print", "review_url": f"{base}/review", "has_previous": not audit.get("analysis") and store.previous_audit(audit) is not None}
         # The practical report in brief: the executive summary, the scorecard and the timeline's counts. The whole of it,
         # with every issue and the page table, is GET /audits/{id}/practical: a results card stays small.
         built = practical.build(full, summary.search(report, limit=100_000)["items"], report, None)
@@ -1303,10 +1312,35 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
     def appendix_name(audit: dict[str, Any]) -> str:
         return download_name(audit, "xlsx").replace(".xlsx", "-appendix.xlsx")
 
+    def review_path(audit: dict[str, Any]) -> Path:
+        from maya_audit import manual_review
+        return artifact_folder(audit["id"]) / manual_review.NAME
+
     def client_selection_of(audit: dict[str, Any], report: dict[str, Any]) -> dict[str, Any]:
-        """What the client report shows and the appendix lists (DECISIONS 300): one selection for both."""
-        from maya_audit import client_selection
-        return client_selection.select(report, affected(audit["id"]))
+        """What the client report shows and the appendix lists (DECISIONS 300): one selection for both, with the
+        owner's manual checks of this audit (review.json, DECISIONS 301)."""
+        from maya_audit import client_selection, manual_review
+        return client_selection.select(report, affected(audit["id"]),
+                                       manual_review.confirmations(manual_review.load(review_path(audit))))
+
+    def review_view(audit: dict[str, Any]) -> dict[str, Any]:
+        """The "Teyit edin" list with each group's manual check, and the review file's entries."""
+        from maya_audit import manual_review
+        from . import wording
+        report = load_report(audit)
+        selection = client_selection_of(audit, report)
+        lang = current_language()
+
+        def row(g):
+            lead = g["lead"]
+            return {"finding_id": lead.get("id"), "finding_ids": g["finding_ids"], "rule_id": g.get("rule_id"),
+                    "title": wording.title(lead.get("check_id"), lead.get("title") or "", lang)[0] or lead.get("title"),
+                    "severity": g["severity"], "severity_label": t(f"result.severity.{g['severity']}"),
+                    "reason": g.get("confirm_reason"), "reason_label": t("c6.reason." + g["confirm_reason"]) if g.get("confirm_reason") else "",
+                    "placement": g["placement"], "manual": g.get("manual"), "addresses": len(g["urls"])}
+        reviewed = [g for g in selection["groups"] if g.get("manual")]
+        return {"confirm": [row(g) for g in selection["confirm"]], "reviewed": [row(g) for g in reviewed],
+                "entries": manual_review.load(review_path(audit))["entries"]}
 
     def appendix_xlsx(audit: dict[str, Any]) -> bytes:
         from maya_audit import client_appendix
@@ -1548,6 +1582,22 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         _, workspace = client_workspace(audit_id)
         return client_call(lambda: client_reports.public(workspace.update(body.revision,
             lambda w: client_reports.review(w, body.reviewer, body.reason))))
+
+    @api.get("/audits/{audit_id}/review", summary="The findings to confirm first and the owner's manual checks")
+    def get_review(audit_id: str) -> dict[str, Any]:
+        return review_view(need_audit(audit_id))
+
+    @api.post("/audits/{audit_id}/review", summary="Record the owner's manual check of one finding (confirmed or rejected)")
+    def post_review(audit_id: str, body: ManualCheckIn) -> dict[str, Any]:
+        from maya_audit import manual_review
+        from maya_audit.release_gate import findings_of
+        audit = need_audit(audit_id)
+        finding = findings_of(load_report(audit)).get(body.finding_id)
+        if finding is None:
+            raise ApiError(404, "finding_not_found", t("review.unknown_finding"))
+        manual_review.record(review_path(audit), manual_review.entry(
+            body.finding_id, body.result, by=body.by, seen=body.seen, note=body.note, rule_id=finding.get("rule_id")))
+        return review_view(audit)
 
     @api.post("/audits/{audit_id}/client-report/validate")
     def validate_client_report(audit_id: str):

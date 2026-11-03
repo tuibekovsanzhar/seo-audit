@@ -102,6 +102,19 @@ def _when(group, row):
     return "later"
 
 
+def _card_title(group, row, lang):
+    """A merge group's own title (DECISIONS 301 (4)) when the card holds more than one finding; else the finding's."""
+    from maya_audit.client_selection import MERGE_BY_RULE
+    merged = MERGE_BY_RULE.get(group.get("rule_id") or "") if len(group["finding_ids"]) > 1 else None
+    return (merged["title"].get(lang) or merged["title"]["en"]) if merged else (row.get("title_shown") or group["title"])
+
+
+def _score(group):
+    """A card's priority score as printed: one decimal, a decimal comma in Turkish (the selection keeps three)."""
+    text = f"{group['priority']:.1f}"
+    return text.replace(".", ",") if current_language() == "tr" else text
+
+
 def render(view, rows, generated_at, practical, companions, demo=False, selection=None):
     from .pdf import CSS
     from maya_audit.client_selection import CONFIRM_LINES, platform_steps
@@ -140,7 +153,7 @@ def render(view, rows, generated_at, practical, companions, demo=False, selectio
         out.append(f'<p class="wrap"><b>{e(view["headline"])}</b></p>')
     out.append(f"<p class=\"wrap\"><b>{e(outcome['label'])}.</b> {e(outcome.get('reason_shown') or outcome['reason'])}</p>")
     out.append('<div class="cards">' + "".join(
-        f'<div class="card"><b>{e(counts["by_severity"][level])}</b>{e(t(f"result.severity.{level}"))}</div>'
+        f'<div class="card"><b>{e((sel["counts"].get("by_severity") or counts["by_severity"])[level])}</b>{e(t(f"result.severity.{level}"))}</div>'
         for level in ("S1", "S2", "S3", "S4", "Info")) + "</div>")
     c = sel["counts"]
     out.append('<p class="wrap">' + e(t("c6.summary_counts", findings=c.get("findings", 0), cards=c.get("cards", 0),
@@ -148,8 +161,8 @@ def render(view, rows, generated_at, practical, companions, demo=False, selectio
                                        appendix=c.get("appendix_only", 0))) + '</p>')
     if sel["cards"]:
         out.append(f'<p><b>{e(t("c6.first"))}</b></p><ol>' + "".join(
-            f'<li class="wrap">{e((by_id.get(g["finding_ids"][0]) or {}).get("title_shown") or g["title"])} '
-            f'<span class="muted small">{e(t("c6.score", score=g["priority"]))}</span></li>' for g in sel["cards"][:3]) + '</ol>')
+            f'<li class="wrap">{e(_card_title(g, by_id.get(g["finding_ids"][0]) or {}, lang))} '
+            f'<span class="muted small">{e(t("c6.score", score=_score(g)))}</span></li>' for g in sel["cards"][:3]) + '</ol>')
 
     # 2. Coverage: what was read and what was not. Maya's own limits are said here, never as the client's problems.
     cov = sel["coverage"]
@@ -223,19 +236,43 @@ def render(view, rows, generated_at, practical, companions, demo=False, selectio
     out.append(f'<h2>{e(t("c6.cards", count=len(sel["cards"])))}</h2><p class="small wrap">{e(t("c6.how_to_read"))}</p>')
     if not sel["cards"]:
         out.append(f'<p>{e(t("result.actions.none"))}</p>')
+    from maya_audit import language_regions
+    from maya_audit.client_selection import MERGE_BY_RULE
+    region_names = {r: t("c6.region." + r) for r in language_regions.REGIONS}
+    region_names["_percent_first"] = lang == "tr"
     for g in sel["cards"]:
         row = by_id.get(g["finding_ids"][0]) or {}
         est = row.get("estimates") or {}
-        out.append(f'<section class="issue" id="card-{g["card"]}"><h3>{g["card"]}. {e(row.get("title_shown") or g["title"])}</h3>')
+        merged = MERGE_BY_RULE.get(g.get("rule_id") or "") if len(g["finding_ids"]) > 1 else None
+        title = _card_title(g, row, lang)
+        out.append(f'<section class="issue" id="card-{g["card"]}"><h3>{g["card"]}. {e(title)}</h3>')
+        check = g.get("manual") if (g.get("manual") or {}).get("result") == "confirmed" else None
+        confidence = t("c6.class.confirmed", by=check.get("by"), date=check.get("date")) if check else t(f"c6.class.{g['confidence']}")
+        affects = t("c6.addresses", count=len(g["urls"])) if merged else (row.get("affects") or "")
         out.append('<p class="small">' + e(" · ".join(x for x in (
-            t("c6.score", score=g["priority"]), row.get("severity_label") or g["severity"],
-            t(f"c6.class.{g['confidence']}"), row.get("affects") or "",
+            t("c6.score", score=_score(g)), row.get("severity_label") or g["severity"],
+            confidence, affects,
             t("c6.effort", effort=est.get("effort_label") or "—"), ", ".join(g["finding_ids"][:3])
             + (f" +{len(g['finding_ids']) - 3}" if len(g["finding_ids"]) > 3 else "")) if x)) + '</p>')
-        out.append(f'<p class="wrap"><b>{e(t("result.why"))}:</b> {e(row.get("why_shown") or row.get("why"))}</p>')
-        steps = platform_steps(g.get("rule_id"), sel.get("platform"), lang)
+        # A merged card's reason comes from its broadest finding, not from whichever came first (often the homepage).
+        why_row = max((by_id.get(i) or {} for i in g["finding_ids"]), key=lambda r: int(r.get("pages_total") or 0)) if merged else row
+        out.append(f'<p class="wrap"><b>{e(t("result.why"))}:</b> {e(why_row.get("why_shown") or why_row.get("why") or row.get("why_shown") or row.get("why"))}</p>')
+        if check and check.get("note"):
+            out.append(f'<p class="wrap"><b>{e(t("c6.manual_note"))}:</b> {e(check["note"])}</p>')
+        # A language-mismatch card says which regions are in the other language and bases its steps on them, with the
+        # platform's own translation tool (DECISIONS 301 (2)).
+        found = next(((by_id.get(i) or {}).get("evidence_record", {}).get("evidence", {}).get("regions")
+                      for i in g["finding_ids"] if ((by_id.get(i) or {}).get("evidence_record", {}).get("evidence") or {}).get("regions")), None)
+        found = found or next(((m.get("evidence") or {}).get("regions") for m in g.get("members") or [] if (m.get("evidence") or {}).get("regions")), None)
+        where = language_regions.line(found, region_names)
+        if where:
+            out.append(f'<p class="wrap"><b>{e(t("c6.regions"))}:</b> {e(where)}</p>')
+        steps = language_regions.advice(found, sel.get("platform"), lang) or platform_steps(g.get("rule_id"), sel.get("platform"), lang)
         if steps:
-            out.append(f'<p class="wrap"><b>{e(t("result.fix"))} ({e(sel["platform"])}):</b> {e("; ".join(steps))}.</p>')
+            label = t("result.fix") + (f" ({sel['platform']})" if sel.get("platform") else "")
+            out.append(f'<p class="wrap"><b>{e(label)}:</b> {e("; ".join(steps))}.</p>')
+        elif merged:
+            out.append(f'<p class="wrap"><b>{e(t("result.fix"))}:</b> {e(merged["fix"].get(lang) or merged["fix"]["en"])}</p>')
         else:
             out.append(f'<p class="wrap"><b>{e(t("result.fix"))}:</b> {e(row.get("fix_shown") or row.get("fix"))}</p>')
         if row.get('verification') and row['verification'] != standard_verification:

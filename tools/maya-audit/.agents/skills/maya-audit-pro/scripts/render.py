@@ -485,6 +485,12 @@ def sub_lines(t, L):
     return f'<div class="todo-sub">{body}</div>'
 
 
+def score_text(score, lang):
+    """A card's priority score: one decimal, a decimal comma in Turkish (DECISIONS 301 (3))."""
+    text = f"{score:.1f}"
+    return text.replace(".", ",") if lang == "tr" else text
+
+
 def todo_pages(d, L):
     """Yapılacaklar: sayfa başına 4 kart (2×2). Her kart: onay kutusu, iş, takvim/sorumlu/efor, adımlar, doğrulama, linkler."""
     todos = d.get("todos") or []
@@ -505,7 +511,7 @@ def todo_pages(d, L):
                 f'<b data-slot="todos[{i}].title">{e(t["title"])}</b></div>'
                 f'<div class="tm"><span class="sev {e(t["severity"])}">{e(t["severity_label"])}</span> {e(t["when"])} · {e(t["owner"])} · '
                 f'{e(L["col_effort"].title() if d["lang"] == "en" else "Efor")}: {e(t["effort"])}'
-                + (f' · {e(L["todo_priority"].format(score=t["priority"]))}' if t.get("priority") is not None else "")
+                + (f' · {e(L["todo_priority"].format(score=score_text(t["priority"], d["lang"])))}' if t.get("priority") is not None else "")
                 + f' · <span class="mono">{e(t["id"])}</span></div>'
                 f'<div class="todo-status">{e(t["status"])}</div>'
                 # DECISIONS 278: a broken link's failing address and the page to edit are two things, never swapped.

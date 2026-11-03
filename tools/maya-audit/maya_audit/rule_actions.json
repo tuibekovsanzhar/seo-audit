@@ -834,6 +834,46 @@
      "Confirm which language the page should be in",
      "Align the content or <html lang> with it"
     ]
+   },
+   "region_steps": {
+    "menu": {
+     "tr": "Menü öğelerini (koleksiyon adları) bu dil için çevirin",
+     "en": "Translate the menu items (collection names) for this language"
+    },
+    "breadcrumbs": {
+     "tr": "Kırılımdaki koleksiyon adlarını bu dil için çevirin",
+     "en": "Translate the collection names in the breadcrumbs"
+    },
+    "titles": {
+     "tr": "Ürün ve içerik başlıklarını (renk, beden adları dahil) çevirin",
+     "en": "Translate product and item titles, colour and size names included"
+    },
+    "buttons": {
+     "tr": "Düğme ve etiket metinlerini temanın dil dosyasında çevirin",
+     "en": "Translate button and label texts in the theme's language file"
+    },
+    "banners": {
+     "tr": "Afiş görsellerini ve alt metinlerini bu dil için ayrı yükleyin",
+     "en": "Upload banner images and their alt text per language"
+    },
+    "footer": {
+     "tr": "Alt bilgi bağlantılarının metinlerini çevirin",
+     "en": "Translate the footer link texts"
+    },
+    "body": {
+     "tr": "Sayfa metnini bu dilde yazın ya da sayfayı doğru dil klasörüne taşıyın",
+     "en": "Write the page text in this language, or move the page to its own folder"
+    }
+   },
+   "platform_steps_language": {
+    "Shopify": {
+     "tr": "Shopify'da Translate & Adapt ile ürün, koleksiyon, menü ve temayı çevirin",
+     "en": "On Shopify, translate products, collections, menu and theme in Translate & Adapt"
+    },
+    "WordPress": {
+     "tr": "WordPress'te WPML ya da Polylang ile sayfa, menü ve metinleri çevirin",
+     "en": "On WordPress, translate pages, menus and strings with WPML or Polylang"
+    }
    }
   },
   "idx1.4xx.referenced.linked": {

@@ -245,3 +245,7 @@ table.data th { white-space: nowrap; overflow-wrap: normal; font-weight: 600; co
 .unverified-note { margin: var(--space-1, 4px) 0; }
 
 .client-workspace{margin-block:24px;padding:16px;border:1px solid #bbb;border-radius:8px}.client-field{display:block;margin-block:14px}.client-field span{display:block;margin-bottom:6px}.client-field textarea,.client-card select{width:100%;box-sizing:border-box}.client-workspace pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:400px;overflow:auto}.client-card{margin-block:12px;padding:12px;border:1px solid #ddd}.client-validation{max-height:350px;overflow:auto}.client-workspace details>summary{cursor:pointer;font-weight:600}
+
+/* DECISIONS 301: the manual-check form of the "Teyit edin" list */
+.review-form { display: grid; gap: 6px; margin-top: 6px; max-width: 640px; }
+.review-form input, .review-form textarea { width: 100%; }

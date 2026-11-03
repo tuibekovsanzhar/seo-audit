@@ -312,7 +312,20 @@
   "appendix_file": "ek (XLSX)",
   "appendix_line": "{file}: {findings} bulgunun tamamı ve etkilenen her adres. Bu raporda {cards} kart; teyit edilecek {confirm} grup; {notes} not grubu; yalnız ekte {appendix} sorun grubu. Maya'nın sınırları soldaki kutuda ve ekin Kapsam sayfasındadır.",
   "todo_priority": "Öncelik puanı {score}",
-  "schedule_priority": "Öncelik puanına göre ilk kartlar"
+  "schedule_priority": "Öncelik puanına göre ilk kartlar",
+  "manual_confirmed": "Ölçüldü, elle teyit edildi ({by}, {date})",
+  "manual_note": "Elle kontrol: {note}",
+  "regions_line": "Diğer dilde kalan bölgeler: {regions}",
+  "region_names": {
+   "menu": "menü",
+   "breadcrumbs": "kırılım",
+   "titles": "ürün ve içerik başlıkları",
+   "buttons": "düğme ve etiketler",
+   "banners": "afişler",
+   "footer": "alt bilgi",
+   "body": "sayfa metni",
+   "_percent_first": true
+  }
  },
  "en": {
   "doc_kind": "WEBSITE AUDIT",
@@ -626,6 +639,18 @@
   "appendix_file": "appendix (XLSX)",
   "appendix_line": "{file}: all {findings} findings and every affected address. In this report {cards} cards; {confirm} groups to confirm; {notes} note groups; {appendix} problem groups only in the appendix. Maya's own limits are in the box on the left and in the appendix's Coverage sheet.",
   "todo_priority": "Priority score {score}",
-  "schedule_priority": "First cards by priority score"
+  "schedule_priority": "First cards by priority score",
+  "manual_confirmed": "Measured, confirmed by manual check ({by}, {date})",
+  "manual_note": "Manual check: {note}",
+  "regions_line": "In the other language: {regions}",
+  "region_names": {
+   "menu": "menu",
+   "breadcrumbs": "breadcrumbs",
+   "titles": "product and item titles",
+   "buttons": "buttons and labels",
+   "banners": "banners",
+   "footer": "footer",
+   "body": "body text"
+  }
  }
 }

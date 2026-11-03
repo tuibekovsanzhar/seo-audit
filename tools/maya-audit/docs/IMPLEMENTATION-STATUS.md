@@ -850,6 +850,68 @@ was not given (placeholder in the request): STR-12 stays in "Teyit edin" until `
 button for the XLSX (the route and the companion line exist); manual confirmations are a pro-report flag only (the web
 app has none); reach cap 5 makes broad Low findings tie at 25.0 (ties broken by severity, then report order).
 
+## Report-quality rules for every audit (2026-11-03, DECISIONS 301)
+
+**Changed:** (1) a per-audit review file for manual checks (`maya_audit/manual_review.py`; `review.json` beside the
+report; web "Teyit edin" panel with Confirmed/Rejected buttons, `GET/POST /audits/{id}/review`; `build_data.py
+--confirm/--reject --by --seen [--note] [--review]`); a confirmed finding is "measured, confirmed by manual check" with
+its note on the card. (2) Language-mismatch findings name the page regions in the other language
+(`maya_audit/language_regions.py`, `evidence.regions`) and their advice follows them, with Shopify Translate & Adapt /
+WordPress WPML-Polylang first. (3) Cards by severity band, then priority; reach = 1 + ln(1 + importance / 100), at most
+10; scores kept to 3 decimals. (4) Merge table `client_selection.MERGE_GROUPS` (8 groups, listed in DECISIONS 301): one
+card, one title, one fix, worst pages as examples. (5) Every count from `select()["counts"]`; a test compares the web
+PDF, pro data, XLSX and Markdown. (7) XLSX button on the results page. Pro: steps of merged cards de-duplicated and kept
+to three when a card already shows two lines above them. Tests: `tests/test_v03_client_report.py` 23 -> 31.
+
+**(6) maya-audit-rapor — recommendation: retire it.** It is the third client report (`maya_audit/client_reporting/`,
+`maya_audit_web/client_reports.py`, the web "Client report" workspace, the `maya-audit-rapor` skill; about 2,170 lines
+and 14 test files). It has its own grouping, score and wording, so it would need the selection rewired into all of them
+to obey the 10-page/15-card rule, and it would then duplicate the pro report. Its one feature the others lack, a
+reviewer's sign-off (draft → reviewed), is covered by the review file now. Suggested path: hide the web button and
+mark the skill deprecated now, delete with its tests one release later. Not changed here; owner's decision.
+
+**nihan, adile, enpara rebuilt offline** (copies in a temp folder; `~/.maya-audit/web` untouched; each saved report
+through `tools/reassess_saved.py`, then the web concise PDF (tr) through an isolated copy of the web app, the pro report
+(tr, draft: model fields unfilled; page and card counts do not depend on them). Before = commit `5f6d21f` (stage 6) run
+the same way; after = this tree, with nihan's review file (STR-12 confirmed by the owner).
+
+| Audit | | Web PDF pages | Web cards | Pro pages | Pro cards | Teyit edin | Groups |
+|---|---|---|---|---|---|---|---|
+| nihan | before | 5 | 10 | 7 | 12 | 10 | 32 |
+| nihan | after | 5 | 8 | 7 | 10 | 9 | 29 |
+| adile | before | 4 | 4 | 6 | 7 | 14 | 39 |
+| adile | after | 4 | 4 | 6 | 7 | 14 | 39 |
+| enpara | before | 4 | 5 | 6 | 8 | 10 | 30 |
+| enpara | after | 4 | 5 | 6 | 8 | 10 | 30 |
+
+Top cards (score, severity, cause):
+
+- nihan before: 25.0 Low STR-16 · 25.0 Low RND-6 late · 25.0 Low TSEO-1 · 25.0 Low STR-1 · 25.0 Low RND-6 large · 17.5
+  Low STR-2 · 14.4 Medium RND-6 homepage · 11.7 Low STR-14 · 8.0 Low IDX-5 · 4.0 Low ACC-3.
+- nihan after: 93.4 Medium html_weight (3 RND-6) · 67.3 Medium language_mismatch (STR-12, confirmed by manual check;
+  menu 39%, item titles 70%, body 98% in Turkish; Translate & Adapt) · 22.9 Low heading_levels · 19.4 Low template_meta
+  (STR-16 + STR-1) · 12.5 Low STR-2 no `<h1>` · 11.0 Low links_without_text · 9.8 Low sitemap_lastmod (Shopify steps) ·
+  7.9 Low ACC-3 search/cart indexable.
+- adile before: 17.9 Low TSEO-1 · 2.3 Low STR-14 · 1.5 Medium IDX-5 failed files · 0.6 Low STR-2 empty `<h1>`.
+- adile after: 16.4 Medium IDX-5 failed files · 12.6 Low heading_levels · 6.9 Low links_without_text · 5.6 Low STR-2.
+- enpara before: 73.6 High TSEO-1 early `</head>` · 15.0 Low STR-5 · 10.8 Low STR-14 · 5.9 Low STR-2 · 1.0 Low IDX-2.
+- enpara after: 81.8 High TSEO-1 early `</head>` · 12.4 Low STR-5 · 10.8 Low links_without_text · 8.9 Low STR-2 · 5.9
+  Low IDX-2.
+
+**Verification** (working tree on `5f6d21f`, macOS, Python 3.13.1; no .env, no providers, no live requests):
+
+| Command | Result |
+|---|---|
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2625 passed, 4 skipped, 131 deselected, 1 warning in 410.89s (0:06:50)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `2756 passed, 4 skipped, 1 warning in 748.31s (0:12:28)` |
+| pro skill tests (outside `testpaths`) | `56 passed` |
+| `ruff check --select E9,F821,F841` (CI paths + pro scripts) | `All checks passed!` (caught a 3.12-only f-string in `render.py`, fixed) |
+| `python3.11 -m compileall`, `node` syntax check of `static/app.js` | OK |
+| Linux/Windows, live runs, the web UI in a real browser | NOT RUN |
+
+Final nihan pro report (fields filled, validated, gate PASS, no overflow): 7 pages, 10 cards (8 problem + 2 Not), XLSX
+appendix with all 48 findings. Outputs: `reviews/2026-11-03/rebuild-301/` (git-ignored).
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

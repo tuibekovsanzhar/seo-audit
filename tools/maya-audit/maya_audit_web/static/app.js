@@ -1013,6 +1013,10 @@ function resultView(view, context) {
   add(out, el("div", { class: "row" },
     el("button", { class: "button primary", type: "button", onclick: () => { clientSlot.hidden = false; if (!clientSlot.dataset.opened) { clientSlot.dataset.opened = "1"; showClientReport(clientSlot, view.audit.id); } } }, T("client.action")),
     profileForm(view.audit.project_id, "saved-" + view.audit.id)), clientSlot);
+  // "Teyit edin": the owner's manual checks, written to this audit's review file (DECISIONS 301).
+  const reviewSlot = el("section", { class: "review-list" });
+  add(out, reviewSlot);
+  showReview(reviewSlot, view.audit.id);
   add(out, el("h3", { text: T("result.downloads") }), el("p", { class: "muted small", text: T("result.downloads.note") }));
   add(out, el("div", { class: "row" }, view.downloads.map((item) => item.format === "pdf"
     ? el("button", { class: "button", type: "button", onclick: () => downloadPdf(item.url, view.print_url) }, item.label)
@@ -1022,6 +1026,35 @@ function resultView(view, context) {
 
   add(out, el("h3", { text: T("result.followups") }), el("div", { class: "chips" }, view.follow_ups.map((question) => el("button", { class: "chip", type: "button", onclick: () => send(question) }, question))));
   return out;
+}
+
+async function showReview(box, auditId) {
+  let data;
+  try { data = await api("GET", "/audits/" + auditId + "/review"); } catch (error) { box.replaceChildren(); return; }
+  const rowView = (row) => {
+    const by = el("input", { type: "text", maxlength: "120", placeholder: T("review.by") });
+    const seen = el("textarea", { maxlength: "1000", rows: "2", placeholder: T("review.seen") });
+    const note = el("input", { type: "text", maxlength: "1000", placeholder: T("review.extra") });
+    const save = async (result) => {
+      if (!by.value.trim() || !seen.value.trim()) { notice(T("review.seen")); return; }
+      try {
+        await api("POST", "/audits/" + auditId + "/review", { finding_id: row.finding_id, result, by: by.value.trim(), seen: seen.value.trim(), note: note.value.trim() || null });
+        notice(T("review.saved"));
+        showReview(box, auditId);
+      } catch (error) { notice(error.message); }
+    };
+    const done = row.manual ? el("p", { class: "muted small", text: T("review.done", { result: T(row.manual.result === "confirmed" ? "review.confirm" : "review.reject"), by: row.manual.by, date: row.manual.date }) }) : null;
+    return el("li", {}, el("strong", { text: row.title }), " · " + row.severity_label + (row.reason_label ? " · " + row.reason_label : ""), done,
+      el("details", { class: "quiet-details" }, el("summary", { text: T("review.confirm") + " / " + T("review.reject") }),
+        el("div", { class: "review-form" }, by, seen, note,
+          el("div", { class: "row" },
+            el("button", { class: "button", type: "button", onclick: () => save("confirmed") }, T("review.confirm")),
+            el("button", { class: "button quiet", type: "button", onclick: () => save("rejected") }, T("review.reject"))))));
+  };
+  box.replaceChildren(el("h3", { text: T("review.title") }), el("p", { class: "muted small", text: T("review.note") }),
+    data.confirm.length ? el("ul", { class: "list" }, data.confirm.map(rowView)) : el("p", { class: "muted", text: T("review.none") }),
+    data.reviewed.length ? el("h4", { text: T("review.reviewed") }) : null,
+    data.reviewed.length ? el("ul", { class: "list" }, data.reviewed.map(rowView)) : null);
 }
 
 async function downloadPdf(url, printUrl) {

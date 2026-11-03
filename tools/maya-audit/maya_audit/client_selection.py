@@ -14,8 +14,8 @@ needs confirming first, a different re-test state (a card shows one, RG-4).
 
     severity    Blocker (S1) 100, High (S2) 40, Medium (S3) 15, Low (S4) 5, Info 0
     confidence  measured 1.0, estimated 0.6, inferred 0.5, unverified 0.4
-    reach       the summed importance (page grouping, 0-100) of the pages it affects, in units of 100 (the homepage),
-                at most 5; a finding with no page address reaches the homepage (1.0)
+    reach       1 + ln(1 + the summed importance (page grouping, 0-100) of the pages it affects / 100), at most 10
+                (DECISIONS 301: diminishing returns, no ties); a finding with no page address reaches the homepage
     business    1.0 until business-type profiles exist (stage 4)
 
 "Measured" is the engine's `verified`; "unverified" is a finding from a rule not yet validated on real sites (the
@@ -49,7 +49,9 @@ CONFIDENCE_WEIGHT = {"measured": 1.0, "estimated": 0.6, "inferred": 0.5, "unveri
 ENGINE_CONFIDENCE = {"verified": "measured", "estimated": "estimated", "inferred": "inferred", "not_assessed": "unverified"}
 CONFIRM_AT_OR_BELOW = 0.5
 REACH_UNIT = 100
-REACH_CAP = 5.0
+# DECISIONS 301 (3): reach grows with diminishing returns, 1 + ln(1 + importance / 100), up to 10 (reached only past
+# about 800,000 importance points), so two findings of one band with different reach never score the same.
+REACH_CAP = 10.0
 UNSCORED_IMPORTANCE = 10  # a page the grouping did not score (not read, a file): counted, but small
 BUSINESS_RELEVANCE = 1.0
 from .release_gate import CLIENT_MAX_CARDS as MAX_CARDS, CLIENT_MAX_PAGES as MAX_PAGES  # noqa: E402
@@ -60,8 +62,32 @@ PROBLEM = ("S1", "S2", "S3", "S4")
 # How Maya read the pages: the reader's own note, not a problem of the site (DECISIONS 288 keeps acc9.blocked_429 and
 # acc9.rate_limited_429, which warn that AI crawlers may be refused too, as the site's).
 OWN_LIMIT_RULES = frozenset({"acc9.reader", "acc9.reader.counted", "acc9.reader.site", "acc9.reader.site.counted"})
-# One cause found by two rules (the pro report's merged empty-page cards, DECISIONS 284).
-RULE_FAMILY = {"judgment.empty.repeated": "idx1.empty", "judgment.empty.single": "idx1.empty"}
+# DECISIONS 301 (4): rule ids -> one root cause -> one fix. Findings of these rules are one card (still split by what
+# a card states: confirm first, intent, re-test state, Info), with the worst pages as examples (`worst_by`: the
+# evidence field that measures how bad a page is). Every finding id stays in the appendix. A rule in no group is its
+# own cause. `title` and `fix` are the card's one title and one fix, in Turkish and English.
+MERGE_GROUPS = (
+    {"id": "html_weight", "title": {"tr": "Sayfa HTML'ini hafifletin", "en": 'Make the page HTML lighter'}, "fix": {"tr": "Satır içi JSON, betik, stil ve SVG'yi HTML'in dışına taşıyın; kullanılmayan tema bloklarını kaldırın; ana içerik HTML'in başına yakın başlasın.", "en": 'Move inlined JSON, scripts, styles and SVG out of the HTML; remove unused theme blocks; let the main content start early in the HTML.'}, "cause": "the page HTML is too heavy (inlined data, scripts, styles, theme blocks)",
+     "rules": ("rnd6.home_large", "rnd6.home_large_fc", "rnd6.large", "rnd6.large_fc", "rnd6.late", "rnd6.late_fc"),
+     "worst_by": ("bytes", "main_offset_bytes")},
+    {"id": "empty_pages", "title": {"tr": 'Boş yanıt veren sayfaları düzeltin', "en": 'Fix pages that answer empty'}, "fix": {"tr": 'Boş yanıtın nedenini sunucu ya da CDN kayıtlarında bulun ve sayfanın içerikle yanıt vermesini sağlayın.', "en": 'Find why the page answers empty in the server or CDN logs and make it answer with its content.'}, "cause": "pages answer with an empty document",
+     "rules": ("idx1.empty", "idx1.empty.bot", "judgment.empty.repeated", "judgment.empty.single")},
+    {"id": "heading_levels", "title": {"tr": 'Başlık düzeylerini sıraya koyun', "en": 'Put heading levels in order'}, "fix": {"tr": "Başlıkları sırayla kullanın (H2'den sonra H3); tekrarlanan bloklardaki başlıkları temada düzeltin.", "en": 'Use heading levels in order (an H3 after an H2); fix the headings of repeated blocks in the theme.'}, "cause": "heading levels skip a level, in the pages or in a repeated block",
+     "rules": ("tseo1.heading_jumps", "shared.heading_jump", "shared.heading_jump_varied")},
+    {"id": "links_without_text", "title": {"tr": 'Metni olmayan bağlantılara ad verin', "en": 'Name the links that have no text'}, "fix": {"tr": 'Bağlantıya metin verin ya da içindeki görsele alt metin ekleyin; tekrarlanan bloklarda bunu temada yapın.', "en": 'Give the link text or give its image an alt text; in repeated blocks, do it in the theme.'}, "cause": "links with no text (usually an image link with no alt)",
+     "rules": ("str14.no_text", "shared.link_no_text", "shared.block_links_no_text", "shared.link_no_text_pattern")},
+    {"id": "links_without_address", "title": {"tr": 'Adresi olmayan bağlantıları düzeltin', "en": 'Fix links with no address'}, "fix": {"tr": 'Sayfaya giden öğelere gerçek bir href verin; yalnız işlem yapan öğeler için <button> kullanın.', "en": 'Give elements that lead to a page a real href; use <button> for elements that only act.'}, "cause": "links and controls with no address a crawler can follow",
+     "rules": ("str19.no_target", "shared.link_no_address", "shared.links_no_address", "str19.lead_nowhere")},
+    {"id": "language_mismatch", "title": {"tr": 'Dil sürümlerindeki çevrilmemiş metni düzeltin', "en": 'Fix untranslated text in language versions'}, "fix": {"tr": "Diğer dilde kalan bölgeleri (menü, başlıklar, metin) çevirin ya da <html lang>'i içeriğe göre düzeltin.", "en": 'Translate the regions left in the other language (menu, titles, text), or set <html lang> to match the content.'}, "cause": "a language version carries text of another language, or declares the wrong one",
+     "rules": ("str12.language", "str12.headings", "str9.lang_mismatch")},
+    {"id": "sitemap_lastmod", "title": {"tr": 'Site haritası lastmod tarihlerini düzeltin', "en": 'Fix the sitemap lastmod dates'}, "fix": {"tr": "lastmod'u sayfanın gerçek son düzenleme tarihinden alın; alınamıyorsa lastmod'u yazmayın.", "en": "Take lastmod from each page's real last edit; if that is not possible, leave lastmod out."}, "cause": "sitemap <lastmod> dates are generated, not the pages' real edit dates",
+     "rules": ("idx5.stamped", "idx5.identical", "idx5.future")},
+    {"id": "template_meta", "title": {"tr": 'Ortak başlık ve açıklamaları ayırın', "en": 'Give pages their own titles and descriptions'}, "fix": {"tr": 'Şablonun her sayfaya aynı başlık ve açıklamayı yazmasını durdurun; her sayfaya kendi başlık ve açıklamasını verin.', "en": 'Stop the template writing one title and description on every page; give each page its own.'}, "cause": "a template repeats one title or description across pages",
+     "rules": ("str1.shared", "str16.shared")},
+)
+MERGE_BY_RULE = {rule: group for group in MERGE_GROUPS for rule in group["rules"]}
+# Kept for older callers: the empty-page rules were the first family (DECISIONS 284).
+RULE_FAMILY = {rule: "idx1.empty" for rule in MERGE_BY_RULE if MERGE_BY_RULE[rule]["id"] == "empty_pages"}
 CONFIRM_REASONS = ("unverified_check", "low_confidence", "intent", "firecrawl_only", "spoofed_googlebot")
 LG = re.compile(r"^LG-\d+$")
 
@@ -199,11 +225,17 @@ def retest_state(f: dict) -> str:
     return (f.get("verification") or {}).get("state") or "not_retested"
 
 
+def merge_group(f: dict) -> dict | None:
+    return MERGE_BY_RULE.get(f.get("rule_id") or "")
+
+
 def group_key(f: dict, confirmations: dict | None = None) -> tuple:
-    cause = f.get("dedup_key") or RULE_FAMILY.get(f.get("rule_id") or "", f.get("rule_id")) or \
-        f"{f.get('check_id')}:{re.sub(r'[0-9]+', '#', f.get('title') or '')}"
+    merged = merge_group(f)
+    cause = ("merge:" + merged["id"]) if merged else (f.get("dedup_key") or f.get("rule_id") or
+                                                       f"{f.get('check_id')}:{re.sub(r'[0-9]+', '#', f.get('title') or '')}")
     reason = confirm_reason(f, confirmations)
-    return (f.get("check_id"), cause, bool(f.get("intent")), bool(reason), retest_state(f), severity(f) == "Info")
+    return (cause if merged else f.get("check_id"), cause, bool(f.get("intent")), bool(reason), retest_state(f),
+            severity(f) == "Info")
 
 
 def _weight(sev: str) -> int:
@@ -211,16 +243,22 @@ def _weight(sev: str) -> int:
 
 
 def _score(sev: str, conf: str, reach: float) -> float:
-    return round(_weight(sev) * CONFIDENCE_WEIGHT[conf] * reach * BUSINESS_RELEVANCE, 1)
+    """Kept to three decimals: two groups that differ in reach do not tie (cards print one decimal)."""
+    return round(_weight(sev) * CONFIDENCE_WEIGHT[conf] * reach * BUSINESS_RELEVANCE, 3)
+
+
+def reach_of(total: float) -> float:
+    import math
+    return round(min(1 + math.log1p(max(total, 0) / REACH_UNIT), REACH_CAP), 6)
 
 
 def _reach(urls: list[str], importance: dict[str, dict], home_importance: int) -> tuple[float, int, int]:
     """(reach, summed importance, pages counted). Each address once; a duplicate's own score (capped at 20) is used."""
     pages = [u for u in dict.fromkeys(urls) if isinstance(u, str) and u.startswith(("http://", "https://"))]
     if not pages:
-        return 1.0, home_importance, 0
+        return reach_of(home_importance), home_importance, 0
     total = sum(int((importance.get(u) or {}).get("importance", UNSCORED_IMPORTANCE)) for u in pages)
-    return round(min(total / REACH_UNIT, REACH_CAP), 2), total, len(pages)
+    return reach_of(total), total, len(pages)
 
 
 def _examples(urls: list[str], members: list[dict], lists: dict | None, importance: dict[str, dict],
@@ -252,6 +290,25 @@ def _examples(urls: list[str], members: list[dict], lists: dict | None, importan
         m = by_url[u]
         out.append({"url": u, "language": lang, "finding_id": m.get("id"), "title": m.get("title"),
                     "page_type": (importance.get(u) or {}).get("page_type")})
+    return out
+
+
+def worst_examples(members: list[dict], fields: tuple[str, ...], limit: int = 3) -> list[dict]:
+    """The pages a merge group measures worst (largest `fields` value in the members' evidence), one per address."""
+    rows = []
+    for m in members:
+        for row in (m.get("evidence") or {}).get("pages") or []:
+            if isinstance(row, dict) and row.get("url"):
+                value = next((row[k] for k in fields if isinstance(row.get(k), (int, float))), None)
+                if value is not None:
+                    rows.append((value, row["url"], m))
+    out, seen = [], set()
+    for value, url, m in sorted(rows, key=lambda r: -r[0]):
+        if url not in seen:
+            seen.add(url)
+            out.append({"url": url, "language": None, "finding_id": m.get("id"), "title": m.get("title"), "value": value})
+        if len(out) >= limit:
+            break
     return out
 
 
@@ -294,15 +351,19 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
             "own_limit": all(own_limit(m) for m in members),
             "languages": languages,
             "templates": sorted({(importance.get(u) or {}).get("template_key") for u in urls} - {None}),
-            "examples": _examples(urls, members, lists, importance, default_lang),
+            "examples": (worst_examples(members, merge_group(lead)["worst_by"])
+                         if merge_group(lead) and merge_group(lead).get("worst_by") and worst_examples(members, merge_group(lead)["worst_by"])
+                         else _examples(urls, members, lists, importance, default_lang)),
+            "merge_group": (merge_group(lead) or {}).get("id"),
             "manual": next((manual(m, confirmations) for m in members if manual(m, confirmations)), None),
         })
     return rows
 
 
 def _order(rows: list[dict]) -> list[dict]:
-    """Highest priority first; ties: higher severity, then the report's own order (its first finding)."""
-    return sorted(rows, key=lambda g: (-g["priority"], -_weight(g["severity"]), g["_index"]))
+    """DECISIONS 301 (3): severity band first (a Medium is never below a Low), then priority within the band, then the
+    report's own order (its first finding)."""
+    return sorted(rows, key=lambda g: (-_weight(g["severity"]), -g["priority"], g["_index"]))
 
 
 def select(report: dict, lists: dict | None = None, confirmations: dict | None = None, *,
@@ -349,7 +410,8 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
     by_finding = {fid: g for g in rows for fid in g["finding_ids"]}
     return {
         "method": {"severity_weight": SEVERITY_WEIGHT, "confidence_weight": CONFIDENCE_WEIGHT,
-                   "reach": f"summed page importance / {REACH_UNIT}, at most {REACH_CAP}; no page address = 1.0",
+                   "reach": f"1 + ln(1 + summed page importance / {REACH_UNIT}), at most {REACH_CAP}; no page address: the homepage",
+                   "order": "severity band, then priority score", "merge_groups": [g["id"] for g in MERGE_GROUPS],
                    "business_relevance": BUSINESS_RELEVANCE, "max_cards": max_cards, "max_pages": MAX_PAGES,
                    "confirm_at_or_below": CONFIRM_AT_OR_BELOW,
                    "importance": "page grouping (DECISIONS 297, 298)" if importance else "not available"},
@@ -361,9 +423,14 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         "counts": {"findings": len(by_finding), "groups": len(rows), "cards": len(cards), "confirm": len(confirm),
                    "notes": len(notes), "own_limits": len(limits), "appendix_only": len(appendix_only),
                    "rejected": len([g for g in rows if g["placement"] == "rejected"]),
-                   "problems": sum(1 for g in rows for m in g["members"] if severity(m) in PROBLEM)},
+                   "problems": sum(1 for g in rows for m in g["members"] if severity(m) in PROBLEM),
+                   # DECISIONS 301 (5): the one source of every count a client output prints.
+                   "by_severity": {k: sum(1 for g in rows for m in g["members"] if severity(m) == k)
+                                   for k in ("S1", "S2", "S3", "S4", "Info")},
+                   "addresses": len({u for g in rows for u in g["urls"]})},
         "grouping_summary": {k: summary.get(k) for k in ("method_version", "pages_scored", "page_types") if k in summary},
         "platform": (report.get("platform") or {}).get("name"),
+        "_confirmations": confirmations or {},
     }
 
 
@@ -440,6 +507,16 @@ def appendix_rows(selection: dict, lists: dict | None = None) -> list[dict]:
                         "severity": severity(m), "confidence": m.get("confidence"),
                         "confidence_class": g["confidence"], "priority": g["priority"], "placement": g["placement"],
                         "card": g.get("card"), "group_lead": g["finding_ids"][0], "confirm_reason": g["confirm_reason"],
+                        "merge_group": g.get("merge_group"),
+                        "manual": (lambda c: f"{c.get('result')} · {c.get('by')} · {c.get('date')} · {c.get('seen')}"
+                                   + (f" · {c['note']}" if c.get("note") else ""))(manual(m, selection.get("_confirmations")))
+                        if manual(m, selection.get("_confirmations")) else "",
                         "title": m.get("title"), "how_to_fix": m.get("how_to_fix"),
                         "scope_count": (m.get("scope") or {}).get("count"), "urls": affected(m, lists)})
     return out
+
+
+def merge_table() -> list[dict]:
+    """The merge groups as rows (for the appendix, the docs and the tests): id, cause, rules, title, fix."""
+    return [{"id": g["id"], "cause": g["cause"], "rules": list(g["rules"]), "title": g["title"], "fix": g["fix"]}
+            for g in MERGE_GROUPS]

@@ -37,7 +37,7 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | RND-3 | 5 | 4 |  |
 | RND-4 | 10 | 8 |  |
 | RND-5 | 6 | 1 |  |
-| RND-6 | 4 | 3 |  |
+| RND-6 | 5 | 3 |  |
 | RND-7 | 6 | 7 |  |
 | STR-1 | 24 | 20 |  |
 | STR-2 | 20 | 15 |  |
@@ -50,7 +50,7 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | STR-9 | 15 | 7 |  |
 | STR-10 | 17 | 14 |  |
 | STR-11 | 5 | 1 |  |
-| STR-12 | 6 | 4 |  |
+| STR-12 | 8 | 4 |  |
 | STR-13 | 13 | 9 |  |
 | STR-14 | 17 | 8 |  |
 | STR-15 | 1 | 1 |  |
@@ -233,7 +233,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### RND-6
 
-- Finds the problem: `test_clean_on_read.py::test_which_checks_found_nothing_on_what_was_read`, `test_rnd_scenarios.py::test_non_text_payload_and_main_share`, `test_v03_live_fixes.py::test_when_maya_was_blocked_the_html_weight_check_is_measured_on_firecrawls_html`, `test_v03_live_fixes.py::test_when_maya_read_the_site_its_own_html_weight_check_stands`
+- Finds the problem: `test_clean_on_read.py::test_which_checks_found_nothing_on_what_was_read`, `test_rnd_scenarios.py::test_non_text_payload_and_main_share`, `test_v03_client_report.py::test_merge_table_puts_every_html_size_finding_on_one_card_with_the_worst_pages`, `test_v03_live_fixes.py::test_when_maya_was_blocked_the_html_weight_check_is_measured_on_firecrawls_html`, `test_v03_live_fixes.py::test_when_maya_read_the_site_its_own_html_weight_check_stands`
 - Must not flag: `test_firecrawl.py::test_firecrawl_reads_a_blocked_sites_content_and_never_touches_access_results`, `test_round2_followups.py::test_the_main_content_share_is_filed_under_page_structure_not_javascript`, `test_v03_speed_followup.py::test_rnd6_measured_on_firecrawls_copy_says_it_is_rendered_html_and_not_comparable`
 
 ### RND-7
@@ -298,7 +298,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### STR-12
 
-- Finds the problem: `test_answer_key.py::test_str12_reports_theme_headings_left_in_another_language_even_when_the_body_is_turkish`, `test_no_unfilled_placeholders.py::test_a_value_named_language_is_a_value_and_a_language_is_named_in_the_readers_language`, `test_review_fixes.py::test_str12_a_turkish_page_whose_body_is_english_placeholder_text_is_reported`, `test_review_fixes.py::test_str12_reports_placeholder_and_template_text`, `test_review_fixes.py::test_str12_is_a_registered_check_everywhere_checks_are_listed`, `test_wording.py::test_every_fix_and_expected_sentence_in_the_engines_source_has_a_turkish_entry`
+- Finds the problem: `test_answer_key.py::test_str12_reports_theme_headings_left_in_another_language_even_when_the_body_is_turkish`, `test_no_unfilled_placeholders.py::test_a_value_named_language_is_a_value_and_a_language_is_named_in_the_readers_language`, `test_review_fixes.py::test_str12_a_turkish_page_whose_body_is_english_placeholder_text_is_reported`, `test_review_fixes.py::test_str12_reports_placeholder_and_template_text`, `test_review_fixes.py::test_str12_is_a_registered_check_everywhere_checks_are_listed`, `test_v03_client_report.py::test_review_file_confirms_a_finding_which_then_competes_for_the_cards`, `test_v03_client_report.py::test_language_finding_names_the_regions_in_the_other_language_and_advises_on_them`, `test_wording.py::test_every_fix_and_expected_sentence_in_the_engines_source_has_a_turkish_entry`
 - Must not flag: `test_pre_interface_fixes.py::test_str12_an_english_team_page_listing_turkish_names_is_not_reported`, `test_real_sites_benchmark.py::test_language_gap_is_scoped_only_when_its_membership_is_complete`, `test_review_fixes.py::test_str12_does_not_report_matching_pages_a_quotation_or_a_page_filed_under_its_real_language`, `test_review_fixes.py::test_str12_a_page_or_menu_entry_named_like_a_placeholder_is_not_placeholder_text`
 
 ### STR-13

@@ -204,6 +204,9 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _calculator_grids(r, aff, changes, unassessed)
     _decisions_290(r, aff, changes)
     _decisions_300(r, aff, changes)
+    from .language_regions import attach as attach_regions
+    for fid in attach_regions(r):
+        changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
     apply_severity(r.get("checks") or [], r.get("crawl") or {})
     order = _order(r)
     r["findings_in_priority_order"] = order
@@ -216,7 +219,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290 and 300, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300 and 301, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,

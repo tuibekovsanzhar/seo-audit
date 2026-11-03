@@ -419,6 +419,9 @@ class Builder:
         return ((self.r.get("audit_status") or {}).get("content_coverage")) or {}
 
     def by_severity(self):
+        """DECISIONS 301 (5): one source for every count, the client selection's; the report's own summary otherwise."""
+        if self.sel is not None:
+            return {k: v for k, v in self.sel["counts"]["by_severity"].items() if v}
         return ((self.r.get("problem_summary") or {}).get("by_severity")) or {}
 
     def sitemap_ratio(self):
@@ -748,6 +751,22 @@ class Builder:
         return self.info_card(i, self.SHARE_INFO, "share_card_status", "Fix share image, video markup and image formats", "developer", "share")
 
     # -- one card per cause (DECISIONS 284 (1))
+    def manual_check(self, f):
+        """The owner's confirmed manual check of this finding's group (review.json), or None."""
+        g = ((self.sel or {}).get("by_finding") or {}).get(f.get("id")) or {}
+        m = g.get("manual") or {}
+        return m if m.get("result") == "confirmed" else None
+
+    def merged_group(self, members):
+        """The merge group (DECISIONS 301 (4)) of a card holding more than one finding, or None."""
+        if len(members) < 2:
+            return None
+        try:
+            from maya_audit.client_selection import MERGE_BY_RULE  # type: ignore
+        except ImportError:
+            return None
+        return MERGE_BY_RULE.get(members[0].get("rule_id") or "")
+
     def rule_of(self, f):
         return f.get("rule_id") or self._w("rule")(f.get("check_id"), f.get("title"))
 
@@ -925,6 +944,9 @@ class Builder:
     def status_text(self, f, state=None):
         L = self.L
         ev = f.get("evidence") or {}
+        check = self.manual_check(f)
+        if check:  # DECISIONS 301 (1): the owner looked at it in a browser
+            return L["manual_confirmed"].format(by=check.get("by"), date=check.get("date"))
         if ev.get("observation_strength") == "repeated_empty":
             parts = [L["repeated"]]
         else:
@@ -979,8 +1001,9 @@ class Builder:
                 for en_name, tr_name in COUNTRIES_TR.items():
                     market = market.replace(en_name, tr_name)
 
-        problems_total = ps.get("problems", len(self.problems))
-        self.fact(problems_total, *[sev.get(k, 0) for k in SEVERITIES], ps.get("notes", 0))
+        problems_total = self.sel["counts"]["problems"] if self.sel is not None else ps.get("problems", len(self.problems))
+        notes_total = self.sel["counts"]["by_severity"]["Info"] if self.sel is not None else ps.get("notes", 0)
+        self.fact(problems_total, *[sev.get(k, 0) for k in SEVERITIES], notes_total)
         sev_line = " · ".join(f"{sev.get(k, 0)} {L['sev_lower'][k]}" for k in SEVERITIES if sev.get(k))
         pages_read, unread = cov.get("pages_read") or 0, cov.get("known_urls_not_read") or 0
         self.fact(pages_read, unread)
@@ -1056,7 +1079,7 @@ class Builder:
             "rows": [
                 {"label": L["cov_gaps"], "value": fmt_int(gaps, lang)},
                 {"label": L["cov_saved"], "value": f"{saved} / {read_fc} {L['scope_units']['page'][1]}" if read_fc else "—"},
-                {"label": L["cov_notes"], "value": fmt_int(ps.get("notes", 0), lang)},
+                {"label": L["cov_notes"], "value": fmt_int(notes_total, lang)},
                 {"label": L["cov_blockers"], "value": fmt_int(sev.get("S1", 0), lang)},
             ],
             "note": L["cov_note"],
@@ -1219,6 +1242,33 @@ class Builder:
                 self.fact(sc.get("count"), more, pre_steps, pre_verify)
                 states = [(m.get("verification") or {}).get("state") for m in members]
                 state = states[0] if len(set(states)) == 1 else self.retest_state(f)
+                merged = self.merged_group(members)
+                found = next(((m.get("evidence") or {}).get("regions") for m in members if (m.get("evidence") or {}).get("regions")), None)
+                if found:
+                    from maya_audit import language_regions  # type: ignore
+                    region_advice = language_regions.advice(found, (self.sel or {}).get("platform"), self.lang)
+                    if region_advice:
+                        pre_steps, conditional = "\n".join(region_advice), []
+                    where = language_regions.line(found, L["region_names"])
+                    if where:
+                        sub = [L["regions_line"].format(regions=where)] + list(sub or [])
+                        self.fact(where)
+                check = self.manual_check(f)
+                if check and check.get("note"):
+                    sub = [L["manual_note"].format(note=check["note"])] + list(sub or [])
+                if merged and not found:
+                    action = merged["title"].get(self.lang) or merged["title"]["en"]
+                if pre_steps:
+                    # A merged card collects its members' catalogue steps: drop one that says the same as an earlier
+                    # one (same first three words), and keep three when the card already shows two or more lines
+                    # above its steps (the card's box has room for no more; DECISIONS 301 (4)).
+                    kept, heads = [], set()
+                    for step_line in pre_steps.split("\n"):
+                        head = " ".join(step_line.lower().split()[:3])
+                        if step_line.strip() and head not in heads:
+                            heads.add(head)
+                            kept.append(step_line)
+                    pre_steps = "\n".join(kept[:3] if len(sub or []) >= 2 else kept)
                 if group:
                     self.fact(group.get("priority"))
                 todos.append({
@@ -1482,6 +1532,10 @@ def main():
     ap.add_argument("--reanalysis", action="store_true",
                     help="Kayıtlı kanıtın çevrimdışı yeniden analizi (yeni tarama yapılmadı). Yalnız gerçekten öyleyse ver.")
     ap.add_argument("--maya-src", default=None, help="maya_audit_web içeren Maya Audit kaynak klasörü (Türkçe başlıklar için)")
+    ap.add_argument("--review", default=None, help="İnceleme dosyası (review.json); verilmezse report.json'un yanındaki")
+    ap.add_argument("--by", default=None, help="--confirm/--reject: kim kontrol etti")
+    ap.add_argument("--seen", default=None, help="--confirm/--reject: tarayıcıda ne görüldü")
+    ap.add_argument("--note", default=None, help="--confirm: kartta görünecek ek not (isteğe bağlı)")
     ap.add_argument("--confirm", action="append", default=[],
                     help="Sahibin elle teyit ettiği bulgu (kural kimliği ya da bulgu kimliği, ör. str12.language); "
                          "'Teyit edin' listesinden kartlara geçer (DECISIONS 300)")
@@ -1517,17 +1571,36 @@ def main():
         sys.exit("HATA: Maya Audit motoru (maya_audit.final) bulunamadı; --maya-src ile verin. "
                  "Ortak son sonuç ve yayın kapısı olmadan taslak üretilmez.")
     sealed = final.from_report(report, affected or None)
-    # DECISIONS 300: the owner's manual checks ("--confirm STR-12" after looking in a normal browser), by rule or id.
-    confirmations = {key: {"result": "confirmed", "by": "owner"} for key in a.confirm or []}
-    confirmations.update({key: {"result": "rejected", "by": "owner"} for key in a.reject or []})
+    # DECISIONS 301 (1): the owner's manual checks live in the audit's review file (review.json beside report.json, or
+    # --review); --confirm/--reject add an entry to it (with --by and --seen), the web app's buttons write the same file.
     try:
-        from maya_audit import client_selection  # type: ignore
+        from maya_audit import client_selection, manual_review  # type: ignore
+    except ImportError:
+        sys.exit("HATA: Maya Audit motorunda client_selection yok (DECISIONS 300); güncel motoru --maya-src ile verin.")
+    review_path = Path(a.review) if a.review else manual_review.path_for(rp)
+    if a.confirm or a.reject:
+        if not a.by or not a.seen:
+            sys.exit("HATA: --confirm/--reject için --by (kim) ve --seen (ne görüldü) gerekir.")
+        from maya_audit.release_gate import findings_of  # type: ignore
+        known = findings_of(report)
+        for result, keys in (("confirmed", a.confirm or []), ("rejected", a.reject or [])):
+            for key in keys:
+                ids = [key] if key in known else [i for i, f in known.items() if f.get("rule_id") == key]
+                if not ids:
+                    sys.exit(f"HATA: raporda {key} kimlikli ya da kurallı bulgu yok.")
+                for fid in ids:
+                    manual_review.record(review_path, manual_review.entry(fid, result, by=a.by, seen=a.seen, note=a.note,
+                                                                          rule_id=known[fid].get("rule_id")))
+        print(f"İnceleme dosyası güncellendi: {review_path}")
+    confirmations = manual_review.confirmations(manual_review.load(review_path))
+    try:
         selection = client_selection.select(sealed.report, affected or None, confirmations)
     except ImportError:
         sys.exit("HATA: Maya Audit motorunda client_selection yok (DECISIONS 300); güncel motoru --maya-src ile verin.")
     data = Builder(sealed.report, a.lang, labels, catalog, w, a.rev, audit_id, a.reanalysis, affected,
                    cards=sealed.cards, selection=selection).build()
     data["_confirmations"] = confirmations
+    data["_review_path"] = str(review_path) if review_path.exists() else None
     data["_digest"] = sealed.digest
     data["_gate_decision"] = sealed.decision
     data["meta"]["source"] = a.source
