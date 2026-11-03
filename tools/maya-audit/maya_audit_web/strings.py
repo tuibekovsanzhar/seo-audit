@@ -1322,6 +1322,8 @@ STRINGS["en"].update({
     "review.done": "{result} by {by}, {date}",
     "review.none": "No finding waits for confirmation.",
     "review.reviewed": "Checked by hand",
+    "c6.key_pages_empty.reader_only": "Page importance could not be worked out for this audit: Maya's crawler was blocked, the pages were read through Firecrawl, and the saved copies keep no links between pages, which importance is computed from.",
+    "c6.key_pages_empty.no_pages": "Page importance could not be worked out: no page's content was read in this audit.",
     "c6.search": "Search and performance",
     "c6.reassessed": "Offline re-assessment of the saved evidence (no new crawl)",
     "c6.title": "Client audit report — at most 10 pages and 15 cards; everything else is in the appendix",

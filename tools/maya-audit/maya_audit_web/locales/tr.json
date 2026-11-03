@@ -1245,5 +1245,7 @@
  "review.saved": "Bu denetimin inceleme dosyasına kaydedildi.",
  "review.done": "{result}: {by}, {date}",
  "review.none": "Teyit bekleyen bulgu yok.",
- "review.reviewed": "Elle kontrol edilenler"
+ "review.reviewed": "Elle kontrol edilenler",
+ "c6.key_pages_empty.reader_only": "Bu denetimde sayfa önemi hesaplanamadı: Maya'nın tarayıcısı engellendi, sayfalar Firecrawl ile okundu ve kayıtlı kopyalar sayfalar arası bağlantıları tutmuyor; önem bu bağlantılardan hesaplanır.",
+ "c6.key_pages_empty.no_pages": "Bu denetimde içeriği okunan sayfa olmadığı için sayfa önemi hesaplanamadı."
 }

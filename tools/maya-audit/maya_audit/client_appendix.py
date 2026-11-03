@@ -14,7 +14,9 @@ from .client_selection import CONFIDENCE_WEIGHT, SEVERITY_NAME, SEVERITY_WEIGHT,
 
 WORDS = {
     "tr": {"findings": "Bulgular", "urls": "Etkilenen adresler", "key_pages": "Kilit sayfalar", "coverage": "Kapsam",
-           "method_sheet": "Yöntem",
+           "method_sheet": "Yöntem", "note": "Not",
+           "key_pages_empty": {"reader_only": "Bu denetimde sayfa önemi hesaplanamadı: Maya'nın tarayıcısı engellendi, sayfalar Firecrawl ile okundu ve kayıtlı kopyalar sayfalar arası bağlantıları tutmuyor; önem bu bağlantılardan hesaplanır.",
+                               "no_pages": "Bu denetimde içeriği okunan sayfa olmadığı için sayfa önemi hesaplanamadı."},
            "cols": ["Bulgu kimliği", "Kontrol", "Kural", "Önem", "Güven (motor)", "Güven sınıfı", "Öncelik puanı",
                     "Yer", "Kart", "Grubun ilk bulgusu", "Teyit nedeni", "Bulgu", "Ne yapılmalı", "Kapsam (sayı)",
                     "Etkilenen adres sayısı", "Kök neden grubu", "Elle kontrol"],
@@ -40,7 +42,9 @@ WORDS = {
                       ("Öncelik puanı", "önem x güven x erişim x iş önemi; efor gösterilir, puana girmez"),
                       ("Kartlar", "en çok 15: bütün Engelleyici/Yüksek gruplar, sonra bant ve puan sırasıyla")]},
     "en": {"findings": "Findings", "urls": "Affected URLs", "key_pages": "Key pages", "coverage": "Coverage",
-           "method_sheet": "Method",
+           "method_sheet": "Method", "note": "Note",
+           "key_pages_empty": {"reader_only": "Page importance could not be worked out for this audit: Maya's crawler was blocked, the pages were read through Firecrawl, and the saved copies keep no links between pages, which importance is computed from.",
+                               "no_pages": "Page importance could not be worked out: no page's content was read in this audit."},
            "cols": ["Finding ID", "Check", "Rule", "Severity", "Confidence (engine)", "Confidence class",
                     "Priority score", "Placement", "Card", "Group lead", "Confirm because", "Finding", "What to do",
                     "Scope (count)", "Affected URLs (count)", "Root-cause group", "Manual check"],
@@ -104,6 +108,8 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
             urls.append([r["finding_id"], placement, W["severity"].get(r["severity"], r["severity"]), u])
     pages = [[p["rank"], p["url"], p["page_type"], p["importance"], ", ".join(str(c) for c in p["cards"]),
               W["severity"].get(p["worst"], "") if p["worst"] else "", p["confirm"]] for p in selection["key_pages"]]
+    if not pages:  # say why, in one line, rather than leave the sheet empty
+        pages = [[W["key_pages_empty"][selection.get("key_pages_reason") or "no_pages"]]]
     cov = [[W["kind"].get(line["kind"], line["kind"]), coverage_text(line, lang), ", ".join(line.get("checks") or [])]
            for line in selection["coverage"]["lines"]]
     out = []
@@ -112,6 +118,9 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
                                        (W["key_pages"], W["page_cols"], pages, [6, 70, 12, 10, 14, 12, 10]),
                                        (W["coverage"], W["cov_cols"], cov, [18, 110, 40]),
                                        (W["method_sheet"], W["method_cols"], [list(m) for m in W["method"]], [22, 100])):
+        if name == W["key_pages"] and not selection["key_pages"]:
+            out.append({"name": name, "header": [W["note"]], "rows": body, "widths": [140]})
+            continue
         h, b = _drop_empty_columns(header, body) if body else (header, body)
         keep = [header.index(c) for c in h]
         out.append({"name": name, "header": h, "rows": b, "widths": [widths[i] for i in keep]})

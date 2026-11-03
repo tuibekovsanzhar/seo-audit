@@ -1397,7 +1397,9 @@ class Builder:
         quick = [t["n"] for t in todos if t.get("effort") == L["efforts"]["S"] and t.get("finding_ids")][:4]
         name = L["appendix_file"]
         self.fact(*c.values(), more_confirm)
+        reason = sel.get("key_pages_reason")
         return {"own_limits": limits, "confirm": confirm, "confirm_more": more_confirm, "key_pages": pages,
+                "key_pages_note": L["key_pages_empty"][reason] if reason and not pages else None,
                 "quick_wins": quick,
                 "appendix": {"file": name, "finding_ids": sorted(sel["by_finding"]), "counts": c,
                              "line": L["appendix_line"].format(file=name, findings=c["findings"], cards=len(todos),

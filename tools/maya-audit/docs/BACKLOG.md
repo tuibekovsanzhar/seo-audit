@@ -44,3 +44,10 @@ A change to the report's shape: needs a schema bump.
 No check reports it today (the page-word folding only removes U+0307 for matching). nihan: 68 page addresses carry
 `i` + `%CC%87` (a combining dot), e.g. `/pages/etbi%CC%87s`, where the slug was meant as "etbis"/"etbiş". Proposed
 TSEO-1 finding: addresses with a combining character (not in NFC), with the NFC or plain-ASCII form as the fix.
+
+## Key pages for sites that blocked Maya's crawler (DECISIONS 303, 2026-11-03)
+
+Page grouping (DECISIONS 297) runs on Maya's own page records. When Maya's crawler is blocked and Firecrawl reads the
+pages, those records hold no content, so no page gets an importance and the client reports' key pages say why instead
+of listing them (2 Nov nihan Quick 50). Firecrawl's pages do carry their links while the audit runs (`view_pages`):
+run `page_groups.annotate` on them and keep the result with the report (a change to the report's shape: schema bump).

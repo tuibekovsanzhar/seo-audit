@@ -549,7 +549,8 @@ def page6(d, L):
     body = "".join("<tr>" + "".join(f"<td>{e(v)}</td>" for v in (p["rank"], p["path"], p["type"], p["importance"], p["cards"],
                                                                   p["worst"], p["confirm"])) + "</tr>" for p in d.get("key_pages") or [])
     pages = (f'<div class="card"><div class="cardhead"><h3>{e(L["kp_title"])}</h3></div>'
-             f'<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>')
+             + (f'<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>' if body else
+                f'<div class="note">{e(d.get("key_pages_note") or "—")}</div></div>'))
     app = (f'<div class="card app"><div class="cardhead"><h3>{e(L["appendix_title"])}</h3></div>'
            f'<p>{e(d["appendix"]["line"])}</p></div>')
     return f'<div class="body"><div class="p6"><div class="left">{limits}{confirm}</div><div class="right">{pages}{app}</div></div></div>'

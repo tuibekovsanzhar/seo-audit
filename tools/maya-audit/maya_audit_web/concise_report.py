@@ -320,6 +320,9 @@ def render(view, rows, generated_at, practical, companions, demo=False, selectio
                        f'<td>{e(t("result.severity." + p["worst"]) if p["worst"] else "—")}</td><td>{e(p["confirm"])}</td></tr>')
         out.append('</tbody></table>')
 
+    elif sel.get("key_pages_reason"):
+        out.append(f'<h2>{e(t("c6.key_pages"))}</h2><p class="small wrap">{e(t("c6.key_pages_empty." + sel["key_pages_reason"]))}</p>')
+
     # 6. Action plan and quick wins: the cards by when, and the small ones.
     out.append(f'<h2>{e(t("c6.plan"))}</h2>')
     plan = {"week": [], "month": [], "later": []}

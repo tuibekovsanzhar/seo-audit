@@ -410,7 +410,7 @@ function planCard(plan, request, message) {
     if (live && search.requested && !search.market_known) {
       const accept = el("input", { type: "checkbox", id: bid + "-default", checked: Boolean(search.market_default_accepted) });
       accept.addEventListener("change", () => replan(withBusiness({ market_default_accepted: accept.checked }), !sameBusiness()));
-      card.append(search.market_block ? el("p", { class: "notice", role: "alert", text: search.market_block.message }) : null,
+      add(card, search.market_block ? el("p", { class: "notice", role: "alert", text: search.market_block.message }) : null,
         el("p", {}, accept, " ", el("label", { for: bid + "-default", text: search.market_default_label || T("plan.market.accept_default") })));
     }
     // One approval per plan. When Firecrawl is part of it, a single button below approves both maximums, each exact.
@@ -1050,7 +1050,8 @@ async function showReview(box, auditId) {
             el("button", { class: "button", type: "button", onclick: () => save("confirmed") }, T("review.confirm")),
             el("button", { class: "button quiet", type: "button", onclick: () => save("rejected") }, T("review.reject"))))));
   };
-  box.replaceChildren(el("h3", { text: T("review.title") }), el("p", { class: "muted small", text: T("review.note") }),
+  // fill() drops the null parts (no "checked by hand" list yet); replaceChildren would print each as "null".
+  fill(box, el("h3", { text: T("review.title") }), el("p", { class: "muted small", text: T("review.note") }),
     data.confirm.length ? el("ul", { class: "list" }, data.confirm.map(rowView)) : el("p", { class: "muted", text: T("review.none") }),
     data.reviewed.length ? el("h4", { text: T("review.reviewed") }) : null,
     data.reviewed.length ? el("ul", { class: "list" }, data.reviewed.map(rowView)) : null);

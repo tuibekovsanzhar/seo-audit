@@ -390,3 +390,35 @@ def test_web_review_buttons_write_the_audits_review_file_and_the_card_says_so(de
     if f'{target["id"]}' in printed:  # on a card: the card says who confirmed it, and the note
         assert "confirmed by manual check (Owner," in printed and "checked on the live page" in printed
     assert json.loads((folder / "report.json").read_text(encoding="utf-8")) == report  # the report itself is never changed
+
+
+def test_no_dom_call_in_the_web_page_can_print_null():
+    """A raw replaceChildren/append turns a null child into the text "null" ("nullnull" under the "Confirm first"
+    list, 2 Nov nihan Quick 50). Optional children go through el(), add() or fill(), which drop null, undefined and
+    false; a raw call may only take what is always a node."""
+    import re
+    from pathlib import Path
+    source = (Path(__file__).resolve().parents[1] / "maya_audit_web" / "static" / "app.js").read_text(encoding="utf-8")
+    helpers = re.compile(r"^function (el|add|fill)\(")
+    offending = []
+    for number, line in enumerate(source.splitlines(), 1):
+        if helpers.match(line.strip()) or "child instanceof Node" in line:
+            continue
+        for call in re.finditer(r"\.(replaceChildren|append|prepend)\(", line):
+            rest = line[call.end():]
+            if re.search(r"\?[^:]*:\s*null\b|\bnull\s*[,)]", rest):
+                offending.append((number, line.strip()[:120]))
+    assert offending == []
+
+
+def test_key_pages_say_why_they_are_empty_when_no_page_could_be_scored():
+    blocked = {"schema_version": "1.22", "crawl": {"start_url": SITE + "/", "pages": [{"url": SITE + "/", "status": 429}]},
+               "firecrawl": {"crawl_blocked": {"blocked": True}, "pages": [{"url": SITE + "/", "outcome": "read"}]},
+               "checks": [{"check_id": "X", "findings": [finding("A", "r.a", urls=[SITE + "/"])]}]}
+    sel = cs.select(blocked)
+    assert sel["key_pages"] == [] and sel["key_pages_reason"] == "reader_only"
+    rows = xlsx.read(client_appendix.build(sel, "en"))["Key pages"]
+    assert len(rows) == 2 and "saved copies keep no links" in " ".join(rows[1])
+    nothing = {"crawl": {"start_url": SITE + "/", "pages": []}, "checks": []}
+    assert cs.select(nothing)["key_pages_reason"] == "no_pages"
+    assert cs.select(report([finding("A", "r.a", urls=[SITE + "/a"])]))["key_pages_reason"] is None

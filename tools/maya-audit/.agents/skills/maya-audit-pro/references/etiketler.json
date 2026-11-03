@@ -325,6 +325,10 @@
    "footer": "alt bilgi",
    "body": "sayfa metni",
    "_percent_first": true
+  },
+  "key_pages_empty": {
+   "reader_only": "Bu denetimde sayfa önemi hesaplanamadı: Maya'nın tarayıcısı engellendi, sayfalar Firecrawl ile okundu ve kayıtlı kopyalar sayfalar arası bağlantıları tutmuyor; önem bu bağlantılardan hesaplanır.",
+   "no_pages": "Bu denetimde içeriği okunan sayfa olmadığı için sayfa önemi hesaplanamadı."
   }
  },
  "en": {
@@ -651,6 +655,10 @@
    "banners": "banners",
    "footer": "footer",
    "body": "body text"
+  },
+  "key_pages_empty": {
+   "reader_only": "Page importance could not be worked out for this audit: Maya's crawler was blocked, the pages were read through Firecrawl, and the saved copies keep no links between pages, which importance is computed from.",
+   "no_pages": "Page importance could not be worked out: no page's content was read in this audit."
   }
  }
 }

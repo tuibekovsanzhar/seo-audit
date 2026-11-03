@@ -3199,3 +3199,16 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      `maya-audit-pro` as the client report. In w15 (roadmap stage 9): delete the package, the web module and routes,
      the JS workspace, the skill folder and their tests (about 2,170 lines and 14 test files), in one commit with a
      note in this file.
+303. **Two fixes after the owner's browser test of the restarted web app (Owner, 2026-11-03).** (1) "nullnull" under the
+     "Confirm first" list: `showReview` passed its two optional parts (the "checked by hand" heading and list, absent
+     until a finding is checked) to the DOM's `replaceChildren`, which prints `null` as text; it now uses `fill()`, which
+     drops null, undefined and false. The same test found a second one: the plan card's market notice
+     (`card.append(... ? el(...) : null, ...)`), now `add()`. `test_no_dom_call_in_the_web_page_can_print_null` scans
+     `static/app.js` so a raw `replaceChildren`/`append`/`prepend` never takes a possible null again. Every audit had the
+     first one (no audit had a manual check yet). (2) Empty "Key pages" for older audits: a saved report without page
+     grouping already gets it computed on the fly from its page records (`client_selection.grouping`, as
+     `tools/page_groups_saved.py`); what stays empty is an audit whose pages were read only through Firecrawl after Maya's
+     crawler was blocked (2 Nov nihan Quick 50: one page record, no content), because the saved copies keep no links and
+     importance is computed from links. The XLSX sheet, the web PDF and the pro report then say so in one line
+     (`key_pages_reason`: `reader_only` or `no_pages`). New audits of a blocked site have the same gap; grouping
+     Firecrawl's pages at run time is in `docs/BACKLOG.md`.

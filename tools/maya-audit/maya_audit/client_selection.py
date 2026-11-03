@@ -419,6 +419,7 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         "rejected": [g for g in rows if g["placement"] == "rejected"],
         "groups": rows, "by_finding": by_finding,
         "key_pages": key_pages(report, rows, importance),
+        "key_pages_reason": None if importance else key_pages_reason(report),
         "coverage": coverage(report, limits),
         "counts": {"findings": len(by_finding), "groups": len(rows), "cards": len(cards), "confirm": len(confirm),
                    "notes": len(notes), "own_limits": len(limits), "appendix_only": len(appendix_only),
@@ -459,6 +460,17 @@ def key_pages(report: dict, rows: list[dict], importance: dict[str, dict], limit
                     "rank": g.get("importance_rank"), "cards": sorted(x["card"] for x in cards),
                     "worst": worst, "confirm": len(confirm)})
     return out
+
+
+def key_pages_reason(report: dict) -> str:
+    """Why no page could be scored (the key pages list is empty): "reader_only" when the pages were read only through
+    a page reader after Maya's crawler was blocked (the saved copies keep no links, and importance needs the links
+    between pages); "no_pages" otherwise (nothing with content was read)."""
+    crawl = report.get("crawl") or {}
+    own = [p for p in crawl.get("pages") or [] if isinstance(p, dict) and p.get("analysis")]
+    reader = report.get("firecrawl") or {}
+    read_by_reader = [p for p in reader.get("pages") or [] if isinstance(p, dict) and p.get("outcome") == "read"]
+    return "reader_only" if not own and read_by_reader else "no_pages"
 
 
 def coverage(report: dict, limits: list[dict]) -> dict:
