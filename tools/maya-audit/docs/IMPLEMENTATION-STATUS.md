@@ -9,6 +9,7 @@ https://github.com/withmaya/seo-audit), branch `main`; this tool is its folder `
 `~/Projects/maya-audit` is the whole repository's root (DECISIONS 292). Pushes to withmaya/seo-audit are allowed when
 the owner asks for them, never otherwise; never force-push. Package 0.2.8. Interpreter `.venv/bin/python` = CPython 3.13.1 (macOS arm64).
 `HANDOVER.md` not available. Call map and code-level findings: `docs/architecture/baseline.md`.
+The v0.3 plan (stages, status, goals): `docs/ROADMAP-v0.3.md`.
 
 | Stage | Status | Note |
 |---|---|---|
@@ -723,7 +724,7 @@ builds it. The fixture took 23.3s on `c22a0b0` and 23.1s on `1dbdf3d` (stage 2),
 slowest fast-suite setup is 43.9s. Not changed here (a fix is to list that second test as slow, or to make the benchmark's
 pace and retry waits use a fake clock; owner's choice).
 
-## v0.3 speed follow-up (2026-11-03, DECISIONS 299; not pushed)
+## v0.3 speed follow-up (2026-11-03, DECISIONS 299; pushed as `8015f0d`)
 
 **CI of the status commit `54e85a5`** (run 41585995041): **failed**, by chance: `test_counts_and_shared_elements.py`
 looked for "55" anywhere in the counts and met a measured `0.055` s. Fixed here (55 as a whole number). Status-only
@@ -780,6 +781,8 @@ measured live.
 | `ruff check --select E9,F821,F841` (CI's) | `All checks passed!` |
 | `python3.11 -m compileall` | OK |
 | Linux/Windows, live runs | NOT RUN |
+
+**CI of `8015f0d`** (run [41599353639](https://github.com/withmaya/seo-audit/actions/runs/41599353639)): **success**; whole run 9m51s (07:53:45 to 08:03:36 UTC), "Fast tests" step 9m05s (17m11s on the two runs before; 8m48s on 2026-10-30).
 
 ## Next step
 

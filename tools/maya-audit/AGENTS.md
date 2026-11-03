@@ -29,6 +29,7 @@
   "Shared preamble" 1). Record new behavior decisions with attribution. After each phase give a plain-English summary
   of at most 10 lines: what changed, what was run (with its result line), what was not run.
   Handover dates, paths and historical test totals are evidence to verify, not current validation.
+- The v0.3 plan, its stages and their status: `docs/ROADMAP-v0.3.md`.
 
 The project instructions above supersede stale handover advice to recreate `.venv` and historic standing live-provider
 approval for agent development. The current owner requires the existing environment and explicit live-call authorization.
