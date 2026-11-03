@@ -962,6 +962,52 @@ row). Missing-automatable 17 -> 9.
 | CLI `crawl` on a loopback fake site (`healthy`) | exit 0; schema 1.24, gate PASS, `image_entries`/`video_entries` on sitemap records, `grouping` on 5/5 pages |
 | Linux/Windows, live runs, PDFs of the rebuilt audits | NOT RUN |
 
+## Report fixes and nihan pro v3 (DECISIONS 305, 2026-11-03)
+
+What changed: percent-escape case is one address (`%cc` = `%CC`) for page identity, grouping and importance; reach
+counts only pages that were read (unread addresses counted apart); one count of the parts not assessed across every
+client output; merged cards keep their title and whole scope in the pro summary, findings table and action plan;
+evidence tables print the measured value and drop empty columns.
+
+**Card #3 changes position.** nihan, offline (same method as DECISIONS 304's rebuild): the decomposed-address card
+(1,689 addresses, 68 read) goes from 30.9, 3rd, to 18.8, 6th; the alias-links card moves up to 3rd. adile and enpara:
+same cards in the same order (adile's IDX-5 failed-files card 16.4 -> 25.4: a finding on sitemap files now takes the
+homepage's reach instead of 10 per file).
+
+**nihan pro report v3** (`reviews/2026-11-03/nihan-v3/`, git-ignored; built from the offline-reassessed b3198942 report
+with the maya-audit-pro skill, Turkish, review file with the owner's STR-12 confirmation; 19 model fields written,
+`validate_data.py` 0 warnings, release gate PASS): 7 pages, 12 cards (10 problem, 2 Not).
+
+| # | Card | Severity | Score |
+|---|---|---|---|
+| 1 | Sayfa HTML'ini hafifletin (3 RND-6, merged) | Orta | 93,5 |
+| 2 | Belirtilen dili içerikle uyumlu hâle getirin (STR-12, confirmed by the owner) | Orta | 67,3 |
+| 3 | İç bağlantıları kanonik adrese yönlendirin (IDX-6, new) | Düşük | 28,5 |
+| 4 | Atlanan başlık seviyelerini düzeltin (TSEO-1) | Düşük | 22,9 |
+| 5 | Ortak başlık ve açıklamaları ayırın (STR-16 + STR-1) | Düşük | 19,4 |
+| 6 | Adresleri birleşik harflerle yeniden yazın (TSEO-1, new) | Düşük | 18,8 |
+| 7 | Ana başlığı olmayan sayfalara tek bir ana başlık ekleyin (STR-2) | Düşük | 12,5 |
+| 8 | Metni olmayan bağlantılara ad verin (STR-14) | Düşük | 11,0 |
+| 9 | Site haritası lastmod tarihlerini gerçek düzenleme tarihinden alın (IDX-5) | Düşük | 8,4 |
+| 10 | Site içi arama ve sepet sayfalarını dizin dışında tutun (ACC-3) | Düşük | 7,9 |
+| 11 | Soru başlıklarını ve menü dilini düzeltin | Not | — |
+| 12 | Sayfa yüklemesini ve etiketleri toparlayın | Not | — |
+
+Pages checked as images: 1 (priorities "Sayfa HTML ağırlığı · 494 sayfa", coverage box 25), 2 (merged row "Sayfa
+HTML'ini hafifletin · 494 sayfa"; evidence sample ADRES / ÖLÇÜLEN / SINIR: "/ · 885 KB · 500 KB"), 4, 5 (the two new
+cards), 7 ("Değerlendirilemeyen 25 kısım"; "Teyit edin" lists the near-empty collections and the product without a
+category link). Page 3's provenance line says 25 too (text extracted).
+
+**Verification** (working tree on `5219b38`, macOS, Python 3.13.1; no .env, no providers, no live requests):
+
+| Command | Result |
+|---|---|
+| fast suite | `2651 passed, 4 skipped, 131 deselected, 1 warning in 467.87s (0:07:47)` |
+| full suite | `1 failed, 2781 passed, 4 skipped, 1 warning in 792.55s (0:13:12)`: the failure was `test_fixture_matrix.py::test_the_matrix_file_matches_the_tests` (the generated `docs/FIXTURE-MATRIX.md` was stale after the new test file); regenerated with `scripts/fixture_matrix.py`, that file's tests then `3 passed`; the full suite was not run again end to end |
+| pro skill tests | `56 passed` |
+| `ruff check --isolated --select E9,F821,F841`, `python3.11 -m compileall` | `All checks passed!`; compile OK |
+| Linux/Windows, live runs | NOT RUN |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

@@ -270,11 +270,12 @@ def canonical_aliases(read, nodes: set[str], origin: str = "", fetched: set[str]
     mistake), or that was fetched and is not a readable page (a redirect, an error), is not followed: the page keeps its
     links."""
     from .index_data import canonical_target
-    from .urls import same_origin
+    from .urls import same_origin, upper_escapes
     out = {}
     for p in read:
         target = canonical_target(p)
-        if not target or target == p.url or (origin and not same_origin(target, origin)) or (
+        # A canonical that differs only in the case of its percent-escapes names the page itself (DECISIONS 305).
+        if not target or upper_escapes(target) == upper_escapes(p.url) or (origin and not same_origin(target, origin)) or (
                 target in fetched and target not in nodes):
             continue
         if target in nodes or (_last_segment(target) and _last_segment(target) == _last_segment(p.url)):

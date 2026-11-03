@@ -916,7 +916,8 @@ def canonical_target(page) -> str | None:
 def canonical_elsewhere(page) -> bool:
     """True when the page's chosen canonical points at another address (its scheme or www variant does not count)."""
     target = canonical_target(page)
-    return bool(target) and target != page.url
+    from .urls import upper_escapes  # %cc and %CC are one address (RFC 3986 6.2.2.1, DECISIONS 305)
+    return bool(target) and upper_escapes(target) != upper_escapes(page.url)
 
 
 def cloudflare_machinery(url: str) -> bool:

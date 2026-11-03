@@ -52,7 +52,8 @@ REACH_UNIT = 100
 # DECISIONS 301 (3): reach grows with diminishing returns, 1 + ln(1 + importance / 100), up to 10 (reached only past
 # about 800,000 importance points), so two findings of one band with different reach never score the same.
 REACH_CAP = 10.0
-UNSCORED_IMPORTANCE = 10  # a page the grouping did not score (not read, a file): counted, but small
+# DECISIONS 305 (replaces 300's "a page not scored counts 10"): only pages that were read reach; an address that was
+# not read (sitemap-only, found in a link) adds nothing and is listed as a count (`addresses_not_read`).
 BUSINESS_RELEVANCE = 1.0
 from .release_gate import CLIENT_MAX_CARDS as MAX_CARDS, CLIENT_MAX_PAGES as MAX_PAGES  # noqa: E402
 KEY_PAGES = 10
@@ -266,13 +267,20 @@ def reach_of(total: float) -> float:
     return round(min(1 + math.log1p(max(total, 0) / REACH_UNIT), REACH_CAP), 6)
 
 
-def _reach(urls: list[str], importance: dict[str, dict], home_importance: int) -> tuple[float, int, int]:
-    """(reach, summed importance, pages counted). Each address once; a duplicate's own score (capped at 20) is used."""
-    pages = [u for u in dict.fromkeys(urls) if isinstance(u, str) and u.startswith(("http://", "https://"))]
-    if not pages:
-        return reach_of(home_importance), home_importance, 0
-    total = sum(int((importance.get(u) or {}).get("importance", UNSCORED_IMPORTANCE)) for u in pages)
-    return reach_of(total), total, len(pages)
+def _reach(urls: list[str], importance: dict[str, dict], home_importance: int) -> tuple[float, int, int, int]:
+    """(reach, summed importance, pages counted, page addresses not read), DECISIONS 305. Only pages that were read
+    count (scored by the grouping and not a canonical scored only from its aliases); each once, a duplicate with its
+    own score (capped at 20). A finding with no address, or only files (a sitemap, robots.txt), reaches the homepage.
+    One whose page addresses were all left unread reaches nothing past the minimum (1.0)."""
+    from .urls import non_page_kind
+    addresses = [u for u in dict.fromkeys(urls) if isinstance(u, str) and u.startswith(("http://", "https://"))]
+    pages = [u for u in addresses if not non_page_kind(u)]
+    read = [u for u in pages if "importance" in (importance.get(u) or {}) and (importance.get(u) or {}).get("read") is not False]
+    not_read = len(pages) - len(read)
+    if not read and not not_read:
+        return reach_of(home_importance), home_importance, 0, 0
+    total = sum(int(importance[u]["importance"]) for u in read)
+    return reach_of(total), total, len(read), not_read
 
 
 def _examples(urls: list[str], members: list[dict], lists: dict | None, importance: dict[str, dict],
@@ -348,7 +356,7 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
         classes = [confidence_class(m, confirmations) for m in members]
         conf = min(classes, key=lambda c: CONFIDENCE_WEIGHT[c])
         urls = list(dict.fromkeys(u for m in members for u in affected(m, lists)))
-        reach, total, counted = _reach(urls, importance, home_importance)
+        reach, total, counted, not_read = _reach(urls, importance, home_importance)
         lead = members[0]
         reasons = [r for r in (confirm_reason(m, confirmations) for m in members) if r]
         languages = sorted({language_of(u, default_lang) or "" for u in urls} - {""})
@@ -357,7 +365,7 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
             "check_id": lead.get("check_id"), "rule_id": lead.get("rule_id"), "title": lead.get("title"),
             "severity": sev, "severity_name": SEVERITY_NAME.get(sev, sev),
             "confidence": conf, "confidence_weight": CONFIDENCE_WEIGHT[conf],
-            "reach": reach, "importance_sum": total, "pages_counted": counted, "urls": urls,
+            "reach": reach, "importance_sum": total, "pages_counted": counted, "addresses_not_read": not_read, "urls": urls,
             "priority": _score(sev, conf, reach),
             "parts": {"severity": _weight(sev), "confidence": CONFIDENCE_WEIGHT[conf], "reach": reach,
                       "business": BUSINESS_RELEVANCE},
@@ -422,9 +430,11 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
     for g in rows:
         g.pop("_index", None)
     by_finding = {fid: g for g in rows for fid in g["finding_ids"]}
+    coverage_box = coverage(report, limits)
     return {
         "method": {"severity_weight": SEVERITY_WEIGHT, "confidence_weight": CONFIDENCE_WEIGHT,
-                   "reach": f"1 + ln(1 + summed page importance / {REACH_UNIT}), at most {REACH_CAP}; no page address: the homepage",
+                   "reach": f"1 + ln(1 + summed importance of the pages read / {REACH_UNIT}), at most {REACH_CAP}; "
+                            "addresses not read add nothing (counted apart); no page address: the homepage",
                    "order": "severity band, then priority score", "merge_groups": [g["id"] for g in MERGE_GROUPS],
                    "business_relevance": BUSINESS_RELEVANCE, "max_cards": max_cards, "max_pages": MAX_PAGES,
                    "confirm_at_or_below": CONFIRM_AT_OR_BELOW,
@@ -434,7 +444,7 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         "groups": rows, "by_finding": by_finding,
         "key_pages": key_pages(report, rows, importance),
         "key_pages_reason": None if importance else key_pages_reason(report),
-        "coverage": coverage(report, limits),
+        "coverage": coverage_box,
         "counts": {"findings": len(by_finding), "groups": len(rows), "cards": len(cards), "confirm": len(confirm),
                    "notes": len(notes), "own_limits": len(limits), "appendix_only": len(appendix_only),
                    "rejected": len([g for g in rows if g["placement"] == "rejected"]),
@@ -442,7 +452,9 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
                    # DECISIONS 301 (5): the one source of every count a client output prints.
                    "by_severity": {k: sum(1 for g in rows for m in g["members"] if severity(m) == k)
                                    for k in ("S1", "S2", "S3", "S4", "Info")},
-                   "addresses": len({u for g in rows for u in g["urls"]})},
+                   "addresses": len({u for g in rows for u in g["urls"]}),
+                   # Parts of the audit not assessed (DECISIONS 305): the coverage lines of that kind, one count.
+                   "not_assessed": sum(1 for line in coverage_box["lines"] if line["kind"] == "not_assessed")},
         "grouping_summary": {k: summary.get(k) for k in ("method_version", "pages_scored", "page_types") if k in summary},
         "platform": (report.get("platform") or {}).get("name"),
         "_confirmations": confirmations or {},
@@ -487,6 +499,29 @@ def key_pages_reason(report: dict) -> str:
     return "reader_only" if not own and read_by_reader else "no_pages"
 
 
+def not_assessed_parts(report: dict) -> list[dict]:
+    """The parts of the audit not assessed, one per distinct (part, reason), with the checks each applies to: the one
+    count every client output prints ("Değerlendirilmeyen kapsam", DECISIONS 305). A check not assessed as a whole is
+    one part (its title, its summary). Left out: the parts that restate the addresses found and not read
+    (`coverage.UNREAD_RESTATEMENTS`): the coverage line "N addresses not read" says that once. The answer-engine panel
+    counts too."""
+    from .coverage import UNREAD_RESTATEMENTS
+    gaps: dict[tuple, dict] = {}
+    for check in (report.get("checks") or []) + (report.get("answer_engine_panel") or []):
+        parts = (check.get("coverage") or {}).get("not_assessed") or []
+        if check.get("status") == "not_assessed" and not parts:
+            parts = [{"part": check.get("title"), "reason": check.get("summary")}]
+        for part in parts:
+            if part.get("part") in UNREAD_RESTATEMENTS:
+                continue
+            gap = gaps.setdefault((part.get("part"), part.get("reason")), {
+                "part": part.get("part"), "reason": part.get("reason"),
+                "text": f"{part.get('part') or ''}: {part.get('reason') or ''}".strip(": "), "checks": []})
+            if check.get("check_id") not in gap["checks"]:
+                gap["checks"].append(check.get("check_id"))
+    return list(gaps.values())
+
+
 def coverage(report: dict, limits: list[dict]) -> dict:
     """What Maya read and what it could not, for the coverage section: our limits, never a client problem."""
     crawl = report.get("crawl") or {}
@@ -503,16 +538,8 @@ def coverage(report: dict, limits: list[dict]) -> dict:
                       "cut": len(cuts) if isinstance(cuts, list) else cuts or None})
     for g in limits:
         lines.append({"kind": "reader", "finding_ids": g["finding_ids"], "title": g["title"]})
-    gaps: dict[str, list[str]] = {}
-    for check in report.get("checks") or []:
-        for part in (check.get("coverage") or {}).get("not_assessed") or []:
-            text = f"{part.get('part') or ''}: {part.get('reason') or ''}".strip(": ")
-            gaps.setdefault(text, []).append(check.get("check_id"))
-        if check.get("status") == "not_assessed" and not (check.get("coverage") or {}).get("not_assessed"):
-            gaps.setdefault(check.get("summary") or "", []).append(check.get("check_id"))
-    for text, checks in gaps.items():
-        if text:
-            lines.append({"kind": "not_assessed", "text": text, "checks": list(dict.fromkeys(checks))})
+    for gap in not_assessed_parts(report):
+        lines.append({"kind": "not_assessed", **gap})
     reader = report.get("firecrawl") or {}
     return {"pages_read": status.get("pages_read", counts.get("pages_checked")),
             "known_not_read": status.get("known_urls_not_read"),
@@ -534,6 +561,7 @@ def appendix_rows(selection: dict, lists: dict | None = None) -> list[dict]:
                         "confidence_class": g["confidence"], "priority": g["priority"], "placement": g["placement"],
                         "card": g.get("card"), "group_lead": g["finding_ids"][0], "confirm_reason": g["confirm_reason"],
                         "merge_group": g.get("merge_group"),
+                        "pages_read": g.get("pages_counted"), "not_read": g.get("addresses_not_read"),
                         "manual": (lambda c: f"{c.get('result')} · {c.get('by')} · {c.get('date')} · {c.get('seen')}"
                                    + (f" · {c['note']}" if c.get("note") else ""))(manual(m, selection.get("_confirmations")))
                         if manual(m, selection.get("_confirmations")) else "",

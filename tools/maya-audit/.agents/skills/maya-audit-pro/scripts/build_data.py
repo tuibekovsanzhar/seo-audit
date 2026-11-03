@@ -131,6 +131,11 @@ def load_final(maya_src=None):
     return None
 
 
+# Checks whose scope is a list of addresses (URL), not pages; a rule of theirs whose scope is the pages that carry the
+# problem says "sayfa" (DECISIONS 305: the links to an alias are counted on the pages that hold them).
+URL_SCOPED = ("IDX-1", "IDX-6", "IDX-3", "IDX-5")
+PAGE_SCOPED_RULES = frozenset({"idx6.alias_links"})
+
 def unread_part_names():
     """The engine's names for parts that restate the unread addresses; the engine is required (load_final)."""
     if load_final() is None:
@@ -456,9 +461,12 @@ class Builder:
         return c if c.get("status") == "assessed" and c.get("metrics") else None
 
     def gaps(self):
-        """Kontrol edilemeyen kısımlar: maya_audit_web.summary.coverage_gaps'in sadeleştirilmiş eşi
-        (aynı (kısım, neden) bir kez). Okunmayan adresleri yeniden sayan kısımlar hariç: onlar "N URL okunmadı"
-        satırında bir kez sayılır (maya_audit.coverage.UNREAD_RESTATEMENTS, DECISIONS 283 (10))."""
+        """Değerlendirilmeyen kısımlar. Müşteri seçimi varsa onun tek sayısı (`counts["not_assessed"]`,
+        DECISIONS 305): KPI kutusu, kapsam satırı ve son sayfa aynı sayıyı basar. Yoksa aynı kural burada: aynı
+        (kısım, neden) bir kez; okunmayan adresleri yeniden sayan kısımlar hariç (maya_audit.coverage.UNREAD_RESTATEMENTS,
+        DECISIONS 283 (10)); cevap motoru paneli dahil."""
+        if self.sel is not None and "not_assessed" in self.sel["counts"]:
+            return self.sel["counts"]["not_assessed"]
         crawl_gap = unread_part_names()
         seen = set()
         for chk in (self.r.get("checks") or []) + (self.r.get("answer_engine_panel") or []):
@@ -767,6 +775,16 @@ class Builder:
             return None
         return MERGE_BY_RULE.get(members[0].get("rule_id") or "")
 
+    def members_of(self, f):
+        """The findings on the card whose lead is `f` (the lead alone when it has no card of its own)."""
+        return next((g for g in self.groups() if g[0] is f), [f])
+
+    def merge_title(self, f):
+        """A merged card's own title (DECISIONS 301 (4)) when `f` leads one, else None. The summary, the findings
+        table and the action plan say the card's title and its whole scope, never the lead's (DECISIONS 305)."""
+        merged = self.merged_group(self.members_of(f))
+        return (merged["title"].get(self.lang) or merged["title"]["en"]) if merged else None
+
     def rule_of(self, f):
         return f.get("rule_id") or self._w("rule")(f.get("check_id"), f.get("title"))
 
@@ -874,7 +892,7 @@ class Builder:
         complete = all(len(urls) >= ((m.get("scope") or {}).get("count") or 0) for m, urls in zip(members, lists))
         n = (len({u for urls in lists for u in urls if isinstance(u, str)}) if complete
              else sum((m.get("scope") or {}).get("count") or 0 for m in members))
-        unit = self.L["scope_units"]["url" if f.get("check_id") in ("IDX-1", "IDX-6", "IDX-3", "IDX-5") else "page"]
+        unit = self.L["scope_units"]["url" if f.get("check_id") in URL_SCOPED and f.get("rule_id") not in PAGE_SCOPED_RULES else "page"]
         self.fact(n)
         return f"{fmt_int(n, self.lang)} {unit[0] if n == 1 else unit[1]}"
 
@@ -937,7 +955,7 @@ class Builder:
         if sc.get("kind") == "sitewide" and n <= 1:
             unit = "file" if re.search(r"sitemap file|robots\.txt|llms\.txt", title) else None
             return f"1 {L['scope_units']['file'][0]}" if unit else L["scope_units"]["site"]
-        unit = "url" if cid in ("IDX-1", "IDX-6", "IDX-3", "IDX-5") else "page"
+        unit = "url" if cid in URL_SCOPED and f.get("rule_id") not in PAGE_SCOPED_RULES else "page"
         words = L["scope_units"][unit]
         return f"{fmt_int(n, self.lang)} {words[0] if n == 1 else words[1]}"
 
@@ -1066,10 +1084,14 @@ class Builder:
                 continue
             tone = "high" if f["severity"] in ("S1", "S2") else "medium" if f["severity"] == "S3" else "low"
             self.fact(f.get("title"))
-            priorities.append({"n": i + 1, "tone": tone, "value": self.scope_text(f), "finding_ids": [f["id"]],
-                               "title": self.slot(f"priorities[{i}].title", "odak alanı adı (2-4 kelime)", f.get("title"), 40),
+            merged = self.merge_title(f)
+            members = self.members_of(f)
+            priorities.append({"n": i + 1, "tone": tone, "value": self.group_scope(f),
+                               "finding_ids": [m["id"] for m in members],
+                               "title": self.slot(f"priorities[{i}].title", "odak alanı adı (2-4 kelime)",
+                                                  merged or f.get("title"), 40),
                                "text": self.slot(f"priorities[{i}].text", "tek cümle: ne yapılmalı / ne doğrulanmamış",
-                                                 f.get("how_to_fix"), 150)})
+                                                 (self.merged_group(members) or {}).get("fix", {}).get("en") or f.get("how_to_fix"), 150)})
 
         saved, read_fc = self.saved_copies()
         gaps = self.gaps()
@@ -1088,7 +1110,9 @@ class Builder:
         # sayfa 2
         leads = [g[0] for g in self.groups()]
         top = leads[:5]
-        findings = [{"id": f["id"], "title": self.title_for(f, f"findings[{i}].title", 70),
+        findings = [{"id": f["id"], "title": (self.slot(f"findings[{i}].title", "bulgu başlığı", f.get("title"), 70,
+                                                        prefill=self.merge_title(f)) if self.merge_title(f)
+                                              else self.title_for(f, f"findings[{i}].title", 70)),
                      "scope": self.group_scope(f), "severity": f["severity"], "severity_label": L["severity"][f["severity"]],
                      "status": self.status_text(f)} for i, f in enumerate(top)]
         for f in self.problems:
@@ -1146,7 +1170,8 @@ class Builder:
             actions.append({"n": i + 1, "ref": f["id"], "owner": L["owners"][owner], "effort": L["efforts"][effort],
                             "title": self.slot(f"actions[{i}].title", "aksiyon cümlesi, fiille başlar, kısa",
                                                (fx or f.get("how_to_fix") or f.get("title")), 75,
-                                               prefill=self._w("action")(f.get("rule_id") or self._w("rule")(f.get("check_id"), f.get("title"))))})
+                                               prefill=self.merge_title(f) or
+                                               self._w("action")(f.get("rule_id") or self._w("rule")(f.get("check_id"), f.get("title"))))})
         if lab_poor and len(actions) < 5 and not any("DFS" in a["ref"] for a in actions):
             actions.append(self.perf_action(lab, len(actions)))
         self.fact(len(month), len(later))
@@ -1201,6 +1226,10 @@ class Builder:
                 examples = [x["url"] for x in group.get("examples") or [] if x.get("url") in url_finding]
                 urls = examples + [u for u in url_finding if u not in examples]
                 sub = self.merged_lines(members) or self.reason_lines(f) or self.blocked_429_line(f)
+                # DECISIONS 305: addresses that were not read add nothing to the score; the card says how many.
+                if group.get("addresses_not_read"):
+                    sub = list(sub or []) + [L["not_read_line"].format(n=fmt_int(group["addresses_not_read"], self.lang))]
+                    self.fact(group["addresses_not_read"])
                 # kartta 4 link (satırlı kartta 2: satırlar yer kaplar); tam liste render.py'nin yazdığı adres listesi CSV'sinde
                 shown = urls[:2 if sub else 4]
                 # listelenip kartta gösterilmeyenler + rapordaki listeye hiç girmeyen sayfalar (problem_summary.not_listed)
@@ -1372,7 +1401,7 @@ class Builder:
                 text, _ = self.w.title(None, line.get("title") or "")
                 limits.append(text or line.get("title"))
                 self.fact(line.get("title"))
-        gaps = sum(1 for line in cov["lines"] if line["kind"] == "not_assessed")
+        gaps = self.gaps()
         if gaps:
             limits.append(L["own_gaps"].format(n=fmt_int(gaps, lang)))
             self.fact(gaps)
@@ -1426,6 +1455,14 @@ class Builder:
         return {"n": i + 1, "ref": f"diagnostic:{lab['check_id']}", "owner": self.L["owners"]["developer"], "effort": self.L["efforts"]["M"],
                 "title": FIXED["perf_action"][self.lang].format(metrics=metrics)}
 
+    @staticmethod
+    def _without_empty_columns(sample):
+        """An evidence table never prints a column that is empty ("—") in every row (DECISIONS 300 (7), 305)."""
+        keep = [j for j in range(len(sample["columns"])) if j == 0 or any(row[j] not in ("—", "", None) for row in sample["rows"])]
+        sample["columns"] = [sample["columns"][j] for j in keep]
+        sample["rows"] = [[row[j] for j in keep] for row in sample["rows"]]
+        return sample
+
     def evidence_sample(self, f):
         L, ev = self.L, f.get("evidence") or {}
         rows = None
@@ -1452,15 +1489,28 @@ class Builder:
                     "columns": [L["ev_request"], L["ev_time"], L["ev_http"], L["ev_body"]], "rows": out,
                     "alert_col": 3 if any(str(a.get("body_bytes")) == "0" for a in attempts) else None,
                     "note": L["ev_note_sample"].format(total=total)}
+        # The engine's structured evidence first (DECISIONS 271): the measured value and its limit ("885 KB", "500 KB").
+        facts = [x for x in self._w("facts")(self.rule_of(f), ev) or [] if isinstance(x, dict)]
+        if facts:
+            out = []
+            for x in facts[:EV_ROWS]:
+                out.append([path_of(x.get("url")) if x.get("url") else "—", str(x.get("element") or "—"),
+                            str(x.get("observed") or "—"), str(x.get("expected") or "—")])
+                self.fact(x.get("observed"), x.get("expected"))
+            return self._without_empty_columns(
+                {"finding_id": f["id"], "kind": "rows", "caption": f.get("id"),
+                 "columns": [L["ev_url"], L["ev_element"], L["ev_measured"], L["ev_limit"]], "rows": out, "alert_col": None,
+                 "note": L["ev_note_urls"].format(n=len(out))})
         if rows:
             out = []
             for item in rows[:EV_ROWS]:
                 out.append([path_of(item.get("url")), str(item.get("status") or "—"),
                             L["ev_bytes"].format(n=item["body_bytes"]) if item.get("body_bytes") is not None else (item.get("element") or "—")])
                 self.fact(item.get("status"))
-            return {"finding_id": f["id"], "kind": "rows", "caption": f.get("id"),
-                    "columns": [L["ev_url"], L["ev_http"], L["ev_result"]], "rows": out, "alert_col": None,
-                    "note": L["ev_note_urls"].format(n=len(out))}
+            return self._without_empty_columns(
+                {"finding_id": f["id"], "kind": "rows", "caption": f.get("id"),
+                 "columns": [L["ev_url"], L["ev_http"], L["ev_result"]], "rows": out, "alert_col": None,
+                 "note": L["ev_note_urls"].format(n=len(out))})
         urls = ((f.get("scope") or {}).get("urls")) or []
         if urls:
             return {"finding_id": f["id"], "kind": "urls", "caption": f.get("id"), "columns": [L["ev_url"]],

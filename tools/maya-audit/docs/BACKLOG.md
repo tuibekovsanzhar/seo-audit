@@ -25,13 +25,6 @@ Parts of done items that stay open: SEO-031 when robots.txt blocks every crawler
 news sitemaps; SEO-046 infinite scroll with no `rel=next` and no page-2 address; SEO-067 mixed-language slugs; SEO-093
 products with too few links from categories.
 
-## Percent-encoding case in canonical aliases (DECISIONS 304 (6), 2026-11-03)
-
-`page_groups.canonical_aliases` compares the canonical and the page's address as written, so `/pages/etbi%CC%87s` with
-the canonical `/pages/etbi%cc%87s` is an alias of an unread "other" page; its links are split between two nodes in the
-importance graph (nihan: the ETBİS pages, linked from about 250 pages each). Compare decoded addresses there too; this
-changes importance figures, so it waits for the owner.
-
 ## Key pages for sites that blocked Maya's crawler — done (DECISIONS 304)
 
 Firecrawl's pages are grouped while the audit runs and kept as `crawl.reader_page_grouping` (schema 1.24). Saved

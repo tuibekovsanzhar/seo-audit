@@ -140,9 +140,18 @@ def normalize_url(href: str, base: str | None = None) -> str | None:
     if ":" in host:  # IPv6 literal
         host = f"[{host}]"
     netloc = host if port in (None, _DEFAULT_PORTS[scheme]) else f"{host}:{port}"
-    path = remove_dot_segments(parts.path or "/")
-    normalized = urlunsplit((scheme, netloc, path, parts.query, ""))
+    path = upper_escapes(remove_dot_segments(parts.path or "/"))
+    normalized = urlunsplit((scheme, netloc, path, upper_escapes(parts.query), ""))
     return normalized if _sendable(normalized) else None
+
+
+_ESCAPE = re.compile(r"%[0-9a-fA-F]{2}")
+
+
+def upper_escapes(text: str) -> str:
+    """Percent-escapes in upper case (RFC 3986 6.2.2.1): `%cc%87` and `%CC%87` are the same octets, so one address
+    for page identity, grouping and importance (DECISIONS 305). Nothing else in the address changes."""
+    return _ESCAPE.sub(lambda m: m.group(0).upper(), text or "")
 
 
 # What an address that is not a web page is, by its path: checked before a reader is asked for it, and wherever a

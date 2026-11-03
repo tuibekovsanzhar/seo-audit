@@ -364,6 +364,26 @@ def test_web_pdf_pro_pdf_xlsx_and_markdown_print_the_same_counts(demo_app, site_
     assert data["kpis"][0]["value"] == str(c["problems"])
     assert data["appendix"]["counts"]["findings"] == c["findings"]
     assert data["coverage"]["rows"][2]["value"] == str(c["by_severity"]["Info"])
+    # The pro report as printed (DECISIONS 305): the parts not assessed are one number on page 1 (coverage box), page 3
+    # (provenance line) and the last page (own limits). The PDF is printed from this HTML (render.py).
+    for slot in data["_slots"]:
+        parts = re.findall(r"[^.\[\]]+", slot["path"])
+        holder = data
+        for part in parts[:-1]:
+            holder = holder[int(part)] if part.isdigit() else holder[part]
+        key = int(parts[-1]) if parts[-1].isdigit() else parts[-1]
+        if isinstance(holder[key], str) and "⟪" in holder[key]:
+            holder[key] = "Check the page"
+    out.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    html = tmp_path / "pro.html"
+    run = subprocess.run([sys.executable, str(skill.with_name("render.py")), str(out), "-o", str(html)], capture_output=True, text=True)
+    assert run.returncode == 0, run.stderr
+    printed = re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", html.read_text(encoding="utf-8"))))
+    n = c["not_assessed"]
+    assert data["coverage"]["rows"][0]["value"] == str(n)
+    assert f"Unassessed scope items {n}" in printed and f"{n} scope items unassessed" in printed
+    assert (f"{n} parts not assessed" in printed) == bool(n)
+    assert sorted(int(x) for x in re.findall(r"(\d+) (?:scope items unassessed|parts not assessed)", printed)) == [n] * (1 + bool(n))
 
 
 def test_web_review_buttons_write_the_audits_review_file_and_the_card_says_so(demo_app):  # noqa: F811

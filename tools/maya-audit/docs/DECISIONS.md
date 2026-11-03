@@ -3264,3 +3264,33 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      percent-encoding case for another address (nihan: `/pages/etbi%CC%87s`), which splits that page's links between
      two nodes in the importance graph; the new SEO-061 rule compares decoded addresses. Backlog.
      Schema: 1.24. Tests: `tests/test_quick_checks.py` (17).
+305. **Answers and report fixes after DECISIONS 304 (Owner, 2026-11-03: items 1-4; how each is done is an agent
+     default).** Global rules; nihan was the test case.
+     (1) *Percent-escape case* (owner's backlog decision): `%cc` and `%CC` are the same octets (RFC 3986 6.2.2.1), so
+     `urls.normalize_url` writes every escape of the path and query in upper case (`urls.upper_escapes`), and the
+     canonical comparisons (`index_data.canonical_elsewhere`, `page_groups.canonical_aliases`) compare both sides that
+     way, so a saved report written before still counts `/pages/etbi%cc%87s` and `/pages/etbi%CC%87s` as one page. Page
+     identity, grouping and importance follow. nihan: the ETBİS pages are no longer an alias of an unread "other" page.
+     (2) *Reach from pages read* (replaces DECISIONS 300 (2)'s "a page not scored counts 10"): `client_selection._reach`
+     sums the importance of the affected pages that were read (scored, not a canonical scored only from its aliases);
+     an address not read adds nothing and is counted apart (`addresses_not_read`; XLSX columns "Okunan sayfa (erişim)",
+     "Okunmayan adres"; the pro card says "Okunmayan N adres ekte; öncelik puanına katılmadı."). A finding with no
+     address, or only files (a sitemap, robots.txt), keeps the homepage's reach; one whose page addresses were all left
+     unread gets the minimum (1.0). nihan: the decomposed-address card (1,689 addresses, 68 read) goes from 30.9 (3rd)
+     to 18.8 (6th); the alias-links card is 3rd. Side effect: findings on sitemap files now reach the homepage instead of
+     10 per file (adile IDX-5 failed files 16.4 -> 25.4; order unchanged on adile and enpara).
+     (3a) *One count of the parts not assessed:* `client_selection.not_assessed_parts` (one per (part, reason), the
+     parts that restate the unread addresses left out, the answer-engine panel included) feeds the coverage lines and
+     `counts["not_assessed"]`; the pro report's KPI box, provenance line and last page, the web concise PDF and the XLSX
+     Coverage sheet all print it. nihan: 25 on pages 1, 3 and 7 (v2 said 25, 25 and 23).
+     (3b) *Merged cards everywhere:* the pro report's priorities, findings table and action plan use a merged card's
+     title (`MERGE_GROUPS`) and its whole scope (every member's addresses), not the lead finding's (nihan v2: "1 sayfa"
+     on page 1 and the homepage's 885 KB title over 494 pages on page 2).
+     (3c) *Evidence tables:* the sample prints the engine's structured evidence (address, element, measured, limit:
+     "/ · 885 KB · 500 KB") and drops any column empty in every row. Also: the alias-links scope is counted in pages
+     ("141 sayfa"), and the evidence note points to the XLSX appendix.
+     (4) nihan pro report v3 rebuilt offline with the maya-audit-pro skill (Turkish, STR-12 confirmation kept):
+     `reviews/2026-11-03/nihan-v3/` (git-ignored).
+     Schema: no bump (client-selection fields and appendix columns are not report.json). Tests:
+     `tests/test_v03_report_fixes.py` (7), `test_web_pdf_pro_pdf_xlsx_and_markdown_print_the_same_counts` extended to the
+     printed pro report.

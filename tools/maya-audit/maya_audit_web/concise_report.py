@@ -185,14 +185,15 @@ def render(view, rows, generated_at, practical, companions, demo=False, selectio
             out.append(f'<li class="small wrap">{e(row.get("title_shown") or line.get("title"))}</li>')
     # The parts not assessed, in the reader's language: one line per distinct gap with the checks it applies to (CR-05);
     # the three that concern most checks here, the rest counted (all are in the appendix's Coverage sheet).
+    # The same parts the pro report and the appendix count (`client_selection.not_assessed_parts`, DECISIONS 305).
+    from . import wording
     gaps = {}
-    for area in view.get('areas', []):
-        for check in area['checks']:
-            for gap in check.get('not_assessed') or []:
-                text = f'{gap.get("part_shown") or gap.get("part")}: {gap.get("reason_shown") or gap.get("reason")}'
-                gaps.setdefault(text, []).append(check['check_id'])
-            if check['status'] == 'not_assessed' and not check.get('not_assessed'):
-                gaps.setdefault(check.get('summary_shown') or check['summary'], []).append(check['check_id'])
+    for line in cov["lines"]:
+        if line["kind"] != "not_assessed":
+            continue
+        part, reason = wording.label(line.get("part"))[0], wording.line(line.get("reason"))[0]
+        text = f"{part}: {reason}" if part and reason else (part or reason or line.get("text") or "")
+        gaps.setdefault(text, []).extend(line.get("checks") or [])
     ranked = sorted(gaps.items(), key=lambda kv: -len(set(kv[1])))
     for text, checks in ranked[:3]:
         ids = list(dict.fromkeys(checks))

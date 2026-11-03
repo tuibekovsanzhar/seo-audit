@@ -66,7 +66,7 @@
   "ev_attempt": "{n}. istek",
   "ev_bytes": "{n} bayt",
   "ev_note_sample": "{total} adreslik bulgudan bir örnek. Saatler saniyesine kadar gösterilir.",
-  "ev_note_urls": "Etkilenen adreslerden ilk {n} tanesi. Tam liste rapor ekindeki adres listesi dosyasında.",
+  "ev_note_urls": "Etkilenen adreslerden ilk {n} tanesi. Tam liste XLSX ekinde.",
   "next_action": "SONRAKİ ADIM",
   "search_visibility": "Arama görünürlüğü",
   "search_sub": "Seçilen sorgular · Aylık hacim bu seçime göre ölçeklenmiştir",
@@ -329,7 +329,11 @@
   "key_pages_empty": {
    "reader_only": "Bu denetimde sayfa önemi hesaplanamadı: Maya'nın tarayıcısı engellendi, sayfalar Firecrawl ile okundu ve kayıtlı kopyalar sayfalar arası bağlantıları tutmuyor; önem bu bağlantılardan hesaplanır.",
    "no_pages": "Bu denetimde içeriği okunan sayfa olmadığı için sayfa önemi hesaplanamadı."
-  }
+  },
+  "ev_element": "ÖĞE",
+  "ev_measured": "ÖLÇÜLEN",
+  "ev_limit": "SINIR",
+  "not_read_line": "Okunmayan {n} adres ekte; öncelik puanına katılmadı."
  },
  "en": {
   "doc_kind": "WEBSITE AUDIT",
@@ -397,7 +401,7 @@
   "ev_attempt": "Request {n}",
   "ev_bytes": "{n} bytes",
   "ev_note_sample": "One sample from the {total}-URL finding. Timestamps shown to the second.",
-  "ev_note_urls": "The first {n} affected addresses. The full list is in the attached address list.",
+  "ev_note_urls": "The first {n} affected addresses. The full list is in the XLSX appendix.",
   "next_action": "NEXT ACTION",
   "search_visibility": "Search visibility",
   "search_sub": "Selected source queries · Monthly volume shown relative to this selection",
@@ -659,6 +663,10 @@
   "key_pages_empty": {
    "reader_only": "Page importance could not be worked out for this audit: Maya's crawler was blocked, the pages were read through Firecrawl, and the saved copies keep no links between pages, which importance is computed from.",
    "no_pages": "Page importance could not be worked out: no page's content was read in this audit."
-  }
+  },
+  "ev_element": "ELEMENT",
+  "ev_measured": "MEASURED",
+  "ev_limit": "LIMIT",
+  "not_read_line": "{n} addresses not read are in the appendix; they add nothing to the priority score."
  }
 }
