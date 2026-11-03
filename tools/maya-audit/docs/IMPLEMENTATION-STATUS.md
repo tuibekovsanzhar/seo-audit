@@ -709,6 +709,20 @@ findings; no finding, severity or confidence changes; release gate PASS before a
 | ruff: in CI (`ci.yml`, `full.yml`) as `ruff check --select E9,F821,F841 maya_audit maya_audit_web maya_audit_web_lite.py`; installed in `.venv` (0.17.3, dev only) | CI rule set: `All checks passed!` on the CI paths and on the changed files. Ruff's wider default rules: 9 style notes in the new files (import order, an unused `noqa`, `sorted()[0]`), none a defect; not changed |
 | Canonicals scored but not read change no page count (nihan; saved report filled with grouping by `f338bb5` vs by `ecad113` + the STR-3 relabel; isolated copies of the web database and the audit folder; each rendered with its own code; no network) | Identical before/after: `crawl.pages` 500; `page_counts` {pages_checked 500, redirects 0}; coverage `readable_unique_urls` 500 and the Markdown line "**Pages read:** 500 (via Firecrawl)"; summary "500 pages checked. 27 parts could not be checked.", counts (28 problems, 20 notes, S3 5, S4 23, Info 20, findings 48, discovered 23001, not fetched 22499); 48 findings, 3560 affected addresses; gate PASS, no violations; web summary, practical, action plan, findings, Markdown, print and full print: identical (timestamps aside); web PDF 13 pages, text identical; Pro client report: `data.json` identical but for source paths and the report digest, HTML identical, PDF 9 pages text identical, address CSV (434 lines) byte-identical. Only `page_grouping.canonical_pages` differs: 0 -> 283 |
 
+**Pushed** `762ac12..630815a` to withmaya/seo-audit `main` (2026-11-03). CI `maya-audit` run
+[41584039938](https://github.com/withmaya/seo-audit/actions/runs/41584039938): **success**; job `fast` 17m41s (05:27:43 to
+05:45:24 UTC), of which the "Fast tests" step 17m00s. The run before (`762ac12`) was 17m59s (step 17m11s); the one before
+that (`c22a0b0`, 2026-10-30) 9m44s (step 8m48s); setup (install, Chromium) is under a minute in all three.
+
+**Why the fast job doubled** (measured locally, `--durations=40` on the fast suite, `970.17s`): one fixture setup,
+`tests/test_coverage_phase2.py::measured` (module scope, 11 benchmark scenarios run before and after), takes **589.24s**.
+`slow_tests.txt` lists `test_benchmark_more_of_the_right_pages_are_read_where_it_was_possible` as slow but not
+`test_benchmark_healthy_sites_are_unchanged_and_gain_no_findings`, which uses the same fixture, so the fast suite still
+builds it. The fixture took 23.3s on `c22a0b0` and 23.1s on `1dbdf3d` (stage 2), and 589s from `762ac12` on (DECISIONS
+295/296: Firecrawl's own pace, the timeout retry): those waits run in real time in the benchmark's made-up runs. The next
+slowest fast-suite setup is 43.9s. Not changed here (a fix is to list that second test as slow, or to make the benchmark's
+pace and retry waits use a fake clock; owner's choice).
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).
