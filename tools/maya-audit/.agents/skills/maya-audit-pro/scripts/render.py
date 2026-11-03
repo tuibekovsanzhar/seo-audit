@@ -661,7 +661,8 @@ def write_appendix(d, out):
     wording = {}
     try:
         from maya_audit_web import wording as w  # type: ignore
-        wording = {"title": lambda cid, text: w.title(cid, text, d["lang"])[0], "fix": lambda text: w.fix(text, d["lang"])[0]}
+        wording = {"title": lambda cid, text: w.title(cid, text, d["lang"])[0], "fix": lambda text: w.fix(text, d["lang"])[0],
+                   "label": lambda text: w.label(text, d["lang"])[0], "line": lambda text: w.line(text, d["lang"])[0]}
     except Exception:
         pass
     content = client_appendix.build(selection, d["lang"], sealed.affected, **wording)

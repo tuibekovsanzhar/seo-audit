@@ -281,11 +281,11 @@
   "confirm_more": "Teyit edilecek {n} grup daha: ekte.",
   "confirm_none": "Teyit bekleyen bulgu yok.",
   "confirm_reasons": {
-   "unverified_check": "kontrol henüz gerçek sitelerde doğrulanmadı",
-   "low_confidence": "düşük güven",
-   "intent": "kasıtlı olabilir",
-   "firecrawl_only": "yalnız Firecrawl kopyasında görüldü",
-   "spoofed_googlebot": "Googlebot kimliğiyle yapılan isteğe 403/429"
+   "unverified_check": "Doğrulama bekliyor: kontrol yeni",
+   "low_confidence": "Doğrulama bekliyor: tahmini ölçüm",
+   "intent": "Doğrulama bekliyor: bilinçli bir tercih olabilir",
+   "firecrawl_only": "Doğrulama bekliyor: farklı okuma yolunda görüldü",
+   "spoofed_googlebot": "Doğrulama bekliyor: arama motoru kimliğiyle yapılan istek reddedildi; Search Console'da kontrol edin"
   },
   "kp_title": "Kilit sayfalar karnesi",
   "kp_cols": [
@@ -327,7 +327,7 @@
    "_percent_first": true
   },
   "key_pages_empty": {
-   "reader_only": "Bu denetimde sayfa önemi hesaplanamadı: Maya'nın tarayıcısı engellendi, sayfalar Firecrawl ile okundu ve kayıtlı kopyalar sayfalar arası bağlantıları tutmuyor; önem bu bağlantılardan hesaplanır.",
+   "reader_only": "Bu denetimde sayfa önemi hesaplanamadı: Maya'nın tarayıcısı engellendi, sayfalar başka bir okuma yoluyla okundu ve kayıtlı kopyalar sayfalar arası bağlantıları tutmuyor; önem bu bağlantılardan hesaplanır.",
    "no_pages": "Bu denetimde içeriği okunan sayfa olmadığı için sayfa önemi hesaplanamadı."
   },
   "ev_element": "ÖĞE",
@@ -616,11 +616,11 @@
   "confirm_more": "{n} more groups to confirm: in the appendix.",
   "confirm_none": "No finding waits for confirmation.",
   "confirm_reasons": {
-   "unverified_check": "check not yet validated on real sites",
-   "low_confidence": "low confidence",
-   "intent": "may be intentional",
-   "firecrawl_only": "seen only in Firecrawl's copy",
-   "spoofed_googlebot": "403/429 to a request with Googlebot's user agent"
+   "unverified_check": "Awaiting confirmation: new check",
+   "low_confidence": "Awaiting confirmation: estimated measurement",
+   "intent": "Awaiting confirmation: may be a deliberate choice",
+   "firecrawl_only": "Awaiting confirmation: seen through a different reading path",
+   "spoofed_googlebot": "Awaiting confirmation: a request with a search engine's identity was refused; check Search Console"
   },
   "kp_title": "Key pages scorecard",
   "kp_cols": [
@@ -661,7 +661,7 @@
    "body": "body text"
   },
   "key_pages_empty": {
-   "reader_only": "Page importance could not be worked out for this audit: Maya's crawler was blocked, the pages were read through Firecrawl, and the saved copies keep no links between pages, which importance is computed from.",
+   "reader_only": "Page importance could not be worked out for this audit: Maya's crawler was blocked, the pages were read another way, and the saved copies keep no links between pages, which importance is computed from.",
    "no_pages": "Page importance could not be worked out: no page's content was read in this audit."
   },
   "ev_element": "ELEMENT",

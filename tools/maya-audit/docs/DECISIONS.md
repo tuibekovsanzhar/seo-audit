@@ -3294,3 +3294,23 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Schema: no bump (client-selection fields and appendix columns are not report.json). Tests:
      `tests/test_v03_report_fixes.py` (7), `test_web_pdf_pro_pdf_xlsx_and_markdown_print_the_same_counts` extended to the
      printed pro report.
+306. **Client-report polish (Owner, 2026-11-03: items 1-5; wording and the rule list are agent defaults).** Global, every
+     audit; nihan was the test case.
+     (1) *Effort of an address rename:* a fix that renames addresses and needs a redirect for each old one
+     (`recommendation_catalog.RENAMES_ADDRESSES`: `tseo1.url_decomposed`, `tseo1.url_slug_unclear`) is at least Medium
+     (`note()` raises a Small entry) and is never a quick win (pro report and web concise PDF). The card's first step
+     explains Shopify's handle in plain Turkish: "Ürün/sayfa adresindeki kısa adı (handle) ...".
+     (2) *"Teyit edin" in client reports* (pro report, web concise PDF) says why in client words, no vendor name:
+     "Doğrulama bekliyor: kontrol yeni" (an unverified check), "... farklı okuma yolunda görüldü" (seen only in the page
+     reader's copy), "... tahmini ölçüm", "... bilinçli bir tercih olabilir", "... arama motoru kimliğiyle yapılan istek
+     reddedildi; Search Console'da kontrol edin". The technical reason stays in the XLSX ("Teyit nedeni"). The key-pages
+     note for a blocked site no longer names Firecrawl either.
+     (3) *Findings table:* each row says what is wrong. A merged card's row takes its group's `finding` name
+     (`MERGE_GROUPS`, e.g. "Sayfa HTML'i ağır: satır içi veri, betik ve stil"); the cards and the action plan keep the
+     action titles.
+     (4) *Turkish XLSX:* coverage explanations go through the engine's wording (`label`, `line`, passed by the web app and
+     the pro render), page types are Turkish (ana sayfa, kategori, ürün, blog yazısı, politika sayfası, yardımcı sayfa,
+     diğer), and the manual check's result word too ("teyit edildi"); who checked and what they saw stay as written.
+     (5) *"Kayıtlı kopyadan okunan sayfa"* is not printed when it is 0.
+     nihan pro v4: `reviews/2026-11-03/nihan-v4/` (git-ignored). Schema: no bump. Tests: `tests/test_v03_report_fixes.py`
+     7 -> 11.

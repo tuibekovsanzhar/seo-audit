@@ -68,9 +68,10 @@ EMPTY_COLLECTIONS_FIX = ("Fill these collections or merge each into a related on
 EMPTY_COLLECTIONS_NOTE = ("Estimated: the products are counted from the links in each page's own HTML (one per product). "
                           "A list that loads its products with JavaScript shows none here: confirm in a browser.")
 DECOMPOSED_EXPECTED = "every address is written with composed characters (Unicode NFC) or plain letters"
-DECOMPOSED_FIX = ("Change these handles to their composed or plain form (the evidence gives each one, for example "
-                  "etbi̇s -> etbis), redirect each old address to the new one with a 301, and update the links and the "
-                  "sitemap. The combining dot usually comes from lowercasing a capital İ in the tool that wrote the slug.")
+DECOMPOSED_FIX = ("Change these address names (the handle: the name of a product or page at the end of its address) "
+                  "to their composed or plain form (the evidence gives each one, for example etbi̇s -> etbis), redirect "
+                  "each old address to the new one with a 301, and update the links and the sitemap. The combining dot "
+                  "usually comes from lowercasing a capital İ in the tool that wrote the address name.")
 ROBOTS_NOINDEX_EXPECTED = "a page meant to leave the index can be crawled, so its noindex is seen"
 ROBOTS_NOINDEX_FIX = ("Choose one per page. To take it out of the index, allow it in robots.txt so crawlers can read the "
                       "noindex, and block it only after it has dropped out. To keep crawlers out, remove the noindex "

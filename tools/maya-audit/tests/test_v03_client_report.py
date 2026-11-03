@@ -363,7 +363,8 @@ def test_web_pdf_pro_pdf_xlsx_and_markdown_print_the_same_counts(demo_app, site_
     data = json.loads(out.read_text(encoding="utf-8"))
     assert data["kpis"][0]["value"] == str(c["problems"])
     assert data["appendix"]["counts"]["findings"] == c["findings"]
-    assert data["coverage"]["rows"][2]["value"] == str(c["by_severity"]["Info"])
+    rows = {row["label"]: row["value"] for row in data["coverage"]["rows"]}
+    assert rows["Additional notes"] == str(c["by_severity"]["Info"])
     # The pro report as printed (DECISIONS 305): the parts not assessed are one number on page 1 (coverage box), page 3
     # (provenance line) and the last page (own limits). The PDF is printed from this HTML (render.py).
     for slot in data["_slots"]:
@@ -380,7 +381,7 @@ def test_web_pdf_pro_pdf_xlsx_and_markdown_print_the_same_counts(demo_app, site_
     assert run.returncode == 0, run.stderr
     printed = re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", html.read_text(encoding="utf-8"))))
     n = c["not_assessed"]
-    assert data["coverage"]["rows"][0]["value"] == str(n)
+    assert rows["Unassessed scope items"] == str(n)
     assert f"Unassessed scope items {n}" in printed and f"{n} scope items unassessed" in printed
     assert (f"{n} parts not assessed" in printed) == bool(n)
     assert sorted(int(x) for x in re.findall(r"(\d+) (?:scope items unassessed|parts not assessed)", printed)) == [n] * (1 + bool(n))

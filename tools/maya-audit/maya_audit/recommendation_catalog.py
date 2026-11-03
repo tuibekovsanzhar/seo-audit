@@ -294,8 +294,8 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
     ),
     "TSEO-1": (
         # The checklist's quick checks (DECISIONS 304).
-        (r"decomposed character", "developer", "S", "A letter written as two code points makes a second address for the same word: links typed or copied with the normal letter lead elsewhere, and the address looks garbled when shared."),
-        (r"unclear slug", "developer", "S", "A short address made of words tells visitors and engines what the page is before they open it; ids and symbols say nothing."),
+        (r"decomposed character", "developer", "M", "A letter written as two code points makes a second address for the same word: links typed or copied with the normal letter lead elsewhere, and the address looks garbled when shared."),
+        (r"unclear slug", "developer", "M", "A short address made of words tells visitors and engines what the page is before they open it; ids and symbols say nothing."),
         (r"end <head> early: canonical", "developer", "S", "Google stops reading the head at the first element that cannot stand in it, so a canonical, robots or hreflang tag after it is ignored."),
         (r"end <head> early: meta", "developer", "S", "Tags after an element that ends the head early are read as body; previews and some crawlers then miss them."),
         (r"no viewport meta tag", "developer", "S", "Google indexes the mobile version of a page; without a viewport phones show a shrunken desktop layout."),
@@ -315,9 +315,30 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
 _DEFAULT = ("seo", "M", "This check looks at whether search and answer engines can read and understand the page.")
 
 
+# DECISIONS 306: a fix that renames many addresses and needs a redirect for each old one is at least Medium effort and
+# never a quick win, whatever its own entry says (the client reports read `renames_addresses`).
+RENAMES_ADDRESSES = frozenset({"tseo1.url_decomposed", "tseo1.url_slug_unclear"})
+EFFORT_ORDER = ("S", "M", "L")
+
+
+def renames_addresses(check_id: str, title: str = "", rule: str | None = None) -> bool:
+    if rule is None:
+        from .rules import rule_id
+        rule = rule_id(check_id, title)
+    return rule in RENAMES_ADDRESSES
+
+
 def note(check_id: str, title: str = "") -> dict[str, str]:
     """The note for a finding: `owner`, `effort`, `why`. `title` picks the right one when a check reports several kinds
-    of thing. A check with neither kind of entry gets the general note (and the catalog test fails)."""
+    of thing. A check with neither kind of entry gets the general note (and the catalog test fails). A fix that renames
+    addresses is at least "M" (DECISIONS 306)."""
+    found = _note(check_id, title)
+    if found["effort"] == "S" and title and renames_addresses(check_id, title):
+        found = {**found, "effort": "M"}
+    return found
+
+
+def _note(check_id: str, title: str = "") -> dict[str, str]:
     owner, effort, why = _NOTES.get(check_id, _DEFAULT)
     variants = _BY_TITLE.get(check_id, ())
     for pattern, by_owner, by_effort, by_why in variants:

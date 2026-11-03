@@ -15,7 +15,7 @@ from .client_selection import CONFIDENCE_WEIGHT, SEVERITY_NAME, SEVERITY_WEIGHT,
 WORDS = {
     "tr": {"findings": "Bulgular", "urls": "Etkilenen adresler", "key_pages": "Kilit sayfalar", "coverage": "Kapsam",
            "method_sheet": "Yöntem", "note": "Not",
-           "key_pages_empty": {"reader_only": "Bu denetimde sayfa önemi hesaplanamadı: Maya'nın tarayıcısı engellendi, sayfalar Firecrawl ile okundu ve kayıtlı kopyalar sayfalar arası bağlantıları tutmuyor; önem bu bağlantılardan hesaplanır.",
+           "key_pages_empty": {"reader_only": "Bu denetimde sayfa önemi hesaplanamadı: Maya'nın tarayıcısı engellendi, sayfalar başka bir okuma yoluyla okundu ve kayıtlı kopyalar sayfalar arası bağlantıları tutmuyor; önem bu bağlantılardan hesaplanır.",
                                "no_pages": "Bu denetimde içeriği okunan sayfa olmadığı için sayfa önemi hesaplanamadı."},
            "cols": ["Bulgu kimliği", "Kontrol", "Kural", "Önem", "Güven (motor)", "Güven sınıfı", "Öncelik puanı",
                     "Yer", "Kart", "Grubun ilk bulgusu", "Teyit nedeni", "Bulgu", "Ne yapılmalı", "Kapsam (sayı)",
@@ -27,15 +27,18 @@ WORDS = {
            "placement": {"card": "Kart", "confirm": "Teyit edin", "appendix": "Yalnız ekte", "note": "Not",
                          "own_limit": "Maya'nın sınırı (kapsam)", "rejected": "Elle kontrolde reddedildi"},
            "severity": {"S1": "Engelleyici", "S2": "Yüksek", "S3": "Orta", "S4": "Düşük", "Info": "Bilgi"},
+           "manual": {"confirmed": "teyit edildi", "rejected": "reddedildi"},
            "class": {"measured": "Ölçüldü", "estimated": "Tahmini", "inferred": "Çıkarım", "unverified": "Doğrulanmamış kontrol"},
            "reason": {"unverified_check": "kontrol gerçek sitelerde doğrulanmadı", "low_confidence": "düşük güven",
                       "intent": "kasıtlı olabilir", "firecrawl_only": "yalnız Firecrawl kopyasında görüldü",
                       "spoofed_googlebot": "Googlebot kimliğiyle yapılan isteğe 403/429"},
            "kind": {"page_cap": "Sayfa sınırı", "time_budget": "Süre sınırı", "reader": "Okuma yolu",
                     "not_assessed": "Değerlendirilmedi"},
+           "page_type": {"home": "ana sayfa", "category": "kategori", "product": "ürün", "blog_article": "blog yazısı",
+                         "policy": "politika sayfası", "utility": "yardımcı sayfa (arama, sepet, hesap)", "other": "diğer"},
            "method": [("Önem ağırlığı", "Engelleyici 100, Yüksek 40, Orta 15, Düşük 5, Bilgi 0"),
                       ("Güven ağırlığı", "ölçüldü 1,0 · tahmini 0,6 · çıkarım 0,5 · doğrulanmamış 0,4"),
-                      ("Erişim", "1 + ln(1 + etkilenen sayfaların önem puanı toplamı / 100), en çok 10; adressiz bulgu: ana sayfa"),
+                      ("Erişim", "1 + ln(1 + etkilenen ve okunan sayfaların önem puanı toplamı / 100), en çok 10; okunmayan adres katılmaz (ayrı sütunda sayılır); adressiz bulgu: ana sayfa"),
                       ("Sıra", "önce önem bandı, sonra bant içinde öncelik puanı"),
                       ("Kök neden grupları", "aynı nedeni ve tek düzeltmeyi paylaşan kurallar tek kart (sütun: Kök neden grubu)"),
                       ("İş önemi", "1,0 (iş türü profilleri gelene kadar)"),
@@ -43,7 +46,7 @@ WORDS = {
                       ("Kartlar", "en çok 15: bütün Engelleyici/Yüksek gruplar, sonra bant ve puan sırasıyla")]},
     "en": {"findings": "Findings", "urls": "Affected URLs", "key_pages": "Key pages", "coverage": "Coverage",
            "method_sheet": "Method", "note": "Note",
-           "key_pages_empty": {"reader_only": "Page importance could not be worked out for this audit: Maya's crawler was blocked, the pages were read through Firecrawl, and the saved copies keep no links between pages, which importance is computed from.",
+           "key_pages_empty": {"reader_only": "Page importance could not be worked out for this audit: Maya's crawler was blocked, the pages were read another way, and the saved copies keep no links between pages, which importance is computed from.",
                                "no_pages": "Page importance could not be worked out: no page's content was read in this audit."},
            "cols": ["Finding ID", "Check", "Rule", "Severity", "Confidence (engine)", "Confidence class",
                     "Priority score", "Placement", "Card", "Group lead", "Confirm because", "Finding", "What to do",
@@ -55,15 +58,18 @@ WORDS = {
            "placement": {"card": "Card", "confirm": "Confirm first", "appendix": "Appendix only", "note": "Note",
                          "own_limit": "Maya's own limit (coverage)", "rejected": "Rejected by manual check"},
            "severity": SEVERITY_NAME,
+           "manual": {"confirmed": "confirmed", "rejected": "rejected"},
            "class": {"measured": "Measured", "estimated": "Estimated", "inferred": "Inferred", "unverified": "Unverified check"},
            "reason": {"unverified_check": "check not yet validated on real sites", "low_confidence": "low confidence",
                       "intent": "may be intentional", "firecrawl_only": "seen only in Firecrawl's copy",
                       "spoofed_googlebot": "403/429 to a request with Googlebot's user agent"},
            "kind": {"page_cap": "Page cap", "time_budget": "Time budget", "reader": "How pages were read",
                     "not_assessed": "Not assessed"},
+           "page_type": {"home": "homepage", "category": "category", "product": "product", "blog_article": "blog article",
+                         "policy": "policy page", "utility": "utility page (search, cart, account)", "other": "other"},
            "method": [("Severity weight", "Blocker 100, High 40, Medium 15, Low 5, Info 0"),
                       ("Confidence weight", "measured 1.0 · estimated 0.6 · inferred 0.5 · unverified 0.4"),
-                      ("Reach", "1 + ln(1 + summed importance of the affected pages / 100), at most 10; no address: the homepage"),
+                      ("Reach", "1 + ln(1 + summed importance of the affected pages that were read / 100), at most 10; addresses not read add nothing (counted in their own column); no address: the homepage"),
                       ("Order", "severity band first, then priority score within the band"),
                       ("Root-cause groups", "rules sharing one cause and one fix are one card (column: Root-cause group)"),
                       ("Business relevance", "1.0 (until business-type profiles exist)"),
@@ -77,7 +83,16 @@ def _drop_empty_columns(header: list[str], rows: list[list]) -> tuple[list[str],
     return [header[i] for i in keep], [[r[i] if i < len(r) else "" for i in keep] for r in rows]
 
 
-def coverage_text(line: dict, lang: str) -> str:
+def _manual(text: str, W: dict) -> str:
+    """The manual check's result word in the appendix's language; who checked and what they saw stay as written."""
+    word, sep, rest = text.partition(" · ")
+    return f"{W['manual'].get(word, word)}{sep}{rest}" if text else ""
+
+
+def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = None,
+                  sentence: Callable[[str], str] | None = None, title: Callable[[str, str], str] | None = None) -> str:
+    """A coverage line in the report's language (DECISIONS 306): the engine's part and reason through the reader's
+    wording (`label`, `sentence`), a reader line's finding title through `title`."""
     W = WORDS[lang]
     kind = line["kind"]
     if kind == "page_cap":
@@ -87,12 +102,18 @@ def coverage_text(line: dict, lang: str) -> str:
         return (f"Süre sınırı {line.get('seconds')} sn; süre yüzünden atlanan adım: {line.get('cut') or '—'}" if lang == "tr"
                 else f"Time budget {line.get('seconds')} s; steps cut by time: {line.get('cut') or '—'}")
     if kind == "reader":
-        return f"{line.get('title')} ({', '.join(line.get('finding_ids') or [])})"
+        shown = (title(None, line.get("title") or "") if title else None) or line.get("title")
+        return f"{shown} ({', '.join(line.get('finding_ids') or [])})"
+    if kind == "not_assessed" and (line.get("part") or line.get("reason")) and (label or sentence):
+        part = (label(line.get("part")) if label and line.get("part") else None) or line.get("part") or ""
+        reason = (sentence(line.get("reason")) if sentence and line.get("reason") else None) or line.get("reason") or ""
+        return f"{part}: {reason}".strip(": ")
     return line.get("text") or W["kind"].get(kind, kind)
 
 
 def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
-           title: Callable[[str, str], str] | None = None, fix: Callable[[str], str] | None = None) -> list[dict]:
+           title: Callable[[str, str], str] | None = None, fix: Callable[[str], str] | None = None,
+           label: Callable[[str], str] | None = None, line: Callable[[str], str] | None = None) -> list[dict]:
     W = WORDS[lang]
     rows, urls = [], []
     for r in appendix_rows(selection, lists):
@@ -104,15 +125,15 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
                      placement, r["card"], r["group_lead"] if r["group_lead"] != r["finding_id"] else "",
                      W["reason"].get(r["confirm_reason"], r["confirm_reason"]) if r["confirm_reason"] else "",
                      t, x, r["scope_count"], len(r["urls"]), r.get("pages_read"), r.get("not_read"),
-                     r.get("merge_group") or "", r.get("manual") or ""])
+                     r.get("merge_group") or "", _manual(r.get("manual") or "", W)])
         for u in r["urls"]:
             urls.append([r["finding_id"], placement, W["severity"].get(r["severity"], r["severity"]), u])
-    pages = [[p["rank"], p["url"], p["page_type"], p["importance"], ", ".join(str(c) for c in p["cards"]),
+    pages = [[p["rank"], p["url"], W["page_type"].get(p["page_type"], p["page_type"]), p["importance"], ", ".join(str(c) for c in p["cards"]),
               W["severity"].get(p["worst"], "") if p["worst"] else "", p["confirm"]] for p in selection["key_pages"]]
     if not pages:  # say why, in one line, rather than leave the sheet empty
         pages = [[W["key_pages_empty"][selection.get("key_pages_reason") or "no_pages"]]]
-    cov = [[W["kind"].get(line["kind"], line["kind"]), coverage_text(line, lang), ", ".join(line.get("checks") or [])]
-           for line in selection["coverage"]["lines"]]
+    cov = [[W["kind"].get(row["kind"], row["kind"]), coverage_text(row, lang, label, line, title),
+            ", ".join(row.get("checks") or [])] for row in selection["coverage"]["lines"]]
     out = []
     for name, header, body, widths in ((W["findings"], W["cols"], rows, [16, 8, 22, 11, 11, 16, 9, 16, 6, 16, 26, 70, 70, 9, 9, 10, 10, 20, 60]),
                                        (W["urls"], W["url_cols"], urls, [16, 16, 11, 90]),

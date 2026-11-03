@@ -1349,7 +1349,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         lang = current_language()
         return client_appendix.build(client_selection_of(audit, report), lang, affected(audit["id"]),
                                      title=lambda check_id, text: wording.title(check_id, text, lang)[0],
-                                     fix=lambda text: wording.fix(text, lang)[0])
+                                     fix=lambda text: wording.fix(text, lang)[0],
+                                     label=lambda text: wording.label(text, lang)[0],
+                                     line=lambda text: wording.line(text, lang)[0])
 
     def report_language(audit: dict[str, Any], lang: str | None) -> str:
         """The language a printed report or PDF is written in: an explicit `?lang=` first, then the language the audit

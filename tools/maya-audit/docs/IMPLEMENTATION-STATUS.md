@@ -1008,6 +1008,28 @@ category link). Page 3's provenance line says 25 too (text extracted).
 | `ruff check --isolated --select E9,F821,F841`, `python3.11 -m compileall` | `All checks passed!`; compile OK |
 | Linux/Windows, live runs | NOT RUN |
 
+## Client-report polish and nihan pro v4 (DECISIONS 306, 2026-11-03)
+
+What changed: rename-and-redirect fixes are at least "Orta" effort and never a quick win; "handle" explained in plain
+Turkish; "Teyit edin" reasons in client words with no vendor name (technical reason in the XLSX only); findings table
+rows phrased as findings; Turkish XLSX fully Turkish (coverage explanations, page types, manual-check result); the saved
+copies row hidden at 0.
+
+**nihan pro v4** (`reviews/2026-11-03/nihan-v4/`, git-ignored; offline-reassessed b3198942, Turkish, STR-12
+confirmation kept; `validate_data.py` 0 warnings, gate PASS): 7 pages, 12 cards, same order and scores as v3. Card 6
+(decomposed addresses) is "Orta"; quick wins 03, 04, 05, 07. PDF text: "Firecrawl" 0, "gerçek sitelerde" 0, "Kayıtlı
+kopyadan" 0. XLSX: no engine English (the only English is the owner's own manual-check note).
+
+**Verification** (working tree on `3c9975f`, macOS, Python 3.13.1; no .env, no providers, no live requests):
+
+| Command | Result |
+|---|---|
+| fast suite | `2655 passed, 4 skipped, 131 deselected, 1 warning in 436.63s (0:07:16)` |
+| full suite | `2786 passed, 4 skipped, 1 warning in 808.27s (0:13:28)` |
+| pro skill tests | `56 passed` |
+| `ruff check --isolated --select E9,F821,F841`, `python3.11 -m compileall` | `All checks passed!`; compile OK |
+| CI on push | see the commit's GitHub Actions run |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

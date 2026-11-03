@@ -1250,12 +1250,12 @@
    "tr": "Adresleri birleşik harflerle yeniden yazın",
    "steps": {
     "tr": [
-     "Her kısa adı birleşik ya da düz biçimine çevirin",
+     "Ürün/sayfa adresindeki kısa adı (handle) düz harflerle yeniden yazın",
      "Her eski adresi kalıcı olarak yenisine yönlendirin",
      "Bağlantıları ve site haritasını güncelleyin"
     ],
     "en": [
-     "Rename each handle to its composed or plain form",
+     "Rewrite each address name (the handle) in plain letters",
      "Redirect each old address permanently to the new one",
      "Update the links and the sitemap"
     ]
@@ -1340,7 +1340,7 @@
    "tr": "Sayfalara kısa, okunabilir adresler verin",
    "steps": {
     "tr": [
-     "Her kısa adı birkaç kelimeyle yazın",
+     "Ürün/sayfa adresindeki kısa adı (handle) birkaç kelimeyle yazın",
      "Her eski adresi kalıcı olarak yenisine yönlendirin",
      "Bağlantıları güncelleyin"
     ],

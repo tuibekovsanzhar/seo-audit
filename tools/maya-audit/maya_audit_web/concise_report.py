@@ -332,7 +332,9 @@ def render(view, rows, generated_at, practical, companions, demo=False, selectio
     for key in ("week", "month", "later"):
         if plan[key]:
             out.append(f'<p><b>{e(t("c6.when." + key))}:</b> ' + e(", ".join(f'{t("c6.card_ref", n=g["card"])}' for g in plan[key])) + '</p>')
-    quick = [g for g in sel["cards"] if ((by_id.get(g["finding_ids"][0]) or {}).get("estimates") or {}).get("effort") == "S"]
+    from maya_audit.recommendation_catalog import RENAMES_ADDRESSES  # DECISIONS 306: a rename is never a quick win
+    quick = [g for g in sel["cards"] if ((by_id.get(g["finding_ids"][0]) or {}).get("estimates") or {}).get("effort") == "S"
+             and g.get("rule_id") not in RENAMES_ADDRESSES]
     out.append(f'<p><b>{e(t("c6.quick"))}:</b> ' + (e(", ".join(t("c6.card_ref", n=g["card"]) + " " + ((by_id.get(g["finding_ids"][0]) or {}).get("title_shown") or g["title"]) for g in quick))
                if quick else e(t("c6.quick_none"))) + '</p>')
 

@@ -785,6 +785,12 @@ class Builder:
         merged = self.merged_group(self.members_of(f))
         return (merged["title"].get(self.lang) or merged["title"]["en"]) if merged else None
 
+    def merge_finding(self, f):
+        """What a merged card's findings say is wrong, in one line (`MERGE_GROUPS[...]["finding"]`), or None."""
+        merged = self.merged_group(self.members_of(f))
+        names = (merged or {}).get("finding") or {}
+        return (names.get(self.lang) or names.get("en")) if names else None
+
     def rule_of(self, f):
         return f.get("rule_id") or self._w("rule")(f.get("check_id"), f.get("title"))
 
@@ -1100,7 +1106,8 @@ class Builder:
             "badge": L["badge_saved"] if saved else L["badge_live"],
             "rows": [
                 {"label": L["cov_gaps"], "value": fmt_int(gaps, lang)},
-                {"label": L["cov_saved"], "value": f"{saved} / {read_fc} {L['scope_units']['page'][1]}" if read_fc else "—"},
+                # DECISIONS 306: a row that would say 0 (no page read from a saved copy) is not printed.
+                *([{"label": L["cov_saved"], "value": f"{saved} / {read_fc} {L['scope_units']['page'][1]}"}] if saved else []),
                 {"label": L["cov_notes"], "value": fmt_int(notes_total, lang)},
                 {"label": L["cov_blockers"], "value": fmt_int(sev.get("S1", 0), lang)},
             ],
@@ -1110,9 +1117,10 @@ class Builder:
         # sayfa 2
         leads = [g[0] for g in self.groups()]
         top = leads[:5]
-        findings = [{"id": f["id"], "title": (self.slot(f"findings[{i}].title", "bulgu başlığı", f.get("title"), 70,
-                                                        prefill=self.merge_title(f)) if self.merge_title(f)
-                                              else self.title_for(f, f"findings[{i}].title", 70)),
+        # DECISIONS 306: the findings table says what is wrong (a merged card's `finding` name); the cards say what to do.
+        findings = [{"id": f["id"], "title": (self.slot(f"findings[{i}].title", "bulgu başlığı (ne yanlış; eylem değil)",
+                                                        f.get("title"), 70, prefill=self.merge_finding(f))
+                                              if self.merge_finding(f) else self.title_for(f, f"findings[{i}].title", 70)),
                      "scope": self.group_scope(f), "severity": f["severity"], "severity_label": L["severity"][f["severity"]],
                      "status": self.status_text(f)} for i, f in enumerate(top)]
         for f in self.problems:
@@ -1423,7 +1431,12 @@ class Builder:
                           "type": L["page_types"].get(str(p["page_type"]), "—"), "importance": p["importance"],
                           "cards": ", ".join(f"{n:02d}" for n in p["cards"]) or "—",
                           "worst": L["severity"].get(p["worst"], "—") if p["worst"] else "—", "confirm": p["confirm"]})
-        quick = [t["n"] for t in todos if t.get("effort") == L["efforts"]["S"] and t.get("finding_ids")][:4]
+        try:  # DECISIONS 306: a fix that renames addresses (redirects) is never a quick win
+            from maya_audit.recommendation_catalog import RENAMES_ADDRESSES  # type: ignore
+        except ImportError:
+            RENAMES_ADDRESSES = frozenset()
+        quick = [t["n"] for t in todos if t.get("effort") == L["efforts"]["S"] and t.get("finding_ids")
+                 and t.get("rule_id") not in RENAMES_ADDRESSES][:4]
         name = L["appendix_file"]
         self.fact(*c.values(), more_confirm)
         reason = sel.get("key_pages_reason")
