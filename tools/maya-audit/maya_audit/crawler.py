@@ -8,7 +8,6 @@ stay distinguishable (spec IDX-7; OpenSEO PM research).
 
 from __future__ import annotations
 
-import time
 import threading
 import hashlib
 import os
@@ -45,6 +44,7 @@ from .scratchpad import (BLOCKED, CRAWLED, FAILED, MEMORY, QUEUED, RATE_LIMITED,
 from .sitemap import discover_sitemap_urls
 from .urls import (crawl_identity, host_allowed, is_allowed_origin_move, is_loopback_host, lock_key, normalize_url,
                    origin_of, same_origin)
+from . import clock as _clock
 
 MAX_ROBOTS_REDIRECTS = 5
 MAX_START_REDIRECTS = 5
@@ -135,6 +135,10 @@ def _shared_site_lock(origin: str):
         except OSError:
             pass
         stream.close()
+
+
+# A 429 on the start page or on one of this many first pages starts a waiting page reader at once (DECISIONS 299).
+EARLY_READER_FIRST_PAGES = 3
 
 
 def _attempt(response, retry_after: float | None, *, waited: float) -> dict:
@@ -229,6 +233,10 @@ class Crawler:
         self._scratchpad = scratchpad
         self._owns_scratchpad = scratchpad is None
         self._robots_fingerprint: str | None = None
+        # Called once, with what the crawl knows so far, when one of its first page requests answers 429 (DECISIONS
+        # 299): a page reader may start then, before the Retry-After wait and the rest of Maya's crawl.
+        self.on_rate_limited = None
+        self.rate_limited_at: dict | None = None
 
     def run(self, start_url: str, post_crawl=None) -> CrawlResult:
         normalized = normalize_url(start_url)
@@ -281,7 +289,7 @@ class Crawler:
             )
 
         started_at = utc_now()
-        t0 = time.monotonic()
+        t0 = _clock.monotonic()
 
         # A public crawler-info page is useful, but it belongs to Maya rather
         # than the site being audited. Its absence or 404 must not prevent the
@@ -294,7 +302,7 @@ class Crawler:
                     "reason": "No optional Maya crawler-information page was configured; crawl continued.",
                 }
             else:
-                remaining = cfg.time_limit_s - (time.monotonic() - t0)
+                remaining = cfg.time_limit_s - (_clock.monotonic() - t0)
                 if remaining <= 0:
                     bot_info_check = {"state": "unavailable", "url": cfg.bot_info_url,
                                       "reason": "overall audit deadline was reached before the optional page check",
@@ -344,11 +352,11 @@ class Crawler:
             # Include all post-crawl collectors (rendering, extra fetches and sampling waits), not
             # just the frontier loop. Reports and job runners need the actual elapsed time.
             result.finished_at = utc_now()
-            result.elapsed_s = round(time.monotonic() - t0, 3)
+            result.elapsed_s = round(_clock.monotonic() - t0, 3)
             result.stopped = fetcher.stopped
             # A stop moves the deadline to "now" to end the run; that is not the time limit being reached.
             result.deadline_hit = not fetcher.stopped and bool(
-                fetcher.deadline_hits or time.monotonic() >= fetcher.deadline_mono)
+                fetcher.deadline_hits or _clock.monotonic() >= fetcher.deadline_mono)
             if result.stopped:
                 result.collector_errors.setdefault("audit_stopped", "the audit was stopped on request")
             if result.deadline_hit:
@@ -516,7 +524,7 @@ class Crawler:
                 stop_reason, stop_detail = StopReason.STOPPED, "stopped on request before every page was fetched"
                 pending.append(url)
                 break
-            if time.monotonic() - t0 >= cfg.time_limit_s * cfg.crawl_time_share:
+            if _clock.monotonic() - t0 >= cfg.time_limit_s * cfg.crawl_time_share:
                 stop_reason = StopReason.TIME_LIMIT
                 stop_detail = (f"time limit of {cfg.time_limit_s}s reached" if cfg.crawl_time_share >= 1 else
                                f"the crawl used its share ({cfg.crawl_time_share:.0%}) of the {cfg.time_limit_s:g}s time "
@@ -535,6 +543,10 @@ class Crawler:
 
             response = fetcher.get(url, "page", cfg.max_body_bytes)
             fetches += 1
+            if (response.status == 429 and self.rate_limited_at is None and self.on_rate_limited is not None
+                    and (via == "start" or pages_counted < EARLY_READER_FIRST_PAGES)):
+                self._announce_rate_limit(fetcher, url, response, start, origin, started_at, token, policies, pages,
+                                          skipped, sitemap_docs, sitemap_urls, frontier)
             retried = False
             attempts: list[dict] = []
             retry_after = parse_retry_after(response.headers.get("retry-after"))
@@ -719,7 +731,7 @@ class Crawler:
             product_token=token,
             started_at=started_at,
             finished_at=utc_now(),
-            elapsed_s=round(time.monotonic() - t0, 3),
+            elapsed_s=round(_clock.monotonic() - t0, 3),
             config=cfg.snapshot(),
             robots=[self._policy_summary(p) for p in policies.values()],
             pages=pages,
@@ -743,6 +755,28 @@ class Crawler:
                      "total_cooldown_s": round(total_cooldown_s, 1), **pacing_record(fetcher, cfg)},
         )
 
+    def _announce_rate_limit(self, fetcher, url, response, start, origin, started_at, token, policies, pages, skipped,
+                             sitemap_docs, sitemap_urls, frontier) -> None:
+        """Hand `on_rate_limited` a copy of what the crawl knows now (robots.txt, sitemaps, addresses found, pages read):
+        nothing it holds is changed by the crawl that goes on."""
+        self.rate_limited_at = {"url": url, "at": utc_now(), "elapsed_s": round(_clock.monotonic() - self._t0, 3),
+                                "retry_after": response.headers.get("retry-after")}
+        known = CrawlResult(
+            start_url=start, origin=origin, user_agent=self.config.user_agent, product_token=token, started_at=started_at,
+            finished_at=utc_now(), elapsed_s=round(_clock.monotonic() - self._t0, 3), config=self.config.snapshot(),
+            robots=[self._policy_summary(p) for p in policies.values()], pages=list(pages), skipped_robots=list(skipped),
+            sitemap_docs=list(sitemap_docs), sitemap_urls=list(sitemap_urls),
+            discovered_urls=sorted(set(frontier.all_urls()) | set(sitemap_urls)), not_fetched_urls=[],
+            stop_reason=None, stop_detail="", requests=[], robots_policy_by_origin=dict(policies),
+            sitemap_lastmods=dict(self._lastmods), sitemap_notes=list(self._sitemap_notes),
+            _sitemap_named_in=dict(self._sitemap_named_in), _sitemap_file_of=dict(self._sitemap_file_of))
+        try:
+            started = self.on_rate_limited(fetcher, known)
+        except Exception as exc:  # a reader that cannot start leaves the crawl as it was
+            started = False
+            self.rate_limited_at["error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
+        self.rate_limited_at["reader_started"] = bool(started)
+
     def _discover_sitemaps(
         self, fetcher: Fetcher, policy: RobotsPolicy, origin: str, skipped: list[SkippedUrl]
     ) -> tuple[list, list[str]]:
@@ -755,6 +789,9 @@ class Crawler:
         docs, urls, notes = discover_sitemap_urls(
             fetcher, policy, origin, cfg.product_token, cfg.max_sitemap_docs, cfg.max_sitemap_depth,
             cfg.max_sitemap_bytes, skipped, self._lastmods, deadline, self._sitemap_named_in, self._sitemap_file_of,
+            # Enough addresses for the page cap and the sitemap check's sample, spread over the index's files
+            # (DECISIONS 299): the rest of a large index is not read.
+            enough=cfg.max_pages + max(0, cfg.sitemap_check_max),
         )
         self._sitemap_notes.extend(notes)
         return docs, urls

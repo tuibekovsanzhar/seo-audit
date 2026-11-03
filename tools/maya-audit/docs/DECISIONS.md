@@ -3031,3 +3031,57 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      `canonical_importance`, `aliases`, `read`, `indexable`, `basis`; summary `aliases`, `canonical_pages_scored`,
      `canonical_pages`, `citable_content_pages`, `policy_footer_cap`, `order`) do not change the frozen shape.
      `page_grouping.method_version` is 2. Tests: `tests/test_page_groups.py` (15).
+299. **v0.3 speed follow-up: one clock for every wait, Firecrawl started at Maya's first 429, a large sitemap index read
+     in part, the blocked sentence said once, RND-6 on Firecrawl's rendered HTML labelled (Owner, 2026-11-03; the rules
+     below are agent defaults).**
+     (1) *One clock* (`maya_audit/clock.py`): every wait and deadline of the engine reads `clock.monotonic()` and sleeps
+     with `clock.sleep()` (the polite gap and Retry-After in the fetcher, the site limit's gap, Firecrawl's own pace and
+     back-off, the timeout retry's wait, scheduled requests, the run clock, the sitemap time share, the archives and
+     DataForSEO waits; 21 modules). They ask the clock in use: the system's, or a `FakeClock` a test puts in place with
+     `clock.using(...)` (process-wide; tests only). A fake clock moves when something sleeps and returns at once. The
+     headless browser (`render.py`) keeps the system clock: it waits for a real browser. `RunClock` and `ReaderPace`
+     no longer capture `time.monotonic` at import, which is why a test's patch of the time module did not reach them
+     (the coverage benchmark's 589 s). Tests: `test_coverage_phase2.py`'s benchmark fixture and
+     `test_w4b_report_length.py`'s fixture run under a fake clock (589 s -> 26 s, 13 s -> 1.4 s); both stay in the fast
+     suite, and `test_benchmark_more_of_the_right_pages_are_read_where_it_was_possible` leaves `slow_tests.txt`. Three
+     tests that patched `client_module.time.sleep` patch `client_module._clock.sleep`. The CI failure of the status
+     commit `54e85a5` (run 41585995041) was a test that looked for "55" anywhere in the counts and met a measured
+     0.055 s; it now looks for 55 as a whole number. No status-only commit is pushed from now on (Owner).
+     (2) *Firecrawl at Maya's first 429* (`Crawler.on_rate_limited`, `EarlyReading.start_after_rate_limit`): when the
+     start page, or one of the first 3 page requests, answers 429, the crawler hands a copy of what it knows (robots.txt,
+     the sitemaps, the addresses found, the pages read) to the page reader, which starts at once, before the Retry-After
+     wait, reading as for a blocked site (Firecrawl's own copies, its own pace, the sitemap asked through it when Maya
+     had none). It runs whether Firecrawl is the main reader or the reader of blocked sites; the web app now creates
+     the early reader for both (still not with a paid panel whose ranking pages it would wait for). Beside it, Maya's
+     own steps go on as before: the Retry-After wait and the one retry, the rest of the crawl when the retry is
+     answered, the access, index, structure, rendering, performance and sitemap checks, the llms.txt links, and the
+     robots.txt re-sample (its wait included); the reader's time reserve is no longer kept apart (both end by the one
+     time limit). The report says when it started (`firecrawl.coverage.started_at_first_429`: seconds into the crawl,
+     the address, the Retry-After asked, the addresses known then). A 429 later in the crawl does not start it early.
+     (3) *A large sitemap index read in part* (`sitemap.discover_sitemap_urls(enough=...)`): every file robots.txt
+     names (and the guessed /sitemap.xml) is read; the files of an index are read in turn by family (folder kept,
+     numbers left out: `/sitemap_products_#`, `/sitemap_pages_#`, `/en/sitemap_products_#` are three), within a family
+     first, last, middle, then the quarters (not only a catalog's first files), and reading
+     stops once the addresses known reach the page cap plus the sitemap check's sample (`max_pages` +
+     `sitemap_check_max`) and every family has had one file read. The note "sitemap index read in part: N addresses
+     from F of T sitemap files ...; K file(s) were not read, so the discovered count is partial." goes into
+     `crawl.sitemap_notes`; the Markdown says "N URLs discovered (partial: a large sitemap index was read in part)" and
+     the web summary has `discovered_partial`. nihan (2 Nov Quick 50): 11 of 25 files, 2,419 addresses, every kind in
+     both languages (26 sitemap requests -> 12, about 16 s less).
+     (4) *The blocked sentence said once*: the card's and the PDF's outcome label already says "Maya's crawler was
+     blocked (429 on pages); read through Firecrawl: N pages"; the reason under it (`summary.outcome_shown`) now leaves
+     out its first two clauses, which said the same (English and Turkish). The status summary no longer repeats
+     "N page(s) read through Firecrawl" after "We read N page(s) through Firecrawl." (new reports).
+     (5) *RND-6 on Firecrawl's HTML*: Firecrawl's `rawHtml` is the page as its browser built it (after JavaScript,
+     with `blockAds` on and base64 images removed), not the server's raw HTML. Measured on nihan's Standard 500
+     (`b3198942`): on the 499 pages both read, Firecrawl's copy was a median 36% larger than Maya's raw copy (from 8%
+     smaller to 59% larger). RND-6 measured on it (DECISIONS 295 (4)) now says so: each title ends "(rendered HTML via
+     Firecrawl, not comparable with raw size)" (Turkish "(Firecrawl ile işlenmiş HTML; ham boyutla
+     karşılaştırılamaz)"), each finding carries the note and `evidence.html_measured: "rendered (Firecrawl)"`, and it
+     is never set beside Maya's raw sizes. Thresholds unchanged.
+     (6) *nihan Quick 50, estimated* from the 2 Nov run (`50473193`, 349.5 s for every step, ~6 min wall): preflight
+     ~10 s; sitemaps 30 s -> ~14 s; the homepage's 429 at ~25 s now starts Firecrawl, which read its 50 pages in 108 s
+     (ending ~135 s); Maya's own steps then end on the robots.txt re-sample, due 240 s after the first robots.txt
+     request (~250 s), where they ended before too. Estimated whole audit **about 4.2 min** (was 5.8-6.0), now set by
+     the robots.txt re-sample wait, not Firecrawl. Not measured live.
+     Tests: `tests/test_v03_speed_followup.py` (11).

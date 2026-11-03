@@ -19,6 +19,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from typing import Callable
+from . import clock as _clock
 
 # A request with less than this left would almost certainly be cut off after it was sent (and possibly billed).
 MIN_REQUEST_S = 5.0
@@ -32,9 +33,9 @@ class RunClock:
     should_stop: Callable[[], bool] | None = None
     # Seconds between requests that reach the audited site, as Maya's own crawler ended up pacing them.
     pace_s: float = 0.0
-    clock: Callable[[], float] = time.monotonic
-    sleep: Callable[[float], None] = time.sleep
-    started_mono: float = field(default_factory=time.monotonic)
+    clock: Callable[[], float] = _clock.monotonic
+    sleep: Callable[[float], None] = _clock.sleep
+    started_mono: float = field(default_factory=_clock.monotonic)
     _last_site_request: float | None = None
     # Maya's own limit on the audited site (maya_audit.sitelimit, DECISIONS 294), kept here for the report's figures. A
     # reader does not take it: it has its own pace (`reader_pace`, DECISIONS 295).

@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import re
 import threading
-import time
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -33,6 +32,7 @@ from ..network import PublicTransport
 from ..urls import UnsafeTargetError
 from . import settings
 from .settings import FirecrawlKey
+from .. import clock as _clock
 
 # Tests replace this with a mock transport. Nothing else should.
 TRANSPORT: httpx.BaseTransport | None = None
@@ -246,9 +246,9 @@ class FirecrawlClient:
             limit = self.clock.timeout(settings.TIMEOUT_S)
             payload["timeout"] = max(1000, int(limit * 1000) - 5000)  # the provider's own limit, inside ours
             self.clock.site_was_asked()
-            began = time.monotonic()
+            began = _clock.monotonic()
             body = self._send(url, payload, call_id, estimate, limit)
-            seconds = round(time.monotonic() - began, 3)
+            seconds = round(_clock.monotonic() - began, 3)
         finally:
             self.clock.give_back(slot)
         with self._lock:
@@ -283,12 +283,12 @@ class FirecrawlClient:
     def _send(self, url: str, payload: dict[str, Any], call_id: str, estimate: int, limit: float | None = None) -> dict[str, Any]:
         headers = {"Authorization": self.key.authorization()}
         limit = settings.TIMEOUT_S if limit is None else limit
-        end = time.monotonic() + limit
+        end = _clock.monotonic() + limit
         try:
             with self._http.stream("POST", settings.SCRAPE, headers=headers, json=payload, timeout=limit) as incoming:
                 chunks, size = [], 0
                 for chunk in incoming.iter_bytes():
-                    if time.monotonic() >= end:
+                    if _clock.monotonic() >= end:
                         raise httpx.ReadTimeout("Firecrawl response took too long")
                     size += len(chunk)
                     if size > settings.MAX_RESPONSE_BYTES:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ssl
 import threading
-import time
 import zlib
 from http.cookiejar import DefaultCookiePolicy
 from contextlib import nullcontext
@@ -15,6 +14,7 @@ import httpx
 from .models import RequestRecord
 from .network import PublicTransport, BeforeConnectDeadline
 from .urls import HostNotFoundError, LocalDnsError, UnresolvedHostError, UnsafeTargetError, validate_public_target
+from . import clock as _clock
 
 ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
 # Requests that do not count toward adaptive pacing (DECISIONS 219 part 2): ACC-4's browser and Googlebot comparison,
@@ -329,7 +329,7 @@ class Fetcher:
 
     def begin_step(self, name: str) -> None:
         """Close the step running now and start `name`. Its row counts the requests and the waiting until the next."""
-        now = time.monotonic()
+        now = _clock.monotonic()
         self.end_step(now)
         self._step = {"step": name, "started_at": utc_now(), "_t": now, "_requests": self.own_requests,
                       "_waited": self.waited_s}
@@ -338,7 +338,7 @@ class Fetcher:
         step, self._step = self._step, None
         if step is None:
             return
-        now = time.monotonic() if now is None else now
+        now = _clock.monotonic() if now is None else now
         self.steps.append({"step": step["step"], "started_at": step["started_at"], "seconds": round(max(0.0, now - step["_t"]), 1),
                            "requests": self.own_requests - step["_requests"],
                            "waiting_s": round(max(0.0, self.waited_s - step["_waited"]), 1)})
@@ -367,8 +367,8 @@ class Fetcher:
         if (not self._due or self._sending_due or purpose in ("render", "render_subresource")
                 or threading.get_ident() != self._owner):
             return
-        while self._due and self._due[0]["due"] <= time.monotonic():
-            if self.deadline_mono is not None and time.monotonic() >= self.deadline_mono:
+        while self._due and self._due[0]["due"] <= _clock.monotonic():
+            if self.deadline_mono is not None and _clock.monotonic() >= self.deadline_mono:
                 return
             self._send(self._due.pop(0))
 
@@ -376,11 +376,11 @@ class Fetcher:
         """At the end of Maya's own steps: wait for what is still not due, then send it. False when the time limit or a
         stop came first (what was left is then not sent)."""
         while self._due:
-            wait = self._due[0]["due"] - time.monotonic()
+            wait = self._due[0]["due"] - _clock.monotonic()
             if wait > 0 and not self.sleep(wait):
                 self._due.clear()
                 return False
-            if self.poll_stop() or (self.deadline_mono is not None and time.monotonic() >= self.deadline_mono):
+            if self.poll_stop() or (self.deadline_mono is not None and _clock.monotonic() >= self.deadline_mono):
                 self._due.clear()
                 return False
             self._send(self._due.pop(0))
@@ -390,12 +390,12 @@ class Fetcher:
         """Wait out the gap before the next request: since the last request of all, or with per-host gaps since the
         last request to `host` (the audited site's when `host` is not given)."""
         if not self.per_host:
-            wait = self._last_request + self.delay_s - time.monotonic()
+            wait = self._last_request + self.delay_s - _clock.monotonic()
         else:
             host = (host or self.site_host or "").lower() or None
             with self._hosts_guard:
                 last = self._last_by_host.get(host) if host else None
-            wait = (last + self.gap_for(host) - time.monotonic()) if last is not None else 0.0
+            wait = (last + self.gap_for(host) - _clock.monotonic()) if last is not None else 0.0
         if wait > 0:
             self.sleep(wait)
 
@@ -403,34 +403,34 @@ class Fetcher:
         """Whether a stop was requested. The first time it is, the deadline moves to now."""
         if not self.stopped and self.stop_check is not None and self.stop_check():
             self.stopped = True
-            self.deadline_mono = time.monotonic()
+            self.deadline_mono = _clock.monotonic()
         return self.stopped
 
     def sleep(self, seconds: float) -> bool:
         """Sleep without crossing the audit-wide deadline; return False when time ran out."""
         self.poll_stop()
-        remaining = (self.deadline_mono - time.monotonic()) if self.deadline_mono is not None else seconds
+        remaining = (self.deadline_mono - _clock.monotonic()) if self.deadline_mono is not None else seconds
         if remaining <= 0:
             self.hit_deadline()
             return False
-        began = time.monotonic()
+        began = _clock.monotonic()
         wake = began + min(max(seconds, 0.0), remaining)
-        while (left := wake - time.monotonic()) > 0:
-            time.sleep(min(left, 0.5) if self.stop_check is not None else left)  # in slices, to hear a stop request
+        while (left := wake - _clock.monotonic()) > 0:
+            _clock.sleep(min(left, 0.5) if self.stop_check is not None else left)  # in slices, to hear a stop request
             if self.poll_stop():
                 break
         # A pool worker's waiting is not a step's "Of which waiting"; the other-site pool's row is measured from its
         # requests (maya_audit.other_sites).
         if not self.in_pool:
-            self.waited_s += max(0.0, time.monotonic() - began)
-        if self.deadline_mono is not None and time.monotonic() >= self.deadline_mono:
+            self.waited_s += max(0.0, _clock.monotonic() - began)
+        if self.deadline_mono is not None and _clock.monotonic() >= self.deadline_mono:
             self.hit_deadline()
             return False
         return True
 
     def record_external(self, url: str, purpose: str, started_at: str, status: int | None, error: str | None) -> None:
         """Log a request made outside httpx (e.g. by the headless browser) so INT-4 audits it."""
-        now = time.monotonic()
+        now = _clock.monotonic()
         with self._log_lock:
             self.log.append(RequestRecord(seq=len(self.log) + 1, url=url, purpose=purpose, user_agent=self.user_agent,
                                           started_at=started_at, status=status, error=error, elapsed_ms=0.0,
@@ -445,7 +445,7 @@ class Fetcher:
 
     def remaining_timeout(self, timeout_s: float | None = None) -> float:
         self.poll_stop()
-        remaining = self.deadline_mono - time.monotonic() if self.deadline_mono is not None else self.timeout_s
+        remaining = self.deadline_mono - _clock.monotonic() if self.deadline_mono is not None else self.timeout_s
         if remaining <= 0:
             self.hit_deadline()
             raise httpx.TimeoutException("overall audit deadline reached")
@@ -461,12 +461,12 @@ class Fetcher:
     def api_request(self, client: httpx.Client, method: str, url: str, **kwargs) -> httpx.Response:
         """Bound API response size and elapsed time; never follow API redirects."""
         budget = self.request_budget(url)
-        end = time.monotonic() + budget
+        end = _clock.monotonic() + budget
         with client.stream(method, url, timeout=budget, follow_redirects=False, **kwargs) as response:
             chunks, size = [], 0
             for chunk in response.iter_bytes():
                 self.poll_stop()
-                if self.stopped or time.monotonic() >= end:
+                if self.stopped or _clock.monotonic() >= end:
                     self.hit_deadline()
                     raise httpx.TimeoutException("overall audit deadline reached")
                 size += len(chunk)
@@ -494,7 +494,7 @@ class Fetcher:
         # A request that cannot start before the global deadline is not a network
         # attempt: do not manufacture a timeout row (INT-4 counts real attempts).
         self.poll_stop()
-        if self.deadline_mono is not None and time.monotonic() >= self.deadline_mono:
+        if self.deadline_mono is not None and _clock.monotonic() >= self.deadline_mono:
             self.hit_deadline()
             return RawResponse(url, None, {}, b"", False, 0.0, "audit_deadline_skipped", utc_now(), None)
         paced = purpose != "render_subresource"
@@ -546,7 +546,7 @@ class Fetcher:
         started_at = utc_now()
         # A request through the shared site limit starts when the limit let it (the spacing the limit kept is the spacing
         # the log shows, whatever the threads did in between).
-        start = time.monotonic() if slot_started is None else slot_started
+        start = _clock.monotonic() if slot_started is None else slot_started
         status: int | None = None
         headers: dict[str, str] = {}
         chunks: list[bytes] = []
@@ -556,7 +556,7 @@ class Fetcher:
         set_cookies: list[str] = []
         wire_bytes: int | None = None
         try:
-            if self.deadline_mono is not None and time.monotonic() >= self.deadline_mono:
+            if self.deadline_mono is not None and _clock.monotonic() >= self.deadline_mono:
                 self.hit_deadline()
                 return RawResponse(url, None, {}, b"", False, 0.0, "audit_deadline_skipped", started_at, None)
             if not self._mock_transport:
@@ -566,7 +566,7 @@ class Fetcher:
                 headers_out["User-Agent"] = user_agent
             if cookie:
                 headers_out["Cookie"] = cookie
-            remaining = (self.deadline_mono - time.monotonic()) if self.deadline_mono is not None else self.timeout_s
+            remaining = (self.deadline_mono - _clock.monotonic()) if self.deadline_mono is not None else self.timeout_s
             if remaining <= 0:
                 self.hit_deadline()
                 return RawResponse(url, None, {}, b"", False, 0.0, "audit_deadline_skipped", started_at, None)
@@ -574,7 +574,7 @@ class Fetcher:
             with self._client.stream(method, url, headers=headers_out or None,
                                      timeout=request_timeout) as response:
                 status = response.status_code
-                ttfb_ms = round((time.monotonic() - start) * 1000, 1)
+                ttfb_ms = round((_clock.monotonic() - start) * 1000, 1)
                 for key, value in response.headers.multi_items():
                     key = key.lower()
                     headers[key] = f"{headers[key]}, {value}" if key in headers else value
@@ -589,10 +589,10 @@ class Fetcher:
                 pieces = response.iter_raw() if decoder is not None else response.iter_bytes()
                 for piece in pieces:
                     self.poll_stop()
-                    if self.stopped or (self.deadline_mono is not None and time.monotonic() >= self.deadline_mono):
+                    if self.stopped or (self.deadline_mono is not None and _clock.monotonic() >= self.deadline_mono):
                         self.hit_deadline()
                         raise httpx.ReadTimeout("overall audit deadline reached")
-                    if time.monotonic() - start > self.timeout_s:
+                    if _clock.monotonic() - start > self.timeout_s:
                         raise httpx.ReadTimeout("total response deadline exceeded")
                     chunk = decoder.decode(piece, max_bytes - total + 1) if decoder is not None else piece
                     total += len(chunk)
@@ -635,7 +635,7 @@ class Fetcher:
         if error is not None:
             status, headers, chunks, ttfb_ms, set_cookies, wire_bytes = None, {}, [], None, [], None
 
-        ended = time.monotonic()
+        ended = _clock.monotonic()
         elapsed_ms = round((ended - start) * 1000, 1)
         with self._log_lock:
             self._last_request = ended

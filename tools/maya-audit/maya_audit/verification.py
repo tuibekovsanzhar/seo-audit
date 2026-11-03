@@ -24,7 +24,6 @@ re-test carry no `verification`. The requests come after the integrity gates (IN
 """
 from __future__ import annotations
 
-import time
 from collections import Counter
 from typing import Any, Callable
 from urllib.parse import urljoin
@@ -34,6 +33,7 @@ from .classify import classify_fetch, empty_response
 from .fetcher import Fetcher
 from .html_links import decode_body, extract_link_edges, is_html
 from .models import FetchClass
+from . import clock as _clock
 
 CONFIRMED, CHANGED, NOT_REPRODUCED, NOT_RETESTED = "confirmed", "changed", "not_reproduced", "not_retested"
 PURPOSE = "verification"
@@ -298,7 +298,7 @@ def _run(checks, result, cfg, transport=None, hooks=None, pace_s: float | None =
         delay = max(delay, min(crawl_delay(policy.robots, cfg.product_token)[0], cfg.max_crawl_delay_s))
     fetcher = Fetcher(cfg.user_agent, cfg.request_timeout_s, delay, transport, cfg.ca_bundle,
                       block_loopback=cfg.block_loopback)
-    fetcher.deadline_mono = time.monotonic() + cfg.verification_time_s
+    fetcher.deadline_mono = _clock.monotonic() + cfg.verification_time_s
     if hooks is not None and getattr(hooks, "should_stop", None) is not None:
         fetcher.stop_check = hooks.stop_requested
     ask = _Asker(fetcher, cfg, policy, cap)

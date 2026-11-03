@@ -723,6 +723,64 @@ builds it. The fixture took 23.3s on `c22a0b0` and 23.1s on `1dbdf3d` (stage 2),
 slowest fast-suite setup is 43.9s. Not changed here (a fix is to list that second test as slow, or to make the benchmark's
 pace and retry waits use a fake clock; owner's choice).
 
+## v0.3 speed follow-up (2026-11-03, DECISIONS 299; not pushed)
+
+**CI of the status commit `54e85a5`** (run 41585995041): **failed**, by chance: `test_counts_and_shared_elements.py`
+looked for "55" anywhere in the counts and met a measured `0.055` s. Fixed here (55 as a whole number). Status-only
+commits are no longer pushed (Owner).
+
+**Changed:** (1) one clock for every wait (`maya_audit/clock.py`, 21 modules; the headless browser keeps the system
+clock); the coverage benchmark and the w4b fixture run under a fake clock, both still in the fast suite. (2) Firecrawl
+starts at Maya's first 429 (start page or one of the first 3 page requests), before the Retry-After wait, from a copy of
+what the crawl knew; the web app makes the early reader for the blocked-site reader too. (3) A large sitemap index is
+read in part: one file of each family (folder kept) first, then stop at page cap + sitemap check sample; the
+discovered count says "(partial ...)". (4) The outcome reason under the "Maya's crawler was blocked (429 on pages); read
+through Firecrawl: N pages" label no longer repeats it (card, print, PDF; English and Turkish); the status summary no
+longer says the Firecrawl count twice. (5) Firecrawl's `rawHtml` is rendered HTML (nihan: median +36% against Maya's
+raw copy, 499 pages); RND-6 measured on it says "(rendered HTML via Firecrawl, not comparable with raw size)" in every
+title, with a note and `evidence.html_measured`. Tests: new `tests/test_v03_speed_followup.py` (11).
+
+**The 10 slowest fast-suite tests** (`pytest -m "not slow and not timing" --durations=10`, this Mac):
+
+| Before (`54e85a5`, fast suite 970.17 s) | | After (fast suite 409.58 s) | |
+|---|---|---|---|
+| 589.24 s | coverage_phase2 benchmark (setup) | 46.36 s | brand_neutral saas_spa_rendered (setup, real browser) |
+| 43.88 s | brand_neutral saas_spa_rendered (setup) | 28.74 s | rnd_scenarios render sample (setup, real browser) |
+| 27.27 s | rnd_scenarios render sample (setup) | 24.52 s | coverage_phase2 benchmark (setup, fake clock) |
+| 12.24 s | w4b concise report [tr] (setup) | 3.59 s | prf_scenarios intermittent timeout (setup) |
+| 3.52 s | prf_scenarios intermittent timeout (setup) | 2.20 s | web_firecrawl challenged site result page |
+| 1.69 s | nine_corrections large h1 | 2.08 s | nine_corrections large h1 |
+| 1.56 s | web_firecrawl challenged site result page | 1.38 s | w4b concise report [tr] (setup, fake clock) |
+| 1.13 s | review_fixes idx8 | 1.20 s | dataforseo_backlinks 6b |
+| 1.06 s | web_app daily limit | 1.19 s | web_app daily limit |
+| 1.03 s | gx3_length concise print (setup) | 1.16 s | web_app one audit at a time |
+
+The two remaining long setups run a real headless browser (Playwright): their time is the browser's, not a wait.
+
+**Saved nihan Quick 50 (`50473193`, 2 Nov), offline** (isolated copies; `~/.maya-audit/web` untouched): rendered with
+`54e85a5` and with this tree, every web output compared. Only the outcome reason under the label changed (card, print,
+full print, PDF): "Maya's crawler was blocked (429 on pages); read through Firecrawl: 50 pages. 18192 more discovered
+URLs remain unchecked ..." instead of saying the first part twice. Markdown, practical view, action plan, findings and
+counts: identical. A saved report keeps its RND-6 titles, sitemap count and status summary (they are written when an
+audit runs).
+
+**nihan Quick 50, estimated** (2 Nov timeline: preflight 10 s, sitemaps 30 s, crawl 61 s = the homepage's 60 s
+Retry-After, access + index 13 s, llms links 30 s, robots.txt re-sample wait 107 s, then Firecrawl 108 s; 349.5 s of
+steps, ~6.0 min wall, Firecrawl shown at "1 of 50" until it started): sitemaps ~14 s (12 requests, not 26); Firecrawl
+starts at the homepage's 429 (~25 s) and ends ~135 s; Maya's steps end with the robots.txt re-sample (due 240 s after
+the first robots.txt request, ~250 s), as before. **About 4.2 min**, set now by the robots.txt re-sample wait. Not
+measured live.
+
+**Verification** (working tree on `54e85a5`, macOS, Python 3.13.1; no .env, no providers, no live requests):
+
+| Command | Result |
+|---|---|
+| fast suite (local fast-job time), `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing" --durations=10` | `3 failed, 2591 passed, 4 skipped, 131 deselected, 1 warning in 409.58s (0:06:49)`: the RND-6 note in the check summary (no Turkish; removed from the summary) and `maya_audit/rule_ids.json` out of date (regenerated); then the three files: `50 passed` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | first `2 failed, 2723 passed, 4 skipped, 1 warning in 762.26s`: `docs/FIXTURE-MATRIX.md` out of date (regenerated), and a sitemap-check test whose three numbered files are one family (files made smaller; families are now also spread first, last, middle); then `2725 passed, 4 skipped, 1 warning in 754.15s (0:12:34)` |
+| `ruff check --select E9,F821,F841` (CI's) | `All checks passed!` |
+| `python3.11 -m compileall` | OK |
+| Linux/Windows, live runs | NOT RUN |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

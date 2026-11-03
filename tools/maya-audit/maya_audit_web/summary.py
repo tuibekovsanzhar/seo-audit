@@ -530,6 +530,11 @@ def rendering(report: dict[str, Any]) -> dict[str, Any]:
             "label": t("result.rendering.on", count=len(render.get("pages") or {})) if sampled else t("result.rendering.off")}
 
 
+def _sitemap_partial(notes) -> bool:
+    from maya_audit.sitemap import partial
+    return partial(notes)
+
+
 def method(report: dict[str, Any], audit: dict[str, Any] | None = None) -> dict[str, Any]:
     """How the audit was done: what a reader needs to judge how far the results reach."""
     crawl, config = report["crawl"], report["crawl"].get("config") or {}
@@ -537,6 +542,8 @@ def method(report: dict[str, Any], audit: dict[str, Any] | None = None) -> dict[
             "elapsed_s": crawl.get("elapsed_s"), "page_cap": (audit or {}).get("page_cap") or config.get("max_pages"),
             "pages_checked": pages_read(report) if (report.get("firecrawl") or {}).get("pages_read") else report["page_counts"]["pages_checked"], "redirects": report["page_counts"]["redirects"],
             "requests": len(crawl.get("requests") or []), "discovered": len(crawl.get("discovered_urls") or []),
+            # A large sitemap index read in part (DECISIONS 299): the discovered figure is then partial.
+            "discovered_partial": _sitemap_partial(crawl.get("sitemap_notes")),
             "not_fetched": len(crawl.get("not_fetched_urls") or []), "request_delay_s": config.get("request_delay_s"),
             "time_limit_s": config.get("time_limit_s"), "user_agent": crawl.get("user_agent"),
             "key_pages": list(config.get("key_pages") or []), "sessions": len(crawl.get("sessions") or []),
@@ -783,6 +790,23 @@ def outcome_label(outcome: str | None, reason: str | None) -> str | None:
     return t(f"result.outcome.{outcome}")
 
 
+def outcome_shown(outcome: str | None, reason: str | None) -> tuple[str, bool]:
+    """The outcome's reason in the reader's language, as shown under its label. When the label already says "Maya's
+    crawler was blocked (429 on pages); read through Firecrawl: N pages" (`outcome_label`), the reason's first two
+    clauses, which say the same, are left out (DECISIONS 299): the card and the PDF said it twice."""
+    shown, ok = wording.outcome(reason)
+    if outcome == "DEGRADED" and BLOCKED_READ_THROUGH_SENTENCE.match(reason or ""):
+        head, _sep, rest = shown.partition("; ")
+        _second, sep, rest = rest.partition("; ")
+        if sep and rest:
+            shown = rest[:1].upper() + rest[1:]
+        elif head and "; " not in shown.partition("; ")[2]:
+            # Nothing after the two clauses but the closing sentences: keep those.
+            tail = shown.split(". ", 1)
+            shown = tail[1] if len(tail) == 2 else ""
+    return shown, ok
+
+
 def build(report: dict[str, Any], *, outcome: str | None, reason: str | None, backlinks: dict[str, Any] | None = None,
           resumable: bool = False, profile: dict[str, Any] | None = None, audit: dict[str, Any] | None = None,
           affected: dict[str, list[str]] | None = None) -> dict[str, Any]:
@@ -813,7 +837,7 @@ def build(report: dict[str, Any], *, outcome: str | None, reason: str | None, ba
     checked = pages_read(report)
     by_severity = {s: counts.get(s, 0) for s in SEVERITIES}
     totals = problems_of(report, affected, checked)
-    shown_reason, reason_ok = wording.outcome(reason)
+    shown_reason, reason_ok = outcome_shown(outcome, reason)
     def compact_row(row):
         return {k:v for k,v in row.items() if k != "evidence_record"} if row else None
     return {
@@ -840,7 +864,8 @@ def build(report: dict[str, Any], *, outcome: str | None, reason: str | None, ba
         # functions applied to an older report.
         "problem_summary": totals,
         "counts": {"pages_checked": checked, "redirects": report["page_counts"]["redirects"],
-                   "page_cap": how["page_cap"], "discovered": how["discovered"], "not_fetched": how["not_fetched"],
+                   "page_cap": how["page_cap"], "discovered": how["discovered"], "discovered_partial": how["discovered_partial"],
+                   "not_fetched": how["not_fetched"],
                    "problems": len(problems), "notes": counts.get("Info", 0),
                    "by_severity": by_severity, "needs_review": len(review),
                    "not_checked": len(gaps), "findings_total": len(rows)},

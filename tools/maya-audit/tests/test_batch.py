@@ -182,7 +182,7 @@ def test_with_dataforseo_the_batch_plan_is_shown_first_and_each_brand_goes_throu
 
 def test_a_dataforseo_failure_for_one_brand_is_in_its_row_and_changes_no_exit_code(monkeypatch, capsys, tmp_path, sites):
     use_credentials(monkeypatch)
-    monkeypatch.setattr(client_module.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(client_module._clock, "sleep", lambda seconds: None)  # the one clock (DECISIONS 299)
 
     def responder(request):
         if b"down-brand.com" in request.content:

@@ -425,13 +425,15 @@ class Runner:
         return reading
 
     def _early_reader(self, audit: dict[str, Any], stop: threading.Event, progress: dict[str, Any]):
-        """An EarlyReading for this audit, or None: only Firecrawl's first, approved run as the main page reader, and
-        only without a paid panel whose ranking pages it would wait for. Nothing is sent or marked until it starts."""
+        """An EarlyReading for this audit, or None: only Firecrawl's first, approved run (as the main page reader, which
+        starts when Maya's crawl ends, DECISIONS 294, or at Maya's first 429, 299; or as the reader of a blocked site,
+        which starts at the first 429), and only without a paid panel whose ranking pages it would wait for. Nothing is
+        sent or marked until it starts."""
         state = audit.get("firecrawl") or {}
         if state.get("state") != "pending" or state.get("continue") or audit.get("backlinks"):
             return None
         options = fc.options_from(state.get("options") or {})
-        if not options.read_always:
+        if not (options.read_always or options.read_blocked):
             return None
 
         def mark() -> None:  # marked before the first request: a resume must not spend the approval twice

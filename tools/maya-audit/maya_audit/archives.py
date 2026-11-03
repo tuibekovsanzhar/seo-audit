@@ -9,7 +9,6 @@ import gzip
 import io
 import json
 import re
-import time
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from typing import Callable
@@ -21,6 +20,7 @@ from .fetcher import utc_now
 from .findings import check_id_key
 from .models import StopReason, to_jsonable
 from .urls import normalize_url
+from . import clock as _clock
 
 NAMES = {"wayback": "Wayback Machine", "common_crawl": "Common Crawl"}
 NOTICE = "archived/indexed copy, date {date}; the live site may differ"
@@ -68,7 +68,7 @@ def scoped(url: str, target: str) -> bool:
 
 class Client:
     def __init__(self, user_agent: str, *, transport=None, should_stop: Callable[[], bool] = lambda: False,
-                 sleep=time.sleep, clock=time.monotonic):
+                 sleep=_clock.sleep, clock=_clock.monotonic):
         self.http = httpx.Client(transport=transport, timeout=20, follow_redirects=False, trust_env=False,
                                  headers={"User-Agent": user_agent, "Accept-Encoding": "identity"})
         self.should_stop, self.sleep, self.clock = should_stop, sleep, clock
@@ -284,7 +284,7 @@ def analyze(copies, result, cfg):
 TRANSPORT = None
 
 
-def collect(result, cfg, *, wayback=False, common_crawl=False, transport=None, should_stop=lambda: False, sleep=time.sleep, clock=None):
+def collect(result, cfg, *, wayback=False, common_crawl=False, transport=None, should_stop=lambda: False, sleep=_clock.sleep, clock=None):
     enabled = [name for name, on in (("wayback", wayback), ("common_crawl", common_crawl)) if on]
     if not enabled:
         return None

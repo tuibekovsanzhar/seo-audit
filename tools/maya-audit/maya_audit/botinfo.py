@@ -7,11 +7,11 @@ start without it, and an unavailable page does not block the site audit.
 from __future__ import annotations
 
 from urllib.parse import urlsplit, urljoin
-import time
 
 
 from .fetcher import Fetcher, utc_now
 from .urls import is_loopback_host
+from . import clock as _clock
 
 UNPUBLISHED_MARKER = "REPLACE-BEFORE-PUBLISHING"
 RESERVED_SUFFIXES = (".invalid", ".example", ".test", ".localhost", ".local")
@@ -42,7 +42,7 @@ def check_bot_info_page(url: str | None, user_agent: str, product_token: str, ti
     validate_bot_info_url(url, allow_loopback)
     checked_at = utc_now()
     fetcher = Fetcher(user_agent, timeout_s, 0, block_loopback=not allow_loopback)
-    fetcher.deadline_mono = min(deadline_mono or float("inf"), time.monotonic() + timeout_s)
+    fetcher.deadline_mono = min(deadline_mono or float("inf"), _clock.monotonic() + timeout_s)
     fetcher.stop_check = stop_check
     try:
         current = url

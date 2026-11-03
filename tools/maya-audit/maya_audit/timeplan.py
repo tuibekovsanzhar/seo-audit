@@ -15,8 +15,8 @@ page reader's row (`step_rows`).
 
 from __future__ import annotations
 
-import time
 from typing import Any
+from . import clock as _clock
 
 # The optional steps, in the order they give way to the time limit (the first is lost first).
 SKIP_ORDER = ("other_site_links", "llms_links", "sitemap_check", "performance", "rendering")
@@ -70,7 +70,7 @@ def short_of_time(fetcher, result, cfg) -> bool:
     """Whether a link to another site should give way: the time left is no more than the later steps need."""
     if fetcher.deadline_mono is None:
         return False
-    return fetcher.deadline_mono - time.monotonic() <= later_need_s(fetcher, result, cfg)
+    return fetcher.deadline_mono - _clock.monotonic() <= later_need_s(fetcher, result, cfg)
 
 
 def _cut(result, name: str) -> bool:

@@ -761,8 +761,19 @@ def rnd5_walls(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
 
 # -- RND-6 -------------------------------------------------------------------
 
-def rnd6_payload(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
+# Said on every RND-6 finding measured on Firecrawl's copy of the pages (DECISIONS 299).
+RENDERED_VIA_FIRECRAWL = " (rendered HTML via Firecrawl, not comparable with raw size)"
+RENDERED_NOTE = ("Measured on the HTML Firecrawl returned: the page as its browser built it after JavaScript, with ads "
+                 "blocked and embedded base64 images removed, not the HTML the server sends. It is not compared with "
+                 "Maya's own raw measurement (on nihan.com.tr the same 499 pages were a median 36% larger this way, from 8% "
+                 "smaller to 59% larger).")
+
+
+def rnd6_payload(result: CrawlResult, cfg: CrawlConfig, *, rendered_via_firecrawl: bool = False) -> CheckResult:
+    """RND-6 on the pages of `result`. `rendered_via_firecrawl`: the pages are Firecrawl's rendered copies (DECISIONS
+    299), so every title and note says so and nothing is set beside Maya's raw sizes."""
     title = "HTML payload size"
+    rendered = rendered_via_firecrawl
     key_urls = set(key_page_urls(result, cfg))
     large, late, home_heavy = [], [], []
     home = homepage_url(result)
@@ -809,6 +820,11 @@ def rnd6_payload(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
             importance_tier=_tier(urls, key_urls), notes=["Capped at S4: Hypothesis."],
         ))
     summary = f"{len(findings)} finding(s)." if findings else "No oversized HTML and no late-starting main content."
+    if rendered:
+        for finding in findings:
+            finding.title += RENDERED_VIA_FIRECRAWL  # every title says what was measured
+            finding.notes.append(RENDERED_NOTE)
+            finding.evidence = {**finding.evidence, "html_measured": "rendered (Firecrawl)"}
     return CheckResult("RND-6", title, _status(findings), summary, findings)
 
 

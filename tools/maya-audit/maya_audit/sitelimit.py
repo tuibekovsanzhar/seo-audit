@@ -21,9 +21,9 @@ is recorded. Nothing here sends a request: callers ask for a slot, send, and giv
 from __future__ import annotations
 
 import threading
-import time
 from dataclasses import dataclass, field
 from typing import Callable
+from . import clock as _clock
 
 DEFAULT_LIMIT = 5
 MIN_LIMIT, MAX_LIMIT = 1, 10
@@ -60,7 +60,7 @@ class Slot:
 class SiteLimiter:
     limit: int = DEFAULT_LIMIT
     gap: Callable[[], float] = lambda: 0.0
-    # None: `time.monotonic()` and `time.sleep()` looked up at each call, so a test's fake clock (which patches the time
+    # None: `_clock.monotonic()` and `_clock.sleep()` looked up at each call, so a test's fake clock (which patches the time
     # module) moves this limit the same as the fetcher.
     clock: Callable[[], float] | None = None
     # Whether Maya's own steps are still running: slot 0 is then Maya's alone.
@@ -87,7 +87,7 @@ class SiteLimiter:
     # -- asking for a slot ----------------------------------------------------------------------------------------------
 
     def _now(self) -> float:
-        return self.clock() if self.clock is not None else time.monotonic()
+        return self.clock() if self.clock is not None else _clock.monotonic()
 
     def _candidates(self, who: str, main: bool) -> list[int]:
         if main:
@@ -151,7 +151,7 @@ class SiteLimiter:
                             wait = min(wait, max(0.0, deadline_mono - now))
                         self._cond.release()
                         try:
-                            time.sleep(max(0.001, wait))
+                            _clock.sleep(max(0.001, wait))
                         finally:
                             self._cond.acquire()
                         continue

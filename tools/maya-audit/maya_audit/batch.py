@@ -10,7 +10,6 @@ from __future__ import annotations
 import csv
 import re
 import sys
-import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -21,6 +20,7 @@ from .findings import Severity
 from .runclock import for_outcome
 from .report import (EXIT_COMPLETED, EXIT_DEGRADED, EXIT_ERROR, EXIT_INCOMPLETE, build_report, page_counts, render_markdown,
                      run_outcome)
+from . import clock as _clock
 
 EXIT_MEANINGS = {EXIT_COMPLETED: "completed", EXIT_DEGRADED: "degraded: the site could not be read properly",
                  EXIT_ERROR: "error: no audit was produced", EXIT_INCOMPLETE: "incomplete: stopped at a page cap or time limit"}
@@ -290,7 +290,7 @@ def run(args, config_for: Callable[[str], CrawlConfig], run_audit: Callable[[str
     started, rows = datetime.now(timezone.utc).isoformat(timespec="seconds"), []
     for number, brand in enumerate(brands, 1):
         print(f"[{number}/{len(brands)}] {brand.name}  {brand.url}", flush=True)
-        clock = time.monotonic()
+        clock = _clock.monotonic()
         try:
             row = _audit_brand(brand, out, args, config_for, run_audit, open_client)
         except KeyboardInterrupt:
@@ -298,7 +298,7 @@ def run(args, config_for: Callable[[str], CrawlConfig], run_audit: Callable[[str
         except Exception as exc:  # one brand failing must not stop the others
             row = _row(brand)
             row.update(exit_code=EXIT_ERROR, result=EXIT_MEANINGS[EXIT_ERROR], error=f"{type(exc).__name__}: {str(exc)[:500]}")
-        row["duration_s"] = f"{time.monotonic() - clock:.1f}"
+        row["duration_s"] = f"{_clock.monotonic() - clock:.1f}"
         rows.append(row)
         print(f"      exit {row['exit_code']} ({EXIT_MEANINGS[row['exit_code']].split(':')[0]}) in {row['duration_s']}s"
               + (f"; DataForSEO ${float(row['dfs_cost_usd']):.4f}" if row["dfs_cost_usd"] else "")

@@ -24,6 +24,7 @@ from maya_audit.config import CrawlConfig  # noqa: E402
 from maya_audit.report import build_report  # noqa: E402
 from maya_audit_web import demo, pdf, practical, summary  # noqa: E402
 from maya_audit_web.app import create_app  # noqa: E402
+from maya_audit import clock  # noqa: E402
 from maya_audit_web.runner import Engine  # noqa: E402
 
 API = "/api/v1"
@@ -55,7 +56,9 @@ INTERNAL = ("recorded_observation", "diagnostic_concern", "informational_observa
 @pytest.fixture(scope="module")
 def arjava_app(tmp_path_factory):
     scenario = ARJAVA_SCENARIOS["arjava"]
-    with FakeServer(scenario.build()) as server:
+    # A fake clock (DECISIONS 299) for both audits made here: their polite gaps are counted, not waited (31 s of sleep).
+    fake = clock.FakeClock()
+    with clock.using(fake), FakeServer(scenario.build()) as server:
         config = CrawlConfig(**{"request_delay_s": 0.0, "robots_sample_interval_s": 0.05, "probe_retry_cooldown_s": 0.0,
                                 "refetch_delay_s": 0.0, "render_enabled": False, "prf_round_gap_s": 0.0, **scenario.config})
         outcome = run_audit(server.base_url + "/", config)
@@ -72,9 +75,10 @@ def arjava_app(tmp_path_factory):
         client.get("/")
         client.headers["x-maya-token"] = client.get(f"{API}/session").json()["token"]
         made = client.post(f"{API}/plans", json={"url": demo.CAFE})
-        started = client.post(f"{API}/audits", json={"plan_id": made.json()["id"], "message": "arjava"})
-        audit_id = started.json()["id"]
-        client.app.state.runner.wait(audit_id, 120)
+        with clock.using(fake):
+            started = client.post(f"{API}/audits", json={"plan_id": made.json()["id"], "message": "arjava"})
+            audit_id = started.json()["id"]
+            client.app.state.runner.wait(audit_id, 120)
         artifacts = client.app.state.runner.artifacts(audit_id)
         (artifacts / "report.json").write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
         (artifacts / "affected-urls.json").unlink(missing_ok=True)

@@ -11,9 +11,9 @@ exactly as when the time limit is reached. With a crawl database (`db_path`) the
 
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
+from . import clock as _clock
 
 # In the order an audit goes through them.
 PHASES = ("starting", "sitemap", "crawl", "access", "index", "structure", "render", "performance", "sitemap_check", "citations",
@@ -27,13 +27,13 @@ class Hooks:
     on_progress: Callable[[dict[str, Any]], None] | None = None
     # Asked before every request. True means: stop as soon as possible.
     should_stop: Callable[[], bool] | None = None
-    _t0: float = field(default_factory=time.monotonic, repr=False)
+    _t0: float = field(default_factory=_clock.monotonic, repr=False)
 
     def emit(self, phase: str, **fields: Any) -> None:
         if self.on_progress is None:
             return
         try:
-            self.on_progress({"phase": phase, "elapsed_s": round(time.monotonic() - self._t0, 1), **fields})
+            self.on_progress({"phase": phase, "elapsed_s": round(_clock.monotonic() - self._t0, 1), **fields})
         except Exception:  # noqa: BLE001  a listener's failure must never fail the audit
             pass
 

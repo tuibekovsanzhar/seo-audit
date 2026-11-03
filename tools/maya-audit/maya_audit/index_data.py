@@ -13,7 +13,6 @@ import re
 import secrets
 import socket
 import ssl
-import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
@@ -32,6 +31,7 @@ from .fetcher import Fetcher, tls_verify, utc_now
 from .html_links import decode_body, is_html
 from .models import CrawlResult, FetchClass, StopReason
 from .urls import host_allowed, is_loopback_host, is_registrable_domain, non_page_kind, normalize_url, same_origin, validate_public_target, UnsafeTargetError, public_addresses
+from . import clock as _clock
 
 KEPT = ("server", "content-type", "location", "x-robots-tag", "link", "retry-after")
 # OpenSSL X509 verification codes (x509_vfy.h) mapped to a plain label.
@@ -158,7 +158,7 @@ def soft_404_probe(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig, poli
         entry["reason"] = "no page of the site answered 200, so a missing page cannot be told from the rest"
     elif not policy.decide(cfg.product_token, url).allowed:
         entry["reason"] = "robots.txt disallows this path for Maya's user agent"
-    elif fetcher.deadline_mono is not None and time.monotonic() >= fetcher.deadline_mono:
+    elif fetcher.deadline_mono is not None and _clock.monotonic() >= fetcher.deadline_mono:
         entry["reason"] = "the audit's time limit was reached before the request could be sent"
     else:
         response = fetcher.get(url, "soft_404_probe", 64 * 1024)
@@ -252,7 +252,7 @@ def _walk_again(fetcher: Fetcher, url: str, cfg: CrawlConfig, policy, origin: st
             return {"outcome": ANSWERED, "hops": hops, "reason": f"redirects off the audited site, to {current}; not followed"}
         if not policy.decide(cfg.product_token, current).allowed:
             return {"outcome": NOT_CHECKED, "hops": hops, "reason": "robots.txt disallows this address for Maya's user agent"}
-        if fetcher.deadline_mono is not None and time.monotonic() >= fetcher.deadline_mono:
+        if fetcher.deadline_mono is not None and _clock.monotonic() >= fetcher.deadline_mono:
             # Said here, without asking the fetcher: a refused request would count as the time limit cutting this step.
             return {"outcome": NOT_CHECKED, "hops": hops, "reason": "the audit's time limit was reached before the request could be sent"}
         sent = "; ".join(f"{name}={value}" for name, value in jar.items()) if cookies and jar else None
@@ -425,7 +425,7 @@ def check_other_site_targets(fetcher: Fetcher, result: CrawlResult, cfg: CrawlCo
         if sent >= cfg.idx6_other_site_checks_max:
             entry["reason"] = _IDX6_CAP.format(cap=cfg.idx6_other_site_checks_max)
             continue
-        if fetcher.deadline_mono is not None and time.monotonic() >= fetcher.deadline_mono:
+        if fetcher.deadline_mono is not None and _clock.monotonic() >= fetcher.deadline_mono:
             entry["reason"] = _IDX6_TIME
             continue
         origin = origin_of(url)
@@ -668,7 +668,7 @@ class LightRequests:
         """The row, or None when nothing was sent (`stopped_because` then says why)."""
         if self.stopped_because:
             return None
-        if self.fetcher.deadline_mono is not None and time.monotonic() >= self.fetcher.deadline_mono:
+        if self.fetcher.deadline_mono is not None and _clock.monotonic() >= self.fetcher.deadline_mono:
             with self._lock:
                 self.stopped_because = self.stopped_because or "time_limit"
             return None
@@ -1182,10 +1182,10 @@ def inspect_tls(host: str, port: int, timeout: float, ca_bundle: str | None, *, 
         addresses = public_addresses(url, allow_loopback=not fetcher.block_loopback if fetcher else True)
         if fetcher is not None:
             timeout = fetcher.request_budget(url, timeout)
-        end = time.monotonic() + timeout
+        end = _clock.monotonic() + timeout
         with _connect_first(addresses, port, timeout) as raw:
             if fetcher is not None:
-                timeout = min(end - time.monotonic(), fetcher.request_budget(url, timeout))
+                timeout = min(end - _clock.monotonic(), fetcher.request_budget(url, timeout))
                 if timeout <= 0:
                     raise httpx.TimeoutException("overall audit deadline reached")
                 raw.settimeout(timeout)

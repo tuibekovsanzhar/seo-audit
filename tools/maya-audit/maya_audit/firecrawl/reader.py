@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import re
 import threading
-import time
 from collections import deque
 from dataclasses import dataclass, replace
 from typing import Any
@@ -43,6 +42,7 @@ from . import settings
 from .client import FirecrawlClient, ZeroDataRetentionUnavailable
 from .reading import SITEMAP_MIN_CAP, ReadingQueue, discover_through_reader
 from .settings import DEFAULT_PROXY, Options
+from .. import clock as _clock
 
 SOURCE = "Source: Firecrawl (Maya's crawler was blocked)"
 RENDER_SOURCE = "Source: Firecrawl rendered these pages (the local browser could not start)"
@@ -469,9 +469,10 @@ def read_blocked_site(result: CrawlResult, cfg: CrawlConfig, client: ContentProv
         # none, Maya got (DECISIONS 295). Labelled with the reader's source like the content checks.
         from ..checks.render import rnd6_payload
 
-        weight = rnd6_payload(replace(result, pages=pages, render=None), cfg)
-        weight.evidence = {**weight.evidence, "measured_on": "the HTML Firecrawl returned (rawHtml) for the pages it read",
-                           "pages_measured": len(pages)}
+        weight = rnd6_payload(replace(result, pages=pages, render=None), cfg, rendered_via_firecrawl=True)
+        weight.evidence = {**weight.evidence, "pages_measured": len(pages), "html_measured": "rendered (Firecrawl)",
+                           "measured_on": "the rendered HTML Firecrawl returned (rawHtml: its browser's page after "
+                                          "JavaScript) for the pages it read; not comparable with Maya's raw size"}
         checks.append(weight)
     if main:
         _label(checks, MAIN_SOURCE, MAIN_WHY, client.identity, notice=None)
@@ -592,10 +593,10 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
     pool = ThreadPoolExecutor(at_once, thread_name_prefix="reader") if at_once > 1 else None
     stop = False
     call_seconds: list[float] = []
-    reading_began = time.monotonic()
+    reading_began = _clock.monotonic()
     # A page whose call timed out is asked for once more after a short wait (DECISIONS 295): (due, url, via, depth).
-    now = clock.clock if clock is not None and hasattr(clock, "clock") else time.monotonic
-    nap = clock.sleep if clock is not None and hasattr(clock, "sleep") else time.sleep
+    now = clock.clock if clock is not None and hasattr(clock, "clock") else _clock.monotonic
+    nap = clock.sleep if clock is not None and hasattr(clock, "sleep") else _clock.sleep
     retries: deque = deque()
     timed_out: set[str] = set()     # pages whose first call timed out
     sent_again: set[str] = set()    # pages asked for a second time
@@ -758,7 +759,7 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
                 progress({"phase": "firecrawl", "url": url, "attempted": len(rows) + 1, "read": len(pages), "page_cap": options.max_pages,
                           "failed": sum(1 for row in rows if row["outcome"] not in ("read", "redirected")),
                           "from_cache": sum(1 for row in rows if row.get("from_cache")) + int(bool(fetched.cached)),
-                          "in_flight": len(in_flight), "seconds_per_page": round((time.monotonic() - reading_began) / max(1, asked), 2),
+                          "in_flight": len(in_flight), "seconds_per_page": round((_clock.monotonic() - reading_began) / max(1, asked), 2),
                           # Firecrawl's own pace now (DECISIONS 295), for the progress box.
                           "at_once": concurrency["final"], "gap_s": None if pace is None else pace.gap_s})
             relation, landed = where_it_landed(url, getattr(fetched, "final_url", None), origin)
@@ -872,7 +873,7 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
                           # The reader's own pace, measured (DECISIONS 294): wall time per page asked for (with the
                           # requests in flight at once), the time one call took (median), what was assumed before
                           # anything was measured, and the pages left unread because the time limit came first.
-                          "seconds_per_page_measured": round((time.monotonic() - reading_began) / asked, 2) if asked else None,
+                          "seconds_per_page_measured": round((_clock.monotonic() - reading_began) / asked, 2) if asked else None,
                           "call_seconds_measured": None if not call_seconds else round(_median(call_seconds), 2),
                           "seconds_per_page_assumed": READER_SECONDS_PER_PAGE,
                           "skipped_for_time": len(waiting) if why_waiting == "time_limit" else 0,
@@ -957,6 +958,9 @@ class EarlyReading:
         # Called once, just before the reading starts (the web app marks the approval as being spent then).
         self.on_start = on_start
         self.started = False
+        # Set when it started at Maya's first 429 (DECISIONS 299): what happened then, for the report.
+        self.after_rate_limit: dict[str, Any] | None = None
+        self._blocked = False
         self.info: dict[str, Any] = {}
         self.began: float | None = None
         self.ended: float | None = None
@@ -981,21 +985,46 @@ class EarlyReading:
         clock.site_limiter = limiter  # Maya's own limit, kept for the report's figures; the reader does not take it
         if clock.why_not():
             return False
+        return self._begin(result, cfg)
+
+    def start_after_rate_limit(self, known: CrawlResult, cfg: CrawlConfig, deadline_mono: float | None,
+                               rate_limited_at: dict[str, Any] | None = None) -> bool:
+        """Start reading now, at the first 429 of Maya's own page requests (DECISIONS 299), from what the crawl knew
+        then (`known`: robots.txt, the sitemaps, the addresses found; a copy the crawl does not change): not after the
+        Retry-After wait or the rest of Maya's steps. Read as for a blocked site: Firecrawl's own pages, its own pace,
+        and the sitemap asked through it when Maya had none. True when it started."""
+        if self.started or not self.options.read_blocked or cfg.single_page:
+            return False
+        clock = getattr(self.client, "clock", None)
+        if clock is None:
+            return False
+        if deadline_mono is not None:
+            clock.deadline_mono = deadline_mono
+        if clock.why_not():
+            return False
+        self._blocked = True
+        self.after_rate_limit = {"started_at_s": (rate_limited_at or {}).get("elapsed_s"),
+                                 "url": (rate_limited_at or {}).get("url"),
+                                 "retry_after": (rate_limited_at or {}).get("retry_after"),
+                                 "addresses_known": len(known.discovered_urls), "sitemap_addresses": len(known.sitemap_urls)}
+        return self._begin(known, cfg)
+
+    def _begin(self, result: CrawlResult, cfg: CrawlConfig) -> bool:
         if self.on_start is not None:
             self.on_start()
-        self.started, self.began = True, time.monotonic()
+        self.started, self.began = True, _clock.monotonic()
         self._thread = threading.Thread(target=self._run, args=(result, cfg), name="early-reader", daemon=True)
         self._thread.start()
         return True
 
     def _run(self, result: CrawlResult, cfg: CrawlConfig) -> None:
         try:
-            self._state = _read_pages(result, cfg, self.client, self.options, self.info, blocked=False,
+            self._state = _read_pages(result, cfg, self.client, self.options, self.info, blocked=self._blocked,
                                       progress=self.progress, inbox=self._inbox)
         except BaseException as exc:  # handed to `finish`, which raises it where apply would have
             self._error = exc
         finally:
-            self.ended = time.monotonic()
+            self.ended = _clock.monotonic()
 
     def add(self, urls) -> None:
         """More addresses to read, while it reads (a paid panel's ranking pages that arrived later)."""
@@ -1011,6 +1040,8 @@ class EarlyReading:
         info.update(self.info)
         coverage = info.setdefault("coverage", {})
         coverage["ran_beside_maya"] = True
+        if self.after_rate_limit is not None:
+            coverage["started_at_first_429"] = dict(self.after_rate_limit)
         if self._error is not None:
             raise self._error
         return self._state
@@ -1019,7 +1050,7 @@ class EarlyReading:
     def elapsed_s(self) -> float | None:
         if self.began is None:
             return None
-        return round((self.ended or time.monotonic()) - self.began, 3)
+        return round((self.ended or _clock.monotonic()) - self.began, 3)
 
 
 def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, *, progress=None, ranking_urls=(),
@@ -1046,7 +1077,7 @@ def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, 
         if clock.deadline_mono is None:
             clock.deadline_mono = getattr(outcome, "deadline_mono", None)
         clock.pace_s = max(clock.pace_s, float(getattr(outcome, "pace_s", 0.0) or 0.0))
-    began = time.monotonic()
+    began = _clock.monotonic()
     try:
         blocked, why = crawl_was_blocked(result, cfg)
         if options.read_always and not blocked:
@@ -1127,7 +1158,7 @@ def apply(outcome, cfg: CrawlConfig, client: FirecrawlClient, options: Options, 
     else:
         final.settle(outcome.checks, result)
     info.setdefault("coverage", {})["elapsed_s"] = (early.elapsed_s if early is not None and early.started
-                                                     else round(time.monotonic() - began, 3))
+                                                     else round(_clock.monotonic() - began, 3))
     limiter = getattr(outcome, "site_limiter", None) or getattr(clock, "site_limiter", None)
     if limiter is not None and isinstance(getattr(result, "backoff", None), dict):
         result.backoff["site_limit"] = limiter.summary()  # Maya's own requests after the crawl (DECISIONS 295)

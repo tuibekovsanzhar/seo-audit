@@ -10,7 +10,6 @@ log analysis (ACC-5). All of it is audited by INT-4.
 from __future__ import annotations
 
 import re
-import time
 from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import urlsplit
@@ -23,6 +22,7 @@ from .models import CrawlResult, FetchClass, StopReason
 from .probes import run_probes, run_ua_check
 from .robots import looks_like_html
 from .urls import detect_templates, normalize_url, same_origin
+from . import clock as _clock
 
 MAX_REDIRECTS = 5
 LLMS_PATHS = ("/llms.txt", "/llms-full.txt")
@@ -354,11 +354,11 @@ def collect_access_data(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig)
             return  # never sent: the time limit came first
         samples.append(sample)
         if attempt < cfg.robots_samples:
-            sent = fetcher.log[before].started_mono if len(fetcher.log) > before else time.monotonic()
+            sent = fetcher.log[before].started_mono if len(fetcher.log) > before else _clock.monotonic()
             fetcher.schedule(sent + cfg.robots_sample_interval_s, lambda: take(attempt + 1))
 
     if cfg.robots_samples >= 2:
-        fetcher.schedule((first_sent if first_sent is not None else time.monotonic()) + cfg.robots_sample_interval_s,
+        fetcher.schedule((first_sent if first_sent is not None else _clock.monotonic()) + cfg.robots_sample_interval_s,
                          lambda: take(2))
 
     ownership = verify_ownership(result, cfg)

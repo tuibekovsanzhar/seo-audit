@@ -28,7 +28,6 @@ is one, is the row `other_sites_wait`.
 from __future__ import annotations
 
 import threading
-import time
 from concurrent.futures import ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from typing import Any, Callable
@@ -39,6 +38,7 @@ from .fetcher import Fetcher, RawResponse, utc_now
 from .models import CrawlResult
 from .media_sample import IMAGE_HEADERS
 from .urls import normalize_url, origin_of
+from . import clock as _clock
 
 IDX6 = "idx6"          # IDX-6's GET (purpose other_site_link), outside the other-site budget
 CHECK = "check"        # external_links.check: one HEAD (sameAs profiles and other links)
@@ -109,7 +109,7 @@ class OtherSitePool:
         for item in self.items:
             if item.why is None and not item.by_idx6:
                 by_site.setdefault(item.origin, []).append(item)
-        self.started_mono, self.started_at = time.monotonic(), utc_now()
+        self.started_mono, self.started_at = _clock.monotonic(), utc_now()
         if not by_site:
             return
         self._executor = ThreadPoolExecutor(max(1, self.cfg.other_site_workers), thread_name_prefix="other-sites")
@@ -117,7 +117,7 @@ class OtherSitePool:
 
     def _out_of_time(self) -> bool:
         self.fetcher.poll_stop()
-        return self.fetcher.deadline_mono is not None and time.monotonic() >= self.fetcher.deadline_mono
+        return self.fetcher.deadline_mono is not None and _clock.monotonic() >= self.fetcher.deadline_mono
 
     def _policy(self, origin: str):
         from .crawler import load_robots  # local import: crawler does not import this module
@@ -193,7 +193,7 @@ class OtherSitePool:
                 self.fetcher.begin_step("other_sites_wait")
             wait(self._futures)
             self._executor.shutdown(wait=True)
-        self.finished_mono = time.monotonic()
+        self.finished_mono = _clock.monotonic()
         self.joined = True
         for future in self._futures:
             failed = future.exception()

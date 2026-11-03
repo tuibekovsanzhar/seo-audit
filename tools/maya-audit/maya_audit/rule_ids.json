@@ -703,6 +703,18 @@
   ],
   "RND-6": [
    [
+    "rnd6.large_fc",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ have\\ HTML\\ larger\\ than\\ (?P<kb>\\d+(?:\\.\\d+)?)\\ KB\\ \\(rendered\\ HTML\\ via\\ Firecrawl,\\ not\\ comparable\\ with\\ raw\\ size\\)"
+   ],
+   [
+    "rnd6.home_large_fc",
+    "The\\ homepage's\\ HTML\\ is\\ (?P<kb>\\d+(?:\\.\\d+)?)\\ KB,\\ above\\ (?P<limit>\\d+(?:\\.\\d+)?)\\ KB\\ \\(rendered\\ HTML\\ via\\ Firecrawl,\\ not\\ comparable\\ with\\ raw\\ size\\)"
+   ],
+   [
+    "rnd6.late_fc",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ start\\ their\\ main\\ content\\ more\\ than\\ (?P<kb>\\d+(?:\\.\\d+)?)\\ KB\\ into\\ the\\ HTML\\ \\(rendered\\ HTML\\ via\\ Firecrawl,\\ not\\ comparable\\ with\\ raw\\ size\\)"
+   ],
+   [
     "rnd6.large",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ have\\ HTML\\ larger\\ than\\ (?P<kb>\\d+(?:\\.\\d+)?)\\ KB"
    ],

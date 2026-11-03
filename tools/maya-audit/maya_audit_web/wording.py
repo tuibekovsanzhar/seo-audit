@@ -457,6 +457,13 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "{n:page looks paywalled but has|pages look paywalled but have} no isAccessibleForFree structured data"),
     ),
     "RND-6": (
+        # Measured on Firecrawl's rendered copies (DECISIONS 299): said in the title.
+        ("rnd6.large_fc", "{n#} page(s) have HTML larger than {kb#} KB (rendered HTML via Firecrawl, not comparable with raw size)",
+         "{n:page has|pages have} HTML larger than {kb} KB (rendered HTML via Firecrawl, not comparable with raw size)"),
+        ("rnd6.home_large_fc", "The homepage's HTML is {kb#} KB, above {limit#} KB (rendered HTML via Firecrawl, not comparable with raw size)",
+         "The homepage's HTML is {kb} KB, above {limit} KB (rendered HTML via Firecrawl, not comparable with raw size)"),
+        ("rnd6.late_fc", "{n#} page(s) start their main content more than {kb#} KB into the HTML (rendered HTML via Firecrawl, not comparable with raw size)",
+         "{n:page starts its|pages start their} main content more than {kb} KB into the HTML (rendered HTML via Firecrawl, not comparable with raw size)"),
         ("rnd6.large", "{n#} page(s) have HTML larger than {kb#} KB", "{n:page has|pages have} HTML larger than {kb} KB"),
         ("rnd6.home_large", "The homepage's HTML is {kb#} KB, above {limit#} KB", "The homepage's HTML is {kb} KB, above {limit} KB"),
         ("rnd6.late", "{n#} page(s) start their main content more than {kb#} KB into the HTML",

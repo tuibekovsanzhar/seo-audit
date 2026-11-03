@@ -1579,6 +1579,13 @@ BUILT_TITLES = {
               (("serve a short page that looks like a consent, login, age, or geo wall instead of the content",),
                "1 page(s) serve a short page that looks like a consent, login, age, or geo wall instead of the content"),
               (("look paywalled but have no isAccessibleForFree structured data",), "2 page(s) look paywalled but have no isAccessibleForFree structured data")),
+    # RND-6 on Firecrawl's rendered copies (DECISIONS 299): the title as written, then what was measured.
+    "RND-6": ((("have HTML larger than", " (rendered HTML via Firecrawl, not comparable with raw size)"),
+               "12 page(s) have HTML larger than 1000 KB (rendered HTML via Firecrawl, not comparable with raw size)"),
+              (("The homepage's HTML is", " (rendered HTML via Firecrawl, not comparable with raw size)"),
+               "The homepage's HTML is 1400 KB, above 900 KB (rendered HTML via Firecrawl, not comparable with raw size)"),
+              (("start their main content more than", " (rendered HTML via Firecrawl, not comparable with raw size)"),
+               "30 page(s) start their main content more than 500 KB into the HTML (rendered HTML via Firecrawl, not comparable with raw size)")),
     "STR-4": ((("structured-data {field} differs from the {field} shown on the page", '"price"'), "2 page(s): structured-data price differs from the price shown on the page"),
               (('"product name"',), "1 page(s): structured-data product name differs from the product name shown on the page"),
               (("structured-data {field} is not shown on the page", '"author"'), "4 page(s): structured-data author is not shown on the page"),

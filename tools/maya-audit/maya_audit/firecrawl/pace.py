@@ -17,11 +17,11 @@ run clock's, so a test's fake clock moves this pace too.
 from __future__ import annotations
 
 import threading
-import time
 from dataclasses import dataclass, field
 from typing import Callable
 
 from ..sitelimit import backed_off
+from .. import clock as _clock
 
 # The gap grows to at most this many times the setting.
 MOST_WIDENING = 4.0
@@ -37,8 +37,8 @@ class Turn:
 class ReaderPace:
     limit: int
     gap_s: float
-    now: Callable[[], float] = time.monotonic
-    sleep: Callable[[float], None] = time.sleep
+    now: Callable[[], float] = _clock.monotonic
+    sleep: Callable[[float], None] = _clock.sleep
     # A robots.txt Crawl-delay, when the site set one: the gap never goes below it.
     crawl_delay_s: float = 0.0
     configured: int = field(init=False)

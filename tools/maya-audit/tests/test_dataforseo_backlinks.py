@@ -168,7 +168,7 @@ def test_acceptance_3_a_failed_backlink_call_marks_the_panel_not_assessed_and_ch
     use_credentials(monkeypatch)
     outcome = _audit_site(_linked_site(2))
     monkeypatch.setattr(cli, "run_audit", lambda *args, **kwargs: outcome)
-    monkeypatch.setattr(client_module.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(client_module._clock, "sleep", lambda seconds: None)  # the one clock (DECISIONS 299)
 
     def audit(name, responder):
         api = Api(responder)

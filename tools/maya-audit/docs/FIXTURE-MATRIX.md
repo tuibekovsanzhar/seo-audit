@@ -37,7 +37,7 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | RND-3 | 5 | 4 |  |
 | RND-4 | 10 | 8 |  |
 | RND-5 | 6 | 1 |  |
-| RND-6 | 4 | 2 |  |
+| RND-6 | 4 | 3 |  |
 | RND-7 | 6 | 7 |  |
 | STR-1 | 23 | 20 |  |
 | STR-2 | 20 | 15 |  |
@@ -234,7 +234,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 ### RND-6
 
 - Finds the problem: `test_clean_on_read.py::test_which_checks_found_nothing_on_what_was_read`, `test_rnd_scenarios.py::test_non_text_payload_and_main_share`, `test_v03_live_fixes.py::test_when_maya_was_blocked_the_html_weight_check_is_measured_on_firecrawls_html`, `test_v03_live_fixes.py::test_when_maya_read_the_site_its_own_html_weight_check_stands`
-- Must not flag: `test_firecrawl.py::test_firecrawl_reads_a_blocked_sites_content_and_never_touches_access_results`, `test_round2_followups.py::test_the_main_content_share_is_filed_under_page_structure_not_javascript`
+- Must not flag: `test_firecrawl.py::test_firecrawl_reads_a_blocked_sites_content_and_never_touches_access_results`, `test_round2_followups.py::test_the_main_content_share_is_filed_under_page_structure_not_javascript`, `test_v03_speed_followup.py::test_rnd6_measured_on_firecrawls_copy_says_it_is_rendered_html_and_not_comparable`
 
 ### RND-7
 

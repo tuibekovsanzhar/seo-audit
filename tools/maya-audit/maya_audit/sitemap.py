@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 import gzip
 from io import BytesIO
 from collections import deque
@@ -14,9 +13,65 @@ from .fetcher import Fetcher
 from .models import SitemapDoc, SkippedUrl
 from .robots import RobotsPolicy
 from .urls import normalize_url, same_origin
+from . import clock as _clock
 
 # Where a sitemap address came from when nobody named it: Maya asked for /sitemap.xml on its own.
 GUESSED = "guess"
+# The start of the note said when a sitemap index was read in part (DECISIONS 299): the discovered count is then partial.
+PARTIAL = "sitemap index read in part"
+
+
+def family(url: str) -> str:
+    """The kind of sitemap file, its numbers left out and its folder kept: sitemap_products_1.xml and
+    sitemap_products_2.xml?from=9 are one family, sitemap_pages_1.xml another, and /en/sitemap_products_1.xml (another
+    language) a third."""
+    import re
+    from urllib.parse import urlsplit
+    folder, _sep, name = urlsplit(url).path.lower().rpartition("/")
+    return folder + "/" + re.sub(r"\d+", "#", name.split(".", 1)[0])
+
+
+def spread(urls: list[str]) -> list[str]:
+    """The files of a sitemap index in turn by family (products 1, pages 1, blogs 1, products 2, ...), so reading
+    stops with every kind of page represented, not only the first file's."""
+    groups: dict[str, list[str]] = {}
+    for url in urls:
+        groups.setdefault(family(url), []).append(url)
+    # Within a family, an even spread too: the first file, the last, the middle, then the quarters (a catalog's
+    # newest products are not only in its first file).
+    groups = {key: _bisected(members) for key, members in groups.items()}
+    out: list[str] = []
+    rank = 0
+    while len(out) < len(urls):
+        for members in groups.values():
+            if rank < len(members):
+                out.append(members[rank])
+        rank += 1
+    return out
+
+
+def _bisected(items: list[str]) -> list[str]:
+    """First, last, then the midpoints of the gaps left, widest first: [1..8] -> 1, 8, 4, 6, 2, 5, 7, 3."""
+    if len(items) <= 2:
+        return list(items)
+    order, taken = [0, len(items) - 1], {0, len(items) - 1}
+    gaps = [(0, len(items) - 1)]
+    while gaps:
+        gaps.sort(key=lambda gap: gap[0] - gap[1])
+        low, high = gaps.pop(0)
+        if high - low < 2:
+            continue
+        mid = (low + high) // 2
+        if mid not in taken:
+            taken.add(mid)
+            order.append(mid)
+        gaps += [(low, mid), (mid, high)]
+    return [items[i] for i in order]
+
+
+def partial(notes) -> bool:
+    """Whether a sitemap index was read in part (its note is among `notes`): the discovered count is then partial."""
+    return any(str(note).startswith(PARTIAL) for note in notes or [])
 
 
 def _local(tag: str) -> str:
@@ -56,6 +111,7 @@ def discover_sitemap_urls(
     deadline: float | None = None,
     named_in: dict[str, str] | None = None,
     file_of: dict[str, str] | None = None,
+    enough: int | None = None,
 ) -> tuple[list[SitemapDoc], list[str], list[str]]:
     """Fetch sitemaps named in robots.txt plus /sitemap.xml; same-origin only.
 
@@ -64,7 +120,10 @@ def discover_sitemap_urls(
 
     The third value is the notes about what was left out (A14, A15): sitemap files not read because of the time share or
     the file limit, sitemap files robots.txt names on another address, and listed addresses on another origin (http
-    beside https, www beside the bare name). None of these is read, and none is dropped without a word."""
+    beside https, www beside the bare name). None of these is read, and none is dropped without a word.
+
+    `enough` (DECISIONS 299): once this many addresses are known and every family of files in each sitemap index has
+    had one file read (`spread`), the index's other files are not read; a note starting with `PARTIAL` says how many."""
     named_in = named_in if named_in is not None else {}
     sources: list[str] = []
     other_host_files: list[str] = []
@@ -90,8 +149,15 @@ def discover_sitemap_urls(
 
     notes: list[str] = []
     timed_out = False
+    # Each file named in robots.txt (or guessed) is read; of an index's files, at least one of each family.
+    families: dict[tuple[str, str], int] = {("source", url): 0 for url in sources}
+    family_of: dict[str, tuple[str, str]] = {url: ("source", url) for url in sources}
+    lazy_stop = False
     while queue and len(docs) < max_docs:
-        if deadline is not None and time.monotonic() > deadline:
+        if enough is not None and len(page_urls) >= enough and all(families.values()):
+            lazy_stop = True
+            break
+        if deadline is not None and _clock.monotonic() > deadline:
             notes.append(f"sitemap discovery stopped after {len(docs)} document(s) with {len(queue)} still queued: "
                          "it had used its share of the crawl's time limit. Sitemap-based coverage is partial.")
             timed_out = True
@@ -100,6 +166,8 @@ def discover_sitemap_urls(
         if url in seen_docs or depth <= 0:
             continue
         seen_docs.add(url)
+        if url in family_of:
+            families[family_of[url]] += 1
         decision = policy.decide(product_token, url)
         if not decision.allowed:
             skipped.append(SkippedUrl(url, "sitemap_document", decision.to_dict()))
@@ -156,6 +224,11 @@ def discover_sitemap_urls(
                 if named_in.get(n) in (None, GUESSED):
                     named_in[n] = f"sitemap index {url}"
             docs.append(SitemapDoc(url, response.status, None, kind, len(nested)))
+            nested = spread(list(dict.fromkeys(nested)))
+            for n in nested:
+                if n not in family_of:
+                    family_of[n] = (url, family(n))
+                    families.setdefault(family_of[n], 0)
             queue.extend((n, depth - 1) for n in nested)
         elif kind == "urlset":
             entries = [(normalize_url(loc, final_url), lastmod) for loc, lastmod in _entries(root, "url")]
@@ -178,7 +251,12 @@ def discover_sitemap_urls(
             docs.append(SitemapDoc(url, response.status, f"unexpected root element <{kind}>", None, 0))
 
     pending = sum(1 for url, depth in queue if url not in seen_docs and depth > 0)
-    if pending and not timed_out and len(docs) >= max_docs:
+    if pending and lazy_stop:
+        listed = len({u for u, _depth in queue} | seen_docs)
+        notes.append(f"{PARTIAL}: {len(page_urls)} addresses from {len(seen_docs)} of {listed} sitemap files, enough for "
+                     f"the page cap and the sitemap check's sample ({enough}), with every kind of sitemap file read at "
+                     f"least once; {pending} file(s) were not read, so the discovered count is partial.")
+    elif pending and not timed_out and len(docs) >= max_docs:
         notes.append(f"sitemap discovery read its limit of {max_docs} sitemap file(s); {pending} more were not read. "
                      "Sitemap-based coverage is partial.")
     if other_host_files:

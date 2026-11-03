@@ -92,7 +92,10 @@ def test_fifty_addresses_with_five_pdfs_and_seven_that_lead_to_a_read_page_are_4
                                 "8 requests led to pages already read or to missing pages",
                                 "+12 addresses left out: disallowed by robots.txt or not a page"] and cover["known_urls_not_read"] == 449
     assert "credit" not in json.dumps(cover) and "Maya's crawl stopped" not in json.dumps(cover)
-    assert "55" not in json.dumps({key: value for key, value in report.items() if key in ("problem_summary", "audit_status", "page_counts")})
+    # No count of 55 anywhere: as a whole number, so a measured time such as 0.055 s (audit_status.timing) is not one
+    # (that made this test fail by chance on CI, run 41585995041).
+    counted = json.dumps({key: value for key, value in report.items() if key in ("problem_summary", "audit_status", "page_counts")})
+    assert not re.search(r"(?<![\d.])55(?![\d.])", counted)
 
     # The Markdown report.
     markdown = render_markdown(outcome.result, outcome.gates, outcome.checks, firecrawl=section)

@@ -21,13 +21,13 @@ import os
 import queue
 import socket
 import threading
-import time
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable
 
 import httpx
+from . import clock as _clock
 
 SYSTEM_TIMEOUT_S = 4.0        # macOS's own resolver gives up after about 30 seconds; an audit does not wait that long
 SYSTEM_ATTEMPTS = 2
@@ -49,7 +49,7 @@ _A, _AAAA = 1, 28
 # DNS-over-HTTPS requests; `sleep` is the pause between attempts.
 system_lookup: Callable[[str, int], list[str]] | None = None
 doh_transport: httpx.BaseTransport | None = None
-sleep: Callable[[float], None] = time.sleep
+sleep: Callable[[float], None] = _clock.sleep
 
 
 class LookupFailed(OSError):
@@ -144,12 +144,12 @@ def _ask_doh(host: str, attempts: list[dict[str, Any]]) -> tuple[list[str] | Non
     """(addresses, provider that answered, whether a provider answered that the name does not exist)."""
     for name, tls_host, path, addresses in DOH_PROVIDERS:
         for address in addresses:
-            began = time.monotonic()
+            began = _clock.monotonic()
             try:
                 status, found = _doh_once(name, tls_host, path, address, host, "A")
             except Exception as exc:  # noqa: BLE001 - unreachable, refused, not JSON: try the next address or provider
                 attempts.append({"method": f"doh:{name}", "via": address, "outcome": "unreachable",
-                                 "detail": f"{type(exc).__name__}: {exc}"[:200], "ms": round((time.monotonic() - began) * 1000, 1)})
+                                 "detail": f"{type(exc).__name__}: {exc}"[:200], "ms": round((_clock.monotonic() - began) * 1000, 1)})
                 continue
             try:
                 _status6, six = _doh_once(name, tls_host, path, address, host, "AAAA")
@@ -158,7 +158,7 @@ def _ask_doh(host: str, attempts: list[dict[str, Any]]) -> tuple[list[str] | Non
             found = [*found, *six]
             outcome = "answered" if found else "no_such_name" if status == 3 else "no_address"
             attempts.append({"method": f"doh:{name}", "via": address, "outcome": outcome, "dns_status": status,
-                             "addresses": len(found), "ms": round((time.monotonic() - began) * 1000, 1)})
+                             "addresses": len(found), "ms": round((_clock.monotonic() - began) * 1000, 1)})
             if found:
                 return found, name, False
             if status in (0, 3):
@@ -171,7 +171,7 @@ def resolve(host: str, port: int = 443) -> Lookup:
     """Addresses for a host name, with how they were found. Raises LookupFailed."""
     global _system_down_until
     host = host.rstrip(".").lower()
-    now = time.monotonic()
+    now = _clock.monotonic()
     with _lock:
         held = _cache.get(host)
         skip_system = now < _system_down_until
@@ -179,17 +179,17 @@ def resolve(host: str, port: int = 443) -> Lookup:
         if isinstance(held[1], LookupFailed):
             raise held[1]
         return held[1]
-    began = time.monotonic()
+    began = _clock.monotonic()
     attempts: list[dict[str, Any]] = []
     fallback = doh_allowed(host)
     result: Lookup | LookupFailed | None = None
     system_kind = None
     if not (skip_system and fallback):
         for attempt in range(SYSTEM_ATTEMPTS):
-            started = time.monotonic()
+            started = _clock.monotonic()
             addresses, system_kind, detail = _ask_system(host, port)
             attempts.append({"method": "system", "outcome": "answered" if addresses else system_kind, "detail": detail,
-                             "ms": round((time.monotonic() - started) * 1000, 1)})
+                             "ms": round((_clock.monotonic() - started) * 1000, 1)})
             if addresses:
                 result = Lookup(host, list(dict.fromkeys(addresses)), "system")
                 break
@@ -204,7 +204,7 @@ def resolve(host: str, port: int = 443) -> Lookup:
             result = Lookup(host, list(dict.fromkeys(found)), f"doh:{provider}")
             if system_kind in ("timeout", "resolver_error"):
                 with _lock:
-                    _system_down_until = time.monotonic() + SYSTEM_DOWN_S
+                    _system_down_until = _clock.monotonic() + SYSTEM_DOWN_S
         elif said_no:
             result = LookupFailed("not_found", host, f"{host} has no address (answered by the {provider} public resolver)", attempts)
         else:
@@ -212,12 +212,12 @@ def resolve(host: str, port: int = 443) -> Lookup:
                                   f"{_said(attempts)}, and neither public resolver could be reached", attempts)
     elif result is None:
         result = LookupFailed("unresolved", host, f"{host} could not be looked up: the system resolver {_said(attempts)}", attempts)
-    elapsed = round((time.monotonic() - began) * 1000, 1)
+    elapsed = round((_clock.monotonic() - began) * 1000, 1)
     at = datetime.now(timezone.utc).isoformat()
     if isinstance(result, Lookup):
         result.attempts, result.elapsed_ms, result.at = attempts, elapsed, at
     with _lock:
-        _cache[host] = (time.monotonic() + (CACHE_S if isinstance(result, Lookup) else FAILURE_CACHE_S), result)
+        _cache[host] = (_clock.monotonic() + (CACHE_S if isinstance(result, Lookup) else FAILURE_CACHE_S), result)
         LOG.append({"host": host, "at": at, "ms": elapsed,
                     "answered_by": result.method if isinstance(result, Lookup) else None,
                     "failure": None if isinstance(result, Lookup) else result.kind, "attempts": attempts})

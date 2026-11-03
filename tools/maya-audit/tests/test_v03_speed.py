@@ -183,7 +183,8 @@ def _site_with_sitemaps(files, slow_s=0.0, watch=None, status=None):
 
 
 def test_the_sitemap_check_asks_four_at_once_through_the_site_limit_and_int4_stays_compliant(no_lookups):
-    files = {f"/s{n}.xml": [f"/s{n}/p{i}" for i in range(15)] for n in range(3)}
+    # Eight addresses a file: all three files are read before there are enough addresses (2 + 20) (DECISIONS 299).
+    files = {f"/s{n}.xml": [f"/s{n}/p{i}" for i in range(8)] for n in range(3)}
     files["/s0.xml"].insert(0, "/")
     watch = {"now": 0, "most": 0}
     outcome = run_audit(KAFE + "/", CrawlConfig(**{**QUIET, "max_pages": 2, "sitemap_check_max": 20}),

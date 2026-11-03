@@ -241,7 +241,7 @@ def test_07_a_timeout_is_sent_once_never_retried_and_left_as_possibly_billed(hom
 
 
 def test_07b_a_paid_server_error_is_not_retried(home, monkeypatch):
-    monkeypatch.setattr(client_module.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(client_module._clock, "sleep", lambda seconds: None)  # the one clock (DECISIONS 299)
     api = Api(lambda request: httpx.Response(503, text="unavailable"))
     with pytest.raises(DataForSEOError):
         make_client(home, api).request(PAID, [{"target": "example.com"}])

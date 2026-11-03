@@ -8,6 +8,7 @@ from pathlib import Path
 import httpx
 import pytest
 
+from maya_audit import clock
 from maya_audit.audit import run_audit
 from maya_audit.config import CrawlConfig
 from maya_audit.firecrawl import Options, panel, reader
@@ -231,9 +232,11 @@ def measured(tmp_path_factory):
     wanted = {"static", "restaurant", "tr_en", "sitemap_only", "javascript", "clinic_challenged", "both_challenged", "reader_turned_away",
               "shop_50_challenged", "saas_50_challenged", "shop_50_open"}
     out = {}
-    for number, scenario in enumerate(s for s in bench.scenarios() if s.name in wanted):
-        folder = tmp_path_factory.mktemp(f"bench{number}")
-        out[scenario.name] = (scenario, bench.run(scenario, bench.BEFORE, folder / "b"), bench.run(scenario, bench.AFTER, folder / "a"))
+    # A fake clock (DECISIONS 299): the reader's pace and Maya's gaps are counted, not waited (589 s -> seconds).
+    with clock.using(clock.FakeClock()):
+        for number, scenario in enumerate(s for s in bench.scenarios() if s.name in wanted):
+            folder = tmp_path_factory.mktemp(f"bench{number}")
+            out[scenario.name] = (scenario, bench.run(scenario, bench.BEFORE, folder / "b"), bench.run(scenario, bench.AFTER, folder / "a"))
     return out
 
 

@@ -7,7 +7,6 @@ reach the network without passing all of them.
 
 from __future__ import annotations
 
-import time
 import math
 import uuid
 from dataclasses import dataclass
@@ -22,6 +21,7 @@ from . import pricing
 from .cache import Cache
 from .credentials import Credentials
 from .ledger import Ledger
+from .. import clock as _clock
 
 BASE_URL = "https://api.dataforseo.com"
 OK = 20000  # DataForSEO's own status code for success, at the top level and on each task
@@ -146,7 +146,7 @@ class DataForSEOClient:
     def _remaining_timeout(self) -> float:
         if self.should_stop is not None and self.should_stop():
             raise DataForSEOError("DataForSEO plan stopped on request; no further request sent")
-        remaining = TIMEOUT_S if self.deadline_mono is None else self.deadline_mono - time.monotonic()
+        remaining = TIMEOUT_S if self.deadline_mono is None else self.deadline_mono - _clock.monotonic()
         if remaining <= 0:
             raise DataForSEOError("DataForSEO plan deadline reached; no further request sent")
         return min(TIMEOUT_S, remaining)
@@ -251,13 +251,13 @@ class DataForSEOClient:
                 timeout = self._remaining_timeout()
                 self.requests_sent += 1
                 counted = True
-                end = time.monotonic() + timeout
+                end = _clock.monotonic() + timeout
                 method = "GET" if payload is None else "POST"
                 with self._http.stream(method, endpoint, headers=headers, timeout=timeout,
                                        **({} if payload is None else {"json": payload})) as incoming:
                     chunks, size = [], 0
                     for chunk in incoming.iter_bytes():
-                        if time.monotonic() >= end or (self.should_stop is not None and self.should_stop()):
+                        if _clock.monotonic() >= end or (self.should_stop is not None and self.should_stop()):
                             raise httpx.ReadTimeout("DataForSEO response interrupted")
                         size += len(chunk)
                         if size > 8 * 1024 * 1024:
@@ -275,7 +275,7 @@ class DataForSEOClient:
                 self.requests_sent -= int(counted)
                 if unsent_left > 0:
                     unsent_left -= 1
-                    time.sleep(RETRY_WAIT_S)
+                    _clock.sleep(RETRY_WAIT_S)
                     continue
                 if call_id is not None:
                     self.ledger.settle(call_id, "failed", 0.0, f"address lookup failed {RETRIES_WHEN_NOT_SENT + 1} times; no connection made")
@@ -297,7 +297,7 @@ class DataForSEOClient:
                 if unsent_left > 0:
                     self.requests_sent -= int(counted)
                     unsent_left -= 1
-                    time.sleep(RETRY_WAIT_S)
+                    _clock.sleep(RETRY_WAIT_S)
                     continue
                 if call_id is not None:
                     self.ledger.settle(call_id, "failed", 0.0, f"not sent ({type(exc).__name__}), {RETRIES_WHEN_NOT_SENT + 1} attempts")
@@ -309,7 +309,7 @@ class DataForSEOClient:
                 raise DataForSEOError(self._clean(f"DataForSEO {endpoint} could not be reached ({type(exc).__name__})")) from None
             if call_id is None and response.status_code >= 500 and attempt < RETRIES_ON_5XX:
                 attempt += 1
-                time.sleep(0.5 * attempt)
+                _clock.sleep(0.5 * attempt)
                 continue
             break
         try:

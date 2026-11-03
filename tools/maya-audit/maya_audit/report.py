@@ -1742,7 +1742,10 @@ def read_status_summary(status, counts):
     read_line = (f"We read {through} page(s) through Firecrawl" + (f" and {by['maya_only']} with Maya's own crawler" if by['maya_only'] else "") + "."
                  if through else f"Maya's own crawler read {readable} page(s)." if readable else "No page content was read.")
     direct = status['direct_access']
-    return " ".join([read_line, direct['note'] if direct['state'] != 'readable' or not through else '',
+    direct_note = direct['note']
+    if through:  # "We read N page(s) through Firecrawl." is said first: the direct note does not say it again (DECISIONS 299)
+        direct_note = direct_note.replace(f"; {through} page(s) read through Firecrawl.", ".")
+    return " ".join([read_line, direct_note if direct['state'] != 'readable' or not through else '',
                      status['vendor_crawler_evidence']['note'], status['content_coverage']['note']]).replace("  ", " ").strip()
 
 
@@ -2378,12 +2381,19 @@ def impact_effort_lines(groups: list[list[Any]]) -> list[str]:
     return lines + [""]
 
 
+def discovered_phrase(result) -> str:
+    """"N URLs discovered", and when a sitemap index was read in part (DECISIONS 299) that the figure is partial."""
+    from .sitemap import partial
+    n = len(result.discovered_urls)
+    return f"{n} URLs discovered" + (" (partial: a large sitemap index was read in part)" if partial(result.sitemap_notes) else "")
+
+
 def summary_lines(result: CrawlResult, gates: list[GateResult], checks: list[CheckResult], firecrawl: dict | None,
                   summary: dict[str, Any], groups: list[list[Any]]) -> list[str]:
     """The executive summary (H37): the result, the scope, and the top three problems, in five lines."""
     word, sentence = run_outcome(result, gates, firecrawl, checks)[1:]
     not_run = checks_not_run(checks) or 0
-    scope = (f"{_pages_label(summary['pages_checked'])} read of {len(result.discovered_urls)} URLs discovered; "
+    scope = (f"{_pages_label(summary['pages_checked'])} read of {discovered_phrase(result)}; "
              + (f"{not_run} of {len(checks)} checks could not run (see Coverage and checks)." if not_run
                 else f"all {len(checks)} checks ran."))
     lines = ["## Summary", "", f"- **Result:** {word} — {sentence}", f"- **Scope:** {scope}"]
@@ -2422,7 +2432,7 @@ def _markdown_head(result: CrawlResult, gates: list[GateResult], checks: list[Ch
     title = single_page.TITLE.format(url=single_page.page_url(result)) if single_page.is_single(result) else f"Maya Audit: {result.origin}"
     # The result sentence is said once, as the summary's first line.
     lines = [f"# {title}", "", f"**Run date:** {result.started_at}",
-             f"**Pages checked:** {pages_phrase(result)}, of {len(result.discovered_urls)} URLs discovered",
+             f"**Pages checked:** {pages_phrase(result)}, of {discovered_phrase(result)}",
              f"**Crawl status:** {result.stop_reason.value} — {result.stop_detail}",
              duration_line(result, None), ""]
     readable = readable_pages(result, firecrawl)

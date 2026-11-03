@@ -851,7 +851,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             "outcome": None if not audit["outcome"] else {"code": audit["outcome"], "label": summary.outcome_label(audit["outcome"], audit["outcome_reason"]),
                                                           "reason": audit["outcome_reason"],
                                                           # the same sentence in the reader's language (the engine's stays in `reason`)
-                                                          "reason_shown": wording.outcome(audit["outcome_reason"])[0],
+                                                          "reason_shown": summary.outcome_shown(audit["outcome"], audit["outcome_reason"])[0],
                                                           "crawl_stop": audit["crawl_stop"]},
             "error": None if state != "failed" else {"code": audit["error_code"], "message": audit["outcome_reason"]},
             "timeline": timeline(audit),

@@ -21,7 +21,6 @@ report keeps (`crawl.structure.external`).
 
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import urlsplit
@@ -30,6 +29,7 @@ from .config import CrawlConfig, external_link_cap
 from .fetcher import Fetcher
 from .models import CrawlResult
 from .urls import normalize_url, origin_of
+from . import clock as _clock
 
 HEAD_PURPOSE = "external_link_head"
 GET_PURPOSE = "external_link_status"
@@ -98,7 +98,7 @@ def budget(result: CrawlResult, cfg: CrawlConfig) -> ExternalBudget:
 
 def _out_of_time(fetcher: Fetcher) -> bool:
     fetcher.poll_stop()
-    return fetcher.deadline_mono is not None and time.monotonic() >= fetcher.deadline_mono
+    return fetcher.deadline_mono is not None and _clock.monotonic() >= fetcher.deadline_mono
 
 
 def room(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig, url: str, *, same_as: bool = False) -> str | None:

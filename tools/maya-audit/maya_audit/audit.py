@@ -31,6 +31,7 @@ from .progress import NO_HOOKS, Hooks
 from . import other_sites, resolver, timeplan
 from .robots import LOCAL_NETWORK_MESSAGE
 from .urls import is_loopback_host, normalize_url
+from . import clock as _clock
 
 
 @dataclass
@@ -134,7 +135,7 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
         preflight = network_preflight(start_url)
 
     shared: dict[str, Any] = {"deadline_mono": None, "pace_s": config.request_delay_s, "site_limiter": None}
-    started_mono, started_wall = time.monotonic(), time.time()
+    started_mono, started_wall = _clock.monotonic(), time.time()
 
     # Time is divided before anything runs: Maya's own crawl and data collection get the limit less the reader's
     # reserve, so a long crawl cannot leave a page reader with nothing. A stop ends everything at once.
@@ -155,14 +156,21 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
             limiter.seed(last.started_mono, last.ended_mono)
         fetcher.site_limiter = limiter
         shared["site_limiter"] = limiter
-        if reader is not None and not fetcher.stopped and reader.start(crawl, config, limiter, whole):
+        if reader is not None and getattr(reader, "started", False):
+            # Started at Maya's first 429 (DECISIONS 299): it already reads; it keeps Maya's limit for the report's figures.
+            clock = getattr(getattr(reader, "client", None), "clock", None)
+            if clock is not None:
+                clock.site_limiter = limiter
+            if fetcher.deadline_mono is not None:
+                fetcher.deadline_mono = whole
+        elif reader is not None and not fetcher.stopped and reader.start(crawl, config, limiter, whole):
             # The reader reads beside Maya's own steps, so they no longer leave it the reserve: both end by the
             # audit's one time limit.
             if fetcher.deadline_mono is not None:
                 fetcher.deadline_mono = whole
 
         def out_of_time():
-            return fetcher.deadline_mono is not None and time.monotonic() >= fetcher.deadline_mono
+            return fetcher.deadline_mono is not None and _clock.monotonic() >= fetcher.deadline_mono
 
         def collect(name, target, function, when_cut=None):
             """Run one data collector. `when_cut` builds a safe stand-in when the time limit stops it before it starts.
@@ -259,7 +267,17 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
             fetcher.finish_due()
         fetcher.end_step()
 
-    result = Crawler(crawl_config, transport, hooks=hooks).run(start_url, post_crawl=post_crawl)
+    crawler = Crawler(crawl_config, transport, hooks=hooks)
+    if reader is not None and hasattr(reader, "start_after_rate_limit"):
+        def at_first_429(fetcher, known):
+            # The page reader starts now, beside the Retry-After wait and the rest of Maya's crawl (DECISIONS 299).
+            # Both end by the audit's one time limit: the reader's reserve is not kept apart any more.
+            whole = None if fetcher.deadline_mono is None else fetcher.deadline_mono + reserve
+            if fetcher.stopped or not reader.start_after_rate_limit(known, config, whole, crawler.rate_limited_at):
+                return False
+            return True
+        crawler.on_rate_limited = at_first_429
+    result = crawler.run(start_url, post_crawl=post_crawl)
     # What the time limit cut, named once (DECISIONS 219).
     result.skipped_for_time = timeplan.skipped_for_time(result)
     hooks.emit("checks", pages_fetched=len(result.pages))
