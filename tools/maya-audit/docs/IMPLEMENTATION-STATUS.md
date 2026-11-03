@@ -698,7 +698,16 @@ findings; no finding, severity or confidence changes; release gate PASS before a
 | `tests/test_page_groups.py` + the 7 other `page_kind` test files | `197 passed` |
 | `python3.11 -m compileall` (changed files) | OK |
 | CLI `crawl` on a loopback fake site (`healthy`) | exit 0; schema 1.23, `page_grouping.method_version` 2, `grouping` on every page, release gate PASS |
-| full suite re-run after the matrix regeneration, ruff (not installed), Linux/Windows, live runs | NOT RUN |
+| Linux/Windows, live runs | NOT RUN |
+
+**Before the push (2026-11-03, on `ecad113`):**
+
+| Check | Result |
+|---|---|
+| `git status` | clean; `docs/FIXTURE-MATRIX.md` was in `ecad113` |
+| full suite again, `pytest -q -rfEs -p no:cacheprovider` | `2715 passed, 4 skipped, 1 warning in 1318.67s (0:21:58)` |
+| ruff: in CI (`ci.yml`, `full.yml`) as `ruff check --select E9,F821,F841 maya_audit maya_audit_web maya_audit_web_lite.py`; installed in `.venv` (0.17.3, dev only) | CI rule set: `All checks passed!` on the CI paths and on the changed files. Ruff's wider default rules: 9 style notes in the new files (import order, an unused `noqa`, `sorted()[0]`), none a defect; not changed |
+| Canonicals scored but not read change no page count (nihan; saved report filled with grouping by `f338bb5` vs by `ecad113` + the STR-3 relabel; isolated copies of the web database and the audit folder; each rendered with its own code; no network) | Identical before/after: `crawl.pages` 500; `page_counts` {pages_checked 500, redirects 0}; coverage `readable_unique_urls` 500 and the Markdown line "**Pages read:** 500 (via Firecrawl)"; summary "500 pages checked. 27 parts could not be checked.", counts (28 problems, 20 notes, S3 5, S4 23, Info 20, findings 48, discovered 23001, not fetched 22499); 48 findings, 3560 affected addresses; gate PASS, no violations; web summary, practical, action plan, findings, Markdown, print and full print: identical (timestamps aside); web PDF 13 pages, text identical; Pro client report: `data.json` identical but for source paths and the report digest, HTML identical, PDF 9 pages text identical, address CSV (434 lines) byte-identical. Only `page_grouping.canonical_pages` differs: 0 -> 283 |
 
 ## Next step
 
