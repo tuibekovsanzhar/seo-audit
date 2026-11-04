@@ -49,3 +49,11 @@ confirmed / changed / not reproduced"; a report without the field, or "not_retes
 read from every title form the engine writes, including the judged "N sitemap URL observation(s) require
 differentiated review (M checked)", which an older pattern missed. What SKILL.md says about the engine ("Motorun
 bilinen tuzakları") is tested against the engine in `tests/test_w12_skill_claims.py` of the Maya Audit repository.
+
+## One template for the web app and this skill (4 November 2026, DECISIONS 307)
+
+The scripts, labels, owner/effort table, logo and font moved into Maya Audit itself, `maya_audit_web/team_report/`;
+`scripts/build_data.py`, `validate_data.py` and `render.py` here are thin entries with the same arguments. A text
+library (`texts/tr.json`, `texts/en.json`) fills every field the model used to write, so the web app's
+"Ekip raporu (PDF)" button prints the same report without a model. Claude may still polish wording; `_locked` refuses
+any change to severities, counts, order or addresses. `tools/team_report_parity.py` compares the two paths page by page.

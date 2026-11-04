@@ -156,7 +156,7 @@ def test_a_fix_that_renames_addresses_is_at_least_medium_effort_and_never_a_quic
 def test_the_confirm_list_speaks_to_the_client_and_keeps_the_technical_reason_in_the_appendix():
     import json as _json
     from maya_audit_web import strings
-    labels = _json.loads((SKILL / "references" / "etiketler.json").read_text(encoding="utf-8"))
+    labels = _json.loads((SKILL.parents[2] / "maya_audit_web" / "team_report" / "refs" / "etiketler.json").read_text(encoding="utf-8"))
     for lang in ("tr", "en"):
         shown = list(labels[lang]["confirm_reasons"].values()) + [strings.t(f"c6.reason.{k}", lang) for k in cs.CONFIRM_REASONS]
         for text in shown:

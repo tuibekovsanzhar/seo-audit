@@ -36,6 +36,7 @@ include = ["maya_audit*"]
 maya_audit = ["rule_ids.json", "rule_actions.json"]
 "maya_audit.client_reporting" = ["references/*", "assets/*"]
 maya_audit_web = ["static/*", "locales/*.json", "locales/catalog/*.json", "locales/findings/*.json"]
+"maya_audit_web.team_report" = ["refs/*.json", "assets/*", "texts/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

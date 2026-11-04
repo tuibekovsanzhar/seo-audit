@@ -58,7 +58,9 @@ STALE_AFTER_S = 20
 DOWNLOAD_NAMES = {"json": ("json", "application/json"), "markdown": ("md", "text/markdown; charset=utf-8"),
                   "pdf": ("pdf", "application/pdf"), "evidence": ("zip", "application/zip"),
                   # The client report's appendix: every finding and affected address (DECISIONS 300).
-                  "xlsx": ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+                  "xlsx": ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+                  # The team report: the maya-audit-pro design, built here from the saved audit (DECISIONS 307).
+                  "team": ("pdf", "application/pdf")}
 _PROJECT_ID = re.compile(r"[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?")
 
 
@@ -937,6 +939,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                                else t(f"result.download.{fmt}")}
                               for fmt in ("pdf", "xlsx", "markdown", "json", "evidence")
                               for draft in [fmt != "evidence" and gate_decision(report) == release_gate.BLOCKED]],
+                "team_report": {"pdf": f"{base}/downloads/team", "xlsx": f"{base}/downloads/xlsx", "default_lang": "tr"},
                 "print_url": f"{base}/print", "review_url": f"{base}/review", "has_previous": not audit.get("analysis") and store.previous_audit(audit) is not None}
         # The practical report in brief: the executive summary, the scorecard and the timeline's counts. The whole of it,
         # with every issue and the page table, is GET /audits/{id}/practical: a results card stays small.
@@ -1343,15 +1346,20 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                 "entries": manual_review.load(review_path(audit))["entries"]}
 
     def appendix_xlsx(audit: dict[str, Any]) -> bytes:
-        from maya_audit import client_appendix
-        from . import wording
-        report = load_report(audit)
-        lang = current_language()
-        return client_appendix.build(client_selection_of(audit, report), lang, affected(audit["id"]),
-                                     title=lambda check_id, text: wording.title(check_id, text, lang)[0],
-                                     fix=lambda text: wording.fix(text, lang)[0],
-                                     label=lambda text: wording.label(text, lang)[0],
-                                     line=lambda text: wording.line(text, lang)[0])
+        """The XLSX appendix: the same function the maya-audit-pro skill writes its `-ek.xlsx` with (DECISIONS 307)."""
+        from maya_audit import manual_review
+        from .team_report import service
+        return service.appendix(load_report(audit), affected(audit["id"]) or None,
+                                manual_review.confirmations(manual_review.load(review_path(audit))), current_language())
+
+    def team_report(audit: dict[str, Any], lang: str):
+        """The team report of this audit (DECISIONS 307), rebuilt on every request so a manual check counts at once."""
+        from .team_report import service
+        load_report(audit)  # a missing or unreadable report says so as every download does
+        folder = artifact_folder(audit["id"])
+        return service.build(report_path(audit["id"]), lang, review_path=review_path(audit),
+                             affected_path=folder / AFFECTED_JSON if (folder / AFFECTED_JSON).is_file() else None,
+                             audit_id=audit["id"])
 
     def report_language(audit: dict[str, Any], lang: str | None) -> str:
         """The language a printed report or PDF is written in: an explicit `?lang=` first, then the language the audit
@@ -1422,6 +1430,18 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         extension, media_type = DOWNLOAD_NAMES[format]
         name = download_name(audit, extension)
         load_report(audit)
+        if format == "team":
+            # Turkish unless the reader asks for English; the validator and the release gate decide, and a blocked
+            # report says why in plain words instead of downloading (DECISIONS 307).
+            chosen = lang if lang in ("tr", "en") else "tr"
+            built = team_report(audit, chosen)
+            if built.blocked:
+                from .team_report import texts as team_texts
+                raise ApiError(422, "team_report_blocked", team_texts.library(chosen)["blocked"]["title"],
+                               reasons=built.reasons, details=built.details[:20])
+            name = name.replace(".pdf", "-ekip-raporu.pdf" if chosen == "tr" else "-team-report.pdf")
+            return Response(built.pdf, media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{name}"',
+                                                                       "X-Maya-Release-Gate": str(built.decision), "X-Maya-Pages": str(built.pages)})
         gate: dict[str, str] = {}
         blocked = False
         if format != "evidence":  # the raw evidence is not a report; every report form passes the release gate

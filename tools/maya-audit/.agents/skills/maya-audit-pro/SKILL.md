@@ -33,21 +33,26 @@ Maya Audit'in report.json dosyasından, `Maya-Audit-Professional.pdf` tasarımı
 - **Müşteri dili (DECISIONS 306):** Bulgu tablosundaki her satır neyin yanlış olduğunu söyler (bulgu), ne yapılacağını değil; eylem kartlardadır. "Teyit edin" satırlarında sağlayıcı adı (Firecrawl) ve "kontrol henüz gerçek sitelerde doğrulanmadı" yazılmaz: "Doğrulama bekliyor: kontrol yeni", "Doğrulama bekliyor: farklı okuma yolunda görüldü" gibi sade ifadeler kullanılır; teknik neden yalnız XLSX ekindedir. Adres değiştiren ve yönlendirme gerektiren düzeltme (ör. ayrışık "İ" taşıyan adresler) en az "Orta" eforludur ve "Hızlı kazanımlar"a girmez. Shopify "handle" müşteriye "ürün/sayfa adresindeki kısa ad (handle)" diye açıklanır. "Kayıtlı kopyadan okunan sayfa" 0 ise basılmaz. Türkçe ekte motorun İngilizce cümlesi kalmaz (kapsam açıklamaları ve sayfa türleri dahil).
 - **Ek (XLSX):** `render.py` HTML'in yanına `<ad>-ek.xlsx` (`<ad>-appendix.xlsx`) yazar: her bulgu (yeri, kartı, puanı, teyit nedeni), etkilenen her adres, kilit sayfalar, kapsam ve yöntem. Hiçbir satırı dolu olmayan sütun yazılmaz. **Bu dosya PDF'le birlikte müşteriye gönderilir.**
 
+**Tek şablon, tek metin kitaplığı (DECISIONS 307).** Şablon, metin kitaplığı ve denetimler Maya Audit'in içindedir: `maya_audit_web/team_report/` (`build_data.py`, `validate_data.py`, `render.py`, `texts.py`, `texts/tr.json`, `texts/en.json`). Bu skill'in `scripts/` dosyaları yalnız o modülleri çağırır. Web uygulamasının "Ekip raporu (PDF)" ve "Ek (XLSX)" düğmeleri aynı modüllerle, model olmadan aynı raporu basar (`tools/team_report_parity.py` iki yolu sayfa sayfa karşılaştırır).
+
 İş bölümü:
 - **Sayılar:** Hepsi report.json'dan deterministik olarak gelir (`build_data.py`). Model sayı üretmez, değiştirmez.
-- **Metin:** Kartların çoğu koddan dolar (DECISIONS 270): iş başlığı ve adımlar Maya Audit'in kural kataloğundan (`maya_audit/rule_actions.json`, kural kimliği `rule_id`), doğrulama cümlesi motorun kendi "beklenen" cümlesinden, Not kartlarının başlık ve doğrulaması sabit metinden. Model yalnız `⟪YAZ: …⟫` kalan alanları yazar: değerlendirme, öncelik başlık ve cümleleri, sonraki adım, bu ayın özeti, Not kartlarının siteye özgü adımları ve katalogda olmayan kuralların kartları (tipik olarak ~15 alan). Önceden dolu bir alanı yalnız siteye özgü bir bilgi eklemek için değiştir.
+- **Metin:** Bütün alanlar koddan dolar; `⟪YAZ⟫` kalmaz. İş başlığı ve adımlar önce Maya Audit'in kural kataloğundan (`maya_audit/rule_actions.json`), doğrulama motorun "beklenen" cümlesinden; bunlar yoksa ya da kutuya sığmıyorsa **metin kitaplığından** (`texts/<dil>.json`: her kural ve birleştirme grubu için başlık, bulgu, açıklama, neden önemli, adımlar ve platform adımları, doğrulama, özet). 1. sayfanın hükmü, değerlendirmesi, öncelikleri, sonraki adımı, kanıt sınırı ve bu ayın özeti ilk kartlardan şablonla kurulur.
+- **Model ne yapabilir:** İsterse metni siteye göre **cilalar** (ör. "dil sürümleri" yerine "İngilizce sayfalar"). Önem, sayı, kart sırası, adres, KPI ya da puan değiştirilemez: `build_data.py` bunların özetini `_locked` olarak yazar ve `validate_data.py` değişiklik görürse durur ("Önem, sayı ya da sıra değişmiş"). Cilalanmamış rapor da teslim edilebilir; web uygulamasının bastığı budur.
 - **Kanıt satırı:** Kartta durum satırının altındaki "Kanıt" satırı motorun yapılandırılmış kanıtından gelir (`evidence.facts`, DECISIONS 271): adres · öğe · değer (sınır). Ona dokunma; adımlarda ondan alıntı yapabilirsin.
 - **Denetim:** `validate_data.py` işaret kalmış mı, rapora dayanmayan bir sayı yazılmış mı, dil karışmış mı, alan kutuya sığıyor mu ve **metindeki her site adresi o kartın adreslerinde ya da bulgunun kanıtında var mı** diye bakar (başka bulgudan ya da canlı kontrolden adres taşınamaz; canlıda bulduğun bir adresi karta değil kullanıcıya söyle). `render.py` basarken taşmayı ve sayfa sayısını ölçer.
 
 ## Dosyalar
 
-- `scripts/build_data.py`: report.json → data.json taslağı (`--lang tr|en` zorunlu, varsayılanı yok). Raporu Maya'nın ortak son sonucu üzerinden okur (`maya_audit.final.from_report`, DECISIONS 283); motor bulunamazsa taslak üretmez. `validate_data.py`, data.json'un raporun şimdiki son sonucundan üretildiğini (`_digest`) de denetler.
-- `scripts/validate_data.py`: data.json denetimi ve Maya Audit'in yayın kapısı (DECISIONS 278). Hata varsa 1 ile çıkar; kapı çalışamazsa da.
-- `scripts/render.py`: data.json → HTML + PDF (+ `--png` önizleme). Taşma varsa alanın adını yazar ve PDF'i basmaz.
-- `references/etiketler.json`: Sabit etiketler (TR/EN). Yeni etiket eklenecekse iki dile birlikte eklenir.
+- `scripts/build_data.py`, `scripts/validate_data.py`, `scripts/render.py`: `maya_audit_web/team_report/` modüllerini çağıran ince girişler (aynı argümanlar). Altta anlatılanlar o modüllerin işidir.
+- `build_data.py`: report.json → data.json taslağı (`--lang tr|en` zorunlu, varsayılanı yok). Raporu Maya'nın ortak son sonucu üzerinden okur (`maya_audit.final.from_report`, DECISIONS 283); motor bulunamazsa taslak üretmez. `validate_data.py`, data.json'un raporun şimdiki son sonucundan üretildiğini (`_digest`) de denetler.
+- `validate_data.py`: data.json denetimi ve Maya Audit'in yayın kapısı (DECISIONS 278). Hata varsa 1 ile çıkar; kapı çalışamazsa da.
+- `render.py`: data.json → HTML + PDF (+ `--png` önizleme). Taşma varsa alanın adını yazar ve PDF'i basmaz.
+- `maya_audit_web/team_report/refs/etiketler.json`: Sabit etiketler (TR/EN). Yeni etiket eklenecekse iki dile birlikte eklenir.
+- `maya_audit_web/team_report/texts/tr.json`, `en.json`: metin kitaplığı (DECISIONS 307). Bir kural eklenince iki dile birlikte yazılır; `tests/test_team_report.py` eksik ya da boş alanı reddeder.
 - `references/veri_sozlesmesi.md`: data.json alanları; hangisini script, hangisini model yazar. **Alanları doldurmadan önce oku.**
-- `references/sahip_efor.json`: Kontrol kodu → sorumlu ve efor. Maya Audit'in `catalog.py` dosyasından statik olarak alındı. Bunlar tahmindir, kanıt değildir.
-- `assets/maya_logo.png`: Logo. Font (Inter) `scripts/inter_b64.py` içinde gömülüdür.
+- `maya_audit_web/team_report/refs/sahip_efor.json`: Kontrol kodu → sorumlu ve efor. Maya Audit'in `catalog.py` dosyasından statik olarak alındı. Bunlar tahmindir, kanıt değildir.
+- `maya_audit_web/team_report/assets/maya_logo.png`: Logo. Font (Inter) `maya_audit_web/team_report/inter_b64.py` içinde gömülüdür.
 - `examples/`: Uydurma markalı örnek report.json ve deneme notları. **Müşteri verisi bu klasöre konmaz.**
 
 Script'leri skill klasöründen çalıştır. Gerekenler: Python 3.10+, `playwright` (Chromium kurulu) ve PNG önizleme ile PDF denetimi için `pymupdf`.
@@ -66,11 +71,11 @@ python scripts/build_data.py <report.json> --lang tr -o data.json [--rev r3] [--
 - **Şema kontrolü:** `schema_version` 1.x değilse script durur. Eski rapor Maya Audit'in güncel sürümüyle yeniden üretilmelidir.
 - **Arama ve Lighthouse verisi:** report.json'da DataForSEO paneli yoksa aynı klasördeki `dataforseo.json` okunur (Maya web uygulaması paneli oraya da yazar). İkisinde de yoksa bu kutular "Ölçülmedi" der; kullanıcıya ücretli panelin bu denetimde koşmadığını ya da beklemede olduğunu söyle. Arama verisi, laboratuvar ve saha verisinin hiçbiri yoksa "Arama ve performans" sayfası basılmaz (özet 3 sayfa olur; DECISIONS 283); 1. sayfadaki laboratuvar kutusu yine "Ölçülmedi" der.
 - **`--reanalysis`:** Yalnız rapor kayıtlı kanıtın çevrimdışı yeniden analiziyse (ör. "analysis-…-r3") verilir ve kapsam kutusuna "Yeni tarama yapılmadı" yazar. Normal denetimde verme: Firecrawl önbelleği olağan denetimde de kopya kullanabilir; rapor bunu sayısıyla ayrıca yazar.
-- **`--maya-src`:** İçinde `maya_audit_web/` olan klasördür (ya da paket kuruludur). Verilirse bulgu başlıkları ve düzeltme cümleleri motorun kendi Türkçe çevirisiyle gelir ve modele daha az alan kalır. Verilmezse bu alanlar `⟪YAZ⟫` olarak modele bırakılır. **Dikkat:** Bu bayrak o klasördeki Maya Audit Python modüllerini içe aktarır, yani o kodu çalıştırır. Yalnız güvendiğin bir kuruluma işaret et.
+- **`--maya-src`:** İçinde `maya_audit_web/` olan klasördür (ya da paket kuruludur). Verilmezse motor, bu skill'i taşıyan depoda (ya da kurulu pakette) aranır; motorsuz taslak üretilmez. **Dikkat:** Bu bayrak o klasördeki Maya Audit Python modüllerini içe aktarır, yani o kodu çalıştırır. Yalnız güvendiğin bir kuruluma işaret et.
 - **Denetim kimliği:** report.json `artifacts/` klasöründeyse kimlik yoldan alınır. Değilse `--audit-id` ile ver; verilmezse alt bilgide "—" görünür.
 
-### 2. `⟪YAZ⟫` alanlarını doldur
-data.json'u aç. `_slots` listesinde her alanın yolu (`path`), ipucu (`hint`), kaynak cümlesi (`src`, motorun İngilizce metni) ve en fazla uzunluğu (`max`) var. Alan ayrıntıları `references/veri_sozlesmesi.md` dosyasında.
+### 2. Metni gözden geçir (isteğe bağlı cila)
+data.json'daki bütün metin alanları doludur (DECISIONS 307). `_slots` listesinde her alanın yolu (`path`), ipucu (`hint`), motorun İngilizce kaynak cümlesi (`src`) ve en fazla uzunluğu (`max`) var. Yalnız bu alanları, yalnız daha açık ya da siteye daha uygun olacaksa değiştir; aşağıdaki kurallar cila için de geçerlidir. Başka bir alana dokunursan `validate_data.py` durur. Alan ayrıntıları `references/veri_sozlesmesi.md` dosyasında. Eski bir motor `⟪YAZ: …⟫` bırakırsa onu doldur.
 
 **Sayılar:**
 - Metne yalnız rapordaki sayıları yaz. İzinli sayılar `_facts` listesindedir; ondan başka sayı yazarsan denetleyici reddeder.

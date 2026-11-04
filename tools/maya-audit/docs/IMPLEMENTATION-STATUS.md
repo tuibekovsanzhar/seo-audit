@@ -1030,6 +1030,37 @@ kopyadan" 0. XLSX: no engine English (the only English is the owner's own manual
 | `ruff check --isolated --select E9,F821,F841`, `python3.11 -m compileall` | `All checks passed!`; compile OK |
 | CI on push | see the commit's GitHub Actions run |
 
+## One place for reports: the team report from the web app (DECISIONS 307, 2026-11-04)
+
+What changed: the pro report's template (build, validate, render), labels, logo and font moved from the skill into
+`maya_audit_web/team_report/`; the skill's scripts are thin entries to the same modules. A text library
+(`texts/tr.json`, `texts/en.json`: all 299 rule ids, 8 merge groups, 27 Note-card topics, page-1 templates, plain
+reasons) fills the 19 fields the model wrote and the 2 it shortened, so the web app prints the report with no model:
+results page "Ekip raporu" (TR/EN switch, TR first; "Ekip raporu (PDF)" = `GET /downloads/team`, "Ek (XLSX)" =
+`/downloads/xlsx`, now the skill's own appendix function). The validator and release gate run on every download; a
+blocked report answers 422 with the reasons in plain words. "Teyit edin" Confirm/Reject counts on the next download. The
+skill may still polish wording; `_locked` refuses a changed severity, count, order or address.
+
+**nihan through the web path** (`tools/team_report_parity.py` on the v4 source with the owner's STR-12 confirmation,
+Turkish, isolated web folder and analysis entry in `reviews/2026-11-04/nihan-web/`, git-ignored; `~/.maya-audit/web`
+only read for the manifest format, not changed): web `GET /downloads/team` HTTP 200, gate PASS, 7 pages
+(`web-nihan.pdf`, `web-nihan-ek.xlsx`); skill path 7 pages; every page the same pixels (PNG byte-identical, pages 1-7);
+XLSX the same in every sheet and cell. Against the approved v4: the same 12 cards, order and severities; 17 of 69 text
+fields worded differently (`parity.md` lists them: the library's generic wording where v4 named the site, e.g. "Dil
+sürümlerindeki çeviri" for "İngilizce sayfaların çevirisi"). Pages 1 and 7 checked as images.
+
+**Verification** (working tree on `844b14f`, macOS, Python 3.13.1; no .env, no providers, no live requests):
+
+| Command | Result |
+|---|---|
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2671 passed, 4 skipped, 132 deselected, 1 warning in 430.01s (0:07:10)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `2803 passed, 4 skipped, 1 warning in 790.52s (0:13:10)` (skips: 2 wheel builds without setuptools, live-run examples not in git, real-site corpus outside the repo) |
+| pro skill tests (`unittest discover -s .agents/skills/maya-audit-pro/tests`) | `Ran 56 tests` `OK` |
+| `tests/test_team_report.py` | `17 passed` (one slow: web vs skill PNGs, a manual check rebuilding the report) |
+| `ruff check --isolated --select E9,F821,F841`, `python3.11 -m compileall` | `All checks passed!`; compile OK |
+| Web app restarted on port 8770, browser click-through | NOT RUN (the owner's process; restart needed to load the new code) |
+| Linux/Windows, live runs, wheel build | NOT RUN |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

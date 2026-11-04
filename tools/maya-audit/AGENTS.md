@@ -15,7 +15,8 @@
   or a fixed issue. Keep check logic in the engine and the CLI working; report-shape changes need a schema bump.
 - For application changes follow `maya-spec-writer`, then `maya-implementer`, then `maya-verifier`.
   Use `maya-report-checker` for audit findings/report accuracy and `maya-audit-pro` for client-facing reports
-  (`maya-audit-rapor` is deprecated and goes in release w15, DECISIONS 302).
+  (`maya-audit-rapor` is deprecated and goes in release w15, DECISIONS 302). The pro report's template and text
+  library live in `maya_audit_web/team_report/`; the web app's "Ekip raporu (PDF)" prints the same report (DECISIONS 307).
   If a required skill is unavailable, report the missing source rather than inventing its workflow.
 - Use `maya-judgment-validator` for substantive audit-judgment changes and disputed evidence; pair it with
   `maya-verifier` for implementation/tests and `maya-report-checker` for consistency across outputs.

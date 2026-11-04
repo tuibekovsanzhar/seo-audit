@@ -1,6 +1,8 @@
 # data.json sözleşmesi (contract 1)
 
-`build_data.py` üretir, model yalnız `⟪YAZ⟫` alanlarını doldurur, `render.py` basar. **S** = script yazar (dokunma), **M** = model yazar (`_slots` listesinde), **S→M** = script motor metniyle doldurur, model gerekirse kısaltır.
+`build_data.py` üretir, `render.py` basar (ikisi de `maya_audit_web/team_report/`, DECISIONS 307). **S** = script yazar (dokunma), **M** ve **S→M** = `_slots` listesindeki metin alanları: script motor, katalog ya da **metin kitaplığı** (`texts/tr.json`, `texts/en.json`) metniyle doldurur; model isterse cilalar. Hiçbir alan `⟪YAZ⟫` kalmaz. "M" diye işaretli alanların kitaplıktaki kaynağı: `assessment.*` ve `next_action.*` ve `followup.text` → `page1` şablonları (ilk kartların `summary` ve `explanation` alanlarıyla); `priorities[].title/text` → kartın `summary` / `explanation`; `findings[].title`, `confirm[].title` → `finding`; `todos[].title/steps/verify` → `title` / `steps` (`steps_by_platform`) / `verify`; Not kartlarının adımları → `notes`.
+
+**Kilit:** `_locked`, `_slots` dışındaki her görünür alanın özetidir (önem, sayı, sıra, adres, puan). `validate_data.py` değişiklik görürse durur.
 
 ## Kök
 | Alan | Kim | Açıklama |

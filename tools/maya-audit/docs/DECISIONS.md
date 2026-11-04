@@ -3314,3 +3314,52 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      (5) *"Kayıtlı kopyadan okunan sayfa"* is not printed when it is 0.
      nihan pro v4: `reviews/2026-11-03/nihan-v4/` (git-ignored). Schema: no bump. Tests: `tests/test_v03_report_fixes.py`
      7 -> 11.
+307. **One place for reports: the web app builds the team report (the maya-audit-pro design) and its XLSX appendix by
+     itself, from one shared template and one text library (Owner, 2026-11-04: items 1-5; the library's wording, the
+     page-1 templates, the lock and the plain reasons are agent defaults, seeded from the approved nihan v4 report).**
+     Global for every audit; nihan was the test case.
+     (1) *What the model wrote before* (investigation, nihan v4 rebuilt from its own source): `build_data.py` drafted 69
+     text slots; the model wrote 19 (`assessment.headline/text`, `priorities[0-2].title/text`, `next_action.lead/text/
+     caveat`, `followup.text`, the steps of the content-language and page-load Note cards, 5 `confirm[].title`) and
+     shortened 2 finding titles longer than their box; the other 48 came from the catalogue and the engine's wording.
+     Numbers, severities, scores, order and placement were deterministic already (`client_selection`). Of 299 rule ids,
+     90 had catalogue text; none had a verification or summary phrase of its own.
+     (2) *One template.* The skill's scripts, labels, owner/effort table, logo and font moved (git mv) into
+     `maya_audit_web/team_report/` (`build_data.py`, `validate_data.py`, `render.py`, `refs/`, `assets/`, `inter_b64.py`);
+     the skill's `scripts/*.py` are thin entries that find the engine and run those modules with the same arguments
+     (`import build_data` gets the module itself, so the skill's tests are unchanged). New callable steps:
+     `build_data.build_from_files`, `validate_data.check` (structured errors), `render.produce`, `render.appendix_bytes`
+     (the web app's "Ek (XLSX)" and the skill's `-ek.xlsx` are the same function), and `service.build`, the whole path
+     for the web app. A report that is itself an offline reanalysis (`generation.analysis`) says "no new crawl" without
+     `--reanalysis`.
+     (3) *Text library* (`maya_audit_web/team_report/texts/tr.json`, `en.json`, read by `texts.py`): for every rule id
+     (299) a title, finding, explanation, why it matters, 2-4 steps (`steps_by_platform` where the fix differs, e.g.
+     Shopify), verify line and summary; for every merge group the same fields except title and finding (those stay in
+     `MERGE_GROUPS`); a step and summary for every Note-card topic (with a platform line, e.g. Shopify's managed CDN
+     cache); page-1 templates (verdict by severity band of the problem cards, assessment, priority text with the manual
+     check or estimate, next step, caveat, month summary, confirm title); generic last-resort words; plain reasons for a
+     blocked report. No digits in library text (numbers come from report.json, the validator refuses others). The
+     catalogue (`rule_actions.json`) still wins for title, steps and platform steps; a catalogue step with a condition
+     (`step_when`) is never printed by the library, so the release gate keeps checking it (RG-11). Wording written by
+     four agents from each rule's engine title, "why", catalogue entry and the v4 card text, then checked by script.
+     (4) *Filling:* `Builder.slot` takes the engine's or catalogue's words when they fit the box, else the library's
+     (`fallback`); `finish` gives any slot still marked the generic words: no report has an empty text field.
+     (5) *Lock:* `build_from_files` writes `_locked`, a digest of every visible field outside `_slots` (severities,
+     counts, scores, card order, addresses, KPIs). The skill may let Claude polish the text; `validate_data` refuses any
+     other change ("Önem, sayı ya da sıra değişmiş").
+     (6) *Web app:* `GET /audits/{id}/downloads/team?lang=tr|en` (Turkish when no language is given) runs build,
+     validator, release gate, render and the PDF checks on every request, so a "Teyit edin" Confirm/Reject counts on the
+     next download; blocked -> HTTP 422 `team_report_blocked` with `reasons` in plain words (the gate rule's or the
+     validator's kind, in the report's language) and the technical `details`. The results page has a "Ekip raporu"
+     section: TR/EN switch (TR first), "Ekip raporu (PDF)", "Ek (XLSX)", the reasons shown under the buttons. The
+     concise PDF and the other downloads are unchanged.
+     (7) *Parity:* `tools/team_report_parity.py` serves a saved audit's copy through an isolated web app (an `analysis-*`
+     entry), downloads both files over HTTP, runs the skill's three scripts on the same copy, renders every page to PNG
+     and compares them; with `--approved` it lists the text fields that differ from an approved data.json.
+     nihan (v4 source, review file with the owner's STR-12 confirmation, Turkish): web 7 pages, skill 7 pages, every page
+     the same pixels, XLSX the same in every cell; cards, order and severities the same as v4; 17 of 69 text fields
+     worded differently from the model's v4 (listed in `reviews/2026-11-04/nihan-web/parity.md`, git-ignored): the
+     library is generic where the model named the site ("dil sürümleri" for "İngilizce sayfalar", no "Translate &
+     Adapt" in the priority line, confirm titles without the link count).
+     Schema: no bump (report.json unchanged). Package data: `maya_audit_web.team_report` refs, assets, texts.
+     Tests: `tests/test_team_report.py` (17; one slow: web vs skill PNGs and a manual check rebuilding the report).

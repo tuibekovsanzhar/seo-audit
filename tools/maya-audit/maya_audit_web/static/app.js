@@ -1016,6 +1016,8 @@ function resultView(view, context) {
   const reviewSlot = el("section", { class: "review-list" });
   add(out, reviewSlot);
   showReview(reviewSlot, view.audit.id);
+  // The team report (the maya-audit-pro design) and its appendix, built here from the saved audit (DECISIONS 307).
+  if (view.team_report) add(out, teamReport(view.team_report));
   add(out, el("h3", { text: T("result.downloads") }), el("p", { class: "muted small", text: T("result.downloads.note") }));
   add(out, el("div", { class: "row" }, view.downloads.map((item) => item.format === "pdf"
     ? el("button", { class: "button", type: "button", onclick: () => downloadPdf(item.url, view.print_url) }, item.label)
@@ -1038,7 +1040,7 @@ async function showReview(box, auditId) {
       if (!by.value.trim() || !seen.value.trim()) { notice(T("review.seen")); return; }
       try {
         await api("POST", "/audits/" + auditId + "/review", { finding_id: row.finding_id, result, by: by.value.trim(), seen: seen.value.trim(), note: note.value.trim() || null });
-        notice(T("review.saved"));
+        notice(T("review.saved") + " " + T("team.rebuilt"));
         showReview(box, auditId);
       } catch (error) { notice(error.message); }
     };
@@ -1055,6 +1057,42 @@ async function showReview(box, auditId) {
     data.confirm.length ? el("ul", { class: "list" }, data.confirm.map(rowView)) : el("p", { class: "muted", text: T("review.none") }),
     data.reviewed.length ? el("h4", { text: T("review.reviewed") }) : null,
     data.reviewed.length ? el("ul", { class: "list" }, data.reviewed.map(rowView)) : null);
+}
+
+function teamReport(team) {
+  let lang = team.default_lang || "tr";
+  const why = el("div", { class: "team-blocked" });
+  const choice = (code) => el("button", { class: "button quiet" + (code === lang ? " selected" : ""), type: "button", "aria-pressed": String(code === lang),
+    onclick: (event) => { lang = code; for (const b of event.currentTarget.parentNode.children) { b.classList.toggle("selected", b === event.currentTarget); b.setAttribute("aria-pressed", String(b === event.currentTarget)); } fill(why); } }, code.toUpperCase());
+  const pdfButton = el("button", { class: "button", type: "button" }, T("team.pdf"));
+  pdfButton.onclick = async () => {
+    fill(why, el("p", { class: "muted small", text: T("team.building") }));
+    pdfButton.disabled = true;
+    let response;
+    try { response = await fetch(team.pdf + "?lang=" + lang, { credentials: "same-origin" }); }
+    catch (error) { pdfButton.disabled = false; fill(why); notice(T("error.offline")); return; }
+    pdfButton.disabled = false;
+    if (!response.ok) {
+      let problem = {};
+      try { problem = ((await response.json()) || {}).error || {}; } catch (error) { problem = {}; }
+      const reasons = (problem.details && problem.details.reasons) || [];
+      fill(why, el("p", {}, el("strong", { text: problem.message || T("team.blocked") })),
+        reasons.length ? el("ul", { class: "list" }, reasons.map((line) => el("li", { text: line }))) : null);
+      return;
+    }
+    fill(why);
+    const blob = await response.blob();
+    const name = /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") || "");
+    const anchor = el("a", { href: URL.createObjectURL(blob), download: name ? name[1] : "maya-team-report.pdf" });
+    document.body.append(anchor);
+    anchor.click();
+    setTimeout(() => { URL.revokeObjectURL(anchor.href); anchor.remove(); }, 1000);
+  };
+  const xlsxButton = el("button", { class: "button", type: "button",
+    onclick: () => { const a = el("a", { href: team.xlsx + "?lang=" + lang, download: "" }); document.body.append(a); a.click(); a.remove(); } }, T("team.xlsx"));
+  return el("section", { class: "team-report" }, el("h3", { text: T("team.title") }), el("p", { class: "muted small", text: T("team.note") }),
+    el("div", { class: "row" }, el("span", { class: "muted small", text: T("team.lang") }), el("span", { class: "row" }, choice("tr"), choice("en"))),
+    el("div", { class: "row" }, pdfButton, xlsxButton), why);
 }
 
 async function downloadPdf(url, printUrl) {

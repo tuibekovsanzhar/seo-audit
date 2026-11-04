@@ -1246,6 +1246,14 @@
  "review.done": "{result}: {by}, {date}",
  "review.none": "Teyit bekleyen bulgu yok.",
  "review.reviewed": "Elle kontrol edilenler",
+ "team.title": "Ekip raporu",
+ "team.note": "Profesyonel rapor tasarımı ve XLSX eki, kayıtlı denetimden bu uygulamada, asistan olmadan oluşturulur. “Teyit edin” altındaki elle kontrol raporu yeniden oluşturur.",
+ "team.pdf": "Ekip raporu (PDF)",
+ "team.xlsx": "Ek (XLSX)",
+ "team.lang": "Rapor dili",
+ "team.building": "Ekip raporu hazırlanıyor…",
+ "team.blocked": "Ekip raporu üretilmedi",
+ "team.rebuilt": "Ekip raporu ve eki bu kontrolle yeniden oluşturulur.",
  "c6.key_pages_empty.reader_only": "Bu denetimde sayfa önemi hesaplanamadı: Maya'nın tarayıcısı engellendi, sayfalar başka bir okuma yoluyla okundu ve kayıtlı kopyalar sayfalar arası bağlantıları tutmuyor; önem bu bağlantılardan hesaplanır.",
  "c6.key_pages_empty.no_pages": "Bu denetimde içeriği okunan sayfa olmadığı için sayfa önemi hesaplanamadı."
 }

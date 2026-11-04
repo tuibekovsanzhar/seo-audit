@@ -249,3 +249,7 @@ table.data th { white-space: nowrap; overflow-wrap: normal; font-weight: 600; co
 /* DECISIONS 301: the manual-check form of the "Teyit edin" list */
 .review-form { display: grid; gap: 6px; margin-top: 6px; max-width: 640px; }
 .review-form input, .review-form textarea { width: 100%; }
+
+/* Team report language switch (DECISIONS 307) */
+.team-report .button.selected { outline: 2px solid currentColor; outline-offset: 1px; }
+.team-blocked:empty { display: none; }
