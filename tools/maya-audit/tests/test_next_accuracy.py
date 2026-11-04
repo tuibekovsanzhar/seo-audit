@@ -154,7 +154,7 @@ def test_actual_concise_route_preserves_ids_and_full_companions(demo_app,monkeyp
     # DECISIONS 300: the concise report has at most 15 cards; every finding ID is in the XLSX appendix it names.
     from maya_audit import client_appendix
     appendix=demo_app.get(base+'/downloads/xlsx');assert appendix.status_code==200
-    assert ids<=client_appendix.finding_ids(appendix.content) and '-appendix.xlsx' in concise.text
+    assert ids<=client_appendix.finding_ids(appendix.content) and '-appendix-en.xlsx' in concise.text
     assert 'maya-concise' in concise.text and 'Demonstration:' in concise.text
     full=demo_app.get(base+'/print?full=true');assert full.status_code==200 and 'maya-concise' not in full.text
     assert demo_app.get(base+'/downloads/json').json()==r

@@ -1446,6 +1446,13 @@ class Builder:
         if ratio and listed:
             prov.append({"k": L["prov_sitemap"], "v": L["prov_sitemap_line"].format(listed=fmt_int(listed, lang), checked=fmt_int(checked, lang))})
         prov.append({"k": L["prov_engine"], "v": L["prov_engine_line"].format(version=version, audit_id=audit_id)})
+        # DECISIONS 308: a saved audit re-evaluated with the current engine says so, with that engine and its date.
+        from maya_audit_web.team_report.current import line_of
+        reassessed = (line_of((gen.get("analysis") or {}).get("engine"), lang) if not gen.get("_reassess_failed")
+                      else L["prov_reassess_failed"])
+        if reassessed:
+            prov.append({"k": L["prov_reassessed"], "v": reassessed})
+            self.fact(reassessed)
 
         data = {
             "contract": 1, "lang": lang,
@@ -1696,6 +1703,8 @@ def main():
                     help="Kayıtlı kanıtın çevrimdışı yeniden analizi (yeni tarama yapılmadı). Yalnız gerçekten öyleyse ver.")
     ap.add_argument("--maya-src", default=None, help="maya_audit_web içeren Maya Audit kaynak klasörü (Türkçe başlıklar için)")
     ap.add_argument("--review", default=None, help="İnceleme dosyası (review.json); verilmezse report.json'un yanındaki")
+    ap.add_argument("--no-reassess", action="store_true",
+                    help="Raporu olduğu gibi kullan; güncel motorla yeniden değerlendirme yapma (DECISIONS 308)")
     ap.add_argument("--by", default=None, help="--confirm/--reject: kim kontrol etti")
     ap.add_argument("--seen", default=None, help="--confirm/--reject: tarayıcıda ne görüldü")
     ap.add_argument("--note", default=None, help="--confirm: kartta görünecek ek not (isteğe bağlı)")
@@ -1710,12 +1719,13 @@ def main():
         if not a.by or not a.seen:
             sys.exit("HATA: --confirm/--reject için --by (kim) ve --seen (ne görüldü) gerekir.")
         try:
-            record_checks(rp, a.review, a.confirm, a.reject, by=a.by, seen=a.seen, note=a.note, maya_src=a.maya_src)
+            record_checks(rp, a.review, a.confirm, a.reject, by=a.by, seen=a.seen, note=a.note, maya_src=a.maya_src,
+                          reassess=not a.no_reassess)
         except BuildError as exc:
             sys.exit(f"HATA: {exc}")
     try:
         data, notes = build_from_files(rp, a.lang, rev=a.rev, audit_id=a.audit_id, source=a.source, reanalysis=a.reanalysis,
-                                       maya_src=a.maya_src, review=a.review)
+                                       maya_src=a.maya_src, review=a.review, reassess=not a.no_reassess)
     except BuildError as exc:
         sys.exit(f"HATA: {exc}")
     for line in notes:
@@ -1737,14 +1747,16 @@ def _review_file(rp, review):
     return Path(review) if review else manual_review.path_for(rp)
 
 
-def record_checks(rp, review, confirm, reject, *, by, seen, note=None, maya_src=None):
+def record_checks(rp, review, confirm, reject, *, by, seen, note=None, maya_src=None, reassess=True):
     """--confirm / --reject: the owner's manual checks into the audit's review file (DECISIONS 301 (1))."""
     if load_final(maya_src) is None:
         raise BuildError("Maya Audit motoru (maya_audit.final) bulunamadı; --maya-src ile verin.")
     from maya_audit import manual_review  # type: ignore
     from maya_audit.release_gate import findings_of  # type: ignore
     review_path = _review_file(Path(rp), review)
-    known = findings_of(load(rp))
+    # The findings the team report is built from (DECISIONS 308): a rule the current engine added can be checked too.
+    from maya_audit_web.team_report import current as current_engine
+    known = findings_of(load(current_engine.current(Path(rp)).report_path if reassess else rp))
     for result, keys in (("confirmed", confirm or []), ("rejected", reject or [])):
         for key in keys:
             ids = [key] if key in known else [i for i, f in known.items() if f.get("rule_id") == key]
@@ -1757,13 +1769,42 @@ def record_checks(rp, review, confirm, reject, *, by, seen, note=None, maya_src=
 
 
 def build_from_files(report_path, lang, *, rev=None, audit_id=None, source=None, reanalysis=False, maya_src=None,
-                     review=None, affected_path=None):
+                     review=None, affected_path=None, reassess=True):
     """report.json (and the files beside it) -> data.json as a dict, plus the lines the CLI prints. The one path of the
-    skill's build step and of the web app's team report (DECISIONS 307). Raises BuildError when nothing can be built."""
-    rp = Path(report_path).resolve()
+    skill's build step and of the web app's team report (DECISIONS 307). Raises BuildError when nothing can be built.
+
+    A saved report is first re-evaluated with the current engine (DECISIONS 308, `current.current`): the report is built
+    from that derived copy; the source is never written. The review file stays the source's (`artifacts/review.json`),
+    so a check made in the web app's "Teyit edin" counts in the skill's report too. `reassess=False` builds the file
+    as it is."""
+    src = Path(report_path).resolve()
     notes = []
+    review_path = _review_file(src, review)
+    if not audit_id and src.parent.name == "artifacts":
+        audit_id = src.parent.parent.name  # ~/.maya-audit/web/audits/<id>/artifacts/report.json
+    if affected_path is None:
+        affected_path = next((p for p in (src.with_name(src.stem + ".affected-urls.json"), src.parent / "affected-urls.json")
+                              if p.exists()), None)
+    rp = src
+    reassess_failed = None
+    if reassess:
+        if load_final(maya_src) is None:
+            raise BuildError("Maya Audit motoru (maya_audit.final) bulunamadı; --maya-src ile verin.")
+        from maya_audit_web.team_report import current as current_engine
+        try:
+            cur = current_engine.current(src, affected_path)
+        except Exception as exc:  # noqa: BLE001 - a report the current engine cannot re-read is used as written, said so
+            cur = None
+            reassess_failed = f"{type(exc).__name__}: {exc}"[:200]
+            notes.append(f"  UYARI: güncel motorla yeniden değerlendirilemedi ({reassess_failed}); rapor kaydedildiği hâliyle kullanıldı")
+        if cur is not None:
+            rp, affected_path = cur.report_path, cur.affected_path
+            if cur.reassessed:
+                notes.append(f"  Güncel motorla yeniden değerlendirildi: {rp} ({len(cur.changes)} değişiklik; kaynak değişmedi)")
     report = load(rp)
-    side = rp.parent / "dataforseo.json"
+    if reassess_failed:
+        report.setdefault("generation", {})["_reassess_failed"] = reassess_failed
+    side = src.parent / "dataforseo.json"
     if not report.get("dataforseo") and side.exists():
         report["dataforseo"] = load(side)  # Maya web uygulaması paneli ayrıca bu dosyaya da yazar
         notes.append("  DataForSEO verisi yandaki dataforseo.json dosyasından alındı")
@@ -1773,12 +1814,7 @@ def build_from_files(report_path, lang, *, rev=None, audit_id=None, source=None,
     labels = load(REFS / "etiketler.json")[lang]
     catalog = load(REFS / "sahip_efor.json")
     w = Wording(lang, maya_src)
-    if not audit_id and rp.parent.name == "artifacts":
-        audit_id = rp.parent.parent.name  # ~/.maya-audit/web/audits/<id>/artifacts/report.json
     # CLI: <report>.affected-urls.json (named after the report); web app: affected-urls.json in its artifacts folder.
-    if affected_path is None:
-        affected_path = next((p for p in (rp.with_name(rp.stem + ".affected-urls.json"), rp.parent / "affected-urls.json")
-                              if p.exists()), None)
     affected = load(affected_path) if affected_path else {}
     if affected:
         # Read from beside report.json; it must belong to the same saved audit.
@@ -1794,12 +1830,14 @@ def build_from_files(report_path, lang, *, rev=None, audit_id=None, source=None,
         from maya_audit import client_selection, manual_review  # type: ignore
     except ImportError:
         raise BuildError("Maya Audit motorunda client_selection yok (DECISIONS 300); güncel motoru --maya-src ile verin.") from None
-    review_path = _review_file(rp, review)
     confirmations = manual_review.confirmations(manual_review.load(review_path))
     selection = client_selection.select(sealed.report, affected or None, confirmations)
     data = Builder(sealed.report, lang, labels, catalog, w, rev, audit_id, reanalysis, affected,
                    cards=sealed.cards, selection=selection).build()
     data["_confirmations"] = confirmations
+    # The engine that re-evaluated this saved audit (DECISIONS 308), None when the report was used as written.
+    data["_engine"] = ((report.get("generation") or {}).get("analysis") or {}).get("engine")
+    data["_reassess_failed"] = reassess_failed
     data["_review_path"] = str(review_path) if review_path.exists() else None
     data["_digest"] = sealed.digest
     data["_gate_decision"] = sealed.decision

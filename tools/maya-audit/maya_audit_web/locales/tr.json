@@ -518,9 +518,9 @@
  "result.backlinks.title": "Arama verisi ve geri bağlantılar (DataForSEO’dan üçüncü taraf verisi)",
  "result.backlinks.note": "DataForSEO’nun kendi dizinlerinden tahminler; denetimin sitede ölçtüğü bir şey değil.",
  "result.backlinks.unavailable": "Bu veriler bu denetim için mevcut değil. Bu, hiç olmadığı anlamına gelmez.",
- "result.downloads": "İndir",
+ "result.downloads": "Diğer indirmeler",
  "result.downloads.note": "İndirme, bu bilgisayarda tarayıcınızın indirmeleri koyduğu yere bir kopya kaydeder.",
- "result.download.pdf": "PDF raporu",
+ "result.download.pdf": "Kısa teknik özet (PDF, {language})",
  "result.download.markdown": "Markdown (tam)",
  "result.download.json": "JSON (tam, geliştiriciler için)",
  "result.download.evidence": "Sayfa kanıtları (zip)",
@@ -1255,5 +1255,10 @@
  "team.blocked": "Ekip raporu üretilmedi",
  "team.rebuilt": "Ekip raporu ve eki bu kontrolle yeniden oluşturulur.",
  "c6.key_pages_empty.reader_only": "Bu denetimde sayfa önemi hesaplanamadı: Maya'nın tarayıcısı engellendi, sayfalar başka bir okuma yoluyla okundu ve kayıtlı kopyalar sayfalar arası bağlantıları tutmuyor; önem bu bağlantılardan hesaplanır.",
- "c6.key_pages_empty.no_pages": "Bu denetimde içeriği okunan sayfa olmadığı için sayfa önemi hesaplanamadı."
+ "c6.key_pages_empty.no_pages": "Bu denetimde içeriği okunan sayfa olmadığı için sayfa önemi hesaplanamadı.",
+ "team.note.lang": "İki dosya da burada seçilen dilde; her tıklama o dili yeniden oluşturur.",
+ "team.ready": "{language} hazır ({pages} sayfa). Kaydedin:",
+ "team.lang.tr": "Türkçe",
+ "team.lang.en": "İngilizce",
+ "result.downloads.other": "Kısa teknik özet ekip raporu değildir: motorun kendi kısa raporudur, denetimin dilindedir."
 }

@@ -3363,3 +3363,48 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Adapt" in the priority line, confirm titles without the link count).
      Schema: no bump (report.json unchanged). Package data: `maya_audit_web.team_report` refs, assets, texts.
      Tests: `tests/test_team_report.py` (17; one slow: web vs skill PNGs and a manual check rebuilding the report).
+308. **Web team report fixes: current engine first, one language per click, the short summary named apart, one review
+     file (Owner, 2026-11-04: items 1-4; the derived-copy folder and key, the build-then-link flow, the file names and
+     the labels are agent defaults).** Global for every audit; nihan (b3198942) was the test case.
+     (1) *Current engine first* (`maya_audit_web/team_report/current.py`): `build_data.build_from_files`, the one build
+     step of the web app's team report and of the maya-audit-pro skill, first re-evaluates a saved audit with the
+     current engine: the steps of `tools/reassess_saved.py` (`reassess_rules.apply`: reassessment rules, the checks that
+     run on saved data, the Product fields from the saved JSON-LD evidence; sockets refused), then the selection-time
+     rules (reach from pages read, percent-escape case, DECISIONS 305) apply to that copy. The source report.json and
+     affected-urls.json are never written: the copy is `<audit>/current-engine/` beside `artifacts/` (or
+     `<report>.current-engine/` elsewhere) with `meta.json`, made again only when the source files (size, modified
+     time) or the engine (a hash of the `maya_audit` package's files) change. Used as written: a report of the current
+     schema with no offline record, or an offline copy this engine made. The copy's `generation.analysis.engine`
+     (version, schema, commit, fingerprint, time) gives one line, in the PDF's provenance box ("Değerlendirme:") and
+     under the web buttons: "Güncel motorla yeniden değerlendirildi (Maya Audit 0.2.8 · şema 1.24 · <commit>, <date>)".
+     "Teyit edin" (GET/POST review), the XLSX appendix (and its gate) and the skill's `--confirm` read the same copy, so
+     a finding only the current engine finds can be confirmed. `--no-reassess` builds the file as it is. A report the
+     current engine cannot re-read (a hand-made fragment, a record missing a field the rules need) is used as saved and
+     says so: the build notes give the error, the provenance line reads "Güncel motorla yeniden değerlendirilemedi;
+     rapor kaydedildiği hâliyle kullanıldı.", and the web app shows it under the buttons.
+     (2) *TR/EN switch.* Found: the server built the asked language (checked through the routes and in Chromium, with a
+     Turkish and an English interface); what failed was the download. The page fetched the PDF and saved it by a
+     script click 20-50 s later, which browsers treat as an automatic "multiple downloads" attempt and block after the
+     first file, so the reader kept the first (Turkish) file; the XLSX had one name for both languages
+     (`-appendix.xlsx`), so the second copy was saved as "(1)" beside the first; and the "İndir" section's PDF and
+     XLSX, which follow the audit's language, sat under the switch with a look-alike "Ek (XLSX)". Now: GET
+     `/audits/{id}/team-report?lang=` builds that language and returns two ordinary links (the PDF from a short-lived
+     build token, kept only for that audit and language; the XLSX route), named with the language:
+     `…-ekip-raporu-tr.pdf`, `…-team-report-en.pdf`, `…-ek-tr.xlsx`, `…-appendix-en.xlsx`; the buttons carry the chosen
+     language ("Ekip raporu (PDF) · EN"); switching clears a built link; every build starts again; responses carry
+     `X-Maya-Language` and `Cache-Control: no-store`. The owner's Downloads folder had one team PDF (Turkish, from the
+     unreassessed report: 28 issues, 5 medium) and no English one.
+     (3) *Downloads section:* "Diğer indirmeler" / "Other downloads", below the team report; the concise PDF is "Kısa
+     teknik özet (PDF, <language>)" with a note that it is not the team report; its XLSX button is gone (the appendix is
+     in the team report's section, in the chosen language).
+     (4) *Where confirmations live:* one file per audit, `artifacts/review.json`, written by the web app's "Teyit edin"
+     and by the skill's `--confirm` when the skill is pointed at that audit's report; the current-engine copy has none.
+     For nihan the owner's STR-12 confirmation is only in the skill-path copies (`reviews/2026-11-03/nihan-v4/source/
+     review.json`, also v3 and rebuild-301); the web audit `b3198942…/artifacts` has no review file, so the web app's
+     team report keeps STR-12 under "Teyit edin" until it is confirmed there (or that file is copied in by the owner).
+     nihan rebuilt through the web routes from a copy of the original audit (current engine, with and without the v4
+     review file): `reviews/2026-11-04/nihan-web-v2/` (git-ignored).
+     Schema: no bump (report.json unchanged; the copy is a derived file). Tests: `tests/test_team_report.py` (+5: the
+     current-engine copy, one review file read through the copy, the downloads labels, each language through the real
+     routes with no template text of the other, a report that cannot be re-read used as saved and said so);
+     `test_v03_client_report`, `test_w4b_report_length`, `test_next_accuracy` follow the new names and buttons.

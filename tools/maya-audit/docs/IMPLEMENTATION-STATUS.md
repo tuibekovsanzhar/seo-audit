@@ -1061,6 +1061,50 @@ sürümlerindeki çeviri" for "İngilizce sayfaların çevirisi"). Pages 1 and 7
 | Web app restarted on port 8770, browser click-through | NOT RUN (the owner's process; restart needed to load the new code) |
 | Linux/Windows, live runs, wheel build | NOT RUN |
 
+## Web team report fixes: current engine first, one language per click (DECISIONS 308, 2026-11-04)
+
+What changed: the team report (web app and pro skill, one `build_from_files`) is built from the saved audit
+re-evaluated with the current engine (`team_report/current.py`: the `reassess_saved.py` steps on a copy in
+`<audit>/current-engine/`, made again when the source or the engine changes; report.json never written). The line
+"Güncel motorla yeniden değerlendirildi (Maya Audit 0.2.8 · şema 1.24 · <commit>, <date>)" is in the PDF's provenance
+box and under the web buttons. "Teyit edin", the XLSX appendix and its gate read the same copy; the one review file is
+the audit's `artifacts/review.json`. TR/EN: the server always built the asked language; the script-started download
+20-50 s after the click was blocked by the browser after the first file, and the XLSX had one name for both. Now
+`GET /team-report?lang=` builds, then the page shows two ordinary links named `…-ekip-raporu-tr.pdf` /
+`…-team-report-en.pdf`, `…-ek-tr.xlsx` / `…-appendix-en.xlsx`. "İndir" is "Diğer indirmeler", below the team report;
+its PDF is "Kısa teknik özet (PDF, <dil>)"; its XLSX button is gone.
+
+**Where confirmations live (nihan):** the owner's STR-12 confirmation is only in the skill-path copies
+(`reviews/2026-11-03/nihan-v4/source/review.json`, v3, rebuild-301). The web audit
+`~/.maya-audit/web/audits/b3198942…/artifacts/` has no `review.json` (not changed here), so the web app lists STR-12
+under "Teyit edin" until it is confirmed there.
+
+**nihan through the real web routes** (`tools/team_report_parity.py` on a copy of the original b3198942 artifacts and
+evidence; isolated web folder; `reviews/2026-11-04/nihan-web-v2/`, git-ignored):
+
+| Run | Web route result | Web vs skill | Cards |
+|---|---|---|---|
+| TR, v4 review file (STR-12 confirmed) | `GET /team-report?lang=tr` 200, gate PASS, 7 pages, `…-ekip-raporu-tr.pdf`, `…-ek-tr.xlsx` | pages 1-7 same pixels; XLSX same | 12, the same cards, order and severities as v4 (IDX-6 3rd, decomposed addresses 6th, no STR-5) |
+| EN, v4 review file | `lang=en` 200, gate PASS, 7 pages, `…-team-report-en.pdf`, `…-appendix-en.xlsx` | pages 1-7 same pixels; XLSX same | the same 12 cards in English |
+| TR, the web audit's own review state (no file) | 200, 7 pages | same | 11: v4's without STR-12 (left in "Teyit edin") |
+
+Browser click-through (isolated server on port 8793 serving the copy, headless Chromium, Turkish interface): TR, EN,
+TR again each gave that language's PDF and XLSX under their own names; the re-evaluation line shows under the links.
+Page 3 (provenance box with the "Değerlendirme" line) and page 7 checked as images.
+
+**Verification** (working tree on `5749501`, macOS, Python 3.13.1; no .env, no providers, no live requests):
+
+| Command | Result |
+|---|---|
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2675 passed, 4 skipped, 133 deselected, 1 warning in 451.43s (0:07:31)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `2808 passed, 4 skipped, 1 warning in 828.74s (0:13:48)` (skips: 2 wheel builds without setuptools, live-run examples not in git, real-site corpus outside the repo) |
+| pro skill tests (`unittest discover -s .agents/skills/maya-audit-pro/tests`) | `Ran 56 tests` `OK` |
+| `tests/test_team_report.py` (slow included) | `22 passed` |
+| `ruff check --isolated --select E9,F821,F841 .` | changed files clean; 4 F841 in test files not changed here (`test_oct18_corrections`, `test_real_run_fixes`, `test_review_fixes`, `test_run_clock`) |
+| `python3.11 -m compileall` | OK |
+| Owner's web app on port 8770 | NOT RUN (restart needed to load the new code) |
+| Linux/Windows, live runs, wheel build | NOT RUN |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

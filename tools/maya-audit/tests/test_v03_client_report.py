@@ -394,7 +394,8 @@ def test_web_review_buttons_write_the_audits_review_file_and_the_card_says_so(de
     one = audit(demo_app, demo.SHOP)
     base = f"/api/v1/audits/{one['id']}"
     view = demo_app.get(base + "/summary").json()
-    assert [d["format"] for d in view["downloads"]][:2] == ["pdf", "xlsx"]          # the appendix has its own button
+    # The appendix's button is in the team report's section, in its chosen language (DECISIONS 308).
+    assert [d["format"] for d in view["downloads"]][:2] == ["pdf", "markdown"] and view["team_report"]["xlsx"].endswith("/downloads/xlsx")
     folder = demo_app.app.state.runner.artifacts(one["id"])
     report = json.loads((folder / "report.json").read_text(encoding="utf-8"))
     target = next(f for c in report["checks"] for f in c.get("findings") or [] if f["severity"] in ("S2", "S3", "S4"))

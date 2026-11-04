@@ -35,6 +35,8 @@ Maya Audit'in report.json dosyasından, `Maya-Audit-Professional.pdf` tasarımı
 
 **Tek şablon, tek metin kitaplığı (DECISIONS 307).** Şablon, metin kitaplığı ve denetimler Maya Audit'in içindedir: `maya_audit_web/team_report/` (`build_data.py`, `validate_data.py`, `render.py`, `texts.py`, `texts/tr.json`, `texts/en.json`). Bu skill'in `scripts/` dosyaları yalnız o modülleri çağırır. Web uygulamasının "Ekip raporu (PDF)" ve "Ek (XLSX)" düğmeleri aynı modüllerle, model olmadan aynı raporu basar (`tools/team_report_parity.py` iki yolu sayfa sayfa karşılaştırır).
 
+**Önce güncel motor (DECISIONS 308).** `build_data.py` kayıtlı denetimi önce güncel motorla yeniden değerlendirir (`tools/reassess_saved.py`'nin adımları) ve raporu bu türetilmiş kopyadan kurar: `<denetim>/current-engine/report.json` (web geçmişinde `artifacts/`'ın yanında; başka yerde `<rapor>.current-engine/`). Asıl report.json hiç yazılmaz; kopya, kaynak ya da motor değişince yeniden yapılır. Kapsam kutusu "Değerlendirme: Güncel motorla yeniden değerlendirildi (…)" satırını basar. `--no-reassess` raporu olduğu gibi kullanır. **Elle kontroller tek dosyadadır:** web denetiminin `artifacts/review.json`'u. Skill'i web denetiminin `artifacts/report.json`'una yönelt: web uygulamasının "Teyit edin"inde yapılan kontrol iki raporda da geçer; `reviews/` altındaki bir kopyaya yazılan kontrol web uygulamasına geçmez.
+
 İş bölümü:
 - **Sayılar:** Hepsi report.json'dan deterministik olarak gelir (`build_data.py`). Model sayı üretmez, değiştirmez.
 - **Metin:** Bütün alanlar koddan dolar; `⟪YAZ⟫` kalmaz. İş başlığı ve adımlar önce Maya Audit'in kural kataloğundan (`maya_audit/rule_actions.json`), doğrulama motorun "beklenen" cümlesinden; bunlar yoksa ya da kutuya sığmıyorsa **metin kitaplığından** (`texts/<dil>.json`: her kural ve birleştirme grubu için başlık, bulgu, açıklama, neden önemli, adımlar ve platform adımları, doğrulama, özet). 1. sayfanın hükmü, değerlendirmesi, öncelikleri, sonraki adımı, kanıt sınırı ve bu ayın özeti ilk kartlardan şablonla kurulur.
@@ -66,7 +68,7 @@ Script'leri skill klasöründen çalıştır. Gerekenler: Python 3.10+, `playwri
 
 ### 1. Taslağı üret
 ```bash
-python scripts/build_data.py <report.json> --lang tr -o data.json [--rev r3] [--audit-id ID] [--reanalysis] [--maya-src <maya-audit kaynak klasörü>]
+python scripts/build_data.py <report.json> --lang tr -o data.json [--rev r3] [--audit-id ID] [--reanalysis] [--no-reassess] [--maya-src <maya-audit kaynak klasörü>]
 ```
 - **Şema kontrolü:** `schema_version` 1.x değilse script durur. Eski rapor Maya Audit'in güncel sürümüyle yeniden üretilmelidir.
 - **Arama ve Lighthouse verisi:** report.json'da DataForSEO paneli yoksa aynı klasördeki `dataforseo.json` okunur (Maya web uygulaması paneli oraya da yazar). İkisinde de yoksa bu kutular "Ölçülmedi" der; kullanıcıya ücretli panelin bu denetimde koşmadığını ya da beklemede olduğunu söyle. Arama verisi, laboratuvar ve saha verisinin hiçbiri yoksa "Arama ve performans" sayfası basılmaz (özet 3 sayfa olur; DECISIONS 283); 1. sayfadaki laboratuvar kutusu yine "Ölçülmedi" der.

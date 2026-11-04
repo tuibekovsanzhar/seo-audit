@@ -1,11 +1,13 @@
 """The team report made by the web app vs the maya-audit-pro skill, offline (DECISIONS 307).
 
     .venv/bin/python tools/team_report_parity.py <artifacts folder of a saved audit> --out DIR [--lang tr|en]
-        [--approved data.json] [--label NAME]
+        [--approved data.json] [--label NAME] [--review review.json]
 
-The artifacts folder (report.json, affected-urls.json, review.json) is copied into DIR; the real web folder is only
-read. The web path: an isolated web app (`create_app` on DIR/web, the copy served as an `analysis-*` entry) answers
-GET /downloads/team and /downloads/xlsx over HTTP, as the "Ekip raporu (PDF)" and "Ek (XLSX)" buttons ask. The skill
+The artifacts folder (report.json, affected-urls.json, review.json, evidence/) is copied into DIR; the real web folder
+is only read. `--review` uses another review file (the owner's manual checks) instead of the folder's. The web path: an
+isolated web app (`create_app` on DIR/web, the copy served as an `analysis-*` entry) answers GET /team-report and the
+two links it returns over HTTP, as the "Ekip raporu (PDF)" and "Ek (XLSX)" buttons ask; both re-evaluate the saved
+audit with the current engine first (DECISIONS 308), into DIR/analyses/<id>/current-engine/. The skill
 path: the skill's build_data.py, validate_data.py and render.py on the same copy. Every page of both PDFs is rendered
 to PNG and compared; the result and, with --approved, the text fields that differ from an approved data.json are
 written to DIR/parity.md. No request leaves this computer: no crawl, no provider, the renderer refuses the network.
@@ -66,9 +68,13 @@ def web_path(work: Path, analysis_id: str, lang: str):
     with client:
         client.get("/")
         base = f"/api/v1/audits/{analysis_id}"
-        team = client.get(f"{base}/downloads/team", params={"lang": lang})
-        xlsx = client.get(f"{base}/downloads/xlsx", params={"lang": lang})
-    return team, xlsx
+        prepared = client.get(f"{base}/team-report", params={"lang": lang})
+        if prepared.status_code != 200:
+            return prepared, None, None
+        body = prepared.json()
+        team = client.get(body["pdf"]["url"])
+        xlsx = client.get(body["xlsx"]["url"])
+    return team, xlsx, body
 
 
 def main() -> int:
@@ -78,6 +84,7 @@ def main() -> int:
     ap.add_argument("--lang", default="tr", choices=["tr", "en"])
     ap.add_argument("--approved", default=None, help="an approved data.json to list text differences against")
     ap.add_argument("--label", default="team-report")
+    ap.add_argument("--review", default=None, help="a review.json to use instead of the artifacts folder's")
     a = ap.parse_args()
     out = Path(a.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
@@ -89,6 +96,10 @@ def main() -> int:
     for name in ("report.json", "affected-urls.json", "review.json", "dataforseo.json"):
         if (Path(a.artifacts) / name).is_file():
             shutil.copy2(Path(a.artifacts) / name, art / name)
+    if (Path(a.artifacts) / "evidence").is_dir():
+        shutil.copytree(Path(a.artifacts) / "evidence", art / "evidence")
+    if a.review:
+        shutil.copy2(a.review, art / "review.json")
     report = json.loads((art / "report.json").read_text(encoding="utf-8"))
     record = {"audit": manifest(analysis_id, report),
               "analysis": {"id": analysis_id, "label": a.label, "processed_at": datetime.now(timezone.utc).isoformat(),
@@ -96,19 +107,24 @@ def main() -> int:
                            "report_sha256": hashlib.sha256((art / "report.json").read_bytes()).hexdigest()}}
     (art.parent / "analysis.json").write_text(json.dumps(record, ensure_ascii=False), encoding="utf-8")
 
-    team, xlsx = web_path(out, analysis_id, a.lang)
+    team, xlsx, body = web_path(out, analysis_id, a.lang)
     lines = [f"# Team report parity: {a.label} ({a.lang})", "",
-             f"Source: `{Path(a.artifacts).resolve()}` (copied; the original is only read).", ""]
+             f"Source: `{Path(a.artifacts).resolve()}` (copied; the original is only read).",
+             f"Review file: `{Path(a.review).resolve() if a.review else 'the artifacts folder' + chr(39) + 's (' + ('present' if (art / 'review.json').is_file() else 'none') + ')'}`.", ""]
     if team.status_code != 200:
         lines += [f"Web path: HTTP {team.status_code}", "", "```", team.text, "```"]
         (out / "parity.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
         print("\n".join(lines))
         return 1
-    web_pdf = out / f"web-{a.label}.pdf"
+    pdf_name = team.headers.get("content-disposition", "").split("filename=")[-1].strip('"')
+    xlsx_name = xlsx.headers.get("content-disposition", "").split("filename=")[-1].strip('"')
+    web_pdf = out / pdf_name
     web_pdf.write_bytes(team.content)
-    (out / f"web-{a.label}-{'ek' if a.lang == 'tr' else 'appendix'}.xlsx").write_bytes(xlsx.content)
+    (out / xlsx_name).write_bytes(xlsx.content)
+    if body.get("reassessed"):
+        lines += [f"Re-evaluation: {body['reassessed']}", ""]
 
-    skill = out / "skill"
+    skill = out / f"skill-{a.lang}"
     skill.mkdir(exist_ok=True)
     env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
     steps = [[SKILL / "build_data.py", art / "report.json", "--lang", a.lang, "-o", skill / "data.json"],
@@ -121,13 +137,13 @@ def main() -> int:
             (out / "parity.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
             print("\n".join(lines))
             return 1
-    web_pages = pages_png(web_pdf, out / "png-web")
-    skill_pages = pages_png(skill / f"{a.label}.pdf", out / "png-skill")
+    web_pages = pages_png(web_pdf, out / f"png-web-{a.lang}")
+    skill_pages = pages_png(skill / f"{a.label}.pdf", out / f"png-skill-{a.lang}")
     from maya_audit import xlsx as sheet
     skill_xlsx = next(skill.glob("*.xlsx"))
     same_xlsx = sheet.read(xlsx.content) == sheet.read(skill_xlsx.read_bytes())
-    lines += [f"Web app: GET /downloads/team -> HTTP 200, release gate {team.headers.get('x-maya-release-gate')}, "
-              f"{team.headers.get('x-maya-pages')} pages, file `{team.headers.get('content-disposition', '').split('filename=')[-1]}`",
+    lines += [f"Web app: GET /team-report?lang={a.lang} -> HTTP 200, release gate {team.headers.get('x-maya-release-gate')}, "
+              f"{team.headers.get('x-maya-pages')} pages, language {team.headers.get('x-maya-language')}; files `{pdf_name}`, `{xlsx_name}`",
               f"Skill: build_data.py, validate_data.py, render.py -> {len(skill_pages)} pages", "",
               "| Page | Web PNG | Skill PNG | Same pixels | Differing bytes |", "|---|---|---|---|---|"]
     differing = []
@@ -151,6 +167,12 @@ def main() -> int:
     lines += ["", f"Pages that differ: {', '.join(map(str, differing)) if differing else 'none'}.",
               f"XLSX appendix (web download vs the skill's file), every sheet and cell: {'same' if same_xlsx else 'DIFFERENT'}.", ""]
 
+    built = json.loads((skill / "data.json").read_text(encoding="utf-8"))
+    lines += [f"## Cards ({a.lang})", "", "| # | Severity | Rule | Card | Findings |", "|---|---|---|---|---|"]
+    for n, t in enumerate(built["todos"], 1):
+        lines.append(f"| {n} | {t.get('severity')} | {t.get('rule_id') or '—'} | {str(t.get('title')).replace('|', '/')} | "
+                     f"{', '.join(t.get('finding_ids') or [])} |")
+    lines.append("")
     if a.approved:
         def get(o, p):
             for part in re.findall(r"[^.\[\]]+", p):
@@ -159,7 +181,6 @@ def main() -> int:
                 if o is None:
                     return None
             return o
-        built = json.loads((skill / "data.json").read_text(encoding="utf-8"))
         approved = json.loads(Path(a.approved).read_text(encoding="utf-8"))
         same_cards = [(t.get("finding_ids"), t.get("severity")) for t in built["todos"]] == \
                      [(t.get("finding_ids"), t.get("severity")) for t in approved["todos"]]

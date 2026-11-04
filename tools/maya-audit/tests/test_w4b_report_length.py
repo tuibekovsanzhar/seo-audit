@@ -113,7 +113,7 @@ def test_the_concise_report_says_each_shared_sentence_once_and_keeps_every_findi
     assert finding_ids(report) <= set(selection["by_finding"])
     appendix = client.get(f"{API}/audits/{audit_id}/downloads/xlsx?lang={language}")
     assert appendix.status_code == 200 and finding_ids(report) <= client_appendix.finding_ids(appendix.content)
-    assert re.search(r"maya-audit-[\w.-]+-appendix\.xlsx", text)
+    assert re.search(r"maya-audit-[\w.-]+-(?:appendix-en|ek-tr)\.xlsx", text)  # named with its language (DECISIONS 308)
     # One card per root cause, each once; at most 15.
     detailed = re.findall(r'<section class="issue" id="(card-\d+)"', page)
     assert detailed and len(detailed) == len(set(detailed)) <= 15

@@ -333,7 +333,10 @@
   "ev_element": "ÖĞE",
   "ev_measured": "ÖLÇÜLEN",
   "ev_limit": "SINIR",
-  "not_read_line": "Okunmayan {n} adres ekte; öncelik puanına katılmadı."
+  "not_read_line": "Okunmayan {n} adres ekte; öncelik puanına katılmadı.",
+  "prov_reassessed": "Değerlendirme:",
+  "prov_reassessed_line": "Güncel motorla yeniden değerlendirildi (Maya Audit {version} · şema {schema}{commit}, {date})",
+  "prov_reassess_failed": "Güncel motorla yeniden değerlendirilemedi; rapor kaydedildiği hâliyle kullanıldı."
  },
  "en": {
   "doc_kind": "WEBSITE AUDIT",
@@ -667,6 +670,9 @@
   "ev_element": "ELEMENT",
   "ev_measured": "MEASURED",
   "ev_limit": "LIMIT",
-  "not_read_line": "{n} addresses not read are in the appendix; they add nothing to the priority score."
+  "not_read_line": "{n} addresses not read are in the appendix; they add nothing to the priority score.",
+  "prov_reassessed": "Assessment:",
+  "prov_reassessed_line": "Re-evaluated with the current engine (Maya Audit {version} · schema {schema}{commit}, {date})",
+  "prov_reassess_failed": "Could not be re-evaluated with the current engine; the report is used as saved."
  }
 }
