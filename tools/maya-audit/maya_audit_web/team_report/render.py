@@ -28,6 +28,7 @@ if __package__ in (None, ""):  # run as a script: the engine is the folder two l
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from maya_audit_web.team_report.inter_b64 import INTER_FACES  # noqa: E402
 from maya_audit_web.team_report.validate_data import gate_check, load_gate  # noqa: E402
+from maya_audit_web.team_report.texts import label as fmt  # noqa: E402
 
 STEP_MARKER = re.compile(r"^\s*(?:[-•]|\d+[.)])\s+")
 LABELS = json.loads((ROOT / "refs" / "etiketler.json").read_text(encoding="utf-8"))
@@ -92,6 +93,12 @@ body { font-family: 'MayaInter', 'Segoe UI', system-ui, sans-serif; color: var(-
 .kpi .v small { font-size: 13pt; color: var(--faint); margin-left: 6pt; letter-spacing: 0; }
 .kpi .v.na { font-size: 20pt; color: var(--faint); line-height: 2.1; }
 .kpi .s { font-size: 8.4pt; color: var(--muted); margin-top: 2pt; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+.lowcov { margin-top: 8pt; padding: 5pt 12pt; border: .6pt solid var(--na-line); background: var(--na-bg); border-radius: 5pt;
+          font-size: 9.2pt; line-height: 1.3; color: var(--high); font-weight: 600; white-space: nowrap; overflow: hidden; }
+/* DECISIONS 309: the banner's room comes from the page's own spacing, so page 1 keeps its size */
+.body.with-lowcov .kpis { height: 100pt; padding: 14pt 0; }
+.body.with-lowcov .assess { margin-top: 8pt; height: 86pt; padding-top: 12pt; }
+.body.with-lowcov .row2 { margin-top: 12pt; }
 .assess { margin-top: 20pt; height: 94pt; position: relative; padding: 16pt 20pt 0 21pt; overflow: hidden; }
 .assess::before { content: ''; position: absolute; left: -.6pt; top: -.6pt; bottom: -.6pt; width: 3pt; background: var(--accent); border-radius: 3pt 0 0 3pt; }
 .eyebrow { font-size: 8.4pt; font-weight: 600; color: var(--faint); letter-spacing: .3pt; }
@@ -208,7 +215,9 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 .todo .box { flex: 0 0 11pt; height: 11pt; border: 1.2pt solid var(--faint); border-radius: 2pt; margin: 2pt 10pt 0 0; }
 .todo .tn { font-size: 10pt; font-weight: 600; color: var(--accent); margin-right: 9pt; padding-top: 1pt; }
 .todo .th b { font-size: 11pt; font-weight: 600; line-height: 1.3; max-height: 29pt; overflow: hidden; flex: 1; }
-.todo .tm { font-size: 8.6pt; color: var(--muted); margin-top: 6pt; padding-left: 41pt; white-space: nowrap; overflow: hidden; }
+.todo .tm { font-size: 8.6pt; color: var(--muted); margin-top: 6pt; padding-left: 41pt; }
+/* DECISIONS 309: the finding IDs wrap to the next line as a whole, never cut off at the card's edge */
+.todo .tm .ids { display: inline-block; white-space: nowrap; }
 .todo .tm .sev { font-size: 8pt; padding: 3pt 6pt; margin-right: 4pt; }
 .todo .tm .mono { color: var(--faint); font-size: 8pt; }
 .todo-status {font-size:8.3pt;color:var(--muted);margin:2pt 0 0 41pt;line-height:1.2;}
@@ -298,9 +307,9 @@ def header(d, L, idx, title, sub):
 
 def footer(d, L, n, total=4):
     m = d["meta"]
-    left = (L["footer_left_src"].format(source=m["source"], audit_id=m["audit_id"]) if m.get("source")
-            else L["footer_left"].format(audit_id=m["audit_id"]))
-    right = L["footer_right"].format(version=m["engine_version"], date=m["date"])
+    left = (fmt(L["footer_left_src"], source=m["source"], audit_id=m["audit_id"]) if m.get("source")
+            else fmt(L["footer_left"], audit_id=m["audit_id"]))
+    right = fmt(L["footer_right"], version=m["engine_version"], date=m["date"])
     return f'<div class="foot"><span>{e(left)}</span><span>{e(right)} &nbsp;&nbsp; {n:02d} / {total:02d}</span></div>'
 
 
@@ -317,15 +326,17 @@ def page1(d, L):
         pr.append(f'<div class="pitem"><span class="n">{p["n"]:02d}</span><div class="tx">'
                   f'<b data-slot="priorities[{i}].title">{e(p["title"])}</b><p data-slot="priorities[{i}].text">{e(p["text"])}</p></div>'
                   f'<div class="val tone-{p["tone"]}">{e(p["value"])}</div></div>')
+    low = (f'\n  <div class="lowcov" data-banner="low_coverage">{e(d["low_coverage"]["text"])}</div>'
+           if d.get("low_coverage") else "")
     cov = d["coverage"]
     rows = "".join(f'<div class="covrow"><span>{e(r["label"])}</span><b>{e(r["value"])}</b></div>' for r in cov["rows"])
     return f"""
-<div class="body">
-  <div class="card kpis">{''.join(kp)}</div>
+<div class="body{' with-lowcov' if low else ''}">
+  <div class="card kpis">{''.join(kp)}</div>{low}
   <div class="card assess"><div class="eyebrow">{e(L['assessment'])}</div>
     <h2 data-slot="assessment.headline">{e(d['assessment']['headline'])}</h2><p data-slot="assessment.text">{e(d['assessment']['text'])}</p></div>
   <div class="row2">
-    <div class="card prio"><div class="cardhead"><h3>{e(L['priorities'])}</h3><span>{e(L['priorities_n'].format(n=len(d['priorities'])))}</span></div>{''.join(pr)}</div>
+    <div class="card prio"><div class="cardhead"><h3>{e(L['priorities'])}</h3><span>{e(fmt(L['priorities_n'], n=len(d['priorities'])))}</span></div>{''.join(pr)}</div>
     <div class="card cov"><div class="cardhead"><h3>{e(L['evidence_coverage'])}</h3></div><span class="badge">{e(cov['badge'])}</span>{rows}
       <div class="note">{e(cov['note'])}</div></div>
   </div>
@@ -381,7 +392,7 @@ def page3(d, L):
     if lab and lab.get("score") is not None:
         diags = "".join(f'<div><span style="color:var(--ink);font-weight:600">{e(x["label"])}</span><span>{e(x["value"] or "")}</span></div>'
                         for x in lab["diagnostics"]) or f'<div style="font-weight:400;color:var(--muted)">{e(L["lab_diag_none"])}</div>'
-        labc = (f'<div class="card lab"><div class="cardhead"><h3>{e(L["lab_title"])}</h3></div><div class="sub">{e(L["lab_sub"].format(date=lab["date"]))}</div>'
+        labc = (f'<div class="card lab"><div class="cardhead"><h3>{e(L["lab_title"])}</h3></div><div class="sub">{e(fmt(L["lab_sub"], date=lab["date"]))}</div>'
                 f'<div class="big">{e(lab["score"])}<small>/ 100</small></div><div class="gauge"><i style="width:{max(1, min(100, int(lab["score"])))}%"></i></div>'
                 f'<div class="ticks"><span>0</span><span>50</span><span>100</span></div>'
                 f'<div class="diag"><div class="eyebrow" style="display:block">{e(L["lab_diag"])}</div>{diags}</div>'
@@ -415,11 +426,11 @@ def page4(d, L):
             f'<tr><th>{e(L["col_no"])}</th><th>{e(L["col_action"])}</th><th>{e(L["col_owner"])}</th><th>{e(L["col_effort"])}</th></tr>{trs}</table></div>')
     fu = d["followup"]
     follow = (f'<div class="card"><div class="cardhead"><h3>{e(L["followup"])}</h3></div>'
-              f'<div class="eyebrow">{e(L["schedule_caps"].format(when=L["when"]["month"].upper()))}</div>'
+              f'<div class="eyebrow">{e(fmt(L["schedule_caps"], when=L["when"]["month"].upper()))}</div>'
               f'<p data-slot="followup.text">{e(fu["text"])}</p><div class="fn">{e(fu["note"])}</div></div>')
     later = "".join(f'<div class="lr"><b>{e(x["count"])}</b><span data-slot="later[{i}].label">{e(x["label"])}</span></div>' for i, x in enumerate(d["later"])) or '<div class="lr"><span>—</span></div>'
     sub = (f'<div class="card later"><div class="cardhead"><h3>{e(L["subsequent"])}</h3></div>'
-           f'<div class="eyebrow">{e(L["schedule_caps"].format(when=L["when"]["later"].upper()))}</div>{later}</div>')
+           f'<div class="eyebrow">{e(fmt(L["schedule_caps"], when=L["when"]["later"].upper()))}</div>{later}</div>')
     if has_client_page(d):
         # DECISIONS 300: the action plan carries the quick wins (cards with a small effort) in place of "later".
         todos = {t["n"]: t for t in d.get("todos") or []}
@@ -461,7 +472,7 @@ def link_table(rows, L):
         body.append("<tr>" + "".join(f"<td>{e(c)}</td>" for c in cells) + "</tr>")
     more = len(rows) - LINK_ROWS
     return (f'<table class="lk"><thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table>'
-            + (f'<div class="more">{e(L["link_more"].format(n=more))}</div>' if more > 0 else "")
+            + (f'<div class="more">{e(fmt(L["link_more"], n=more))}</div>' if more > 0 else "")
             + f'<div class="lknote">{e(L["link_note"])}</div>')
 
 
@@ -483,7 +494,7 @@ def sub_lines(t, L):
     rest = len(lines) - len(shown)
     body = "".join(f"<div>{e(x)}</div>" for x in shown)
     if rest:
-        body += f"<div>{e(L['sub_more'].format(n=rest))}</div>"
+        body += f"<div>{e(fmt(L['sub_more'], n=rest))}</div>"
     return f'<div class="todo-sub">{body}</div>'
 
 
@@ -505,7 +516,7 @@ def todo_pages(d, L):
             steps = "".join(f"<li>{e(STEP_MARKER.sub('', line).strip())}</li>" for line in str(t["steps"]).split("\n") if line.strip())
             if t["links"]:
                 links = '<div class="links">' + "".join(f'<a href="{e(x["href"])}">{e(x["text"])}</a>' for x in t["links"]) + "</div>"
-                links += f'<div class="more">{e(L["todo_more"].format(n=t["more"]))}</div>' if t["more"] else ""
+                links += f'<div class="more">{e(fmt(L["todo_more"], n=t["more"]))}</div>' if t["more"] else ""
             else:
                 links = f'<div class="sw">{e(L["todo_sitewide"])}</div>'
             cards.append(
@@ -513,8 +524,8 @@ def todo_pages(d, L):
                 f'<b data-slot="todos[{i}].title">{e(t["title"])}</b></div>'
                 f'<div class="tm"><span class="sev {e(t["severity"])}">{e(t["severity_label"])}</span> {e(t["when"])} · {e(t["owner"])} · '
                 f'{e(L["col_effort"].title() if d["lang"] == "en" else "Efor")}: {e(t["effort"])}'
-                + (f' · {e(L["todo_priority"].format(score=score_text(t["priority"], d["lang"])))}' if t.get("priority") is not None else "")
-                + f' · <span class="mono">{e(t["id"])}</span></div>'
+                + (f' · {e(fmt(L["todo_priority"], score=score_text(t["priority"], d["lang"])))}' if t.get("priority") is not None else "")
+                + " · " + " · ".join(f'<span class="mono ids">{e(part)}</span>' for part in t["id"].split(" · ")) + "</div>"
                 f'<div class="todo-status">{e(t["status"])}</div>'
                 # DECISIONS 278: a broken link's failing address and the page to edit are two things, never swapped.
                 # The target line takes the evidence line's place: that line mixes source and target ("/a · /b · 404"),
@@ -544,7 +555,7 @@ def page6(d, L):
     rows = "".join(f'<li><span data-slot="confirm[{i}].title">{e(c["title"])}</span> · {e(c["severity_label"])} · {e(c["scope"])}'
                    f' <span class="why">· {e(c["reason"])}</span></li>' for i, c in enumerate(d.get("confirm") or []))
     if d.get("confirm_more"):
-        rows += f'<li class="why">{e(L["confirm_more"].format(n=d["confirm_more"]))}</li>'
+        rows += f'<li class="why">{e(fmt(L["confirm_more"], n=d["confirm_more"]))}</li>'
     confirm = (f'<div class="card"><div class="cardhead"><h3>{e(L["confirm_title"])}</h3></div>'
                f'<div class="note">{e(L["confirm_note"])}</div><ul>{rows or "<li>" + e(L["confirm_none"]) + "</li>"}</ul></div>')
     head = "".join(f"<th>{e(c)}</th>" for c in L["kp_cols"])
@@ -562,9 +573,9 @@ def build_html(d):
     L = LABELS[d["lang"]]
     nf = len(d["findings"])
     m = d["meta"]
-    sub3 = L["p3_sub_market"].format(market=m["market"]) if m.get("market") else L["p3_sub_nomarket"]
+    sub3 = fmt(L["p3_sub_market"], market=m["market"]) if m.get("market") else L["p3_sub_nomarket"]
     summary = {0: (L["p1_title"], L["p1_sub"], lambda: page1(d, L)),
-               1: (L["p2_title"], L["p2_sub"].format(n=nf), lambda: page2(d, L)),
+               1: (L["p2_title"], fmt(L["p2_sub"], n=nf), lambda: page2(d, L)),
                2: (L["p3_title"], sub3, lambda: page3(d, L)),
                3: (L["p4_title"], L["p4_sub"], lambda: page4(d, L))}
     pages = [(tab, summary[tab][0], summary[tab][1], summary[tab][2]()) for tab in summary_pages(d)]

@@ -603,11 +603,17 @@
    "why": "Site içi arama ve sepet sayfaları sonsuz, neredeyse boş çeşitlemelerdir. Dizine girmeleri tarayıcı ziyaretlerini boşa harcar, gerçek sayfaların önüne geçebilir.",
    "steps": [
     "Arama ve sepet sayfalarına noindex robots etiketi ekleyin",
-    "Shopify'da: temanın <head> bölümünde arama ve sepet şablonları için",
     "Bu sayfaları site haritasına almayın"
    ],
    "verify": "Site içi arama ve sepet sayfalarının kaynağını açın; noindex robots etiketi görünmeli.",
-   "summary": "Arama ve sepet dizinlemesi"
+   "summary": "Arama ve sepet dizinlemesi",
+   "steps_by_platform": {
+    "Shopify": [
+     "Arama ve sepet sayfalarına noindex robots etiketi ekleyin",
+     "Shopify'da: temanın <head> bölümünde arama ve sepet şablonları için",
+     "Bu sayfaları site haritasına almayın"
+    ]
+   }
   },
   "acc4.different": {
    "title": "Tarayıcılara web tarayıcısıyla aynı içeriği sunun",
@@ -1681,11 +1687,17 @@
    "why": "Kopya adrese giden bağlantı tarayıcıyı başka sayfaya katılacak bir adrese gönderir: ziyaret iki kez harcanır, kanonik sayfa bağlantılarını dolaylı alır.",
    "steps": [
     "Kopya adrese bağlantı yazan şablonu bulun",
-    "Şablonun kanonik adresi yazmasını sağlayın",
-    "Shopify'da: ürün kartı bağlantısından \"within: collection\" kaldırın"
+    "Şablonun kanonik adresi yazmasını sağlayın"
    ],
    "verify": "Sayfa kaynağında iç bağlantıların her sayfanın kanonik adresini gösterdiği görülmelidir.",
-   "summary": "Kopya adrese iç bağlantılar"
+   "summary": "Kopya adrese iç bağlantılar",
+   "steps_by_platform": {
+    "Shopify": [
+     "Kopya adrese bağlantı yazan şablonu bulun",
+     "Şablonun kanonik adresi yazmasını sağlayın",
+     "Shopify'da: ürün kartı bağlantısından \"within: collection\" kaldırın"
+    ]
+   }
   },
   "idx6.broken": {
    "title": "Hata veren adreslere giden bağlantıları düzeltin ya da kaldırın",
@@ -3351,11 +3363,17 @@
    "why": "GTIN ya da MPN, Google'ın ürünü başka yerlerdeki aynı ürünle eşleştirmesini sağlar; alışveriş sonuçları ve satıcı listelemeleri buna dayanır.",
    "steps": [
     "GTIN'i (barkod), yoksa MPN'i ekleyin",
-    "Markayı da ekleyin",
-    "Shopify'da: her varyantın barkod alanını doldurun"
+    "Markayı da ekleyin"
    ],
    "verify": "Rich Results Test'te Product işaretlemesinde gtin ya da mpn alanı görünmeli.",
-   "summary": "Ürün tanımlayıcıları"
+   "summary": "Ürün tanımlayıcıları",
+   "steps_by_platform": {
+    "Shopify": [
+     "GTIN'i (barkod), yoksa MPN'i ekleyin",
+     "Markayı da ekleyin",
+     "Shopify'da: her varyantın barkod alanını doldurun"
+    ]
+   }
   },
   "str3.qa_no_faqpage": {
    "title": "Soru-cevap içeriğini FAQPage ile işaretleyin",

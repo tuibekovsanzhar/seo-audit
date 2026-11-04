@@ -90,7 +90,7 @@ MERGE_GROUPS = (
 MERGE_BY_RULE = {rule: group for group in MERGE_GROUPS for rule in group["rules"]}
 # Kept for older callers: the empty-page rules were the first family (DECISIONS 284).
 RULE_FAMILY = {rule: "idx1.empty" for rule in MERGE_BY_RULE if MERGE_BY_RULE[rule]["id"] == "empty_pages"}
-CONFIRM_REASONS = ("unverified_check", "low_confidence", "intent", "firecrawl_only", "spoofed_googlebot")
+CONFIRM_REASONS = ("unverified_check", "low_confidence", "intent", "firecrawl_only", "spoofed_googlebot", "rendered_html")
 LG = re.compile(r"^LG-\d+$")
 
 
@@ -116,7 +116,7 @@ def confidence_class(f: dict, confirmations: dict | None = None) -> str:
     if any(LG.match(str(g)) for g in f.get("launch_gated") or []):
         return "unverified"
     reading = (f.get("evidence") or {}).get("reading") or {}
-    if reading.get("seen_in") == "firecrawl_only":
+    if reading.get("seen_in") == "firecrawl_only" or rendered_html(f):
         return "estimated"
     return ENGINE_CONFIDENCE.get(f.get("confidence") or "", "unverified")
 
@@ -130,6 +130,15 @@ def spoofed_googlebot(f: dict) -> bool:
     return bool(pairs) and all(p.get("outcome") == "refused" for p in pairs if isinstance(p, dict))
 
 
+def rendered_html(f: dict) -> bool:
+    """An HTML-size finding (RND-6) measured on the page reader's rendered HTML, not on what the server sends
+    (DECISIONS 299 (4)): not comparable with a raw size, so it is confirmed before anyone acts on it (DECISIONS 309)."""
+    if f.get("check_id") != "RND-6":
+        return False
+    ev = f.get("evidence") or {}
+    return str(ev.get("html_measured") or "").startswith("rendered") or (ev.get("source") or {}).get("reader") == "firecrawl"
+
+
 def confirm_reason(f: dict, confirmations: dict | None = None) -> str | None:
     """Why the finding goes to "Teyit edin" before anyone acts on it, or None."""
     check = manual(f, confirmations)
@@ -139,6 +148,8 @@ def confirm_reason(f: dict, confirmations: dict | None = None) -> str | None:
         return "spoofed_googlebot"
     if ((f.get("evidence") or {}).get("reading") or {}).get("seen_in") == "firecrawl_only":
         return "firecrawl_only"
+    if rendered_html(f):
+        return "rendered_html"
     if f.get("intent"):
         return "intent"
     cls = confidence_class(f, confirmations)
@@ -268,20 +279,38 @@ def reach_of(total: float) -> float:
     return round(min(1 + math.log1p(max(total, 0) / REACH_UNIT), REACH_CAP), 6)
 
 
-def _reach(urls: list[str], importance: dict[str, dict], home_importance: int) -> tuple[float, int, int, int]:
-    """(reach, summed importance, pages counted, page addresses not read), DECISIONS 305. Only pages that were read
-    count (scored by the grouping and not a canonical scored only from its aliases); each once, a duplicate with its
-    own score (capped at 20). A finding with no address, or only files (a sitemap, robots.txt), reaches the homepage.
-    One whose page addresses were all left unread reaches nothing past the minimum (1.0)."""
+NEUTRAL_IMPORTANCE = 50  # DECISIONS 309: a page read but not scored (a page reader's copy keeps no links) counts this
+
+
+def pages_read(report: dict) -> set[str]:
+    """The addresses whose content was read: Maya's own pages (2xx with content) and the page reader's."""
+    crawl = report.get("crawl") or {}
+    urls = {p.get("url") for p in crawl.get("pages") or [] if isinstance(p, dict) and isinstance(p.get("status"), int)
+            and 200 <= p["status"] < 300 and p.get("content_checks_eligible") is not False}
+    urls |= {p.get("url") for p in (report.get("firecrawl") or {}).get("pages") or []
+             if isinstance(p, dict) and p.get("outcome") == "read"}
+    return {u for u in urls if isinstance(u, str)}
+
+
+def _reach(urls: list[str], importance: dict[str, dict], home_importance: int,
+           read_urls: set[str] | None = None) -> tuple[float, int, int, int, int]:
+    """(reach, summed importance, pages counted, page addresses not read, pages read but not scored), DECISIONS 305
+    and 309. Only pages that were read count (scored by the grouping and not a canonical scored only from its aliases);
+    each once, a duplicate with its own score (capped at 20). A page that was read but has no importance (the page
+    reader's copies keep no links between pages) counts NEUTRAL_IMPORTANCE: read, importance unknown, never "not read".
+    A finding with no address, or only files (a sitemap, robots.txt), reaches the homepage. One whose page addresses
+    were all left unread reaches nothing past the minimum (1.0)."""
     from .urls import non_page_kind
     addresses = [u for u in dict.fromkeys(urls) if isinstance(u, str) and u.startswith(("http://", "https://"))]
     pages = [u for u in addresses if not non_page_kind(u)]
     read = [u for u in pages if "importance" in (importance.get(u) or {}) and (importance.get(u) or {}).get("read") is not False]
-    not_read = len(pages) - len(read)
-    if not read and not not_read:
-        return reach_of(home_importance), home_importance, 0, 0
-    total = sum(int(importance[u]["importance"]) for u in read)
-    return reach_of(total), total, len(read), not_read
+    unscored = [u for u in pages if u not in read and u in (read_urls or set())
+                and (importance.get(u) or {}).get("read") is not False]
+    not_read = len(pages) - len(read) - len(unscored)
+    if not read and not unscored and not not_read:
+        return reach_of(home_importance), home_importance, 0, 0, 0
+    total = sum(int(importance[u]["importance"]) for u in read) + NEUTRAL_IMPORTANCE * len(unscored)
+    return reach_of(total), total, len(read) + len(unscored), not_read, len(unscored)
 
 
 def _examples(urls: list[str], members: list[dict], lists: dict | None, importance: dict[str, dict],
@@ -342,6 +371,7 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
         importance, _ = grouping(report)
     home = _home(report)
     home_importance = int((importance.get(home) or {}).get("importance", REACH_UNIT))
+    read_urls = pages_read(report)
     default_lang = default_language(report)
     out: dict[tuple, dict] = {}
     for f in all_findings(report):
@@ -357,7 +387,7 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
         classes = [confidence_class(m, confirmations) for m in members]
         conf = min(classes, key=lambda c: CONFIDENCE_WEIGHT[c])
         urls = list(dict.fromkeys(u for m in members for u in affected(m, lists)))
-        reach, total, counted, not_read = _reach(urls, importance, home_importance)
+        reach, total, counted, not_read, unscored = _reach(urls, importance, home_importance, read_urls)
         lead = members[0]
         reasons = [r for r in (confirm_reason(m, confirmations) for m in members) if r]
         languages = sorted({language_of(u, default_lang) or "" for u in urls} - {""})
@@ -366,7 +396,8 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
             "check_id": lead.get("check_id"), "rule_id": lead.get("rule_id"), "title": lead.get("title"),
             "severity": sev, "severity_name": SEVERITY_NAME.get(sev, sev),
             "confidence": conf, "confidence_weight": CONFIDENCE_WEIGHT[conf],
-            "reach": reach, "importance_sum": total, "pages_counted": counted, "addresses_not_read": not_read, "urls": urls,
+            "reach": reach, "importance_sum": total, "pages_counted": counted, "addresses_not_read": not_read,
+            "pages_read_unscored": unscored, "urls": urls,
             "priority": _score(sev, conf, reach),
             "parts": {"severity": _weight(sev), "confidence": CONFIDENCE_WEIGHT[conf], "reach": reach,
                       "business": BUSINESS_RELEVANCE},
@@ -435,7 +466,8 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
     return {
         "method": {"severity_weight": SEVERITY_WEIGHT, "confidence_weight": CONFIDENCE_WEIGHT,
                    "reach": f"1 + ln(1 + summed importance of the pages read / {REACH_UNIT}), at most {REACH_CAP}; "
-                            "addresses not read add nothing (counted apart); no page address: the homepage",
+                            "addresses not read add nothing (counted apart); a page read with no importance counts "
+                            f"{NEUTRAL_IMPORTANCE}; no page address: the homepage",
                    "order": "severity band, then priority score", "merge_groups": [g["id"] for g in MERGE_GROUPS],
                    "business_relevance": BUSINESS_RELEVANCE, "max_cards": max_cards, "max_pages": MAX_PAGES,
                    "confirm_at_or_below": CONFIRM_AT_OR_BELOW,
@@ -446,6 +478,7 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         "key_pages": key_pages(report, rows, importance),
         "key_pages_reason": None if importance else key_pages_reason(report),
         "coverage": coverage_box,
+        "low_coverage": low_coverage(report),
         "counts": {"findings": len(by_finding), "groups": len(rows), "cards": len(cards), "confirm": len(confirm),
                    "notes": len(notes), "own_limits": len(limits), "appendix_only": len(appendix_only),
                    "rejected": len([g for g in rows if g["placement"] == "rejected"]),
@@ -474,19 +507,75 @@ def platform_steps(rule_id: str | None, platform: str | None, lang: str) -> list
 
 # ---------------------------------------------------------------- key pages and coverage
 
+def is_homepage(url: str, record: dict | None = None) -> bool:
+    """The site's root or a language version of it (`/`, `/tr/`, `/en-gb/`): a homepage whatever the grouping typed it
+    (DECISIONS 309), as is a page the grouping typed one."""
+    from .page_groups import is_locale
+    if (record or {}).get("page_type") == "home":
+        return True
+    parts = [p for p in (urlsplit(url).path or "/").split("/") if p]
+    return not parts or (len(parts) == 1 and is_locale(parts[0]))
+
+
+def main_homepage(report: dict, importance: dict[str, dict]) -> str | None:
+    """The homepage in the site's main language: the start address's final page when the grouping knows it, else the
+    start address when it was read and scored."""
+    for url, g in importance.items():
+        if g.get("read") is not False and str(g.get("page_type_basis") or "").startswith("the start address's final page"):
+            return url
+    home = _home(report)
+    for url in (home, home.rstrip("/") + "/", home.rstrip("/")):
+        if url in importance and importance[url].get("read") is not False:
+            return url
+    return None
+
+
 def key_pages(report: dict, rows: list[dict], importance: dict[str, dict], limit: int = KEY_PAGES) -> list[dict]:
-    """The most important pages read (importance rank), with what the cards and the confirm list say about each."""
+    """The most important pages read (importance rank), with what the cards and the confirm list say about each.
+    DECISIONS 309: the main-language homepage first, then the other language homepages read (each typed a homepage),
+    then the rest by importance; the rank shown is the place in this list (1, 2, 3 ...): a page that was not read
+    leaves no gap."""
     read = [(u, g) for u, g in importance.items() if g.get("read") is not False]
     read.sort(key=lambda kv: (kv[1].get("importance_rank") or 10**9, -(kv[1].get("importance") or 0)))
+    main = main_homepage(report, importance)
+    homes = [(u, g) for u, g in read if u != main and is_homepage(u, g)]
+    chosen = (([(main, importance[main])] if main else []) + homes
+              + [(u, g) for u, g in read if u != main and not is_homepage(u, g)])
     out = []
-    for url, g in read[:limit]:
+    for n, (url, g) in enumerate(chosen[:limit], 1):
         cards = [x for x in rows if x.get("placement") == "card" and url in x["urls"]]
         confirm = [x for x in rows if x.get("placement") == "confirm" and url in x["urls"]]
         worst = max((x["severity"] for x in cards), key=_weight, default=None)
-        out.append({"url": url, "page_type": g.get("page_type"), "importance": g.get("importance"),
-                    "rank": g.get("importance_rank"), "cards": sorted(x["card"] for x in cards),
+        out.append({"url": url, "page_type": "home" if is_homepage(url, g) else g.get("page_type"),
+                    "importance": g.get("importance"), "rank": n, "importance_rank": g.get("importance_rank"),
+                    "main_homepage": url == main, "cards": sorted(x["card"] for x in cards),
                     "worst": worst, "confirm": len(confirm)})
     return out
+
+
+LOW_COVERAGE_PAGES = 10  # DECISIONS 309: fewer pages read than this is low coverage
+LOW_COVERAGE_SHARE = 0.2  # ... as is fewer than this share of the pages the audit planned to read
+
+
+def low_coverage(report: dict) -> dict | None:
+    """{"pages_read", "planned"} when very few pages were read: under LOW_COVERAGE_PAGES, or under LOW_COVERAGE_SHARE
+    of the plan (the page cap). None otherwise. The team report and the web app show a banner; a client brief is not
+    made from such an audit (`client_brief_allowed`)."""
+    cov = (report.get("audit_status") or {}).get("content_coverage") or {}
+    read = cov.get("pages_read")
+    if not isinstance(read, int):
+        read = len(pages_read(report))
+    planned = ((report.get("crawl") or {}).get("config") or {}).get("max_pages")
+    planned = planned if isinstance(planned, int) and planned > 0 else None
+    if read < LOW_COVERAGE_PAGES or (planned and read < LOW_COVERAGE_SHARE * planned):
+        return {"pages_read": read, "planned": planned}
+    return None
+
+
+def client_brief_allowed(report: dict) -> tuple[bool, str | None]:
+    """(allowed, reason): the gate every client brief made from an audit passes first (DECISIONS 309). Low coverage
+    blocks it: a brief written from a handful of pages would speak for a site it did not see."""
+    return (False, "low_coverage") if low_coverage(report) else (True, None)
 
 
 def key_pages_reason(report: dict) -> str:
@@ -563,6 +652,7 @@ def appendix_rows(selection: dict, lists: dict | None = None) -> list[dict]:
                         "card": g.get("card"), "group_lead": g["finding_ids"][0], "confirm_reason": g["confirm_reason"],
                         "merge_group": g.get("merge_group"),
                         "pages_read": g.get("pages_counted"), "not_read": g.get("addresses_not_read"),
+                        "read_unscored": g.get("pages_read_unscored"),
                         "manual": (lambda c: f"{c.get('result')} · {c.get('by')} · {c.get('date')} · {c.get('seen')}"
                                    + (f" · {c['note']}" if c.get("note") else ""))(manual(m, selection.get("_confirmations")))
                         if manual(m, selection.get("_confirmations")) else "",

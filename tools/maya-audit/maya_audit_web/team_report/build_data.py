@@ -39,6 +39,7 @@ ERROR_PAGE = re.compile(r"/(?:404|not[-_]?found)(?:[/?.#]|$)|aspxerrorpath", re.
 EV_ROWS = 3
 CONFIRM_SHOWN = 10  # "Teyit edin" lines the last page has room for; the rest are counted and in the appendix
 MAX_CARDS = 15  # DECISIONS 300: a client report has at most 15 cards (release gate RG-16)
+NOTES_SHOWN = 2  # DECISIONS 309: Note cards printed in the PDF, after every problem card; the rest are in the appendix
 
 
 def platform_steps(rule, platform, lang):
@@ -86,6 +87,9 @@ def load(p):
 def num(text):
     m = re.search(r"\d[\d,.]*", str(text or ""))
     return int(re.sub(r"[,.]", "", m.group(0))) if m else None
+
+
+fmt = T.label  # DECISIONS 309: every label through one plural-aware format
 
 
 def fmt_int(n, lang):
@@ -477,6 +481,21 @@ class Builder:
                     self.facts.add(m)
 
     # -- ortak hesaplar
+    def low_coverage_banner(self):
+        """DECISIONS 309: page 1's banner when very few pages were read (the engine's `low_coverage`), or None."""
+        low = (self.sel or {}).get("low_coverage")
+        if not low:
+            return None
+        self.fact(low["pages_read"], low.get("planned"))
+        key = "low_coverage" if low.get("planned") else "low_coverage_unplanned"
+        return {"text": fmt(self.L[key], read=fmt_int(low["pages_read"], self.lang),
+                                           planned=fmt_int(low.get("planned") or 0, self.lang))}
+
+    def counted(self, key, n):
+        """A label with a count, in its singular form for 1 ("1 page", DECISIONS 309) when the labels have one."""
+        self.fact(n)
+        return fmt(self.L[f"{key}_one" if n == 1 and f"{key}_one" in self.L else key], n=fmt_int(n, self.lang))
+
     def coverage(self):
         return ((self.r.get("audit_status") or {}).get("content_coverage")) or {}
 
@@ -955,9 +974,19 @@ class Builder:
         complete = all(len(urls) >= ((m.get("scope") or {}).get("count") or 0) for m, urls in zip(members, lists))
         n = (len({u for urls in lists for u in urls if isinstance(u, str)}) if complete
              else sum((m.get("scope") or {}).get("count") or 0 for m in members))
-        unit = self.L["scope_units"]["url" if f.get("check_id") in URL_SCOPED and f.get("rule_id") not in PAGE_SCOPED_RULES else "page"]
+        unit = self.L["scope_units"][self.unit_for(f, members)]
         self.fact(n)
         return f"{fmt_int(n, self.lang)} {unit[0] if n == 1 else unit[1]}"
+
+    def unit_for(self, f, members=None):
+        """The scope's unit (DECISIONS 309): "request" for blocked page requests (ACC-9), "address" when most of the
+        addresses were never read (a page that was not read is not "a page" the audit saw), else URL or page."""
+        if f.get("check_id") == "ACC-9":
+            return "request"
+        group = ((self.sel or {}).get("by_finding") or {}).get(f.get("id")) or {}
+        if (group.get("addresses_not_read") or 0) > (group.get("pages_counted") or 0):
+            return "address"
+        return "url" if f.get("check_id") in URL_SCOPED and f.get("rule_id") not in PAGE_SCOPED_RULES else "page"
 
     def blocked_429_line(self, f):
         """DECISIONS 288: Maya's crawler blocked by 429 on pages. One line on the card: AI crawlers may be treated the same,
@@ -1015,11 +1044,13 @@ class Builder:
             return f"{fmt_int(ratio[0], self.lang)} / {fmt_int(ratio[1], self.lang)} {self.L['scope_units']['url'][1]}"
         n = sc.get("count") or 0
         cid, title = f.get("check_id"), f.get("title") or ""
+        if cid == "ACC-9" and n:
+            words = L["scope_units"]["request"]
+            return f"{fmt_int(n, self.lang)} {words[0] if n == 1 else words[1]}"
         if sc.get("kind") == "sitewide" and n <= 1:
             unit = "file" if re.search(r"sitemap file|robots\.txt|llms\.txt", title) else None
             return f"1 {L['scope_units']['file'][0]}" if unit else L["scope_units"]["site"]
-        unit = "url" if cid in URL_SCOPED and f.get("rule_id") not in PAGE_SCOPED_RULES else "page"
-        words = L["scope_units"][unit]
+        words = L["scope_units"][self.unit_for(f)]
         return f"{fmt_int(n, self.lang)} {words[0] if n == 1 else words[1]}"
 
     def status_text(self, f, state=None):
@@ -1027,7 +1058,7 @@ class Builder:
         ev = f.get("evidence") or {}
         check = self.manual_check(f)
         if check:  # DECISIONS 301 (1): the owner looked at it in a browser
-            return L["manual_confirmed"].format(by=check.get("by"), date=check.get("date"))
+            return fmt(L["manual_confirmed"], by=check.get("by"), date=check.get("date"))
         if ev.get("observation_strength") == "repeated_empty":
             parts = [L["repeated"]]
         else:
@@ -1095,14 +1126,14 @@ class Builder:
             {"label": L["kpi_problems"], "value": fmt_int(problems_total, lang), "of": None, "sub": sev_line or "—", "state": "ok"},
             {"label": L["kpi_pages"], "value": fmt_int(pages_read, lang), "of": None,
              # Nothing read and nothing left unread is not "every page was read" (nihan.com.tr: 429 on the first request).
-             "sub": L["kpi_pages_sub"].format(n=fmt_int(unread, lang)) if unread else
+             "sub": fmt(L["kpi_pages_sub"], n=fmt_int(unread, lang)) if unread else
              L["kpi_pages_sub_all"] if pages_read else L["kpi_pages_sub_none"], "state": "ok" if pages_read else "missing"},
         ]
         if ratio:
             bad, checked, listed, f = ratio
             self.fact(bad, checked, listed)
             kpis.append({"label": L["kpi_sitemap"], "value": fmt_int(bad, lang), "of": fmt_int(checked, lang),
-                         "sub": L["kpi_sitemap_sub"].format(conf=L["confidence"].get(f.get("confidence"), "")), "state": "ok"})
+                         "sub": fmt(L["kpi_sitemap_sub"], conf=L["confidence"].get(f.get("confidence"), "")), "state": "ok"})
         elif pages_read:
             # yalnız gerçekten okunan sayfalar: yoklanıp okunmayan adresler paydayı aşmasın
             # (DECISIONS 287: nothing read, no "0 / 0" tile; the pages box already says nothing could be read)
@@ -1116,7 +1147,7 @@ class Builder:
             whole = int((ps.get("whole_site") or {}).get("problems") or 0)
             self.fact(pages_with, whole)
             kpis.append({"label": L["kpi_problem_pages"], "value": fmt_int(pages_with, lang), "of": fmt_int(pages_read, lang),
-                         "sub": L["kpi_problem_pages_sub_whole"].format(n=fmt_int(whole, lang)) if whole else L["kpi_problem_pages_sub"],
+                         "sub": fmt(L["kpi_problem_pages_sub_whole"], n=fmt_int(whole, lang)) if whole else L["kpi_problem_pages_sub"],
                          "state": "ok"})
         if lab and lab.get("score") is not None:
             self.fact(lab["score"])
@@ -1278,7 +1309,8 @@ class Builder:
             if not prefill:
                 act = self._w("action")(f.get("rule_id") or self._w("rule")(f.get("check_id"), f.get("title")))
                 prefill = act if act and len(act) <= 55 else None
-            unit = L["scope_units"]["url" if f.get("check_id") in ("IDX-1", "IDX-6", "IDX-3", "IDX-5") else "page"]
+            unit = L["scope_units"]["url" if f.get("check_id") in ("IDX-1", "IDX-6", "IDX-3", "IDX-5") else
+                                    "address" if self.unit_for(f) == "address" else "page"]
             later_rows.append({"count": f"{fmt_int(cnt, lang)} {unit[0] if cnt == 1 else unit[1]}",
                                "label": self.slot(f"later[{i}].label", "kısa etiket, sayı olmadan", f.get("title"), 55, prefill=prefill,
                                                   fallback=next(t for t in (self.lib(f)["title"], self.lib(f)["summary"])
@@ -1316,8 +1348,10 @@ class Builder:
                 sub = self.merged_lines(members) or self.reason_lines(f) or self.blocked_429_line(f)
                 # DECISIONS 305: addresses that were not read add nothing to the score; the card says how many.
                 if group.get("addresses_not_read"):
-                    sub = list(sub or []) + [L["not_read_line"].format(n=fmt_int(group["addresses_not_read"], self.lang))]
-                    self.fact(group["addresses_not_read"])
+                    sub = list(sub or []) + [self.counted("not_read_line", group["addresses_not_read"])]
+                # DECISIONS 309: read through the page reader with no importance: neutral reach, never "not read".
+                if group.get("pages_read_unscored"):
+                    sub = list(sub or []) + [self.counted("read_unscored_line", group["pages_read_unscored"])]
                 # kartta 4 link (satırlı kartta 2: satırlar yer kaplar); tam liste render.py'nin yazdığı adres listesi CSV'sinde
                 shown = urls[:2 if sub else 4]
                 # listelenip kartta gösterilmeyenler + rapordaki listeye hiç girmeyen sayfalar (problem_summary.not_listed)
@@ -1368,11 +1402,11 @@ class Builder:
                         pre_steps, conditional = "\n".join(region_advice), []
                     where = language_regions.line(found, L["region_names"])
                     if where:
-                        sub = [L["regions_line"].format(regions=where)] + list(sub or [])
+                        sub = [fmt(L["regions_line"], regions=where)] + list(sub or [])
                         self.fact(where)
                 check = self.manual_check(f)
                 if check and check.get("note"):
-                    sub = [L["manual_note"].format(note=check["note"])] + list(sub or [])
+                    sub = [fmt(L["manual_note"], note=check["note"])] + list(sub or [])
                 if merged and not found:
                     action = merged["title"].get(self.lang) or merged["title"]["en"]
                 if pre_steps:
@@ -1385,7 +1419,8 @@ class Builder:
                         if step_line.strip() and head not in heads:
                             heads.add(head)
                             kept.append(step_line)
-                    pre_steps = "\n".join(kept[:3] if len(sub or []) >= 2 else kept)
+                    # DECISIONS 309: four lines or more above them (a confirmed group with its note), two steps.
+                    pre_steps = "\n".join(kept[:2] if len(sub or []) >= 4 else kept[:3] if len(sub or []) >= 2 else kept)
                 if group:
                     self.fact(group.get("priority"))
                 # DECISIONS 307: what the catalogue and the engine do not say, the text library does (the platform's own
@@ -1431,21 +1466,25 @@ class Builder:
                     "launch_gated": sorted({g for m in members for g in m.get("launch_gated") or [] if re.fullmatch(r"LG-\d+", str(g))}),
                 })
                 self.fact(todos[-1]["fact"])  # a card may quote its evidence's numbers
+        # DECISIONS 309: the problem cards first; a Note card only fills a slot they left free, and at most NOTES_SHOWN
+        # of them are printed. Every note is in the appendix in any case.
+        notes_shown = 0
         for make in (self.schema_card, self.hygiene_card, self.content_card, self.perf_card, self.share_card):
-            if self.sel is not None and len(todos) >= MAX_CARDS:
-                break  # DECISIONS 300: at most 15 cards; the notes are in the appendix in any case
+            if self.sel is not None and (len(todos) >= MAX_CARDS or notes_shown >= NOTES_SHOWN):
+                break
             card = make(len(todos))
             if card:
                 todos.append(card)
+                notes_shown += 1
 
         extra = self.client_page(todos) if self.sel is not None else {}
 
         listed = ratio[2] if ratio else None
         checked = ratio[1] if ratio else None
-        prov = [{"k": L["prov_content"], "v": L["prov_content_line"].format(read=fmt_int(pages_read, lang), unread=fmt_int(unread, lang), gaps=gaps)}]
+        prov = [{"k": L["prov_content"], "v": fmt(L["prov_content_line"], read=fmt_int(pages_read, lang), unread=fmt_int(unread, lang), gaps=gaps)}]
         if ratio and listed:
-            prov.append({"k": L["prov_sitemap"], "v": L["prov_sitemap_line"].format(listed=fmt_int(listed, lang), checked=fmt_int(checked, lang))})
-        prov.append({"k": L["prov_engine"], "v": L["prov_engine_line"].format(version=version, audit_id=audit_id)})
+            prov.append({"k": L["prov_sitemap"], "v": fmt(L["prov_sitemap_line"], listed=fmt_int(listed, lang), checked=fmt_int(checked, lang))})
+        prov.append({"k": L["prov_engine"], "v": fmt(L["prov_engine_line"], version=version, audit_id=audit_id)})
         # DECISIONS 308: a saved audit re-evaluated with the current engine says so, with that engine and its date.
         from maya_audit_web.team_report.current import line_of
         reassessed = (line_of((gen.get("analysis") or {}).get("engine"), lang) if not gen.get("_reassess_failed")
@@ -1461,6 +1500,7 @@ class Builder:
                      "coverage_level": cov.get("level") or "partial",
                      "coverage_label": L["coverage_level"].get(cov.get("level") or "partial", cov.get("level"))},
             "kpis": kpis,
+            "low_coverage": self.low_coverage_banner(),
             "assessment": {"headline": self.slot("assessment.headline", "raporun tek cümlelik hükmü", None, 90,
                                                  fallback=T.headline([f["severity"] for f in card_leads], summaries, lang,
                                                                      pages_read=pages_read)),
@@ -1477,13 +1517,13 @@ class Builder:
             "commercial": FIXED["commercial"][lang],
             "limits": limits,
             "actions": actions,
-            "actions_schedule": L["schedule_priority"] if self.sel is not None else L["schedule_label"].format(when=L["when"]["week"]),
+            "actions_schedule": L["schedule_priority"] if self.sel is not None else fmt(L["schedule_label"], when=L["when"]["week"]),
             "followup": followup,
             "later": later_rows,
             "todos": todos,
             **extra,
             "provenance": {"lines": prov, "note": L["prov_note_saved"] if self.reanalysis else
-                           (L["prov_note_cache"].format(saved=saved, read=read_fc) if saved else L["prov_note_live"])},
+                           (fmt(L["prov_note_cache"], saved=saved, read=read_fc) if saved else L["prov_note_live"])},
         }
         self.fact(started or "")
         self.finish(data)
@@ -1501,11 +1541,11 @@ class Builder:
         limits = []
         for line in cov["lines"]:
             if line["kind"] == "page_cap":
-                limits.append(L["own_page_cap"].format(pages=fmt_int(line.get("pages") or 0, lang),
+                limits.append(fmt(L["own_page_cap"], pages=fmt_int(line.get("pages") or 0, lang),
                                                        not_read=fmt_int(line.get("not_read") or 0, lang)))
                 self.fact(line.get("pages"), line.get("not_read"))
             elif line["kind"] == "time_budget":
-                limits.append(L["own_time"].format(seconds=fmt_int(int(line.get("seconds") or 0), lang)))
+                limits.append(fmt(L["own_time"], seconds=fmt_int(int(line.get("seconds") or 0), lang)))
                 self.fact(int(line.get("seconds") or 0))
             elif line["kind"] == "reader":
                 text, _ = self.w.title(None, line.get("title") or "")
@@ -1513,7 +1553,7 @@ class Builder:
                 self.fact(line.get("title"))
         gaps = self.gaps()
         if gaps:
-            limits.append(L["own_gaps"].format(n=fmt_int(gaps, lang)))
+            limits.append(fmt(L["own_gaps"], n=fmt_int(gaps, lang)))
             self.fact(gaps)
         confirm = []
         for i, g in enumerate(sel["confirm"][:CONFIRM_SHOWN]):
@@ -1549,7 +1589,7 @@ class Builder:
                 "key_pages_note": L["key_pages_empty"][reason] if reason and not pages else None,
                 "quick_wins": quick,
                 "appendix": {"file": name, "finding_ids": sorted(sel["by_finding"]), "counts": c,
-                             "line": L["appendix_line"].format(file=name, findings=c["findings"], cards=len(todos),
+                             "line": fmt(L["appendix_line"], file=name, findings=c["findings"], cards=len(todos),
                                                                confirm=c["confirm"], notes=c["notes"],
                                                                appendix=c["appendix_only"], limits=c["own_limits"])}}
 
@@ -1595,10 +1635,10 @@ class Builder:
             out = []
             for k, a in enumerate(attempts):
                 d = parse_dt(a.get("requested_at"))
-                label = L["ev_first"] if k == 0 else L["ev_repeat"] if len(attempts) == 2 else L["ev_attempt"].format(n=k + 1)
+                label = L["ev_first"] if k == 0 else L["ev_repeat"] if len(attempts) == 2 else fmt(L["ev_attempt"], n=k + 1)
                 body = a.get("body_bytes")
                 out.append([label, d.strftime("%H:%M:%S") if d else "—", str(a.get("status") or "—"),
-                            L["ev_bytes"].format(n=body) if body is not None else "—"])
+                            fmt(L["ev_bytes"], n=body) if body is not None else "—"])
                 self.fact(a.get("status"), body)
             method = attempts[0].get("method") or "GET"
             self.fact(total)
@@ -1606,7 +1646,7 @@ class Builder:
                     "caption": f"{path_of(item.get('url'))} · {method} · {date_long(attempts[0].get('requested_at'), L)} / UTC",
                     "columns": [L["ev_request"], L["ev_time"], L["ev_http"], L["ev_body"]], "rows": out,
                     "alert_col": 3 if any(str(a.get("body_bytes")) == "0" for a in attempts) else None,
-                    "note": L["ev_note_sample"].format(total=total)}
+                    "note": fmt(L["ev_note_sample"], total=total)}
         # The engine's structured evidence first (DECISIONS 271): the measured value and its limit ("885 KB", "500 KB").
         facts = [x for x in self._w("facts")(self.rule_of(f), ev) or [] if isinstance(x, dict)]
         if facts:
@@ -1618,21 +1658,21 @@ class Builder:
             return self._without_empty_columns(
                 {"finding_id": f["id"], "kind": "rows", "caption": f.get("id"),
                  "columns": [L["ev_url"], L["ev_element"], L["ev_measured"], L["ev_limit"]], "rows": out, "alert_col": None,
-                 "note": L["ev_note_urls"].format(n=len(out))})
+                 "note": self.counted("ev_note_urls", len(out))})
         if rows:
             out = []
             for item in rows[:EV_ROWS]:
                 out.append([path_of(item.get("url")), str(item.get("status") or "—"),
-                            L["ev_bytes"].format(n=item["body_bytes"]) if item.get("body_bytes") is not None else (item.get("element") or "—")])
+                            fmt(L["ev_bytes"], n=item["body_bytes"]) if item.get("body_bytes") is not None else (item.get("element") or "—")])
                 self.fact(item.get("status"))
             return self._without_empty_columns(
                 {"finding_id": f["id"], "kind": "rows", "caption": f.get("id"),
                  "columns": [L["ev_url"], L["ev_http"], L["ev_result"]], "rows": out, "alert_col": None,
-                 "note": L["ev_note_urls"].format(n=len(out))})
+                 "note": self.counted("ev_note_urls", len(out))})
         urls = ((f.get("scope") or {}).get("urls")) or []
         if urls:
             return {"finding_id": f["id"], "kind": "urls", "caption": f.get("id"), "columns": [L["ev_url"]],
-                    "rows": [[path_of(u)] for u in urls[:EV_ROWS]], "alert_col": None, "note": L["ev_note_urls"].format(n=min(EV_ROWS, len(urls)))}
+                    "rows": [[path_of(u)] for u in urls[:EV_ROWS]], "alert_col": None, "note": self.counted("ev_note_urls", min(EV_ROWS, len(urls)))}
         return None
 
     def search(self):
@@ -1657,7 +1697,7 @@ class Builder:
             if rel != "branded" and ranking_page is None and len(r) > 3:
                 ranking_page = path_of(r[3])
         return {"state": "ok", "rows": out, "ranking_page": ranking_page,
-                "source": L["search_source"].format(date=date_long((c.get("evidence") or {}).get("data_from"), L))}
+                "source": fmt(L["search_source"], date=date_long((c.get("evidence") or {}).get("data_from"), L))}
 
 
 def lab_value(v, lang):
@@ -1756,12 +1796,20 @@ def record_checks(rp, review, confirm, reject, *, by, seen, note=None, maya_src=
     review_path = _review_file(Path(rp), review)
     # The findings the team report is built from (DECISIONS 308): a rule the current engine added can be checked too.
     from maya_audit_web.team_report import current as current_engine
-    known = findings_of(load(current_engine.current(Path(rp)).report_path if reassess else rp))
+    cur = current_engine.current(Path(rp)) if reassess else None
+    report = load(cur.report_path if cur else rp)
+    known = findings_of(report)
+    # DECISIONS 309: a finding's check covers its "Teyit edin" group, as the web app's does.
+    from maya_audit import client_selection  # type: ignore
+    affected = load(cur.affected_path) if cur and cur.affected_path else None
+    by_finding = client_selection.select(report, affected, manual_review.confirmations(manual_review.load(review_path)))["by_finding"]
     for result, keys in (("confirmed", confirm or []), ("rejected", reject or [])):
         for key in keys:
             ids = [key] if key in known else [i for i, f in known.items() if f.get("rule_id") == key]
             if not ids:
                 raise BuildError(f"raporda {key} kimlikli ya da kurallı bulgu yok.")
+            ids = list(dict.fromkeys(i for fid in ids for i in (by_finding.get(fid) or {}).get("finding_ids") or [fid]
+                                     if i in known))
             for fid in ids:
                 manual_review.record(review_path, manual_review.entry(fid, result, by=by, seen=seen, note=note,
                                                                       rule_id=known[fid].get("rule_id")))

@@ -331,7 +331,9 @@ def test_confirm_first_the_team_report_and_the_appendix_read_the_current_engine_
                          json={"finding_id": "NEW-1-0000aaaa", "result": "rejected", "by": "owner", "seen": "not on the page"})
     assert posted.status_code == 200, posted.text
     review = folder / "review.json"
-    assert json.loads(review.read_text(encoding="utf-8"))["entries"][0]["finding_id"] == "NEW-1-0000aaaa"
+    # The added finding shares its group with the one it copies: the check covers the group (DECISIONS 309).
+    saved = [e["finding_id"] for e in json.loads(review.read_text(encoding="utf-8"))["entries"]]
+    assert "NEW-1-0000aaaa" in saved and posted.json()["saved"]["finding_ids"] == saved
     assert not (folder.parent / "current-engine" / "review.json").exists()  # one review file, the audit's
     data, notes = build_data.build_from_files(folder / REPORT_JSON, "tr")  # the skill's build step
     assert data["_review_path"] == str(review) and "NEW-1-0000aaaa" in data["_confirmations"]

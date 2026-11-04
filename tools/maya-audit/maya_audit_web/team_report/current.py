@@ -12,7 +12,9 @@ any report.
   beside a report anywhere else, with `meta.json` saying what it was made from.
 - The copy is made again only when its source or the engine changed: the key is the source files' size and modified
   time and the engine's fingerprint (a hash of the `maya_audit` package's own files), so every engine change counts.
-- A report written by an engine of the current schema with no offline record is already current: it is used as is.
+- A report written by an engine of the current schema with no offline record is already current: it is used as is,
+  unless its saved data adds what DECISIONS 309 reads from it (the platform a page reader's copies hide, the RND-6
+  label); then the copy holds only those additions (`reassess_rules.saved_data`).
 - The owner's manual checks stay in the audit's one review file (`artifacts/review.json`), which both paths read.
 """
 from __future__ import annotations
@@ -104,6 +106,20 @@ def _saved_jsonld(folder: Path) -> dict[str, list[str]]:
     return out
 
 
+def _saved_texts(folder: Path) -> list[str]:
+    """The saved page copies (Maya's and the page reader's) as text, for what DECISIONS 309 reads from them."""
+    out = []
+    for sub in ("evidence", "evidence-firecrawl"):
+        for path in sorted((folder / sub).glob("*.json")):
+            if path.name == "index.json":
+                continue
+            try:
+                out.append(path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeDecodeError):
+                continue
+    return out
+
+
 def _write(path: Path, value) -> None:
     tmp = path.with_name(path.name + ".part")
     tmp.write_text(json.dumps(value, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -136,24 +152,35 @@ def current(source: Path, affected_path: Path | None = None, *, folder: Path | N
             return Current(folder / "report.json", aff if aff.is_file() else None, source, True, meta.get("engine") or eng,
                            list(meta.get("changes") or []))
         report = json.loads(source.read_text(encoding="utf-8"))
-        if _is_current(report, eng["fingerprint"]):
-            folder.mkdir(parents=True, exist_ok=True)
-            _write(meta_path, {"key": key, "reassessed": False, "engine": eng})
-            return Current(source, affected_path, source, False, eng)
         affected = json.loads(affected_path.read_text(encoding="utf-8")) if affected_path and affected_path.is_file() else None
-        from maya_audit.reassess_rules import apply
+        texts = _saved_texts(source.parent)
+        from maya_audit.reassess_rules import apply, saved_data
         audit_id = source.parent.parent.name if source.parent.name == "artifacts" else None
-        saved = socket.socket.connect, socket.create_connection, socket.getaddrinfo
-        socket.socket.connect = _no_network  # type: ignore[method-assign]
-        socket.create_connection = _no_network  # type: ignore[assignment]
-        socket.getaddrinfo = _no_network  # type: ignore[assignment]
-        try:
-            new, aff, record = apply(report, affected, source_audit_id=audit_id, jsonld_by_url=_saved_jsonld(source.parent))
-        finally:
-            socket.socket.connect, socket.create_connection, socket.getaddrinfo = saved
+        if _is_current(report, eng["fingerprint"]):
+            # Written by an engine of the current schema: only what DECISIONS 309 reads from the saved data (the
+            # platform a page reader's copies hide, the RND-6 label) can still change; without it, used as is.
+            new, changes = saved_data(report, affected, texts)
+            if not changes:
+                folder.mkdir(parents=True, exist_ok=True)
+                _write(meta_path, {"key": key, "reassessed": False, "engine": eng})
+                return Current(source, affected_path, source, False, eng)
+            record = {"kind": "saved-data additions", "rules": "DECISIONS 309", "source_audit_id": audit_id,
+                      "processed_at": datetime.now(timezone.utc).isoformat(), "requests": 0, "changes": changes,
+                      "unchanged": "every other finding, observation, time and count is the source report's"}
+            aff = affected
+        else:
+            saved = socket.socket.connect, socket.create_connection, socket.getaddrinfo
+            socket.socket.connect = _no_network  # type: ignore[method-assign]
+            socket.create_connection = _no_network  # type: ignore[assignment]
+            socket.getaddrinfo = _no_network  # type: ignore[assignment]
+            try:
+                new, aff, record = apply(report, affected, source_audit_id=audit_id, jsonld_by_url=_saved_jsonld(source.parent),
+                                         saved_texts=texts)
+            finally:
+                socket.socket.connect, socket.create_connection, socket.getaddrinfo = saved
         eng = {**eng, "processed_at": record["processed_at"]}
         record["engine"] = eng
-        new["generation"]["analysis"] = record
+        new.setdefault("generation", {})["analysis"] = record
         folder.mkdir(parents=True, exist_ok=True)
         _write(folder / "report.json", new)
         if affected is not None:

@@ -128,7 +128,9 @@ async function loadHistory() {
     el("button", { class: "history-open", type: "button", "aria-current": item.id === state.auditId ? "page" : null, onclick: () => openAudit(item.id) },
       el("span", { class: "history-title", text: item.host }),
       el("span", { class: "history-meta" }, el("span", { class: "dot " + item.state, "aria-hidden": "true" }),
-        el("span", { text: (item.outcome_label || item.state_label) + " · " + when(item.created_at, { dateStyle: "medium" }) }))),
+        el("span", { text: (item.outcome_label || item.state_label) + " · " + when(item.created_at, { dateStyle: "medium", timeStyle: "short" }) })),
+      // DECISIONS 309: how the audit read the site, so two audits of one site can be told apart.
+      el("span", { class: "history-meta", text: [item.mode_label, T("history.pages", { count: item.pages_read || 0 }), item.path_label].filter(Boolean).join(" · ") })),
     el("button", { class: "history-delete", type: "button", "aria-label": T("nav.delete") + ": " + item.host, title: T("nav.delete"),
       onclick: () => removeAudit(item.id) }, "✕"))),
     data.total > data.audits.length ? el("button", { class: "button quiet", type: "button", onclick: () => { state.historyLimit += 30; loadHistory(); } }, T("nav.more")) : null);
@@ -893,6 +895,7 @@ function resultView(view, context) {
   if (view.blocked) add(out, blockCard(view, context || {}));
   if (view.single_page) add(out, el("p", { class: "small" }, el("strong", { text: view.single_page.title })));
   if (view.headline) add(out, el("p", { class: "headline", text: view.headline }));
+  if (view.low_coverage) add(out, el("div", { class: "lowcov", role: "alert", text: view.low_coverage.text }));
   if (view.redirected) add(out, el("div", { class: "lead", role: "note" }, el("p", { text: view.redirected.message }),
     el("div", { class: "row" }, el("button", { class: "button primary", type: "button", onclick: () => { newAudit(); send(view.redirected.to); } }, view.redirected.offer))));
   if (!view.blocked) {
@@ -1039,18 +1042,23 @@ async function showReview(box, auditId) {
     const save = async (result) => {
       if (!by.value.trim() || !seen.value.trim()) { notice(T("review.seen")); return; }
       try {
-        await api("POST", "/audits/" + auditId + "/review", { finding_id: row.finding_id, result, by: by.value.trim(), seen: seen.value.trim(), note: note.value.trim() || null });
-        notice(T("review.saved") + " " + T("team.rebuilt"));
+        const answer = await api("POST", "/audits/" + auditId + "/review", { finding_id: row.finding_id, result, by: by.value.trim(), seen: seen.value.trim(), note: note.value.trim() || null });
+        // DECISIONS 309: the notice names what was saved, so a check recorded on the wrong row is seen at once.
+        notice(T("review.saved_for", { title: row.title, ids: (answer.saved?.finding_ids || [row.finding_id]).join(", ") }) + " " + T("team.rebuilt"));
         showReview(box, auditId);
       } catch (error) { notice(error.message); }
     };
-    const done = row.manual ? el("p", { class: "muted small", text: T("review.done", { result: T(row.manual.result === "confirmed" ? "review.confirm" : "review.reject"), by: row.manual.by, date: row.manual.date }) }) : null;
-    return el("li", {}, el("strong", { text: row.title }), " · " + row.severity_label + (row.reason_label ? " · " + row.reason_label : ""), done,
-      el("details", { class: "quiet-details" }, el("summary", { text: T("review.confirm") + " / " + T("review.reject") }),
+    const done = row.manual ? el("p", { class: "muted small", text: T("review.done", { result: T(row.manual.result === "confirmed" ? "review.confirm" : "review.reject"), by: row.manual.by, date: row.manual.date })
+      + (row.manual.note ? " · " + T("review.note_shown", { note: row.manual.note }) : "") }) : null;
+    // Each form names its finding (ID and title), in its summary and its buttons' labels: one row's form is never
+    // taken for its neighbour's.
+    return el("li", { "data-finding": row.finding_id }, el("strong", { text: row.title }), " · " + row.severity_label + (row.reason_label ? " · " + row.reason_label : ""),
+      el("span", { class: "muted small mono", text: " · " + row.finding_ids.join(", ") }), done,
+      el("details", { class: "quiet-details" }, el("summary", { text: T("review.confirm") + " / " + T("review.reject") + ": " + row.finding_id }),
         el("div", { class: "review-form" }, by, seen, note,
           el("div", { class: "row" },
-            el("button", { class: "button", type: "button", onclick: () => save("confirmed") }, T("review.confirm")),
-            el("button", { class: "button quiet", type: "button", onclick: () => save("rejected") }, T("review.reject"))))));
+            el("button", { class: "button", type: "button", "aria-label": T("review.confirm") + ": " + row.title, onclick: () => save("confirmed") }, T("review.confirm")),
+            el("button", { class: "button quiet", type: "button", "aria-label": T("review.reject") + ": " + row.title, onclick: () => save("rejected") }, T("review.reject"))))));
   };
   // fill() drops the null parts (no "checked by hand" list yet); replaceChildren would print each as "null".
   fill(box, el("h3", { text: T("review.title") }), el("p", { class: "muted small", text: T("review.note") }),

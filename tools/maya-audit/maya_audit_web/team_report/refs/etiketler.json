@@ -67,6 +67,7 @@
   "ev_bytes": "{n} bayt",
   "ev_note_sample": "{total} adreslik bulgudan bir örnek. Saatler saniyesine kadar gösterilir.",
   "ev_note_urls": "Etkilenen adreslerden ilk {n} tanesi. Tam liste XLSX ekinde.",
+  "ev_note_urls_one": "Etkilenen adreslerden ilk {n} tanesi. Tam liste XLSX ekinde.",
   "next_action": "SONRAKİ ADIM",
   "search_visibility": "Arama görünürlüğü",
   "search_sub": "Seçilen sorgular · Aylık hacim bu seçime göre ölçeklenmiştir",
@@ -155,6 +156,14 @@
    "file": [
     "dosya",
     "dosya"
+   ],
+   "request": [
+    "sayfa isteği",
+    "sayfa isteği"
+   ],
+   "address": [
+    "adres",
+    "adres"
    ],
    "site": "Tüm site",
    "section": "{n} sayfa ({section})"
@@ -285,6 +294,7 @@
    "low_confidence": "Doğrulama bekliyor: tahmini ölçüm",
    "intent": "Doğrulama bekliyor: bilinçli bir tercih olabilir",
    "firecrawl_only": "Doğrulama bekliyor: farklı okuma yolunda görüldü",
+   "rendered_html": "Doğrulama bekliyor: işlenmiş HTML, karşılaştırılamaz",
    "spoofed_googlebot": "Doğrulama bekliyor: arama motoru kimliğiyle yapılan istek reddedildi; Search Console'da kontrol edin"
   },
   "kp_title": "Kilit sayfalar karnesi",
@@ -334,6 +344,11 @@
   "ev_measured": "ÖLÇÜLEN",
   "ev_limit": "SINIR",
   "not_read_line": "Okunmayan {n} adres ekte; öncelik puanına katılmadı.",
+  "low_coverage": "Düşük kapsam: planlanan {planned} sayfadan yalnız {read} sayfa okundu. Bulgular siteyi bütünüyle temsil etmez; bu kapsamla müşteri özeti hazırlanmaz.",
+  "low_coverage_unplanned": "Düşük kapsam: yalnız {read} sayfa okundu. Bulgular siteyi bütünüyle temsil etmez; bu kapsamla müşteri özeti hazırlanmaz.",
+  "not_read_line_one": "Okunmayan {n} adres ekte; öncelik puanına katılmadı.",
+  "read_unscored_line": "Okunan, önemi bilinmeyen {n} sayfa: puana nötr ağırlıkla katıldı.",
+  "read_unscored_line_one": "Okunan, önemi bilinmeyen {n} sayfa: puana nötr ağırlıkla katıldı.",
   "prov_reassessed": "Değerlendirme:",
   "prov_reassessed_line": "Güncel motorla yeniden değerlendirildi (Maya Audit {version} · şema {schema}{commit}, {date})",
   "prov_reassess_failed": "Güncel motorla yeniden değerlendirilemedi; rapor kaydedildiği hâliyle kullanıldı."
@@ -351,7 +366,7 @@
   "p1_title": "Audit overview",
   "p1_sub": "Technical findings, evidence coverage and priority actions.",
   "p2_title": "Priority findings",
-  "p2_sub": "The {n} highest-severity issues, with scope and evidence status.",
+  "p2_sub": "The {n:highest-severity issue|highest-severity issues}, with scope and evidence status.",
   "p3_title": "Search & performance",
   "p3_sub_market": "Provider evidence · {market} · Saved search and mobile lab results.",
   "p3_sub_nomarket": "Provider evidence · Saved search and mobile lab results.",
@@ -371,7 +386,7 @@
   "kpi_sitemap_sub": "Checked sample · {conf}",
   "kpi_problem_pages": "Pages with Medium+ issues",
   "kpi_problem_pages_sub": "Page-specific; Low issues not counted",
-  "kpi_problem_pages_sub_whole": "Page-specific, Low not counted · plus {n} site-wide issues",
+  "kpi_problem_pages_sub_whole": "Page-specific, Low not counted · plus {n:site-wide issue|site-wide issues}",
   "kpi_lab": "Mobile lab performance",
   "kpi_lab_sub": "Homepage · Lighthouse",
   "kpi_field": "Real users (CrUX)",
@@ -379,7 +394,7 @@
   "not_measured_sub": "No data collected in this audit",
   "assessment": "ASSESSMENT",
   "priorities": "Investigation priorities",
-  "priorities_n": "{n} focus areas",
+  "priorities_n": "{n:focus area|focus areas}",
   "evidence_coverage": "Evidence coverage",
   "badge_saved": "Includes saved copies",
   "badge_live": "Collected in this audit",
@@ -405,6 +420,7 @@
   "ev_bytes": "{n} bytes",
   "ev_note_sample": "One sample from the {total}-URL finding. Timestamps shown to the second.",
   "ev_note_urls": "The first {n} affected addresses. The full list is in the XLSX appendix.",
+  "ev_note_urls_one": "The first affected address. The full list is in the XLSX appendix.",
   "next_action": "NEXT ACTION",
   "search_visibility": "Search visibility",
   "search_sub": "Selected source queries · Monthly volume shown relative to this selection",
@@ -494,13 +510,21 @@
     "file",
     "files"
    ],
+   "request": [
+    "page request",
+    "page requests"
+   ],
+   "address": [
+    "address",
+    "addresses"
+   ],
    "site": "Whole site",
    "section": "{n} pages ({section})"
   },
   "prov_content": "Content:",
-  "prov_content_line": "{read} pages read; {unread} URLs unread; {gaps} scope items unassessed.",
+  "prov_content_line": "{read:page|pages} read; {unread:URL|URLs} unread; {gaps:scope item|scope items} unassessed.",
   "prov_sitemap": "Sitemap:",
-  "prov_sitemap_line": "{checked} of {listed} URLs checked.",
+  "prov_sitemap_line": "{checked} of {listed:URL|URLs} checked.",
   "prov_engine": "Engine:",
   "prov_engine_line": "Maya Audit {version} · audit {audit_id}",
   "prov_note_saved": "Built from saved evidence. No new crawl was run.",
@@ -535,7 +559,7 @@
    "Nov",
    "Dec"
   ],
-  "prov_note_cache": "Content for {saved} of {read} pages came from Maya's saved copies; the site may have changed since.",
+  "prov_note_cache": "Content for {saved} of {read:page|pages} came from Maya's saved copies; the site may have changed since.",
   "p5_title": "To-do list",
   "p5_sub": "At most 15 cards, by priority: what to do, who does it, how to verify it.",
   "todo_steps": "STEPS",
@@ -543,9 +567,9 @@
   "todo_links": "AFFECTED ADDRESSES",
   "todo_sources": "AFFECTED SOURCE PAGES",
   "todo_targets": "Failing target URL",
-  "todo_more": "+{n} more addresses (full list in the attached XLSX appendix)",
+  "todo_more": "+{n:more address|more addresses} (full list in the attached XLSX appendix)",
   "todo_sitewide": "Applies to the whole site; no individual addresses.",
-  "todo_count": "{n} to-do items",
+  "todo_count": "{n:to-do item|to-do items}",
   "todo_fact": "Evidence",
   "sub_more": "+{n} more",
   "sitemap_row": "Sitemap: {parts}",
@@ -597,7 +621,7 @@
   ],
   "link_unknown": "unknown",
   "link_sitemap": "sitemap.xml entry",
-  "link_more": "+{n} more links (full list in the attached address list)",
+  "link_more": "+{n:more link|more links} (full list in the attached address list)",
   "link_note": "Maya does not know the right new address: choose the page the link should point to, or remove the link.",
   "verification": {
    "confirmed": "Checked again: confirmed",
@@ -611,18 +635,19 @@
   "p6_sub": "Maya's own limits, findings to confirm first, the key pages and the full list in the appendix.",
   "own_title": "Limits of this audit",
   "own_note": "These are Maya's limits (page cap, time, connections, reading path), not problems of the site.",
-  "own_page_cap": "Page cap: at most {pages} pages read; {not_read} known addresses not read.",
-  "own_time": "Time budget: {seconds} seconds; some steps were cut short by it.",
-  "own_gaps": "{n} parts not assessed: in the appendix (Coverage sheet).",
+  "own_page_cap": "Page cap: at most {pages:page|pages} read; {not_read:known address|known addresses} not read.",
+  "own_time": "Time budget: {seconds:second|seconds}; some steps were cut short by it.",
+  "own_gaps": "{n:part|parts} not assessed: in the appendix (Coverage sheet).",
   "confirm_title": "Confirm first",
   "confirm_note": "Confirm in a normal browser or Search Console before acting.",
-  "confirm_more": "{n} more groups to confirm: in the appendix.",
+  "confirm_more": "{n:more group|more groups} to confirm: in the appendix.",
   "confirm_none": "No finding waits for confirmation.",
   "confirm_reasons": {
    "unverified_check": "Awaiting confirmation: new check",
    "low_confidence": "Awaiting confirmation: estimated measurement",
    "intent": "Awaiting confirmation: may be a deliberate choice",
    "firecrawl_only": "Awaiting confirmation: seen through a different reading path",
+   "rendered_html": "Awaiting confirmation: rendered HTML, not comparable",
    "spoofed_googlebot": "Awaiting confirmation: a request with a search engine's identity was refused; check Search Console"
   },
   "kp_title": "Key pages scorecard",
@@ -648,7 +673,7 @@
   "quick_none": "No small-effort job among the cards.",
   "appendix_title": "Appendix",
   "appendix_file": "appendix (XLSX)",
-  "appendix_line": "{file}: all {findings} findings and every affected address. In this report {cards} cards; {confirm} groups to confirm; {notes} note groups; {appendix} problem groups only in the appendix. Maya's own limits are in the box on the left and in the appendix's Coverage sheet.",
+  "appendix_line": "{file}: all {findings:finding|findings} and every affected address. In this report {cards:card|cards}; {confirm:group|groups} to confirm; {notes:note group|note groups}; {appendix:problem group|problem groups} only in the appendix. Maya's own limits are in the box on the left and in the appendix's Coverage sheet.",
   "todo_priority": "Priority score {score}",
   "schedule_priority": "First cards by priority score",
   "manual_confirmed": "Measured, confirmed by manual check ({by}, {date})",
@@ -671,6 +696,11 @@
   "ev_measured": "MEASURED",
   "ev_limit": "LIMIT",
   "not_read_line": "{n} addresses not read are in the appendix; they add nothing to the priority score.",
+  "low_coverage": "Low coverage: {read} of the {planned:planned page|planned pages} read. The findings do not represent the whole site; no client brief is made from this coverage.",
+  "low_coverage_unplanned": "Low coverage: pages read: {read}. The findings do not represent the whole site; no client brief is made from this coverage.",
+  "not_read_line_one": "{n} address not read is in the appendix; it adds nothing to the priority score.",
+  "read_unscored_line": "{n} pages read, importance unknown: counted at a neutral weight.",
+  "read_unscored_line_one": "{n} page read, importance unknown: counted at a neutral weight.",
   "prov_reassessed": "Assessment:",
   "prov_reassessed_line": "Re-evaluated with the current engine (Maya Audit {version} · schema {schema}{commit}, {date})",
   "prov_reassess_failed": "Could not be re-evaluated with the current engine; the report is used as saved."

@@ -3408,3 +3408,64 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      current-engine copy, one review file read through the copy, the downloads labels, each language through the real
      routes with no template text of the other, a report that cannot be re-read used as saved and said so);
      `test_v03_client_report`, `test_w4b_report_length`, `test_next_accuracy` follow the new names and buttons.
+309. **Team report fixes for every audit: web confirmations, platform steps, saved-data platform, key pages, Note
+     slots, read-but-unscored reach, rendered HTML, low coverage, the history list, words (Owner, 2026-11-05: items
+     0-9; the signals, thresholds, neutral weight, labels and layout are agent defaults).** Test cases: nihan b3198942
+     (500 pages, Shopify), nihan 50473193 (Firecrawl-only), nihan efb50ee4 (1 page), moodisthastanesi c581ff0a (hospital,
+     WordPress, multilingual).
+     (0) *Web confirmations.* Where: one file per audit, `<audit>/artifacts/review.json`, written by POST
+     `/audits/{id}/review` and read by every build (`build_from_files(review=…)`, the appendix, "Teyit edin"). Found on
+     b3198942: the owner's file holds six saves of ACC-4-17ea40ab (the Googlebot 429 row, the last of 11), every one with
+     the STR-12 note, and none of STR-12-c792bc34; the build read that file correctly, so STR-12 stayed under "Teyit
+     edin". With today's code a browser check on a copy (headless Chromium, the first row) posts STR-12 and writes it;
+     the rows' forms were alike ("Teyit edildi / Reddedildi" eleven times, the finding named only above the form), and a
+     row is a group: confirming its lead left the group's other finding (STR-9-e3f85546, "6 sayfada <html lang>…") behind
+     as a new row. Now a check is recorded for every finding of the row's group; each form names its finding ID in its
+     summary and its buttons' labels; the row lists the group's IDs; the save notice names the title and IDs saved; a
+     checked row shows its card note; POST answers `saved: {finding_ids, result, file}`; the skill's `--confirm` /
+     `--reject` cover the group the same way. A card with four or more lines under its status (a confirmed group: the
+     note, the regions, one line per finding) keeps two steps, so it fits its box (nihan's English STR-12 card did not
+     with three). The owner's file is not
+     changed: STR-12 is confirmed there with one save in "Teyit edin" (or the ACC-4 entries rejected/kept as they wish).
+     (1) *Platform steps only on that platform.* The catalogue (`maya_audit/rule_actions.json`) and the text library had
+     a Shopify line in the steps every site gets (idx6.alias_links "within: collection", acc3.utility_indexable,
+     str3.product_no_identifier): Moodist's card 04 printed it. Those lines moved to `steps_by_platform.Shopify` (the
+     platform's list: every step, its own line in place); a card shows them only when the report's platform is
+     Shopify (RG-11 checks it). A test keeps every generic step free of a platform name.
+     (2) *Platform from saved data* (`site_platform.recognise_saved`): a page reader's saved copy keeps no script list,
+     so a Firecrawl-only audit named no platform. When the report names none, the saved data is read: a sitemap the
+     platform names (`sitemap_products_N.xml?from=`), its file CDN in the saved copies (`cdn.shopify.com`,
+     `/cdn/shop/`, `.myshopify.com`), and addresses under both `/products/` and `/collections/` (3 or more each); each
+     signal is said, "(saved data, DECISIONS 309)". Used by the live report (`report.py`), the offline reassessment and,
+     for a report of the current schema, `reassess_rules.saved_data` in the derived copy (`current.py` reads
+     `evidence/` and `evidence-firecrawl/`). Shape unchanged (name, cdn, signals): no schema bump.
+     (3) *Key pages.* The rank shown is the place in the list (1, 2, 3 ...): a page not read (Moodist's `/en/en/`, rank 2
+     by importance) leaves no gap. The main-language homepage (the start address's final page, else the start address)
+     comes first, then the other language homepages read, then the rest by importance; the site root and a one-folder
+     locale path (`/tr/`, `/en/`, `/ru/`, `/ar/`) are typed homepage. Importance stays the page's own score (Moodist's
+     `/tr/` is 20: its canonical names `/tr/tr/`, the S2 card).
+     (4) *Note cards:* after every problem card, only in a slot they leave free, at most `NOTES_SHOWN = 2` in the PDF;
+     all notes stay in the appendix (Moodist went from 11 + 4 to 11 + 2).
+     (5) *Read, importance unknown:* a page whose content was read (Maya's 2xx or the page reader's) but has no
+     importance counts `NEUTRAL_IMPORTANCE = 50` in the reach and is never "not read"; the card says "Okunan, önemi
+     bilinmeyen N sayfa: puana nötr ağırlıkla katıldı." / "N pages read, importance unknown: counted at a neutral
+     weight." (`pages_read_unscored`, `read_unscored` in the appendix rows). Ranking only: no severity changes.
+     (6) *Rendered HTML:* RND-6 measured on Firecrawl's HTML (`evidence.html_measured` "rendered …", or an older
+     audit's `evidence.source.reader == "firecrawl"`) is estimated, goes to "Teyit edin" with the reason "işlenmiş HTML,
+     karşılaştırılamaz" / "rendered HTML, not comparable", and an older audit's title gets the label the current engine
+     writes (DECISIONS 299 (4)). Maya's own RND-6 stands as before.
+     (7) *Low coverage:* `client_selection.low_coverage`: fewer than 10 pages read, or under 20% of the page cap. Page
+     1 of the PDF and the top of the web results show a banner ("Düşük kapsam: planlanan 500 sayfadan yalnız 1 sayfa
+     okundu …"); `client_brief_allowed(report)` returns `(False, "low_coverage")`, the gate a future client brief
+     passes first. The team report itself is still built, with the banner.
+     (8) *History list:* each saved audit shows date and time, mode ("Hızlı 50", "Standart 500", "Tek sayfa"), pages read
+     and the reading path (Maya / Firecrawl / Maya + Firecrawl), from the evidence indexes (never report.json), cached
+     while they are unchanged; without saved evidence, the progress counters.
+     (9) *Words:* every label goes through one format with `{name:singular|plural}` (`texts.label`): "1 page read",
+     "1 group to confirm", "The first affected address", "1 of 1 URL checked"; a name with a capital inside its first word
+     keeps its case after "ve"/"and" ("JavaScript'e", not "javaScript'e"); ACC-9's scope is "1 sayfa isteği" / "1 page
+     request" (not "1 dosya"); a scope whose addresses were mostly never read says "adres" / "addresses"; the finding
+     IDs in a card header wrap whole to the next line instead of being cut at the card's edge.
+     Tests: `tests/test_team_report_309.py` (22, one slow through the real routes: confirm with a note -> rebuild -> the
+     card with "Elle kontrol: <note>" in the PDF, nothing of the group left to confirm; a rejection takes it out);
+     `test_team_report` follows the group-wide save.

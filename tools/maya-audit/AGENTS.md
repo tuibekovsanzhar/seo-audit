@@ -18,6 +18,7 @@
   (`maya-audit-rapor` is deprecated and goes in release w15, DECISIONS 302). The pro report's template and text
   library live in `maya_audit_web/team_report/`; the web app's "Ekip raporu (PDF)" prints the same report (DECISIONS 307), both from the
   saved audit re-evaluated with the current engine (a derived copy; report.json is never written, DECISIONS 308).
+  A low-coverage audit (`client_selection.client_brief_allowed`, DECISIONS 309) gets no client brief.
   If a required skill is unavailable, report the missing source rather than inventing its workflow.
 - Use `maya-judgment-validator` for substantive audit-judgment changes and disputed evidence; pair it with
   `maya-verifier` for implementation/tests and `maya-report-checker` for consistency across outputs.

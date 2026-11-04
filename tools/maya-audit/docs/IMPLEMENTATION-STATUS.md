@@ -1105,6 +1105,46 @@ Page 3 (provenance box with the "Değerlendirme" line) and page 7 checked as ima
 | Owner's web app on port 8770 | NOT RUN (restart needed to load the new code) |
 | Linux/Windows, live runs, wheel build | NOT RUN |
 
+## Team report fixes for every audit (DECISIONS 309, 2026-11-05)
+
+What changed: a web confirmation covers its whole "Teyit edin" group (and the skill's `--confirm`), names its finding
+in the form and the save notice, and the next build shows the card with "Elle kontrol: <note>"; the review file is
+`<audit>/artifacts/review.json`. Platform steps (Shopify "within: collection" and two more) moved to
+`steps_by_platform`; the platform is also read from saved data (sitemap names, `/products/` + `/collections/`,
+`/cdn/shop/`); key pages: main homepage first, every language homepage typed and listed, ranks 1..N; at most 2 Note
+cards, after the problem cards; read-but-unscored pages count a neutral 50, never "Okunmayan"; RND-6 on Firecrawl's
+HTML goes to "Teyit edin" ("işlenmiş HTML, karşılaştırılamaz"); low coverage (<10 pages or <20% of the plan) puts a
+banner on PDF page 1 and the web results and blocks a client brief (`client_brief_allowed`); the history list shows
+date and time, mode, pages read and reading path; plural-aware English labels, "JavaScript'e", "1 sayfa isteği",
+"adres" when most addresses were unread, card-header IDs wrap.
+
+**Found on nihan b3198942:** `~/.maya-audit/web/audits/b3198942…/artifacts/review.json` holds six saves of
+ACC-4-17ea40ab (the Googlebot 429 row) with the STR-12 note, none of STR-12; the build read it correctly. Not changed.
+
+**Rebuilt through the real web routes** (isolated copy of the web home, `create_app` + TestClient; GET /review,
+POST /review, GET /team-report, both links; `reviews/2026-11-05/team-report-309/`, git-ignored):
+
+| Audit | TR / EN | Cards | Key pages | Teyit edin (PDF) |
+|---|---|---|---|---|
+| nihan b3198942, review file as saved | 200, PASS, 7 p. / same | 11 (9 + 2 notes); IDX-6, ACC-3, IDX-5 with Shopify steps | 1 `/`, 2 `/en`, then collections | 10, STR-12 first |
+| nihan b3198942, STR-12 confirmed via POST | 200, PASS, 7 p. / same | 12: STR-12 + STR-9 card 2 with the note | same | 9 |
+| nihan 50473193 (Firecrawl-only) | 200, PASS, 6 p. / same | 5; IDX-5 Shopify; neutral-reach lines | empty (reader-only note) | 7, RND-6 "rendered HTML" |
+| nihan efb50ee4 (1 page) | 200, PASS, 7 p. / same | 9 (8 + 1 note) | 1 `/` | 1 (ACC-9, "1 sayfa isteği"); low-coverage banner |
+| moodist c581ff0a | 200, PASS, 8 p. / same | 13 (11 + 2 notes), no Shopify step | 1 `/tr/`, 2 `/ru/`, 3 `/ar/`, 4 `/en/`, then by importance | 6 |
+
+**Verification** (working tree on `647fcbc`, macOS, Python 3.13.1; no .env, no providers, no live requests):
+
+| Command | Result |
+|---|---|
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2697 passed, 4 skipped, 134 deselected, 1 warning in 439.15s (0:07:19)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `1 failed, 2830 passed, 4 skipped, 1 warning in 810.38s (0:13:30)`: `test_fixture_matrix` (the generated docs/FIXTURE-MATRIX.md counted the new test file); regenerated, then `tests/test_fixture_matrix.py`, `test_team_report_309.py`, `test_team_report.py`: `48 passed` |
+| `tests/test_team_report_309.py` (slow included) | `23 passed` |
+| pro skill tests | `Ran 56 tests` `OK` |
+| `ruff check --isolated --select E9,F821,F841 .` | changed files clean; the same 4 F841 in test files not changed here |
+| `python3.11 -m compileall` | OK |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+| Linux/Windows, live runs, wheel build, CLI run | NOT RUN |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

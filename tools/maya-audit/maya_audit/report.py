@@ -79,6 +79,11 @@ def report_and_affected(result: CrawlResult, gates: list[GateResult], checks: li
     from .site_platform import recognise
     if (platform := recognise(result)) is not None:
         report["platform"] = platform
+    if not (report.get("platform") or {}).get("name"):
+        # DECISIONS 309: a page reader's copies keep no script list; the sitemap names and addresses still show some.
+        from .site_platform import recognise_saved
+        if (saved := recognise_saved(report)) is not None:
+            report["platform"] = saved
     # DECISIONS 301 (2): which page regions of a language-mismatch finding are in the other language.
     from .language_regions import attach as attach_regions
     attach_regions(report)

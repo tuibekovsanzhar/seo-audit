@@ -166,6 +166,7 @@ ol.timeline li.skipped, ol.timeline li.not_reached, ol.timeline li.unavailable {
 .outcome { border-left: 3px solid var(--ok); padding: 2px 0 2px var(--space-4); margin: 0 0 var(--space-5); }
 .outcome h3 { margin: 0 0 var(--space-1); font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
 .outcome.INCOMPLETE { border-color: var(--s2); } .outcome.DEGRADED { border-color: var(--danger); }
+.lowcov { border: 1px solid var(--danger); border-left-width: 4px; border-radius: 6px; padding: var(--space-3) var(--space-4); margin: 0 0 var(--space-5); color: var(--danger); font-weight: 600; }
 .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin: var(--space-4) 0; }
 .stat { border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-4) var(--space-5); background: var(--surface); font-weight: 600; }
 .stat b { display: block; font-size: 34px; font-weight: 300; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 2px; }

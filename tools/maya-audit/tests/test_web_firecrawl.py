@@ -348,8 +348,14 @@ def test_the_result_page_of_a_challenged_site_read_through_firecrawl_has_no_bloc
         page.evaluate("view => document.querySelector('#result').append(resultView(view, {}))", view)
         text = page.locator("#result").inner_text()
         browser.close()
-    # The headline is the first line of the card; the outcome follows it.
-    assert problems == [] and "Pages read" in text and "via Firecrawl" in text and text.startswith(view["headline"] + "\n\nAudit complete")
+    # The headline is the first line of the card; the outcome follows it (after the low-coverage banner when few pages
+    # were read, DECISIONS 309).
+    after = text[len(view["headline"]):].lstrip("\n")
+    if view.get("low_coverage"):
+        assert after.startswith(view["low_coverage"]["text"])
+        after = after[len(view["low_coverage"]["text"]):].lstrip("\n")
+    assert problems == [] and "Pages read" in text and "via Firecrawl" in text and text.startswith(view["headline"])
+    assert after.startswith("Audit complete")
     assert "By severity" in text and view["top_title"] in text and "Problems by page (" in text
     assert "The site blocked this audit" not in text and "Readable pages" not in text and "[object Object]" not in text
     assert "Maya's direct crawler was challenged" in text and "Genuine AI-crawler access was not measured" in text

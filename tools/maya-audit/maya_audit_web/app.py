@@ -934,6 +934,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                 "firecrawl_offer": firecrawl_offer(audit, report, view),
                 # A report the release gate blocked downloads only as a marked draft, and the buttons say so (DECISIONS 280).
                 "release_gate": gate_decision(report),
+                # DECISIONS 309: very few pages read: said at the top of the results, as on the PDF's first page.
+                "low_coverage": low_coverage_view(report),
                 # The team report and its XLSX appendix have their own section above (DECISIONS 307, 308); this list is
                 # the other files. The concise PDF is named for what it is, in the language it is written in, so
                 # nobody takes it for the team report.
@@ -1031,6 +1033,40 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             raise ApiError(404, 'audit_not_found', t('error.audit_not_found'))
         return {**audit['analysis'], 'result_url': '/api/v1/audits/'+analysis_id+'/summary'}
 
+    # DECISIONS 309: the history list says how each audit read the site. From the evidence indexes (small files, one
+    # row per page saved), never from report.json (it can be hundreds of MB); kept while the indexes are unchanged.
+    reading_cache: dict[str, tuple[tuple, dict[str, Any]]] = {}
+
+    def reading_of(audit: dict[str, Any]) -> dict[str, Any]:
+        folder = runner.artifacts(audit["id"])
+        indexes = [folder / "evidence" / "index.json", folder / "evidence-firecrawl" / "index.json"]
+        key = tuple((st.st_size, st.st_mtime_ns) if (st := (i.stat() if i.is_file() else None)) else None for i in indexes)
+        hit = reading_cache.get(audit["id"])
+        if hit and hit[0] == key:
+            return hit[1]
+        read: list[set[str]] = []
+        for index in indexes:
+            try:
+                pages = json.loads(index.read_text(encoding="utf-8")).get("pages") or [] if index.is_file() else []
+            except (OSError, ValueError, AttributeError):
+                pages = []
+            read.append({p["url"] for p in pages if isinstance(p, dict) and isinstance(p.get("url"), str)
+                         and isinstance(p.get("status"), int) and 200 <= p["status"] < 300})
+        maya, reader = read
+        if key == (None, None):  # no evidence saved: the progress counters (Maya's include refused requests)
+            progress = audit.get("progress") or {}
+            maya_n, reader_n = int(progress.get("pages_checked") or 0), int((progress.get("firecrawl") or {}).get("read") or 0)
+            total = max(maya_n, reader_n)
+        else:
+            maya_n, reader_n, total = len(maya), len(reader), len(maya | reader)
+        path = "both" if maya_n and reader_n else "maya" if maya_n else "firecrawl" if reader_n else None
+        out = {"pages_read": total, "read_by_maya": maya_n, "read_by_firecrawl": reader_n, "path": path,
+               "path_label": t(f"history.path.{path}") if path else t("history.path.none"),
+               "mode_label": t(f"plan.mode.{audit['mode']}") if audit.get("mode") in MODES else audit.get("mode")}
+        if key != (None, None):  # a running audit's counters move: read again next time
+            reading_cache[audit["id"]] = (key, out)
+        return out
+
     @api.get("/audits", summary="History, newest first")
     def list_audits(q: str = Query(default="", max_length=200), domain: str = Query(default="", max_length=253),
                     status: str = Query(default="", pattern="^(|queued|running|stopping|stopped|interrupted|finished|failed)$"),
@@ -1041,7 +1077,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
              "state": a["state"], "state_label": t(f"job.state.{a['state']}"), "active": is_active(a),
              "outcome": a["outcome"], "outcome_label": summary.outcome_label(a["outcome"], a.get("outcome_reason")),
              "pages_checked": a["progress"].get("pages_checked", 0), "created_at": a["created_at"],
-             "finished_at": a["finished_at"]} for a in rows]}
+             "finished_at": a["finished_at"], **reading_of(a)} for a in rows]}
 
     @api.get("/audits/{audit_id}", summary="One audit: lifecycle, outcome, steps, counters")
     def get_audit(audit_id: str) -> dict[str, Any]:
@@ -1330,6 +1366,14 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             lang = audit.get("language") if audit.get("language") in STRINGS else current_language()
             return t("result.download.pdf", language=t(f"team.lang.{lang}") if lang in ("tr", "en") else LANGUAGE_NAMES.get(lang, lang))
         return t(f"result.download.{fmt}")
+
+    def low_coverage_view(report: dict[str, Any]) -> dict[str, Any] | None:
+        from maya_audit.client_selection import low_coverage
+        low = low_coverage(report)
+        if not low:
+            return None
+        key = "result.low_coverage" if low.get("planned") else "result.low_coverage.unplanned"
+        return {**low, "text": t(key, read=low["pages_read"], planned=low.get("planned") or 0)}
 
     def review_path(audit: dict[str, Any]) -> Path:
         from maya_audit import manual_review
@@ -1691,12 +1735,19 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         from maya_audit import manual_review
         from maya_audit.release_gate import findings_of
         audit = need_audit(audit_id)
-        finding = findings_of(current_report(audit)[0]).get(body.finding_id)
-        if finding is None:
+        report, aff, _ = current_report(audit)
+        findings = findings_of(report)
+        if body.finding_id not in findings:
             raise ApiError(404, "finding_not_found", t("review.unknown_finding"))
-        manual_review.record(review_path(audit), manual_review.entry(
-            body.finding_id, body.result, by=body.by, seen=body.seen, note=body.note, rule_id=finding.get("rule_id")))
-        return review_view(audit)
+        # DECISIONS 309: a row of "Teyit edin" is a group (one cause, several findings): the check covers each of them,
+        # so a confirmed row never leaves one of its findings behind as a new row to confirm.
+        group = client_selection_of(audit, report, aff)["by_finding"].get(body.finding_id) or {}
+        ids = [i for i in group.get("finding_ids") or [body.finding_id] if i in findings] or [body.finding_id]
+        path = review_path(audit)
+        for fid in ids:
+            manual_review.record(path, manual_review.entry(
+                fid, body.result, by=body.by, seen=body.seen, note=body.note, rule_id=findings[fid].get("rule_id")))
+        return {**review_view(audit), "saved": {"finding_ids": ids, "result": body.result, "file": str(path)}}
 
     @api.post("/audits/{audit_id}/client-report/validate")
     def validate_client_report(audit_id: str):

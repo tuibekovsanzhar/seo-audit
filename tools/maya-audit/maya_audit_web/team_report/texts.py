@@ -64,9 +64,28 @@ def fill(template: str | None, **values) -> str | None:
     return _NAME.sub(lambda m: str(values.get(m.group(1), "")), text).strip()
 
 
+_PLURAL = re.compile(r"\{(\w+):([^{}|]*)\|([^{}]*)\}")
+
+
+def label(template: str, **values) -> str:
+    """str.format for the labels (refs/etiketler.json) with `{name:singular|plural}` (DECISIONS 309): "{read:page|pages}"
+    -> "1 page", "15,400 pages". A value may be a formatted number ("15.400"); the count is read from its digits."""
+    def one(m):
+        value = values.get(m.group(1))
+        digits = re.search(r"\d[\d,.]*", str(value if value is not None else ""))
+        n = int(re.sub(r"[,.]", "", digits.group(0))) if digits else None
+        return f"{value} {m.group(2) if n == 1 else m.group(3)}"
+    return _PLURAL.sub(one, template).format(**values)
+
+
 def lower_first(text: str, lang: str) -> str:
     """'Sayfa HTML ağırlığı' -> 'sayfa HTML ağırlığı'; an acronym ('CDN önbelleği') or a tag stays as it is."""
     if not text or len(text) < 2 or not text[0].isupper() or text[1].isupper() or not text[1].isalpha():
+        return text
+    # A name with a capital inside its first word stays as written (DECISIONS 309): "JavaScript'e", "WordPress",
+    # never "javaScript'e" after "ve" / "and".
+    first_word = re.split(r"[\s'’\-/(]", text, maxsplit=1)[0]
+    if any(c.isupper() for c in first_word[1:]):
         return text
     first = {"I": "ı", "İ": "i"}.get(text[0], text[0].lower()) if lang == "tr" else text[0].lower()
     return first + text[1:]

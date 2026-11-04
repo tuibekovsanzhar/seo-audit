@@ -242,6 +242,27 @@ def _decisions_304(report: dict, affected: dict, changes: list[str], unassessed:
         check["status"] = _status(check.get("findings") or [], check.get("review_items") or ())
 
 
+def _decisions_309(report: dict, changes: list[str], saved_texts: list[str]) -> None:
+    """The platform from the saved data when the report names none (a page reader's copies keep no script list), and
+    RND-6 measured on Firecrawl's HTML labelled as such (an audit saved before the label, DECISIONS 299 (4))."""
+    from .checks.render import RENDERED_NOTE, RENDERED_VIA_FIRECRAWL
+    from .site_platform import recognise_saved
+    if not (report.get("platform") or {}).get("name"):
+        found = recognise_saved(report, saved_texts)
+        if found:
+            report["platform"] = found
+            changes.append(f"platform: {found['name']} recognised from the saved data ({'; '.join(found['signals'])}), DECISIONS 309")
+    for check in report.get("checks") or []:
+        for f in check.get("findings") or []:
+            ev = f.get("evidence") or {}
+            if f.get("check_id") != "RND-6" or ev.get("html_measured") or (ev.get("source") or {}).get("reader") != "firecrawl":
+                continue
+            f["title"] = (f.get("title") or "") + RENDERED_VIA_FIRECRAWL
+            f["evidence"] = {**ev, "html_measured": "rendered (Firecrawl)"}
+            f["notes"] = list(f.get("notes") or []) + [RENDERED_NOTE]
+            changes.append(f"{f['id']}: measured on Firecrawl's rendered HTML, labelled and sent to confirm first (DECISIONS 309)")
+
+
 def _order(report: dict) -> list[str]:
     from .findings import Severity, priority_key
     from .models import Confidence
@@ -257,10 +278,11 @@ def _order(report: dict) -> list[str]:
 
 
 def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | None = None,
-          jsonld_by_url: dict[str, list[str]] | None = None) -> tuple[dict, dict, dict]:
+          jsonld_by_url: dict[str, list[str]] | None = None, saved_texts: list[str] | None = None) -> tuple[dict, dict, dict]:
     """(report, affected, record) for a copy of `report` with the changed rules applied. `record` lists every change
     and what could not be assessed offline; it is also written to `generation.analysis`. `jsonld_by_url`: each page's
-    saved JSON-LD blocks (the audit's evidence copies), for the Product fields and authors (DECISIONS 304)."""
+    saved JSON-LD blocks (the audit's evidence copies), for the Product fields and authors (DECISIONS 304).
+    `saved_texts`: the saved page copies as text, for the platform when the report names none (DECISIONS 309)."""
     from . import release_gate
     from .report import problem_summary
     from .severity import apply as apply_severity
@@ -276,6 +298,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
         n = saved_jsonld(r, jsonld_by_url)
         changes.append(f"Product fields read from the saved JSON-LD of {n} page(s) (DECISIONS 304)")
     _decisions_304(r, aff, changes, quick_unassessed)
+    _decisions_309(r, changes, saved_texts or [])
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -291,7 +314,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301 and 304, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304 and 309, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
@@ -302,3 +325,15 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     }
     r.setdefault("generation", {})["analysis"] = record
     return r, aff, record
+
+
+def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str] | None = None) -> tuple[dict, list[str]]:
+    """(copy, changes): only what DECISIONS 309 reads from the saved data (the platform, the RND-6 label), for a report
+    the current engine wrote, which needs no other rule; `changes` is empty when nothing applies."""
+    r = deepcopy(report)
+    changes: list[str] = []
+    _decisions_309(r, changes, saved_texts or [])
+    if changes:
+        from . import release_gate
+        r["release_gate"] = release_gate.run(r, affected or {})
+    return r, changes

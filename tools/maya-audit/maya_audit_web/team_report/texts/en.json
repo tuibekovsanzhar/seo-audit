@@ -603,11 +603,17 @@
    "why": "Search result and cart pages are endless, near-empty variations. Indexing them wastes crawler visits and can crowd out real pages.",
    "steps": [
     "Add a noindex robots tag to the search and cart pages",
-    "On Shopify: in the theme's <head>, for the search and cart templates",
     "Keep these pages out of the sitemap"
    ],
    "verify": "Open the source of the internal search and cart pages; a noindex robots tag should appear there.",
-   "summary": "Search and cart indexing"
+   "summary": "Search and cart indexing",
+   "steps_by_platform": {
+    "Shopify": [
+     "Add a noindex robots tag to the search and cart pages",
+     "On Shopify: in the theme's <head>, for the search and cart templates",
+     "Keep these pages out of the sitemap"
+    ]
+   }
   },
   "acc4.different": {
    "title": "Serve crawlers the same content as browsers",
@@ -1681,11 +1687,17 @@
    "why": "A link to a duplicate address sends crawlers to a page they then fold into another: visits are spent twice and the canonical page gets its links second-hand.",
    "steps": [
     "Find the template that writes the alias links",
-    "Make it write the canonical address instead",
-    "On Shopify: remove \"within: collection\" from product card links"
+    "Make it write the canonical address instead"
    ],
    "verify": "In the page source, internal links should point at each page's canonical address.",
-   "summary": "Internal links to duplicates"
+   "summary": "Internal links to duplicates",
+   "steps_by_platform": {
+    "Shopify": [
+     "Find the template that writes the alias links",
+     "Make it write the canonical address instead",
+     "On Shopify: remove \"within: collection\" from product card links"
+    ]
+   }
   },
   "idx6.broken": {
    "title": "Fix or remove links to addresses that return an error",
@@ -3351,11 +3363,17 @@
    "why": "A GTIN or MPN lets Google match the product to the same item elsewhere, which its shopping results and merchant listings rely on.",
    "steps": [
     "Add the GTIN (barcode), or the MPN when there is none",
-    "Add the brand too",
-    "On Shopify: fill each variant's barcode field"
+    "Add the brand too"
    ],
    "verify": "In the Rich Results Test, the Product markup should show a gtin or mpn field.",
-   "summary": "Product identifiers"
+   "summary": "Product identifiers",
+   "steps_by_platform": {
+    "Shopify": [
+     "Add the GTIN (barcode), or the MPN when there is none",
+     "Add the brand too",
+     "On Shopify: fill each variant's barcode field"
+    ]
+   }
   },
   "str3.qa_no_faqpage": {
    "title": "Mark up question-and-answer content with FAQPage",

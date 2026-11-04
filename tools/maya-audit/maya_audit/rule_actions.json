@@ -1203,14 +1203,26 @@
    "steps": {
     "tr": [
      "Arama ve sepet sayfalarına noindex robots etiketi ekleyin",
-     "Shopify'da: temanın <head> bölümünde arama ve sepet şablonları için",
      "Bu sayfaları site haritasına almayın"
     ],
     "en": [
      "Add a noindex robots tag to the search and cart pages",
-     "On Shopify: in the theme's <head>, for the search and cart templates",
      "Keep these pages out of the sitemap"
     ]
+   },
+   "steps_by_platform": {
+    "Shopify": {
+     "tr": [
+      "Arama ve sepet sayfalarına noindex robots etiketi ekleyin",
+      "Shopify'da: temanın <head> bölümünde arama ve sepet şablonları için",
+      "Bu sayfaları site haritasına almayın"
+     ],
+     "en": [
+      "Add a noindex robots tag to the search and cart pages",
+      "On Shopify: in the theme's <head>, for the search and cart templates",
+      "Keep these pages out of the sitemap"
+     ]
+    }
    }
   },
   "idx6.alias_links": {
@@ -1219,14 +1231,26 @@
    "steps": {
     "tr": [
      "Kopya adrese bağlantı yazan şablonu bulun",
-     "Şablonun kanonik adresi yazmasını sağlayın",
-     "Shopify'da: ürün kartı bağlantısından \"within: collection\" kaldırın"
+     "Şablonun kanonik adresi yazmasını sağlayın"
     ],
     "en": [
      "Find the template that writes the alias links",
-     "Make it write the canonical address instead",
-     "On Shopify: remove \"within: collection\" from product card links"
+     "Make it write the canonical address instead"
     ]
+   },
+   "steps_by_platform": {
+    "Shopify": {
+     "tr": [
+      "Kopya adrese bağlantı yazan şablonu bulun",
+      "Şablonun kanonik adresi yazmasını sağlayın",
+      "Shopify'da: ürün kartı bağlantısından \"within: collection\" kaldırın"
+     ],
+     "en": [
+      "Find the template that writes the alias links",
+      "Make it write the canonical address instead",
+      "On Shopify: remove \"within: collection\" from product card links"
+     ]
+    }
    }
   },
   "str15.empty_collections": {
@@ -1373,14 +1397,26 @@
    "steps": {
     "tr": [
      "GTIN'i (barkod), yoksa MPN'i ekleyin",
-     "Markayı da ekleyin",
-     "Shopify'da: her varyantın barkod alanını doldurun"
+     "Markayı da ekleyin"
     ],
     "en": [
      "Add the GTIN (barcode), or the MPN when there is none",
-     "Add the brand too",
-     "On Shopify: fill each variant's barcode field"
+     "Add the brand too"
     ]
+   },
+   "steps_by_platform": {
+    "Shopify": {
+     "tr": [
+      "GTIN'i (barkod), yoksa MPN'i ekleyin",
+      "Markayı da ekleyin",
+      "Shopify'da: her varyantın barkod alanını doldurun"
+     ],
+     "en": [
+      "Add the GTIN (barcode), or the MPN when there is none",
+      "Add the brand too",
+      "On Shopify: fill each variant's barcode field"
+     ]
+    }
    }
   }
  }

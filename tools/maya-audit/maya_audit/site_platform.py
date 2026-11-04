@@ -14,7 +14,8 @@ one listed first (the more specific), so a shop with one embedded WordPress maga
 from __future__ import annotations
 
 from collections import Counter
-from typing import Any
+import re
+from typing import Any, Iterable
 
 # (name, substrings looked for in script addresses, the generator meta tag and X-Powered-By, lower case). Each list
 # is short on purpose: a host or a folder only that platform uses, never a loose word that would misname sites.
@@ -110,3 +111,56 @@ def recognise(result) -> dict[str, Any] | None:
     signals = ([first[name] + (f" ({votes[name]} of {len(pages)} pages read)" if votes[name] > 1 else "")]
                if name else []) + ([cdn_signal] if cdn_signal else [])
     return {"name": name, "cdn": cdn, "signals": signals}
+
+
+# ---------------------------------------------------------------- from saved data (DECISIONS 309)
+# A page reader's saved copy (Firecrawl) keeps no script list, so `recognise` finds nothing when only the reader read the
+# pages. What the audit saved still shows some platforms: the names of the sitemaps the platform writes, the folders its
+# addresses use and the address of its file CDN inside the saved markup (JSON-LD, og:image, canonicals). Each signal is
+# one only that platform makes; nothing is requested.
+SAVED_SIGNATURES = (
+    ("Shopify", {
+        "sitemap": re.compile(r"/sitemap_(?:products|collections|pages|blogs)_\d+\.xml\?from=\d+", re.IGNORECASE),
+        "text": ("cdn.shopify.com", "/cdn/shop/", ".myshopify.com"),
+        # Both folders, each on several addresses: /products/<handle> and /collections/<handle> together.
+        "paths": ("/products/", "/collections/"),
+    }),
+)
+PATHS_AT_LEAST = 3  # addresses under each folder before the pair counts
+
+
+def _addresses(report: dict) -> list[str]:
+    crawl = report.get("crawl") or {}
+    urls = [u for key in ("sitemap_urls", "discovered_urls") for u in crawl.get(key) or [] if isinstance(u, str)]
+    urls += [p.get("url") for p in crawl.get("pages") or [] if isinstance(p, dict) and isinstance(p.get("url"), str)]
+    urls += [p.get("url") for p in (report.get("firecrawl") or {}).get("pages") or []
+             if isinstance(p, dict) and isinstance(p.get("url"), str)]
+    return urls
+
+
+def recognise_saved(report: dict, texts: Iterable[str] = ()) -> dict[str, Any] | None:
+    """{"name", "cdn", "signals"} (the shape `recognise` returns) for a platform the saved data shows when the report
+    names none, or None. `texts`: the saved page copies (the audit's evidence files) as text. The CDN stays the
+    report's. Each signal says it comes from the saved data."""
+    from urllib.parse import urlsplit
+    texts = list(texts)
+    sitemaps = [d.get("url") for d in (report.get("crawl") or {}).get("sitemap_docs") or []
+                if isinstance(d, dict) and isinstance(d.get("url"), str)]
+    paths = [urlsplit(u).path.lower() for u in _addresses(report)]
+    for name, sig in SAVED_SIGNATURES:
+        signals = []
+        hit = next((u for u in sitemaps if sig["sitemap"].search(u)), None)
+        if hit:
+            signals.append(f"{name}: sitemap {hit[:120]} (the platform's own sitemap names)")
+        needle = next((n for n in sig["text"] for t in texts if n in t.lower()), None)
+        if needle:
+            seen = sum(1 for t in texts if needle in t.lower())
+            signals.append(f"{name}: {needle} in {seen} saved page cop{'y' if seen == 1 else 'ies'}")
+        counts = [sum(1 for p in paths if folder in p) for folder in sig["paths"]]
+        if all(n >= PATHS_AT_LEAST for n in counts):
+            signals.append(f"{name}: addresses under " + " and ".join(f"{f} ({n})" for f, n in zip(sig["paths"], counts)))
+        if signals:
+            return {"name": name, "cdn": (report.get("platform") or {}).get("cdn"),
+                    "signals": [f"{s} (saved data, DECISIONS 309)" for s in signals]
+                               + list((report.get("platform") or {}).get("signals") or [])}
+    return None
