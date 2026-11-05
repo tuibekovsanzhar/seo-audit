@@ -350,3 +350,10 @@ table.data th { white-space: nowrap; overflow-wrap: normal; font-weight: 600; co
 .business-select { max-width: 100%; }
 .business-row, .business-box { margin: 10px 0; display: grid; gap: 4px; }
 .business-box .row { align-items: center; gap: 8px; }
+/* DECISIONS 313: the business type in one compact line. */
+.business-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.business-chip { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); font-size: 13px; font-weight: 500; }
+.business-why summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+.business-why[open] { flex-basis: 100%; }
+.business-line .business-select { width: auto; max-width: 320px; }
+.business-line .label { font-size: 13px; margin: 0; }

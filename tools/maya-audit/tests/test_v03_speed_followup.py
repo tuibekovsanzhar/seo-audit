@@ -193,7 +193,7 @@ def test_the_card_says_maya_was_blocked_once_not_in_its_label_and_again_under_it
         label = summary.outcome_label("DEGRADED", BLOCKED)
         shown, known = summary.outcome_shown("DEGRADED", BLOCKED)
         assert known and label.split(";")[0] not in shown
-        assert shown.startswith("18192 more discovered URLs" if language == "en" else "Keşfedilen 18192 URL")
+        assert shown.startswith("18192 more discovered URLs" if language == "en" else "Keşfedilen 18192 adres")
         # Any other outcome is shown as it was.
         other = "The audit could not read the site properly: every page was blocked."
         assert summary.outcome_shown("DEGRADED", other)[0] == wording.outcome(other)[0]

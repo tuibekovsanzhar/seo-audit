@@ -150,8 +150,8 @@
     "sayfa"
    ],
    "url": [
-    "URL",
-    "URL"
+    "adres",
+    "adres"
    ],
    "file": [
     "dosya",
@@ -169,7 +169,7 @@
    "section": "{n} sayfa ({section})"
   },
   "prov_content": "İçerik:",
-  "prov_content_line": "{read} sayfa okundu; {unread} URL okunmadı; {gaps} kapsam öğesi değerlendirilmedi.",
+  "prov_content_line": "{read} sayfa okundu; {unread} adres okunmadı; {gaps} kapsam öğesi değerlendirilmedi.",
   "prov_sitemap": "Sitemap:",
   "prov_sitemap_line": "{listed} adresin {checked} tanesi kontrol edildi.",
   "prov_engine": "Motor:",
@@ -213,7 +213,7 @@
   "todo_verify": "DOĞRULAMA",
   "todo_links": "ETKİLENEN ADRESLER",
   "todo_sources": "ETKİLENEN KAYNAK SAYFA",
-  "todo_targets": "Hatalı hedef URL",
+  "todo_targets": "Hatalı hedef adres",
   "todo_more": "+{n} adres daha (tam liste ekteki XLSX dosyasında)",
   "todo_sitewide": "Tüm siteyi ilgilendiriyor; tek tek adres yok.",
   "todo_count": "{n} yapılacak iş",
@@ -359,7 +359,12 @@
    "suggestion_plain": "önerildi"
   },
   "kp_not_found": "{label} sayfası okunan sayfalar arasında bulunamadı (sitede olmadığı anlamına gelmez).",
-  "home_languages": "Ana sayfa ({n} dil)"
+  "home_languages": "Ana sayfa ({n} dil)",
+  "kp_importance_unknown": "önem hesaplanamadı ({reason}, bkz. kart #{card})",
+  "kp_importance_reasons": {
+   "canonical": "kanonik sorunu",
+   "redirect": "yönlendirme sorunu"
+  }
  },
  "en": {
   "doc_kind": "WEBSITE AUDIT",
@@ -719,6 +724,11 @@
    "suggestion_plain": "suggested"
   },
   "kp_not_found": "No {label} page among the pages read (this does not mean the site has none).",
-  "home_languages": "Homepage ({n} languages)"
+  "home_languages": "Homepage ({n} languages)",
+  "kp_importance_unknown": "importance not computed ({reason}, see card #{card})",
+  "kp_importance_reasons": {
+   "canonical": "canonical problem",
+   "redirect": "redirect problem"
+  }
  }
 }

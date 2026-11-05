@@ -3593,3 +3593,26 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      PageSpeed, Bing and Search Console keys (`PROVIDER_KEYS`), with a guard test. The recipe was run once as written:
      exit 0, JSON written, no Firecrawl section, no provider ledger.
      Tests: `tests/test_key_pages_312.py` (5); `test_team_report_309` and `test_v03_client_report` follow the one row.
+313. **Global UI fixes: business-type chip, exact headline counts, hints after the title, "adres" not "URL", the
+     homepage's importance when a canonical problem holds it down (Owner, 2026-11-05, moodist c581ff0a as the test case;
+     the wording of the reasons and the layout are agent defaults).**
+     (1) *Business type* (results summary): a compact chip "İşletme türü: Sağlık / klinikler", the reason folded under
+     "Neden?" ("Siteden önerildi: …" or "Sizin seçiminiz."), and "Değiştir" showing the type in use, the suggested one
+     marked "(önerilen)"; there is no "Otomatik öner" there: choosing the suggested type goes back to the suggestion
+     (`auto`, the choice file removed). The overview returns the reason (`business.reason`).
+     (2) *Headline* (`texts.headline(counts=…)`, the web summary and PDF page 1): the problems by severity, the same
+     counts as the first KPI: "1 yüksek, 7 orta ve 11 düşük önemde sorun var; önce …" (moodist). "Engelleyici" /
+     "blocking" only when a Blocker is counted; English "There is 1 medium-severity issue" / "There are …".
+     (3) *Hints:* a card title stays whole; one "?" per technical term it uses (canonical/kanonik, hreflang, noindex)
+     follows it, in the order the terms appear.
+     (4) *Units:* "URL" is gone from Turkish text: "adres" with its Turkish case endings (URL'si -> adresi, URL'lerin ->
+     adreslerin …) in every Turkish value of `locales/tr.json`, `locales/findings/tr.json`, `locales/catalog/tr.json`,
+     `team_report/texts/tr.json` and `etiketler.json` (230 values; English keys unchanged); pages read stay "sayfa".
+     Kept as written: Google's tool name "URL Denetimi" and its English status "URL is unknown to Google" quoted.
+     (5) *Key pages:* when the main homepage is capped as not indexable and a card covering it is a canonical (IDX-4) or
+     redirect (IDX-2, IDX-3) problem, its importance is "önem hesaplanamadı (kanonik sorunu, bkz. kart #1)" instead of
+     the capped number (moodist `/tr/`: 100 for links, depth and type, 20 because its canonical names `/tr/tr/`, card 1
+     idx4.redirect_loop); the PDF row reads "Ana sayfa (4 dil) · önem hesaplanamadı (…)" across the type and
+     importance cells; the appendix and the short summary say the same (`client_selection.importance_unknown`).
+     Shown on moodist through an isolated copy of the web app (port 8771, provider-free; the real web home untouched).
+     Tests: `tests/test_ui_313.py` (6, two in headless Chromium).

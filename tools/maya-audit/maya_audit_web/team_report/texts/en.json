@@ -34,7 +34,15 @@
   "followup": "This month: {list}.",
   "list_join": ", ",
   "list_last": " and ",
-  "confirm_title": "{finding} ({scope})"
+  "confirm_title": "{finding} ({scope})",
+  "band_counts": "There are {list}-severity issues",
+  "band_counts_one": "There is {list}-severity issue",
+  "count_names": {
+   "S1": "blocking",
+   "S2": "high",
+   "S3": "medium",
+   "S4": "low"
+  }
  },
  "groups": {
   "html_weight": {

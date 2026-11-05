@@ -260,7 +260,7 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 .p6 th:nth-child(1) { width: 6%; } .p6 th:nth-child(2) { width: 27%; } .p6 th:nth-child(3) { width: 19%; }
 .p6 th:nth-child(4) { width: 14%; } .p6 th:nth-child(5) { width: 11%; } .p6 th:nth-child(6) { width: 11%; }
 /* DECISIONS 311: a business type's page type names are longer ("Finansal ürün ve ürün listesi"): they wrap. */
-.p6 td:nth-child(3) { white-space: normal; line-height: 1.15; }
+.p6 td:nth-child(3), .p6 td.kp-note { white-space: normal; line-height: 1.15; }
 .p6 .left, .p6 .right { display: flex; flex-direction: column; gap: 18pt; }
 .p6 .app p { font-size: 9.6pt; line-height: 1.4; margin-top: 7pt; }
 .quick .q { font-size: 9.2pt; color: var(--ink); margin-top: 9pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -561,8 +561,16 @@ def page6(d, L):
     confirm = (f'<div class="card"><div class="cardhead"><h3>{e(L["confirm_title"])}</h3></div>'
                f'<div class="note">{e(L["confirm_note"])}</div><ul>{rows or "<li>" + e(L["confirm_none"]) + "</li>"}</ul></div>')
     head = "".join(f"<th>{e(c)}</th>" for c in L["kp_cols"])
-    body = "".join("<tr>" + "".join(f"<td>{e(v)}</td>" for v in (p["rank"], p["path"], p["type"], p["importance"], p["cards"],
-                                                                  p["worst"], p["confirm"])) + "</tr>" for p in d.get("key_pages") or [])
+    def kp_row(p):
+        # DECISIONS 313: a homepage whose importance a canonical or redirect problem holds down says so across the type
+        # and importance cells ("Ana sayfa (4 dil) · önem hesaplanamadı (kanonik sorunu, bkz. kart #1)").
+        if p.get("importance_unknown"):
+            cells = [f"<td>{e(p['rank'])}</td>", f"<td>{e(p['path'])}</td>",
+                     f'<td colspan="2" class="kp-note">{e(p["type"])} · {e(p["importance"])}</td>']
+        else:
+            cells = [f"<td>{e(v)}</td>" for v in (p["rank"], p["path"], p["type"], p["importance"])]
+        return "<tr>" + "".join(cells) + "".join(f"<td>{e(v)}</td>" for v in (p["cards"], p["worst"], p["confirm"])) + "</tr>"
+    body = "".join(kp_row(p) for p in d.get("key_pages") or [])
     # DECISIONS 311: the business type above the table, and the profile's top page types not found among the pages read.
     business = f'<div class="note" data-slot="business_line">{e(d["business_line"])}</div>' if d.get("business_line") else ""
     missing = "".join(f"<li>{e(x)}</li>" for x in d.get("key_pages_not_found") or [])

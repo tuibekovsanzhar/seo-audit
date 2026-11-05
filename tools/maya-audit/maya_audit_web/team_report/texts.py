@@ -194,14 +194,32 @@ def _focus(summaries: list[str], lang: str) -> list[str]:
     return [lower_first(s, lang) for s in summaries if s]
 
 
-def headline(severities: list[str], summaries: list[str], lang: str, *, pages_read: int = 1, limit: int = 90) -> str:
-    """The report's one-line verdict from the problem cards' severities (S1-S4) and the top cards' summaries."""
+def counts_band(counts: dict, lang: str) -> str | None:
+    """DECISIONS 313: the problems by severity, as the first KPI counts them: "1 yüksek, 5 orta ve 11 düşük önemde sorun
+    var". "Engelleyici" / "blocking" only when there is a Blocker. None when nothing S1-S4 is counted."""
+    p = library(lang)["page1"]
+    parts = [(int(counts.get(s) or 0), s) for s in ("S1", "S2", "S3", "S4") if int(counts.get(s) or 0)]
+    if not parts:
+        return None
+    names = [f"{n} {p['count_names'][s]}" for n, s in parts]
+    listed = names[0] if len(names) == 1 else ", ".join(names[:-1]) + p["levels_join"] + names[-1]
+    total = sum(n for n, _ in parts)
+    return fill(p["band_counts_one"] if total == 1 else p["band_counts"], list=listed)
+
+
+def headline(severities: list[str], summaries: list[str], lang: str, *, pages_read: int = 1, limit: int = 90,
+             counts: dict | None = None) -> str:
+    """The report's one-line verdict from the problem cards' severities (S1-S4) and the top cards' summaries. With
+    `counts` (problems by severity, DECISIONS 313) it says the exact numbers."""
     p = library(lang)["page1"]
     if not pages_read:
         return p["headline_unread"]
     if not severities:
         return p["headline_none"]
-    if any(s in ("S1", "S2") for s in severities):
+    exact = counts_band(counts, lang) if counts else None
+    if exact:
+        band = exact
+    elif any(s in ("S1", "S2") for s in severities):
         band = p["band_high"]
     else:
         levels = [p["level_names"][s] for s in ("S3", "S4") if s in severities]

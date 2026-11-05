@@ -1953,7 +1953,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         say = lambda key, **values: strings_module.t(key, lang, **values)  # noqa: E731  the language asked for
         how = say("result.business.user") if sel.get("chosen_by") == "user" else say("result.business.suggested", reason=reason)
         missing = [((n.get("label") or {}).get(lang) or n.get("type")) for n in data.get("_selection_not_found") or []]
-        return {"id": sel["id"], "label": label, "chosen_by": sel.get("chosen_by"), "suggested_id": sug.get("id"),
+        return {"id": sel["id"], "label": label, "chosen_by": sel.get("chosen_by"), "suggested_id": sug.get("id"), "reason": reason,
                 "line": say("result.business", label=label) + " (" + how + ")",
                 "not_found": say("result.business.not_found", types=", ".join(missing)) if missing else None,
                 "choices": bt.choices(lang)}

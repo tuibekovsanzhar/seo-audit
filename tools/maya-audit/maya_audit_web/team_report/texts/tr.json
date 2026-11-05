@@ -34,7 +34,15 @@
   "followup": "Bu ay ele alınacaklar: {list}.",
   "list_join": ", ",
   "list_last": " ve ",
-  "confirm_title": "{finding} ({scope})"
+  "confirm_title": "{finding} ({scope})",
+  "band_counts": "{list} önemde sorun var",
+  "band_counts_one": "{list} önemde sorun var",
+  "count_names": {
+   "S1": "engelleyici",
+   "S2": "yüksek",
+   "S3": "orta",
+   "S4": "düşük"
+  }
  },
  "groups": {
   "html_weight": {
@@ -56,7 +64,7 @@
     "Otomatik istemcilere boş sayfa döndüren kuralı bulun",
     "Sayfanın her istemciye içerikle yanıt vermesini sağlayın"
    ],
-   "verify": "Search Console › URL Denetimi › Canlı test'te sayfa içerikle görünmeli.",
+   "verify": "Search Console › adres Denetimi › Canlı test'te sayfa içerikle görünmeli.",
    "summary": "Boş yanıt veren sayfalar"
   },
   "heading_levels": {
@@ -347,7 +355,7 @@
     "Değilse Disallow kuralını bu sayfaları kapsamayacak şekilde daraltın",
     "Ya da bu tarayıcıların kendi grubuna bir Allow kuralı ekleyin"
    ],
-   "verify": "Etkilenen adresleri Search Console URL Denetimi ile kontrol edin; taramaya izin verildiği görünmeli.",
+   "verify": "Etkilenen adresleri Search Console adres Denetimi ile kontrol edin; taramaya izin verildiği görünmeli.",
    "summary": "robots.txt tarayıcı engelleri"
   },
   "acc2.blocks.sitewide": {
@@ -477,7 +485,7 @@
     "Bulunması gereken sayfalardan noindex'i kaldırın",
     "Onu ekleyebilecek tema, eklenti veya uygulama ayarlarını kontrol edin"
    ],
-   "verify": "Sayfaları Search Console URL Denetimi ile kontrol edin; bulunması gerekenlerde dizine eklemeye izin verilmeli.",
+   "verify": "Sayfaları Search Console adres Denetimi ile kontrol edin; bulunması gerekenlerde dizine eklemeye izin verilmeli.",
    "summary": "noindex'li sayfalar"
   },
   "acc3.noindex_listed": {
@@ -502,7 +510,7 @@
     "Sayfanın arama sonuçlarında istenip istenmediğini teyit edin",
     "İsteniyorsa noindex'i kaldırın"
    ],
-   "verify": "Sayfaları Search Console URL Denetimi ile kontrol edin; dizine ekleme durumu kararınızla uyuşmalı.",
+   "verify": "Sayfaları Search Console adres Denetimi ile kontrol edin; dizine ekleme durumu kararınızla uyuşmalı.",
    "summary": "Yardımcı sayfa noindex'i"
   },
   "acc3.nosnippet": {
@@ -528,7 +536,7 @@
     "Dizinden çıkarmak için: şimdilik robots.txt'de izin verin",
     "Taranmasın istiyorsanız: noindex'i kaldırın"
    ],
-   "verify": "Sayfaları Search Console URL Denetimi ile kontrol edin; tarama ve dizine ekleme seçiminizle uyuşmalı.",
+   "verify": "Sayfaları Search Console adres Denetimi ile kontrol edin; tarama ve dizine ekleme seçiminizle uyuşmalı.",
    "summary": "Engelli noindex'li sayfalar"
   },
   "acc3.robots_outside_head": {
@@ -593,7 +601,7 @@
     "Hâlâ bulunması gereken sayfalardan bu ayarı kaldırın",
     "Tarihi ekleyen şablonu veya uygulamayı kontrol edin"
    ],
-   "verify": "Sayfaları Search Console URL Denetimi ile kontrol edin; bulunması gerekenlerde dizine eklemeye izin verilmeli.",
+   "verify": "Sayfaları Search Console adres Denetimi ile kontrol edin; bulunması gerekenlerde dizine eklemeye izin verilmeli.",
    "summary": "Süresi dolmuş unavailable_after"
   },
   "acc3.utility_indexable": {
@@ -673,11 +681,11 @@
    "explanation": "Googlebot kullanıcı aracısına boş sayfa gönderen şeyi bulmalı ve web tarayıcısının aldığı sayfayı onun da almasını sağlamalısınız.",
    "why": "Gerçek Googlebot boş bir sayfa alırsa Google'ın o adres için dizine ekleyecek veya gösterecek bir şeyi olmaz.",
    "steps": [
-    "Etkilenen bir adresi Search Console URL Denetimi ile kontrol edin",
+    "Etkilenen bir adresi Search Console adres Denetimi ile kontrol edin",
     "Boş sayfayı sunan bot filtresini, güvenlik duvarını veya önbellek kuralını bulun",
     "Googlebot'un web tarayıcısının aldığı sayfayı almasını sağlayın"
    ],
-   "verify": "Search Console URL Denetimi'nde canlı test çalıştırın; getirilen sayfada içeriğin tamamı görünmeli.",
+   "verify": "Search Console adres Denetimi'nde canlı test çalıştırın; getirilen sayfada içeriğin tamamı görünmeli.",
    "summary": "Googlebot'a boş sayfa"
   },
   "acc4.ua_check.size": {
@@ -690,7 +698,7 @@
     "Etkilenen bir adres için iki yanıtı karşılaştırın",
     "Googlebot'ta içerik eksikse onu kaldıran kuralı düzeltin"
    ],
-   "verify": "Search Console URL Denetimi'nde canlı test çalıştırın; getirilen HTML, web tarayıcısının gördüğü içeriği taşımalı.",
+   "verify": "Search Console adres Denetimi'nde canlı test çalıştırın; getirilen HTML, web tarayıcısının gördüğü içeriği taşımalı.",
    "summary": "Googlebot sayfa boyutu farkı"
   },
   "acc4.ua_check.status": {
@@ -700,9 +708,9 @@
    "why": "Gerçek Googlebot geri çevrilirse Google bu sayfaları tarayamaz ve onları sonuçlarından çıkarabilir.",
    "steps": [
     "Güvenlik duvarında Googlebot'un doğrulanmış IP'lerine izin verin",
-    "Kuralı Search Console URL Denetimi ile test edin"
+    "Kuralı Search Console adres Denetimi ile test edin"
    ],
-   "verify": "Search Console URL Denetimi'ne ve tarama istatistiklerine bakın; gerçek Googlebot web tarayıcısıyla aynı yanıtı almalı.",
+   "verify": "Search Console adres Denetimi'ne ve tarama istatistiklerine bakın; gerçek Googlebot web tarayıcısıyla aynı yanıtı almalı.",
    "summary": "Googlebot güvenlik duvarı erişimi"
   },
   "acc5.never": {
@@ -923,7 +931,7 @@
     "Önce sayfadaki bu sorunları düzeltin",
     "Değişiklikten sonra sayfayı yeniden kontrol edin"
    ],
-   "verify": "Alıntılanan adresi web tarayıcısında ve Search Console URL Denetimi'nde açın; yüklenmeli ve dizine eklenebilir olmalı.",
+   "verify": "Alıntılanan adresi web tarayıcısında ve Search Console adres Denetimi'nde açın; yüklenmeli ve dizine eklenebilir olmalı.",
    "summary": "Alıntılanan sayfa sorunları"
   },
   "ans2.contradicts": {
@@ -1014,7 +1022,7 @@
     "Arkalarındaki hatayı düzeltin",
     "Sayfa kaldırıldıysa bulunamadı yanıtı döndürün ya da yönlendirin"
    ],
-   "verify": "Her adresi web tarayıcısında ve Search Console URL Denetimi'nde açın; sunucu hatası olmadan yüklenmeli.",
+   "verify": "Her adresi web tarayıcısında ve Search Console adres Denetimi'nde açın; sunucu hatası olmadan yüklenmeli.",
    "summary": "Sunucu hataları"
   },
   "idx1.5xx.once": {
@@ -1135,7 +1143,7 @@
     "Hâlâ bulduğunuz hataları düzeltin",
     "Sayfaları Bing Webmaster Tools üzerinden yeniden gönderin"
    ],
-   "verify": "Bing Webmaster Tools'ta URL Denetimi'ni kullanın; son tarama sayfanın hatasız getirildiğini göstermeli.",
+   "verify": "Bing Webmaster Tools'ta adres Denetimi'ni kullanın; son tarama sayfanın hatasız getirildiğini göstermeli.",
    "summary": "Bing tarama hataları"
   },
   "idx10.indexnow": {
@@ -1402,7 +1410,7 @@
     "Hedefin doğru sayfa olduğunu kontrol edin",
     "Yanlışsa sayfanın kanonik adresini düzeltin"
    ],
-   "verify": "Search Console URL Denetimi'nde Google'ın seçtiği kanonik adres, bildirilen adresle aynı olmalıdır.",
+   "verify": "Search Console adres Denetimi'nde Google'ın seçtiği kanonik adres, bildirilen adresle aynı olmalıdır.",
    "summary": "Aynı içerikli kanonik hedef"
   },
   "idx4.variant": {
@@ -1669,7 +1677,7 @@
     "lastmod'u sayfanın son düzenleme tarihinden alın",
     "Bu ayar yoksa lastmod'u yazmamayı değerlendirin"
    ],
-   "verify": "Site haritasında her URL'nin lastmod değeri, o sayfanın en son değiştiği tarihi göstermelidir.",
+   "verify": "Site haritasında her adresin lastmod değeri, o sayfanın en son değiştiği tarihi göstermelidir.",
    "summary": "Site haritası lastmod tarihleri",
    "steps_by_platform": {
     "Shopify": [
@@ -1948,9 +1956,9 @@
    "steps": [
     "Search Console'da Google'ın seçtiği kanonik adresi inceleyin",
     "Kanonik etiketi, iç bağlantıları ve site haritasını aynı adrese eşitleyin",
-    "Ardından URL Denetimi'nde dizine eklenme isteyin"
+    "Ardından adres Denetimi'nde dizine eklenme isteyin"
    ],
-   "verify": "Search Console URL Denetimi'nde Google'ın seçtiği kanonik adres, bildirdiğiniz adresle aynı olmalıdır.",
+   "verify": "Search Console adres Denetimi'nde Google'ın seçtiği kanonik adres, bildirdiğiniz adresle aynı olmalıdır.",
    "summary": "Google'ın seçtiği kanonik"
   },
   "idx9.no_rule": {
@@ -1959,11 +1967,11 @@
    "explanation": "Search Console'da her sayfanın kapsam durumunu okumalı ve Google'ın verdiği nedene göre çözümü belirlemelisiniz.",
    "why": "Bu, Google'ın kendi dizin kaydıdır. Dizinde olmayan bir sayfa Google sonuçlarında ve Google'ın yapay zekâ yanıtlarında görünemez.",
    "steps": [
-    "Search Console URL Denetimi'nde sayfanın kapsam durumunu okuyun",
+    "Search Console adres Denetimi'nde sayfanın kapsam durumunu okuyun",
     "Google'ın verdiği nedene göre sayfayı düzeltin",
     "Ardından dizine eklenme isteyin"
    ],
-   "verify": "Search Console URL Denetimi'nde sayfanın Google dizininde olduğu ve canlı testte dizine eklenebildiği görülmelidir.",
+   "verify": "Search Console adres Denetimi'nde sayfanın Google dizininde olduğu ve canlı testte dizine eklenebildiği görülmelidir.",
    "summary": "Google dizin durumu"
   },
   "idx9.noindex": {
@@ -1976,7 +1984,7 @@
     "Değilse noindex'i sayfanın HTML'inden ve X-Robots-Tag başlığından kaldırın",
     "Search Console'da dizine eklenme isteyin"
    ],
-   "verify": "Search Console URL Denetimi'nde sayfanın Google dizininde olduğu ve canlı testte dizine eklenebildiği görülmelidir.",
+   "verify": "Search Console adres Denetimi'nde sayfanın Google dizininde olduğu ve canlı testte dizine eklenebildiği görülmelidir.",
    "summary": "noindex ile dışlanan sayfalar"
   },
   "idx9.robots": {
@@ -1989,7 +1997,7 @@
     "Değilse robots.txt'deki ilgili Disallow kuralını kaldırın ya da daraltın",
     "Search Console'da dizine eklenme isteyin"
    ],
-   "verify": "Search Console robots.txt raporunda ve URL Denetimi'nde sayfanın engellenmediği görülmelidir.",
+   "verify": "Search Console robots.txt raporunda ve adres Denetimi'nde sayfanın engellenmediği görülmelidir.",
    "summary": "robots.txt engelli sayfalar"
   },
   "idx9.state": {
@@ -2002,7 +2010,7 @@
     "Nedene göre noindex'i kaldırın, içeriği güçlendirin ya da kanonik adresi düzeltin",
     "Search Console'da dizine eklenme isteyin"
    ],
-   "verify": "Search Console URL Denetimi'nde sayfanın Google dizininde olduğu ve canlı testte dizine eklenebildiği görülmelidir.",
+   "verify": "Search Console adres Denetimi'nde sayfanın Google dizininde olduğu ve canlı testte dizine eklenebildiği görülmelidir.",
    "summary": "Google dizin durumu"
   },
   "judgment.empty.repeated": {
@@ -3964,7 +3972,7 @@
     "Sürümün dizine girebildiğini doğrulayın",
     "Uygun değilse onu hreflang'den çıkarın"
    ],
-   "verify": "Search Console URL Denetleme aracında her dil sürümü dizine eklenebilir görünmeli.",
+   "verify": "Search Console adres Denetleme aracında her dil sürümü dizine eklenebilir görünmeli.",
    "summary": "hreflang hedef sayfaları"
   },
   "tseo1.analytics_twice": {
@@ -4041,7 +4049,7 @@
     "Onu basan eklentiyi head etiketlerinden sonra yükleyin",
     "Search Console'da canonical'ı teyit edin"
    ],
-   "verify": "Search Console URL Denetleme aracında Google'ın seçtiği kanonik adres, sizin belirttiğinizle aynı olmalı.",
+   "verify": "Search Console adres Denetleme aracında Google'ın seçtiği kanonik adres, sizin belirttiğinizle aynı olmalı.",
    "summary": "Kayıp head etiketleri"
   },
   "tseo1.heading_jumps": {

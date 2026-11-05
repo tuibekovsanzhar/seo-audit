@@ -596,7 +596,8 @@ def key_pages(report: dict, rows: list[dict], importance: dict[str, dict], limit
         confirm = [x for x in rows if x.get("placement") == "confirm" and any(u in x["urls"] for u in group)]
         worst = max((x["severity"] for x in cards), key=_weight, default=None)
         home = url == main or is_homepage(url, g)
-        out.append({"url": url, "page_type": "home" if home else g.get("page_type"),
+        unknown = importance_unknown(g, cards) if url == main else None
+        out.append({"importance_unknown": unknown,"url": url, "page_type": "home" if home else g.get("page_type"),
                     "business_page_type": "home" if home else g.get("business_page_type"),
                     "importance_source": g.get("importance_source"),
                     "importance": g.get("importance"), "rank": n, "importance_rank": g.get("importance_rank"),
@@ -628,6 +629,25 @@ def client_brief_allowed(report: dict) -> tuple[bool, str | None]:
     """(allowed, reason): the gate every client brief made from an audit passes first (DECISIONS 309). Low coverage
     blocks it: a brief written from a handful of pages would speak for a site it did not see."""
     return (False, "low_coverage") if low_coverage(report) else (True, None)
+
+
+# DECISIONS 313: the cards whose problem holds a homepage's importance down: its canonical names another address (IDX-4),
+# or it redirects (IDX-2, IDX-3). Their rule ids start with these.
+IMPORTANCE_BLOCKERS = (("idx4.", "canonical"), ("idx3.", "redirect"), ("idx2.", "redirect"))
+
+
+def importance_unknown(g: dict, cards: list[dict]) -> dict | None:
+    """{"reason": "canonical" | "redirect", "card": n} when the main homepage is capped as not indexable and a card
+    covering it is a canonical or redirect problem: its score then says nothing about how important it is (moodist
+    `/tr/`: 100 for links, depth and type, capped at 20 because its canonical names `/tr/tr/`). None otherwise."""
+    if (g.get("importance_parts") or {}).get("capped") != "not indexable":
+        return None
+    for card in sorted(cards, key=lambda x: x["card"]):
+        rule = str(card.get("rule_id") or "")
+        for prefix, reason in IMPORTANCE_BLOCKERS:
+            if rule.startswith(prefix):
+                return {"reason": reason, "card": card["card"]}
+    return None
 
 
 def key_pages_reason(report: dict) -> str:

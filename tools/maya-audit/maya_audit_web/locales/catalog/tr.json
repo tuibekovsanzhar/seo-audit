@@ -153,7 +153,7 @@
  "Mixed request results require source and time context, not a universal conclusion.": "Karışık istek sonuçları evrensel yargı değil kaynak ve zaman bağlamı gerektirir.",
  "Repeated empty responses are scoped retrieval failures; intended content and cause require diagnosis.": "Tekrarlanan boş yanıtlar kapsamla sınırlı erişim başarısızlığıdır; amaçlanan içerik ve neden incelenmelidir.",
  "One empty response does not establish persistent page failure.": "Tek boş yanıt kalıcı sayfa başarısızlığını kanıtlamaz.",
- "Review each URL response and intended indexing before changing sitemap entries.": "Sitemap girişlerini değiştirmeden önce her URL yanıtı ve dizine alınma amacı incelenmelidir.",
+ "Review each URL response and intended indexing before changing sitemap entries.": "Sitemap girişlerini değiştirmeden önce her adres yanıtı ve dizine alınma amacı incelenmelidir.",
  "Link purpose depends on accessible name and surrounding context.": "Bağlantının amacı erişilebilir ad ve çevre bağlama bağlıdır.",
  "An empty heading does not supply a meaningful page topic.": "Boş başlık anlamlı bir sayfa konusu sağlamaz.",
  "The referenced sitemap file was unavailable in the recorded request. Discovery through that file is unverified; links and other sitemaps may still expose its pages.": "Başvurulan site haritası dosyası kayıtlı istekte alınamadı. Bu dosyadan keşif doğrulanmadı; bağlantılar ve diğer site haritaları sayfaları yine gösterebilir.",

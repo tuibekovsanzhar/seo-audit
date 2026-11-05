@@ -1250,6 +1250,23 @@ moodist's top 10 after (offline copy): 1 homepage (4 languages: `/tr/`, `/ru/`, 
 | the AGENTS.md recipe, once as written (loopback fake site) | exit 0; `out.json` written (schema 1.25); no Firecrawl section; no provider ledger in the temporary home |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 
+## Global UI fixes (DECISIONS 313, 2026-11-05)
+
+What changed: business type as a chip with "Neden?" and the type in use in "Değiştir" ("Sağlık / klinikler
+(önerilen)"); headline with exact counts ("1 yüksek, 7 orta ve 11 düşük önemde sorun var; önce geri dönen kanonik
+adres."), "Engelleyici" only with a Blocker, web and PDF; "?" hints after the whole title; "adres" for "URL" in all
+Turkish text (230 values); moodist's homepage row "Ana sayfa (4 dil) · önem hesaplanamadı (kanonik sorunu, bkz. kart
+#1)". Checked on moodist c581ff0a in an isolated copy of the web app (scratch web home with that audit's rows and saved
+files, port 8771, provider-free environment; headless Chromium screenshot) and its team report PDF (7 pages, page 6).
+
+| Command | Result |
+|---|---|
+| fast and full suites (first run) | `7 failed`: tests holding the old Turkish "URL" wording (6) and the old headline (1, both languages); updated |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2739 passed, 4 skipped, 134 deselected, 1 warning in 466.28s (0:07:46)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `2873 passed, 4 skipped, 1 warning in 859.94s (0:14:19)` |
+| `ruff check --isolated --select E9,F821,F841` (changed code), `python3.11 -m compileall`, `node --check` | clean / OK |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

@@ -149,13 +149,13 @@ def test_page_one_is_built_from_the_top_cards(tmp_path):
     batch = [("RND-6", "rnd6.large"), ("STR-1", "str1.shared"), ("STR-2", "str2.no_h1")]
     data = built(tmp_path, synthetic(batch, "S3"), "tr")
     first = texts.group("html_weight", "tr")
-    assert data["assessment"]["headline"] == "Sorunlar orta önemde; önce sayfa HTML ağırlığı ve ortak başlık ve açıklamalar."
+    assert data["assessment"]["headline"] == "3 orta önemde sorun var; önce sayfa HTML ağırlığı ve ortak başlık ve açıklamalar."  # DECISIONS 313: exact counts
     assert data["priorities"][0]["title"] == first["summary"]
     assert data["priorities"][0]["text"] == first["explanation"]
     assert data["next_action"]["lead"] == "Önce sayfa HTML'ini hafifletin."
     assert data["next_action"]["text"].startswith(first["explanation"])
     en = built(tmp_path, synthetic(batch, "S3"), "en")
-    assert en["assessment"]["headline"].startswith("Issues are medium severity; start with page HTML weight")
+    assert en["assessment"]["headline"].startswith("There are 3 medium-severity issues; start with page HTML weight")
 
 
 def test_polishing_words_is_allowed_but_not_severity_count_or_order(tmp_path):

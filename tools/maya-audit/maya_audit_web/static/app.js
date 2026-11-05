@@ -166,22 +166,12 @@ async function loadHistory() {
 
 /* A "?" beside a technical word that has to stay (DECISIONS 310): a button that shows one plain sentence. */
 const HINTED = [["canonical", "kanonik"], ["hreflang"], ["noindex"]];
+/* DECISIONS 313: the title stays whole; the hints for the terms it uses come after it, in the order they appear. */
 function hinted(text) {
-  const out = [];
-  let rest = String(text || "");
-  for (;;) {
-    let best = null;
-    for (const words of HINTED) for (const word of words) {
-      const at = rest.toLowerCase().indexOf(word);
-      if (at >= 0 && (!best || at < best.at)) best = { at, word, key: words[0] };
-    }
-    if (!best) { out.push(rest); break; }
-    const end = best.at + best.word.length + (rest.slice(best.at + best.word.length).match(/^[\p{L}']*/u) || [""])[0].length;
-    out.push(rest.slice(0, end), hint(best.key));
-    rest = rest.slice(end);
-    if (out.length > 8) { out.push(rest); break; }
-  }
-  return out;
+  const title = String(text || ""), lower = title.toLowerCase();
+  const found = HINTED.map((words) => ({ key: words[0], at: Math.min(...words.map((w) => { const i = lower.indexOf(w); return i < 0 ? Infinity : i; })) }))
+    .filter((term) => term.at !== Infinity).sort((a, b) => a.at - b.at);
+  return [title, ...found.map((term) => [" ", hint(term.key)])];
 }
 function hint(key) {
   const tip = el("span", { class: "hint-tip", role: "tooltip", hidden: true, text: T("hint." + key) });
@@ -1121,10 +1111,16 @@ function businessBox(view, info, redraw) {
     status.textContent = answer.message || "";
     await redraw();
   };
+  /* DECISIONS 313: one compact line, the reason folded under "Neden?", and the dropdown showing the type in use (the
+     suggested one marked "(önerilen)"); choosing the suggested type goes back to the suggestion. */
+  const choices = (info.choices || []).map((c) => c.id === info.suggested_id ? Object.assign({}, c, { label: T("result.business.suggested_mark", { label: c.label }) }) : c);
+  const select = businessSelect(id, choices, info.id, false, (value) => change(value === info.suggested_id ? "auto" : value));
   return el("div", { class: "business-box" },
-    el("p", { class: "small" }, el("strong", { text: info.line })),
-    el("div", { class: "row" }, el("label", { class: "label", for: id, text: T("result.business.change") }),
-      businessSelect(id, info.choices, info.chosen_by === "user" ? info.id : "auto", true, change)),
+    el("div", { class: "business-line" },
+      el("span", { class: "business-chip", text: T("result.business.chip", { label: info.label }) }),
+      el("details", { class: "business-why" }, el("summary", { text: T("result.business.why") }),
+        el("p", { class: "muted small", text: info.chosen_by === "user" ? T("result.business.how.user") : T("result.business.how.suggestion", { reason: info.reason || "" }) })),
+      el("label", { class: "label", for: id, text: T("result.business.change") }), select),
     info.not_found ? el("p", { class: "muted small", text: info.not_found }) : null, status);
 }
 

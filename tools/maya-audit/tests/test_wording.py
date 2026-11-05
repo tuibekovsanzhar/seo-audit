@@ -90,7 +90,7 @@ def test_numbers_and_quoted_values_are_kept_and_one_is_said_as_one_in_both_langu
     assert wording.title("IDX-4", "3 page(s) are canonicalized to a URL with different content", "tr")[0].startswith("3 sayfanın canonical")
     # Bot names, header names, addresses and quoted site text come back untouched.
     for check_id, title, kept in (
-            ("ACC-4", "Requests with search bot user agents were blocked on 3 URL(s): GPTBot, ClaudeBot (seen once, not retried)", ["GPTBot, ClaudeBot", "3 URL"]),
+            ("ACC-4", "Requests with search bot user agents were blocked on 3 URL(s): GPTBot, ClaudeBot (seen once, not retried)", ["GPTBot, ClaudeBot", "3 adreste"]),
             ("IDX-6", "Link target returns 404, linked from 2 page(s): https://made-up.example/old?a=1", ["404", "https://made-up.example/old?a=1"]),
             ("IDX-8", "33 indexable pages share the title 'Winter Sale (page 2)'", ["33", "'Winter Sale (page 2)'"]),
             ("STR-18", "The homepage title does not name the brand ('Welcome | Home')", ["'Welcome | Home'"]),
@@ -147,7 +147,7 @@ def test_the_row_keeps_the_reports_own_title_and_fix_and_adds_what_is_shown():
     strings.set_language("tr")
     turkish = summary.item(finding)
     assert turkish["title"] == finding["title"] and turkish["fix"] == finding["how_to_fix"]  # the catalog, the example and the comparison key on these
-    assert turkish["title_shown"] == "1 sayfanın canonical etiketi farklı içerikli bir URL'yi gösteriyor" and turkish["untranslated"] is False
+    assert turkish["title_shown"] == "1 sayfanın canonical etiketi farklı içerikli bir adresi gösteriyor" and turkish["untranslated"] is False
     assert turkish["fix_shown"].startswith("Canonical'a uyan motorlar") and turkish["expected_shown"].endswith("kendisini gösterir")
     assert practical.example_for(turkish["title"]) and practical.issue(turkish)["what"] == turkish["title_shown"]
     actions = practical.first_actions([turkish])
@@ -453,11 +453,11 @@ def test_the_outcome_sentence_and_the_status_rows_are_turkish_for_every_kind_of_
 
 def test_stop_codes_come_out_as_words_and_an_unknown_reason_takes_the_mark():
     sentence = "The audit finished but is incomplete (page_cap: page cap of 50 reached; 694 discovered URL(s) were not read). Findings cover only what was fetched."
-    assert wording.outcome(sentence, "tr") == ("Denetim bitti ancak eksik (sayfa sınırı: 50 sayfalık sınıra ulaşıldı; keşfedilen 694 URL okunmadı). "
+    assert wording.outcome(sentence, "tr") == ("Denetim bitti ancak eksik (sayfa sınırı: 50 sayfalık sınıra ulaşıldı; keşfedilen 694 adres okunmadı). "
                                                "Bulgular yalnızca getirilen sayfaları kapsar.", True)
     assert wording.reason("Maya's crawl stopped: page_cap (page cap of 50 reached)", "tr") == ("Maya'nın taraması durdu: sayfa sınırı (50 sayfalık sınıra ulaşıldı)", True)
     assert wording.reason("694 more discovered URL(s) remain unchecked (the page cap of 50 was reached)", "tr")[0] == \
-        "keşfedilen 694 URL daha kontrol edilmedi (50 sayfalık sınıra ulaşıldı)"
+        "keşfedilen 694 adres daha kontrol edilmedi (50 sayfalık sınıra ulaşıldı)"
     odd = "reading stopped early (a made-up provider said something new)"
     assert wording.reason(odd, "tr") == (odd + MARK, False) and wording.reason(odd, "en") == (odd, True)
     new = "The audit did a made-up thing nobody planned for."

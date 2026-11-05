@@ -1505,7 +1505,7 @@ class Builder:
             "low_coverage": self.low_coverage_banner(),
             "assessment": {"headline": self.slot("assessment.headline", "raporun tek cümlelik hükmü", None, 90,
                                                  fallback=T.headline([f["severity"] for f in card_leads], summaries, lang,
-                                                                     pages_read=pages_read)),
+                                                                     pages_read=pages_read, counts=sev)),
                            "text": self.slot("assessment.text", "hangi sırayla ne yapılmalı, tek cümle", None, 190,
                                              fallback=T.assessment(summaries, has_confirm, lang))},
             "priorities": priorities,
@@ -1584,8 +1584,12 @@ class Builder:
                     if bt and business and business["id"] != "diger" and p.get("business_page_type") else None)
             if p.get("languages"):  # DECISIONS 312: the homepage's language versions, one row
                 kind = fmt(L["home_languages"], n=len(p["languages"]))
+            unknown = p.get("importance_unknown")  # DECISIONS 313: a canonical or redirect problem holds it down
+            shown = (fmt(L["kp_importance_unknown"], reason=L["kp_importance_reasons"][unknown["reason"]], card=unknown["card"])
+                     if unknown else p["importance"])
             pages.append({"rank": p["rank"], "path": path_of(p["url"]) or urlsplit(p["url"]).netloc, "url": p["url"],
-                          "type": kind or L["page_types"].get(str(p["page_type"]), "—"), "importance": p["importance"],
+                          "type": kind or L["page_types"].get(str(p["page_type"]), "—"), "importance": shown,
+                          "importance_unknown": bool(unknown),
                           "cards": ", ".join(f"{n:02d}" for n in p["cards"]) or "—",
                           "worst": L["severity"].get(p["worst"], "—") if p["worst"] else "—", "confirm": p["confirm"]})
         try:  # DECISIONS 306: a fix that renames addresses (redirects) is never a quick win

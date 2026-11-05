@@ -99,7 +99,7 @@ def test_a_cap_above_the_sitemap_checks_every_url_and_says_of_n(no_lookups):
     # Keep a distinct, unrepresented failure in the sitemap review; do not exclude all error observations.
     assert KAFE+'/blog/8' in share.scope['_all_urls']
     assert "LG-78" not in share.launch_gated and not share.notes
-    assert wording.title("IDX-5", share.title, "tr")[0].startswith("30 site haritası URL'sinin")
+    assert wording.title("IDX-5", share.title, "tr")[0].startswith("30 site haritası adresinin")
     # An empty page found by a light request is IDX-1's empty page too.
     empty = [f for f in outcome.by_id["IDX-1"].findings if "empty page" in f.title]
     assert {KAFE + f"/urun/{n}" for n in (4, 8, 12)} <= {u for f in empty for u in f.scope["_all_urls"]}
