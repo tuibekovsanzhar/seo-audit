@@ -3571,3 +3571,25 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      "Rezervasyon / sipariş". Details: `docs/IMPLEMENTATION-STATUS.md`.
      Tests: `tests/test_business_types_311.py` (22); `test_page_groups` pins "Diğer" for Stage 3's own values;
      `test_web_ux_310` follows the default estimate; schema literals 1.24 -> 1.25.
+312. **Key pages: the language homepages as one row, a place for each profile page type; provider-free local runs
+     (Owner, 2026-11-05; the reserved place per page type is an agent default, needed because merging alone left
+     moodist's "Doktor ve ekip" out).**
+     (1) *One homepage row* (`client_selection.key_pages`): the main homepage and its language versions read (`/tr/`,
+     `/en/`, `/ru/`, `/ar/`) are one row, "Ana sayfa (4 dil)" / "Homepage (4 languages)" in the team report, the XLSX
+     appendix (its cell lists every address) and the short summary; the row's cards and checks are those of every
+     version, its importance the main homepage's own (moodist `/tr/` 20, its canonical issue). Replaces DECISIONS 309's
+     one row per language homepage. (2) *A place per page type:* with a business type, every page type of the profile
+     found among the pages read (not home, other, policy, utility) keeps a place for its best page; the other places go
+     by importance and the list stays in importance order. Merging alone was not enough: moodist has 19 treatment pages
+     at 87-89 above `/tr/ekibimiz/` (80). "Diğer" has no profile types, so its list is the importance order as before.
+     Top 10 after, offline on the copies: moodist: homepage (4 languages), 8 treatment pages, `/tr/ekibimiz/` (Doktor ve
+     ekip); enpara: homepage, 7 product pages, `/ucretler` (Ücret ve başvuru), the loan calculator (Hesaplama aracı);
+     adile: + `/qr-menu/` (Menü); nihan: homepage (2 languages), 6 collections, a product, `/blogs/news`, a help page.
+     Cards unchanged on all four.
+     (3) *Provider-free local runs* (AGENTS.md, "Shared preamble" 8; the repository's AGENTS.md): every CLI or
+     verification run is made from a temporary folder with `MAYA_AUDIT_ENV_FILE` pointing at a file that does not exist,
+     its own `MAYA_AUDIT_HOME`, every provider key empty and `--no-firecrawl`, against a loopback fake site (after the
+     DECISIONS 311 check run sent 5 Firecrawl requests, 0 credits). `tests/conftest.py` now also unsets the CrUX,
+     PageSpeed, Bing and Search Console keys (`PROVIDER_KEYS`), with a guard test. The recipe was run once as written:
+     exit 0, JSON written, no Firecrawl section, no provider ledger.
+     Tests: `tests/test_key_pages_312.py` (5); `test_team_report_309` and `test_v03_client_report` follow the one row.

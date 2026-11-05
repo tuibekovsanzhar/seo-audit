@@ -36,6 +36,7 @@ WORDS = {
                     "not_assessed": "Değerlendirilmedi"},
            "page_type": {"home": "ana sayfa", "category": "kategori", "product": "ürün", "blog_article": "blog yazısı",
                          "policy": "politika sayfası", "utility": "yardımcı sayfa (arama, sepet, hesap)", "other": "diğer"},
+           "home_languages": "ana sayfa ({n} dil)",
            "method": [("Önem ağırlığı", "Engelleyici 100, Yüksek 40, Orta 15, Düşük 5, Bilgi 0"),
                       ("Güven ağırlığı", "ölçüldü 1,0 · tahmini 0,6 · çıkarım 0,5 · doğrulanmamış 0,4"),
                       ("Erişim", "1 + ln(1 + etkilenen ve okunan sayfaların önem puanı toplamı / 100), en çok 10; okunmayan adres katılmaz (ayrı sütunda sayılır); adressiz bulgu: ana sayfa"),
@@ -67,6 +68,7 @@ WORDS = {
                     "not_assessed": "Not assessed"},
            "page_type": {"home": "homepage", "category": "category", "product": "product", "blog_article": "blog article",
                          "policy": "policy page", "utility": "utility page (search, cart, account)", "other": "other"},
+           "home_languages": "homepage ({n} languages)",
            "method": [("Severity weight", "Blocker 100, High 40, Medium 15, Low 5, Info 0"),
                       ("Confidence weight", "measured 1.0 · estimated 0.6 · inferred 0.5 · unverified 0.4"),
                       ("Reach", "1 + ln(1 + summed importance of the affected pages that were read / 100), at most 10; addresses not read add nothing (counted in their own column); no address: the homepage"),
@@ -128,7 +130,10 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
                      r.get("merge_group") or "", _manual(r.get("manual") or "", W)])
         for u in r["urls"]:
             urls.append([r["finding_id"], placement, W["severity"].get(r["severity"], r["severity"]), u])
-    pages = [[p["rank"], p["url"], W["page_type"].get(p["page_type"], p["page_type"]), p["importance"], ", ".join(str(c) for c in p["cards"]),
+    # DECISIONS 312: the homepage's language versions are one row; the cell lists every address.
+    pages = [[p["rank"], "\n".join(p.get("languages") or [p["url"]]),
+              W["home_languages"].format(n=len(p["languages"])) if p.get("languages") else W["page_type"].get(p["page_type"], p["page_type"]),
+              p["importance"], ", ".join(str(c) for c in p["cards"]),
               W["severity"].get(p["worst"], "") if p["worst"] else "", p["confirm"]] for p in selection["key_pages"]]
     if not pages:  # say why, in one line, rather than leave the sheet empty
         pages = [[W["key_pages_empty"][selection.get("key_pages_reason") or "no_pages"]]]

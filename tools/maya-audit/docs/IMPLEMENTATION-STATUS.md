@@ -1229,6 +1229,27 @@ incident above for the one CLI run):
 | Owner's web app on port 8770 | NOT RUN (restart needed; the `hidden` column is added on the next start) |
 | Live runs, Windows/Linux, wheel build | NOT RUN |
 
+## Key pages: one homepage row, a place per page type; provider-free runs (DECISIONS 312, 2026-11-05)
+
+What changed: the homepage's language versions are one key-pages row ("Ana sayfa (4 dil)"); with a business type each
+profile page type found keeps a place for its best page; AGENTS.md (both) require provider-free local runs (temporary
+folder, `MAYA_AUDIT_ENV_FILE` to a missing file, every provider key empty, `--no-firecrawl`); tests also unset the
+CrUX, PageSpeed, Bing and Search Console keys.
+
+moodist's top 10 after (offline copy): 1 homepage (4 languages: `/tr/`, `/ru/`, `/ar/`, `/en/`; 20), 2
+`/tr/tibbi-bolumlerimiz/bagimlilik-merkezi-amatem/` (89), 3 `/tr/tani-ve-tedavi-yontemleri/yatakli-servis/` (89), 4
+`…/direncli-depresyon/` (88), 5 `…/elektro-konvulsif-tedavi-ekt/` (88), 6 `/tr/tibbi-bolumlerimiz/noroloji-birimi/`
+(87), 7 `…/uyku-laboratuvari-uyku-testleri/` (87), 8 `/tr/tibbi-bolumlerimiz/acil-psikiyatri/` (87), 9
+`…/yatakli-servis/psikiyatri-servisi/` (87), 10 `/tr/ekibimiz/` (Doktor ve ekip, 80). Cards unchanged.
+
+| Command | Result |
+|---|---|
+| fast suite (first run) | `1 failed, 2732 passed`: the Turkish appendix test knew only the fixed page-type labels; it now accepts "ana sayfa (N dil)" |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2733 passed, 4 skipped, 134 deselected, 1 warning in 466.24s (0:07:46)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `2867 passed, 4 skipped, 1 warning in 868.47s (0:14:28)` |
+| the AGENTS.md recipe, once as written (loopback fake site) | exit 0; `out.json` written (schema 1.25); no Firecrawl section; no provider ledger in the temporary home |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

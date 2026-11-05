@@ -563,26 +563,45 @@ def main_homepage(report: dict, importance: dict[str, dict]) -> str | None:
 
 def key_pages(report: dict, rows: list[dict], importance: dict[str, dict], limit: int = KEY_PAGES) -> list[dict]:
     """The most important pages read (importance rank), with what the cards and the confirm list say about each.
-    DECISIONS 309: the main-language homepage first, then the other language homepages read (each typed a homepage),
-    then the rest by importance; the rank shown is the place in this list (1, 2, 3 ...): a page that was not read
-    leaves no gap."""
+    DECISIONS 309: the main-language homepage first, then the rest by importance; the rank shown is the place in this
+    list (1, 2, 3 ...): a page that was not read leaves no gap. DECISIONS 312: the homepage's language versions read
+    (`/tr/`, `/en/`, `/ru/`, `/ar/`) are one row ("Ana sayfa (4 dil)": `languages`), its cards and checks those of
+    every version, so the other nine places go to other pages. The row's importance is the main homepage's own."""
     read = [(u, g) for u, g in importance.items() if g.get("read") is not False]
     read.sort(key=lambda kv: (kv[1].get("importance_rank") or 10**9, -(kv[1].get("importance") or 0)))
     main = main_homepage(report, importance)
-    homes = [(u, g) for u, g in read if u != main and is_homepage(u, g)]
-    chosen = (([(main, importance[main])] if main else []) + homes
-              + [(u, g) for u, g in read if u != main and not is_homepage(u, g)])
+    homes = [u for u, g in read if u != main and is_homepage(u, g)]
+    if not main and homes:
+        main, homes = homes[0], homes[1:]
+    rest = [(u, g) for u, g in read if u != main and not is_homepage(u, g)]
+    slots = limit - (1 if main else 0)
+    # DECISIONS 312: with a business type, every page type of its profile found among the pages read keeps a place for
+    # its best page (moodist: 19 treatment pages above "Doktor ve ekip"); the other places go by importance, and the
+    # list stays in importance order. "Diğer" has no profile types: the list is the importance order, as before.
+    best: dict[str, int] = {}
+    for i, (_, g) in enumerate(rest):
+        kind = g.get("business_page_type")
+        if kind and kind not in ("home", "other", "policy", "utility"):
+            best.setdefault(kind, i)
+    keep = set(sorted(best.values())[:slots])
+    for i in range(len(rest)):
+        if len(keep) >= slots:
+            break
+        keep.add(i)
+    chosen = ([(main, importance[main])] if main else []) + [rest[i] for i in sorted(keep)]
     out = []
     for n, (url, g) in enumerate(chosen[:limit], 1):
-        cards = [x for x in rows if x.get("placement") == "card" and url in x["urls"]]
-        confirm = [x for x in rows if x.get("placement") == "confirm" and url in x["urls"]]
+        group = [url] + homes if url == main else [url]
+        cards = [x for x in rows if x.get("placement") == "card" and any(u in x["urls"] for u in group)]
+        confirm = [x for x in rows if x.get("placement") == "confirm" and any(u in x["urls"] for u in group)]
         worst = max((x["severity"] for x in cards), key=_weight, default=None)
-        out.append({"url": url, "page_type": "home" if is_homepage(url, g) else g.get("page_type"),
-                    "business_page_type": "home" if is_homepage(url, g) else g.get("business_page_type"),
+        home = url == main or is_homepage(url, g)
+        out.append({"url": url, "page_type": "home" if home else g.get("page_type"),
+                    "business_page_type": "home" if home else g.get("business_page_type"),
                     "importance_source": g.get("importance_source"),
                     "importance": g.get("importance"), "rank": n, "importance_rank": g.get("importance_rank"),
-                    "main_homepage": url == main, "cards": sorted(x["card"] for x in cards),
-                    "worst": worst, "confirm": len(confirm)})
+                    "main_homepage": url == main, "languages": group if url == main and homes else [],
+                    "cards": sorted({x["card"] for x in cards}), "worst": worst, "confirm": len(confirm)})
     return out
 
 

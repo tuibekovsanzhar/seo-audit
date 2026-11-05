@@ -316,7 +316,7 @@ def render(view, rows, generated_at, practical, companions, demo=False, selectio
                    f'<th>{e(t("c6.kp.type"))}</th><th>{e(t("c6.kp.importance"))}</th><th>{e(t("c6.kp.cards"))}</th>'
                    f'<th>{e(t("c6.kp.worst"))}</th><th>{e(t("c6.kp.confirm"))}</th></tr></thead><tbody>')
         for p in sel["key_pages"]:
-            out.append(f'<tr><td>{e(p["rank"])}</td><td class="wrap">{e(_path(p["url"]))}</td><td>{e(t("c6.type." + str(p["page_type"])))}</td>'
+            out.append(f'<tr><td>{e(p["rank"])}</td><td class="wrap">{e(_path(p["url"]))}</td><td>{e(t("c6.type.home_languages", n=len(p["languages"])) if p.get("languages") else t("c6.type." + str(p["page_type"])))}</td>'
                        f'<td>{e(p["importance"])}</td><td>{e(", ".join(str(n) for n in p["cards"]) or "—")}</td>'
                        f'<td>{e(t("result.severity." + p["worst"]) if p["worst"] else "—")}</td><td>{e(p["confirm"])}</td></tr>')
         out.append('</tbody></table>')

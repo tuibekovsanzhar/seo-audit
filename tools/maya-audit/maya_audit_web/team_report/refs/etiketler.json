@@ -358,7 +358,8 @@
    "suggestion": "önerildi; neden: {reason}",
    "suggestion_plain": "önerildi"
   },
-  "kp_not_found": "{label} sayfası okunan sayfalar arasında bulunamadı (sitede olmadığı anlamına gelmez)."
+  "kp_not_found": "{label} sayfası okunan sayfalar arasında bulunamadı (sitede olmadığı anlamına gelmez).",
+  "home_languages": "Ana sayfa ({n} dil)"
  },
  "en": {
   "doc_kind": "WEBSITE AUDIT",
@@ -717,6 +718,7 @@
    "suggestion": "suggested; why: {reason}",
    "suggestion_plain": "suggested"
   },
-  "kp_not_found": "No {label} page among the pages read (this does not mean the site has none)."
+  "kp_not_found": "No {label} page among the pages read (this does not mean the site has none).",
+  "home_languages": "Homepage ({n} languages)"
  }
 }

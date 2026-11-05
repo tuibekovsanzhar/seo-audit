@@ -1582,6 +1582,8 @@ class Builder:
             # DECISIONS 311: the page type of the business type when one applies, else the general page type.
             kind = (bt.type_label(business["id"], p.get("business_page_type"), lang)
                     if bt and business and business["id"] != "diger" and p.get("business_page_type") else None)
+            if p.get("languages"):  # DECISIONS 312: the homepage's language versions, one row
+                kind = fmt(L["home_languages"], n=len(p["languages"]))
             pages.append({"rank": p["rank"], "path": path_of(p["url"]) or urlsplit(p["url"]).netloc, "url": p["url"],
                           "type": kind or L["page_types"].get(str(p["page_type"]), "—"), "importance": p["importance"],
                           "cards": ", ".join(f"{n:02d}" for n in p["cards"]) or "—",

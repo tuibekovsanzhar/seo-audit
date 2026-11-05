@@ -133,11 +133,9 @@ def test_the_key_pages_list_has_the_main_homepage_first_every_homepage_and_no_ga
     pages = key_pages({"crawl": {"start_url": site + "/"}}, [], importance)
     assert [p["rank"] for p in pages] == list(range(1, len(pages) + 1))
     assert pages[0]["url"] == f"{site}/tr/" and pages[0]["main_homepage"]
-    urls = [p["url"] for p in pages]
-    assert f"{site}/en/en/" not in urls
-    assert {f"{site}/ru/", f"{site}/ar/", f"{site}/en/"} <= set(urls)
-    assert all(p["page_type"] == "home" for p in pages if p["url"] != f"{site}/tr/a/")
-    assert urls.index(f"{site}/tr/a/") == len(urls) - 1  # the homepages first
+    # DECISIONS 312: the language homepages are one row, the main one first; a homepage never read is not among them.
+    assert pages[0]["languages"] == [f"{site}/tr/", f"{site}/ru/", f"{site}/ar/", f"{site}/en/"]
+    assert [p["url"] for p in pages] == [f"{site}/tr/", f"{site}/tr/a/"]
     # Without the start address's final page, the start address itself when it was read.
     plain = {f"{site}/": {"importance": 100, "importance_rank": 1}, f"{site}/a": {"importance": 50, "importance_rank": 2}}
     shown = key_pages({"crawl": {"start_url": site + "/"}}, [], plain)

@@ -59,6 +59,11 @@ def no_public_dns(monkeypatch):
     resolver.reset()
 
 
+# Credentials of the paid or third-party providers (AGENTS.md): never in a test, whatever the shell or .env holds.
+PROVIDER_KEYS = ("MAYA_AUDIT_DATAFORSEO_LOGIN", "MAYA_AUDIT_DATAFORSEO_PASSWORD", "MAYA_AUDIT_FIRECRAWL_API_KEY",
+                 "MAYA_AUDIT_CRUX_API_KEY", "MAYA_AUDIT_GOOGLE_API_KEY", "MAYA_AUDIT_BING_API_KEY", "MAYA_AUDIT_GSC_TOKEN")
+
+
 @pytest.fixture(autouse=True)
 def isolate_dataforseo(monkeypatch, tmp_path_factory):
     """No test reads real DataForSEO credentials or touches the real ledger and cache in ~/.maya-audit."""
@@ -70,7 +75,10 @@ def isolate_dataforseo(monkeypatch, tmp_path_factory):
     # Firecrawl reads every audit's pages when a key is set: a key exported in the shell must never reach a test.
     for name in ("MAYA_AUDIT_DATAFORSEO_DAILY_USD", "MAYA_AUDIT_DATAFORSEO_CONFIRM_ABOVE_USD", "MAYA_AUDIT_DATAFORSEO_AUDIT_CAP_USD",
                  "MAYA_AUDIT_FIRECRAWL_API_KEY", "MAYA_AUDIT_FIRECRAWL", "MAYA_AUDIT_FIRECRAWL_ZERO_DATA_RETENTION",
-                 "MAYA_AUDIT_FIRECRAWL_DAILY_CREDITS", "MAYA_AUDIT_FIRECRAWL_USD_PER_CREDIT"):
+                 "MAYA_AUDIT_FIRECRAWL_DAILY_CREDITS", "MAYA_AUDIT_FIRECRAWL_USD_PER_CREDIT",
+                 # Every other provider key (DECISIONS 312): CrUX is read from the environment or the env file by
+                 # itself; PageSpeed, Bing and Search Console when asked for. None of them may reach a test.
+                 *PROVIDER_KEYS):
         monkeypatch.delenv(name, raising=False)
     # Firecrawl's own gap between request starts (DECISIONS 295) is 0 here, so a made-up reader answers at test speed;
     # the tests of the gap set it themselves. No test keeps a real Mac awake.

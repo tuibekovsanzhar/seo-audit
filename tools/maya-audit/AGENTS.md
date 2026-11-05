@@ -80,7 +80,29 @@ Every `.agents/skills/*/SKILL.md` follows this section instead of repeating it.
      report-checker run marks it.
 7. **Live network.** Only on an explicit request in this session. Browser identity only, never a search-engine bot's
    user agent; respect robots.txt; no private or loopback addresses (use the engine's guarded transport).
-8. **Shared limits.** Never read, print or search inside `.env`, credentials or authentication files. No real paid
+8. **Every local CLI or verification run is provider-free** (owner, 2026-11-05, after a check run sent 5 Firecrawl
+   requests: DECISIONS 312). Firecrawl is on by default whenever a key is found (the shell or the `.env` in the folder
+   the command runs from), and CrUX is read the same way. So every run made for development or verification (the
+   platform check's CLI run, a web app started for a test or a screenshot, a script) uses all of these:
+   - run it from a fresh temporary folder (`cd <tmp>`), never from the project folder that holds `.env`;
+   - `MAYA_AUDIT_ENV_FILE=<tmp>/no-such.env` (a path that does not exist: no `.env` is read) and
+     `MAYA_AUDIT_HOME=<tmp>/home` (no real ledger, cache or history);
+   - every provider key set empty: `MAYA_AUDIT_FIRECRAWL_API_KEY= MAYA_AUDIT_DATAFORSEO_LOGIN=
+     MAYA_AUDIT_DATAFORSEO_PASSWORD= MAYA_AUDIT_CRUX_API_KEY= MAYA_AUDIT_GOOGLE_API_KEY= MAYA_AUDIT_BING_API_KEY=
+     MAYA_AUDIT_GSC_TOKEN=`;
+   - CLI flag `--no-firecrawl`, and none of `--firecrawl`, `--firecrawl-render`, `--dataforseo`, `--dfs-search-data`,
+     `--pagespeed`, `--gsc-site-url`, `--bing-site-url`, `--archives`; web app plans with `firecrawl: false` and no
+     paid options;
+   - only a loopback fake site (`fakeserver/`) or the demo sites as the target.
+   Example: `cd "$(mktemp -d)" && env MAYA_AUDIT_ENV_FILE="$PWD/no-such.env" MAYA_AUDIT_HOME="$PWD/home"
+   MAYA_AUDIT_FIRECRAWL_API_KEY= MAYA_AUDIT_DATAFORSEO_LOGIN= MAYA_AUDIT_DATAFORSEO_PASSWORD= MAYA_AUDIT_CRUX_API_KEY=
+   MAYA_AUDIT_GOOGLE_API_KEY= MAYA_AUDIT_BING_API_KEY= MAYA_AUDIT_GSC_TOKEN= <venv-python> -m maya_audit crawl
+   http://127.0.0.1:<port>/ --max-pages 5 --no-firecrawl --json out.json > out.md`. Check afterwards that the report's
+   `firecrawl` section says it was not used and that `<tmp>/home` holds no provider ledger entry; say so in the
+   handoff. **Tests never use the real `.env`:** `tests/conftest.py` points `MAYA_AUDIT_ENV_FILE` at a file that does
+   not exist in a temporary home and unsets every provider key for every test (`PROVIDER_KEYS`); a test that needs a
+   key or a provider uses a made-up value and a mock transport.
+9. **Shared limits.** Never read, print or search inside `.env`, credentials or authentication files. No real paid
    calls (Firecrawl, DataForSEO) and no real crawls in tests: fake servers and mock transports only. Push to
    withmaya/seo-audit only when the owner asks; never force-push.
    Only one agent edits code at a time.

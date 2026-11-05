@@ -1510,6 +1510,7 @@ STRINGS["en"].update({
     "c6.kp.worst": "Highest severity",
     "c6.kp.confirm": "To confirm (count)",
     "c6.type.home": "home",
+    "c6.type.home_languages": "homepage ({n} languages)",
     "c6.type.category": "category",
     "c6.type.product": "product",
     "c6.type.blog_article": "article",

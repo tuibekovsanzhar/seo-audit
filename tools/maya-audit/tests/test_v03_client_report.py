@@ -140,8 +140,10 @@ def test_at_most_fifteen_cards_but_every_blocker_and_high_is_kept():
 
 def test_key_pages_follow_importance_rank_and_name_their_cards():
     sel = cs.select(report([finding("A", "r.a", urls=[SITE + "/", SITE + "/a"])]))
-    assert [p["url"] for p in sel["key_pages"][:2]] == [SITE + "/", SITE + "/en"]
-    assert sel["key_pages"][0]["cards"] == [1] and sel["key_pages"][1]["cards"] == []
+    # DECISIONS 312: "/en" (the homepage in English) is part of the homepage's row, not a row of its own.
+    assert [p["url"] for p in sel["key_pages"][:2]] == [SITE + "/", SITE + "/a"]
+    assert sel["key_pages"][0]["languages"] == [SITE + "/", SITE + "/en"]
+    assert sel["key_pages"][0]["cards"] == [1] and sel["key_pages"][1]["cards"] == [1]
 
 
 # ---------------------------------------------------------------- gate and appendix

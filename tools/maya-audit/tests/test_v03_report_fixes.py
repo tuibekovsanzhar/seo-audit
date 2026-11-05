@@ -190,7 +190,10 @@ def test_a_turkish_appendix_holds_no_english_sentence_of_the_engine():
     assert not [c for c in cells if "(İngilizce)" in c]
     assert client_appendix._manual("confirmed · Owner · 2026-11-03 · seen", client_appendix.WORDS["tr"]).startswith("teyit edildi · Owner")
     key_pages = next(s for s in sheets if s["name"] == "Kilit sayfalar")
-    assert {row[2] for row in key_pages["rows"]} <= set(client_appendix.WORDS["tr"]["page_type"].values())
+    # DECISIONS 312: the homepage's language versions are one row, "ana sayfa (N dil)".
+    import re
+    assert {re.sub(r"^ana sayfa \(\d+ dil\)$", "ana sayfa", row[2]) for row in key_pages["rows"]} <= set(
+        client_appendix.WORDS["tr"]["page_type"].values())
 
 
 def test_the_saved_copy_row_is_not_printed_when_no_page_came_from_a_saved_copy():

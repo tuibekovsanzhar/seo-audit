@@ -1393,5 +1393,6 @@
  "nav.unhide": "Yeniden göster",
  "nav.hidden": "Gizlenenler ({count})",
  "error.invalid_business_type": "Bu işletme türü listede yok.",
- "nav.empty.back": "Görünen denetimlere dön"
+ "nav.empty.back": "Görünen denetimlere dön",
+ "c6.type.home_languages": "ana sayfa ({n} dil)"
 }
