@@ -119,21 +119,53 @@ async function loadHistory() {
   const data = await guarded(() => api("GET", "/audits?limit=" + state.historyLimit + "&q=" + encodeURIComponent(query)));
   if (!data) return;
   const revised = await guarded(() => api("GET", "/analyses"));
-  const revisedNodes = (revised?.analyses || []).map(item => el("button", {class:"history-open", type:"button", onclick: () => openAudit(item.id)},
-    el("span", {class:"history-title", text:item.label}), el("span", {class:"history-meta", text:T("analysis.revised") + " · " + when(item.processed_at, {dateStyle:"medium"})})));
-  const revisedSection = revisedNodes.length ? el("div", {class:"history-item"}, el("strong", {text:T("analysis.section")}), revisedNodes) : null;
+  // DECISIONS 310: revised analyses are their own small section under the audits, one row each (they overlapped).
+  const revisedRows = (revised?.analyses || []).filter((item) => !query || String(item.label).toLowerCase().includes(query.toLowerCase()));
+  const revisedSection = revisedRows.length ? el("div", { class: "history-section" },
+    el("div", { class: "history-heading", text: T("analysis.section") + " (" + num(revisedRows.length) + ")" }),
+    revisedRows.map((item) => el("button", { class: "history-open", type: "button", onclick: () => openAudit(item.id) },
+      el("span", { class: "history-title", text: item.label }),
+      el("span", { class: "history-meta", text: T("analysis.revised") + " · " + when(item.processed_at, { dateStyle: "medium" }) })))) : null;
   const list = $("history");
-  if (!data.audits.length) { fill(list, revisedSection, el("div", { class: "history-empty", text: T(query ? "nav.no_match" : "nav.empty") })); return; }
-  fill(list, revisedSection, data.audits.map((item) => el("div", { class: "history-item" + (item.id === state.auditId ? " current" : "") },
+  if (!data.audits.length) { fill(list, el("div", { class: "history-empty", text: T(query ? "nav.no_match" : "nav.empty") }), revisedSection); return; }
+  // Each audit: site, date and time, mode, pages read and how, a plain status and its short ID (DECISIONS 309, 310).
+  fill(list, data.audits.map((item) => el("div", { class: "history-item" + (item.id === state.auditId ? " current" : "") },
     el("button", { class: "history-open", type: "button", "aria-current": item.id === state.auditId ? "page" : null, onclick: () => openAudit(item.id) },
       el("span", { class: "history-title", text: item.host }),
-      el("span", { class: "history-meta" }, el("span", { class: "dot " + item.state, "aria-hidden": "true" }),
-        el("span", { text: (item.outcome_label || item.state_label) + " · " + when(item.created_at, { dateStyle: "medium", timeStyle: "short" }) })),
-      // DECISIONS 309: how the audit read the site, so two audits of one site can be told apart.
-      el("span", { class: "history-meta", text: [item.mode_label, T("history.pages", { count: item.pages_read || 0 }), item.path_label].filter(Boolean).join(" · ") })),
+      el("span", { class: "history-meta", text: when(item.created_at, { dateStyle: "medium", timeStyle: "short" }) + (item.mode_label ? " · " + item.mode_label : "") }),
+      el("span", { class: "history-meta", text: [T("history.pages", { count: item.pages_read || 0 }), item.path_label].filter(Boolean).join(" · ") }),
+      el("span", { class: "history-status" }, el("span", { class: "pill status-" + (item.status || item.state), text: item.status_label || item.state_label }),
+        el("span", { class: "id", text: item.short_id || "" }))),
     el("button", { class: "history-delete", type: "button", "aria-label": T("nav.delete") + ": " + item.host, title: T("nav.delete"),
       onclick: () => removeAudit(item.id) }, "✕"))),
-    data.total > data.audits.length ? el("button", { class: "button quiet", type: "button", onclick: () => { state.historyLimit += 30; loadHistory(); } }, T("nav.more")) : null);
+    data.total > data.audits.length ? el("button", { class: "button quiet", type: "button", onclick: () => { state.historyLimit += 30; loadHistory(); } }, T("nav.more")) : null,
+    revisedSection);
+}
+
+/* A "?" beside a technical word that has to stay (DECISIONS 310): a button that shows one plain sentence. */
+const HINTED = [["canonical", "kanonik"], ["hreflang"], ["noindex"]];
+function hinted(text) {
+  const out = [];
+  let rest = String(text || "");
+  for (;;) {
+    let best = null;
+    for (const words of HINTED) for (const word of words) {
+      const at = rest.toLowerCase().indexOf(word);
+      if (at >= 0 && (!best || at < best.at)) best = { at, word, key: words[0] };
+    }
+    if (!best) { out.push(rest); break; }
+    const end = best.at + best.word.length + (rest.slice(best.at + best.word.length).match(/^[\p{L}']*/u) || [""])[0].length;
+    out.push(rest.slice(0, end), hint(best.key));
+    rest = rest.slice(end);
+    if (out.length > 8) { out.push(rest); break; }
+  }
+  return out;
+}
+function hint(key) {
+  const tip = el("span", { class: "hint-tip", role: "tooltip", hidden: true, text: T("hint." + key) });
+  const button = el("button", { class: "hint", type: "button", "aria-label": T("hint.label", { term: key }), "aria-expanded": "false",
+    onclick: (event) => { event.stopPropagation(); tip.hidden = !tip.hidden; button.setAttribute("aria-expanded", String(!tip.hidden)); } }, "?");
+  return el("span", { class: "hint-wrap" }, button, tip);
 }
 
 async function removeAudit(id) {
@@ -160,7 +192,8 @@ function optionChips(draft, redraw) {
 
 function drawOptions() {
   const box = $("options");
-  if (state.auditId) { fill(box); return; }
+  // DECISIONS 310: the depth and the extra options are on the New audit card; the composer only asks questions.
+  if (state.auditId || $("new-audit-card")) { fill(box); return; }
   const modes = el("div", { class: "chips", role: "radiogroup", "aria-label": T("option.mode") }, state.settings.modes.map((mode) =>
     el("button", { class: "chip", type: "button", role: "radio", "aria-checked": String(state.draft.mode === mode.id),
       onclick: () => { state.draft.mode = mode.id; drawOptions(); } }, mode.label)));
@@ -188,15 +221,47 @@ function newAudit() {
   closeDrawer();
   $("page-title").textContent = T("welcome.title");
   $("input").placeholder = T("composer.placeholder.new");
+  const address = el("input", { class: "field-input big", type: "text", id: "new-url", autocomplete: "off", spellcheck: "false",
+    placeholder: T("new.placeholder"), "aria-describedby": "new-url-error" });
+  const problem = el("p", { class: "field-error", id: "new-url-error", role: "alert", hidden: true });
+  const go = () => {
+    const value = address.value.trim();
+    if (!value) { problem.textContent = T("new.error.address"); problem.hidden = false; address.classList.add("bad"); address.focus(); return; }
+    problem.hidden = true; address.classList.remove("bad");
+    send(value);
+  };
+  address.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); go(); } });
+  const modes = el("div", { class: "modes", role: "radiogroup", "aria-label": T("new.depth") });
+  const typicalLine = el("p", { class: "muted small" });
+  const drawModes = () => {
+    fill(modes, state.settings.modes.map((mode) => el("button", { class: "mode-card" + (state.draft.mode === mode.id ? " on" : ""), type: "button", role: "radio",
+      "aria-checked": String(state.draft.mode === mode.id), onclick: () => { state.draft.mode = mode.id; drawModes(); } },
+      el("strong", { text: T("new.mode." + mode.id) }), el("span", { class: "muted small", text: T("new.mode." + mode.id + ".about") }),
+      mode.typical ? el("span", { class: "small", text: mode.typical.short }) : null)));
+    const chosen = state.settings.modes.find((mode) => mode.id === state.draft.mode);
+    typicalLine.textContent = chosen && chosen.typical ? T("new.time", { label: chosen.typical.label }) : "";
+  };
+  const extrasBox = el("div", { class: "chips" });
+  const drawExtras = () => fill(extrasBox,
+    el("button", { class: "chip", type: "button", "aria-pressed": String(state.draft.backlinks), onclick: () => { state.draft.backlinks = !state.draft.backlinks; drawExtras(); } },
+      T(state.draft.backlinks ? "option.backlinks.on" : "option.backlinks.off")), optionChips(state.draft, drawExtras));
+  drawModes(); drawExtras();
+  const card = el("section", { class: "card new-audit", id: "new-audit-card", "aria-labelledby": "new-url-label" },
+    el("label", { class: "field-label", for: "new-url", id: "new-url-label", text: T("new.address") }), address, problem,
+    el("div", { class: "field-label", text: T("new.depth") }), modes, typicalLine,
+    el("details", { class: "extras" }, el("summary", { text: T("new.extras") }), extrasBox),
+    el("div", { class: "row" }, el("button", { class: "button primary big", type: "button", onclick: go }, T("new.go")),
+      el("span", { class: "muted small", text: T("new.go.note") })));
   const chips = el("div", { class: "chips" },
     (state.settings.demo_sites || []).map((site) => el("button", { class: "chip", type: "button", title: site.about,
-      onclick: () => { $("input").value = site.address; $("input").focus(); } }, T("chip.demo", { site: site.address }))),
+      onclick: () => { address.value = site.address; address.focus(); } }, T("chip.demo", { site: site.address }))),
     el("button", { class: "chip", type: "button", onclick: () => { say(bubble("user", T("chip.how"))); say(bubble("assistant", T("help.how"))); } }, T("chip.how")),
     el("button", { class: "chip", type: "button", onclick: () => { say(bubble("user", T("chip.what"))); say(bubble("assistant", T("help.what"))); } }, T("chip.what")));
-  fill($("thread"), el("div", { class: "welcome" }, el("h2", { text: T("welcome.title") }), el("p", { text: T("welcome.body") }), chips));
+  fill($("thread"), el("div", { class: "welcome" }, el("h2", { text: T("welcome.title") }), el("p", { text: T("welcome.body") }), card, chips));
+  $("composer").hidden = true;
   drawOptions();
   loadHistory();
-  $("input").focus();
+  address.focus();
 }
 
 async function send(text) {
@@ -341,8 +406,19 @@ function planCard(plan, request, message) {
   const card = el("section", { class: "card", "aria-label": T("plan.title") });
   const draw = (current, problem) => {
     const live = !current.audit_id && !current.expired;
-    fill(card, el("h2", { text: T("plan.title") + ": " + current.target.host }), el("p", { text: current.lines[0] }), planFacts(current));
-    if (current.prefilled) card.append(el("p", { class: "muted small", text: T("plan.key_pages.from_profile") }));
+    /* DECISIONS 310: the plan in three plain lines and one Start button; the full plan (facts, business, markets,
+       Firecrawl, switches, costs) is folded under "Planın ayrıntıları" and opens by itself when it needs an answer. */
+    const typical = (current.duration || {}).typical;
+    const more = el("details", { class: "plan-more", open: Boolean(problem || current.needs_confirmation || (current.firecrawl && current.firecrawl.needs_confirmation) || current.balance_warning) },
+      el("summary", { text: T("plan.more") }));
+    fill(card, el("h2", { text: T("plan.title") + ": " + current.target.host }),
+      el("ul", { class: "plan-short" }, el("li", { text: T("plan.pages", { cap: num(current.page_cap) }) }), typical ? el("li", { text: T("plan.time", { label: typical.label }) }) : null,
+        el("li", { text: [current.paid && current.paid.total_usd ? T("plan.cost.short", { total: money(current.paid.total_usd) }) : null,
+          current.firecrawl && current.firecrawl.requested && current.firecrawl.max_credits ? T("plan.cost.credits", { credits: num(current.firecrawl.max_credits) }) : null]
+          .filter(Boolean).join(" · ") || T("plan.cost.free") })),
+      more);
+    more.append(planFacts(current));
+    if (current.prefilled) more.append(el("p", { class: "muted small", text: T("plan.key_pages.from_profile") }));
     const business = current.business || {};
     const search = current.search_data || {};
     const bid = "b" + current.id.slice(0, 8);
@@ -399,7 +475,7 @@ function planCard(plan, request, message) {
       brandInput.addEventListener("input", typing);
       countryInput.addEventListener("input", typing);
       familyInput.addEventListener("input", typing);
-      card.append(el("h3", { text: T("plan.label.business") }), el("div", { class: "pair" },
+      more.append(el("h3", { text: T("plan.label.business") }), el("div", { class: "pair" },
         el("div", {}, el("label", { class: "label", for: bid + "-brand", text: T("plan.business.brand") }), brandInput),
         el("div", {}, el("label", { class: "label", for: bid + "-country", text: T("plan.business.country") }), countryInput)),
         el("p", { class: "muted small", text: business.note || "" }),
@@ -408,7 +484,7 @@ function planCard(plan, request, message) {
     }
     /* The market of each paid panel, in plain lines: search data, ChatGPT (always United States), backlinks (none),
        and where a suggested country came from. */
-    if ((search.markets || []).length) card.append(el("ul", { class: "list" }, search.markets.map((line) => el("li", { text: line.text }))));
+    if ((search.markets || []).length) more.append(el("ul", { class: "list" }, search.markets.map((line) => el("li", { text: line.text }))));
     if (live && search.requested && !search.market_known) {
       const accept = el("input", { type: "checkbox", id: bid + "-default", checked: Boolean(search.market_default_accepted) });
       accept.addEventListener("change", () => replan(withBusiness({ market_default_accepted: accept.checked }), !sameBusiness()));
@@ -426,10 +502,10 @@ function planCard(plan, request, message) {
     };
     const both = Boolean(current.firecrawl && current.firecrawl.needs_confirmation);
     const reread = async () => { const fresh = await guarded(() => api("GET", "/plans/" + current.id)); if (fresh) draw(Object.assign(fresh, { prefilled: current.prefilled })); };
-    add(card, el("h3", { text: T("plan.label.cost") }), paidBox(current.paid, live && !both ? confirm : null, current.confirmation && current.confirmation.approved_max_usd, live ? reread : null),
+    add(more, el("h3", { text: T("plan.label.cost") }), paidBox(current.paid, live && !both ? confirm : null, current.confirmation && current.confirmation.approved_max_usd, live ? reread : null),
       search.brand_warning ? el("p", { class: "lead small", role: "note", text: search.brand_warning }) : null);
-    add(card, firecrawlBox(current, request, live, (body) => replan(body, false)));
-    add(card, switchesBox(current, request, live, (body) => replan(body, false)));
+    add(more, firecrawlBox(current, request, live, (body) => replan(body, false)));
+    add(more, switchesBox(current, request, live, (body) => replan(body, false)));
     if (live && both && current.needs_confirmation) card.append(el("div", { class: "row" }, el("button", { class: "button pay", type: "button", onclick: confirm }, pending.label)));
     if (problem) card.append(el("p", { class: "error-text", role: "alert", text: problem }));
     if (current.expired) card.append(el("p", { class: "error-text", text: T("plan.expired") }));
@@ -536,13 +612,18 @@ async function openAudit(id) {
   window.history.replaceState(null, "", data.audit.analysis ? "#analysis="+encodeURIComponent(id) : location.pathname);
   $("page-title").textContent = data.audit.host;
   $("input").placeholder = T("composer.placeholder.ask");
+  $("composer").hidden = false;
   drawOptions();
+  // DECISIONS 310: a finished audit's plan is folded into "how the audit ran"; while it runs, it stays on top.
+  const folded = !data.audit.active && !["failed", "stopped", "interrupted"].includes(data.audit.state);
+  let planNode = null;
   const nodes = data.messages.map((message) => {
-    if (message.role === "user") return bubble("user", message.body.text);
+    if (message.role === "user") return folded ? null : bubble("user", message.body.text);
+    if (message.kind === "plan" && folded && message.plan) { planNode = el("div", {}, el("h4", { text: T("plan.title") }), planFacts(message.plan)); return null; }
     if (message.kind === "plan") return message.plan ? el("section", { class: "card", "aria-label": T("plan.title") }, el("h2", { text: T("plan.title") + ": " + message.plan.target.host }),
       el("details", {}, el("summary", { text: message.plan.scope_label || T("plan.scope", { mode: message.plan.mode_label, cap: num(message.plan.page_cap) }) }), el("div", {}, planFacts(message.plan),
         paidBox(message.plan.paid, null, message.plan.confirmation && message.plan.confirmation.approved_max_usd)))) : null;
-    if (message.kind === "audit") return auditCard(data.audit);
+    if (message.kind === "audit") return auditCard(data.audit, planNode);
     return answer(message.body);
   }).filter(Boolean);
   fill($("thread"), nodes);
@@ -565,7 +646,7 @@ function answer(body) {
   return node;
 }
 
-function auditCard(audit) {
+function auditCard(audit, planNode) {
   const card = el("section", { class: "card", "aria-label": audit.host });
   const head = el("div"), body = el("div"), log = el("div", { class: "log", "aria-live": "off" }), result = el("div");
   const logBox = el("details", { hidden: true }, el("summary", { text: T("job.log") }), log);
@@ -575,7 +656,12 @@ function auditCard(audit) {
   const tick = () => { if (current.active && current.started_at) elapsed.textContent = T("job.elapsed", { time: duration((Date.now() - new Date(current.started_at).getTime()) / 1000) }); };
 
   const draw = () => {
-    fill(head, el("h2", {}, current.url, " ", el("span", { class: "state " + current.state, text: current.state_label })));
+    // DECISIONS 310: while it runs, the site, the time left and the steps in plain words; once finished, one line.
+    fill(head, current.active
+      ? el("div", {}, el("h2", {}, T("job.running.title", { host: current.host }), " ", el("span", { class: "pill", text: current.mode_label })),
+          current.started_at ? el("p", { class: "muted small", text: T("job.running.note", { time: when(current.started_at, { timeStyle: "short" }) }) }) : null)
+      : el("div", { class: "row job-line" }, el("strong", { text: current.host }), el("span", { class: "muted small", text: [when(current.started_at || current.created_at, { dateStyle: "medium", timeStyle: "short" }), current.mode_label].filter(Boolean).join(" · ") }),
+          el("span", { class: "state " + current.state, text: current.state_label }), el("span", { class: "id", text: String(current.id).slice(0, 8) })));
     const c = current.counters;
     const bar = el("div"); bar.style.width = Math.min(100, Math.round(100 * (c.pages_checked || 0) / Math.max(1, c.page_cap))) + "%";
     const parts = [el("ol", { class: "timeline" }, current.timeline.map((step) => el("li", { class: step.status, title: step.reason || "" },
@@ -600,10 +686,28 @@ function auditCard(audit) {
         current.error ? el("p", { class: "error-text", text: current.error.message }) : null);
     }
     const resumeSlot = el("div");
-    parts.push(el("div", { class: "row" },
+    const actions = [el("div", { class: "row" },
       current.can_stop ? el("button", { class: "button danger", type: "button", onclick: async () => { const next = await guarded(() => api("POST", "/audits/" + current.id + "/stop")); if (next) { current = next; if (next.note) addLog(next.note); draw(); } } }, T("job.stop")) : null,
-      current.can_resume ? el("button", { class: "button primary", type: "button", onclick: () => resumeDialog(resumeSlot) }, T("job.resume")) : null), resumeSlot);
-    fill(body, parts);
+      current.can_stop ? el("span", { class: "muted small", text: T("job.stop.explain") }) : null,
+      current.can_resume ? el("button", { class: "button primary", type: "button", onclick: () => resumeDialog(resumeSlot) }, T("job.resume")) : null), resumeSlot];
+    if (current.active) {
+      const read = Math.max(c.pages_checked || 0, c.firecrawl_read || 0);
+      bar.style.width = Math.min(100, Math.round(100 * read / Math.max(1, c.page_cap))) + "%";
+      const steps = current.timeline.filter((step) => step.status !== "skipped" && step.status !== "unavailable");
+      fill(body, el("p", { class: "eta" }, el("strong", { text: (current.eta && current.eta.plain) || (current.eta && current.eta.label) || "" }),
+          el("span", { class: "muted small", text: " · " + T("job.pages.plain", { read: num(read), cap: num(c.page_cap) }) })),
+        el("div", { class: "meter", role: "progressbar", "aria-valuemin": 0, "aria-valuemax": c.page_cap, "aria-valuenow": read, "aria-label": T("result.pages") }, bar),
+        el("ol", { class: "plain-steps" }, steps.map((step, i) => el("li", { class: step.status },
+          el("span", { class: "dot", "aria-hidden": "true", text: step.status === "done" ? "✓" : step.status === "active" ? String(i + 1) : "" }),
+          el("span", { text: step.plain || step.label }), el("span", { class: "visually-hidden", text: " (" + step.status_label + ")" })))),
+        actions, el("details", { class: "quiet-details" }, el("summary", { text: T("job.details") }), el("div", {}, parts)));
+    } else if (current.can_resume || current.state === "failed") {
+      fill(body, parts, actions);
+    } else {
+      fill(body, el("details", { class: "quiet-details" }, el("summary", { text: T("job.details.done") }), el("div", {}, planNode || null, parts)), actions);
+    }
+    card.classList.toggle("card", Boolean(current.active || current.can_resume || current.state === "failed"));
+    card.classList.toggle("job-done", !(current.active || current.can_resume || current.state === "failed"));
     tick();
     logBox.hidden = !log.childNodes.length;
     const key = current.has_report && !current.active ? current.state + ":" + current.finished_at : null;
@@ -884,20 +988,223 @@ function blockCard(view, context) {
   return card;
 }
 
+/* DECISIONS 310: one path through the results. (1) Summary: the report's verdict and four numbers; (2) what to fix:
+   the team report's cards; (3) check these first; (4) downloads; the questions; (5) technical details, folded: every
+   section the page had before. (1) and (2) are the team report's own data, from the copy re-evaluated with the
+   current engine, so the page and the PDF say the same thing. */
 function resultView(view, context) {
-  const out = el("div");
-  const o = view.outcome, c = view.counts, stat = view.pages_stat;
+  const out = el("div", { class: "results" });
   const analysis = view.audit?.analysis;
   if (analysis) add(out, el("section", {class:"notice"}, el("h2", {text:analysis.label}),
     el("p", {text:T("analysis.notice")}), el("p", {class:"small", text:"ID: "+analysis.id+" · "+T("analysis.source")+": "+analysis.source_audit_id}),
     el("p", {class:"small", text:T("analysis.version")+": "+analysis.analysis_version+" · "+T("analysis.processed")+": "+analysis.processed_at})));
-
   if (view.blocked) add(out, blockCard(view, context || {}));
-  if (view.single_page) add(out, el("p", { class: "small" }, el("strong", { text: view.single_page.title })));
-  if (view.headline) add(out, el("p", { class: "headline", text: view.headline }));
   if (view.low_coverage) add(out, el("div", { class: "lowcov", role: "alert", text: view.low_coverage.text }));
   if (view.redirected) add(out, el("div", { class: "lead", role: "note" }, el("p", { text: view.redirected.message }),
     el("div", { class: "row" }, el("button", { class: "button primary", type: "button", onclick: () => { newAudit(); send(view.redirected.to); } }, view.redirected.offer))));
+  const overviewSlot = el("div", { class: "overview" });
+  const reviewSlot = el("section", { class: "card review-list", "aria-labelledby": "check-first-title" });
+  add(out, overviewSlot, reviewSlot);
+  const refresh = () => showOverview(overviewSlot, view);
+  refresh();
+  showReview(reviewSlot, view.audit.id, refresh);
+  if (view.team_report) add(out, teamReport(view.team_report));
+  if ((view.follow_ups || []).length) add(out, el("section", { class: "followups" }, el("h3", { text: T("result.followups") }),
+    el("div", { class: "chips" }, view.follow_ups.map((question) => el("button", { class: "chip", type: "button", onclick: () => send(question) }, question)))));
+  const techBox = el("div");
+  const tech = el("details", { class: "card tech-details" }, el("summary", {}, el("span", { class: "section-no", text: "5 · " }), T("result.tech.title"),
+    el("span", { class: "muted small", text: " — " + T("result.tech.note") })), techBox);
+  let built = false;
+  const build = () => { if (!built) { built = true; fill(techBox, technicalView(view, context)); } };
+  tech.addEventListener("toggle", () => { if (tech.open) build(); });
+  add(out, tech);
+  out.openTechnical = () => { build(); tech.open = true; };
+  return out;
+}
+
+function sectionLabel(n, key) { return el("div", { class: "section-label", text: n + " · " + T(key) }); }
+
+async function showOverview(box, view) {
+  if (!box.childNodes.length) fill(box, el("section", { class: "card" }, sectionLabel(1, "overview.title"), el("p", { class: "busy", role: "status", text: T("overview.loading") })));
+  const lang = state.language === "en" ? "en" : "tr";
+  let data;
+  try { data = await api("GET", "/audits/" + view.audit.id + "/overview?lang=" + lang); }
+  catch (error) { data = { available: false, reason: error.message }; }
+  if (!data.available) {
+    fill(box, el("section", { class: "card" }, sectionLabel(1, "overview.title"),
+      view.headline ? el("h1", { class: "verdict", text: view.headline }) : null,
+      el("p", { class: "muted", text: data.reason || T("overview.unavailable") })));
+    return;
+  }
+  const kpi = (k) => el("div", { class: "kpi" }, el("div", { class: "kpi-label", text: k.label }),
+    el("div", { class: "kpi-value" }, k.value, k.of ? el("small", { text: " / " + k.of }) : null), el("div", { class: "kpi-sub", text: k.sub }));
+  const fixRow = (f) => el("li", { class: "fix" }, el("span", { class: "fix-n", text: String(f.n).padStart(2, "0") }),
+    el("div", { class: "fix-body" },
+      el("div", { class: "fix-title" }, el("strong", {}, hinted(f.title)), " ", el("span", { class: "sev " + f.severity, text: f.severity_label })),
+      f.why || f.scope ? el("p", { class: "muted small", text: [f.why, f.scope].filter(Boolean).join(" · ") }) : null,
+      f.note ? el("p", { class: "small", text: f.note }) : null,
+      el("div", { class: "id", text: f.finding_ids.slice(0, 3).join(" · ") + (f.finding_ids.length > 3 ? " +" + (f.finding_ids.length - 3) : "") })),
+    el("div", { class: "fix-who" }, el("span", { text: f.owner }), el("span", { class: "muted small", text: f.effort })));
+  CONFIRM_SCOPES[view.audit.id] = data.confirm_scopes || {};
+  if (REVIEW_REDRAW[view.audit.id]) REVIEW_REDRAW[view.audit.id]();
+  const first = data.fixes.slice(0, 5), rest = data.fixes.slice(5);
+  fill(box,
+    el("section", { class: "card summary", "aria-labelledby": "summary-title" }, sectionLabel(1, "overview.title"),
+      el("h1", { class: "verdict", id: "summary-title", text: data.headline }),
+      el("div", { class: "kpis" }, data.kpis.map(kpi)),
+      data.reassessed ? el("p", { class: "muted small", text: data.reassessed }) : null),
+    el("section", { class: "card fixes", "aria-labelledby": "fixes-title" }, sectionLabel(2, "fixes.title"),
+      el("h2", { id: "fixes-title", text: data.fixes.length ? T("fixes.heading", { count: first.length }) : T("fixes.none") }),
+      el("ol", { class: "fix-list" }, first.map(fixRow)),
+      rest.length ? el("details", { class: "more" }, el("summary", { text: T("fixes.more", { count: rest.length }) }), el("ol", { class: "fix-list" }, rest.map(fixRow))) : null,
+      data.notes ? el("p", { class: "muted small", text: T("fixes.notes", { count: data.notes }) }) : null));
+}
+
+/* "Önce bunları kontrol edin" (Teyit edin, DECISIONS 301, 309, 310). Optional: an unchecked finding stays out of the
+   report's cards and in the appendix. Two big buttons; the name is asked once and remembered in this browser; what
+   was seen and the card note are optional; a missing name is said beside the field; a saved item moves to "Checked"
+   with an Undo. At most three items open, highest severity first; the rest one click away. */
+const SHOWN_CHECKS = 3;
+const CONFIRM_SCOPES = {};  // audit id -> {first finding id: the scope the PDF prints}, from the overview
+const REVIEW_REDRAW = {};
+const SEVERITY_RANK = { S1: 0, S2: 1, S3: 2, S4: 3, Info: 4 };
+function rememberedName() { try { return localStorage.getItem("maya.reviewer") || ""; } catch (error) { return ""; } }
+function rememberName(name) { try { localStorage.setItem("maya.reviewer", name); } catch (error) { /* private window: asked again */ } }
+
+async function showReview(box, auditId, onChange) {
+  let data;
+  try { data = await api("GET", "/audits/" + auditId + "/review"); } catch (error) { box.replaceChildren(); return; }
+  drawReview(box, auditId, data, onChange, null);
+}
+
+function drawReview(box, auditId, data, onChange, justSaved) {
+  let name = rememberedName();
+  REVIEW_REDRAW[auditId] = () => { if (box.isConnected) drawReview(box, auditId, data, onChange, justSaved); };
+  const redraw = (next, saved) => { drawReview(box, auditId, next, onChange, saved); if (onChange) onChange(); };
+  const fieldId = (row, field) => "chk-" + String(row.finding_id).replace(/[^A-Za-z0-9-]/g, "") + "-" + field;
+  const item = (row, index) => {
+    const nameInput = el("input", { class: "field-input", type: "text", maxlength: "120", id: fieldId(row, "by"), autocomplete: "name", "aria-describedby": fieldId(row, "by-error") });
+    nameInput.value = name;
+    const nameError = el("p", { class: "field-error", id: fieldId(row, "by-error"), hidden: true });
+    const seen = el("textarea", { class: "field-input", maxlength: "1000", rows: "2", id: fieldId(row, "seen"), placeholder: T("check.seen.example") });
+    const note = el("input", { class: "field-input", type: "text", maxlength: "1000", id: fieldId(row, "note"), placeholder: T("check.note.example") });
+    const saveError = el("p", { class: "field-error", role: "alert", hidden: true });
+    const askName = !name;
+    const nameBox = el("div", { class: "field", hidden: !askName }, el("label", { class: "field-label", for: nameInput.id, text: T("check.by") }), nameInput, nameError);
+    const extra = el("div", { class: "check-fields", hidden: !(askName && index === 0) },
+      el("div", { class: "field" }, el("label", { class: "field-label", for: seen.id }, T("check.seen"), el("span", { class: "muted", text: " " + T("check.optional") })), seen),
+      el("div", { class: "field" }, el("label", { class: "field-label", for: note.id }, T("check.note"), el("span", { class: "muted", text: " " + T("check.optional") })), note));
+    const who = el("span", { class: "muted small" });
+    const drawWho = () => fill(who, name ? T("check.saved_as", { name }) : "", name ? [" · ", el("button", { class: "link", type: "button",
+      onclick: () => { nameBox.hidden = false; nameInput.focus(); } }, T("check.change"))] : null,
+      extra.hidden ? [name ? " · " : "", el("button", { class: "link", type: "button", onclick: () => { extra.hidden = false; seen.focus(); drawWho(); } }, T("check.add_note"))] : null);
+    drawWho();
+    const buttons = [];
+    const save = async (result) => {
+      const by = nameInput.value.trim();
+      if (!by) {
+        nameBox.hidden = false; nameError.textContent = T("check.error.by"); nameError.hidden = false; nameInput.classList.add("bad"); nameInput.focus(); return;
+      }
+      nameError.hidden = true; nameInput.classList.remove("bad"); saveError.hidden = true;
+      buttons.forEach((b) => { b.disabled = true; });
+      try {
+        const next = await api("POST", "/audits/" + auditId + "/review", { finding_id: row.finding_id, result, by, seen: seen.value.trim() || null, note: note.value.trim() || null });
+        rememberName(by); name = by;
+        redraw(next, row.finding_id);
+      } catch (error) {
+        buttons.forEach((b) => { b.disabled = false; });
+        const fields = (error.details && error.details.fields) || {};
+        if (fields.by) { nameBox.hidden = false; nameError.textContent = fields.by; nameError.hidden = false; nameInput.classList.add("bad"); nameInput.focus(); }
+        else { saveError.textContent = error.message || T("check.error.save"); saveError.hidden = false; }
+      }
+    };
+    buttons.push(el("button", { class: "button ok big", type: "button", "aria-label": T("check.correct") + ": " + row.title, onclick: () => save("confirmed") }, "✓ " + T("check.correct")),
+      el("button", { class: "button no big", type: "button", "aria-label": T("check.wrong") + ": " + row.title, onclick: () => save("rejected") }, "✕ " + T("check.wrong")));
+    return el("li", { class: "check-item", "data-finding": row.finding_id },
+      el("div", { class: "check-head" }, el("strong", {}, hinted(row.title)), el("span", { class: "sev " + row.severity, text: row.severity_label }),
+        (CONFIRM_SCOPES[auditId] || {})[row.finding_ids[0]] ? el("span", { class: "muted small", text: CONFIRM_SCOPES[auditId][row.finding_ids[0]] }) : null,
+        el("span", { class: "id", text: row.finding_ids.join(" · ") })),
+      row.reason_label ? el("p", { class: "muted small", text: row.reason_label }) : null,
+      nameBox, extra, el("div", { class: "row" }, buttons, who), saveError);
+  };
+  const checked = (row) => el("li", { class: "checked-item" + (row.finding_id === justSaved ? " just" : ""), "data-finding": row.finding_id },
+    el("div", { class: "check-head" }, el("span", { class: "pill " + (row.manual.result === "confirmed" ? "status-finished" : "status-too_few"),
+      text: (row.manual.result === "confirmed" ? "✓ " + T("check.correct") : "✕ " + T("check.wrong")) }), el("strong", {}, hinted(row.title)),
+      el("span", { class: "muted small", text: row.manual.by + " · " + row.manual.date }), el("span", { class: "id", text: row.finding_ids.join(" · ") }),
+      el("button", { class: "button", type: "button", "aria-label": T("check.undo") + ": " + row.title, onclick: async (event) => {
+        event.currentTarget.disabled = true;
+        try { redraw(await api("DELETE", "/audits/" + auditId + "/review/" + encodeURIComponent(row.finding_id)), null); }
+        catch (error) { event.currentTarget.disabled = false; notice(error.message); }
+      } }, T("check.undo"))),
+    row.manual.note ? el("p", { class: "muted small", text: T("check.note_shown", { note: row.manual.note }) }) : null);
+  const open = data.confirm.slice().sort((a, b) => (SEVERITY_RANK[a.severity] ?? 9) - (SEVERITY_RANK[b.severity] ?? 9));
+  const first = open.slice(0, SHOWN_CHECKS), rest = open.slice(SHOWN_CHECKS);
+  fill(box, sectionLabel(3, "check.title"),
+    el("h2", { id: "check-first-title", text: open.length ? T("check.heading", { count: open.length }) : T("check.none") }),
+    el("p", { class: "muted small", text: T("check.how") }),
+    el("p", { class: "small optional-line", text: T("check.optional_line") }),
+    open.length ? el("ul", { class: "check-list" }, first.map(item)) : null,
+    rest.length ? el("details", { class: "more" }, el("summary", { text: T("check.more", { count: rest.length }) }), el("ul", { class: "check-list" }, rest.map((row, i) => item(row, i + first.length)))) : null,
+    data.reviewed.length ? el("details", { class: "more checked", open: Boolean(justSaved) }, el("summary", { text: T("check.done_title", { count: data.reviewed.length }) }),
+      el("ul", { class: "check-list" }, data.reviewed.map(checked))) : null);
+}
+
+function teamReport(team) {
+  // One language at a time (DECISIONS 308): the switch decides both files, each click builds that language again, and
+  // the file is then offered as an ordinary link under its own name (…-ekip-raporu-tr.pdf / …-team-report-en.pdf). A
+  // download a script starts long after the click is blocked by browsers as "multiple downloads". DECISIONS 310: the
+  // Downloads card: the language, the team report PDF, the XLSX appendix, and the client brief (not yet).
+  let lang = team.default_lang || "tr";
+  const why = el("div", { class: "team-blocked" });
+  const ready = el("div", { class: "team-ready" });
+  const langName = (code) => T("team.lang." + code);
+  const pdfButton = el("button", { class: "button primary", type: "button" });
+  const xlsxLink = el("a", { class: "button", download: "" });
+  const label = () => { pdfButton.textContent = T("download.pdf.build", { language: langName(lang) }); xlsxLink.textContent = T("download.xlsx.get", { language: langName(lang) }); xlsxLink.href = team.xlsx + "?lang=" + lang; };
+  const choice = (code) => el("button", { class: "button lang" + (code === lang ? " selected" : ""), type: "button", "aria-pressed": String(code === lang), "data-lang": code,
+    onclick: (event) => { lang = code; for (const b of event.currentTarget.parentNode.children) { b.classList.toggle("selected", b === event.currentTarget); b.setAttribute("aria-pressed", String(b === event.currentTarget)); } fill(why); fill(ready); label(); } }, langName(code));
+  pdfButton.onclick = async () => {
+    const asked = lang;
+    fill(ready);
+    fill(why, el("p", { class: "busy small", role: "status", text: T("team.building") + " (" + langName(asked) + ")" }));
+    pdfButton.disabled = true;
+    let response;
+    try { response = await fetch(team.prepare + "?lang=" + asked, { credentials: "same-origin", cache: "no-store" }); }
+    catch (error) { pdfButton.disabled = false; fill(why); notice(T("error.offline")); return; }
+    pdfButton.disabled = false;
+    let body = {};
+    try { body = (await response.json()) || {}; } catch (error) { body = {}; }
+    if (asked !== lang) { fill(why); return; } // the reader chose the other language meanwhile
+    if (!response.ok) {
+      const problem = body.error || {};
+      const reasons = (problem.details && problem.details.reasons) || [];
+      fill(why, el("p", {}, el("strong", { text: problem.message || T("team.blocked") })),
+        reasons.length ? el("ul", { class: "list" }, reasons.map((line) => el("li", { text: line }))) : null);
+      return;
+    }
+    fill(why);
+    fill(ready, el("p", { class: "small", text: T("team.ready", { language: langName(body.lang), pages: body.pages }) }),
+      el("div", { class: "row" },
+        el("a", { class: "button primary", href: body.pdf.url, download: body.pdf.filename, "data-lang": body.lang }, T("download.get") + ": " + body.pdf.filename),
+        el("a", { class: "button", href: body.xlsx.url, download: body.xlsx.filename, "data-lang": body.lang }, body.xlsx.filename)),
+      body.reassessed ? el("p", { class: "muted small", text: body.reassessed }) : null);
+  };
+  label();
+  return el("section", { class: "card team-report downloads", "aria-labelledby": "downloads-title" }, sectionLabel(4, "download.title"),
+    el("div", { class: "row" }, el("strong", { id: "downloads-title", text: T("team.lang") }), el("span", { class: "row", role: "group", "aria-label": T("team.lang") }, choice("tr"), choice("en"))),
+    el("div", { class: "dl-grid" },
+      el("div", { class: "dl-card" }, el("strong", { text: T("download.pdf.title") }), el("p", { class: "muted small", text: T("download.pdf.about") }), pdfButton, why, ready),
+      el("div", { class: "dl-card" }, el("strong", { text: T("download.xlsx.title") }), el("p", { class: "muted small", text: T("download.xlsx.about") }), xlsxLink),
+      el("div", { class: "dl-card off", "aria-disabled": "true" }, el("strong", { text: T("download.brief.title") }), el("p", { class: "muted small", text: T("download.brief.soon") }))));
+}
+
+function technicalView(view, context) {
+  const out = el("div");
+  const o = view.outcome, c = view.counts, stat = view.pages_stat;
+  const analysis = view.audit?.analysis;
+
+  if (view.single_page) add(out, el("p", { class: "small" }, el("strong", { text: view.single_page.title })));
+  if (view.headline) add(out, el("p", { class: "headline", text: view.headline }));
   if (!view.blocked) {
     // The page reader of every audit is said once, folded away; a reader used for something unusual is said in full.
     const mainReader = Boolean(view.firecrawl && view.firecrawl.main_reader && view.firecrawl.used);
@@ -1012,15 +1319,7 @@ function resultView(view, context) {
       source.notes.length ? el("details", { class: "quiet-details" }, el("summary", { text: T("result.archives.notes") }), el("ul", { class: "list" }, (source.notes_shown || source.notes).slice(0, 20).map((note) => el("li", { class: "small", text: note })))) : null)));
   if (view.suggested_key_pages.length) add(out, el("p", { class: "muted small", text: T("result.suggest_key_pages") }), el("ul", { class: "list" }, view.suggested_key_pages.map((address) => el("li", {}, link(address)))));
 
-  // The "Client report" (maya-audit-rapor) button is hidden: that report is deprecated and goes in release w15
-  // (DECISIONS 302). Its API and showClientReport stay until then; the concise PDF and the pro report replace it.
   add(out, el("div", { class: "row" }, profileForm(view.audit.project_id, "saved-" + view.audit.id)));
-  // "Teyit edin": the owner's manual checks, written to this audit's review file (DECISIONS 301).
-  const reviewSlot = el("section", { class: "review-list" });
-  add(out, reviewSlot);
-  showReview(reviewSlot, view.audit.id);
-  // The team report (the maya-audit-pro design) and its appendix, built here from the saved audit (DECISIONS 307).
-  if (view.team_report) add(out, teamReport(view.team_report));
   add(out, el("h3", { text: T("result.downloads") }), el("p", { class: "muted small", text: T("result.downloads.note") + (view.team_report ? " " + T("result.downloads.other") : "") }));
   add(out, el("div", { class: "row" }, view.downloads.map((item) => item.format === "pdf"
     ? el("button", { class: "button", type: "button", onclick: () => downloadPdf(item.url, view.print_url) }, item.label)
@@ -1028,90 +1327,7 @@ function resultView(view, context) {
     el("a", { class: "button quiet", href: view.print_url, target: "_blank", rel: "noopener" }, T("result.printable")),
     el("a", { class: "button quiet", href: view.print_url + "?full=true", target: "_blank", rel: "noopener" }, T("concise.full_technical"))));
 
-  add(out, el("h3", { text: T("result.followups") }), el("div", { class: "chips" }, view.follow_ups.map((question) => el("button", { class: "chip", type: "button", onclick: () => send(question) }, question))));
   return out;
-}
-
-async function showReview(box, auditId) {
-  let data;
-  try { data = await api("GET", "/audits/" + auditId + "/review"); } catch (error) { box.replaceChildren(); return; }
-  const rowView = (row) => {
-    const by = el("input", { type: "text", maxlength: "120", placeholder: T("review.by") });
-    const seen = el("textarea", { maxlength: "1000", rows: "2", placeholder: T("review.seen") });
-    const note = el("input", { type: "text", maxlength: "1000", placeholder: T("review.extra") });
-    const save = async (result) => {
-      if (!by.value.trim() || !seen.value.trim()) { notice(T("review.seen")); return; }
-      try {
-        const answer = await api("POST", "/audits/" + auditId + "/review", { finding_id: row.finding_id, result, by: by.value.trim(), seen: seen.value.trim(), note: note.value.trim() || null });
-        // DECISIONS 309: the notice names what was saved, so a check recorded on the wrong row is seen at once.
-        notice(T("review.saved_for", { title: row.title, ids: (answer.saved?.finding_ids || [row.finding_id]).join(", ") }) + " " + T("team.rebuilt"));
-        showReview(box, auditId);
-      } catch (error) { notice(error.message); }
-    };
-    const done = row.manual ? el("p", { class: "muted small", text: T("review.done", { result: T(row.manual.result === "confirmed" ? "review.confirm" : "review.reject"), by: row.manual.by, date: row.manual.date })
-      + (row.manual.note ? " · " + T("review.note_shown", { note: row.manual.note }) : "") }) : null;
-    // Each form names its finding (ID and title), in its summary and its buttons' labels: one row's form is never
-    // taken for its neighbour's.
-    return el("li", { "data-finding": row.finding_id }, el("strong", { text: row.title }), " · " + row.severity_label + (row.reason_label ? " · " + row.reason_label : ""),
-      el("span", { class: "muted small mono", text: " · " + row.finding_ids.join(", ") }), done,
-      el("details", { class: "quiet-details" }, el("summary", { text: T("review.confirm") + " / " + T("review.reject") + ": " + row.finding_id }),
-        el("div", { class: "review-form" }, by, seen, note,
-          el("div", { class: "row" },
-            el("button", { class: "button", type: "button", "aria-label": T("review.confirm") + ": " + row.title, onclick: () => save("confirmed") }, T("review.confirm")),
-            el("button", { class: "button quiet", type: "button", "aria-label": T("review.reject") + ": " + row.title, onclick: () => save("rejected") }, T("review.reject"))))));
-  };
-  // fill() drops the null parts (no "checked by hand" list yet); replaceChildren would print each as "null".
-  fill(box, el("h3", { text: T("review.title") }), el("p", { class: "muted small", text: T("review.note") }),
-    data.confirm.length ? el("ul", { class: "list" }, data.confirm.map(rowView)) : el("p", { class: "muted", text: T("review.none") }),
-    data.reviewed.length ? el("h4", { text: T("review.reviewed") }) : null,
-    data.reviewed.length ? el("ul", { class: "list" }, data.reviewed.map(rowView)) : null);
-}
-
-function teamReport(team) {
-  // One language at a time (DECISIONS 308): the switch decides both files, each click builds that language again, and
-  // the file is then offered as an ordinary link under its own name (…-ekip-raporu-tr.pdf / …-team-report-en.pdf). A
-  // download a script starts long after the click is blocked by browsers as "multiple downloads", which left the
-  // reader with the first language's file.
-  let lang = team.default_lang || "tr";
-  const why = el("div", { class: "team-blocked" });
-  const ready = el("div", { class: "team-ready" });
-  const langName = (code) => T("team.lang." + code);
-  const pdfButton = el("button", { class: "button", type: "button" });
-  const xlsxButton = el("button", { class: "button", type: "button" });
-  const label = () => { pdfButton.textContent = T("team.pdf") + " · " + lang.toUpperCase(); xlsxButton.textContent = T("team.xlsx") + " · " + lang.toUpperCase(); };
-  const choice = (code) => el("button", { class: "button quiet" + (code === lang ? " selected" : ""), type: "button", "aria-pressed": String(code === lang), "data-lang": code,
-    onclick: (event) => { lang = code; for (const b of event.currentTarget.parentNode.children) { b.classList.toggle("selected", b === event.currentTarget); b.setAttribute("aria-pressed", String(b === event.currentTarget)); } fill(why); fill(ready); label(); } }, code.toUpperCase());
-  pdfButton.onclick = async () => {
-    const asked = lang;
-    fill(ready);
-    fill(why, el("p", { class: "muted small", text: T("team.building") + " (" + langName(asked) + ")" }));
-    pdfButton.disabled = true;
-    let response;
-    try { response = await fetch(team.prepare + "?lang=" + asked, { credentials: "same-origin", cache: "no-store" }); }
-    catch (error) { pdfButton.disabled = false; fill(why); notice(T("error.offline")); return; }
-    pdfButton.disabled = false;
-    let body = {};
-    try { body = (await response.json()) || {}; } catch (error) { body = {}; }
-    if (asked !== lang) { fill(why); return; } // the reader chose the other language meanwhile
-    if (!response.ok) {
-      const problem = body.error || {};
-      const reasons = (problem.details && problem.details.reasons) || [];
-      fill(why, el("p", {}, el("strong", { text: problem.message || T("team.blocked") })),
-        reasons.length ? el("ul", { class: "list" }, reasons.map((line) => el("li", { text: line }))) : null);
-      return;
-    }
-    fill(why);
-    fill(ready, el("p", { class: "small", text: T("team.ready", { language: langName(body.lang), pages: body.pages }) }),
-      el("div", { class: "row" },
-        el("a", { class: "button primary", href: body.pdf.url, download: body.pdf.filename, "data-lang": body.lang }, body.pdf.filename),
-        el("a", { class: "button", href: body.xlsx.url, download: body.xlsx.filename, "data-lang": body.lang }, body.xlsx.filename)),
-      body.reassessed ? el("p", { class: "muted small", text: body.reassessed }) : null);
-  };
-  xlsxButton.onclick = () => { const a = el("a", { href: team.xlsx + "?lang=" + lang, download: "" }); document.body.append(a); a.click(); a.remove(); };
-  label();
-  return el("section", { class: "team-report" }, el("h3", { text: T("team.title") }), el("p", { class: "muted small", text: T("team.note") + " " + T("team.note.lang") }),
-    el("div", { class: "row" }, el("span", { class: "muted small", text: T("team.lang") }), el("span", { class: "row" }, choice("tr"), choice("en"))),
-    el("div", { class: "row" }, pdfButton, xlsxButton), why, ready);
 }
 
 async function downloadPdf(url, printUrl) {
@@ -1160,7 +1376,9 @@ async function openEvidence(evidenceId, opener) {
 function setTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   try { localStorage.setItem("maya-theme", theme); } catch (error) { /* private mode: the choice is just not kept */ }
-  $("theme").textContent = T("theme.toggle") + ": " + T(theme === "dark" ? "theme.dark" : "theme.light");
+  // DECISIONS 310: the button names what it does ("Koyu tema"); the full sentence is its accessible name.
+  $("theme").textContent = T(theme === "dark" ? "theme.to_light" : "theme.to_dark");
+  $("theme").setAttribute("aria-label", T("theme.toggle") + ": " + T(theme === "dark" ? "theme.dark" : "theme.light"));
   $("theme").setAttribute("aria-pressed", String(theme === "dark"));
 }
 
@@ -1192,8 +1410,10 @@ async function boot() {
   fill($("language"), state.languages.map((item) => el("option", { value: item.id, text: item.label, selected: item.id === state.language })));
   $("language-box").hidden = state.languages.length < 2;
   const chosen = state.languages.find((item) => item.id === state.language);
+  // The translation note is kept, folded behind the language select's tooltip, not as a paragraph (DECISIONS 310).
   $("language-note").textContent = (chosen && chosen.note) || "";
-  $("language-note").hidden = !(chosen && chosen.note);
+  $("language-note").hidden = true;
+  $("language").title = (chosen && chosen.note) || "";
   $("language").addEventListener("change", async () => {
     // The choice is kept by the server in a cookie; the page is loaded again so every sentence comes in that language.
     if (await guarded(() => api("PUT", "/session/language", { language: $("language").value }))) window.location.reload();

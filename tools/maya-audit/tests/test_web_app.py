@@ -1201,13 +1201,15 @@ def test_demo_mode_is_labelled_accepts_only_its_own_sites_and_keeps_its_own_ledg
     assert folder == tmp_path / "home" / "web" / "demo"
     with TestClient(app, base_url=BASE) as client:
         client.get("/")
+        assert client.get(f"{API}/settings").json()["language"] == "tr"  # Turkish unless the reader chose (DECISIONS 310)
+        client.cookies.set("maya_language", "en")
         client.headers["x-maya-token"] = client.get(f"{API}/session").json()["token"]
         settings = client.get(f"{API}/settings").json()
         assert settings["demo"] and {s["address"] for s in settings["demo_sites"]} == set(demo.SITES)
         refused = error(client.post(f"{API}/plans", json={"url": "example.com"}), 422, "demo_sites_only")
         assert SHOP in refused["message"]
         made = plan(client, SHOP, backlinks=True, mode="standard")
-        assert made["paid"]["calls"][0]["target"] == "demo-shop.example" and made["duration"] == {"known": False, "label": strings.t("plan.duration.demo")}
+        assert made["paid"]["calls"][0]["target"] == "demo-shop.example" and {k: v for k, v in made["duration"].items() if k != "typical"} == {"known": False, "label": strings.t("plan.duration.demo")}
         audit = start(client, confirm(client, made))
         view = get(client, audit, "/summary")
         assert view["demo"] and view["counts"]["pages_checked"] == 500 and view["backlinks"]["available"]

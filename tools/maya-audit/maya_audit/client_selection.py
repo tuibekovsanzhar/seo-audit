@@ -653,7 +653,7 @@ def appendix_rows(selection: dict, lists: dict | None = None) -> list[dict]:
                         "merge_group": g.get("merge_group"),
                         "pages_read": g.get("pages_counted"), "not_read": g.get("addresses_not_read"),
                         "read_unscored": g.get("pages_read_unscored"),
-                        "manual": (lambda c: f"{c.get('result')} · {c.get('by')} · {c.get('date')} · {c.get('seen')}"
+                        "manual": (lambda c: " · ".join(str(c[k]) for k in ("result", "by", "date", "seen") if c.get(k))
                                    + (f" · {c['note']}" if c.get("note") else ""))(manual(m, selection.get("_confirmations")))
                         if manual(m, selection.get("_confirmations")) else "",
                         "title": m.get("title"), "how_to_fix": m.get("how_to_fix"),

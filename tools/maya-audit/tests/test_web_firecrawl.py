@@ -345,17 +345,14 @@ def test_the_result_page_of_a_challenged_site_read_through_firecrawl_has_no_bloc
         page.set_content("<main id='result'></main>")
         page.add_script_tag(content=(static / "app.js").read_text(encoding="utf-8").removesuffix("boot();\n"))
         page.evaluate("values => { state.strings = values; }", strings.table("en"))
-        page.evaluate("view => document.querySelector('#result').append(resultView(view, {}))", view)
-        text = page.locator("#result").inner_text()
+        # DECISIONS 310: the former page is the folded "Technical details"; opened here to read it.
+        page.evaluate("view => { const out = resultView(view, {}); document.querySelector('#result').append(out); out.openTechnical(); }", view)
+        page.wait_for_timeout(300)
+        text = page.locator(".tech-details").inner_text()
         browser.close()
-    # The headline is the first line of the card; the outcome follows it (after the low-coverage banner when few pages
-    # were read, DECISIONS 309).
-    after = text[len(view["headline"]):].lstrip("\n")
-    if view.get("low_coverage"):
-        assert after.startswith(view["low_coverage"]["text"])
-        after = after[len(view["low_coverage"]["text"]):].lstrip("\n")
-    assert problems == [] and "Pages read" in text and "via Firecrawl" in text and text.startswith(view["headline"])
-    assert after.startswith("Audit complete")
+    # In the technical details the headline still comes first and the outcome follows it.
+    assert problems == [] and "Pages read" in text and "via Firecrawl" in text and view["headline"] in text
+    assert text.index(view["headline"]) < text.index("Audit complete")
     assert "By severity" in text and view["top_title"] in text and "Problems by page (" in text
     assert "The site blocked this audit" not in text and "Readable pages" not in text and "[object Object]" not in text
     assert "Maya's direct crawler was challenged" in text and "Genuine AI-crawler access was not measured" in text

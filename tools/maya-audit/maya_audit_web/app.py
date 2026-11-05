@@ -148,8 +148,8 @@ class ManualCheckIn(Strict):
     """The owner's manual check of one finding in the "Teyit edin" list (DECISIONS 301 (1))."""
     finding_id: str = Field(min_length=3, max_length=80)
     result: Literal["confirmed", "rejected"]
-    by: str = Field(min_length=1, max_length=120)
-    seen: str = Field(min_length=1, max_length=1000)
+    by: str | None = Field(default=None, max_length=120)
+    seen: str | None = Field(default=None, max_length=1000)
     note: str | None = Field(default=None, max_length=1000)
 
 
@@ -295,7 +295,8 @@ def _sse(event_id: int, name: str, data: dict[str, Any]) -> str:
 
 
 def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 8770,
-               allowed_hosts: frozenset[str] | None = None, heartbeat_s: float = 10.0, analysis_folder: Path | None = None) -> FastAPI:
+               allowed_hosts: frozenset[str] | None = None, heartbeat_s: float = 10.0, analysis_folder: Path | None = None,
+               default_language: str | None = None) -> FastAPI:
     """The app for one data folder. `engine` decides where audits and paid calls go (real, demo or test)."""
     from .analyses import Registry
     analysis_registry = Registry(analysis_folder)
@@ -328,7 +329,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
     @app.middleware("http")
     async def language(request: Request, call_next) -> Response:
         # The person's choice travels in a plain cookie; it selects sentences and nothing else.
-        set_language(request.cookies.get(LANGUAGE_COOKIE))
+        # DECISIONS 310: with no choice made yet, the app's default (Turkish when started with `python -m maya_audit_web`).
+        set_language(request.cookies.get(LANGUAGE_COOKIE) or default_language)
         response = await call_next(request)
         parts = request.url.path.split('/')
         if len(parts) > 5 and parts[3] == 'audits' and analysis_registry.accepts(parts[4]):
@@ -561,6 +563,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         duration = ({"known": False, "label": t("plan.duration.demo")} if engine.demo else
                     {"known": True, "up_to_minutes": shape["up_to_minutes"],
                      "label": t("plan.duration", minutes=shape["up_to_minutes"], cap=cap)})
+        duration["typical"] = typical(mode)  # DECISIONS 310: what recent runs of this mode took
         balance = store.get_meta("provider_balance")
         document = {
             "id": new_id(), "fingerprint": fingerprint,
@@ -715,7 +718,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
     def settings() -> dict[str, Any]:
         return {"api_version": API_VERSION, "language": current_language(), "languages": sorted(STRINGS), "demo": engine.demo,
                 "demo_sites": [{"address": host, "about": about} for host, about in demo.SITES.items()] if engine.demo else [],
-                "modes": [{"id": mode, "label": t(f"plan.mode.{mode}"), "page_cap": cap} for mode, cap in MODES.items()],
+                "modes": [{"id": mode, "label": t(f"plan.mode.{mode}"), "page_cap": cap, "typical": typical(mode)}
+                          for mode, cap in MODES.items()],
                 "max_key_pages": MAX_KEY_PAGES, "max_queued": MAX_QUEUED, "one_audit_at_a_time": True,
                 "plan_lifetime_minutes": PLAN_LIFETIME_S // 60, "report_schema": "1.x",
                 "paid": {"daily_cap_usd": paid.daily_cap(), "credentials_configured": engine.paid.credentials() is not None},
@@ -810,10 +814,25 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             else:
                 status = "pending" if active else "not_reached"
             rows.append({"step": step, "label": t(f"step.{step}"), "status": status, "status_label": t(f"step.status.{status}"),
-                         "reason": reason})
+                         "reason": reason, "plain": t(f"step.plain.{step}")})
         return rows
 
     def eta(audit: dict[str, Any]) -> dict[str, Any]:
+        found = measured_eta(audit)
+        # DECISIONS 310: the plain line is what recent runs of this mode took, less the time already spent; the
+        # measured line stays beside it. Past the typical time, only the measured one.
+        if audit["state"] == "running" and audit.get("started_at"):
+            usual = typical(audit["mode"])
+            spent = (datetime.now(timezone.utc) - datetime.fromisoformat(audit["started_at"])).total_seconds()
+            if usual["known"] and usual["seconds"] - spent >= 60:
+                minutes = max(1, round((usual["seconds"] - spent) / 60))
+                return {**found, "plain": t("time.left", minutes=minutes), "basis": "recent_runs", "runs": usual["runs"]}
+            if usual["known"]:
+                return {**found, "plain": t("time.left.over"), "basis": "recent_runs", "runs": usual["runs"]}
+            return {**found, "plain": t("time.left.range", low=usual["low_minutes"], high=usual["high_minutes"]), "basis": "range"}
+        return found
+
+    def measured_eta(audit: dict[str, Any]) -> dict[str, Any]:
         progress = audit["progress"]
         if audit["state"] != "running":
             return {"kind": "none", "label": None}
@@ -946,6 +965,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                               for draft in [fmt != "evidence" and gate_decision(report) == release_gate.BLOCKED]],
                 "team_report": {"prepare": f"{base}/team-report", "pdf": f"{base}/downloads/team", "xlsx": f"{base}/downloads/xlsx",
                                 "default_lang": "tr"},
+                "overview_url": f"{base}/overview",
                 "print_url": f"{base}/print", "review_url": f"{base}/review", "has_previous": not audit.get("analysis") and store.previous_audit(audit) is not None}
         # The practical report in brief: the executive summary, the scorecard and the timeline's counts. The whole of it,
         # with every issue and the page table, is GET /audits/{id}/practical: a results card stays small.
@@ -1033,6 +1053,55 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             raise ApiError(404, 'audit_not_found', t('error.audit_not_found'))
         return {**audit['analysis'], 'result_url': '/api/v1/audits/'+analysis_id+'/summary'}
 
+    TYPICAL_RUNS = 5  # DECISIONS 310: the time shown is the median of this many recent finished audits of the mode
+
+    def typical(mode: str) -> dict[str, Any]:
+        """How long an audit of this mode took lately: the median of the last finished runs (one session each), or,
+        with none yet, a range from the plan's own bound. Said with "about"; never a promise."""
+        rows, _ = store.audits(status="finished", limit=100)
+        seconds = []
+        for a in rows:
+            if a["mode"] != mode or not a.get("started_at") or not a.get("finished_at") or int(a.get("sessions") or 1) != 1:
+                continue
+            took = (datetime.fromisoformat(a["finished_at"]) - datetime.fromisoformat(a["started_at"])).total_seconds()
+            if took >= 0:  # a run within one second (a demo site) counts as one
+                seconds.append(took)
+            if len(seconds) >= TYPICAL_RUNS:
+                break
+        if seconds:
+            middle = sorted(seconds)[len(seconds) // 2] if len(seconds) % 2 else sum(sorted(seconds)[len(seconds) // 2 - 1:len(seconds) // 2 + 1]) / 2
+            minutes = max(1, round(middle / 60))
+            return {"known": True, "seconds": round(middle), "runs": len(seconds), "minutes": minutes,
+                    "label": t("time.typical", minutes=minutes, runs=len(seconds)), "short": t("time.about", minutes=minutes)}
+        high = max(1, int(plan_shape(engine, mode, []).get("up_to_minutes") or 1))
+        low = max(1, round(high / 4))
+        return {"known": False, "low_minutes": low, "high_minutes": high,
+                "label": t("time.range", low=low, high=high), "short": t("time.range.short", low=low, high=high)}
+
+    def plain_status(audit: dict[str, Any], reading: dict[str, Any]) -> dict[str, str]:
+        """DECISIONS 310: one plain word for the history list: Bitti, Sayfa sınırına ulaşıldı, Erken durduruldu, Çok az
+        sayfa okundu (and Sırada, Çalışıyor, Başarısız while it is not finished)."""
+        state = audit["state"]
+        if state == "queued":
+            code = "queued"
+        elif state in ("running", "stopping"):
+            code = "running"
+        elif state == "failed":
+            code = "failed"
+        elif state in ("stopped", "interrupted"):
+            code = "stopped"
+        else:
+            cap, read = MODES.get(audit["mode"], 1), int(reading.get("pages_read") or 0)
+            if read < min(10, cap) or read < 0.2 * cap:
+                code = "too_few"
+            elif read >= cap or audit.get("crawl_stop") == "page_cap":
+                code = "page_cap"
+            elif audit.get("crawl_stop") in ("time_limit", "stopped", "rate_limit", "error", "network_problem"):
+                code = "stopped"
+            else:
+                code = "finished"
+        return {"status": code, "status_label": t(f"history.status.{code}")}
+
     # DECISIONS 309: the history list says how each audit read the site. From the evidence indexes (small files, one
     # row per page saved), never from report.json (it can be hundreds of MB); kept while the indexes are unchanged.
     reading_cache: dict[str, tuple[tuple, dict[str, Any]]] = {}
@@ -1077,7 +1146,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
              "state": a["state"], "state_label": t(f"job.state.{a['state']}"), "active": is_active(a),
              "outcome": a["outcome"], "outcome_label": summary.outcome_label(a["outcome"], a.get("outcome_reason")),
              "pages_checked": a["progress"].get("pages_checked", 0), "created_at": a["created_at"],
-             "finished_at": a["finished_at"], **reading_of(a)} for a in rows]}
+             "finished_at": a["finished_at"], "short_id": a["id"][:8], **(read := reading_of(a)),
+             **plain_status(a, read)} for a in rows]}
 
     @api.get("/audits/{audit_id}", summary="One audit: lifecycle, outcome, steps, counters")
     def get_audit(audit_id: str) -> dict[str, Any]:
@@ -1726,6 +1796,53 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         return client_call(lambda: client_reports.public(workspace.update(body.revision,
             lambda w: client_reports.review(w, body.reviewer, body.reason))))
 
+    # DECISIONS 310: the results page's summary and "what to fix" are the team report's own (the same build, from the
+    # copy re-evaluated with the current engine), so the page and the PDF say the same numbers in the same words.
+    overview_cache: dict[tuple, dict[str, Any]] = {}
+
+    def overview_of(audit: dict[str, Any], lang: str) -> dict[str, Any]:
+        from .team_report import build_data, texts as team_texts
+        load_report(audit)
+        folder = artifact_folder(audit["id"])
+        cur = current_of(audit)
+        review = review_path(audit)
+        stamp = lambda p: (p.stat().st_size, p.stat().st_mtime_ns) if p and Path(p).is_file() else None  # noqa: E731
+        key = (audit["id"], lang, str(cur.report_path), stamp(cur.report_path), stamp(review))
+        if key in overview_cache:
+            return overview_cache[key]
+        try:
+            data, _ = build_data.build_from_files(report_path(audit["id"]), lang, review=review, audit_id=audit["id"],
+                                                  affected_path=folder / AFFECTED_JSON if (folder / AFFECTED_JSON).is_file() else None)
+        except build_data.BuildError as exc:
+            words = team_texts.library(lang)["blocked"]
+            return {"available": False, "reason": words.get("build") or words["gate"], "detail": str(exc)[:300]}
+        problems = [todo for todo in data["todos"] if todo["severity"] in ("S1", "S2", "S3", "S4")]
+        notes = [todo for todo in data["todos"] if todo["severity"] not in ("S1", "S2", "S3", "S4")]
+        waiting = len(data.get("confirm") or []) + int(data.get("confirm_more") or 0)
+        kpis = [{"label": k["label"], "value": k["value"], "of": k.get("of"), "sub": k["sub"]} for k in data["kpis"][:3]]
+        kpis.append({"label": t("overview.waiting"), "value": str(waiting), "of": None, "sub": t("overview.waiting.sub")})
+        out = {"available": True, "lang": lang, "headline": data["assessment"]["headline"], "text": data["assessment"]["text"],
+               "kpis": kpis, "low_coverage": (data.get("low_coverage") or {}).get("text"),
+               "fixes": [{"n": todo["n"], "title": todo["title"], "why": todo.get("why"), "scope": todo.get("scope"),
+                          "severity": todo["severity"], "severity_label": todo["severity_label"], "owner": todo["owner"],
+                          "effort": todo["effort"], "finding_ids": todo["finding_ids"], "note": (todo.get("sub") or [None])[0]
+                          if str((todo.get("sub") or [""])[0]).startswith(("Elle kontrol", "Manual check")) else None}
+                         for todo in problems],
+               # each "Teyit edin" row's scope as the PDF prints it, by the row's first finding (DECISIONS 310)
+               "confirm_scopes": {row["finding_ids"][0]: row.get("scope") for row in data.get("confirm") or [] if row.get("finding_ids")},
+               "notes": len(notes), "waiting": waiting, "reassessed": next((line["v"] for line in data["provenance"]["lines"]
+                                                                            if line["k"] in ("Değerlendirme:", "Assessment:")), None)}
+        if len(overview_cache) > 20:
+            overview_cache.clear()
+        overview_cache[key] = out
+        return out
+
+    @api.get("/audits/{audit_id}/overview", summary="The results page's summary and what to fix: the team report's own words")
+    def get_overview(audit_id: str, lang: str | None = Query(default=None, pattern="^(tr|en)$")) -> dict[str, Any]:
+        audit = need_audit(audit_id)
+        chosen = lang or (current_language() if current_language() in ("tr", "en") else "tr")
+        return overview_of(audit, chosen)
+
     @api.get("/audits/{audit_id}/review", summary="The findings to confirm first and the owner's manual checks")
     def get_review(audit_id: str) -> dict[str, Any]:
         return review_view(need_audit(audit_id))
@@ -1735,6 +1852,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         from maya_audit import manual_review
         from maya_audit.release_gate import findings_of
         audit = need_audit(audit_id)
+        # DECISIONS 310: said in plain words beside the field that needs it, never as a bare error bar.
+        if not (body.by or "").strip():
+            raise ApiError(422, "invalid_review", t("review.error.by"), fields={"by": t("review.error.by")})
         report, aff, _ = current_report(audit)
         findings = findings_of(report)
         if body.finding_id not in findings:
@@ -1748,6 +1868,20 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             manual_review.record(path, manual_review.entry(
                 fid, body.result, by=body.by, seen=body.seen, note=body.note, rule_id=findings[fid].get("rule_id")))
         return {**review_view(audit), "saved": {"finding_ids": ids, "result": body.result, "file": str(path)}}
+
+    @api.delete("/audits/{audit_id}/review/{finding_id}", summary="Undo the owner's manual check of one finding (and its group)")
+    def undo_review(audit_id: str, finding_id: str) -> dict[str, Any]:
+        """DECISIONS 310 ("Geri al"): the group's entries leave review.json and are kept in its `replaced` history."""
+        from maya_audit import manual_review
+        audit = need_audit(audit_id)
+        report, aff, _ = current_report(audit)
+        group = client_selection_of(audit, report, aff)["by_finding"].get(finding_id) or {}
+        ids = list(dict.fromkeys([finding_id] + list(group.get("finding_ids") or [])))
+        path = review_path(audit)
+        undone = manual_review.undo(path, ids) if path.is_file() else []
+        if not undone:
+            raise ApiError(404, "review_not_found", t("review.error.nothing_to_undo"))
+        return {**review_view(audit), "undone": {"finding_ids": undone, "file": str(path)}}
 
     @api.post("/audits/{audit_id}/client-report/validate")
     def validate_client_report(audit_id: str):

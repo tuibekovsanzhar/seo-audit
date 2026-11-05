@@ -1145,6 +1145,36 @@ POST /review, GET /team-report, both links; `reviews/2026-11-05/team-report-309/
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 | Linux/Windows, live runs, wheel build, CLI run | NOT RUN |
 
+## Web app UX: one clear path (DECISIONS 310, 2026-11-05)
+
+What changed (behaviour and data unchanged; routes and downloads kept): the results page is Summary → Neyi düzeltmeli →
+Önce bunları kontrol edin → İndir → questions → Teknik ayrıntılar (folded: everything the page had). Summary and cards
+come from the team report's own data (GET `/audits/{id}/overview`, the current-engine copy), so the page shows the PDF's
+numbers. "Önce bunları kontrol edin": three items open, the optional line, "Doğru" / "Doğru değil", the name asked once,
+plain errors beside the field, "Kontrol edilenler" with "Geri al" (DELETE `/audits/{id}/review/{finding_id}`; the entry
+moves to review.json's `replaced`). Times from the median of the last five runs per mode (a range without history).
+History: date and time, mode, pages read, path, plain status, short ID; revised analyses fixed. New audit: address,
+depth cards, extra options folded; the plan in three lines; progress in plain steps with the time left. "?" hints for
+canonical, hreflang, noindex. Turkish by default.
+
+Screenshots (isolated copies of the four audits and the demo; `reviews/2026-11-05/ux-proposal/built/`, git-ignored):
+new audit, the name error, the plan, progress, history, nihan/Moodist/efb/Firecrawl-only results in TR and EN, the
+check error, a saved item with Undo, Downloads, technical details opened; no horizontal scroll at 1280 or 1440 px.
+
+**Verification** (working tree on `e053b9f`, macOS, Python 3.13.1; no .env, no providers, no live requests):
+
+| Command | Result |
+|---|---|
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2706 passed, 4 skipped, 134 deselected, 1 warning in 463.45s (0:07:43)` |
+| full suite (first run) | `2 failed, 2838 passed, 4 skipped`: the generated FIXTURE-MATRIX.md, and the demo test that now starts in Turkish; both fixed |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` (rerun) | `2840 passed, 4 skipped, 1 warning in 844.47s (0:14:04)` (skips: 2 wheel builds, live-run examples, real-site corpus) |
+| `tests/test_web_ux_310.py` | `9 passed` |
+| pro skill tests | `OK` |
+| `ruff check --isolated --select E9,F821,F841 .` | changed files clean; the same 4 F841 in old test files |
+| `python3.11 -m compileall`, JS syntax check | OK |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+| Windows/Linux browsers, screen readers, live runs | NOT RUN |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

@@ -276,7 +276,8 @@ def test_review_file_confirms_a_finding_which_then_competes_for_the_cards(tmp_pa
     with pytest.raises(ValueError):
         manual_review.entry("FC", "maybe", by="x", seen="y")
     with pytest.raises(ValueError):
-        manual_review.entry("FC", "confirmed", by="x", seen="")
+        manual_review.entry("FC", "confirmed", by=" ", seen="y")  # who checked is required
+    assert "seen" not in manual_review.entry("FC", "confirmed", by="x", seen="")  # what was seen is optional (DECISIONS 310)
 
 
 def _record(url, menu, titles, lang, alt=None):

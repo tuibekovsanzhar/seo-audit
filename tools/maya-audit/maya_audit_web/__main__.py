@@ -34,7 +34,8 @@ def build(demo_mode: bool, port: int):
         folder, engine = home, Engine()
     # Revised analyses live under the data home, never beside the installed code (site-packages after a pip install, D-25).
     analyses = None if demo_mode else home / 'analyses'
-    return create_app(folder, engine=engine, port=port, analysis_folder=analyses), folder
+    # DECISIONS 310: the team works in Turkish; the language switch still offers English.
+    return create_app(folder, engine=engine, port=port, analysis_folder=analyses, default_language="tr"), folder
 
 
 def probe_options(probe: socket.socket, platform: str | None = None) -> None:

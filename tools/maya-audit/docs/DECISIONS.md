@@ -3469,3 +3469,41 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Tests: `tests/test_team_report_309.py` (22, one slow through the real routes: confirm with a note -> rebuild -> the
      card with "Elle kontrol: <note>" in the PDF, nothing of the group left to confirm; a rejection takes it out);
      `test_team_report` follows the group-wide save.
+310. **Web app UX: one clear path for the team (Owner, 2026-11-05: the Step 1 proposal approved with changes; the
+     layout, wording, cache and test pages are agent defaults).** Behaviour and data unchanged; no engine judgment
+     changes; every route and download kept.
+     (1) *Results, in order:* 1 Summary (the team report's own verdict and its first three numbers, plus "Teyit bekleyen"),
+     2 "Neyi düzeltmeli" (the report's cards: title, why it matters, scope, owner, effort; the first five, the rest one
+     click away; IDs small and grey), 3 "Önce bunları kontrol edin", 4 "İndir" (language, team report PDF, appendix XLSX,
+     "Müşteri özeti — Yakında"), the suggested questions and the chat box, 5 "Teknik ayrıntılar", folded: everything the
+     page showed before (outcome, coverage, Firecrawl, all problems, every page, Core Web Vitals, other downloads, the
+     plan). (1) and (2) come from GET `/audits/{id}/overview`: `build_data.build_from_files` on the copy re-evaluated
+     with the current engine (DECISIONS 308), cached per copy, review file and language, so the page says the PDF's
+     numbers in the PDF's words (the old headline used the saved report: nihan 28 issues there, 31 in the PDF). A
+     finished audit's job card is one line with its plan and steps folded.
+     (2) *Check these first:* at most three items open, highest severity first, the rest under "Diğer N bulguyu göster";
+     the line "İsteğe bağlı: kontrol etmezseniz bu bulgular rapora girmez, ekte kalır."; two big buttons "Doğru" /
+     "Doğru değil"; the name is asked once and remembered in the browser (localStorage, asked again when it is not
+     available); "Ne gördünüz" and "Kartta görünecek not" optional with an example placeholder; a missing name is said
+     beside the field ("Lütfen adınızı yazın.", also from the server: 422 `invalid_review`, `details.fields.by`); a saved
+     item moves to "Kontrol edilenler" with "Geri al". Undo: DELETE `/audits/{id}/review/{finding_id}` takes the group's
+     entries out of review.json and keeps them in `replaced` with `undone` (`manual_review.undo`). `manual_review.entry`
+     now requires only who checked; `seen` is optional (left out when empty). Each row's scope is the PDF's.
+     (3) *Time estimates* from real runs: the median of the last five finished one-session audits of the mode ("yaklaşık
+     6 dk (bu moddaki son 5 denetime göre)"), on the New audit cards, the plan and while it runs ("Yaklaşık 4 dk kaldı",
+     the median less the time spent; past it, "her zamankinden uzun sürüyor"); with no run of that mode yet, a range from
+     the plan's own bound (a quarter of it to all of it). The measured estimates stay in the progress details.
+     (4) *History:* site, date and time, mode, pages read and reading path (DECISIONS 309), a plain status (Bitti, Sayfa
+     sınırına ulaşıldı, Erken durduruldu, Çok az sayfa okundu; Sırada, Çalışıyor, Çalışmadı) and the short ID; revised
+     analyses in their own section below (the row overlapped); search by site. "Çok az": fewer than min(10, page cap)
+     pages read, or under 20% of the cap.
+     (5) *New audit:* the address, three depth cards (Tek sayfa / Hızlı 50 / Standart 500) with their recent time, extra
+     options folded, "Planı göster"; the plan says pages, time and cost in three lines with one Start button, its
+     details folded (opened by themselves when an approval or a warning needs an answer). Progress: the steps in plain
+     words with ticks, the pages read and the time left, Stop with what stopping does; counters and log folded.
+     (6) "?" hints for canonical/kanonik, hreflang and noindex. Turkish by default (`create_app(default_language="tr")`
+     from `python -m maya_audit_web`; tests keep English unless they ask), English through the switch. Laptop widths
+     without horizontal scrolling (checked at 1280 and 1440); every action is a button or link with a visible focus.
+     Tests: `tests/test_web_ux_310.py` (9: the form's validation, save and undo through the routes and in Chromium, the
+     history list, recent-run times and the range, the summary = the team report's, Turkish by default);
+     `test_web_firecrawl`, `test_team_report`, `test_v03_client_report` follow the new page.

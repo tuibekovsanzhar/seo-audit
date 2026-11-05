@@ -202,10 +202,12 @@ def test_the_results_page_offers_the_team_report_in_turkish_first(finished):
     assert team == {"prepare": f"/api/v1/audits/{audit['id']}/team-report", "pdf": f"/api/v1/audits/{audit['id']}/downloads/team",
                     "xlsx": f"/api/v1/audits/{audit['id']}/downloads/xlsx", "default_lang": "tr"}
     script = (ROOT / "maya_audit_web" / "static" / "app.js").read_text(encoding="utf-8")
-    assert 'T("team.pdf")' in script and 'T("team.xlsx")' in script and 'choice("tr"), choice("en")' in script
+    # DECISIONS 310: the Downloads card (team report PDF, appendix XLSX, client brief "Yakında"), one language switch.
+    assert 'T("download.pdf.title")' in script and 'T("download.xlsx.title")' in script and 'choice("tr"), choice("en")' in script
     assert 'team.prepare + "?lang=" + asked' in script and 'download: body.pdf.filename' in script
     tr = json.loads((ROOT / "maya_audit_web" / "locales" / "tr.json").read_text(encoding="utf-8"))
-    assert tr["team.pdf"] == "Ekip raporu (PDF)" and tr["team.xlsx"] == "Ek (XLSX)"
+    assert tr["download.pdf.title"] == "Ekip raporu (PDF)" and tr["download.xlsx.title"] == "Ek (XLSX)"
+    assert tr["download.brief.title"] == "Müşteri özeti" and tr["download.brief.soon"] == "Yakında"
 
 
 def test_a_blocked_team_report_says_why_in_plain_words(finished):

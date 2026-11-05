@@ -1443,6 +1443,8 @@ class Builder:
                     # DECISIONS 300: the card's place and score in Maya Audit's client selection (shown, never a severity)
                     "priority": group.get("priority"), "confidence_class": group.get("confidence"),
                     "platform_steps": shown_platform,
+                    # DECISIONS 310: the web results page shows each card's scope and why it matters, as the library words it
+                    "scope": self.group_scope(f), "why": entry.get("why"),
                     "finding_ids": [m["id"] for m in members],
                     "severity": f["severity"], "severity_label": L["severity"][f["severity"]],
                     # The release gate (DECISIONS 278) compares what the card shows with the finding's own state.

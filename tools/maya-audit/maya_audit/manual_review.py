@@ -50,14 +50,16 @@ def confirmations(review: dict) -> dict[str, dict]:
     return out
 
 
-def entry(finding_id: str, result: str, *, by: str, seen: str, note: str | None = None, rule_id: str | None = None,
+def entry(finding_id: str, result: str, *, by: str, seen: str | None = None, note: str | None = None, rule_id: str | None = None,
           when: str | None = None) -> dict:
     if result not in RESULTS:
         raise ValueError(f"result must be one of {RESULTS}, not {result!r}")
-    if not finding_id or not by or not seen:
-        raise ValueError("a manual check needs the finding id, who checked and what was seen")
-    row = {"finding_id": str(finding_id)[:80], "result": result, "by": str(by)[:120], "date": when or date.today().isoformat(),
-           "seen": str(seen)[:MAX_TEXT]}
+    # DECISIONS 310: who checked is required; what was seen is optional (the owner's choice for the web form).
+    if not finding_id or not str(by or "").strip():
+        raise ValueError("a manual check needs the finding id and who checked")
+    row = {"finding_id": str(finding_id)[:80], "result": result, "by": str(by).strip()[:120], "date": when or date.today().isoformat()}
+    if seen and str(seen).strip():
+        row["seen"] = str(seen).strip()[:MAX_TEXT]
     if rule_id:
         row["rule_id"] = str(rule_id)[:80]
     if note:
@@ -79,3 +81,23 @@ def record(path: str | Path, row: dict) -> dict:
         json.dump(review, fh, ensure_ascii=False, indent=1)
     os.replace(tmp, path)
     return review
+
+
+def undo(path: str | Path, finding_ids: list[str]) -> list[str]:
+    """Take the current entries of these findings out of the review file (DECISIONS 310: "Geri al"): each moves to
+    `replaced`, so its history is kept, and the finding is unchecked again. Returns the ids taken out."""
+    path = Path(path)
+    review = load(path)
+    wanted = set(finding_ids)
+    kept, gone = [], []
+    for old in review["entries"]:
+        (gone if old.get("finding_id") in wanted else kept).append(old)
+    if not gone:
+        return []
+    replaced = list(review.get("replaced") or []) + [{**old, "undone": date.today().isoformat()} for old in gone]
+    review = {"version": VERSION, "entries": kept, "replaced": replaced}
+    fd, tmp = tempfile.mkstemp(prefix=".review-", dir=str(path.parent))
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(review, fh, ensure_ascii=False, indent=1)
+    os.replace(tmp, path)
+    return [old.get("finding_id") for old in gone]
