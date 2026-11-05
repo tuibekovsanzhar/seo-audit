@@ -509,8 +509,10 @@ def product_no_identifier(read, groups: dict, key_urls=frozenset()) -> tuple[lis
 
 # -- running them ----------------------------------------------------------------------------------------------------
 
-RULE_CHECKS = {"IDX-5": "SEO-036", "IDX-6": "SEO-061", "IDX-7": "SEO-046, SEO-093", "STR-3": "SEO-078, SEO-097",
-               "STR-15": "SEO-099", "TSEO-1": "decomposed characters, SEO-067", "ACC-3": "SEO-031"}
+RULE_CHECKS = {"IDX-5": "SEO-036", "IDX-6": "SEO-061, links to redirects (Stage 8a)", "IDX-7": "SEO-046, SEO-093",
+               "STR-3": "SEO-078, SEO-097", "STR-15": "SEO-099", "TSEO-1": "decomposed characters, SEO-067", "ACC-3": "SEO-031",
+               # Stage 8a, borrowed from Screaming Frog (DECISIONS 315, checks/stage8_rules.py).
+               "IDX-4": "canonical chains", "STR-9": "hreflang target language", "STR-7": "images over 100 KB"}
 
 
 def findings(result, *, key_urls=frozenset(), check_ids=None, saved: bool = False) -> tuple[dict[str, list[Finding]], list[dict]]:
@@ -564,6 +566,21 @@ def findings(result, *, key_urls=frozenset(), check_ids=None, saved: bool = Fals
             unassessed.append({"rule": "SEO-097 product identifiers (str3.product_no_identifier)",
                                "why": "no product page read has Product fields recorded (no Product markup, or a report "
                                       "saved before schema 1.24 without its saved JSON-LD)"})
+    # Stage 8a (DECISIONS 315): whole-crawl rules borrowed from Screaming Frog.
+    from . import stage8_rules as s8
+    if "IDX-6" in wanted:
+        out["IDX-6"] += s8.links_to_redirect(pages, read, key_urls)
+    if "IDX-4" in wanted:
+        out["IDX-4"] += s8.canonical_chain(read, key_urls)
+    if "STR-9" in wanted:
+        out["STR-9"] += s8.hreflang_wrong_language(read, key_urls)
+    if "STR-7" in wanted:
+        structure = getattr(result, "structure", None)
+        if structure is None and saved:
+            unassessed.append({"rule": "images over 100 KB (str7.over_100kb)",
+                               "why": "the saved report keeps no image sample"})
+        else:
+            out["STR-7"] += s8.images_over_100kb(structure, key_urls)
     return out, unassessed
 
 

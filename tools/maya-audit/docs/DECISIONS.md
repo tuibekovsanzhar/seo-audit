@@ -3640,3 +3640,50 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      2560, 479/479 at 1440 and 67% zoom; before: 32/216, 32/696, 32/1336.
      Tests: `tests/test_web_build_314.py` (7: every key in TR and EN, prefix keys, the fallback, the snapshot, the
      version route and 304, the derived copy rebuilt on a text change, the centred layout at five sizes in Chromium).
+315. **Stage 8a: borrowed from Screaming Frog (Owner, 2026-11-06: items 1-5 of the research file's recommendations as
+     planned; A = a chain is 3+ addresses (today's IDX-3 rule); B = a compact "Şablonlara göre sorunlar" page, the 10
+     largest templates; C = a Fırsat badge, order unchanged; template line at 80% of a card's pages and at least 5. Each
+     rule's severity, type and wording, the opportunity/warning lists and the cluster rule are agent defaults).**
+     Source: `docs/research/screaming-frog-research-for-maya-audit.md`, "Recommendations" 2, 3, 5 (and 1 in part).
+     (1) *Redirects.* `crawl.redirects` (schema **1.26**): every requested address that redirected, hop by hop
+     ({url, status, target}), its final address and status, and whether it loops (`checks/stage8_rules.redirect_records`;
+     also written into the current-engine copy of an older report, `reassess_rules._decisions_315`). New
+     `idx6.links_to_redirect` (IDX-6, S4, Sorun, developer): internal links to an address that redirects, each target with
+     its final address, hops and linking pages. IDX-3's chains (2+ redirects, 3+ addresses) and loops are kept.
+     *One cause, one card:* findings of the redirect/canonical rules (`client_selection.CHAIN_RULES`: idx4.redirect_loop,
+     idx4.redirecting, idx4.chain, the IDX-3 chain and loop rules, idx6.links_to_redirect) that name a shared address
+     (their pages, canonicals and where those resolve, chain hops, link targets; not the linking pages) are merged into
+     one "redirect_chain" card, its severity the highest; a cluster made only of links to a redirect is not merged; an
+     unrelated chain elsewhere stays its own card. The card says the chain hop by hop, how many pages link into it and the
+     address to link to, and which page names which canonical. moodist: cards 01 (idx4.redirect_loop, `/tr/` -> `/tr/tr/`),
+     03 (idx4.redirecting, `/en/` -> `/en/en/`) and 09 (idx3.chain `/tr/tr/` -> `/` -> `/tr/`) and the new links-to-`/`
+     finding (50 pages) are one High card: "Zincir: /tr/tr/ → / → /tr/. 50 sayfa zincire bağlanıyor; bağlantıları /tr/
+     yapın." / "Kanonik: /tr/ → /tr/tr/ · /en/ → /en/en/."
+     (2) *Issue type* beside severity (`maya_audit/issue_types.json`, every rule id listed; a test fails on a rule without
+     one): Sorun / Kontrol edin / Fırsat (Issue / Warning / Opportunity); 217 / 40 / 46 rules. A group in "Teyit edin"
+     shows Kontrol edin until checked; confirmed in review.json it takes its rule's type (a Kontrol edin rule becomes
+     Sorun); review.json is read as before and never written by this. Shown on the PDF cards, in the XLSX ("Sorun türü")
+     and on the web results' cards; severity, placement and order are unchanged.
+     (3) *Templates (segments)*: `client_selection.templates_table`: every template with pages read, its pages, the pages
+     a problem touches, the problem groups, the cards and the highest severity; a template's language folder is left out
+     (`/en/collections/*/products/*` is `/collections/*/products/*`: one theme fix). PDF: "Şablonlara göre sorunlar", the
+     10 largest (8 pages for moodist, 9 for nihan); XLSX: "Şablonlar", all. A card says "Tek şablon düzeltmesi: ürün
+     şablonu (/collections/*/products/*): 63 sayfa" when 80% of its pages read, and at least 5, are in one template.
+     (4) *Whole-site checks after the crawl*: new `idx4.chain` (S3, Sorun): a canonical naming a page whose own canonical is
+     a third address; new `str9.wrong_language` (S3, Sorun): an hreflang link whose target page declares another
+     language (a malformed code such as "jp" stays str9.bad_codes'). Already covered and kept: missing return link,
+     target not 200, target not indexable or canonicalized elsewhere (str9.target_page), missing self-reference or
+     x-default (str9.cluster), canonicals that redirect, loop or are broken/noindex (IDX-4).
+     (5) *Images*: new `str7.over_100kb` (S4, Fırsat): sampled image files between 100 and 500 KB (over 500 KB stays
+     str7.heavy); unknown sizes are counted apart, never as small. Missing alt and width/height stay STR-7's rules; every
+     image finding is grouped by template through (3).
+     *Also fixed (Stage 4's matcher):* on a tie between two page types the deeper address word names the page:
+     `/collections/c/products/p` is "Ürün detayı", not "Kategori" (nihan's products had escaped it through their Product
+     markup).
+     Every new rule: wording frame (`wording.py`, `rule_ids.json` regenerated), Turkish title, fix, expected and note
+     (`locales/findings/tr.json`), action and steps (`rule_actions.json`), team-report texts in both languages, owner and
+     effort (`recommendation_catalog`), type. Thresholds in docs/LAUNCH-GATE.md (LG-102).
+     Not in this stage: list mode, raw-vs-rendered diff beyond RND, near-duplicate method changes, crawl comparison,
+     custom extraction (the research file's 4, 6-9).
+     Tests: `tests/test_stage8a_315.py` (11, fake sites and hand-made reports); `test_normal_report_accuracy` gives its
+     hand-made copies their own rule id; `test_v03_client_report` follows the new sheet; schema literals 1.25 -> 1.26.

@@ -286,6 +286,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "{n:page declares|pages declare} a canonical that redirects back to the page itself"),
         ("idx4.redirecting", "{n#} page(s) declare a canonical that redirects to another address",
          "{n:page declares|pages declare} a canonical that redirects to another address"),
+        # Stage 8a (DECISIONS 315): a canonical of a canonical.
+        ("idx4.chain", "{n#} page(s) declare a canonical to a page whose own canonical is another address",
+         "{n:page declares|pages declare} a canonical to a page whose own canonical is another address"),
         ("idx4.conflict", "{n#} page(s) declare conflicting canonicals", "{n:page declares|pages declare} conflicting canonicals"),
         ("idx4.different", "{n#} page(s) are canonicalized to a URL with different content", "{n:page is|pages are} canonicalized to a URL with different content"),
         ("idx4.same", "{n#} page(s) are canonicalized to a URL with the same content", "{n:page is|pages are} canonicalized to a URL with the same content"),
@@ -354,6 +357,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         # Cloudflare's e-mail obfuscation (review H09).
         ("idx6.cf_email", "Cloudflare e-mail obfuscation is on: the address is readable only with JavaScript",
          "Cloudflare e-mail obfuscation is on: the address is readable only with JavaScript"),
+        # Stage 8a (DECISIONS 315): links to an address that redirects.
+        ("idx6.links_to_redirect", "{links#} internal link(s) on {pages#} page(s) point to an address that redirects",
+         "{links:internal link|internal links} on {pages:page|pages} [links:points|point] to an address that redirects"),
         ("idx6.tracking", "{links#} internal link(s) on {pages#} page(s) carry tracking parameters ({params})",
          "{links:internal link|internal links} on {pages:page|pages} [links:carries|carry] tracking parameters ({params})"),
         # Reports saved before team-preview-14: the other address was not requested (`SAVED_ONLY`).
@@ -580,6 +586,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "{images:other image|other images} on {pages:page|pages} [images:has|have] no alt attribute"),
         # H29: heavy and mislabelled media files.
         ("str7.heavy", "{n#} sampled image file(s) are over 500 KB", "{n:sampled image file is|sampled image files are} over 500 KB"),
+        # Stage 8a (DECISIONS 315).
+        ("str7.over_100kb", "{n#} sampled image file(s) are between 100 and 500 KB",
+         "{n:sampled image file is|sampled image files are} between 100 and 500 KB"),
         ("str7.mime", "{n#} sampled image file(s) are served in a format their file name does not say",
          "{n:sampled image file is|sampled image files are} served in a format [n:its|their] file name does not say"),
         # H30: loading behaviour read from the markup.
@@ -614,6 +623,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "{n:hreflang target page is|hreflang target pages are} not indexable or have an empty title or description"),
         ("str9.cluster", "{n#} page(s) with hreflang links lack x-default or a link to themselves",
          "{n:page with hreflang links lacks|pages with hreflang links lack} x-default or a link to themselves"),
+        # Stage 8a (DECISIONS 315).
+        ("str9.wrong_language", "{n#} page(s) have hreflang links whose target page declares another language",
+         "{n:page has|pages have} hreflang links whose target page declares another language"),
     ),
     "STR-10": (
         ("str10.no_twitter", "{n#} page(s) have Open Graph tags but no Twitter card", "{n:page has|pages have} Open Graph tags but no Twitter card"),

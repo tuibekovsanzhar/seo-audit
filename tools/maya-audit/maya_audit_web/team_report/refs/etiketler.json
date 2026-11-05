@@ -364,7 +364,39 @@
   "kp_importance_reasons": {
    "canonical": "kanonik sorunu",
    "redirect": "yönlendirme sorunu"
-  }
+  },
+  "issue_types": {
+   "issue": "Sorun",
+   "warning": "Kontrol edin",
+   "opportunity": "Fırsat"
+  },
+  "template_kinds": {
+   "home": "ana sayfa şablonu",
+   "category": "kategori şablonu",
+   "product": "ürün şablonu",
+   "blog_article": "blog şablonu",
+   "policy": "politika şablonu",
+   "utility": "yardımcı sayfa şablonu",
+   "other": "sayfa şablonu"
+  },
+  "template_named": "{kind} şablonu",
+  "template_line": "Tek şablon düzeltmesi: {kind} ({tpl}): {n} sayfa",
+  "chain_line": "Zincir: {hops}.",
+  "chain_links": "{n} sayfa zincire bağlanıyor; bağlantıları {final} yapın.",
+  "tpl_title": "Şablonlara göre sorunlar",
+  "tpl_sub": "Hangi sayfa şablonunda kaç sayfa okundu ve sorunlar nerede toplanıyor (en büyük 10 şablon).",
+  "tpl_cols": [
+   "Şablon",
+   "Tür",
+   "Okunan sayfa",
+   "Sorunlu sayfa",
+   "Sorun grubu",
+   "Kartlar",
+   "En yüksek"
+  ],
+  "tpl_note": "Bir şablondaki düzeltme o şablonun tüm sayfalarını düzeltir. Tam liste ekte (Şablonlar sayfası).",
+  "tpl_empty": "Bu denetimde şablon bilgisi yok (sayfa gruplaması yapılamadı).",
+  "chain_canon": "Kanonik: {pairs}."
  },
  "en": {
   "doc_kind": "WEBSITE AUDIT",
@@ -729,6 +761,38 @@
   "kp_importance_reasons": {
    "canonical": "canonical problem",
    "redirect": "redirect problem"
-  }
+  },
+  "issue_types": {
+   "issue": "Issue",
+   "warning": "Warning",
+   "opportunity": "Opportunity"
+  },
+  "template_kinds": {
+   "home": "homepage template",
+   "category": "category template",
+   "product": "product template",
+   "blog_article": "blog template",
+   "policy": "policy template",
+   "utility": "utility page template",
+   "other": "page template"
+  },
+  "template_named": "{kind} template",
+  "template_line": "One template fix: {kind} ({tpl}): {n:page|pages}",
+  "chain_line": "Chain: {hops}.",
+  "chain_links": "{n:page links|pages link} into it; link them to {final}.",
+  "tpl_title": "Problems by template",
+  "tpl_sub": "How many pages of each page template were read and where the problems gather (the 10 largest templates).",
+  "tpl_cols": [
+   "Template",
+   "Type",
+   "Pages read",
+   "Pages with problems",
+   "Problem groups",
+   "Cards",
+   "Highest"
+  ],
+  "tpl_note": "A fix in a template fixes every page of it. The full list is in the appendix (Templates sheet).",
+  "tpl_empty": "No template information in this audit (the page grouping could not be made).",
+  "chain_canon": "Canonical: {pairs}."
  }
 }

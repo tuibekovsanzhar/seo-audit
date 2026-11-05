@@ -1080,7 +1080,10 @@ async function showOverview(box, view) {
     el("div", { class: "kpi-value" }, k.value, k.of ? el("small", { text: " / " + k.of }) : null), el("div", { class: "kpi-sub", text: k.sub }));
   const fixRow = (f) => el("li", { class: "fix" }, el("span", { class: "fix-n", text: String(f.n).padStart(2, "0") }),
     el("div", { class: "fix-body" },
-      el("div", { class: "fix-title" }, el("strong", {}, hinted(f.title)), " ", el("span", { class: "sev " + f.severity, text: f.severity_label })),
+      el("div", { class: "fix-title" }, el("strong", {}, hinted(f.title)), " ", el("span", { class: "sev " + f.severity, text: f.severity_label }),
+        f.issue_type_label ? el("span", { class: "itype " + (f.issue_type || "issue"), text: f.issue_type_label }) : null),
+      f.chain_line ? el("p", { class: "small", text: f.chain_line }) : null,
+      f.template_line ? el("p", { class: "small", text: f.template_line }) : null,
       f.why || f.scope ? el("p", { class: "muted small", text: [f.why, f.scope].filter(Boolean).join(" · ") }) : null,
       f.note ? el("p", { class: "small", text: f.note }) : null,
       el("div", { class: "id", text: f.finding_ids.slice(0, 3).join(" · ") + (f.finding_ids.length > 3 ? " +" + (f.finding_ids.length - 3) : "") })),

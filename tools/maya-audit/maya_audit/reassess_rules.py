@@ -213,6 +213,20 @@ def saved_jsonld(report: dict, blocks_by_url: dict[str, list[str]]) -> int:
     return with_products
 
 
+def _decisions_315(report: dict, changes: list[str]) -> None:
+    """Stage 8a: every redirect hop per requested address (`crawl.redirects`, schema 1.26), from the saved page
+    records (each redirect answer is kept with its status and target)."""
+    from .checks.stage8_rules import redirect_records
+    from .models import page_from_record
+    crawl = report.get("crawl") or {}
+    if crawl.get("redirects") is not None:
+        return
+    pages = [page_from_record(p) for p in crawl.get("pages") or [] if isinstance(p, dict)]
+    crawl["redirects"] = redirect_records(pages)
+    if crawl["redirects"]:
+        changes.append(f"{len(crawl['redirects'])} redirecting address(es) recorded hop by hop (DECISIONS 315)")
+
+
 def _decisions_304(report: dict, affected: dict, changes: list[str], unassessed: list[dict]) -> None:
     from types import SimpleNamespace
     from .checks.access import _status
@@ -223,7 +237,8 @@ def _decisions_304(report: dict, affected: dict, changes: list[str], unassessed:
     pages = [page_from_record(p) for p in crawl.get("pages") or [] if isinstance(p, dict)]
     result = SimpleNamespace(pages=pages, start_url=crawl.get("start_url") or "", origin=crawl.get("origin"),
                              discovered_urls=crawl.get("discovered_urls") or [], sitemap_urls=crawl.get("sitemap_urls") or [],
-                             sitemap_docs=crawl.get("sitemap_docs") or [], page_grouping=None)
+                             sitemap_docs=crawl.get("sitemap_docs") or [], page_grouping=None,
+                             structure=crawl.get("structure"))
     checks = {c.get("check_id"): c for c in report.get("checks") or [] if c.get("status") != "not_assessed"}
     made, missing = quick_findings(result, check_ids=set(checks), saved=True)
     unassessed.extend(missing)
@@ -299,6 +314,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
         changes.append(f"Product fields read from the saved JSON-LD of {n} page(s) (DECISIONS 304)")
     _decisions_304(r, aff, changes, quick_unassessed)
     _decisions_309(r, changes, saved_texts or [])
+    _decisions_315(r, changes)
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")

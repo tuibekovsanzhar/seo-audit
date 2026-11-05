@@ -379,6 +379,10 @@
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ declare\\ a\\ canonical\\ that\\ redirects\\ to\\ another\\ address"
    ],
    [
+    "idx4.chain",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ declare\\ a\\ canonical\\ to\\ a\\ page\\ whose\\ own\\ canonical\\ is\\ another\\ address"
+   ],
+   [
     "idx4.conflict",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ declare\\ conflicting\\ canonicals"
    ],
@@ -505,6 +509,10 @@
    [
     "idx6.cf_email",
     "Cloudflare\\ e\\-mail\\ obfuscation\\ is\\ on:\\ the\\ address\\ is\\ readable\\ only\\ with\\ JavaScript"
+   ],
+   [
+    "idx6.links_to_redirect",
+    "(?P<links>\\d+(?:\\.\\d+)?)\\ internal\\ link\\(s\\)\\ on\\ (?P<pages>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ point\\ to\\ an\\ address\\ that\\ redirects"
    ],
    [
     "idx6.tracking",
@@ -1163,6 +1171,10 @@
     "(?P<n>\\d+(?:\\.\\d+)?)\\ sampled\\ image\\ file\\(s\\)\\ are\\ over\\ 500\\ KB"
    ],
    [
+    "str7.over_100kb",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ sampled\\ image\\ file\\(s\\)\\ are\\ between\\ 100\\ and\\ 500\\ KB"
+   ],
+   [
     "str7.mime",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ sampled\\ image\\ file\\(s\\)\\ are\\ served\\ in\\ a\\ format\\ their\\ file\\ name\\ does\\ not\\ say"
    ],
@@ -1253,6 +1265,10 @@
    [
     "str9.cluster",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ with\\ hreflang\\ links\\ lack\\ x\\-default\\ or\\ a\\ link\\ to\\ themselves"
+   ],
+   [
+    "str9.wrong_language",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ have\\ hreflang\\ links\\ whose\\ target\\ page\\ declares\\ another\\ language"
    ]
   ],
   "TSEO-1": [

@@ -4154,6 +4154,55 @@
    ],
    "verify": "Site haritasında adresler kelimelerden oluşmalı; eski adres açıldığında yeni adrese yönlenmeli.",
    "summary": "Okunabilir adresler"
+  },
+  "idx6.links_to_redirect": {
+   "title": "Bağlantıları doğrudan son adrese verin",
+   "finding": "İç bağlantılar yönlendiren adreslere gidiyor",
+   "explanation": "Yönlendiren adrese giden iç bağlantıları, yönlendirmenin bittiği son adrese çevirmelisiniz.",
+   "why": "Yönlendiren adrese giden her bağlantı bir istek daha harcatır; tarayıcı uzun zincirleri yarıda bırakabilir.",
+   "steps": [
+    "Yönlendiren adrese bağlantı yazan sayfaları ve şablonu bulun",
+    "Bağlantıyı yönlendirmenin bittiği son adresle değiştirin"
+   ],
+   "verify": "Sayfa kaynağında bağlantıların son adresi gösterdiği, tıklanınca yönlendirme olmadan açıldığı görülmelidir.",
+   "summary": "Yönlendirmeye giden iç bağlantılar"
+  },
+  "idx4.chain": {
+   "title": "Kanonik adresi doğrudan son sayfaya verin",
+   "finding": "Kanonik adres, kendisi başka bir kanonik gösteren sayfaya gidiyor",
+   "explanation": "Kanonik etiketi, kanonik zincirinin sonundaki sayfaya çevirmelisiniz.",
+   "why": "Arama motorları kanonik adresin kanonik adresini izlemeyebilir; hangi sayfanın tercih edildiği belirsiz kalır.",
+   "steps": [
+    "Kanonik adresin gösterdiği sayfanın kendi kanonik adresine bakın",
+    "Kanonik etiketi o son adrese çevirin"
+   ],
+   "verify": "Sayfanın kanonik adresi açıldığında o sayfanın kendi kanonik adresi kendisi olmalıdır.",
+   "summary": "Kanonik zinciri"
+  },
+  "str9.wrong_language": {
+   "title": "hreflang kodunu hedef sayfanın diliyle eşleştirin",
+   "finding": "hreflang bağlantıları başka dildeki sayfaları gösteriyor",
+   "explanation": "Her hreflang kodunun, bağlantının gittiği sayfanın diliyle aynı olmasını sağlamalısınız.",
+   "why": "Yanlış dil kodu, arama motorunun kullanıcıya başka dildeki sürümü göstermesine yol açar.",
+   "steps": [
+    "Kodun dili ile hedef sayfanın dilini karşılaştırın",
+    "Kodu düzeltin ya da bağlantıyı o dildeki sayfaya verin"
+   ],
+   "verify": "Her hreflang bağlantısının hedef sayfasının <html lang> değeri kodla aynı dili göstermelidir.",
+   "summary": "Yanlış dildeki hreflang hedefleri"
+  },
+  "str7.over_100kb": {
+   "title": "Büyük görselleri hafifletin",
+   "finding": "Bazı görsel dosyaları gereğinden büyük",
+   "explanation": "Büyük görselleri gösterildikleri boyuta küçültüp sıkıştırmalı ya da WebP/AVIF olarak sunmalısınız.",
+   "why": "Büyük görseller sayfanın yüklenmesini yavaşlatır; özellikle mobil bağlantılarda ziyaretçi bekler.",
+   "steps": [
+    "Görseli gösterildiği en büyük boyuta küçültün",
+    "Sıkıştırın ya da WebP/AVIF olarak sunun",
+    "Dosyayı aynı adreste değiştirin"
+   ],
+   "verify": "Tarayıcının ağ sekmesinde görselin dosya boyutunun küçüldüğü görülmelidir.",
+   "summary": "Büyük görsel dosyaları"
   }
  }
 }

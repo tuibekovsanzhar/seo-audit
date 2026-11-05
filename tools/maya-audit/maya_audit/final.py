@@ -47,6 +47,9 @@ def settle(checks, result) -> None:
     # The business type (DECISIONS 311): page importance weighted by the profile; never a severity.
     from .business_types import attach as attach_business
     attach_business(result)
+    # Every redirect hop of the crawl, per requested address (Stage 8a, DECISIONS 315).
+    from .checks.stage8_rules import redirect_records
+    result.redirects = redirect_records(result.pages)
 
 
 def verify(checks, result, cfg, transport=None, hooks=None, pace_s: float | None = None, *,

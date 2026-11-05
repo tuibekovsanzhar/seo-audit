@@ -51,10 +51,12 @@ def test_status_codes(idx):
 
     # IDX-6: one finding per broken target; the transient 500 is not a broken link. A 4xx target IDX-1 already reports is
     # said there, with its links as a row (review H10): one dead URL, one finding.
-    targets = sorted(f.evidence["target"].rsplit("/", 1)[-1] for f in run.findings("IDX-6"))
+    # (Links to an address that redirects are their own IDX-6 finding since DECISIONS 315.)
+    broken_links = [f for f in run.findings("IDX-6") if "target" in f.evidence]
+    targets = sorted(f.evidence["target"].rsplit("/", 1)[-1] for f in broken_links)
     assert targets == ["broken-500"]
-    assert all(f.severity.value == "S3" for f in run.findings("IDX-6"))
-    assert run.findings("IDX-6")[0].evidence["links"][0]["anchor"]
+    assert all(f.severity.value == "S3" for f in broken_links)
+    assert broken_links[0].evidence["links"][0]["anchor"]
     [linked] = [f for f in run.findings("IDX-1") if "; linked from " in f.title]
     assert [row["target"].rsplit("/", 1)[-1] for row in linked.evidence["broken_links"]] == ["gone"]
     assert run.gates["INT-4"].state == "compliant"

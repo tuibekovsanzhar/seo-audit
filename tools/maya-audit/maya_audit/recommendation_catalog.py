@@ -83,6 +83,8 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"did not follow", "developer", "S", "The page sends visitors on to an address this audit does not follow, so what they finally see was not checked."),
     ),
     "IDX-4": (
+        # Stage 8a (DECISIONS 315).
+        (r"canonical to a page whose own canonical is another address", "seo", "S", "Engines may not follow a canonical of a canonical, so the page the site prefers stays unclear."),
         (r"canonical that is broken, noindexed, or an error", "seo", "M", "The canonical tag names the version of a page that should be indexed. When it points at a page that cannot be indexed, neither may be."),
         (r"canonical that redirects back to the page itself", "seo", "S", "The canonical sends engines to another address and the redirect sends them back, so the page never states which address it prefers."),
         (r"canonical that redirects to another address", "seo", "S", "A canonical should name the final address; a redirecting one makes engines follow an extra step and weakens the signal."),
@@ -113,7 +115,8 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"does not open with", "content", "S", "The llms.txt proposal opens the file with the site's name as a “# ” title. A tool that reads the file that way may not find the name."),
     ),
     "IDX-6": (
-        # The checklist's quick checks (DECISIONS 304).
+        # The checklist's quick checks (DECISIONS 304); Stage 8a (DECISIONS 315).
+        (r"point to an address that redirects", "developer", "S", "Each link to a redirect costs crawlers and visitors one more request; linking to the final address removes it."),
         (r"whose canonical is another page", "developer", "S", "A link to a duplicate address sends crawlers to a page they then fold into another one: visits are spent twice and the canonical page gets its links second-hand."),
         (r"external destination.*GET redirect cycle", "developer", "M", "An observed redirect cycle prevents that request from reaching its destination; other client contexts may differ."),
         (r"Link target returns", "content", "S", "A broken link sends visitors and crawlers to nothing."),
@@ -239,6 +242,8 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"show no published or updated date", "content", "S", "Dates tell engines how fresh an article is. Without one, it may be treated as old."),
     ),
     "STR-7": (
+        # Stage 8a (DECISIONS 315).
+        (r"between 100 and 500 KB", "developer", "M", "Images over 100 KB slow the page down, most of all on mobile; a lighter file looks the same."),
         (r"placeholder alt text", "content", "S", "A filename or generic label may not describe an informative image. Its actual purpose, equivalent text and decorative intent require review."),
         (r"do(es)? not load", "developer", "S", "An image that fails to load shows visitors a gap and gives engines nothing to show beside the page."),
         (r"WebP or AVIF", "developer", "M", "Markup references do not establish delivered image formats. Compare saved response formats, byte sizes and acceptable quality before recommending delivery alternatives; savings are not guaranteed."),
@@ -257,6 +262,8 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"empty <table>", "developer", "S", "An empty table announces rows of facts and holds none. An engine or a screen reader that reads the page as the server sent it finds nothing in it."),
     ),
     "STR-9": (
+        # Stage 8a (DECISIONS 315).
+        (r"target page declares another language", "developer", "S", "A code that names the wrong language leads engines to show readers the version in another language."),
         (r"same hreflang code to two or more", "developer", "S", "Two addresses for one language code leave engines to guess which version to show."),
         (r"hreflang target page\(s\) are not indexable", "developer", "S", "A language version that cannot be indexed, or has no title or description, has nothing to show for its readers."),
         (r"lack x-default or a link to themselves", "developer", "S", "x-default and a link to the page itself complete the set of versions, so engines can pick one for every reader."),

@@ -360,3 +360,8 @@ table.data th { white-space: nowrap; overflow-wrap: normal; font-weight: 600; co
 .business-why[open] { flex-basis: 100%; }
 .business-line .business-select { width: auto; max-width: 320px; }
 .business-line .label { font-size: 13px; margin: 0; }
+
+/* Stage 8a (DECISIONS 315): the issue type beside the severity. */
+.itype { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border-strong); color: var(--text); }
+.itype.warning { border-color: var(--s2); color: var(--s2); }
+.itype.opportunity { border-color: var(--ok); color: var(--ok); }

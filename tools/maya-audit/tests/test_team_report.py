@@ -107,7 +107,7 @@ def synthetic(batch, severity="S4"):
                          "how_to_fix": "", "expected": "", "evidence": {"pages": [url]},
                          "verification": {"state": "not_retested", "reason": "not re-tested in this test"}})
     pages = [{"url": f"{SITE}/p{n}", "status": 200} for n in range(len(batch))] + [{"url": SITE + "/", "status": 200}]
-    return {"schema_version": "1.25", "checks": [{"check_id": f["check_id"], "findings": [f]} for f in findings],
+    return {"schema_version": "1.26", "checks": [{"check_id": f["check_id"], "findings": [f]} for f in findings],
             "findings_in_priority_order": [f["id"] for f in findings],
             "problem_summary": {"problems": len(findings), "by_severity": {severity: len(findings)}, "by_page": [],
                                 "whole_site": {"problems": 0}},

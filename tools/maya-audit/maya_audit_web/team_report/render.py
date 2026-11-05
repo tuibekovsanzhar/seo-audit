@@ -219,6 +219,17 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 /* DECISIONS 309: the finding IDs wrap to the next line as a whole, never cut off at the card's edge */
 .todo .tm .ids { display: inline-block; white-space: nowrap; }
 .todo .tm .sev { font-size: 8pt; padding: 3pt 6pt; margin-right: 4pt; }
+/* Stage 8a (DECISIONS 315): Sorun / Kontrol edin / Fırsat */
+.itype { display: inline-block; font-size: 8pt; padding: 3pt 6pt; border-radius: 3pt; margin-right: 4pt; border: .6pt solid var(--line); color: var(--ink); }
+.itype.warning { border-color: var(--med); color: var(--med); }
+.itype.opportunity { border-color: #2f7d4f; color: #2f7d4f; }
+.card.tpl { padding: 16pt 20pt; }
+.tpl .note { font-size: 8.4pt; color: var(--faint); margin-top: 10pt; line-height: 1.3; }
+.tpl table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9pt; margin-top: 8pt; }
+.tpl th { text-align: left; color: var(--faint); font-weight: 600; padding: 0 6pt 4pt 0; }
+.tpl td { padding: 5pt 6pt 4pt 0; border-top: .5pt solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tpl th:nth-child(1) { width: 26%; } .tpl th:nth-child(2) { width: 20%; } .tpl th:nth-child(3), .tpl th:nth-child(4), .tpl th:nth-child(5) { width: 10%; }
+.tpl th:nth-child(6) { width: 14%; }
 .todo .tm .mono { color: var(--faint); font-size: 8pt; }
 .todo-status {font-size:8.3pt;color:var(--muted);margin:2pt 0 0 41pt;line-height:1.2;}
 .todo-fact {font-size:8.3pt;color:var(--ink);margin:2pt 0 0 41pt;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -524,7 +535,10 @@ def todo_pages(d, L):
             cards.append(
                 f'<div class="card todo{" sub" if t.get("sub") else ""}"><div class="th"><span class="box"></span><span class="tn">{t["n"]:02d}</span>'
                 f'<b data-slot="todos[{i}].title">{e(t["title"])}</b></div>'
-                f'<div class="tm"><span class="sev {e(t["severity"])}">{e(t["severity_label"])}</span> {e(t["when"])} · {e(t["owner"])} · '
+                f'<div class="tm"><span class="sev {e(t["severity"])}">{e(t["severity_label"])}</span>'
+                # Stage 8a (DECISIONS 315): the issue type beside the severity.
+                + (f'<span class="itype {e(t.get("issue_type") or "issue")}">{e(t["issue_type_label"])}</span>' if t.get("issue_type_label") else "")
+                + f' {e(t["when"])} · {e(t["owner"])} · '
                 f'{e(L["col_effort"].title() if d["lang"] == "en" else "Efor")}: {e(t["effort"])}'
                 + (f' · {e(fmt(L["todo_priority"], score=score_text(t["priority"], d["lang"])))}' if t.get("priority") is not None else "")
                 + " · " + " · ".join(f'<span class="mono ids">{e(part)}</span>' for part in t["id"].split(" · ")) + "</div>"
@@ -547,6 +561,18 @@ def todo_pages(d, L):
                    f'<div class="sec"><div class="eyebrow">{e(L["todo_sources"] if t.get("target_urls") else L["todo_links"])}</div>{links}</div></div>'))
         pages.append(f'<div class="body"><div class="todos">{"".join(cards)}</div></div>')
     return pages
+
+
+def page_templates(d, L):
+    """Stage 8a (DECISIONS 315): problems per template (segments), the 10 largest templates."""
+    rows = d.get("templates") or []
+    head = "".join(f"<th>{e(c)}</th>" for c in L["tpl_cols"])
+    body = "".join("<tr>" + "".join(f"<td>{e(v)}</td>" for v in (r["template"], r["kind"], r["pages"], r["pages_with_problems"],
+                                                                  r["problem_groups"], r["cards"], r["worst"])) + "</tr>" for r in rows)
+    table = (f"<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>" if body else
+             f'<div class="note">{e(L["tpl_empty"])}</div>')
+    return (f'<div class="body"><div class="card tpl">{table}'
+            f'<div class="note">{e(L["tpl_note"])}</div></div></div>')
 
 
 def page6(d, L):
@@ -595,6 +621,8 @@ def build_html(d):
     pages = [(tab, summary[tab][0], summary[tab][1], summary[tab][2]()) for tab in summary_pages(d)]
     for content in todo_pages(d, L):
         pages.append((4, L["p5_title"], L["p5_sub"], content))
+    if d.get("templates"):  # Stage 8a (DECISIONS 315)
+        pages.append((5, L["tpl_title"], L["tpl_sub"], page_templates(d, L)))
     if has_client_page(d):
         pages.append((5, L["p6_title"], L["p6_sub"], page6(d, L)))
     total = len(pages)
@@ -654,7 +682,8 @@ def check_pdf(pdf_path, d):
     else:
         doc = fitz.open(str(pdf_path))
         texts = [pg.get_text() for pg in doc]
-    expected = len(summary_pages(d)) + -(-len(d.get("todos") or []) // 4) + (1 if has_client_page(d) else 0)
+    expected = (len(summary_pages(d)) + -(-len(d.get("todos") or []) // 4) + (1 if has_client_page(d) else 0)
+                + (1 if d.get("templates") else 0))
     if len(doc) != expected:
         problems.append(f"HATA: PDF {len(doc)} sayfa; {expected} olmalı (bir bölüm taştı)")
     # DECISIONS 300: the client PDF has at most 10 pages and 15 cards (release gate RG-15, RG-16).

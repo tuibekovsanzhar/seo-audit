@@ -149,7 +149,7 @@ def test_the_main_content_share_is_filed_under_page_structure_not_javascript(no_
 
     # A report saved at 1.14, before this change: its RND-7 is shown under page structure, and its old fix still reads.
     report = json.loads(json.dumps(build_report(outcome.result, outcome.gates, outcome.checks), default=str))
-    assert report["schema_version"] == "1.25"
+    assert report["schema_version"] == "1.26"
     report['schema_version']='1.14'  # Explicit legacy fixture; historical severities must not be silently rewritten.
     report.pop('generation')
     for check in report["checks"]:

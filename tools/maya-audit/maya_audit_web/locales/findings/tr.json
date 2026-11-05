@@ -302,7 +302,11 @@
   "str3.product_no_identifier": "{n} ürün sayfasının Product işaretlemesinde GTIN ya da MPN yok",
   "str15.empty_collections": "{n} dizine eklenebilir koleksiyon veya kategori sayfasında hiç ya da neredeyse hiç ürün yok",
   "tseo1.url_decomposed": "{n} adreste ayrışık bir karakter var (bir harf ve ardından gelen birleşik bir işaret)",
-  "tseo1.url_slug_unclear": "{n} sayfa adresinin kısa adı (slug) anlaşılır değil (yalnızca bir kimlik, 100 karakterden uzun ya da boşluk ve simge içeriyor)"
+  "tseo1.url_slug_unclear": "{n} sayfa adresinin kısa adı (slug) anlaşılır değil (yalnızca bir kimlik, 100 karakterden uzun ya da boşluk ve simge içeriyor)",
+  "idx4.chain": "{n} sayfa, kendi kanonik adresi başka bir adres olan bir sayfayı kanonik gösteriyor",
+  "idx6.links_to_redirect": "{pages} sayfadaki {links} iç bağlantı, yönlendiren bir adrese gidiyor",
+  "str7.over_100kb": "Örneklenen {n} görsel dosyası 100 ile 500 KB arasında",
+  "str9.wrong_language": "{n} sayfadaki hreflang bağlantılarının hedef sayfası başka bir dil belirtiyor"
  },
  "fixes": {
   "Check Google Search Console (Settings → Crawl stats, by response) for 403 or 429 answers to the real Googlebot. Maya's request came from Maya's own address, which a firewall may refuse on purpose as a fake Googlebot; change nothing unless the real Googlebot is refused too.": "Google Search Console'da (Ayarlar → Tarama istatistikleri, yanıta göre) gerçek Googlebot'a 403 veya 429 yanıtı verilip verilmediğine bakın. Maya'nın isteği Maya'nın kendi adresinden geldi; güvenlik duvarı bunu bilerek sahte Googlebot sayıp reddetmiş olabilir. Gerçek Googlebot da reddedilmiyorsa hiçbir şeyi değiştirmeyin.",
@@ -572,7 +576,11 @@
   "Add video entries (<video:video> with a title, description, thumbnail and the video's address) to the sitemap, or a separate video sitemap named in robots.txt.": "Site haritasına video kayıtları (başlık, açıklama, küçük resim ve video adresiyle <video:video>) ekleyin ya da robots.txt'de adı geçen ayrı bir video site haritası kullanın.",
   "Give these pages short slugs made of words (for example /products/linen-shirt-white), redirect each old address to the new one with a 301 and update the links.": "Bu sayfalara kelimelerden oluşan kısa adlar verin (örneğin /products/keten-gomlek-beyaz), her eski adresi 301 ile yenisine yönlendirin ve bağlantıları güncelleyin.",
   "Show the author's name on each article, linked to an author page, and add author (a Person with name and url) to the article's Article or BlogPosting markup.": "Her makalede yazarın adını, bir yazar sayfasına bağlantıyla gösterin ve makalenin Article ya da BlogPosting işaretlemesine author (name ve url taşıyan bir Person) ekleyin.",
-  "Add the product's GTIN (its barcode: gtin13 for an EAN) or, when it has none, its MPN, and the brand, to the Product markup. On Shopify, fill each variant's barcode field so the theme writes it.": "Ürünün GTIN'ini (barkodu: EAN için gtin13) ya da yoksa MPN'ini ve markasını Product işaretlemesine ekleyin. Shopify'da her varyantın barkod alanını doldurun; tema bunu yazar."
+  "Add the product's GTIN (its barcode: gtin13 for an EAN) or, when it has none, its MPN, and the brand, to the Product markup. On Shopify, fill each variant's barcode field so the theme writes it.": "Ürünün GTIN'ini (barkodu: EAN için gtin13) ya da yoksa MPN'ini ve markasını Product işaretlemesine ekleyin. Shopify'da her varyantın barkod alanını doldurun; tema bunu yazar.",
+  "Change each link to the final address its redirect ends at (the evidence gives it for every target); when a template writes the link, change it there.": "Her bağlantıyı, yönlendirmesinin bittiği son adresle değiştirin (kanıt her hedef için son adresi verir); bağlantıyı bir şablon yazıyorsa orada değiştirin.",
+  "Point each canonical straight at the final page (the canonical of the page it names now); search engines may not follow a canonical of a canonical.": "Her kanonik adresi doğrudan son sayfaya (şimdi gösterdiği sayfanın kanonik adresine) verin; arama motorları kanonik adresin kanonik adresini izlemeyebilir.",
+  "Correct the hreflang code, or point the link at the page in that language; check the target page's <html lang> too.": "hreflang kodunu düzeltin ya da bağlantıyı o dildeki sayfaya verin; hedef sayfanın <html lang> değerini de kontrol edin.",
+  "Resize each image to the largest size it is shown at and compress it, or serve WebP/AVIF; replace the file at the same address.": "Her görseli gösterildiği en büyük boyuta küçültüp sıkıştırın ya da WebP/AVIF olarak sunun; dosyayı aynı adreste değiştirin."
  },
  "fix_patterns": {
   "acc2.search": "{engines} bu sayfaları bulup atıf yapabilsin istiyorsanız, {line}. satırdaki kuralı bu kullanıcı aracıları için kaldırın veya daraltın. Engelleme bilinçli bir tercihse “kasıtlı” olarak işaretleyin.",
@@ -795,7 +803,11 @@
   "a site with many videos lists them in a video sitemap (<video:video>)": "çok videosu olan bir site videolarını bir video site haritasında listeler (<video:video>)",
   "page addresses are short and made of readable words": "sayfa adresleri kısadır ve okunabilir kelimelerden oluşur",
   "each article names its author, on the page and in its markup": "her makale yazarını hem sayfada hem işaretlemesinde belirtir",
-  "Product markup carries a GTIN or an MPN, and a brand": "Product işaretlemesi bir GTIN ya da MPN ve bir marka taşır"
+  "Product markup carries a GTIN or an MPN, and a brand": "Product işaretlemesi bir GTIN ya da MPN ve bir marka taşır",
+  "internal links point straight at the page they end on": "iç bağlantılar doğrudan vardıkları sayfayı gösterir",
+  "a canonical names a page that is its own canonical": "kanonik adres, kendi kanonik adresi kendisi olan bir sayfayı gösterir",
+  "each hreflang link names a page in the language its code says": "her hreflang bağlantısı, kodunun belirttiği dildeki sayfayı gösterir",
+  "content images under 100 KB each where they can be": "içerik görselleri mümkün olduğunca 100 KB'ın altındadır"
  },
  "expected_patterns": {
   "acc2.declared": "robots.txt, beyan edildiği gibi {role} botlarını engeller",
@@ -1059,7 +1071,8 @@
   "Estimated: the products are counted from the links in each page's own HTML (one per product). A list that loads its products with JavaScript shows none here: confirm in a browser.": "Tahmini: ürünler her sayfanın kendi HTML'indeki bağlantılardan sayılır (ürün başına bir). Ürünlerini JavaScript ile yükleyen bir liste burada hiç ürün göstermez: bir tarayıcıda doğrulayın.",
   "Estimated: page types are worked out from addresses, links and markup (page grouping), and a link counts when it sits in the page's content or in a breadcrumb trail, not in the menu or the footer.": "Tahmini: sayfa türleri adreslerden, bağlantılardan ve işaretlemeden çıkarılır (sayfa gruplama); bir bağlantı menüde ya da altbilgide değil, sayfanın içeriğinde ya da bir içerik yolunda duruyorsa sayılır.",
   "Estimated: an author counts when the page has a byline element (a class or id such as author or byline), rel=author, itemprop=author, a meta author tag or an author in its structured data.": "Tahmini: sayfada bir yazar satırı öğesi (author ya da byline gibi bir class veya id), rel=author, itemprop=author, bir meta author etiketi ya da yapılandırılmış verisinde bir yazar varsa yazar sayılır.",
-  "Read from a saved report, which keeps the meta tags, the structured data and the page's saved JSON-LD but no byline element: confirm on the page.": "Kayıtlı bir rapordan okundu; rapor meta etiketlerini, yapılandırılmış veriyi ve sayfanın kayıtlı JSON-LD'sini tutar ama yazar satırı öğesini tutmaz: sayfada doğrulayın."
+  "Read from a saved report, which keeps the meta tags, the structured data and the page's saved JSON-LD but no byline element: confirm on the page.": "Kayıtlı bir rapordan okundu; rapor meta etiketlerini, yapılandırılmış veriyi ve sayfanın kayıtlı JSON-LD'sini tutar ama yazar satırı öğesini tutmaz: sayfada doğrulayın.",
+  "Sizes are the Content-Length the server sent for a sample of image files; files over 500 KB are in their own finding.": "Boyutlar, sunucunun örneklenen görsel dosyaları için gönderdiği Content-Length değerleridir; 500 KB'tan büyük dosyalar ayrı bir bulguda."
  },
  "note_patterns": {
   "source.firecrawl": "Kaynak: Firecrawl",

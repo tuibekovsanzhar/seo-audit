@@ -1418,6 +1418,64 @@
      ]
     }
    }
+  },
+  "idx6.links_to_redirect": {
+   "en": "Link straight to the final address",
+   "tr": "Bağlantıları doğrudan son adrese verin",
+   "steps": {
+    "tr": [
+     "Yönlendiren adrese bağlantı yazan sayfaları ve şablonu bulun",
+     "Bağlantıyı yönlendirmenin bittiği son adresle değiştirin"
+    ],
+    "en": [
+     "Find the pages and the template that link to the redirecting address",
+     "Replace the link with the final address the redirect ends at"
+    ]
+   }
+  },
+  "idx4.chain": {
+   "en": "Point each canonical straight at the final page",
+   "tr": "Kanonik adresi doğrudan son sayfaya verin",
+   "steps": {
+    "tr": [
+     "Kanonik adresin gösterdiği sayfanın kendi kanonik adresine bakın",
+     "Kanonik etiketi o son adrese çevirin"
+    ],
+    "en": [
+     "Look at the canonical of the page the canonical names",
+     "Change the canonical tag to that final address"
+    ]
+   }
+  },
+  "str9.wrong_language": {
+   "en": "Match each hreflang code to its target's language",
+   "tr": "hreflang kodunu hedef sayfanın diliyle eşleştirin",
+   "steps": {
+    "tr": [
+     "Kodun dili ile hedef sayfanın dilini karşılaştırın",
+     "Kodu düzeltin ya da bağlantıyı o dildeki sayfaya verin"
+    ],
+    "en": [
+     "Compare the code's language with the target page's language",
+     "Correct the code, or link to the page in that language"
+    ]
+   }
+  },
+  "str7.over_100kb": {
+   "en": "Make large images lighter",
+   "tr": "Büyük görselleri hafifletin",
+   "steps": {
+    "tr": [
+     "Görseli gösterildiği en büyük boyuta küçültün",
+     "Sıkıştırın ya da WebP/AVIF olarak sunun",
+     "Dosyayı aynı adreste değiştirin"
+    ],
+    "en": [
+     "Resize the image to the largest size it is shown at",
+     "Compress it or serve it as WebP/AVIF",
+     "Replace the file at the same address"
+    ]
+   }
   }
  }
 }

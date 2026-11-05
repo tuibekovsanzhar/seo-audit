@@ -1295,6 +1295,35 @@ now on the page itself says when a restart is needed.
 | `ruff check --isolated --select E9,F821,F841`, `python3.11 -m compileall`, `node --check` | clean / OK |
 | Owner's web app on port 8770 | NOT RUN by me (restart needed: steps above) |
 
+## Stage 8a: borrowed from Screaming Frog (DECISIONS 315, 2026-11-06)
+
+What changed: every redirect hop per address (`crawl.redirects`, schema 1.26); new rules `idx6.links_to_redirect`,
+`idx4.chain`, `str9.wrong_language`, `str7.over_100kb`; redirect/canonical findings that share an address are one card;
+issue type Sorun / Kontrol edin / Fırsat on cards, in the XLSX and the web app; problems per template (PDF page,
+XLSX sheet, card line). Research file: `docs/research/screaming-frog-research-for-maya-audit.md`.
+
+**Before / after, offline on copies of the saved audits** (current-engine copies made in a scratch folder):
+
+| | moodist c581ff0a | nihan b3198942 |
+|---|---|---|
+| Headline | "1 yüksek, 7 orta ve 11 düşük …" -> "1 yüksek, 7 orta ve 12 düşük …" (+ links to `/`) | "3 orta ve 28 düşük" -> "3 orta ve 29 düşük" (+ an image over 100 KB) |
+| Problem cards | 9 -> 7 | 10 -> 11 |
+| Merged | 01 idx4.redirect_loop + 03 idx4.redirecting + 09 idx3.chain + new links to `/` (50 pages) -> card 01, High, Sorun | none (no redirect in the crawl) |
+| New | — (inside card 01) | card 09 str7.over_100kb, Low, Fırsat (the homepage hero, 135 KB) |
+| Types | card 07 str7.placeholder is Kontrol edin; the rest Sorun | card 09 Fırsat; the rest Sorun |
+| Template lines | none (no card has 80% of its pages in one template) | 02 str12.language: kategori şablonu (/collections/*) 43 sayfa; 03 idx6.alias_links: /collections/* 141 sayfa; 06 tseo1.url_decomposed: ürün şablonu (/collections/*/products/*) 63 sayfa |
+| Templates page | /tibbi-bolumlerimiz/*/* 9, /tani-ve-tedavi-yontemleri/*/* 8 … (Tedavi ve bölüm şablonu) | /collections/*/products/* 323, /collections/* 143, /products/* 8 … |
+| PDF (Turkish, built and checked: nothing cut) | 8 pages: the templates page added (7 in DECISIONS 313) | 9 pages: the templates page and a fourth card page (13 cards) |
+
+| Command | Result |
+|---|---|
+| fast suite (first run) | `17 failed`: text-library rules (digits, length, plurals, Turkish entries), README schema, sheet order, a hand-made test copying the loop's rule id, a fake site's malformed hreflang code; all fixed |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2756 passed, 4 skipped, 134 deselected, 1 warning in 479.26s (0:07:59)` |
+| full suite (first run) | `1 failed`: test_idx_scenarios assumed every IDX-6 finding is a broken link; narrowed |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `2890 passed, 4 skipped, 1 warning in 871.46s (0:14:31)` |
+| ruff E9/F821/F841, `python3.11 -m compileall`, `node --check` | clean / OK |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

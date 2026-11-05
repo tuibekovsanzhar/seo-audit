@@ -139,6 +139,18 @@ def _segments(url: str) -> list[str]:
     return [_norm(s.rsplit(".", 1)[0] if s.endswith((".html", ".htm", ".php", ".aspx")) else s) for s in segs]
 
 
+def url_depth(word: str, segs: list[str]) -> int | None:
+    """The index of the segment `word` matches in (`url_hit`'s rules), or None. On a tie between two page types the
+    deeper match names the page (DECISIONS 315: /collections/c/products/p is a product, not a collection)."""
+    if word.endswith("/*"):
+        w = _norm(word[:-2])
+        return next((i for i, s in enumerate(segs[:-1]) if s == w), None)
+    if word.endswith("/"):
+        return len(segs) - 1 if segs and segs[-1] == _norm(word[:-1]) else None
+    w = _norm(word)
+    return next((i for i, s in enumerate(segs) if w and f" {w} " in f" {s} "), None) if w else None
+
+
 def url_hit(word: str, segs: list[str]) -> bool:
     """`word`: any segment holds the word(s); `word/*`: a segment is the word and another follows it (an item);
     `word/`: the last segment is the word (the list page itself)."""
@@ -233,7 +245,7 @@ def match(t: dict, facts: dict) -> tuple[int, list[dict]]:
     hits = []
     url = next((w for w in s.get("url") or [] if url_hit(w, facts["segments"])), None)
     if url:
-        hits.append({"kind": "url", "value": url})
+        hits.append({"kind": "url", "value": url, "depth": url_depth(url, facts["segments"])})
     schema = sorted(set(s.get("schema") or []) & facts["schema"])
     if schema:
         hits.append({"kind": "schema", "value": schema[0]})
@@ -265,10 +277,13 @@ def classify(prof: dict, facts: dict) -> tuple[str, str, list[dict]]:
             return claim["id"], "a policy or legal page (page grouping), which this business type counts here", []
         return "policy", "a policy or legal page (page grouping)", []
     best = None
+
+    def depth(hits):
+        return max((h.get("depth") or 0 for h in hits if h["kind"] == "url"), default=-1)
     for t in types:
         score, hits = match(t, facts)
         if score >= MIN_SCORE and (best is None or score > best[0] or (
-                score == best[0] and (t["rank"] or 99) < (best[1]["rank"] or 99))):
+                score == best[0] and (depth(hits), -(t["rank"] or 99)) > (depth(best[2]), -(best[1]["rank"] or 99)))):
             best = (score, t, hits)
     if best:
         return best[1]["id"], f"signals scored {best[0]}", best[2]

@@ -842,14 +842,80 @@ class Builder:
         return m if m.get("result") == "confirmed" else None
 
     def merged_group(self, members):
-        """The merge group (DECISIONS 301 (4)) of a card holding more than one finding, or None."""
+        """The merge group (DECISIONS 301 (4)) of a card holding more than one finding, or None. The selection's own
+        group id when there is one (DECISIONS 315: a redirect chain is merged by the addresses it shares, not by rule)."""
         if len(members) < 2:
             return None
         try:
-            from maya_audit.client_selection import MERGE_BY_RULE  # type: ignore
+            from maya_audit.client_selection import MERGE_BY_ID, MERGE_BY_RULE  # type: ignore
         except ImportError:
             return None
+        g = ((self.sel or {}).get("by_finding") or {}).get(members[0].get("id")) or {}
+        if g.get("merge_group"):
+            return MERGE_BY_ID.get(g["merge_group"])
         return MERGE_BY_RULE.get(members[0].get("rule_id") or "")
+
+    TEMPLATES_SHOWN = 10  # the PDF's page: the 10 largest templates (owner, Stage 8a); every one is in the appendix
+
+    def templates_rows(self):
+        """Problems per template for the PDF page (Stage 8a, DECISIONS 315), or [] without page grouping."""
+        L, lang = self.L, self.lang
+        rows = []
+        for r in ((self.sel or {}).get("templates") or [])[:self.TEMPLATES_SHOWN]:
+            self.fact(r["pages"], r["pages_with_problems"], r["problem_groups"], *r["cards"])
+            rows.append({"template": r["template"], "kind": self.template_label(r.get("kind")),
+                         "pages": fmt_int(r["pages"], lang), "pages_with_problems": fmt_int(r["pages_with_problems"], lang),
+                         "problem_groups": fmt_int(r["problem_groups"], lang),
+                         "cards": ", ".join(f"{n:02d}" for n in r["cards"]) or "—",
+                         "worst": L["severity"].get(r["worst"], "—") if r.get("worst") else "—"})
+        return rows
+
+    # -- Stage 8a (DECISIONS 315): type, template and chain lines
+    def issue_label(self, kind):
+        return self.L["issue_types"].get(kind or "issue", kind)
+
+    def template_label(self, kind):
+        """'ürün şablonu', 'Tedavi ve bölüm şablonu': the template's page type, the business type's when one applies."""
+        L = self.L
+        name = L["template_kinds"].get(str(kind))
+        if not name:
+            business = (self.sel or {}).get("business_type") or {}
+            try:
+                from maya_audit import business_types as bt  # type: ignore
+                found = bt.type_label(business.get("id"), kind, self.lang) if business.get("id") else None
+            except ImportError:
+                found = None
+            if found:  # lower-cased like the general names ("yardım ve güven şablonu"), Turkish I/İ kept right
+                found = ({"I": "ı", "İ": "i"}.get(found[0], found[0].lower()) if self.lang == "tr" else found[0].lower()) + found[1:]
+            name = fmt(L["template_named"], kind=found) if found else L["template_kinds"]["other"]
+        return name
+
+    def template_text(self, line):
+        if not line:
+            return None
+        return fmt(self.L["template_line"], kind=self.template_label(line.get("kind")), tpl=line["template"], n=line["pages"])
+
+    def chain_lines(self, chain):
+        """A chain card's lines (DECISIONS 315): the chain hop by hop with the pages linking into it, and which page
+        names which canonical."""
+        lines = [self.chain_text(chain)] if self.chain_text(chain) else []
+        pairs = [f"{path_of(r['url']) or '/'} → {path_of(r.get('canonical') or '') or '/'}"
+                 for r in chain.get("canonical_pages") or [] if r.get("canonical")]
+        if pairs:
+            lines.append(fmt(self.L["chain_canon"], pairs=" · ".join(pairs[:3])))
+        for line in lines:
+            self.fact(line)
+        return lines
+
+    def chain_text(self, chain):
+        if not chain or not chain.get("hops"):
+            return None
+        hops = " → ".join(path_of(u) or "/" for u in chain["hops"])
+        line = fmt(self.L["chain_line"], hops=hops)
+        if chain.get("linking_pages"):
+            line += " " + fmt(self.L["chain_links"], n=chain["linking_pages"],
+                              final=path_of(chain.get("final") or "") or "/")
+        return line
 
     def members_of(self, f):
         """The findings on the card whose lead is `f` (the lead alone when it has no card of its own)."""
@@ -1346,6 +1412,8 @@ class Builder:
                 examples = [x["url"] for x in group.get("examples") or [] if x.get("url") in url_finding]
                 urls = examples + [u for u in url_finding if u not in examples]
                 sub = self.merged_lines(members) or self.reason_lines(f) or self.blocked_429_line(f)
+                if (group or {}).get("chain"):  # DECISIONS 315: the chain and its canonicals, not one line per member
+                    sub = self.chain_lines(group["chain"])
                 # DECISIONS 305: addresses that were not read add nothing to the score; the card says how many.
                 if group.get("addresses_not_read"):
                     sub = list(sub or []) + [self.counted("not_read_line", group["addresses_not_read"])]
@@ -1407,6 +1475,13 @@ class Builder:
                 check = self.manual_check(f)
                 if check and check.get("note"):
                     sub = [fmt(L["manual_note"], note=check["note"])] + list(sub or [])
+                # Stage 8a (DECISIONS 315): the chain a merged card is about, and the template one fix covers.
+                chain_line = self.chain_text((group or {}).get("chain"))
+                template_line = None if chain_line else self.template_text((group or {}).get("template_line"))
+                for line in (template_line,):
+                    if line:
+                        sub = [line] + list(sub or [])
+                        self.fact(line)
                 if merged and not found:
                     action = merged["title"].get(self.lang) or merged["title"]["en"]
                 if pre_steps:
@@ -1447,6 +1522,10 @@ class Builder:
                     "scope": self.group_scope(f), "why": entry.get("why"),
                     "finding_ids": [m["id"] for m in members],
                     "severity": f["severity"], "severity_label": L["severity"][f["severity"]],
+                    # Stage 8a (DECISIONS 315): Sorun / Kontrol edin / Fırsat beside the severity, never instead of it.
+                    "issue_type": (group or {}).get("issue_type") or "issue",
+                    "issue_type_label": self.issue_label((group or {}).get("issue_type")),
+                    "template_line": template_line, "chain_line": chain_line,
                     # The release gate (DECISIONS 278) compares what the card shows with the finding's own state.
                     "verification_state": state,
                     "when": L["when"][when_key], "owner": L["owners"][owner], "effort": L["efforts"][effort],
@@ -1612,6 +1691,7 @@ class Builder:
                          for n in sel.get("key_pages_not_found") or []]
         return {"own_limits": limits, "confirm": confirm, "confirm_more": more_confirm, "key_pages": pages,
                 "business_line": business_line, "key_pages_not_found": not_found,
+                "templates": self.templates_rows(),
                 "key_pages_note": L["key_pages_empty"][reason] if reason and not pages else None,
                 "quick_wins": quick,
                 "appendix": {"file": name, "finding_ids": sorted(sel["by_finding"]), "counts": c,

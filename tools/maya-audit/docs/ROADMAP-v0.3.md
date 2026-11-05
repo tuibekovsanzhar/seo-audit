@@ -22,7 +22,7 @@ The owner's plan for v0.3 (2026-11-03). Each stage records its status here; the 
 | 5 | Smart sampling (about 150 pages, under 10 minutes) | Planned |
 | 6 | Priority score, 10-page client report, XLSX appendix, release-gate rule | Done, not pushed (DECISIONS 300-302); team report from the web app, one template (DECISIONS 307); current engine first, one language per click (DECISIONS 308); confirmations, platform steps, key pages, low coverage, history list, words (DECISIONS 309); web app UX: one clear path (DECISIONS 310) |
 | 7 | Type-specific checks | Planned; includes switching checks on or off by business type (the "Profiles (Stage 4)" sheet of `reviews/checklist/mapping.xlsx`, moved here from Stage 4, owner 2026-11-05). Done ahead: the checklist's quick checks (DECISIONS 304; mapping 61% -> 66% done) |
-| 8 | Screaming Frog borrowings: redirect chains, image weight and size, mixed content, URL parameters, rich-result schema rules, key-pages list mode, PageSpeed key | Planned |
+| 8 | Screaming Frog borrowings: redirect chains, image weight and size, mixed content, URL parameters, rich-result schema rules, key-pages list mode, PageSpeed key | 8a done, not pushed (DECISIONS 315): redirect hops and links to redirects, one card per redirect/canonical chain, issue type (Sorun / Kontrol edin / Fırsat), problems per template, canonical chains, hreflang target language, images over 100 KB. Left: mixed content, URL parameters, rich-result rules, list mode, PageSpeed key |
 | 9 | Benchmark and release w15; delete the deprecated `maya-audit-rapor` report (DECISIONS 302) | Planned |
 
 ## Inputs

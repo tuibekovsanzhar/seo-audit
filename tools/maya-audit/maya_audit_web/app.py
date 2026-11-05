@@ -1936,6 +1936,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                "kpis": kpis, "low_coverage": (data.get("low_coverage") or {}).get("text"),
                "fixes": [{"n": todo["n"], "title": todo["title"], "why": todo.get("why"), "scope": todo.get("scope"),
                           "severity": todo["severity"], "severity_label": todo["severity_label"], "owner": todo["owner"],
+                          # Stage 8a (DECISIONS 315): Sorun / Kontrol edin / Fırsat, and the template or chain line.
+                          "issue_type": todo.get("issue_type") or "issue", "issue_type_label": todo.get("issue_type_label"),
+                          "template_line": todo.get("template_line"), "chain_line": todo.get("chain_line"),
                           "effort": todo["effort"], "finding_ids": todo["finding_ids"], "note": (todo.get("sub") or [None])[0]
                           if str((todo.get("sub") or [""])[0]).startswith(("Elle kontrol", "Manual check")) else None}
                          for todo in problems],

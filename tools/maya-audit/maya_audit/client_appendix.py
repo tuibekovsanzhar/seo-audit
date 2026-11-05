@@ -17,7 +17,11 @@ WORDS = {
            "method_sheet": "Yöntem", "note": "Not",
            "key_pages_empty": {"reader_only": "Bu denetimde sayfa önemi hesaplanamadı: Maya'nın tarayıcısı engellendi, sayfalar başka bir okuma yoluyla okundu ve kayıtlı kopyalar sayfalar arası bağlantıları tutmuyor; önem bu bağlantılardan hesaplanır.",
                                "no_pages": "Bu denetimde içeriği okunan sayfa olmadığı için sayfa önemi hesaplanamadı."},
-           "cols": ["Bulgu kimliği", "Kontrol", "Kural", "Önem", "Güven (motor)", "Güven sınıfı", "Öncelik puanı",
+           "templates": "Şablonlar", "itype": {"issue": "Sorun", "warning": "Kontrol edin", "opportunity": "Fırsat"},
+           "tpl_cols": ["Şablon", "Tür", "Okunan sayfa", "Sorunlu sayfa", "Sorun grubu", "Kartlar", "En yüksek önem", "Bulgu kimlikleri"],
+           "tpl_kinds": {"home": "ana sayfa", "category": "kategori", "product": "ürün", "blog_article": "blog yazısı",
+                         "policy": "politika", "utility": "yardımcı sayfa", "other": "diğer"},
+           "cols": ["Bulgu kimliği", "Kontrol", "Kural", "Önem", "Sorun türü", "Güven (motor)", "Güven sınıfı", "Öncelik puanı",
                     "Yer", "Kart", "Grubun ilk bulgusu", "Teyit nedeni", "Bulgu", "Ne yapılmalı", "Kapsam (sayı)",
                     "Etkilenen adres sayısı", "Okunan sayfa (erişim)", "Okunmayan adres", "Kök neden grubu", "Elle kontrol"],
            "url_cols": ["Bulgu kimliği", "Yer", "Önem", "Adres"],
@@ -51,7 +55,11 @@ WORDS = {
            "method_sheet": "Method", "note": "Note",
            "key_pages_empty": {"reader_only": "Page importance could not be worked out for this audit: Maya's crawler was blocked, the pages were read another way, and the saved copies keep no links between pages, which importance is computed from.",
                                "no_pages": "Page importance could not be worked out: no page's content was read in this audit."},
-           "cols": ["Finding ID", "Check", "Rule", "Severity", "Confidence (engine)", "Confidence class",
+           "templates": "Templates", "itype": {"issue": "Issue", "warning": "Warning", "opportunity": "Opportunity"},
+           "tpl_cols": ["Template", "Type", "Pages read", "Pages with problems", "Problem groups", "Cards", "Highest severity", "Finding IDs"],
+           "tpl_kinds": {"home": "homepage", "category": "category", "product": "product", "blog_article": "blog article",
+                         "policy": "policy", "utility": "utility page", "other": "other"},
+           "cols": ["Finding ID", "Check", "Rule", "Severity", "Issue type", "Confidence (engine)", "Confidence class",
                     "Priority score", "Placement", "Card", "Group lead", "Confirm because", "Finding", "What to do",
                     "Scope (count)", "Affected URLs (count)", "Pages read (reach)", "Not read", "Root-cause group", "Manual check"],
            "url_cols": ["Finding ID", "Placement", "Severity", "URL"],
@@ -127,7 +135,7 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
         x = (fix(r["how_to_fix"]) if fix and r["how_to_fix"] else None) or r["how_to_fix"]
         placement = W["placement"].get(r["placement"], r["placement"])
         rows.append([r["finding_id"], r["check_id"], r["rule_id"], W["severity"].get(r["severity"], r["severity"]),
-                     r["confidence"], W["class"].get(r["confidence_class"], r["confidence_class"]), r["priority"],
+                     W["itype"].get(r.get("issue_type") or "issue", ""), r["confidence"], W["class"].get(r["confidence_class"], r["confidence_class"]), r["priority"],
                      placement, r["card"], r["group_lead"] if r["group_lead"] != r["finding_id"] else "",
                      W["reason"].get(r["confirm_reason"], r["confirm_reason"]) if r["confirm_reason"] else "",
                      t, x, r["scope_count"], len(r["urls"]), r.get("pages_read"), r.get("not_read"),
@@ -143,12 +151,17 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
               W["severity"].get(p["worst"], "") if p["worst"] else "", p["confirm"]] for p in selection["key_pages"]]
     if not pages:  # say why, in one line, rather than leave the sheet empty
         pages = [[W["key_pages_empty"][selection.get("key_pages_reason") or "no_pages"]]]
+    # Stage 8a (DECISIONS 315): problems per template, every template.
+    tpls = [[t["template"], W["tpl_kinds"].get(str(t.get("kind")), str(t.get("kind") or "")), t["pages"], t["pages_with_problems"],
+             t["problem_groups"], ", ".join(str(c) for c in t["cards"]), W["severity"].get(t["worst"], "") if t.get("worst") else "",
+             ", ".join(t["finding_ids"])] for t in selection.get("templates") or []]
     cov = [[W["kind"].get(row["kind"], row["kind"]), coverage_text(row, lang, label, line, title),
             ", ".join(row.get("checks") or [])] for row in selection["coverage"]["lines"]]
     out = []
-    for name, header, body, widths in ((W["findings"], W["cols"], rows, [16, 8, 22, 11, 11, 16, 9, 16, 6, 16, 26, 70, 70, 9, 9, 10, 10, 20, 60]),
+    for name, header, body, widths in ((W["findings"], W["cols"], rows, [16, 8, 22, 11, 13, 11, 16, 9, 16, 6, 16, 26, 70, 70, 9, 9, 10, 10, 20, 60]),
                                        (W["urls"], W["url_cols"], urls, [16, 16, 11, 90]),
                                        (W["key_pages"], W["page_cols"], pages, [6, 70, 12, 10, 14, 12, 10]),
+                                       (W["templates"], W["tpl_cols"], tpls, [40, 16, 12, 12, 12, 16, 14, 60]),
                                        (W["coverage"], W["cov_cols"], cov, [18, 110, 40]),
                                        (W["method_sheet"], W["method_cols"], [list(m) for m in W["method"]], [22, 100])):
         if name == W["key_pages"] and not selection["key_pages"]:

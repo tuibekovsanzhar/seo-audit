@@ -88,6 +88,22 @@ MERGE_GROUPS = (
      "rules": ("str1.shared", "str16.shared")},
 )
 MERGE_BY_RULE = {rule: group for group in MERGE_GROUPS for rule in group["rules"]}
+# Stage 8a (DECISIONS 315): canonical, redirect-chain, loop and links-to-redirect findings that name the same addresses
+# are one cause (moodist: /tr/ and /en/ name /tr/tr/ and /en/en/, which redirect through / to /tr/; links to /). They are
+# merged only when they share an address, never all such findings of a site.
+CHAIN_RULES = frozenset({"idx4.redirect_loop", "idx4.redirecting", "idx4.chain", "idx3.chain", "idx3.loop",
+                         "idx3.cookie", "idx3.intermittent", "idx3.self_once", "idx6.links_to_redirect"})
+CHAIN_GROUP = {"id": "redirect_chain",
+               "finding": {"tr": "Kanonik adresler ve bağlantılar bir yönlendirme zincirine gidiyor",
+                           "en": "Canonicals and links lead into a redirect chain"},
+               "title": {"tr": "Kanonik adresleri ve bağlantıları zincirin son adresine verin",
+                         "en": "Point canonicals and links at the chain's final address"},
+               "fix": {"tr": "Her sayfanın kanonik adresini kendisi (ya da zincirin bittiği son adres) yapın, iç bağlantıları "
+                             "son adrese verin ve zincirdeki fazla yönlendirmeleri kaldırın.",
+                       "en": "Make each page's canonical itself (or the chain's final address), point internal links at the "
+                             "final address and remove the extra redirects in the chain."},
+               "cause": "canonicals, redirects and links that form one redirect chain", "rules": tuple(sorted(CHAIN_RULES))}
+MERGE_BY_ID = {**{g["id"]: g for g in MERGE_GROUPS}, CHAIN_GROUP["id"]: CHAIN_GROUP}
 # Kept for older callers: the empty-page rules were the first family (DECISIONS 284).
 RULE_FAMILY = {rule: "idx1.empty" for rule in MERGE_BY_RULE if MERGE_BY_RULE[rule]["id"] == "empty_pages"}
 CONFIRM_REASONS = ("unverified_check", "low_confidence", "intent", "firecrawl_only", "spoofed_googlebot", "rendered_html")
@@ -269,10 +285,96 @@ def retest_state(f: dict) -> str:
 
 
 def merge_group(f: dict) -> dict | None:
+    if f.get("_chain_cluster"):
+        return CHAIN_GROUP
     return MERGE_BY_RULE.get(f.get("rule_id") or "")
 
 
+def _chain_addresses(f: dict) -> set[str]:
+    """The addresses a chain finding names: its pages, their canonicals and where those resolve, the hops of its
+    chains and loops, and the redirect targets its links lead to (not the linking pages: every page links to /)."""
+    ev = f.get("evidence") or {}
+    out: set[str] = set()
+    for row in ev.get("pages") or []:
+        if isinstance(row, dict):
+            out |= {row.get("url"), row.get("canonical"), row.get("redirects_to"), row.get("canonical_of_canonical")}
+            out |= set(row.get("resolved_via") or [])
+    for chain in ev.get("chains") or []:
+        out |= set((chain or {}).get("hops") or [])
+    for loop in ev.get("loops") or []:
+        out |= set(loop or [])
+    for row in ev.get("targets") or []:
+        if isinstance(row, dict):
+            out |= {row.get("url"), row.get("final")} | set(row.get("hops") or [])
+    if f.get("rule_id") != "idx6.links_to_redirect":
+        out |= set((f.get("scope") or {}).get("urls") or [])
+    return {u for u in out if isinstance(u, str) and u}
+
+
+def mark_chain_clusters(findings: list[dict]) -> list[list[str]]:
+    """Set `_chain_cluster` (in memory only) on chain findings that share an address with another chain finding, at
+    least one of them a canonical or redirect finding. Returns the clusters as finding ids."""
+    chain = [f for f in findings if f.get("rule_id") in CHAIN_RULES]
+    parent = list(range(len(chain)))
+
+    def root(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    seen: dict[str, int] = {}
+    for i, f in enumerate(chain):
+        for u in _chain_addresses(f):
+            if u in seen:
+                parent[root(i)] = root(seen[u])
+            else:
+                seen[u] = i
+    clusters: dict[int, list[int]] = {}
+    for i in range(len(chain)):
+        clusters.setdefault(root(i), []).append(i)
+    out = []
+    for n, members in enumerate(sorted(clusters.values(), key=lambda m: m[0]), 1):
+        rules = {chain[i].get("rule_id") for i in members}
+        if len(members) < 2 or not rules - {"idx6.links_to_redirect"}:
+            continue
+        for i in members:
+            chain[i]["_chain_cluster"] = f"redirect_chain:{n}"
+        out.append([chain[i].get("id") for i in members])
+    return out
+
+
+def chain_summary(members: list[dict], importance: dict | None = None) -> dict | None:
+    """What a merged chain card shows (DECISIONS 315): the longest chain hop by hop, the pages whose canonical leads into
+    it, and how many pages link into it (with the final address to link to)."""
+    if not any(m.get("_chain_cluster") for m in members):
+        return None
+    hops, canon_pages, linking, final, linking_count = [], [], set(), None, 0
+    for m in members:
+        ev = m.get("evidence") or {}
+        for chain in ev.get("chains") or []:
+            if len((chain or {}).get("hops") or []) > len(hops):
+                hops = list(chain["hops"])
+        for row in ev.get("pages") or []:
+            if isinstance(row, dict) and row.get("url"):
+                canon_pages.append({"url": row["url"], "canonical": row.get("canonical")})
+                via = row.get("resolved_via") or []
+                if len(via) > len(hops):
+                    hops = list(via)
+        for row in ev.get("targets") or []:
+            if isinstance(row, dict):
+                linking |= set(row.get("linked_from") or [])
+                final = final or row.get("final")
+        if m.get("rule_id") == "idx6.links_to_redirect":
+            linking |= set(((m.get("scope") or {}).get("_all_urls") or (m.get("scope") or {}).get("urls") or []))
+            linking_count = int((m.get("evidence") or {}).get("page_count") or 0)
+    final = final or (hops[-1] if hops else None)
+    return {"hops": hops, "final": final, "canonical_pages": canon_pages,
+            "linking_pages": max(len(linking), linking_count)}
+
+
 def group_key(f: dict, confirmations: dict | None = None) -> tuple:
+    if f.get("_chain_cluster"):  # one card for one chain, whatever each member's state (DECISIONS 315)
+        return ("merge:" + f["_chain_cluster"], "merge:" + f["_chain_cluster"], False, False, "chain", False)
     merged = merge_group(f)
     cause = ("merge:" + merged["id"]) if merged else (f.get("dedup_key") or f.get("rule_id") or
                                                        f"{f.get('check_id')}:{re.sub(r'[0-9]+', '#', f.get('title') or '')}")
@@ -390,7 +492,9 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
     read_urls = pages_read(report)
     default_lang = default_language(report)
     out: dict[tuple, dict] = {}
-    for f in all_findings(report):
+    findings_all = all_findings(report)
+    mark_chain_clusters(findings_all)
+    for f in findings_all:
         key = group_key(f, confirmations)
         g = out.get(key)
         if g is None:
@@ -425,6 +529,7 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
                          if merge_group(lead) and merge_group(lead).get("worst_by") and worst_examples(members, merge_group(lead)["worst_by"])
                          else _examples(urls, members, lists, importance, default_lang)),
             "merge_group": (merge_group(lead) or {}).get("id"),
+            "chain": chain_summary(members),
             "manual": next((manual(m, confirmations) for m in members if manual(m, confirmations)), None),
         })
     return rows
@@ -478,6 +583,9 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
     appendix_only = _order([g for g in rows if g["placement"] == "appendix"])
     for g in rows:
         g.pop("_index", None)
+    for g in rows:
+        g["issue_type"] = issue_type(g)
+        g["template_line"] = template_line(g, importance)
     by_finding = {fid: g for g in rows for fid in g["finding_ids"]}
     coverage_box = coverage(report, limits)
     return {
@@ -500,6 +608,8 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         "key_pages_not_found": [] if low_coverage(report) else list((summary.get("business_type") or {}).get("not_found") or []),
         "coverage": coverage_box,
         "low_coverage": low_coverage(report),
+        # Stage 8a (DECISIONS 315): problems per template (segments).
+        "templates": templates_table(rows, importance),
         "counts": {"findings": len(by_finding), "groups": len(rows), "cards": len(cards), "confirm": len(confirm),
                    "notes": len(notes), "own_limits": len(limits), "appendix_only": len(appendix_only),
                    "rejected": len([g for g in rows if g["placement"] == "rejected"]),
@@ -514,6 +624,110 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         "platform": (report.get("platform") or {}).get("name"),
         "_confirmations": confirmations or {},
     }
+
+
+# ---------------------------------------------------------------- issue type and templates (Stage 8a, DECISIONS 315)
+
+ISSUE_TYPES = ("issue", "warning", "opportunity")
+
+
+def _issue_catalogue() -> dict:
+    import json
+    from pathlib import Path
+    global _ISSUE_CATALOGUE
+    try:
+        return _ISSUE_CATALOGUE
+    except NameError:
+        _ISSUE_CATALOGUE = json.loads((Path(__file__).parent / "issue_types.json").read_text(encoding="utf-8"))
+        return _ISSUE_CATALOGUE
+
+
+def rule_type(rule_id: str | None) -> str:
+    """The rule's own type: issue (Sorun), warning (Kontrol edin) or opportunity (Fırsat); issue when unknown."""
+    return (_issue_catalogue().get("rules") or {}).get(rule_id or "", "issue")
+
+
+def issue_type_label(kind: str, lang: str) -> str:
+    return (_issue_catalogue().get("labels") or {}).get(lang, {}).get(kind) or kind
+
+
+def issue_type(g: dict) -> str:
+    """A group's type beside its severity. Waiting in "Teyit edin": warning. Otherwise the most serious of its
+    members' rule types (issue over warning over opportunity); a warning rule a person confirmed is an issue. Never
+    changes severity, placement or order."""
+    if g.get("placement") == "confirm":
+        return "warning"
+    kinds = {rule_type(m.get("rule_id")) for m in g.get("members") or []} or {"issue"}
+    kind = next(k for k in ISSUE_TYPES if k in kinds)
+    if kind == "warning" and (g.get("manual") or {}).get("result") == "confirmed":
+        return "issue"
+    return kind
+
+
+TEMPLATE_SHARE = 0.8   # a card names a template when this share of its pages read are in it (owner, Stage 8a)
+TEMPLATE_MIN_PAGES = 5  # ... and at least this many
+
+
+def _template_of(record: dict | None) -> str | None:
+    """The page's template, its language folder left out: /en/collections/*/products/* is the same theme template as
+    /collections/*/products/*, so one fix covers both (DECISIONS 315)."""
+    from .page_groups import is_locale
+    key = (record or {}).get("template_key") or None
+    if not key:
+        return None
+    segs = key.split("/")
+    if len(segs) > 2 and segs[0] == "" and is_locale(segs[1]):
+        key = "/" + "/".join(segs[2:])
+    return key
+
+
+def template_kind(pages: list[dict]) -> str | None:
+    """The page type most of a template's pages have (the business type's when one applies)."""
+    from collections import Counter
+    kinds = Counter((r.get("business_page_type") if r.get("business_page_type") not in (None, "other") else r.get("page_type"))
+                    for r in pages)
+    return kinds.most_common(1)[0][0] if kinds else None
+
+
+def template_line(g: dict, importance: dict[str, dict]) -> dict | None:
+    """{"template", "kind", "pages"} when one template holds most of a card's pages read (one template fix covers
+    them), else None."""
+    from collections import Counter
+    read = [u for u in g.get("urls") or [] if u in importance and importance[u].get("read") is not False]
+    if len(read) < TEMPLATE_MIN_PAGES:
+        return None
+    counts = Counter(_template_of(importance[u]) for u in read)
+    counts.pop(None, None)
+    if not counts:
+        return None
+    template, n = counts.most_common(1)[0]
+    if n < TEMPLATE_MIN_PAGES or n / len(read) < TEMPLATE_SHARE:
+        return None
+    members = [importance[u] for u in read if _template_of(importance[u]) == template]
+    return {"template": template, "kind": template_kind(members), "pages": n}
+
+
+def templates_table(rows: list[dict], importance: dict[str, dict], limit: int | None = None) -> list[dict]:
+    """Problems per template (segments): every template with pages read, its page count, how many of its pages a
+    problem touches, the problem groups and the cards. Largest first."""
+    from collections import defaultdict
+    pages_of: dict[str, list[str]] = defaultdict(list)
+    for u, r in importance.items():
+        t = _template_of(r)
+        if t and r.get("read") is not False:
+            pages_of[t].append(u)
+    out = []
+    for t, urls in pages_of.items():
+        members = set(urls)
+        hit = [g for g in rows if g.get("placement") not in ("rejected", "own_limit") and g["severity"] in PROBLEM
+               and members & set(g.get("urls") or [])]
+        out.append({"template": t, "kind": template_kind([importance[u] for u in urls]), "pages": len(urls),
+                    "pages_with_problems": len({u for g in hit for u in g["urls"] if u in members}),
+                    "problem_groups": len(hit), "cards": sorted(g["card"] for g in hit if g.get("placement") == "card"),
+                    "worst": max((g["severity"] for g in hit), key=_weight, default=None),
+                    "finding_ids": sorted({fid for g in hit for fid in g["finding_ids"]})})
+    out.sort(key=lambda r: (-r["pages"], -r["problem_groups"], r["template"]))
+    return out[:limit] if limit else out
 
 
 def platform_steps(rule_id: str | None, platform: str | None, lang: str) -> list[str] | None:
@@ -722,7 +936,7 @@ def appendix_rows(selection: dict, lists: dict | None = None) -> list[dict]:
                         "severity": severity(m), "confidence": m.get("confidence"),
                         "confidence_class": g["confidence"], "priority": g["priority"], "placement": g["placement"],
                         "card": g.get("card"), "group_lead": g["finding_ids"][0], "confirm_reason": g["confirm_reason"],
-                        "merge_group": g.get("merge_group"),
+                        "merge_group": g.get("merge_group"), "issue_type": g.get("issue_type"),
                         "pages_read": g.get("pages_counted"), "not_read": g.get("addresses_not_read"),
                         "read_unscored": g.get("pages_read_unscored"),
                         "manual": (lambda c: " · ".join(str(c[k]) for k in ("result", "by", "date", "seen") if c.get(k))
@@ -736,4 +950,4 @@ def appendix_rows(selection: dict, lists: dict | None = None) -> list[dict]:
 def merge_table() -> list[dict]:
     """The merge groups as rows (for the appendix, the docs and the tests): id, cause, rules, title, fix."""
     return [{"id": g["id"], "cause": g["cause"], "rules": list(g["rules"]), "title": g["title"], "fix": g["fix"]}
-            for g in MERGE_GROUPS]
+            for g in (*MERGE_GROUPS, CHAIN_GROUP)]

@@ -123,7 +123,8 @@ def test_ordinary_summary_print_and_download_share_safe_advice_for_saved_reports
         ('RND-7', '1 page(s) have less than 30% of their text in the main content',
          "Mark the page's own content with one <main> element, so the menu, footer and sidebars sit outside it. This is page structure: no JavaScript change is needed."),
     ]:
-        f = {**copy.deepcopy(prototype), 'check_id': check_id, 'id': check_id + '-synthetic', 'title': title, 'how_to_fix': fix,
+        # Copies of the redirect loop: not the loop's rule (DECISIONS 315 merges a redirect chain's findings by rule).
+        f = {**copy.deepcopy(prototype), 'rule_id': None, 'dedup_key': None, 'check_id': check_id, 'id': check_id + '-synthetic', 'title': title, 'how_to_fix': fix,
              'severity': 'S4', 'evidence': {'pages': [{'url': URL, 'basis': '<main>/<article> text'}]}}
         next(c for c in report['checks'] if c['check_id'] == check_id)['findings'].append(f)
     for check in (report['checks']):

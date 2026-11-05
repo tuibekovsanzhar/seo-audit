@@ -43,7 +43,7 @@ def test_a_start_address_that_answers_404_is_said_first_in_every_output_in_engli
     found = {"entered": ENTERED, "status": 404, "audited_from": KAFE + "/"}
     assert start_address(outcome.result) == found
     report, view, printed = shown(outcome)
-    assert report["schema_version"] == "1.25" and report["problem_summary"]["start_address"] == found
+    assert report["schema_version"] == "1.26" and report["problem_summary"]["start_address"] == found
     assert set(report["problem_summary"]) <= set(schema.PROBLEM_SUMMARY_KEYS) and tuple(found) == schema.PROBLEM_START_ADDRESS_KEYS
     assert START_FAILED.format(status=404, path="/urun-detayi", audited_from=KAFE + "/") == SENTENCE
     # The engine's own outputs: the first sentence of the Markdown headline, and a line of the text header.

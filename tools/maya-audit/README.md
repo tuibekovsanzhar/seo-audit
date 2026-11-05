@@ -356,8 +356,8 @@ whenever rendering is off.
 
 ### The JSON report format
 
-Every JSON report starts with `schema_version` (now `1.25`). The fields are described in
-[docs/REPORT-SCHEMA.md](docs/REPORT-SCHEMA.md), and the frozen shape is in `docs/report-schema-1.25.json`.
+Every JSON report starts with `schema_version` (now `1.26`). The fields are described in
+[docs/REPORT-SCHEMA.md](docs/REPORT-SCHEMA.md), and the frozen shape is in `docs/report-schema-1.26.json`.
 A test fails when the shape changes without a new version number, so anything built on the report can rely on it.
 
 ### Handing a report to a language model

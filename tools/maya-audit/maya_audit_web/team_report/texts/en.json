@@ -4154,6 +4154,55 @@
    ],
    "verify": "In the sitemap, addresses should be made of words, and an old address should redirect to the new one.",
    "summary": "Readable addresses"
+  },
+  "idx6.links_to_redirect": {
+   "title": "Link straight to the final address",
+   "finding": "Internal links point to addresses that redirect",
+   "explanation": "Change internal links that point to a redirecting address to the final address the redirect ends at.",
+   "why": "Every link to a redirect costs one more request; crawlers may give up on long chains.",
+   "steps": [
+    "Find the pages and the template that link to the redirecting address",
+    "Replace the link with the final address the redirect ends at"
+   ],
+   "verify": "In the page source the links show the final address and open without a redirect.",
+   "summary": "Internal links to redirects"
+  },
+  "idx4.chain": {
+   "title": "Point each canonical straight at the final page",
+   "finding": "A canonical names a page whose own canonical is another address",
+   "explanation": "Change the canonical tag to the page at the end of the canonical chain.",
+   "why": "Search engines may not follow a canonical of a canonical; which page is preferred stays unclear.",
+   "steps": [
+    "Look at the canonical of the page the canonical names",
+    "Change the canonical tag to that final address"
+   ],
+   "verify": "The page the canonical names has itself as its own canonical.",
+   "summary": "Canonical chains"
+  },
+  "str9.wrong_language": {
+   "title": "Match each hreflang code to its target's language",
+   "finding": "hreflang links name pages in another language",
+   "explanation": "Make each hreflang code name the language of the page it links to.",
+   "why": "A wrong language code leads search engines to show visitors the version in another language.",
+   "steps": [
+    "Compare the code's language with the target page's language",
+    "Correct the code, or link to the page in that language"
+   ],
+   "verify": "Each hreflang target's <html lang> shows the language its code says.",
+   "summary": "hreflang targets in the wrong language"
+  },
+  "str7.over_100kb": {
+   "title": "Make large images lighter",
+   "finding": "Some image files are larger than they need to be",
+   "explanation": "Resize large images to the size they are shown at and compress them, or serve them as WebP/AVIF.",
+   "why": "Large images slow the page down, especially on mobile connections.",
+   "steps": [
+    "Resize the image to the largest size it is shown at",
+    "Compress it or serve it as WebP/AVIF",
+    "Replace the file at the same address"
+   ],
+   "verify": "The browser's network tab shows a smaller file for the image.",
+   "summary": "Large image files"
   }
  }
 }
