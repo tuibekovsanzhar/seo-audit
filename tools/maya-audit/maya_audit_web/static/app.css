@@ -74,7 +74,9 @@ a:hover { color: var(--accent); }
 .banner { background: var(--ink); color: var(--ink-text); padding: 9px var(--space-6); font-size: 12.5px; font-weight: 500; }
 .notice { background: var(--danger-soft); border: 1px solid var(--danger); color: var(--danger); margin: var(--space-3) var(--space-6) 0; padding: 10px 14px; border-radius: var(--radius-s); }
 .thread { flex: 1; overflow-y: auto; padding: var(--space-7) var(--space-6); display: flex; flex-direction: column; gap: var(--space-5); min-height: 0; }
-.thread > * { width: 100%; max-width: 920px; margin: 0 auto; }
+/* DECISIONS 314: every item of the column is centred in the space right of the sidebar, whatever its own margins
+   (a finished audit's card had `margin: 0 0 …` and sat on the left); full width below 920 px of room. */
+.thread > * { width: 100%; max-width: 920px; margin: 0 auto; margin-left: auto !important; margin-right: auto !important; }
 .welcome { text-align: center; margin-top: 12vh; }
 .welcome h2 { font-size: 32px; margin: 0 0 var(--space-3); font-weight: 700; letter-spacing: -0.02em; }
 .welcome p { color: var(--muted); margin: 0 0 var(--space-5); font-size: 16px; }
@@ -338,7 +340,8 @@ table.data th { white-space: nowrap; overflow-wrap: normal; font-weight: 600; co
   .dl-grid, .modes { grid-template-columns: minmax(0, 1fr); }
   .check-fields { grid-template-columns: minmax(0, 1fr); }
 }
-.job-done { margin: 0 0 var(--space-4); }
+/* DECISIONS 314: auto side margins, like every column item: a finished audit's card stayed on the left. */
+.job-done { margin: 0 auto var(--space-4); }
 .job-done > div:first-child { padding: 0 var(--space-1); }
 
 /* DECISIONS 311: hide an audit from the history; the business type on the new-audit card, the plan and the results. */

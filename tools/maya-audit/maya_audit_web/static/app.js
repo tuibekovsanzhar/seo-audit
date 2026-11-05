@@ -19,7 +19,9 @@ function T(key, values) {
   const given = values || {};
   const has = (name) => Object.prototype.hasOwnProperty.call(given, name) && given[name] !== undefined && given[name] !== null;
   const HOLE = /\{(\w+)(?::([^{}]*))?\}/g;
-  let template = state.strings[key] || key;
+  /* DECISIONS 314: a key this language lacks is said in English; one no table has is "…", never the raw key. */
+  let template = state.strings[key] || (state.fallback || {})[key];
+  if (!template) { if (window.console) console.warn("Maya Audit: no text for " + key); template = "…"; }
   /* A sentence is never shown with an unfilled hole (the same rule as strings.t()): when a value is missing, the
      sentence's plain form ("<key>.plain") is used if there is one; otherwise the missing value is written "…". */
   const missing = (text) => Array.from(text.matchAll(HOLE)).some((hole) => !has(hole[1]));
@@ -1446,6 +1448,17 @@ function setTheme(theme) {
   $("theme").setAttribute("aria-pressed", String(theme === "dark"));
 }
 
+/* DECISIONS 314: when the code on this computer is newer than the running app, say so: the page and its texts belong to
+   the process that serves them, and an update shows only after a restart. */
+async function checkVersion() {
+  let info = null;
+  try { info = await api("GET", "/version"); } catch (error) { return; }
+  const box = $("restart-banner");
+  if (!box) return;
+  box.textContent = info && info.restart_needed ? T("app.restart_needed") : "";
+  box.hidden = !(info && info.restart_needed);
+}
+
 async function boot() {
   let saved = null;
   try { saved = localStorage.getItem("maya-theme"); } catch (error) { saved = null; }
@@ -1456,8 +1469,11 @@ async function boot() {
     state.language = session.language;
     state.languages = session.languages || [];
     state.strings = (await api("GET", "/strings?language=" + encodeURIComponent(session.language))).strings;
+    state.fallback = session.language === "en" ? {} : (await api("GET", "/strings?language=en")).strings;
     state.settings = await api("GET", "/settings");
   } catch (error) { notice(error.message); return; }
+  checkVersion();
+  setInterval(checkVersion, 5 * 60 * 1000);
   document.documentElement.lang = state.language;
   document.title = T("app.title");
   $("app-title").textContent = T("app.title");

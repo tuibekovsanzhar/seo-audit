@@ -189,7 +189,8 @@ def test_the_pages_own_sentence_filler_follows_the_same_rule(tmp_path):
                       'T("result.affects.pages", {count: 1}), T("result.affects.pages", {count: 1234}), T("no.such.key")]));\n', encoding="utf-8")
     shown = json.loads(subprocess.run([node, str(script)], capture_output=True, check=True, timeout=60).stdout.decode("utf-8"))  # Node writes UTF-8; Windows text mode would read the ANSI code page
     assert shown == ["3 section headings are in English, but the page is declared as Turkish", "Has section headings in another language than it declares",
-                     "3 problems across assessed scope; … read for content", "Affects …", "Affects 1 page", "Affects 1,234 pages", "no.such.key"]
+                     "3 problems across assessed scope; … read for content", "Affects …", "Affects 1 page", "Affects 1,234 pages",
+                     "…"]  # DECISIONS 314: a key no table has is never shown raw
     assert [text for text in shown if open_holes(text)] == []
 
 

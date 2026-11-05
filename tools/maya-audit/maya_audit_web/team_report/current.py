@@ -47,12 +47,17 @@ class Current:
 
 @lru_cache(maxsize=1)
 def fingerprint() -> str:
-    """A hash of the engine's own files (maya_audit/**/*.py and *.json): any change to a rule changes it."""
-    root = Path(__file__).resolve().parents[2] / "maya_audit"
+    """A hash of the engine's own files (maya_audit/**/*.py and *.json) and, DECISIONS 314, the text libraries the
+    reports are written with (the team report's texts and labels, the web app's translations): any change to a rule
+    or a sentence makes the derived copy again."""
+    base = Path(__file__).resolve().parents[2]
+    roots = [base / "maya_audit", base / "maya_audit_web" / "team_report" / "texts",
+             base / "maya_audit_web" / "team_report" / "refs", base / "maya_audit_web" / "locales"]
     h = hashlib.sha256()
-    for path in sorted(p for p in root.rglob("*") if p.suffix in (".py", ".json") and "__pycache__" not in p.parts):
-        h.update(path.relative_to(root).as_posix().encode())
-        h.update(path.read_bytes())
+    for root in roots:
+        for path in sorted(p for p in root.rglob("*") if p.suffix in (".py", ".json") and "__pycache__" not in p.parts):
+            h.update(path.relative_to(base).as_posix().encode())
+            h.update(path.read_bytes())
     return h.hexdigest()[:16]
 
 

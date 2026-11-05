@@ -3616,3 +3616,27 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      importance cells; the appendix and the short summary say the same (`client_selection.importance_unknown`).
      Shown on moodist through an isolated copy of the web app (port 8771, provider-free; the real web home untouched).
      Tests: `tests/test_ui_313.py` (6, two in headless Chromium).
+314. **One version per running app; the report column centred (Owner, 2026-11-05: raw text keys, the old headline,
+     "4 URL" and an old engine commit seen on port 8770 after 03bc8ae; the layout and the notice's wording are agent
+     defaults).**
+     (1) *Cause.* No text key was missing (TR and EN both hold every key the page uses; the app on 8770, started at 21:45
+     after 03bc8ae, serves them). The page's script and stylesheet were read from disk on every request, while the text
+     table, the headline builder and the engine stay as they were when the process started: after an update without a
+     restart the new script asked the old process for keys it did not have (shown raw), and the old process built the
+     old headline, "URL" and its own engine commit. The derived copy itself was right: it is keyed by the engine
+     fingerprint and was rebuilt with 03bc8ae on the first open after the restart.
+     (2) *Fix* (`maya_audit_web/build.py`): the page, app.js and app.css are read once when the app starts and served
+     from memory (`/static/app.js?v=<build>`, `Cache-Control: no-cache` with an ETag, 304 on revalidation), so a page
+     always comes with the texts and engine of the process that serves it. GET `/api/v1/version` gives the build, the
+     code fingerprint the process started with and the one on disk (hashed at most every 20 s); the page checks it at
+     start and every 5 minutes and shows "Maya Audit bu bilgisayarda güncellendi. … yeniden başlatın" when they differ.
+     A key a language lacks is said in English, a key no table has is "…": never the raw key. The derived copy's
+     fingerprint now also covers the text libraries (team report texts and labels, the web translations), so a changed
+     sentence rebuilds it too.
+     (3) *Layout:* every item of the report column is centred in the space right of the sidebar (max 920 px, auto side
+     margins that no item's own margin overrides: a finished audit's card had `margin: 0 0 …` and sat on the left); the
+     chat bar was already centred. Measured on the normal app path (a copy of the owner's web home, port 8772,
+     provider-free): left/right margins 32/32 at 1024 px (full width), 124/124 at 1440, 364/364 at 1920, 684/684 at
+     2560, 479/479 at 1440 and 67% zoom; before: 32/216, 32/696, 32/1336.
+     Tests: `tests/test_web_build_314.py` (7: every key in TR and EN, prefix keys, the fallback, the snapshot, the
+     version route and 304, the derived copy rebuilt on a text change, the centred layout at five sizes in Chromium).

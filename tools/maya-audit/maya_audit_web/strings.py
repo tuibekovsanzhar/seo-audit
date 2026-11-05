@@ -1511,6 +1511,7 @@ STRINGS["en"].update({
     "c6.kp.confirm": "To confirm (count)",
     "c6.type.home": "home",
     "c6.type.home_languages": "homepage ({n} languages)",
+    "app.restart_needed": "Maya Audit was updated on this computer. Restart the app to use the new version: stop it (Ctrl+C in its window), start it again, then reload this page.",
     "c6.kp.importance_unknown": "importance not computed ({reason}, see card #{card})",
     "c6.kp.reason.canonical": "canonical problem",
     "c6.kp.reason.redirect": "redirect problem",

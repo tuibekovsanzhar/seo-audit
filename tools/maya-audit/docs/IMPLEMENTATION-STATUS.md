@@ -1267,6 +1267,34 @@ files, port 8771, provider-free environment; headless Chromium screenshot) and i
 | `ruff check --isolated --select E9,F821,F841` (changed code), `python3.11 -m compileall`, `node --check` | clean / OK |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 
+## One version per running app; centred column (DECISIONS 314, 2026-11-05)
+
+What was wrong on 8770: an app process started before 03bc8ae served the new script (read from disk each request) with
+its old text table and engine: raw keys, the old headline, "4 URL", engine 6ed3f4b. Not missing keys and not the
+derived copy (rebuilt with 03bc8ae at 21:45 after the restart). Now the page's files come from the process's start-up
+snapshot with a version token, the page says when a restart is needed, a missing key is never shown raw, and the
+derived copy is also rebuilt when a text library changes. The report column is centred (a finished audit's card was
+left-aligned at wide windows).
+
+Checked on the normal app path: `python -m maya_audit_web --port 8772` with a copy of the owner's web home (63 audits;
+database copied with SQLite's backup, read-only source), provider-free environment, moodist c581ff0a opened in
+headless Chromium: chip, "Neden?", "Sağlık / klinikler (önerilen)", "1 yüksek, 7 orta ve 11 düşük önemde sorun var;
+…", engine 03bc8ae in the footer (the working tree), centred at 1024/1440/1920/2560 px and at 67% zoom. The first test
+start showed my own bug (the new `snapshot` variable hid the module of the same name: the summary route failed); fixed
+before the measurements.
+
+**To see the change on port 8770:** stop the running app (Ctrl+C in its Terminal window), start it again from
+`tools/maya-audit` with `.venv/bin/python -m maya_audit_web`, then reload the page in the browser (Cmd+Shift+R). From
+now on the page itself says when a restart is needed.
+
+| Command | Result |
+|---|---|
+| fast and full suites (first run) | `1 failed`: `test_no_unfilled_placeholders` expected an unknown key shown raw; now "…" (the owner's rule) |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2746 passed, 4 skipped, 134 deselected, 1 warning in 496.01s (0:08:16)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `2880 passed, 4 skipped, 1 warning in 880.25s (0:14:40)` |
+| `ruff check --isolated --select E9,F821,F841`, `python3.11 -m compileall`, `node --check` | clean / OK |
+| Owner's web app on port 8770 | NOT RUN by me (restart needed: steps above) |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

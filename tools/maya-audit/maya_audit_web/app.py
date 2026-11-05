@@ -310,6 +310,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
     from .analyses import Registry
     analysis_registry = Registry(analysis_folder)
     engine = engine or Engine()
+    # DECISIONS 314: the page's files as they were when this process started, served with its version token.
+    from .build import Snapshot
+    page_files = Snapshot.take(STATIC)
     store = Store(folder)
     server_log = _server_log(store.folder)
     try:
@@ -734,6 +737,11 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
     @api.get("/health", summary="Is the local server up")
     def health() -> dict[str, Any]:
         return {"status": "ok", "api_version": API_VERSION}
+
+    @api.get("/version", summary="This process's version, and whether the code on disk is newer (restart needed)")
+    def version() -> dict[str, Any]:
+        from .team_report.current import engine as engine_identity
+        return {**page_files.status(), "engine": engine_identity()}
 
     @api.get("/session", summary="The action token for this browser session")
     def session() -> dict[str, Any]:
@@ -2102,10 +2110,23 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
 
     @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     def index() -> Response:
-        response = FileResponse(STATIC / "index.html", media_type="text/html; charset=utf-8",
-                                headers={"Cache-Control": "no-store"})
+        # DECISIONS 314: the page as this process started with it; its script and stylesheet carry the version token.
+        response = Response(page_files.index, media_type="text/html; charset=utf-8", headers={"Cache-Control": "no-store"})
         guard.set_cookie(response)
         return response
+
+    @app.get("/static/{name}", include_in_schema=False)
+    def static_file(name: str, request: Request) -> Response:
+        """app.js and app.css from this process's snapshot: never newer or older than the text table it serves. A
+        browser revalidates them each time (no-cache with an ETag), so an update shows after a restart and a reload."""
+        if name not in page_files.files:
+            raise StarletteHTTPException(status_code=404)
+        etag = f'"{page_files.build}-{name}"'
+        headers = {"Cache-Control": "no-cache", "ETag": etag}
+        if request.headers.get("if-none-match") == etag:
+            return Response(status_code=304, headers=headers)
+        kind = "text/javascript; charset=utf-8" if name.endswith(".js") else "text/css; charset=utf-8"
+        return Response(page_files.files[name], media_type=kind, headers=headers)
 
     app.include_router(api)
     app.mount("/static", StaticFiles(directory=STATIC), name="static")

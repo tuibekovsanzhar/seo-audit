@@ -1402,5 +1402,6 @@
  "result.business.why": "Neden?",
  "result.business.suggested_mark": "{label} (önerilen)",
  "result.business.how.user": "Sizin seçiminiz.",
- "result.business.how.suggestion": "Siteden önerildi: {reason}"
+ "result.business.how.suggestion": "Siteden önerildi: {reason}",
+ "app.restart_needed": "Maya Audit bu bilgisayarda güncellendi. Yeni sürümü kullanmak için uygulamayı yeniden başlatın: penceresinde Ctrl+C ile durdurun, yeniden başlatın, sonra bu sayfayı yenileyin."
 }
