@@ -1,0 +1,238 @@
+{
+ "id": "saas",
+ "order": 7,
+ "label": {
+  "tr": "B2B SaaS",
+  "en": "B2B SaaS"
+ },
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "suggest": {
+  "schema": [
+   "SoftwareApplication",
+   "WebApplication"
+  ],
+  "platforms": [],
+  "url": [
+   "pricing",
+   "fiyatlandirma",
+   "features",
+   "ozellikler",
+   "integrations",
+   "entegrasyonlar",
+   "demo",
+   "signup",
+   "docs",
+   "customers",
+   "case-studies"
+  ],
+  "words": [
+   "fiyatlandırma",
+   "pricing",
+   "özellikler",
+   "features",
+   "entegrasyonlar",
+   "integrations",
+   "demo",
+   "ücretsiz dene",
+   "free trial",
+   "request a demo"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "pricing",
+   "label": {
+    "tr": "Paket ve fiyat",
+    "en": "Plans and pricing"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "pricing",
+     "fiyatlandirma",
+     "fiyatlar",
+     "paketler",
+     "plans",
+     "plan",
+     "fiyat"
+    ],
+    "schema": [
+     "Offer",
+     "AggregateOffer"
+    ],
+    "words": [
+     "fiyatlandırma",
+     "pricing",
+     "paketler",
+     "plans"
+    ],
+    "content": [
+     "price",
+     "table"
+    ]
+   }
+  },
+  {
+   "id": "features",
+   "label": {
+    "tr": "Özellik ve entegrasyon",
+    "en": "Features and integrations"
+   },
+   "citable": false,
+   "generic": [
+    "category",
+    "product"
+   ],
+   "signals": {
+    "url": [
+     "features",
+     "feature",
+     "ozellikler",
+     "ozellik",
+     "integrations",
+     "entegrasyonlar",
+     "entegrasyon",
+     "product",
+     "urun",
+     "cozumler",
+     "solutions",
+     "platform"
+    ],
+    "schema": [
+     "SoftwareApplication",
+     "WebApplication"
+    ],
+    "words": [
+     "özellikler",
+     "entegrasyon",
+     "features",
+     "integrations",
+     "çözümler",
+     "solutions"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "sales",
+   "label": {
+    "tr": "Satış iletişimi",
+    "en": "Sales contact"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "demo",
+     "iletisim",
+     "contact",
+     "contact-sales",
+     "satis",
+     "sales",
+     "demo-talep",
+     "request-demo",
+     "teklif"
+    ],
+    "schema": [
+     "ContactPage"
+    ],
+    "words": [
+     "demo",
+     "satış",
+     "iletişim",
+     "contact sales",
+     "request a demo"
+    ],
+    "content": [
+     "form"
+    ]
+   }
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber",
+    "en": "Guide"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "rehber",
+     "guide",
+     "guides",
+     "docs",
+     "dokumantasyon",
+     "kaynaklar",
+     "resources",
+     "help",
+     "yardim",
+     "academy",
+     "sss",
+     "faq"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting",
+     "TechArticle"
+    ],
+    "words": [
+     "rehber",
+     "blog",
+     "kaynaklar",
+     "docs",
+     "guide",
+     "resources"
+    ],
+    "content": [
+     "faq"
+    ]
+   }
+  },
+  {
+   "id": "references",
+   "label": {
+    "tr": "Referanslar",
+    "en": "References"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "referanslar",
+     "musteriler",
+     "musterilerimiz",
+     "customers",
+     "case-studies",
+     "basari-hikayeleri",
+     "testimonials",
+     "references"
+    ],
+    "schema": [],
+    "words": [
+     "referanslar",
+     "müşterilerimiz",
+     "başarı hikayeleri",
+     "case study",
+     "customers"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ],
+   "added": "Stage 4: the homepage is at least 85 in every sector (owner); not in the sector list"
+  }
+ ]
+}

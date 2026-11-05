@@ -284,7 +284,7 @@ def test_firecrawl_reads_up_to_five_at_once_through_the_site_limit_and_says_so(t
     assert READER not in outcome.result.backoff["site_limit"]["starts"] and section["concurrency"]["own_pace"] is True
     assert sorted(row["url"] for row in section["pages"]) == sorted(api.urls)
     report = build_report(outcome.result, outcome.gates, outcome.checks, firecrawl=section)
-    assert report["schema_version"] == "1.24" and report["crawl"]["backoff"]["site_limit"]["configured"] == 5
+    assert report["schema_version"] == "1.25" and report["crawl"]["backoff"]["site_limit"]["configured"] == 5
 
 
 def test_without_mayas_site_limit_the_reader_keeps_its_own_pace(tmp_path, no_lookups):

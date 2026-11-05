@@ -1,0 +1,264 @@
+{
+ "id": "otomotiv",
+ "order": 6,
+ "label": {
+  "tr": "Otomotiv",
+  "en": "Automotive"
+ },
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "suggest": {
+  "schema": [
+   "Car",
+   "Vehicle",
+   "AutoDealer",
+   "AutomotiveBusiness",
+   "AutoRepair"
+  ],
+  "platforms": [],
+  "url": [
+   "modeller",
+   "fiyat-listesi",
+   "bayiler",
+   "test-surusu",
+   "binek",
+   "ticari-araclar",
+   "elektrikli",
+   "yetkili-servis"
+  ],
+  "words": [
+   "modeller",
+   "fiyat listesi",
+   "bayiler",
+   "servis",
+   "test sürüşü",
+   "binek",
+   "ticari"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "model",
+   "label": {
+    "tr": "Model detayı",
+    "en": "Model detail"
+   },
+   "citable": false,
+   "generic": [
+    "product"
+   ],
+   "signals": {
+    "url": [
+     "modeller/*",
+     "model/*",
+     "models/*",
+     "araclar/*",
+     "binek/*",
+     "ticari/*",
+     "suv/*",
+     "elektrikli/*"
+    ],
+    "schema": [
+     "Car",
+     "Vehicle",
+     "Product"
+    ],
+    "words": [
+     "teknik özellikler",
+     "donanım",
+     "test sürüşü"
+    ],
+    "content": [
+     "price"
+    ]
+   }
+  },
+  {
+   "id": "pricelist",
+   "label": {
+    "tr": "Fiyat listesi",
+    "en": "Price list"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "fiyat-listesi",
+     "fiyatlar",
+     "fiyat",
+     "price-list",
+     "prices",
+     "kampanyali-fiyatlar"
+    ],
+    "schema": [],
+    "words": [
+     "fiyat listesi",
+     "fiyatlar",
+     "price list"
+    ],
+    "content": [
+     "table",
+     "price"
+    ]
+   }
+  },
+  {
+   "id": "models",
+   "label": {
+    "tr": "Model listesi",
+    "en": "Model list"
+   },
+   "citable": false,
+   "generic": [
+    "category"
+   ],
+   "signals": {
+    "url": [
+     "modeller/",
+     "models/",
+     "araclar/",
+     "model-gamasi",
+     "tum-modeller",
+     "binek/",
+     "ticari/"
+    ],
+    "schema": [
+     "ItemList",
+     "CollectionPage"
+    ],
+    "words": [
+     "modeller",
+     "tüm modeller",
+     "model gaması"
+    ],
+    "content": [
+     "list"
+    ]
+   }
+  },
+  {
+   "id": "dealers",
+   "label": {
+    "tr": "Bayi ve servis",
+    "en": "Dealers and service"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "bayi",
+     "bayiler",
+     "bayilerimiz",
+     "servis",
+     "servisler",
+     "yetkili-servis",
+     "bayi-bul",
+     "dealers",
+     "dealer",
+     "service",
+     "servis-randevu"
+    ],
+    "schema": [
+     "AutoDealer",
+     "AutoRepair",
+     "AutomotiveBusiness",
+     "LocalBusiness"
+    ],
+    "words": [
+     "bayi",
+     "yetkili servis",
+     "servis randevu",
+     "bayi bul",
+     "dealer"
+    ],
+    "content": [
+     "map"
+    ]
+   }
+  },
+  {
+   "id": "configure",
+   "label": {
+    "tr": "Araç oluşturma ve talep",
+    "en": "Configure and request"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "konfigurator",
+     "configurator",
+     "arac-olustur",
+     "test-surusu",
+     "teklif",
+     "teklif-al",
+     "talep",
+     "configure",
+     "build"
+    ],
+    "schema": [],
+    "words": [
+     "aracını oluştur",
+     "test sürüşü",
+     "teklif al",
+     "talep",
+     "konfigüratör"
+    ],
+    "content": [
+     "form"
+    ]
+   }
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Teknik rehber",
+    "en": "Technical guide"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "rehber",
+     "teknik",
+     "bakim",
+     "kullanim-kilavuzu",
+     "kilavuz",
+     "sss",
+     "blog",
+     "blogs",
+     "guide",
+     "faq",
+     "manual",
+     "haberler"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "rehber",
+     "kılavuz",
+     "bakım",
+     "sıkça sorulan",
+     "blog"
+    ],
+    "content": [
+     "faq"
+    ]
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ],
+   "added": "Stage 4: the homepage is at least 85 in every sector (owner); not in the sector list"
+  }
+ ]
+}

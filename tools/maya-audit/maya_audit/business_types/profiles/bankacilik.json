@@ -1,0 +1,249 @@
+{
+ "id": "bankacilik",
+ "order": 2,
+ "group": "finans",
+ "label": {
+  "tr": "Bankacılık",
+  "en": "Banking"
+ },
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "suggest": {
+  "schema": [
+   "BankOrCreditUnion",
+   "FinancialProduct",
+   "LoanOrCredit",
+   "BankAccount",
+   "DepositAccount",
+   "CreditCard"
+  ],
+  "platforms": [],
+  "url": [
+   "kredi",
+   "krediler",
+   "kredi-karti",
+   "mevduat",
+   "vadeli",
+   "faiz",
+   "ihtiyac-kredisi",
+   "konut-kredisi",
+   "internet-subesi",
+   "eft",
+   "havale"
+  ],
+  "words": [
+   "kredi",
+   "kredi kartı",
+   "mevduat",
+   "hesap aç",
+   "internet şubesi",
+   "faiz",
+   "havale",
+   "eft",
+   "bireysel",
+   "kurumsal"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ]
+  },
+  {
+   "id": "support",
+   "label": {
+    "tr": "Destek",
+    "en": "Support"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "destek",
+     "yardim",
+     "musteri-hizmetleri",
+     "iletisim",
+     "sss",
+     "sikca-sorulan-sorular",
+     "help",
+     "support",
+     "contact",
+     "faq"
+    ],
+    "schema": [
+     "ContactPage"
+    ],
+    "words": [
+     "destek",
+     "yardım",
+     "müşteri hizmetleri",
+     "sıkça sorulan",
+     "iletişim"
+    ],
+    "content": [
+     "faq"
+    ]
+   }
+  },
+  {
+   "id": "products",
+   "label": {
+    "tr": "Finansal ürün ve ürün listesi",
+    "en": "Financial products and product list"
+   },
+   "citable": false,
+   "generic": [
+    "category",
+    "product"
+   ],
+   "signals": {
+    "url": [
+     "kredi",
+     "krediler",
+     "kredi-karti",
+     "kartlar",
+     "mevduat",
+     "hesap",
+     "hesaplar",
+     "vadeli",
+     "sigorta",
+     "sigortalar",
+     "odemeler",
+     "yatirim",
+     "ihtiyac-kredisi",
+     "konut-kredisi",
+     "tasit-kredisi",
+     "urunler"
+    ],
+    "schema": [
+     "FinancialProduct",
+     "LoanOrCredit",
+     "BankAccount",
+     "DepositAccount",
+     "CreditCard",
+     "Service"
+    ],
+    "words": [
+     "kredi",
+     "mevduat",
+     "vadeli",
+     "hesap",
+     "kart",
+     "sigorta",
+     "faiz oranı",
+     "ödemeler"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "fees",
+   "label": {
+    "tr": "Ücret ve başvuru",
+    "en": "Fees and application"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "ucretler",
+     "ucret",
+     "masraf",
+     "masraflar",
+     "komisyon",
+     "tarife",
+     "basvuru",
+     "basvur",
+     "hesap-ac",
+     "fees",
+     "apply"
+    ],
+    "schema": [],
+    "words": [
+     "ücret",
+     "masraf",
+     "başvur",
+     "hesap aç",
+     "tarife",
+     "komisyon"
+    ],
+    "content": [
+     "form",
+     "table"
+    ]
+   }
+  },
+  {
+   "id": "calculator",
+   "label": {
+    "tr": "Hesaplama aracı",
+    "en": "Calculator"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "hesaplama",
+     "hesapla",
+     "hesaplayici",
+     "kredi-hesaplama",
+     "calculator"
+    ],
+    "schema": [],
+    "words": [
+     "hesapla",
+     "hesaplama",
+     "calculator"
+    ],
+    "content": [
+     "calculator"
+    ]
+   }
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber / SSS / blog",
+    "en": "Guide / FAQ / blog"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "rehber",
+     "finans-rehberi",
+     "sozluk",
+     "sss",
+     "faq",
+     "guide",
+     "makale",
+     "makaleler"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "blog",
+     "rehber",
+     "sıkça sorulan sorular",
+     "SSS",
+     "makaleler"
+    ],
+    "content": [
+     "faq"
+    ]
+   },
+   "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
+   "weight": 30
+  }
+ ]
+}

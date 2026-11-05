@@ -1,0 +1,274 @@
+{
+ "id": "yatirim",
+ "order": 3,
+ "group": "finans",
+ "label": {
+  "tr": "Yatırım hizmetleri",
+  "en": "Investment services"
+ },
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "suggest": {
+  "schema": [
+   "InvestmentOrDeposit",
+   "InvestmentFund",
+   "BrokerageAccount"
+  ],
+  "platforms": [],
+  "url": [
+   "hisse",
+   "hisse-senedi",
+   "borsa",
+   "fon",
+   "fonlar",
+   "viop",
+   "kripto",
+   "halka-arz",
+   "piyasalar",
+   "endeks",
+   "varant",
+   "eurobond"
+  ],
+  "words": [
+   "hisse",
+   "borsa",
+   "fon",
+   "viop",
+   "halka arz",
+   "piyasalar",
+   "kripto",
+   "yatırım",
+   "varant"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "products",
+   "label": {
+    "tr": "Yatırım ürünleri",
+    "en": "Investment products"
+   },
+   "citable": false,
+   "generic": [
+    "category",
+    "product"
+   ],
+   "signals": {
+    "url": [
+     "hisse",
+     "hisse-senedi",
+     "borsa",
+     "fon",
+     "fonlar",
+     "viop",
+     "kripto",
+     "halka-arz",
+     "tahvil",
+     "eurobond",
+     "doviz",
+     "altin",
+     "varant",
+     "yatirim-urunleri",
+     "products"
+    ],
+    "schema": [
+     "InvestmentFund",
+     "InvestmentOrDeposit",
+     "FinancialProduct"
+    ],
+    "words": [
+     "hisse",
+     "fon",
+     "viop",
+     "halka arz",
+     "tahvil",
+     "kripto",
+     "borsa",
+     "varant"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "fees",
+   "label": {
+    "tr": "Ücret ve komisyon",
+    "en": "Fees and commission"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "komisyon",
+     "komisyonlar",
+     "ucretler",
+     "ucret",
+     "fiyatlandirma",
+     "pricing",
+     "fees",
+     "commission"
+    ],
+    "schema": [],
+    "words": [
+     "komisyon",
+     "ücret",
+     "fiyatlandırma",
+     "commission"
+    ],
+    "content": [
+     "table",
+     "price"
+    ]
+   }
+  },
+  {
+   "id": "account",
+   "label": {
+    "tr": "Hesap açma",
+    "en": "Account opening"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "hesap-ac",
+     "hesap-acma",
+     "musteri-ol",
+     "basvuru",
+     "open-account"
+    ],
+    "schema": [],
+    "words": [
+     "hesap aç",
+     "hesap açma",
+     "müşteri ol",
+     "open account"
+    ],
+    "content": [
+     "form"
+    ]
+   }
+  },
+  {
+   "id": "company",
+   "label": {
+    "tr": "Kurum ve destek",
+    "en": "Company and support"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "hakkimizda",
+     "kurumsal",
+     "destek",
+     "iletisim",
+     "yardim",
+     "sss",
+     "about",
+     "support",
+     "contact",
+     "yatirimci-iliskileri"
+    ],
+    "schema": [
+     "AboutPage",
+     "ContactPage"
+    ],
+    "words": [
+     "hakkımızda",
+     "kurumsal",
+     "destek",
+     "iletişim",
+     "yardım"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "platform",
+   "label": {
+    "tr": "İşlem platformu",
+    "en": "Trading platform"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "platform",
+     "platformlar",
+     "uygulama",
+     "mobil",
+     "web-trader",
+     "trader",
+     "app",
+     "indir",
+     "download",
+     "api"
+    ],
+    "schema": [
+     "SoftwareApplication",
+     "MobileApplication"
+    ],
+    "words": [
+     "platform",
+     "uygulama",
+     "mobil",
+     "trader",
+     "indir"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ],
+   "added": "Stage 4: the homepage is at least 85 in every sector (owner); not in the sector list"
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber / SSS / blog",
+    "en": "Guide / FAQ / blog"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "analiz",
+     "analizler",
+     "bulten",
+     "akademi",
+     "egitim",
+     "rehber",
+     "arastirma",
+     "guide",
+     "research"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "blog",
+     "rehber",
+     "sıkça sorulan sorular",
+     "SSS",
+     "makaleler"
+    ],
+    "content": [
+     "faq"
+    ]
+   },
+   "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
+   "weight": 30
+  }
+ ]
+}

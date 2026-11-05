@@ -1,0 +1,212 @@
+{
+ "bankacilik|calculator|heading|hesaplama": {
+  "enpara": 1
+ },
+ "bankacilik|calculator|menu|hesaplama": {
+  "enpara": 1
+ },
+ "bankacilik|calculator|url|hesaplama": {
+  "enpara": 1
+ },
+ "bankacilik|fees|content|form": {
+  "enpara": 7
+ },
+ "bankacilik|fees|menu|başvur": {
+  "enpara": 1
+ },
+ "bankacilik|fees|menu|hesap aç": {
+  "enpara": 6
+ },
+ "bankacilik|fees|url|basvuru": {
+  "enpara": 5
+ },
+ "bankacilik|fees|url|ucretler": {
+  "enpara": 1
+ },
+ "bankacilik|products|heading|hesap": {
+  "enpara": 1
+ },
+ "bankacilik|products|heading|kredi": {
+  "enpara": 3
+ },
+ "bankacilik|products|heading|mevduat": {
+  "enpara": 4
+ },
+ "bankacilik|products|heading|ödemeler": {
+  "enpara": 7
+ },
+ "bankacilik|products|menu|hesap": {
+  "enpara": 2
+ },
+ "bankacilik|products|menu|kredi": {
+  "enpara": 4
+ },
+ "bankacilik|products|menu|mevduat": {
+  "enpara": 3
+ },
+ "bankacilik|products|menu|ödemeler": {
+  "enpara": 1
+ },
+ "bankacilik|products|schema|CreditCard": {
+  "enpara": 1
+ },
+ "bankacilik|products|url|hesap": {
+  "enpara": 1
+ },
+ "bankacilik|products|url|hesaplar": {
+  "enpara": 2
+ },
+ "bankacilik|products|url|kartlar": {
+  "enpara": 3
+ },
+ "bankacilik|products|url|kredi": {
+  "enpara": 3
+ },
+ "bankacilik|products|url|krediler": {
+  "enpara": 3
+ },
+ "bankacilik|products|url|mevduat": {
+  "enpara": 3
+ },
+ "bankacilik|products|url|odemeler": {
+  "enpara": 7
+ },
+ "bankacilik|products|url|sigortalar": {
+  "enpara": 2
+ },
+ "bankacilik|products|url|yatirim": {
+  "enpara": 3
+ },
+ "eticaret|category|content|list": {
+  "nihan": 145
+ },
+ "eticaret|category|heading|collection": {
+  "nihan": 1
+ },
+ "eticaret|category|heading|tüm ürünler": {
+  "nihan": 1
+ },
+ "eticaret|category|heading|yeni gelenler": {
+  "nihan": 2
+ },
+ "eticaret|category|menu|collection": {
+  "nihan": 1
+ },
+ "eticaret|category|menu|koleksiyon": {
+  "nihan": 1
+ },
+ "eticaret|category|menu|yeni gelenler": {
+  "nihan": 2
+ },
+ "eticaret|category|schema|CollectionPage": {
+  "nihan": 143
+ },
+ "eticaret|category|url|collections": {
+  "nihan": 145
+ },
+ "eticaret|guide|content|faq": {
+  "nihan": 6
+ },
+ "eticaret|guide|heading|blog": {
+  "nihan": 2
+ },
+ "eticaret|guide|menu|blog": {
+  "nihan": 2
+ },
+ "eticaret|guide|schema|BlogPosting": {
+  "nihan": 6
+ },
+ "eticaret|guide|url|blogs": {
+  "nihan": 6
+ },
+ "eticaret|product|content|price": {
+  "nihan": 331
+ },
+ "eticaret|product|url|products/*": {
+  "nihan": 609
+ },
+ "restoran|branches|heading|şube": {
+  "adile": 2
+ },
+ "restoran|branches|schema|Restaurant": {
+  "adile": 2
+ },
+ "restoran|branches|url|sube": {
+  "adile": 2
+ },
+ "restoran|contact|content|form": {
+  "adile": 1
+ },
+ "restoran|contact|heading|iletişim": {
+  "adile": 1
+ },
+ "restoran|contact|menu|iletişim": {
+  "adile": 1
+ },
+ "restoran|contact|url|iletisim": {
+  "adile": 1
+ },
+ "restoran|guide|content|faq": {
+  "adile": 1
+ },
+ "restoran|guide|heading|sıkça sorulan sorular": {
+  "adile": 1
+ },
+ "restoran|guide|menu|blog": {
+  "adile": 1
+ },
+ "restoran|guide|menu|sıkça sorulan sorular": {
+  "adile": 1
+ },
+ "restoran|guide|url|blog": {
+  "adile": 5
+ },
+ "restoran|guide|url|sss": {
+  "adile": 1
+ },
+ "restoran|menu|url|menu": {
+  "adile": 1
+ },
+ "saglik|doctors|heading|ekibimiz": {
+  "moodist": 1
+ },
+ "saglik|doctors|menu|ekibimiz": {
+  "moodist": 1
+ },
+ "saglik|doctors|schema|Physician": {
+  "moodist": 1
+ },
+ "saglik|doctors|url|ekibimiz": {
+  "moodist": 1
+ },
+ "saglik|doctors|url|our-team": {
+  "moodist": 1
+ },
+ "saglik|treatment|heading|tedavi": {
+  "moodist": 3
+ },
+ "saglik|treatment|heading|treatment": {
+  "moodist": 4
+ },
+ "saglik|treatment|menu|tedavi": {
+  "moodist": 2
+ },
+ "saglik|treatment|menu|treatment": {
+  "moodist": 4
+ },
+ "saglik|treatment|schema|MedicalCondition": {
+  "moodist": 9
+ },
+ "saglik|treatment|schema|MedicalProcedure": {
+  "moodist": 2
+ },
+ "saglik|treatment|schema|MedicalSpecialty": {
+  "moodist": 2
+ },
+ "saglik|treatment|url|tedavi": {
+  "moodist": 10
+ },
+ "saglik|treatment|url|treatment": {
+  "moodist": 9
+ }
+}

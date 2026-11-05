@@ -44,6 +44,9 @@ def settle(checks, result) -> None:
     # Templates, page types, link scores, click depth, importance (DECISIONS 297): stored, never a severity.
     from .page_groups import annotate as annotate_groups
     annotate_groups(result)
+    # The business type (DECISIONS 311): page importance weighted by the profile; never a severity.
+    from .business_types import attach as attach_business
+    attach_business(result)
 
 
 def verify(checks, result, cfg, transport=None, hooks=None, pace_s: float | None = None, *,

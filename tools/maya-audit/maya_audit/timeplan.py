@@ -18,6 +18,12 @@ from __future__ import annotations
 from typing import Any
 from . import clock as _clock
 
+# The engine's speed mark (DECISIONS 311 (6)): stored on each web audit when it starts. Only finished runs with the
+# current mark set the time the web app shows. Raise it when a change makes audits notably faster or slower (DECISIONS
+# 294-296, 299 were such changes); runs with an older mark then stop counting, and the mode's default is shown until
+# three new runs have finished.
+SPEED_VERSION = 1
+
 # The optional steps, in the order they give way to the time limit (the first is lost first).
 SKIP_ORDER = ("other_site_links", "llms_links", "sitemap_check", "performance", "rendering")
 SKIP_LABELS = {"other_site_links": "links to other sites", "llms_links": "llms.txt links", "sitemap_check": "the sitemap check",

@@ -1175,6 +1175,60 @@ check error, a saved item with Undo, Downloads, technical details opened; no hor
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 | Windows/Linux browsers, screen readers, live runs | NOT RUN |
 
+## Business types, v0.3 stage 4 (DECISIONS 311, 2026-11-05)
+
+What changed: 14 business-type profiles (`maya_audit/business_types/profiles/`): the 12 sectors of the owner's file
+(`docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx`), "Restoran / kafe" and "Diğer"; each page read gets
+the profile's page type from its address, structured data, title/H1, menu and link text and content signals; importance
+= 50% profile weight + 35% link score + 15% click depth (`importance_source`); the suggestion with a one-line reason;
+"not found among the pages read" notes for the top 3 types; `crawl.business_type` (schema 1.25); the web app's
+"İşletme türü" on the new-audit form, the plan, the progress box and the results ("Değiştir"); the team report's page 6
+line and page types; time estimates from current-engine runs only (defaults 1 / 10 / 25 min below three runs); "Gizle"
+in the history. "Diğer" = Stage 3 exactly. Signals for the team to review: `docs/business-types/signals.md` and
+`signals.xlsx` (1,155 signals, 1,047 still guesses). Also fixed: `/qr-menu/` was taken for a language folder.
+
+**Offline on copies of four saved audits** (copied to a scratch folder; current-engine copies made there;
+`tools/business_types_saved.py --current`; nothing under `~/.maya-audit/web` written):
+
+| Audit | Suggested type, reason | Not found among the pages read | Cards (order) |
+|---|---|---|---|
+| nihan b3198942 (500 pages) | E-ticaret: Shopify; 22.114 addresses with 'products', 'collections'; menu 'koleksiyon' | none | same 9 in the same order |
+| moodist c581ff0a | Sağlık: Hospital, MedicalOrganization on the homepage; 58 addresses with 'tedavi', 'doctors'; menu 'anlaşmalı kurumlar', 'check-up' | Klinik ve konum | same 9 in the same order |
+| enpara 07297f4d | Bankacılık: 143 addresses with 'kredi', 'mevduat'; menu 'kredi', 'kredi kartı', 'mevduat' | Destek | same 5 in the same order |
+| adile 6f2830d5 | Restoran / kafe: FoodEstablishment on the homepage; 85 addresses with 'sube', 'subeler' | Rezervasyon / sipariş | same 4 in the same order |
+
+Top 10 key pages, before (Diğer) -> after (the suggested type): nihan: homepage, `/en`, then 8 collections, unchanged
+(collections 91 -> 98, homepage 96 -> 90). moodist: the four language homepages, then six treatment pages (89-87);
+`/tr/ekibimiz/` (Doktor ve ekip) and the English adult-psychiatry page leave the top 10; `/tr/` stays 20 (its canonical names `/tr/tr/`, the S2 card). enpara:
+homepage, `/sirketim`, then product pages (cards, insurance, accounts, `/odemeler`) at 69-70; `/transferler` (72) leaves
+the top 10. adile: homepage, the two branch pages (`/sube/...`, 76), `/restoranlar-iletisim` (contact), `/blog`, then the
+story pages; before: homepage, `/blog`, the story pages, `/sss`. `/qr-menu/` is the "Menü" page (it was typed a
+homepage). Priorities move by a few tenths; no finding, severity or gate decision changes. Team report PDFs (adile,
+enpara; Turkish): 6 pages each, page 6 shows "İşletme türü: … (önerildi; neden: …)", the profile's page types and the
+"not found" line, nothing cut.
+
+**Incident:** the one CLI run of the platform check (against a loopback fake site, with an isolated audit home) did not
+switch Firecrawl off or isolate the env file: the CLI read the project's Firecrawl key and sent 5 scrape requests for
+the loopback pages; all failed (HTTP 500), 0 credits spent or reserved (the scratch ledger). The owner's ledger in
+`~/.maya-audit` does not hold them. No other provider was called. Not repeated.
+
+**Verification** (working tree on `c676483`, macOS, Python 3.13.1; no .env read, no live site requests; see the
+incident above for the one CLI run):
+
+| Command | Result |
+|---|---|
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` (first run) | `3 failed, 2725 passed`: README schema line (2), the early suggestion lacked the crawl counters (1); fixed |
+| fast suite (rerun) | `2728 passed, 4 skipped, 134 deselected, 1 warning in 492.69s (0:08:12)` |
+| full suite (first run) | `1 failed, 2861 passed, 4 skipped`: the suggestion was sent as a "progress" web event without counters; now its own event `business` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` (rerun) | `2862 passed, 4 skipped, 1 warning in 869.00s (0:14:29)` (skips: 2 wheel builds, live-run examples, real-site corpus) |
+| `tests/test_business_types_311.py` | `22 passed` |
+| pro skill tests | `Ran 56 tests` `OK` |
+| `ruff check --isolated --select E9,F821,F841 .` | changed files clean; the same 4 F841 in old test files |
+| `python3.11 -m compileall`, `node --check app.js` | OK |
+| CLI run with stdout to a file | ran once on a loopback fake site (exit 0, Markdown to stdout; no `--json`, so no JSON written); see the incident; not repeated |
+| Owner's web app on port 8770 | NOT RUN (restart needed; the `hidden` column is added on the next start) |
+| Live runs, Windows/Linux, wheel build | NOT RUN |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

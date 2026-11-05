@@ -1,0 +1,225 @@
+{
+ "id": "restoran",
+ "order": 13,
+ "label": {
+  "tr": "Restoran / kafe",
+  "en": "Restaurant / café"
+ },
+ "source": "owner, 2026-11-05 (Stage 4 request)",
+ "suggest": {
+  "schema": [
+   "Restaurant",
+   "CafeOrCoffeeShop",
+   "FoodEstablishment",
+   "Bakery",
+   "BarOrPub",
+   "FastFoodRestaurant",
+   "Menu"
+  ],
+  "platforms": [],
+  "url": [
+   "menu",
+   "menuler",
+   "menumuz",
+   "sube",
+   "subeler",
+   "subelerimiz",
+   "rezervasyon",
+   "paket-servis",
+   "online-siparis",
+   "restoran",
+   "restaurant"
+  ],
+  "words": [
+   "menü",
+   "menümüz",
+   "şubeler",
+   "şubelerimiz",
+   "rezervasyon",
+   "sipariş",
+   "paket servis",
+   "restoran"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "menu",
+   "label": {
+    "tr": "Menü",
+    "en": "Menu"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "menu",
+     "menuler",
+     "menumuz",
+     "yemekler",
+     "yemeklerimiz",
+     "yemek-listesi",
+     "food",
+     "drinks",
+     "icecekler"
+    ],
+    "schema": [
+     "Menu",
+     "MenuSection",
+     "MenuItem"
+    ],
+    "words": [
+     "menü",
+     "menümüz",
+     "yemeklerimiz",
+     "içecekler",
+     "menu"
+    ],
+    "content": [
+     "price"
+    ]
+   }
+  },
+  {
+   "id": "branches",
+   "label": {
+    "tr": "Şube ve konum",
+    "en": "Branches and location"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "sube",
+     "subeler",
+     "subelerimiz",
+     "lokasyon",
+     "lokasyonlar",
+     "konum",
+     "adres",
+     "locations",
+     "branches"
+    ],
+    "schema": [
+     "Restaurant",
+     "LocalBusiness",
+     "Place"
+    ],
+    "words": [
+     "şubelerimiz",
+     "şube",
+     "konum",
+     "adres",
+     "yol tarifi"
+    ],
+    "content": [
+     "map"
+    ]
+   }
+  },
+  {
+   "id": "order",
+   "label": {
+    "tr": "Rezervasyon / sipariş",
+    "en": "Booking / order"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "rezervasyon",
+     "siparis",
+     "online-siparis",
+     "paket-servis",
+     "reservation",
+     "order",
+     "book-a-table"
+    ],
+    "schema": [],
+    "words": [
+     "rezervasyon",
+     "sipariş",
+     "paket servis",
+     "masa ayırt"
+    ],
+    "content": [
+     "form"
+    ]
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ]
+  },
+  {
+   "id": "contact",
+   "label": {
+    "tr": "İletişim",
+    "en": "Contact"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "iletisim",
+     "bize-ulasin",
+     "contact"
+    ],
+    "schema": [
+     "ContactPage"
+    ],
+    "words": [
+     "iletişim",
+     "bize ulaşın"
+    ],
+    "content": [
+     "form",
+     "map"
+    ]
+   }
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber / SSS / blog",
+    "en": "Guide / FAQ / blog"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "tarifler",
+     "tarif",
+     "haberler",
+     "recipes",
+     "sss",
+     "faq"
+    ],
+    "schema": [
+     "Recipe",
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "tarif",
+     "tarifler",
+     "blog",
+     "sıkça sorulan sorular"
+    ],
+    "content": [
+     "faq"
+    ]
+   },
+   "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
+   "weight": 30
+  }
+ ]
+}

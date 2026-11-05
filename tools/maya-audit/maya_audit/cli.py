@@ -195,6 +195,10 @@ def _parser() -> argparse.ArgumentParser:
     crawl = sub.add_parser("crawl", help="crawl a site and report INT-1..INT-4, ACC-1..ACC-8, IDX-1..IDX-10, RND-1..RND-7, STR-1..STR-13, TSEO-1, PRF-1..PRF-3, ANS-1..ANS-5")
     crawl.add_argument("url")
     crawl.add_argument("--max-pages", type=int, default=50)
+    crawl.add_argument("--business-type", default="auto", metavar="ID",
+                       help="business type for page importance and key pages (DECISIONS 311): auto (suggested) or one of "
+                            "eticaret, bankacilik, yatirim, kart, saglik, otomotiv, saas, su_aritma, guvenlik, "
+                            "ev_hizmetleri, gida, seyahat, restoran, diger")
     crawl.add_argument("--single-page", action="store_true",
                        help="audit only the address given: one page, no links followed, no sitemap. Site-level facts the page "
                             "depends on (robots.txt, its redirects, http:// to https://) are still checked")
@@ -514,6 +518,14 @@ def _brand_family_domain(text: str) -> str:
     return host
 
 
+def _business_type(value: str | None) -> str:
+    from .business_types import profiles, valid
+    value = (value or "auto").strip()
+    if not valid(value):
+        raise SystemExit(f"--business-type: unknown '{value}'; use auto or one of {', '.join(profiles())}")
+    return value
+
+
 def _crawl_config(args) -> CrawlConfig:
     """The audit settings for one `crawl` command line. `batch` builds each brand's settings through here too."""
     if getattr(args, "single_page", False):
@@ -529,6 +541,7 @@ def _crawl_config(args) -> CrawlConfig:
         request_delay_s=args.delay,
         max_crawl_delay_s=args.max_crawl_delay,
         key_pages=tuple(args.key_page),
+        business_type=_business_type(getattr(args, "business_type", "auto")),
         bot_info_url=args.bot_info_url,
         allowed_live_hosts=frozenset(args.allow_live_host),
         policy=DeclaredPolicy(training_bots=args.training_bots, search_bots=args.search_bots),

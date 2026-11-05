@@ -1,0 +1,216 @@
+{
+ "id": "guvenlik",
+ "order": 9,
+ "label": {
+  "tr": "Güvenlik hizmetleri",
+  "en": "Security services"
+ },
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "suggest": {
+  "schema": [],
+  "platforms": [],
+  "url": [
+   "alarm",
+   "alarm-sistemleri",
+   "guvenlik-sistemleri",
+   "kamera",
+   "ev-guvenligi",
+   "isyeri-guvenligi",
+   "ucretsiz-kesif"
+  ],
+  "words": [
+   "alarm",
+   "güvenlik sistemi",
+   "kamera",
+   "ücretsiz keşif",
+   "ev güvenliği"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "services",
+   "label": {
+    "tr": "Hizmet ve çözüm",
+    "en": "Services and solutions"
+   },
+   "citable": false,
+   "generic": [
+    "category",
+    "product"
+   ],
+   "signals": {
+    "url": [
+     "hizmetler",
+     "hizmet",
+     "cozumler",
+     "alarm",
+     "kamera",
+     "guvenlik-sistemleri",
+     "ev-guvenligi",
+     "isyeri-guvenligi",
+     "services",
+     "solutions"
+    ],
+    "schema": [
+     "Service",
+     "Product"
+    ],
+    "words": [
+     "alarm",
+     "kamera",
+     "güvenlik sistemi",
+     "çözümler",
+     "hizmetler"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "pricing",
+   "label": {
+    "tr": "Paket ve fiyat",
+    "en": "Packages and pricing"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "paketler",
+     "paket",
+     "fiyatlar",
+     "fiyat",
+     "pricing",
+     "packages"
+    ],
+    "schema": [],
+    "words": [
+     "paket",
+     "fiyat",
+     "aylık"
+    ],
+    "content": [
+     "price",
+     "table"
+    ]
+   }
+  },
+  {
+   "id": "contact",
+   "label": {
+    "tr": "İletişim ve keşif",
+    "en": "Contact and site survey"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "iletisim",
+     "kesif",
+     "ucretsiz-kesif",
+     "teklif",
+     "bize-ulasin",
+     "contact"
+    ],
+    "schema": [
+     "ContactPage"
+    ],
+    "words": [
+     "keşif",
+     "ücretsiz keşif",
+     "teklif",
+     "iletişim"
+    ],
+    "content": [
+     "form"
+    ]
+   }
+  },
+  {
+   "id": "support",
+   "label": {
+    "tr": "Destek ve koşullar",
+    "en": "Support and terms"
+   },
+   "citable": false,
+   "generic": [
+    "policy"
+   ],
+   "signals": {
+    "url": [
+     "destek",
+     "sss",
+     "yardim",
+     "kosullar",
+     "sozlesme",
+     "support",
+     "faq"
+    ],
+    "schema": [],
+    "words": [
+     "destek",
+     "sss",
+     "koşullar",
+     "sıkça sorulan"
+    ],
+    "content": [
+     "faq"
+    ]
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ],
+   "added": "Stage 4: the homepage is at least 85 in every sector (owner); not in the sector list"
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber / SSS / blog",
+    "en": "Guide / FAQ / blog"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "blogs",
+     "rehber",
+     "haberler",
+     "makale",
+     "makaleler",
+     "sss",
+     "sikca-sorulan-sorular",
+     "faq",
+     "guide",
+     "guides",
+     "articles",
+     "news"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "blog",
+     "rehber",
+     "sıkça sorulan sorular",
+     "SSS",
+     "makaleler"
+    ],
+    "content": [
+     "faq"
+    ]
+   },
+   "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
+   "weight": 30
+  }
+ ]
+}

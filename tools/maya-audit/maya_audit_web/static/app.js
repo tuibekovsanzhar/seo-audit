@@ -8,7 +8,7 @@
 
 const API = "/api/v1";
 const state = { token: null, strings: {}, settings: null, language: "en", auditId: null, source: null, ticker: null,
-  historyLimit: 30, draft: { mode: "quick", backlinks: false, search_data: false, local_business: false, archives: false, verify_ownership: false }, lastFocus: null };
+  historyLimit: 30, showHidden: false, draft: { mode: "quick", backlinks: false, search_data: false, local_business: false, archives: false, verify_ownership: false, business_type: "auto" }, lastFocus: null };
 const $ = (id) => document.getElementById(id);
 
 const num = (value) => new Intl.NumberFormat(state.language).format(Number(value) || 0);
@@ -73,6 +73,22 @@ function el(tag, attrs, ...children) {
   }
   return node;
 }
+/* The business types as a dropdown (DECISIONS 311): "Otomatik öner" first when offered, Finance as one group. */
+function businessSelect(id, choices, value, withAuto, onChange) {
+  const select = el("select", { class: "field-input business-select", id });
+  if (withAuto) select.append(el("option", { value: "auto", text: T("new.business.auto") }));
+  const groups = {};
+  for (const choice of choices || []) {
+    const option = el("option", { value: choice.id, text: choice.label });
+    if (choice.group) {
+      if (!groups[choice.group]) { groups[choice.group] = el("optgroup", { label: choice.group_label || choice.group }); select.append(groups[choice.group]); }
+      groups[choice.group].append(option);
+    } else select.append(option);
+  }
+  select.value = value || (withAuto ? "auto" : "diger");
+  if (onChange) select.addEventListener("change", () => onChange(select.value));
+  return select;
+}
 function add(node, ...children) { node.append(...children.flat(3).filter((c) => c !== null && c !== undefined && c !== false)); return node; }
 function fill(node, ...children) { node.replaceChildren(...children.flat(3).filter((c) => c !== null && c !== undefined && c !== false)); return node; }
 
@@ -116,7 +132,7 @@ async function guarded(action) {
 
 async function loadHistory() {
   const query = $("search").value.trim();
-  const data = await guarded(() => api("GET", "/audits?limit=" + state.historyLimit + "&q=" + encodeURIComponent(query)));
+  const data = await guarded(() => api("GET", "/audits?limit=" + state.historyLimit + "&q=" + encodeURIComponent(query) + (state.showHidden ? "&hidden=true" : "")));
   if (!data) return;
   const revised = await guarded(() => api("GET", "/analyses"));
   // DECISIONS 310: revised analyses are their own small section under the audits, one row each (they overlapped).
@@ -127,7 +143,10 @@ async function loadHistory() {
       el("span", { class: "history-title", text: item.label }),
       el("span", { class: "history-meta", text: T("analysis.revised") + " · " + when(item.processed_at, { dateStyle: "medium" }) })))) : null;
   const list = $("history");
-  if (!data.audits.length) { fill(list, el("div", { class: "history-empty", text: T(query ? "nav.no_match" : "nav.empty") }), revisedSection); return; }
+  // DECISIONS 311: hidden audits are one click away, in their own list; each row can be hidden or shown again.
+  const hiddenToggle = data.hidden_total || state.showHidden ? el("button", { class: "button quiet history-hidden", type: "button", "aria-pressed": String(state.showHidden),
+    onclick: () => { state.showHidden = !state.showHidden; loadHistory(); } }, state.showHidden ? T("nav.empty.back") : T("nav.hidden", { count: data.hidden_total || 0 })) : null;
+  if (!data.audits.length) { fill(list, el("div", { class: "history-empty", text: T(query ? "nav.no_match" : "nav.empty") }), hiddenToggle, revisedSection); return; }
   // Each audit: site, date and time, mode, pages read and how, a plain status and its short ID (DECISIONS 309, 310).
   fill(list, data.audits.map((item) => el("div", { class: "history-item" + (item.id === state.auditId ? " current" : "") },
     el("button", { class: "history-open", type: "button", "aria-current": item.id === state.auditId ? "page" : null, onclick: () => openAudit(item.id) },
@@ -136,10 +155,13 @@ async function loadHistory() {
       el("span", { class: "history-meta", text: [T("history.pages", { count: item.pages_read || 0 }), item.path_label].filter(Boolean).join(" · ") }),
       el("span", { class: "history-status" }, el("span", { class: "pill status-" + (item.status || item.state), text: item.status_label || item.state_label }),
         el("span", { class: "id", text: item.short_id || "" }))),
-    el("button", { class: "history-delete", type: "button", "aria-label": T("nav.delete") + ": " + item.host, title: T("nav.delete"),
-      onclick: () => removeAudit(item.id) }, "✕"))),
+    el("div", { class: "history-actions" },
+      el("button", { class: "history-hide", type: "button", "aria-label": (item.hidden ? T("nav.unhide") : T("nav.hide.label")) + ": " + item.host,
+        title: item.hidden ? T("nav.unhide") : T("nav.hide.label"), onclick: () => hideAudit(item.id, !item.hidden) }, item.hidden ? T("nav.unhide") : T("nav.hide")),
+      el("button", { class: "history-delete", type: "button", "aria-label": T("nav.delete") + ": " + item.host, title: T("nav.delete"),
+        onclick: () => removeAudit(item.id) }, "✕")))),
     data.total > data.audits.length ? el("button", { class: "button quiet", type: "button", onclick: () => { state.historyLimit += 30; loadHistory(); } }, T("nav.more")) : null,
-    revisedSection);
+    hiddenToggle, revisedSection);
 }
 
 /* A "?" beside a technical word that has to stay (DECISIONS 310): a button that shows one plain sentence. */
@@ -166,6 +188,11 @@ function hint(key) {
   const button = el("button", { class: "hint", type: "button", "aria-label": T("hint.label", { term: key }), "aria-expanded": "false",
     onclick: (event) => { event.stopPropagation(); tip.hidden = !tip.hidden; button.setAttribute("aria-expanded", String(!tip.hidden)); } }, "?");
   return el("span", { class: "hint-wrap" }, button, tip);
+}
+
+async function hideAudit(id, hidden) {
+  const answer = await guarded(() => api("PUT", "/audits/" + id + "/hidden", { hidden }));
+  if (answer) await loadHistory();
 }
 
 async function removeAudit(id) {
@@ -246,9 +273,13 @@ function newAudit() {
     el("button", { class: "chip", type: "button", "aria-pressed": String(state.draft.backlinks), onclick: () => { state.draft.backlinks = !state.draft.backlinks; drawExtras(); } },
       T(state.draft.backlinks ? "option.backlinks.on" : "option.backlinks.off")), optionChips(state.draft, drawExtras));
   drawModes(); drawExtras();
+  const business = businessSelect("new-business", state.settings.business_types, state.draft.business_type, true,
+    (value) => { state.draft.business_type = value; });
   const card = el("section", { class: "card new-audit", id: "new-audit-card", "aria-labelledby": "new-url-label" },
     el("label", { class: "field-label", for: "new-url", id: "new-url-label", text: T("new.address") }), address, problem,
     el("div", { class: "field-label", text: T("new.depth") }), modes, typicalLine,
+    el("label", { class: "field-label", for: "new-business", text: T("new.business") }), business,
+    el("p", { class: "muted small", text: T("new.business.help") }),
     el("details", { class: "extras" }, el("summary", { text: T("new.extras") }), extrasBox),
     el("div", { class: "row" }, el("button", { class: "button primary big", type: "button", onclick: go }, T("new.go")),
       el("span", { class: "muted small", text: T("new.go.note") })));
@@ -275,7 +306,7 @@ async function send(text) {
     return;
   }
   say(bubble("user", value));
-  await proposePlan({ url: value, mode: state.draft.mode, backlinks: state.draft.backlinks, search_data: state.draft.search_data, local_business: state.draft.local_business, archives: state.draft.archives, verify_ownership: state.draft.verify_ownership, key_pages: [] }, value, true);
+  await proposePlan({ url: value, mode: state.draft.mode, backlinks: state.draft.backlinks, search_data: state.draft.search_data, local_business: state.draft.local_business, archives: state.draft.archives, verify_ownership: state.draft.verify_ownership, business_type: state.draft.business_type || "auto", key_pages: [] }, value, true);
 }
 
 /* ---------- plan ---------- */
@@ -402,6 +433,18 @@ function planFacts(plan) {
     [T("plan.label.unavailable"), plan.unavailable], [T("plan.label.limits"), plan.limitations]]);
 }
 
+/* DECISIONS 311: on the plan, the business type asked for, with the suggestion of this site's last audit (or "once the
+   homepage is read": the plan itself requests nothing). Changing it makes a new plan; nothing is sent. */
+function businessRow(plan, live, onChange) {
+  const info = plan.business_type;
+  if (!info) return null;
+  const id = "pb" + plan.id.slice(0, 8);
+  return el("div", { class: "business-row" },
+    el("label", { class: "label", for: id, text: T("plan.business.label") }),
+    businessSelect(id, info.choices, info.chosen, true, live ? onChange : null),
+    el("p", { class: "muted small", text: info.line }));
+}
+
 function planCard(plan, request, message) {
   const card = el("section", { class: "card", "aria-label": T("plan.title") });
   const draw = (current, problem) => {
@@ -416,6 +459,7 @@ function planCard(plan, request, message) {
         el("li", { text: [current.paid && current.paid.total_usd ? T("plan.cost.short", { total: money(current.paid.total_usd) }) : null,
           current.firecrawl && current.firecrawl.requested && current.firecrawl.max_credits ? T("plan.cost.credits", { credits: num(current.firecrawl.max_credits) }) : null]
           .filter(Boolean).join(" · ") || T("plan.cost.free") })),
+      businessRow(current, live, (value) => replan(Object.assign({}, request, { business_type: value }), false)),
       more);
     more.append(planFacts(current));
     if (current.prefilled) more.append(el("p", { class: "muted small", text: T("plan.key_pages.from_profile") }));
@@ -694,8 +738,11 @@ function auditCard(audit, planNode) {
       const read = Math.max(c.pages_checked || 0, c.firecrawl_read || 0);
       bar.style.width = Math.min(100, Math.round(100 * read / Math.max(1, c.page_cap))) + "%";
       const steps = current.timeline.filter((step) => step.status !== "skipped" && step.status !== "unavailable");
+      const business = current.business || {};
       fill(body, el("p", { class: "eta" }, el("strong", { text: (current.eta && current.eta.plain) || (current.eta && current.eta.label) || "" }),
           el("span", { class: "muted small", text: " · " + T("job.pages.plain", { read: num(read), cap: num(c.page_cap) }) })),
+        business.suggested_line ? el("p", { class: "small business-early", role: "status", text: business.suggested_line }) : null,
+        business.chosen_line ? el("p", { class: "muted small", text: business.chosen_line }) : null,
         el("div", { class: "meter", role: "progressbar", "aria-valuemin": 0, "aria-valuemax": c.page_cap, "aria-valuenow": read, "aria-label": T("result.pages") }, bar),
         el("ol", { class: "plain-steps" }, steps.map((step, i) => el("li", { class: step.status },
           el("span", { class: "dot", "aria-hidden": "true", text: step.status === "done" ? "✓" : step.status === "active" ? String(i + 1) : "" }),
@@ -737,6 +784,7 @@ function auditCard(audit, planNode) {
       refreshSoon();
     });
     on("step", refresh); on("state", refresh);
+    on("business", refreshSoon);  // DECISIONS 311: the homepage's suggestion, shown in the progress box
     on("log", (data) => addLog(data.message));
     on("done", refresh);
     on("end", (data) => { current = data.audit; closeStream(); draw(); loadHistory(); });
@@ -1052,12 +1100,32 @@ async function showOverview(box, view) {
     el("section", { class: "card summary", "aria-labelledby": "summary-title" }, sectionLabel(1, "overview.title"),
       el("h1", { class: "verdict", id: "summary-title", text: data.headline }),
       el("div", { class: "kpis" }, data.kpis.map(kpi)),
+      businessBox(view, data.business, () => showOverview(box, view)),
       data.reassessed ? el("p", { class: "muted small", text: data.reassessed }) : null),
     el("section", { class: "card fixes", "aria-labelledby": "fixes-title" }, sectionLabel(2, "fixes.title"),
       el("h2", { id: "fixes-title", text: data.fixes.length ? T("fixes.heading", { count: first.length }) : T("fixes.none") }),
       el("ol", { class: "fix-list" }, first.map(fixRow)),
       rest.length ? el("details", { class: "more" }, el("summary", { text: T("fixes.more", { count: rest.length }) }), el("ol", { class: "fix-list" }, rest.map(fixRow))) : null,
       data.notes ? el("p", { class: "muted small", text: T("fixes.notes", { count: data.notes }) }) : null));
+}
+
+/* DECISIONS 311: the business type the summary and key pages use, why, and a dropdown to change it. Saved beside the
+   audit; the summary, key pages, team report and appendix are made again from the saved report, nothing is requested. */
+function businessBox(view, info, redraw) {
+  if (!info) return null;
+  const id = "rb" + String(view.audit.id).slice(0, 8);
+  const status = el("p", { class: "ok-text small", role: "status" });
+  const change = async (value) => {
+    const answer = await guarded(() => api("POST", "/audits/" + view.audit.id + "/business-type", { id: value }));
+    if (!answer) return;
+    status.textContent = answer.message || "";
+    await redraw();
+  };
+  return el("div", { class: "business-box" },
+    el("p", { class: "small" }, el("strong", { text: info.line })),
+    el("div", { class: "row" }, el("label", { class: "label", for: id, text: T("result.business.change") }),
+      businessSelect(id, info.choices, info.chosen_by === "user" ? info.id : "auto", true, change)),
+    info.not_found ? el("p", { class: "muted small", text: info.not_found }) : null, status);
 }
 
 /* "Önce bunları kontrol edin" (Teyit edin, DECISIONS 301, 309, 310). Optional: an unchecked finding stays out of the

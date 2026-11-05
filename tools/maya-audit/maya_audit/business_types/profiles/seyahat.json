@@ -1,0 +1,233 @@
+{
+ "id": "seyahat",
+ "order": 12,
+ "label": {
+  "tr": "Seyahat / rezervasyon",
+  "en": "Travel / booking"
+ },
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "suggest": {
+  "schema": [
+   "Hotel",
+   "LodgingBusiness",
+   "TravelAgency",
+   "TouristTrip",
+   "TouristDestination",
+   "Resort"
+  ],
+  "platforms": [],
+  "url": [
+   "otel",
+   "oteller",
+   "tur",
+   "turlar",
+   "tatil",
+   "destinasyon",
+   "erken-rezervasyon",
+   "yurtdisi-turlari",
+   "hotels",
+   "tours"
+  ],
+  "words": [
+   "oteller",
+   "turlar",
+   "tatil",
+   "yurt dışı",
+   "erken rezervasyon",
+   "destinasyonlar"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "listings",
+   "label": {
+    "tr": "Destinasyon, otel ve tur listeleri",
+    "en": "Destination, hotel and tour lists"
+   },
+   "citable": false,
+   "generic": [
+    "category"
+   ],
+   "signals": {
+    "url": [
+     "oteller/",
+     "turlar/",
+     "destinasyonlar",
+     "tatil",
+     "yurtdisi-turlari",
+     "yurtici-turlari",
+     "bolgeler",
+     "hotels/",
+     "tours/",
+     "destinations",
+     "otelleri",
+     "turlari"
+    ],
+    "schema": [
+     "ItemList",
+     "CollectionPage",
+     "TouristDestination"
+    ],
+    "words": [
+     "oteller",
+     "turlar",
+     "destinasyon",
+     "tatil"
+    ],
+    "content": [
+     "list"
+    ]
+   }
+  },
+  {
+   "id": "detail",
+   "label": {
+    "tr": "Otel ve tur detayı",
+    "en": "Hotel and tour detail"
+   },
+   "citable": false,
+   "generic": [
+    "product"
+   ],
+   "signals": {
+    "url": [
+     "otel/*",
+     "oteller/*",
+     "tur/*",
+     "turlar/*",
+     "hotel/*",
+     "tour/*",
+     "hotels/*",
+     "tours/*"
+    ],
+    "schema": [
+     "Hotel",
+     "LodgingBusiness",
+     "TouristTrip",
+     "Trip",
+     "Resort",
+     "Product"
+    ],
+    "words": [
+     "oda tipleri",
+     "tur programı",
+     "otel olanakları"
+    ],
+    "content": [
+     "price"
+    ]
+   }
+  },
+  {
+   "id": "terms_help",
+   "label": {
+    "tr": "Rezervasyon koşulları ve yardım",
+    "en": "Booking terms and help"
+   },
+   "citable": false,
+   "generic": [
+    "policy"
+   ],
+   "signals": {
+    "url": [
+     "rezervasyon-kosullari",
+     "kosullar",
+     "iptal",
+     "yardim",
+     "sss",
+     "help",
+     "faq",
+     "booking-terms"
+    ],
+    "schema": [],
+    "words": [
+     "rezervasyon koşulları",
+     "iptal",
+     "iade",
+     "yardım",
+     "sss"
+    ],
+    "content": [
+     "faq"
+    ]
+   }
+  },
+  {
+   "id": "campaign",
+   "label": {
+    "tr": "Kampanyalar",
+    "en": "Campaigns"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "kampanya",
+     "kampanyalar",
+     "firsat",
+     "erken-rezervasyon",
+     "indirim",
+     "deals",
+     "offers"
+    ],
+    "schema": [],
+    "words": [
+     "kampanya",
+     "fırsat",
+     "erken rezervasyon",
+     "indirim"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ],
+   "added": "Stage 4: the homepage is at least 85 in every sector (owner); not in the sector list"
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber / SSS / blog",
+    "en": "Guide / FAQ / blog"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "rehber",
+     "gezi-rehberi",
+     "gezilecek-yerler",
+     "travel-guide",
+     "guide",
+     "haberler"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "blog",
+     "rehber",
+     "sıkça sorulan sorular",
+     "SSS",
+     "makaleler"
+    ],
+    "content": [
+     "faq"
+    ]
+   },
+   "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
+   "weight": 30
+  }
+ ]
+}

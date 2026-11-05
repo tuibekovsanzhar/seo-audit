@@ -1572,10 +1572,18 @@ class Builder:
                             "scope": self.group_scope(f) if g["severity"] != "Info" else self.scope_text(f)})
         more_confirm = max(0, len(sel["confirm"]) - CONFIRM_SHOWN)
         pages = []
+        business = sel.get("business_type") or None
+        try:
+            from maya_audit import business_types as bt  # type: ignore
+        except ImportError:
+            bt = None
         for p in sel["key_pages"]:
             self.fact(p["rank"], p["importance"], p["confirm"], *p["cards"])
+            # DECISIONS 311: the page type of the business type when one applies, else the general page type.
+            kind = (bt.type_label(business["id"], p.get("business_page_type"), lang)
+                    if bt and business and business["id"] != "diger" and p.get("business_page_type") else None)
             pages.append({"rank": p["rank"], "path": path_of(p["url"]) or urlsplit(p["url"]).netloc, "url": p["url"],
-                          "type": L["page_types"].get(str(p["page_type"]), "—"), "importance": p["importance"],
+                          "type": kind or L["page_types"].get(str(p["page_type"]), "—"), "importance": p["importance"],
                           "cards": ", ".join(f"{n:02d}" for n in p["cards"]) or "—",
                           "worst": L["severity"].get(p["worst"], "—") if p["worst"] else "—", "confirm": p["confirm"]})
         try:  # DECISIONS 306: a fix that renames addresses (redirects) is never a quick win
@@ -1587,7 +1595,17 @@ class Builder:
         name = L["appendix_file"]
         self.fact(*c.values(), more_confirm)
         reason = sel.get("key_pages_reason")
+        business_line, not_found = None, []
+        if business and "business_line" in L:
+            sug = business.get("suggestion") or {}
+            why = ((sug.get("reason") or {}).get(lang) or "").strip()
+            how = (L["business_how"]["user"] if business.get("chosen_by") == "user" else
+                   fmt(L["business_how"]["suggestion"], reason=why) if why else L["business_how"]["suggestion_plain"])
+            business_line = fmt(L["business_line"], label=(business.get("label") or {}).get(lang) or business["id"], how=how)
+            not_found = [fmt(L["kp_not_found"], label=(n.get("label") or {}).get(lang) or n.get("type"))
+                         for n in sel.get("key_pages_not_found") or []]
         return {"own_limits": limits, "confirm": confirm, "confirm_more": more_confirm, "key_pages": pages,
+                "business_line": business_line, "key_pages_not_found": not_found,
                 "key_pages_note": L["key_pages_empty"][reason] if reason and not pages else None,
                 "quick_wins": quick,
                 "appendix": {"file": name, "finding_ids": sorted(sel["by_finding"]), "counts": c,
@@ -1804,7 +1822,8 @@ def record_checks(rp, review, confirm, reject, *, by, seen, note=None, maya_src=
     # DECISIONS 309: a finding's check covers its "Teyit edin" group, as the web app's does.
     from maya_audit import client_selection  # type: ignore
     affected = load(cur.affected_path) if cur and cur.affected_path else None
-    by_finding = client_selection.select(report, affected, manual_review.confirmations(manual_review.load(review_path)))["by_finding"]
+    by_finding = client_selection.select(report, affected, manual_review.confirmations(manual_review.load(review_path)),
+                                         business=business_choice(review_path))["by_finding"]
     for result, keys in (("confirmed", confirm or []), ("rejected", reject or [])):
         for key in keys:
             ids = [key] if key in known else [i for i, f in known.items() if f.get("rule_id") == key]
@@ -1816,6 +1835,16 @@ def record_checks(rp, review, confirm, reject, *, by, seen, note=None, maya_src=
                 manual_review.record(review_path, manual_review.entry(fid, result, by=by, seen=seen, note=note,
                                                                       rule_id=known[fid].get("rule_id")))
     print(f"İnceleme dosyası güncellendi: {review_path}")
+
+
+def business_choice(review_path):
+    """The business type a person chose for this audit (DECISIONS 311): `business-type.json` beside its review file
+    (`<audit>/artifacts/`), or None (the report's own, else the suggestion)."""
+    try:
+        from maya_audit.business_types import load_choice  # type: ignore
+    except ImportError:
+        return None
+    return load_choice(Path(review_path).parent) if review_path else None
 
 
 def build_from_files(report_path, lang, *, rev=None, audit_id=None, source=None, reanalysis=False, maya_src=None,
@@ -1881,10 +1910,14 @@ def build_from_files(report_path, lang, *, rev=None, audit_id=None, source=None,
     except ImportError:
         raise BuildError("Maya Audit motorunda client_selection yok (DECISIONS 300); güncel motoru --maya-src ile verin.") from None
     confirmations = manual_review.confirmations(manual_review.load(review_path))
-    selection = client_selection.select(sealed.report, affected or None, confirmations)
+    business = business_choice(review_path)
+    selection = client_selection.select(sealed.report, affected or None, confirmations, business=business)
     data = Builder(sealed.report, lang, labels, catalog, w, rev, audit_id, reanalysis, affected,
                    cards=sealed.cards, selection=selection).build()
     data["_confirmations"] = confirmations
+    data["_business"] = business  # the person's business-type choice (DECISIONS 311), for the appendix's selection
+    data["_selection_business"] = selection.get("business_type")
+    data["_selection_not_found"] = selection.get("key_pages_not_found") or []
     # The engine that re-evaluated this saved audit (DECISIONS 308), None when the report was used as written.
     data["_engine"] = ((report.get("generation") or {}).get("analysis") or {}).get("engine")
     data["_reassess_failed"] = reassess_failed

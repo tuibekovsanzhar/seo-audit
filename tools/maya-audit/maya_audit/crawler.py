@@ -473,9 +473,9 @@ class Crawler:
             if page is not None:
                 frontier.save_page(page_record(page))
 
-        def progress(url: str | None = None) -> None:
+        def progress(url: str | None = None, **extra) -> None:
             if self.hooks.on_progress is not None:
-                self.hooks.emit("crawl", pages_fetched=earlier_counted + pages_counted, max_pages=earlier_counted + cfg.max_pages,
+                self.hooks.emit("crawl", **extra, pages_fetched=earlier_counted + pages_counted, max_pages=earlier_counted + cfg.max_pages,
                                 pages_discovered=sum(frontier.counts().values()), url=url,
                                 # Beside the pages the cap counts: this session's redirect hops and repeats after a 429,
                                 # and every request sent so far (robots.txt and sitemaps included).
@@ -693,6 +693,17 @@ class Crawler:
                                        for e in internal])
                 why = "homepage" if not home_seen else "key page" if url in self._key_urls else None
                 home_seen = True
+                if why == "homepage" and self.hooks.on_progress is not None:
+                    # DECISIONS 311: the business type this homepage suggests, for the progress box. A hint only: the
+                    # report's own suggestion is worked out again from every page read.
+                    try:
+                        from .business_types import suggest
+                        from .site_platform import _platform_hits
+                        found = suggest(page.analysis, internal, next(iter(_platform_hits(page)), None),
+                                        [url] + [e["target"] for e in internal])
+                        progress(url, business_suggestion={k: found[k] for k in ("id", "label", "reason")})
+                    except Exception:  # noqa: BLE001  never fails the crawl
+                        pass
                 # Live gap 3: the homepage's and key pages' hreflang alternates and canonical target go to the front
                 # (scratchpad.PRIORITY["alternate"]), so a 50-page crawl reads /en even when only <head> names it.
                 if why and not cfg.single_page:

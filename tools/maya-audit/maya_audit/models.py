@@ -240,6 +240,10 @@ class CrawlResult:
     # schema 1.24): the summary keys of `page_grouping`, plus `reader` and `pages` ({url: grouping record}). Maya's own
     # page records hold no content then, so `page_grouping` scores nothing. None when no reader read the site for Maya.
     reader_page_grouping: dict[str, Any] | None = None
+    # The business type the audit used (maya_audit.business_types, DECISIONS 311, schema 1.25): {id, label, chosen_by
+    # ("user" | "suggestion"), suggestion {id, label, reason, signals, scores}, page_types (the importance summary),
+    # not_found, version}. None in a report saved before it.
+    business_type: dict[str, Any] | None = None
     _sitemap_named_in: dict[str, str] = field(default_factory=dict, repr=False)
     # In memory only: the sitemap file that listed each sitemap URL, for the sitemap check's sample (DECISIONS 294).
     _sitemap_file_of: dict[str, str] = field(default_factory=dict, repr=False)

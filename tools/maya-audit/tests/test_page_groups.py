@@ -80,7 +80,8 @@ def _respond(pages):
 
 def _audit(pages=None):
     pages = pages or _shop()
-    config = CrawlConfig(**{**QUIET, "max_pages": 40, "sitemap_check_max": 5})
+    # Stage 3's own importance (DECISIONS 297): the business type "Diğer" keeps it exactly (DECISIONS 311).
+    config = CrawlConfig(**{**QUIET, "max_pages": 40, "sitemap_check_max": 5, "business_type": "diger"})
     return run_audit(SHOP + "/", config, httpx.MockTransport(_respond(pages)))
 
 
@@ -170,7 +171,7 @@ def test_a_made_up_shop_gets_templates_types_depths_and_importance_on_every_page
 def test_the_grouping_is_written_per_page_in_report_json_under_schema_1_23():
     outcome = _audit()
     report = build_report(outcome.result, outcome.gates, outcome.checks)
-    assert report["schema_version"] == "1.24"
+    assert report["schema_version"] == "1.25"
     pages = {p["url"]: p for p in report["crawl"]["pages"]}
     home = pages[SHOP + "/"]["grouping"]
     assert home["page_type"] == "home" and home["importance"] >= 80 and home["template_key"] == "/"
@@ -346,7 +347,7 @@ def test_ties_are_broken_by_products_listed_then_sitemap_order_never_by_address(
         if request.url.path == "/sitemap.xml":
             return httpx.Response(200, text=sitemap, headers={"content-type": "application/xml"})
         return base(request)
-    config = CrawlConfig(**{**QUIET, "max_pages": 40, "sitemap_check_max": 5})
+    config = CrawlConfig(**{**QUIET, "max_pages": 40, "sitemap_check_max": 5, "business_type": "diger"})
     g = _by_path(run_audit(SHOP + "/", config, httpx.MockTransport(respond)).result)
     cats = {path: g[path] for path in ("/collections/zeytin", "/collections/armut", "/collections/incir")}
     assert len({row["importance"] for row in cats.values()}) == 1  # a tie

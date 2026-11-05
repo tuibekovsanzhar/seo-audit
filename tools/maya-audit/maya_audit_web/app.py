@@ -31,7 +31,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from . import client_reports
 from . import API_VERSION, chat, comparison, demo, fc, followups, paid, pdf, practical, snapshot, summary, wording
 from .runner import (AFFECTED_JSON, MAX_KEY_PAGES, MAX_QUEUED, MODES, REPORT_JSON, REPORT_MD, STEPS, Engine, Runner,
-                     crawl_config, is_active, pages_saved, plan_shape, CRAWL_DB)
+                     crawl_config, is_active, pages_saved, plan_shape, write_file, CRAWL_DB)
 from .security import Guard, error_body, loopback_hosts
 from maya_audit import archives, crux, final, ownership, release_gate
 from maya_audit import brand as brand_module
@@ -174,6 +174,15 @@ class PlanIn(Strict):
     firecrawl_max_pages: int | None = Field(default=None, ge=1, le=500, description="The most pages Firecrawl may read for this audit. Left out: the plan's own page cap (at most 500).")
     firecrawl_proxy: str = Field(default="basic", pattern="^(basic|enhanced|auto)$", description="basic unless the site owner approved more.")
     firecrawl_owner_approved: bool = Field(default=False, description="The site owner has approved bypassing bot protection.")
+    business_type: str = Field(default="auto", max_length=40, pattern="^[a-z_]+$", description="The business type (İşletme türü, DECISIONS 311): auto (suggested once the homepage is read) or a profile id from GET /settings `business_types`. It weights page importance and key pages only.")
+
+
+class BusinessTypeIn(Strict):
+    id: str = Field(max_length=40, pattern="^[a-z_]+$", description="A profile id from GET /settings `business_types`, or auto for the suggestion.")
+
+
+class HiddenIn(Strict):
+    hidden: bool = Field(description="True hides the audit from the history list (its files stay); false shows it again.")
 
 
 # The largest amount a confirmation may name at all: the largest value any spending limit can be set to
@@ -598,6 +607,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             "paid": {**cost, "provider_balance": balance or {"known": False, "message": t("paid.balance.unknown")}},
             "firecrawl": reader,
             "paid_options": options, "archives": bool(extras.get("archives")),
+            # DECISIONS 311: the business type asked for, and the suggestion this site's last audit made (A1: the plan
+            # requests nothing, so a site never audited gets its suggestion once its homepage is read).
+            "business_type": business_plan(project_of(url), extras.get("business_type") or "auto"),
             "ownership": {**ownership_of(project_of(url)), "requested": bool(extras.get("verify_ownership"))},
             "search_data": {"requested": options["search_data"], "local_business": options["local_business"],
                             **market,
@@ -607,6 +619,33 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             "lines": [t("plan.intro")],
         }
         return document, fingerprint, cost["total_usd"]
+
+    def business_plan(project_id: str, chosen: str) -> dict[str, Any]:
+        from maya_audit import business_types as bt
+        lang = "en" if current_language() == "en" else "tr"
+        last = store.latest_reported(project_id)
+        prior = ((last or {}).get("progress") or {}).get("business_type") or {}
+        sug = prior.get("suggestion") if isinstance(prior.get("suggestion"), dict) else None
+        suggested = None
+        if sug and sug.get("id") in bt.profiles():
+            suggested = {"id": sug["id"], "label": bt.label(sug["id"], lang), "reason": (sug.get("reason") or {}).get(lang) or ""}
+        line = (t("plan.business.suggested.last", label=suggested["label"], reason=suggested["reason"]) if suggested
+                else t("plan.business.later"))
+        return {"chosen": chosen, "chosen_label": None if chosen == "auto" else bt.label(chosen, lang),
+                "suggested": suggested, "line": line, "choices": bt.choices(lang)}
+
+    def business_view(raw: dict[str, Any] | None) -> dict[str, Any] | None:
+        """A business type as the page shows it: {id, label, chosen_by, reason, line}."""
+        from maya_audit import business_types as bt
+        if not isinstance(raw, dict) or raw.get("id") not in bt.profiles():
+            return None
+        lang = "en" if current_language() == "en" else "tr"
+        sug = raw.get("suggestion") or {}
+        reason = (sug.get("reason") or {}).get(lang) or ""
+        label = bt.label(raw["id"], lang)
+        how = t("result.business.user") if raw.get("chosen_by") == "user" else t("result.business.suggested", reason=reason)
+        return {"id": raw["id"], "label": label, "chosen_by": raw.get("chosen_by"), "reason": reason,
+                "suggested_id": sug.get("id"), "line": t("result.business", label=label) + " (" + how + ")"}
 
     def switch_basis(switches: dict[str, Any] | None) -> dict[str, bool]:
         """What the fingerprint holds about the two switches: a changed switch is a changed plan. Written so that a plan
@@ -714,6 +753,10 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         chosen = language if language in STRINGS else current_language() if language is None else DEFAULT_LANGUAGE
         return {"language": chosen, "available": sorted(STRINGS), "strings": strings_module.table(chosen)}
 
+    def business_choices() -> list[dict[str, Any]]:
+        from maya_audit.business_types import choices
+        return choices("en" if current_language() == "en" else "tr")
+
     @api.get("/settings", summary="Safe public settings. No credentials, no file paths")
     def settings() -> dict[str, Any]:
         return {"api_version": API_VERSION, "language": current_language(), "languages": sorted(STRINGS), "demo": engine.demo,
@@ -721,6 +764,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                 "modes": [{"id": mode, "label": t(f"plan.mode.{mode}"), "page_cap": cap, "typical": typical(mode)}
                           for mode, cap in MODES.items()],
                 "max_key_pages": MAX_KEY_PAGES, "max_queued": MAX_QUEUED, "one_audit_at_a_time": True,
+                "business_types": business_choices(),
                 "plan_lifetime_minutes": PLAN_LIFETIME_S // 60, "report_schema": "1.x",
                 "paid": {"daily_cap_usd": paid.daily_cap(), "credentials_configured": engine.paid.credentials() is not None},
                 "audits_recovered_at_startup": runner.recovered}
@@ -742,6 +786,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
     @api.post("/plans", status_code=201, summary="Make a plan. Nothing is requested from the site or any provider")
     def create_plan(body: PlanIn) -> dict[str, Any]:
         url, plain, typed_http = target(body.url)
+        from maya_audit.business_types import valid as valid_business
+        if not valid_business(body.business_type):
+            raise ApiError(422, "invalid_business_type", t("error.invalid_business_type"))
         try:
             key_pages = chat.key_page_urls(url, body.key_pages, MAX_KEY_PAGES)
         except ValueError as exc:
@@ -758,7 +805,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                                                      {"search_data": body.search_data, "local_business": body.local_business and body.search_data,
                                                       "archives": body.archives, "verify_ownership": body.verify_ownership,
                                                       "market_default_accepted": body.market_default_accepted,
-                                                      "fast_check": body.fast_check, "external_links": body.external_links},
+                                                      "fast_check": body.fast_check, "external_links": body.external_links,
+                                                      "business_type": body.business_type},
                                                      brand=body.brand_name, country=body.country,
                                                      family=None if body.brand_family_domains is None else brand_family(body.brand_family_domains))
         plan = store.create_plan(project_id=document["project_id"], url=url, mode=body.mode, key_pages=key_pages,
@@ -826,9 +874,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             spent = (datetime.now(timezone.utc) - datetime.fromisoformat(audit["started_at"])).total_seconds()
             if usual["known"] and usual["seconds"] - spent >= 60:
                 minutes = max(1, round((usual["seconds"] - spent) / 60))
-                return {**found, "plain": t("time.left", minutes=minutes), "basis": "recent_runs", "runs": usual["runs"]}
+                return {**found, "plain": t("time.left", minutes=minutes), "basis": usual.get("basis", "recent_runs"), "runs": usual["runs"]}
             if usual["known"]:
-                return {**found, "plain": t("time.left.over"), "basis": "recent_runs", "runs": usual["runs"]}
+                return {**found, "plain": t("time.left.over"), "basis": usual.get("basis", "recent_runs"), "runs": usual["runs"]}
             return {**found, "plain": t("time.left.range", low=usual["low_minutes"], high=usual["high_minutes"]), "basis": "range"}
         return found
 
@@ -900,6 +948,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                          "firecrawl_gap_s": (progress.get("firecrawl") or {}).get("gap_s"),
                          "maya_gap_s": progress.get("maya_gap_s")},
             "current_url": progress.get("url") if is_active(audit) else None,
+            # DECISIONS 311: the suggestion as soon as the homepage is read, and the type the audit used.
+            "business": business_progress(audit),
             "address_note": progress.get("address_note"),
             "created_at": audit["created_at"], "started_at": audit["started_at"], "finished_at": audit["finished_at"],
             "elapsed_s": elapsed, "eta": eta(audit), "sessions": audit["sessions"],
@@ -916,6 +966,23 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                           "continuing": bool(audit["firecrawl"].get("continue")) and is_active(audit)},
             "has_report": report_path(audit["id"]).is_file(), "last_event_id": store.last_event_id(audit["id"]),
         }
+
+    def business_progress(audit: dict[str, Any]) -> dict[str, Any] | None:
+        from maya_audit import business_types as bt
+        progress = audit["progress"] or {}
+        lang = "en" if current_language() == "en" else "tr"
+        early = progress.get("business_suggestion")
+        chosen = (audit.get("config") or {}).get("business_type") or "auto"
+        out = {"chosen": chosen}
+        if isinstance(early, dict) and early.get("id") in bt.profiles():
+            out["suggested_line"] = t("job.business.suggested", label=bt.label(early["id"], lang),
+                                      reason=(early.get("reason") or {}).get(lang) or "")
+        if chosen != "auto" and chosen in bt.profiles():
+            out["chosen_line"] = t("job.business.chosen", label=bt.label(chosen, lang))
+        final_type = business_view(progress.get("business_type"))
+        if final_type:
+            out["final"] = final_type
+        return out if len(out) > 1 else None
 
     def backlinks_view(audit: dict[str, Any], report: dict[str, Any]) -> dict[str, Any] | None:
         if report.get("dataforseo"):
@@ -1031,6 +1098,10 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         if store.count_active() >= MAX_QUEUED + 1:
             raise ApiError(429, "queue_full", t("job.queue_full", limit=MAX_QUEUED))
         config = crawl_config(engine, {**plan, "verification": plan["document"].get("ownership")}, Path(CRAWL_DB), resume=False).snapshot()
+        # DECISIONS 311 (6): the engine this audit runs with, so only its own kind of runs set the time shown later.
+        from maya_audit import __version__ as engine_version
+        from maya_audit.timeplan import SPEED_VERSION
+        flags = {**flags, "speed_version": SPEED_VERSION, "engine_version": engine_version}
         audit, created = store.create_audit(plan, approved, config, use, current_language(), flags)
         if created:
             if body.message:
@@ -1054,24 +1125,44 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         return {**audit['analysis'], 'result_url': '/api/v1/audits/'+analysis_id+'/summary'}
 
     TYPICAL_RUNS = 5  # DECISIONS 310: the time shown is the median of this many recent finished audits of the mode
+    MIN_TYPICAL_RUNS = 3  # DECISIONS 311 (6): fewer such runs than this, and the mode's default is shown
+    DEFAULT_MINUTES = {"single": 1, "quick": 10, "standard": 25}  # the v0.3 time goals (docs/ROADMAP-v0.3.md)
+    COUNTED_STOPS = ("page_cap", "exhausted")  # a run that read what it set out to; not stopped, blocked or rate-limited
+
+    def counts_for_time(a: dict[str, Any], mode: str) -> bool:
+        """DECISIONS 311 (6): a finished one-session run of this mode, made with the current engine (its speed mark),
+        that stopped at its page cap or ran out of pages, and read enough pages to be an ordinary run."""
+        from maya_audit.timeplan import SPEED_VERSION
+        if a["mode"] != mode or a["state"] != "finished" or not a.get("started_at") or not a.get("finished_at"):
+            return False
+        if int(a.get("sessions") or 1) != 1 or (a.get("flags") or {}).get("speed_version") != SPEED_VERSION:
+            return False
+        if a.get("crawl_stop") not in COUNTED_STOPS:
+            return False
+        cap, read = MODES.get(mode, 1), int((a.get("progress") or {}).get("pages_checked") or 0)
+        return not (read < min(10, cap) or read < 0.2 * cap)
 
     def typical(mode: str) -> dict[str, Any]:
-        """How long an audit of this mode took lately: the median of the last finished runs (one session each), or,
-        with none yet, a range from the plan's own bound. Said with "about"; never a promise."""
-        rows, _ = store.audits(status="finished", limit=100)
+        """How long an audit of this mode took lately: the median of the last finished runs that count
+        (`counts_for_time`), or, with fewer than MIN_TYPICAL_RUNS of them, the mode's default. Said with "about"."""
+        rows, _ = store.audits(status="finished", limit=200)
         seconds = []
         for a in rows:
-            if a["mode"] != mode or not a.get("started_at") or not a.get("finished_at") or int(a.get("sessions") or 1) != 1:
+            if not counts_for_time(a, mode):
                 continue
             took = (datetime.fromisoformat(a["finished_at"]) - datetime.fromisoformat(a["started_at"])).total_seconds()
             if took >= 0:  # a run within one second (a demo site) counts as one
                 seconds.append(took)
             if len(seconds) >= TYPICAL_RUNS:
                 break
+        if len(seconds) < MIN_TYPICAL_RUNS:
+            minutes = DEFAULT_MINUTES.get(mode, 10)
+            return {"known": True, "basis": "default", "seconds": minutes * 60, "runs": len(seconds), "minutes": minutes,
+                    "label": t("time.default", minutes=minutes), "short": t("time.default.short", minutes=minutes)}
         if seconds:
             middle = sorted(seconds)[len(seconds) // 2] if len(seconds) % 2 else sum(sorted(seconds)[len(seconds) // 2 - 1:len(seconds) // 2 + 1]) / 2
             minutes = max(1, round(middle / 60))
-            return {"known": True, "seconds": round(middle), "runs": len(seconds), "minutes": minutes,
+            return {"known": True, "basis": "recent_runs", "seconds": round(middle), "runs": len(seconds), "minutes": minutes,
                     "label": t("time.typical", minutes=minutes, runs=len(seconds)), "short": t("time.about", minutes=minutes)}
         high = max(1, int(plan_shape(engine, mode, []).get("up_to_minutes") or 1))
         low = max(1, round(high / 4))
@@ -1139,14 +1230,17 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
     @api.get("/audits", summary="History, newest first")
     def list_audits(q: str = Query(default="", max_length=200), domain: str = Query(default="", max_length=253),
                     status: str = Query(default="", pattern="^(|queued|running|stopping|stopped|interrupted|finished|failed)$"),
-                    limit: int = Query(default=30, ge=1, le=100), offset: int = Query(default=0, ge=0, le=100_000)) -> dict[str, Any]:
-        rows, total = store.audits(query=q, domain=domain.lower().removeprefix("www."), status=status, limit=limit, offset=offset)
-        return {"total": total, "limit": limit, "offset": offset, "audits": [
+                    limit: int = Query(default=30, ge=1, le=100), offset: int = Query(default=0, ge=0, le=100_000),
+                    hidden: bool = Query(default=False, description="True lists the hidden audits only (DECISIONS 311).")) -> dict[str, Any]:
+        rows, total = store.audits(query=q, domain=domain.lower().removeprefix("www."), status=status, limit=limit, offset=offset,
+                                   hidden=hidden)
+        _, hidden_total = store.audits(query=q, domain=domain.lower().removeprefix("www."), status=status, limit=1, hidden=True)
+        return {"total": total, "limit": limit, "offset": offset, "hidden_total": hidden_total, "audits": [
             {"id": a["id"], "project_id": a["project_id"], "url": a["url"], "host": urlsplit(a["url"]).hostname, "mode": a["mode"],
              "state": a["state"], "state_label": t(f"job.state.{a['state']}"), "active": is_active(a),
              "outcome": a["outcome"], "outcome_label": summary.outcome_label(a["outcome"], a.get("outcome_reason")),
              "pages_checked": a["progress"].get("pages_checked", 0), "created_at": a["created_at"],
-             "finished_at": a["finished_at"], "short_id": a["id"][:8], **(read := reading_of(a)),
+             "finished_at": a["finished_at"], "short_id": a["id"][:8], "hidden": bool(a.get("hidden")), **(read := reading_of(a)),
              **plain_status(a, read)} for a in rows]}
 
     @api.get("/audits/{audit_id}", summary="One audit: lifecycle, outcome, steps, counters")
@@ -1449,12 +1543,21 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         from maya_audit import manual_review
         return artifact_folder(audit["id"]) / manual_review.NAME
 
+    def business_path(audit: dict[str, Any]) -> Path:
+        from maya_audit.business_types import CHOICE_FILE
+        return artifact_folder(audit["id"]) / CHOICE_FILE
+
+    def business_choice(audit: dict[str, Any]) -> str | None:
+        from maya_audit.business_types import load_choice
+        return load_choice(artifact_folder(audit["id"]))
+
     def client_selection_of(audit: dict[str, Any], report: dict[str, Any], affected_urls: dict | None = None) -> dict[str, Any]:
         """What the client report shows and the appendix lists (DECISIONS 300): one selection for both, with the
-        owner's manual checks of this audit (review.json, DECISIONS 301)."""
+        owner's manual checks of this audit (review.json, DECISIONS 301) and the business type chosen (DECISIONS 311)."""
         from maya_audit import client_selection, manual_review
         return client_selection.select(report, affected(audit["id"]) if affected_urls is None else affected_urls,
-                                       manual_review.confirmations(manual_review.load(review_path(audit))))
+                                       manual_review.confirmations(manual_review.load(review_path(audit))),
+                                       business=business_choice(audit))
 
     def current_of(audit: dict[str, Any]):
         """The saved audit re-evaluated with the current engine (DECISIONS 308): a derived copy beside the audit's
@@ -1497,7 +1600,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         from .team_report import service
         report, aff = now if now is not None else current_report(audit)[:2]
         return service.appendix(report, aff or None, manual_review.confirmations(manual_review.load(review_path(audit))),
-                                current_language())
+                                current_language(), business_choice(audit))
 
     def team_report(audit: dict[str, Any], lang: str):
         """The team report of this audit in `lang` (DECISIONS 307), rebuilt on every request so a manual check counts at
@@ -1807,7 +1910,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         cur = current_of(audit)
         review = review_path(audit)
         stamp = lambda p: (p.stat().st_size, p.stat().st_mtime_ns) if p and Path(p).is_file() else None  # noqa: E731
-        key = (audit["id"], lang, str(cur.report_path), stamp(cur.report_path), stamp(review))
+        key = (audit["id"], lang, str(cur.report_path), stamp(cur.report_path), stamp(review), stamp(business_path(audit)))
         if key in overview_cache:
             return overview_cache[key]
         try:
@@ -1831,11 +1934,54 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                # each "Teyit edin" row's scope as the PDF prints it, by the row's first finding (DECISIONS 310)
                "confirm_scopes": {row["finding_ids"][0]: row.get("scope") for row in data.get("confirm") or [] if row.get("finding_ids")},
                "notes": len(notes), "waiting": waiting, "reassessed": next((line["v"] for line in data["provenance"]["lines"]
-                                                                            if line["k"] in ("Değerlendirme:", "Assessment:")), None)}
+                                                                            if line["k"] in ("Değerlendirme:", "Assessment:")), None),
+               # DECISIONS 311: the business type the summary and key pages use, the choices and the "not found" line.
+               "business": overview_business(data, lang)}
         if len(overview_cache) > 20:
             overview_cache.clear()
         overview_cache[key] = out
         return out
+
+    def overview_business(data: dict[str, Any], lang: str) -> dict[str, Any] | None:
+        from maya_audit import business_types as bt
+        sel = (data.get("_selection_business") or {})
+        if not sel.get("id"):
+            return None
+        sug = sel.get("suggestion") or {}
+        reason = (sug.get("reason") or {}).get(lang) or ""
+        label = bt.label(sel["id"], lang)
+        say = lambda key, **values: strings_module.t(key, lang, **values)  # noqa: E731  the language asked for
+        how = say("result.business.user") if sel.get("chosen_by") == "user" else say("result.business.suggested", reason=reason)
+        missing = [((n.get("label") or {}).get(lang) or n.get("type")) for n in data.get("_selection_not_found") or []]
+        return {"id": sel["id"], "label": label, "chosen_by": sel.get("chosen_by"), "suggested_id": sug.get("id"),
+                "line": say("result.business", label=label) + " (" + how + ")",
+                "not_found": say("result.business.not_found", types=", ".join(missing)) if missing else None,
+                "choices": bt.choices(lang)}
+
+    @api.post("/audits/{audit_id}/business-type", summary="Choose this audit's business type; auto goes back to the suggestion. Nothing is requested")
+    def choose_business_type(audit_id: str, body: BusinessTypeIn) -> dict[str, Any]:
+        """DECISIONS 311: saved beside the audit (`artifacts/business-type.json`, like review.json); report.json is never
+        written. The summary, key pages, team report and appendix read it at once."""
+        from maya_audit import business_types as bt
+        audit = need_audit(audit_id)
+        if not bt.valid(body.id):
+            raise ApiError(422, "invalid_business_type", t("error.invalid_business_type"))
+        path = business_path(audit)
+        if body.id == "auto":
+            path.unlink(missing_ok=True)
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            write_file(path, json.dumps({"id": body.id, "chosen_at": now(), "version": bt.VERSION}, ensure_ascii=False) + "\n")
+        lang = "en" if current_language() == "en" else "tr"
+        return {"saved": body.id, "file": str(path),
+                "message": t("result.business.saved", label=bt.label(body.id if body.id != "auto" else None, lang))
+                if body.id != "auto" else None}
+
+    @api.put("/audits/{audit_id}/hidden", summary="Hide an audit from the history list, or show it again. Its files stay")
+    def hide_audit(audit_id: str, body: HiddenIn) -> dict[str, Any]:
+        audit = need_audit(audit_id)
+        store.update_audit(audit["id"], hidden=1 if body.hidden else 0)
+        return {"id": audit["id"], "hidden": body.hidden}
 
     @api.get("/audits/{audit_id}/overview", summary="The results page's summary and what to fix: the team report's own words")
     def get_overview(audit_id: str, lang: str | None = Query(default=None, pattern="^(tr|en)$")) -> dict[str, Any]:

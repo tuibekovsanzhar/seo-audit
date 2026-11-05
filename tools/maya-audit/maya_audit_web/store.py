@@ -106,7 +106,9 @@ class Store:
                                     ("audits", "firecrawl", "TEXT NOT NULL DEFAULT '{}'"),
                                     ("audits", "language", "TEXT NOT NULL DEFAULT 'en'"),
                                     # Decisions taken when the audit was started (today: to run without paid data).
-                                    ("audits", "flags", "TEXT NOT NULL DEFAULT '{}'")):
+                                    ("audits", "flags", "TEXT NOT NULL DEFAULT '{}'"),
+                                    # Hidden from the history list by the person (DECISIONS 311); the files stay.
+                                    ("audits", "hidden", "INTEGER NOT NULL DEFAULT 0")):
             if column not in {row["name"] for row in self._db.execute(f"PRAGMA table_info({table})")}:
                 self._db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
 
@@ -224,10 +226,13 @@ class Store:
     def audit(self, audit_id: str) -> dict[str, Any] | None:
         return self._one("SELECT * FROM audits WHERE id = ?", (audit_id,))
 
-    def audits(self, *, query: str = "", domain: str = "", status: str = "", limit: int = 50, offset: int = 0
-               ) -> tuple[list[dict[str, Any]], int]:
-        """Newest first, with the total for the same filter."""
+    def audits(self, *, query: str = "", domain: str = "", status: str = "", limit: int = 50, offset: int = 0,
+               hidden: bool | None = None) -> tuple[list[dict[str, Any]], int]:
+        """Newest first, with the total for the same filter. `hidden`: None all, False the shown ones, True the hidden."""
         where, args = [], []
+        if hidden is not None:
+            where.append("hidden = ?")
+            args.append(1 if hidden else 0)
         if query.strip():
             like = "%" + query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
             where.append("(url LIKE ? ESCAPE '\\' OR project_id LIKE ? ESCAPE '\\' OR EXISTS (SELECT 1 FROM messages m "
@@ -256,7 +261,7 @@ class Store:
 
     def update_audit(self, audit_id: str, **fields: Any) -> None:
         allowed = {"state", "outcome", "outcome_reason", "crawl_stop", "error_code", "progress", "sessions", "paid_state",
-                   "approved_usd", "started_at", "finished_at", "queue_seq", "url", "firecrawl"}
+                   "approved_usd", "started_at", "finished_at", "queue_seq", "url", "firecrawl", "hidden"}
         sets, args = [], []
         for key, value in fields.items():
             if key not in allowed:

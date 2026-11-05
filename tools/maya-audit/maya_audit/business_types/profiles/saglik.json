@@ -1,0 +1,292 @@
+{
+ "id": "saglik",
+ "order": 5,
+ "label": {
+  "tr": "Sağlık / klinikler",
+  "en": "Health / clinics"
+ },
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "suggest": {
+  "schema": [
+   "Hospital",
+   "MedicalClinic",
+   "MedicalOrganization",
+   "Physician",
+   "MedicalBusiness",
+   "Dentist"
+  ],
+  "platforms": [],
+  "url": [
+   "doktorlar",
+   "doktor",
+   "doktorlarimiz",
+   "hekimlerimiz",
+   "bolumler",
+   "tedavi",
+   "tedaviler",
+   "randevu",
+   "hastane",
+   "klinik",
+   "doctors",
+   "treatments",
+   "departments"
+  ],
+  "words": [
+   "doktorlarımız",
+   "hekimlerimiz",
+   "bölümler",
+   "tedaviler",
+   "randevu",
+   "hastane",
+   "klinik",
+   "anlaşmalı kurumlar",
+   "check-up"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "treatment",
+   "label": {
+    "tr": "Tedavi ve bölüm",
+    "en": "Treatment and department"
+   },
+   "citable": false,
+   "generic": [
+    "category"
+   ],
+   "signals": {
+    "url": [
+     "tedavi",
+     "tedaviler",
+     "bolum",
+     "bolumler",
+     "brans",
+     "branslar",
+     "birim",
+     "birimler",
+     "hastalik",
+     "hastaliklar",
+     "treatments",
+     "treatment",
+     "departments",
+     "department",
+     "specialties",
+     "check-up"
+    ],
+    "schema": [
+     "MedicalSpecialty",
+     "MedicalProcedure",
+     "MedicalTherapy",
+     "MedicalCondition"
+    ],
+    "words": [
+     "tedavi",
+     "bölüm",
+     "branş",
+     "hastalık",
+     "tanı",
+     "check-up",
+     "treatment",
+     "department"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "doctors",
+   "label": {
+    "tr": "Doktor ve ekip",
+    "en": "Doctors and team"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "doktor",
+     "doktorlar",
+     "doktorlarimiz",
+     "hekim",
+     "hekimler",
+     "hekimlerimiz",
+     "ekibimiz",
+     "kadromuz",
+     "doctors",
+     "doctor",
+     "physicians",
+     "our-team"
+    ],
+    "schema": [
+     "Physician"
+    ],
+    "words": [
+     "doktor",
+     "hekim",
+     "uzm. dr",
+     "op. dr",
+     "prof. dr",
+     "doç. dr",
+     "ekibimiz",
+     "doctor"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "clinic",
+   "label": {
+    "tr": "Klinik ve konum",
+    "en": "Clinic and location"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "klinik",
+     "klinikler",
+     "hastane",
+     "hastaneler",
+     "hastanelerimiz",
+     "sube",
+     "subeler",
+     "lokasyon",
+     "konum",
+     "ulasim",
+     "locations",
+     "hospitals",
+     "clinics"
+    ],
+    "schema": [
+     "Hospital",
+     "MedicalClinic",
+     "Place"
+    ],
+    "words": [
+     "hastanemiz",
+     "klinik",
+     "şube",
+     "konum",
+     "ulaşım",
+     "yol tarifi",
+     "location"
+    ],
+    "content": [
+     "map"
+    ]
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ]
+  },
+  {
+   "id": "appointment",
+   "label": {
+    "tr": "Randevu ve iletişim",
+    "en": "Appointment and contact"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "randevu",
+     "online-randevu",
+     "iletisim",
+     "appointment",
+     "contact",
+     "bize-ulasin"
+    ],
+    "schema": [
+     "ContactPage"
+    ],
+    "words": [
+     "randevu",
+     "iletişim",
+     "bize ulaşın",
+     "appointment",
+     "contact"
+    ],
+    "content": [
+     "form",
+     "map"
+    ]
+   }
+  },
+  {
+   "id": "insurers",
+   "label": {
+    "tr": "Anlaşmalı kurumlar",
+    "en": "Contracted insurers"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "anlasmali-kurumlar",
+     "anlasmali-kurum",
+     "anlasmali-sigortalar",
+     "ozel-sigorta",
+     "sigorta",
+     "insurance"
+    ],
+    "schema": [],
+    "words": [
+     "anlaşmalı kurum",
+     "anlaşmalı sigorta",
+     "özel sigorta",
+     "sgk",
+     "insurance"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber / SSS / blog",
+    "en": "Guide / FAQ / blog"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "saglik-rehberi",
+     "rehber",
+     "makaleler",
+     "makale",
+     "haberler",
+     "saglik-bilgisi",
+     "guide",
+     "articles",
+     "news",
+     "sss",
+     "faq"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "blog",
+     "rehber",
+     "sıkça sorulan sorular",
+     "SSS",
+     "makaleler"
+    ],
+    "content": [
+     "faq"
+    ]
+   },
+   "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
+   "weight": 30
+  }
+ ]
+}

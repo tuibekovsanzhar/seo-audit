@@ -1,0 +1,221 @@
+{
+ "id": "ev_hizmetleri",
+ "order": 10,
+ "label": {
+  "tr": "Ev hizmetleri",
+  "en": "Home services"
+ },
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "suggest": {
+  "schema": [
+   "HomeAndConstructionBusiness",
+   "HousePainter",
+   "Plumber",
+   "Electrician",
+   "Locksmith",
+   "MovingCompany",
+   "RoofingContractor",
+   "HVACBusiness"
+  ],
+  "platforms": [],
+  "url": [
+   "temizlik",
+   "ev-temizligi",
+   "nakliyat",
+   "evden-eve",
+   "tadilat",
+   "boya-badana",
+   "tesisat",
+   "hizmet-bolgeleri"
+  ],
+  "words": [
+   "temizlik",
+   "nakliyat",
+   "evden eve",
+   "tadilat",
+   "tesisat",
+   "hizmet bölgeleri"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "service_location",
+   "label": {
+    "tr": "Hizmet ve lokasyon",
+    "en": "Service and location"
+   },
+   "citable": false,
+   "generic": [
+    "category"
+   ],
+   "signals": {
+    "url": [
+     "hizmetler",
+     "hizmet",
+     "temizlik",
+     "nakliyat",
+     "tadilat",
+     "boya",
+     "tesisat",
+     "bolgeler",
+     "ilceler",
+     "lokasyon",
+     "services",
+     "areas"
+    ],
+    "schema": [
+     "Service",
+     "LocalBusiness",
+     "Place"
+    ],
+    "words": [
+     "hizmetlerimiz",
+     "temizlik",
+     "nakliyat",
+     "tadilat",
+     "hizmet bölgeleri"
+    ],
+    "content": [
+     "map"
+    ]
+   }
+  },
+  {
+   "id": "contact",
+   "label": {
+    "tr": "İletişim",
+    "en": "Contact"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "iletisim",
+     "bize-ulasin",
+     "contact"
+    ],
+    "schema": [
+     "ContactPage"
+    ],
+    "words": [
+     "iletişim",
+     "bize ulaşın"
+    ],
+    "content": [
+     "form",
+     "map"
+    ]
+   }
+  },
+  {
+   "id": "booking",
+   "label": {
+    "tr": "Rezervasyon",
+    "en": "Booking"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "rezervasyon",
+     "randevu",
+     "siparis",
+     "booking",
+     "book",
+     "teklif-al"
+    ],
+    "schema": [],
+    "words": [
+     "rezervasyon",
+     "randevu",
+     "hemen sipariş",
+     "teklif al"
+    ],
+    "content": [
+     "form"
+    ]
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ]
+  },
+  {
+   "id": "help",
+   "label": {
+    "tr": "Yardım",
+    "en": "Help"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "yardim",
+     "sss",
+     "sikca-sorulan-sorular",
+     "help",
+     "faq"
+    ],
+    "schema": [],
+    "words": [
+     "yardım",
+     "sss",
+     "sıkça sorulan"
+    ],
+    "content": [
+     "faq"
+    ]
+   }
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber / SSS / blog",
+    "en": "Guide / FAQ / blog"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "blogs",
+     "rehber",
+     "haberler",
+     "makale",
+     "makaleler",
+     "sss",
+     "sikca-sorulan-sorular",
+     "faq",
+     "guide",
+     "guides",
+     "articles",
+     "news"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "blog",
+     "rehber",
+     "sıkça sorulan sorular",
+     "SSS",
+     "makaleler"
+    ],
+    "content": [
+     "faq"
+    ]
+   },
+   "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
+   "weight": 30
+  }
+ ]
+}

@@ -1,0 +1,17 @@
+{
+ "id": "diger",
+ "order": 14,
+ "label": {
+  "tr": "Diğer",
+  "en": "Other"
+ },
+ "source": "owner, 2026-11-05 (Stage 4 request)",
+ "note": "Today's behaviour: Stage 3 importance (50% links, 25% depth, 25% general page type), no profile page types.",
+ "suggest": {
+  "schema": [],
+  "platforms": [],
+  "url": [],
+  "words": []
+ },
+ "page_types": []
+}

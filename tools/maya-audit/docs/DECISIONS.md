@@ -3507,3 +3507,67 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Tests: `tests/test_web_ux_310.py` (9: the form's validation, save and undo through the routes and in Chromium, the
      history list, recent-run times and the range, the summary = the team report's, Turkish by default);
      `test_web_firecrawl`, `test_team_report`, `test_v03_client_report` follow the new page.
+311. **Business types ("İşletme türü"), v0.3 stage 4 (Owner, 2026-11-05: the plan approved with A1, 50/35/15, notes
+     for the top 3, the early suggestion in the progress box, guesses marked in the signal table, check switches left
+     for Stage 7; the signals, scores, thresholds, the unmatched weight and the layout are agent defaults).**
+     New `maya_audit/business_types/` (profiles in `profiles/*.json`), called by `final.settle` after the page grouping
+     and by `client_selection.grouping` for a saved report. It sends no request. **No check, severity, confidence or
+     release-gate decision reads it**; importance orders cards (reach) and key pages only
+     (`test_a_profile_changes_importance_and_key_pages_never_a_finding_or_a_severity`).
+     (1) *Profiles.* One per sector of the owner's file (`docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx`,
+     12 sectors, page types in its order), "Restoran / kafe" (owner: Menü, Şube ve konum, Rezervasyon / sipariş, Ana
+     sayfa, İletişim) and "Diğer". Weights by rank 100/85/70/55/40/30 (`RANK_WEIGHTS`, per profile `weights`); the
+     homepage at least 85 (added at 85 where the sector list has none: Yatırım, Kart, Otomotiv, B2B SaaS, Su arıtma,
+     Güvenlik, Gıda, Seyahat); "Rehber / SSS / blog" added at 30, citable, where a sector has no guide (Otomotiv's
+     "Teknik rehber" and B2B SaaS's "Rehber" keep their rank and are flagged citable). Agent defaults: a page that matches
+     no type 25, policy 15, utility 0 (as Stage 3). Finance is one group in the UI (Bankacılık, Yatırım hizmetleri, Kart
+     ve sadakat programları).
+     (2) *Page type per profile* (`business_page_type`, Stage 3's `page_type` kept): points per kind of signal, each kind
+     once: address word 4, structured-data type 3, a word in the title or H1 2, a word in the menu or link text pointing
+     to the page 2, a content signal 1 (form, price, map, calculator, FAQ, table, list); a type needs 3, ties go to the
+     higher rank. The homepage, utility pages and policy pages come first (a profile's help type may take policy pages:
+     E-ticaret "Yardım ve güven", Güvenlik "Destek ve koşullar", Seyahat "Rezervasyon koşulları"); without a match the
+     Stage 3 type maps to the profile's type that lists it, else "other". Section headings (H2+) and FAQ markup do not
+     name a page (enpara: product pages with an FAQ block had become "Destek"); a structured-data type on half or more of
+     the pages read is a site default and is ignored (adile: Article on 35 of 36 pages). The signals and their status
+     (guess or seen on a saved audit): `docs/business-types/signals.md` and `signals.xlsx`
+     (`tools/business_types_table.py`, from the profiles and `docs/business-types/seen.json`).
+     (3) *Importance* = round(0.5 x profile weight + 0.35 x internal link score + 0.15 x click-depth score), with Stage
+     3's caps (not indexable or utility 20, footer-only policy 35). `importance_source`: `links` ("Diğer", and every
+     report before 1.25) or `profile:<id>`; Stage 3's values stay in `importance_links` / `importance_rank_links`. "Diğer"
+     gives Stage 3's importance, rank, cards, priorities and key pages exactly (`test_other_gives_today_s_results_exactly`).
+     A third source, `maya_top_pages` (Maya dashboard TOP PAGES, GSC clicks), is the next step (BACKLOG).
+     (4) *Suggestion* (`suggest`): per profile, homepage structured data +4, platform +4, the share of the site's
+     addresses with the profile's words (+4 at 10% or more, +3 at 3 or 5%, else +1), homepage menu words +1 each (at
+     most 4); the best needs 4 and a lead of 1, else "Diğer" ("Net bir işaret yok (en yakın: …)"). "Offer" markup does not
+     point to E-ticaret (banks and SaaS use it). The person confirms or changes it: CLI `--business-type`
+     (`CrawlConfig.business_type`, "auto" by default); the web app's new-audit form ("İşletme türü", default "Otomatik
+     öner"); the plan (A1: the plan requests nothing, so it shows the suggestion of this site's last audit, else
+     "Önerilen tür ana sayfa okunduğunda belirlenecek", with a dropdown that makes a new plan); the progress box ("Önerilen
+     işletme türü: … (neden: …)" as soon as the homepage is read: a `business_suggestion` progress event from the crawler,
+     a hint only); the results summary (the type, why, "Değiştir": POST `/audits/{id}/business-type` writes
+     `artifacts/business-type.json` beside review.json, `auto` removes it; report.json is never written). The report keeps
+     `crawl.business_type` (schema **1.25**: id, label, chosen_by, suggestion with reason, the importance summary,
+     not_found); a saved report without it gets the suggestion from its saved data. The team report's page 6 names it
+     ("İşletme türü: Bankacılık (önerildi; neden: …)") and its key-pages table uses the profile's page types.
+     (5) *Not found:* the profile's first three page types no page read was typed as: "Fiyat listesi sayfası okunan
+     sayfalar arasında bulunamadı (sitede olmadığı anlamına gelmez)" in the team report's key-pages card and the web
+     summary; none on a low-coverage audit (DECISIONS 309).
+     (6) *Also:* time estimates count only finished one-session runs of the mode with the current engine's speed mark
+     (`timeplan.SPEED_VERSION`, stored in the audit's `flags` when it starts; raise it when a change alters run time)
+     that stopped at the page cap or ran out of pages and read enough pages (not stopped, rate-limited, robots-blocked or
+     "too few"); with fewer than 3 such runs, the mode's default: Tek sayfa 1 dk, Hızlı 50 10 dk, Standart 500 25 dk (the
+     v0.3 time goals), said as "varsayılan tahmin". Existing audits have no mark, so the defaults show until three new runs
+     finish. History: "Gizle" per row (PUT `/audits/{id}/hidden`; a `hidden` column added by the app's own column
+     migration on its next start; the files stay), "Gizlenenler (N)" lists them with "Yeniden göster".
+     *Also fixed:* a language folder is two letters, optionally a region (two letters or three digits) or a script
+     (`page_groups._LOCALE`): `/qr-menu/` was taken for a language and typed a homepage (adile, DECISIONS 309's key pages).
+     *Not in this stage:* switching checks on or off by business type (`reviews/checklist/mapping.xlsx`, "Profiles (Stage
+     4)") moves to Stage 7.
+     *Offline on copies of the saved audits* (current-engine copies in a scratch folder; `tools/business_types_saved.py`):
+     nihan -> E-ticaret (Shopify; 22.114 addresses with products/collections), moodist -> Sağlık (Hospital markup),
+     enpara -> Bankacılık (143 addresses with kredi/mevduat; menu), adile -> Restoran (FoodEstablishment; sube/subeler);
+     the card order is unchanged on all four (priorities move by a few tenths); not found: enpara "Destek", adile
+     "Rezervasyon / sipariş". Details: `docs/IMPLEMENTATION-STATUS.md`.
+     Tests: `tests/test_business_types_311.py` (22); `test_page_groups` pins "Diğer" for Stage 3's own values;
+     `test_web_ux_310` follows the default estimate; schema literals 1.24 -> 1.25.

@@ -45,8 +45,10 @@ PAGE_TYPES = ("home", "category", "product", "blog_article", "policy", "utility"
 MIN_SIBLINGS = 2
 # A segment that looks like an id: has a digit and is long, or is hex / a uuid.
 _ID = re.compile(r"^(?=.*\d)[\w.-]{6,}$|^\d+$|^[0-9a-f]{8,}$|^[0-9a-f-]{32,36}$", re.IGNORECASE)
-# A language folder ("/en", "/tr", "/en-us"): kept as it is, and the folder after it is a section, as at the root.
-_LOCALE = re.compile(r"^[a-z]{2}(?:[-_][a-z]{2,4})?$", re.IGNORECASE)
+# A language folder ("/en", "/tr", "/en-us", "/zh-hans", "/es-419"): kept as it is, and the folder after it is a
+# section, as at the root. After the language only a region (two letters or three digits) or a script (DECISIONS 311:
+# "/qr-menu/" is a page, not a language).
+_LOCALE = re.compile(r"^[a-z]{2}(?:[-_](?:[a-z]{2}|\d{3}|hans|hant|latn|cyrl|arab))?$", re.IGNORECASE)
 # Folders whose children are always one item each (a slug), even when only one child is known.
 SLUG_FOLDERS = PRODUCT_FOLDERS | ARTICLE_FOLDERS | CATEGORY_WORDS | frozenset(
     {"pages", "policies", "blogs", "collection", "kategoriler", "urunler", "sayfa", "sayfalar", "p", "c"})

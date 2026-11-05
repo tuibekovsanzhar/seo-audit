@@ -1,6 +1,6 @@
 # The JSON report format
 
-Current version: `1.24`
+Current version: `1.25`
 
 Every JSON report the tool writes (`--json`, and one per brand from `batch`) starts with `schema_version`.
 Anything that reads a report, including the web interface, reads that number first.
@@ -162,6 +162,7 @@ A `pass` with anything in `coverage.not_assessed` is written as `partial`, never
 | `skipped_for_time` | The optional steps the time limit cut (1.14, team-preview-16), in the order they give way: `other_site_links`, `llms_links`, `sitemap_check`, `performance`, `rendering`. Empty when nothing was cut or the audit was stopped. |
 | `page_grouping` | The page grouping's summary (1.23, DECISIONS 297), or null in a report that has none: `method_version`, `confidence` ("Estimated"), `pages_scored`, `pages_not_scored`, `page_types` (count per type), `templates` (the 40 largest template keys with their page counts), `templates_total`, `not_reached_from_homepage`, `reached_through_hreflang`, `aliases`, `canonical_pages_scored`, `canonical_pages` ({url: grouping} for canonicals scored from their aliases without being read, DECISIONS 298), `citable_content_pages`, `weights`, `type_weights`, `footer_link_weight`, `not_indexable_cap`, `policy_footer_cap`, `order`, `basis`. Its inner keys are not covered by the version. |
 | `reader_page_grouping` | The same grouping for the pages a page reader (Firecrawl) read when Maya's crawler was blocked or rate-limited (1.24, DECISIONS 304), or null: the keys of `page_grouping` plus `reader` (its name) and `pages` ({url: grouping record}, as a page record's `grouping`). Worked out while the reader's pages and their links were in memory; Maya's own page records hold no content then. `{"reader", "error"}` when the grouping failed. |
+| `business_type` | The business type the audit used (1.25, DECISIONS 311), or null in an older report: `id` (a profile of `maya_audit/business_types/profiles/`, `diger` for none), `label` {tr, en}, `chosen_by` (`user` or `suggestion`), `suggestion` {`id`, `label`, `reason` {tr, en}, `signals`, `scores`, `version`}, `page_types` (the importance summary: `profile`, `formula`, `weights`, `pages_by_type`), `not_found` (the profile's first three page types no page read was typed as: `type`, `label`, `rank`), `version`. Its inner keys are not covered by the version. |
 | `access`, `index`, `render`, `structure`, `perf`, `citations`, `citation_domains` | Not covered by the version. |
 
 ## Page record
@@ -389,6 +390,21 @@ page failures. Coverage stop reasons additionally distinguish `provider_timeout`
 credit/request limits. Existing 1.x reports remain readable; absent historical reasons are never invented.
 Keyword intent dimensions live inside open DataForSEO check evidence; originals and provider totals are preserved.
 
+
+## 1.25 — business type (2026-11-05)
+
+Added for DECISIONS 311; nothing was removed or renamed, so 1.x readers keep working. Why a new version: the crawl
+record gained `business_type`, and the page grouping's records can now be re-scored by it, so a 1.24 reader that took
+`importance` for Stage 3's link-based value would be wrong for a 1.25 report with a profile.
+
+- `crawl.business_type`: the business type (suggested or chosen), its suggestion and reason, the importance summary and
+  the "not found among the pages read" list.
+- Inside a page's `grouping` (not covered by the version, listed for readers): `importance_source` (`links` for
+  "Diğer" and older reports, `profile:<id>` otherwise), and with a profile `business_page_type`,
+  `business_page_type_basis`, `business_signals`, `business_citable`, `importance_links` and `importance_rank_links`
+  (Stage 3's own values), `importance_parts.profile_weight` and `importance_parts.formula`.
+- `crawl.config.business_type`: `auto` or the profile id asked for (config keys are not covered by the version).
+- `crawl.page_grouping.business_type` and `importance_source` (inner keys, not covered).
 
 ## 1.24 — the page reader's grouping, sitemap media counts, Product fields (2026-11-03)
 

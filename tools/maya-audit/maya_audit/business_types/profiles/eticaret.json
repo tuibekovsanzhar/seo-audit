@@ -1,0 +1,288 @@
+{
+ "id": "eticaret",
+ "order": 1,
+ "label": {
+  "tr": "E-ticaret / perakende",
+  "en": "E-commerce / retail"
+ },
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "suggest": {
+  "schema": [
+   "Product",
+   "ProductGroup",
+   "OnlineStore",
+   "Store"
+  ],
+  "platforms": [
+   "Shopify",
+   "Ticimax",
+   "WooCommerce",
+   "Magento",
+   "Shopware",
+   "PrestaShop",
+   "OpenCart",
+   "ikas"
+  ],
+  "url": [
+   "products",
+   "product",
+   "urun",
+   "urunler",
+   "collections",
+   "kategori",
+   "category",
+   "koleksiyon"
+  ],
+  "words": [
+   "sepet",
+   "sepetim",
+   "yeni gelenler",
+   "indirim",
+   "koleksiyon",
+   "tüm ürünler",
+   "shop",
+   "new in"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "category",
+   "label": {
+    "tr": "Kategori ve listeleme",
+    "en": "Category and listing"
+   },
+   "citable": false,
+   "generic": [
+    "category"
+   ],
+   "signals": {
+    "url": [
+     "collections",
+     "collection",
+     "kategori",
+     "kategoriler",
+     "category",
+     "koleksiyon",
+     "koleksiyonlar",
+     "shop/"
+    ],
+    "schema": [
+     "CollectionPage",
+     "ItemList",
+     "OfferCatalog"
+    ],
+    "words": [
+     "koleksiyon",
+     "kategori",
+     "tüm ürünler",
+     "yeni gelenler",
+     "collection",
+     "shop all",
+     "new in"
+    ],
+    "content": [
+     "list"
+    ]
+   }
+  },
+  {
+   "id": "product",
+   "label": {
+    "tr": "Ürün detayı",
+    "en": "Product detail"
+   },
+   "citable": false,
+   "generic": [
+    "product"
+   ],
+   "signals": {
+    "url": [
+     "products/*",
+     "product/*",
+     "urun/*",
+     "urunler/*",
+     "p/*"
+    ],
+    "schema": [
+     "Product",
+     "ProductGroup"
+    ],
+    "words": [
+     "sepete ekle",
+     "add to cart",
+     "ürün açıklaması",
+     "beden tablosu"
+    ],
+    "content": [
+     "price"
+    ]
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ]
+  },
+  {
+   "id": "stores",
+   "label": {
+    "tr": "Mağaza ve satış noktaları",
+    "en": "Stores and points of sale"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "magazalar",
+     "magazalarimiz",
+     "magaza-bul",
+     "magazalar/",
+     "satis-noktalari",
+     "bayiler",
+     "stores",
+     "store-locator",
+     "our-stores"
+    ],
+    "schema": [
+     "Store",
+     "LocalBusiness",
+     "Place"
+    ],
+    "words": [
+     "mağazalarımız",
+     "mağaza bul",
+     "satış noktaları",
+     "store locator",
+     "our stores"
+    ],
+    "content": [
+     "map"
+    ]
+   }
+  },
+  {
+   "id": "campaign",
+   "label": {
+    "tr": "Kampanya",
+    "en": "Campaign"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "kampanya",
+     "kampanyalar",
+     "indirim",
+     "indirimler",
+     "firsat",
+     "outlet",
+     "sale",
+     "campaign",
+     "promotions",
+     "black-friday",
+     "efsane-cuma"
+    ],
+    "schema": [],
+    "words": [
+     "kampanya",
+     "indirim",
+     "fırsat",
+     "outlet",
+     "sale",
+     "black friday"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "help",
+   "label": {
+    "tr": "Yardım ve güven",
+    "en": "Help and trust"
+   },
+   "citable": false,
+   "generic": [
+    "policy"
+   ],
+   "signals": {
+    "url": [
+     "yardim",
+     "sss",
+     "sikca-sorulan-sorular",
+     "iade",
+     "degisim",
+     "kargo",
+     "teslimat",
+     "guvenli-alisveris",
+     "help",
+     "faq",
+     "returns",
+     "shipping",
+     "hakkimizda",
+     "about"
+    ],
+    "schema": [
+     "AboutPage"
+    ],
+    "words": [
+     "yardım",
+     "sıkça sorulan",
+     "iade",
+     "değişim",
+     "kargo",
+     "teslimat",
+     "güvenli alışveriş",
+     "hakkımızda"
+    ],
+    "content": [
+     "faq"
+    ]
+   }
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber / SSS / blog",
+    "en": "Guide / FAQ / blog"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "blogs",
+     "rehber",
+     "dergi",
+     "magazine",
+     "journal",
+     "stil-rehberi",
+     "guide",
+     "articles"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "blog",
+     "rehber",
+     "sıkça sorulan sorular",
+     "SSS",
+     "makaleler"
+    ],
+    "content": [
+     "faq"
+    ]
+   },
+   "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
+   "weight": 30
+  }
+ ]
+}

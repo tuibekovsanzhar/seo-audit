@@ -1,0 +1,566 @@
+"""Business types ("İşletme türü"), v0.3 stage 4 (DECISIONS 311).
+
+One profile per kind of business (`profiles/*.json`): its page types in order of importance, each with the signals
+that recognise it. A profile changes three things, and nothing else:
+
+- *Page type for the business* (`business_page_type`) on every page the page grouping scored (DECISIONS 297): from
+  the address, the structured-data types, the title and headings, the menu and link text pointing to the page and a
+  few content signals; else from the general page type (Stage 3). The Stage 3 `page_type` is kept as it is.
+- *Importance*: 50% the profile weight of that page type + 35% the internal link score + 15% the click-depth score
+  (`FORMULA`), with Stage 3's caps. The Stage 3 value stays in `importance_links`. "Diğer" keeps Stage 3's importance
+  exactly (`importance_source` "links").
+- *Key pages* and the "not found among the pages read" notes for the profile's top page types.
+
+Rule-based and Estimated. No request is sent. No check, severity, confidence or release-gate decision reads any of it;
+importance orders cards (reach) and key pages only. The suggestion (`suggest`) is a hint the person confirms or changes.
+"""
+from __future__ import annotations
+
+import json
+import re
+from collections import Counter
+from functools import lru_cache
+from importlib import resources
+from typing import Iterable
+from urllib.parse import unquote, urlsplit
+
+from ..page_words import fold
+
+VERSION = 1
+AUTO = "auto"
+DEFAULT = "diger"
+# Weights by rank in a profile's list (owner, configurable here or per profile with "weights").
+RANK_WEIGHTS = (100, 85, 70, 55, 40, 30)
+HOME_MIN = 85            # the homepage is at least this in every sector (owner)
+GUIDE_WEIGHT = 30        # "Rehber / SSS / blog" where a profile has no guide of its own (owner)
+UNMATCHED_WEIGHT = 25    # a page that matches no type of the profile (agent default)
+POLICY_WEIGHT = 15       # as Stage 3
+UTILITY_WEIGHT = 0       # as Stage 3
+FORMULA = {"page_type": 0.5, "internal_link_score": 0.35, "click_depth": 0.15}  # owner, 2026-11-05
+# Points per kind of signal; each kind counts once per page type. A type needs MIN_SCORE (agent defaults). The
+# address weighs most: it names the page; FAQ markup or a section heading only says what a part of it holds.
+SCORES = {"url": 4, "schema": 3, "heading": 2, "menu": 2, "content": 1}
+MIN_SCORE = 3
+NOT_FOUND_TOP = 3        # "not found" notes for the profile's first three page types (owner)
+GROUPS = {"finans": {"tr": "Finans", "en": "Finance"}}
+KIND_LABELS = {"url": {"tr": "adres sözcüğü", "en": "address word"},
+               "schema": {"tr": "yapısal veri türü", "en": "structured-data type"},
+               "heading": {"tr": "başlık sözcüğü", "en": "heading word"},
+               "menu": {"tr": "menü veya bağlantı metni", "en": "menu or link text"},
+               "content": {"tr": "içerik işareti", "en": "content signal"}}
+CONTENT_SIGNALS = {
+    "form": "a form that is not search, sign-in, cart or newsletter",
+    "price": "price markup (Offer, PriceSpecification) or a price word in a heading",
+    "map": "an embedded map or GeoCoordinates",
+    "calculator": "a 'hesapla' / 'calculate' button or heading",
+    "faq": "FAQPage markup or three or more question headings",
+    "table": "a data table",
+    "list": "the general page type is a listing (category)",
+}
+SPECIAL = {"home": {"tr": "Ana sayfa", "en": "Homepage"}, "policy": {"tr": "Politika / yasal", "en": "Policy / legal"},
+           "utility": {"tr": "Arama, sepet, hesap", "en": "Search, cart, account"},
+           "other": {"tr": "Diğer sayfa", "en": "Other page"}}
+POLICY_FOOTER_ONLY = "policy page linked only from footers or sitewide blocks"
+
+
+# ---------------------------------------------------------------- profiles
+
+def _norm(text: str) -> str:
+    """Folded, every run of non-letters one space: "Kredi-Kartı" and "kredi karti" are the same words."""
+    return re.sub(r"[^0-9a-z]+", " ", fold(text)).strip()
+
+
+@lru_cache(maxsize=1)
+def profiles() -> dict[str, dict]:
+    """{id: profile} in the order of the files' "order"; each page type with its rank and weight."""
+    folder = resources.files(__package__) / "profiles"
+    out = []
+    for entry in folder.iterdir():
+        if entry.name.endswith(".json"):
+            out.append(json.loads(entry.read_text(encoding="utf-8")))
+    out.sort(key=lambda p: p.get("order", 999))
+    result = {}
+    for p in out:
+        weights = tuple(p.get("weights") or RANK_WEIGHTS)
+        rank = 0
+        types = []
+        for t in p.get("page_types") or []:
+            t = dict(t)
+            if t.get("added"):
+                t["rank"] = None
+                t["weight"] = HOME_MIN if t["id"] == "home" else int(t.get("weight", GUIDE_WEIGHT))
+            else:
+                rank += 1
+                t["rank"] = rank
+                t["weight"] = int(t.get("weight", weights[min(rank, len(weights)) - 1]))
+            if t["id"] == "home":
+                t["weight"] = max(t["weight"], HOME_MIN)
+            t.setdefault("signals", {})
+            t.setdefault("generic", [])
+            types.append(t)
+        result[p["id"]] = {**p, "page_types": types}
+    return result
+
+
+def profile(pid: str | None) -> dict:
+    return profiles().get(pid or DEFAULT) or profiles()[DEFAULT]
+
+
+def label(pid: str | None, lang: str = "tr") -> str:
+    return profile(pid)["label"].get(lang) or profile(pid)["label"]["tr"]
+
+
+def choices(lang: str = "tr") -> list[dict]:
+    """For a dropdown: [{id, label, group, group_label}], finance grouped (owner)."""
+    return [{"id": p["id"], "label": p["label"].get(lang, p["label"]["tr"]), "group": p.get("group"),
+             "group_label": (GROUPS.get(p.get("group") or "") or {}).get(lang)} for p in profiles().values()]
+
+
+def type_label(pid: str | None, type_id: str | None, lang: str = "tr") -> str | None:
+    if not type_id:
+        return None
+    for t in profile(pid)["page_types"]:
+        if t["id"] == type_id:
+            return t["label"].get(lang) or t["label"]["tr"]
+    return (SPECIAL.get(type_id) or {}).get(lang)
+
+
+def valid(pid: str | None) -> bool:
+    return pid in (None, AUTO) or pid in profiles()
+
+
+# ---------------------------------------------------------------- what a page shows
+
+def _segments(url: str) -> list[str]:
+    from ..page_groups import is_locale
+    segs = [unquote(s) for s in urlsplit(url).path.split("/") if s]
+    if segs and is_locale(segs[0]):
+        segs = segs[1:]
+    return [_norm(s.rsplit(".", 1)[0] if s.endswith((".html", ".htm", ".php", ".aspx")) else s) for s in segs]
+
+
+def url_hit(word: str, segs: list[str]) -> bool:
+    """`word`: any segment holds the word(s); `word/*`: a segment is the word and another follows it (an item);
+    `word/`: the last segment is the word (the list page itself)."""
+    if word.endswith("/*"):
+        w = _norm(word[:-2])
+        return any(s == w for s in segs[:-1])
+    if word.endswith("/"):
+        return bool(segs) and segs[-1] == _norm(word[:-1])
+    w = _norm(word)
+    return bool(w) and any(f" {w} " in f" {s} " for s in segs)
+
+
+def _has(words: Iterable[str], text: str) -> list[str]:
+    padded = f" {text} "
+    return [w for w in words if _norm(w) and f" {_norm(w)} " in padded]
+
+
+_SKIP_FORMS = re.compile(r"search|arama|(?<![a-z])ara(?![a-z])|newsletter|bulten|subscribe|abone|login|giris|signin|"
+                         r"cart|sepet|checkout|localization|currency|language|dil")
+
+
+def content_signals(analysis: dict, generic: str | None = None) -> set[str]:
+    out = set()
+    a = analysis or {}
+    types = set((a.get("structured_data") or {}).get("types") or [])
+    forms = [x for x in a.get("form_actions") or [] if x is not None and not _SKIP_FORMS.search(fold(x))]
+    if forms:
+        out.add("form")
+    heads = " ".join(h.get("text") or "" for h in a.get("headings") or [] if isinstance(h, dict))
+    if types & {"Offer", "AggregateOffer", "PriceSpecification", "UnitPriceSpecification"} or re.search(
+            r"(?<![a-z])(fiyat|fiyatlar|price|prices|pricing)(?![a-z])|₺", fold(heads)):
+        out.add("price")
+    if "GeoCoordinates" in types or any(re.search(r"google\.[a-z.]+/maps|maps\.google|yandex\.[a-z.]+/map|/maps/embed",
+                                                  (f.get("src") or "")) for f in a.get("iframes") or [] if isinstance(f, dict)):
+        out.add("map")
+    buttons = " ".join((b.get("text") or "") for b in (a.get("buttons") or []) + (a.get("input_buttons") or [])
+                       if isinstance(b, dict))
+    if re.search(r"hesapla|calculat", fold(buttons + " " + heads)):
+        out.add("calculator")
+    if "FAQPage" in types or sum(1 for h in a.get("headings") or [] if isinstance(h, dict)
+                                 and (h.get("text") or "").strip().endswith("?")) >= 3:
+        out.add("faq")
+    if a.get("tables"):
+        out.add("table")
+    if generic == "category":
+        out.add("list")
+    return out
+
+
+# A structured-data type on at least this share of the pages read (and this many pages) is a site builder's default,
+# not a sign of what one page is (adile: Article on 35 of 36 pages); as Stage 3 treats a sitewide og:type=article.
+SITEWIDE_SCHEMA_SHARE = 0.5
+SITEWIDE_SCHEMA_MIN_PAGES = 4
+
+
+def sitewide_schema(analyses: Iterable[dict | None]) -> set[str]:
+    rows = [set(((a or {}).get("structured_data") or {}).get("types") or []) for a in analyses]
+    if len(rows) < SITEWIDE_SCHEMA_MIN_PAGES:
+        return set()
+    counts = Counter(t for row in rows for t in row)
+    return {t for t, n in counts.items() if n / len(rows) >= SITEWIDE_SCHEMA_SHARE}
+
+
+def page_facts(url: str, analysis: dict | None, menu: Iterable[str] = (), generic: str | None = None,
+               sitewide: set[str] = frozenset()) -> dict:
+    a = analysis or {}
+    # The page's own name: its title and H1. Lower headings name sections (an FAQ block on a product page).
+    heads = [a.get("title") or ""] + [h.get("text") or "" for h in a.get("h1_elements") or [] if isinstance(h, dict)]
+    return {"url": url, "segments": _segments(url), "generic": generic,
+            "schema": set((a.get("structured_data") or {}).get("types") or []) - set(sitewide),
+            "heading": _norm(" | ".join(heads)), "menu": _norm(" | ".join(menu)),
+            "content": content_signals(a, generic) if a else ({"list"} if generic == "category" else set())}
+
+
+def link_texts(pages: Iterable[tuple[str, list]]) -> dict[str, list[str]]:
+    """{target: anchor texts of the links to it} over the pages read ((url, outlinks) pairs)."""
+    out: dict[str, list[str]] = {}
+    for _, outlinks in pages:
+        for edge in outlinks or []:
+            target = (edge.get("target") or "").split("#")[0]
+            anchors = edge.get("anchors") or ([edge["anchor"]] if edge.get("anchor") else [])
+            if target and anchors:
+                out.setdefault(target, []).extend(a for a in anchors if a)
+    return out
+
+
+# ---------------------------------------------------------------- one page
+
+def match(t: dict, facts: dict) -> tuple[int, list[dict]]:
+    """(score, signals that matched) for one page type."""
+    s = t.get("signals") or {}
+    hits = []
+    url = next((w for w in s.get("url") or [] if url_hit(w, facts["segments"])), None)
+    if url:
+        hits.append({"kind": "url", "value": url})
+    schema = sorted(set(s.get("schema") or []) & facts["schema"])
+    if schema:
+        hits.append({"kind": "schema", "value": schema[0]})
+    head = _has(s.get("words") or [], facts["heading"])
+    if head:
+        hits.append({"kind": "heading", "value": head[0]})
+    menu = _has(s.get("words") or [], facts["menu"])
+    if menu:
+        hits.append({"kind": "menu", "value": menu[0]})
+    content = sorted(set(s.get("content") or []) & facts["content"])
+    if content:
+        hits.append({"kind": "content", "value": content[0]})
+    return sum(SCORES[h["kind"]] for h in hits), hits
+
+
+def classify(prof: dict, facts: dict) -> tuple[str, str, list[dict]]:
+    """(business page type, basis, signals). Order: homepage, utility, a policy page (to the profile's type that takes
+    policies, else policy), the best profile match of MIN_SCORE or more, the profile type of the general page type,
+    else "other"."""
+    generic = facts.get("generic")
+    types = [t for t in prof["page_types"] if t["id"] != "home"]
+    if generic == "home":
+        return "home", "the homepage (page grouping)", []
+    if generic == "utility":
+        return "utility", "a search, cart or account page (page grouping)", []
+    if generic == "policy":
+        claim = next((t for t in types if "policy" in t["generic"]), None)
+        if claim:
+            return claim["id"], "a policy or legal page (page grouping), which this business type counts here", []
+        return "policy", "a policy or legal page (page grouping)", []
+    best = None
+    for t in types:
+        score, hits = match(t, facts)
+        if score >= MIN_SCORE and (best is None or score > best[0] or (
+                score == best[0] and (t["rank"] or 99) < (best[1]["rank"] or 99))):
+            best = (score, t, hits)
+    if best:
+        return best[1]["id"], f"signals scored {best[0]}", best[2]
+    fallback = next((t for t in types if generic and generic in t["generic"]), None)
+    if fallback:
+        return fallback["id"], f"the general page type '{generic}' (page grouping)", []
+    return "other", "no signal of this business type", []
+
+
+def weight(prof: dict, type_id: str) -> int:
+    if type_id == "home":
+        home = next((t for t in prof["page_types"] if t["id"] == "home"), None)
+        return max(HOME_MIN, home["weight"] if home else HOME_MIN)
+    if type_id == "policy":
+        return POLICY_WEIGHT
+    if type_id == "utility":
+        return UTILITY_WEIGHT
+    t = next((t for t in prof["page_types"] if t["id"] == type_id), None)
+    return t["weight"] if t else UNMATCHED_WEIGHT
+
+
+# ---------------------------------------------------------------- importance over the records
+
+_KEYS = ("business_page_type", "business_page_type_basis", "business_signals", "business_citable")
+
+
+def reset(g: dict) -> None:
+    """Stage 3's own importance back (a record the engine re-scored under another profile)."""
+    if "importance_links" in g:
+        g["importance"] = g.pop("importance_links")
+    if "importance_rank_links" in g:
+        g["importance_rank"] = g.pop("importance_rank_links")
+    parts = g.get("importance_parts")
+    if isinstance(parts, dict):
+        g["importance_parts"] = {k: v for k, v in parts.items() if k not in ("profile_weight", "formula")}
+    for k in _KEYS:
+        g.pop(k, None)
+    g["importance_source"] = "links"
+
+
+def apply(records: dict[str, dict], facts: dict[str, dict], pid: str | None) -> dict:
+    """Re-score `records` ({url: grouping record}, changed in place) for profile `pid`; Stage 3's importance and rank
+    are kept in `importance_links` / `importance_rank_links`. "Diğer" (or no profile) leaves Stage 3's values.
+    Returns the summary for the report."""
+    prof = profile(pid)
+    scored = {u: g for u, g in records.items() if isinstance(g, dict) and "importance" in g}
+    for g in scored.values():
+        reset(g)
+    if prof["id"] == DEFAULT:
+        return {"profile": DEFAULT, "version": VERSION, "importance": "page grouping (DECISIONS 297): "
+                "50% link score, 25% click depth, 25% general page type"}
+    counts: Counter = Counter()
+    for url, g in scored.items():
+        f = facts.get(url) or page_facts(url, None, (), g.get("page_type"))
+        if f.get("generic") is None:
+            f = {**f, "generic": g.get("page_type")}
+        kind, basis, signals = classify(prof, f)
+        w = weight(prof, kind)
+        parts = g.get("importance_parts") or {}
+        link, depth = parts.get("internal_link_score") or 0, parts.get("click_depth") or 0
+        value = (FORMULA["page_type"] * w + FORMULA["internal_link_score"] * link + FORMULA["click_depth"] * depth)
+        capped = parts.get("capped")
+        cap = 35 if capped == POLICY_FOOTER_ONLY else 20
+        g["importance_links"] = g["importance"]
+        g["importance_rank_links"] = g.get("importance_rank")
+        g["importance"] = min(round(value), cap) if capped else round(value)
+        g["importance_parts"] = {**parts, "profile_weight": w, "formula": dict(FORMULA)}
+        g["importance_source"] = f"profile:{prof['id']}"
+        g["business_page_type"] = kind
+        g["business_page_type_basis"] = basis
+        g["business_signals"] = signals
+        t = next((t for t in prof["page_types"] if t["id"] == kind), None)
+        g["business_citable"] = bool(t and t.get("citable"))
+        if g.get("read") is not False:
+            counts[kind] += 1
+
+    def order(item):
+        url, g = item
+        tb = g.get("tie_break") or {}
+        pos = tb.get("sitemap_position")
+        return (-g["importance"], -(tb.get("body_inlinks") or 0), -(tb.get("products_listed") or 0),
+                pos if pos is not None else float("inf"), g.get("importance_rank_links") or 10**9)
+    for i, (url, g) in enumerate(sorted(scored.items(), key=order), 1):
+        g["importance_rank"] = i
+    return {"profile": prof["id"], "version": VERSION, "formula": dict(FORMULA),
+            "importance": "50% profile weight of the page type + 35% internal link score + 15% click-depth score; "
+                          "Stage 3's caps (not indexable or utility 20, footer-only policy 35)",
+            "weights": {t["id"]: t["weight"] for t in prof["page_types"]} | {
+                "home": weight(prof, "home"), "other": UNMATCHED_WEIGHT, "policy": POLICY_WEIGHT,
+                "utility": UTILITY_WEIGHT},
+            "pages_by_type": dict(counts.most_common())}
+
+
+def not_found(records: dict[str, dict], pid: str | None, top: int = NOT_FOUND_TOP) -> list[dict]:
+    """The profile's first `top` page types (by rank) that no page read was typed as: [{type, label{tr,en}, rank}].
+    "Not found among the pages read", never "missing on the site"."""
+    prof = profile(pid)
+    if prof["id"] == DEFAULT:
+        return []
+    seen = {g.get("business_page_type") for g in records.values() if isinstance(g, dict) and g.get("read") is not False}
+    out = []
+    for t in sorted((t for t in prof["page_types"] if t.get("rank")), key=lambda t: t["rank"])[:top]:
+        if t["id"] not in seen:
+            out.append({"type": t["id"], "label": t["label"], "rank": t["rank"]})
+    return out
+
+
+# ---------------------------------------------------------------- suggestion
+
+def suggest(home_analysis: dict | None, home_outlinks: list | None, platform: str | None,
+            urls: Iterable[str] = ()) -> dict:
+    """{id, label, reason{tr,en}, signals, scores}: the business type the homepage's structured data, the platform,
+    the site's addresses and the homepage's menu point to; "diger" when no type stands out."""
+    a = home_analysis or {}
+    schema = set((a.get("structured_data") or {}).get("types") or [])
+    menu = _norm(" | ".join(x for e in home_outlinks or [] if e.get("nav")
+                            for x in (e.get("anchors") or ([e.get("anchor")] if e.get("anchor") else [])) if x))
+    paths = [_segments(u) for u in dict.fromkeys(u for u in urls if isinstance(u, str))]
+    total = len(paths) or 1
+    rows = []
+    for p in profiles().values():
+        s = p.get("suggest") or {}
+        if p["id"] == DEFAULT:
+            continue
+        score, signals = 0.0, []
+        found = sorted(set(s.get("schema") or []) & schema)
+        if found:
+            score += 4
+            signals.append({"kind": "schema", "values": found[:3]})
+        if platform and platform in (s.get("platforms") or []):
+            score += 4
+            signals.append({"kind": "platform", "values": [platform]})
+        hit_words: Counter = Counter()
+        n = 0
+        for segs in paths:
+            words = [w for w in s.get("url") or [] if url_hit(w, segs)]
+            if words:
+                n += 1
+                hit_words[words[0]] += 1
+        if n and n / total >= 0.1:      # a tenth of the site's addresses or more
+            score += 4
+        elif n >= 3 or (n and n / total >= 0.05):
+            score += 3
+        elif n:
+            score += 1
+        if n:
+            signals.append({"kind": "urls", "count": n, "values": [w for w, _ in hit_words.most_common(2)]})
+        words = _has(s.get("words") or [], menu)
+        if words:
+            score += min(4, len(words))
+            signals.append({"kind": "menu", "values": words[:3]})
+        rows.append((score, p["order"], p["id"], signals))
+    rows.sort(key=lambda r: (-r[0], r[1]))
+    scores = {r[2]: r[0] for r in rows}
+    best = rows[0] if rows else None
+    second = rows[1][0] if len(rows) > 1 else 0
+    if best and best[0] >= 4 and best[0] - second >= 1:
+        return {"id": best[2], "label": profile(best[2])["label"], "reason": _reason(best[3]), "signals": best[3],
+                "scores": scores, "version": VERSION}
+    near = best[2] if best and best[0] > 0 else None
+    reason = {"tr": "Net bir işaret yok" + (f" (en yakın: {label(near, 'tr')})" if near else ""),
+              "en": "No clear signal" + (f" (closest: {label(near, 'en')})" if near else "")}
+    return {"id": DEFAULT, "label": profile(DEFAULT)["label"], "reason": reason, "signals": best[3] if best and near else [],
+            "scores": scores, "version": VERSION}
+
+
+def _reason(signals: list[dict]) -> dict:
+    tr, en = [], []
+    for s in signals:
+        v = ", ".join(f"'{x}'" if s["kind"] in ("urls", "menu") else str(x) for x in s.get("values") or [])
+        if s["kind"] == "schema":
+            tr.append(f"ana sayfada {v} yapısal verisi")
+            en.append(f"{v} structured data on the homepage")
+        elif s["kind"] == "platform":
+            tr.append(f"{v} altyapısı")
+            en.append(f"built on {v}")
+        elif s["kind"] == "urls":
+            tr.append(f"{s['count']:,}".replace(",", ".") + f" adreste {v} gibi sözcükler")
+            en.append(f"{s['count']:,} addresses with words such as {v}")
+        elif s["kind"] == "menu":
+            tr.append(f"menüde {v}")
+            en.append(f"menu words {v}")
+    return {"tr": "; ".join(tr), "en": "; ".join(en)}
+
+
+def resolve(choice: str | None, suggestion: dict) -> dict:
+    """The business type an audit uses: the person's choice, else the suggestion."""
+    if choice and choice != AUTO and choice in profiles():
+        return {"id": choice, "label": profile(choice)["label"], "chosen_by": "user", "suggestion": suggestion,
+                "version": VERSION}
+    return {"id": suggestion["id"], "label": profile(suggestion["id"])["label"], "chosen_by": "suggestion",
+            "suggestion": suggestion, "version": VERSION}
+
+
+# ---------------------------------------------------------------- the engine's result
+
+def attach(result) -> dict | None:
+    """After the page grouping (`final.settle`): suggest, resolve with the audit's choice (`config.business_type`),
+    re-score the grouping records and set `result.business_type`. Returns it."""
+    from ..site_platform import recognise
+    pages = list(getattr(result, "pages", None) or [])
+    read = [p for p in pages if isinstance(getattr(p, "grouping", None), dict) and "importance" in p.grouping]
+    home = next((p for p in read if p.grouping.get("page_type") == "home"
+                 and p.grouping.get("page_type_basis", "").startswith("the start address")), None) or next(
+        (p for p in read if p.grouping.get("page_type") == "home"), None)
+    try:
+        platform = (recognise(result) or {}).get("name")
+    except Exception:  # noqa: BLE001  a hint only
+        platform = None
+    urls = [p.url for p in pages] + list(getattr(result, "discovered_urls", None) or []) + list(
+        getattr(result, "sitemap_urls", None) or [])
+    suggestion = suggest(home.analysis if home else None, home.outlinks if home else None, platform, urls)
+    config = getattr(result, "config", None)
+    choice = (config.get("business_type") if isinstance(config, dict) else getattr(config, "business_type", None))
+    chosen = resolve(choice, suggestion)
+    records = {p.url: p.grouping for p in read}
+    summary = getattr(result, "page_grouping", None)
+    for url, g in ((summary or {}).get("canonical_pages") or {}).items():
+        records.setdefault(url, g)
+    texts = link_texts((p.url, p.outlinks) for p in read)
+    common = sitewide_schema(p.analysis for p in read)
+    facts = {p.url: page_facts(p.url, p.analysis, texts.get(p.url, ()), p.grouping.get("page_type"), common) for p in read}
+    chosen["page_types"] = apply(records, facts, chosen["id"])
+    chosen["not_found"] = not_found(records, chosen["id"])
+    reader = getattr(result, "reader_page_grouping", None)
+    if isinstance(reader, dict) and isinstance(reader.get("pages"), dict):
+        apply(reader["pages"], {}, chosen["id"])
+    if isinstance(summary, dict):
+        summary["business_type"] = {k: chosen[k] for k in ("id", "chosen_by", "version")}
+        summary["importance_source"] = "links" if chosen["id"] == DEFAULT else f"profile:{chosen['id']}"
+    result.business_type = chosen
+    return chosen
+
+
+# ---------------------------------------------------------------- a saved report
+
+def home_record(report: dict, records: dict[str, dict]) -> dict | None:
+    crawl = report.get("crawl") or {}
+    pages = {p.get("url"): p for p in crawl.get("pages") or [] if isinstance(p, dict)}
+    homes = [u for u, g in records.items() if g.get("page_type") == "home"]
+    start = crawl.get("start_url") or ""
+    for u in [start, start.rstrip("/"), start.rstrip("/") + "/"] + homes:
+        if u in pages and (pages[u].get("analysis") or {}):
+            return pages[u]
+    return pages.get(start) or (pages.get(homes[0]) if homes else None)
+
+
+def for_report(report: dict, records: dict[str, dict], choice: str | None = None) -> dict:
+    """The business type of a saved report: `choice` (the person's, saved beside the audit), else the one the report
+    was run with when a person chose it, else the suggestion (the report's own, or worked out from its saved data);
+    then `records` re-scored (in place) for it."""
+    crawl = report.get("crawl") or {}
+    saved = crawl.get("business_type") if isinstance(crawl.get("business_type"), dict) else None
+    suggestion = (saved or {}).get("suggestion")
+    if not isinstance(suggestion, dict) or suggestion.get("version") != VERSION:
+        home = home_record(report, records) or {}
+        platform = (report.get("platform") or {}).get("name")
+        if not platform:
+            try:
+                from ..site_platform import recognise_saved
+                platform = (recognise_saved(report) or {}).get("name")
+            except Exception:  # noqa: BLE001
+                platform = None
+        urls = [p.get("url") for p in crawl.get("pages") or [] if isinstance(p, dict)] + list(
+            crawl.get("discovered_urls") or []) + list(crawl.get("sitemap_urls") or [])
+        suggestion = suggest(home.get("analysis"), home.get("outlinks"), platform, urls)
+    if not choice and saved and saved.get("chosen_by") == "user":
+        choice = saved.get("id")
+    chosen = resolve(choice, suggestion)
+    pages = [p for p in crawl.get("pages") or [] if isinstance(p, dict) and p.get("analysis")]
+    texts = link_texts((p.get("url"), p.get("outlinks")) for p in pages)
+    common = sitewide_schema(p.get("analysis") for p in pages if p.get("url") in records)
+    facts = {p["url"]: page_facts(p["url"], p.get("analysis"), texts.get(p["url"], ()),
+                                  (records.get(p["url"]) or {}).get("page_type"), common)
+             for p in pages if p.get("url") in records}
+    chosen["page_types"] = apply(records, facts, chosen["id"])
+    chosen["not_found"] = not_found(records, chosen["id"])
+    return chosen
+
+
+# ---------------------------------------------------------------- the person's choice for a saved audit
+
+CHOICE_FILE = "business-type.json"
+
+
+def load_choice(folder) -> str | None:
+    """The type a person chose for a saved audit (`<audit>/artifacts/business-type.json`), or None."""
+    from pathlib import Path
+    path = Path(folder) / CHOICE_FILE
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    pid = data.get("id") if isinstance(data, dict) else None
+    return pid if pid in profiles() else None

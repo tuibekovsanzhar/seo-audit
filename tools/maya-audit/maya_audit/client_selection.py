@@ -175,7 +175,23 @@ def _result_from_report(report: dict):
                            page_grouping=None)
 
 
-def grouping(report: dict) -> tuple[dict[str, dict], dict]:
+def grouping(report: dict, business: str | None = None) -> tuple[dict[str, dict], dict]:
+    """The page grouping weighted by the business type (DECISIONS 311): `_stage3_grouping`, then
+    `business_types.for_report` on copies of the records (the report is not changed). `business` is the person's
+    choice for this audit (its `business-type.json`); without it, the report's own choice or the suggestion."""
+    records, summary = _stage3_grouping(report)
+    if not records:
+        return records, summary
+    records = {u: dict(g) for u, g in records.items()}
+    try:
+        from .business_types import for_report
+        info = for_report(report, records, business)
+    except Exception as exc:  # noqa: BLE001  a hint for ordering only: Stage 3's values stand, and it says so
+        return records, {**summary, "business_type": {"error": f"business type not applied: {type(exc).__name__}"}}
+    return records, {**summary, "business_type": info}
+
+
+def _stage3_grouping(report: dict) -> tuple[dict[str, dict], dict]:
     """({url: grouping record}, summary) from the report's page grouping (or the page reader's, `reader_page_grouping`,
     1.24); for a report saved before it (schema below 1.23), from `page_groups.annotate` on the saved page records
     (offline, the report is not changed)."""
@@ -421,9 +437,10 @@ def _order(rows: list[dict]) -> list[dict]:
 
 
 def select(report: dict, lists: dict | None = None, confirmations: dict | None = None, *,
-           max_cards: int = MAX_CARDS) -> dict:
-    """The selection a client report prints: cards, "Teyit edin", notes, own limits, appendix, key pages, counts."""
-    importance, summary = grouping(report)
+           max_cards: int = MAX_CARDS, business: str | None = None) -> dict:
+    """The selection a client report prints: cards, "Teyit edin", notes, own limits, appendix, key pages, counts.
+    `business`: the person's business-type choice for this audit (DECISIONS 311), else the report's or the suggestion."""
+    importance, summary = grouping(report, business)
     rows = groups(report, lists, confirmations, importance)
     for i, g in enumerate(rows):
         g["_index"] = i
@@ -477,6 +494,10 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         "groups": rows, "by_finding": by_finding,
         "key_pages": key_pages(report, rows, importance),
         "key_pages_reason": None if importance else key_pages_reason(report),
+        # DECISIONS 311: the business type, and its first page types no page read was typed as ("not found among the
+        # pages read", never "missing on the site"); none on a low-coverage audit.
+        "business_type": _business_view(summary.get("business_type")),
+        "key_pages_not_found": [] if low_coverage(report) else list((summary.get("business_type") or {}).get("not_found") or []),
         "coverage": coverage_box,
         "low_coverage": low_coverage(report),
         "counts": {"findings": len(by_finding), "groups": len(rows), "cards": len(cards), "confirm": len(confirm),
@@ -517,6 +538,16 @@ def is_homepage(url: str, record: dict | None = None) -> bool:
     return not parts or (len(parts) == 1 and is_locale(parts[0]))
 
 
+def _business_view(info: dict | None) -> dict | None:
+    """What a client output says about the business type: id, label, who chose it, the suggestion and its reason."""
+    if not isinstance(info, dict) or "id" not in info:
+        return None
+    sug = info.get("suggestion") or {}
+    return {"id": info["id"], "label": info.get("label"), "chosen_by": info.get("chosen_by"),
+            "suggestion": {"id": sug.get("id"), "label": sug.get("label"), "reason": sug.get("reason")},
+            "importance_source": "links" if info["id"] == "diger" else f"profile:{info['id']}"}
+
+
 def main_homepage(report: dict, importance: dict[str, dict]) -> str | None:
     """The homepage in the site's main language: the start address's final page when the grouping knows it, else the
     start address when it was read and scored."""
@@ -547,6 +578,8 @@ def key_pages(report: dict, rows: list[dict], importance: dict[str, dict], limit
         confirm = [x for x in rows if x.get("placement") == "confirm" and url in x["urls"]]
         worst = max((x["severity"] for x in cards), key=_weight, default=None)
         out.append({"url": url, "page_type": "home" if is_homepage(url, g) else g.get("page_type"),
+                    "business_page_type": "home" if is_homepage(url, g) else g.get("business_page_type"),
+                    "importance_source": g.get("importance_source"),
                     "importance": g.get("importance"), "rank": n, "importance_rank": g.get("importance_rank"),
                     "main_homepage": url == main, "cards": sorted(x["card"] for x in cards),
                     "worst": worst, "confirm": len(confirm)})

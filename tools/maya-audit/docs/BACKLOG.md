@@ -2,6 +2,18 @@
 
 Decided later, by the owner. Each item names where its evidence is; nothing here is implemented.
 
+## Next: Maya dashboard TOP PAGES as importance (after DECISIONS 311, owner 2026-11-05)
+
+Page importance has a source field (`importance_source`: `links`, `profile:<id>`). The next source is
+`maya_top_pages`: the pages with the most Google Search Console clicks from the Maya dashboard's TOP PAGES.
+
+- First a CSV upload per audit (address, clicks, impressions, period), kept beside the audit like review.json; later the
+  dashboard's API.
+- Addresses merged before matching: `http`/`https`, with and without `www.`, a trailing slash, and the canonical
+  aliases of DECISIONS 298, so one page's clicks are never split.
+- To decide: how clicks combine with the profile weight and link score (for example a share of the 50% type weight, or
+  a floor for the top 10 by clicks); pages with clicks that were not read are listed apart, never scored as read.
+
 ## Firecrawl only where needed (DECISIONS 296, 2026-11-02)
 
 Firecrawl reads a page only when Maya could not read it (blocked, challenged, 429, empty, no answer), or when its

@@ -351,7 +351,14 @@
   "read_unscored_line_one": "Okunan, önemi bilinmeyen {n} sayfa: puana nötr ağırlıkla katıldı.",
   "prov_reassessed": "Değerlendirme:",
   "prov_reassessed_line": "Güncel motorla yeniden değerlendirildi (Maya Audit {version} · şema {schema}{commit}, {date})",
-  "prov_reassess_failed": "Güncel motorla yeniden değerlendirilemedi; rapor kaydedildiği hâliyle kullanıldı."
+  "prov_reassess_failed": "Güncel motorla yeniden değerlendirilemedi; rapor kaydedildiği hâliyle kullanıldı.",
+  "business_line": "İşletme türü: {label} ({how})",
+  "business_how": {
+   "user": "seçildi",
+   "suggestion": "önerildi; neden: {reason}",
+   "suggestion_plain": "önerildi"
+  },
+  "kp_not_found": "{label} sayfası okunan sayfalar arasında bulunamadı (sitede olmadığı anlamına gelmez)."
  },
  "en": {
   "doc_kind": "WEBSITE AUDIT",
@@ -703,6 +710,13 @@
   "read_unscored_line_one": "{n} page read, importance unknown: counted at a neutral weight.",
   "prov_reassessed": "Assessment:",
   "prov_reassessed_line": "Re-evaluated with the current engine (Maya Audit {version} · schema {schema}{commit}, {date})",
-  "prov_reassess_failed": "Could not be re-evaluated with the current engine; the report is used as saved."
+  "prov_reassess_failed": "Could not be re-evaluated with the current engine; the report is used as saved.",
+  "business_line": "Business type: {label} ({how})",
+  "business_how": {
+   "user": "chosen",
+   "suggestion": "suggested; why: {reason}",
+   "suggestion_plain": "suggested"
+  },
+  "kp_not_found": "No {label} page among the pages read (this does not mean the site has none)."
  }
 }

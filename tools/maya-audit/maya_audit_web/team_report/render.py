@@ -257,8 +257,10 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 .p6 table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 7pt; font-size: 8.4pt; }
 .p6 th { text-align: left; color: var(--faint); font-weight: 600; padding: 0 4pt 3pt 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .p6 td { padding: 3pt 4pt 2pt 0; border-top: .5pt solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.p6 th:nth-child(1) { width: 6%; } .p6 th:nth-child(2) { width: 31%; } .p6 th:nth-child(3) { width: 11%; }
-.p6 th:nth-child(4) { width: 14%; } .p6 th:nth-child(5) { width: 14%; } .p6 th:nth-child(6) { width: 11%; }
+.p6 th:nth-child(1) { width: 6%; } .p6 th:nth-child(2) { width: 27%; } .p6 th:nth-child(3) { width: 19%; }
+.p6 th:nth-child(4) { width: 14%; } .p6 th:nth-child(5) { width: 11%; } .p6 th:nth-child(6) { width: 11%; }
+/* DECISIONS 311: a business type's page type names are longer ("Finansal ürün ve ürün listesi"): they wrap. */
+.p6 td:nth-child(3) { white-space: normal; line-height: 1.15; }
 .p6 .left, .p6 .right { display: flex; flex-direction: column; gap: 18pt; }
 .p6 .app p { font-size: 9.6pt; line-height: 1.4; margin-top: 7pt; }
 .quick .q { font-size: 9.2pt; color: var(--ink); margin-top: 9pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -561,9 +563,13 @@ def page6(d, L):
     head = "".join(f"<th>{e(c)}</th>" for c in L["kp_cols"])
     body = "".join("<tr>" + "".join(f"<td>{e(v)}</td>" for v in (p["rank"], p["path"], p["type"], p["importance"], p["cards"],
                                                                   p["worst"], p["confirm"])) + "</tr>" for p in d.get("key_pages") or [])
-    pages = (f'<div class="card"><div class="cardhead"><h3>{e(L["kp_title"])}</h3></div>'
-             + (f'<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>' if body else
-                f'<div class="note">{e(d.get("key_pages_note") or "—")}</div></div>'))
+    # DECISIONS 311: the business type above the table, and the profile's top page types not found among the pages read.
+    business = f'<div class="note" data-slot="business_line">{e(d["business_line"])}</div>' if d.get("business_line") else ""
+    missing = "".join(f"<li>{e(x)}</li>" for x in d.get("key_pages_not_found") or [])
+    missing = f'<ul class="kp-missing">{missing}</ul>' if missing else ""
+    pages = (f'<div class="card"><div class="cardhead"><h3>{e(L["kp_title"])}</h3></div>{business}'
+             + (f'<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>{missing}</div>' if body else
+                f'<div class="note">{e(d.get("key_pages_note") or "—")}</div>{missing}</div>'))
     app = (f'<div class="card app"><div class="cardhead"><h3>{e(L["appendix_title"])}</h3></div>'
            f'<p>{e(d["appendix"]["line"])}</p></div>')
     return f'<div class="body"><div class="p6"><div class="left">{limits}{confirm}</div><div class="right">{pages}{app}</div></div></div>'
@@ -667,7 +673,7 @@ def write_appendix(d, out):
     from maya_audit import client_appendix, release_gate  # type: ignore
     report = json.loads(Path(d["_report_path"]).read_text(encoding="utf-8"))
     affected = json.loads(Path(d["_affected_path"]).read_text(encoding="utf-8")) if d.get("_affected_path") else None
-    content, sealed = appendix_bytes(report, affected, d.get("_confirmations") or {}, d["lang"])
+    content, sealed = appendix_bytes(report, affected, d.get("_confirmations") or {}, d["lang"], d.get("_business"))
     path = out.with_name(out.stem + ("-appendix.xlsx" if d["lang"] == "en" else "-ek.xlsx"))
     path.write_bytes(content)
     problems = [f"HATA: {v['rule']}: {v['message']}" for v in
@@ -675,14 +681,14 @@ def write_appendix(d, out):
     return path, problems
 
 
-def appendix_bytes(report, affected, confirmations, lang):
+def appendix_bytes(report, affected, confirmations, lang, business=None):
     """The XLSX appendix (DECISIONS 300 (4)) from the saved report, its address list and the owner's manual checks:
     (bytes, the final result). The one function of the skill's `-ek.xlsx` and the web app's "Ek (XLSX)" button, so
     both files are the same (DECISIONS 307)."""
     from maya_audit import client_appendix, client_selection, final  # type: ignore
     from maya_audit_web import wording as w
     sealed = final.from_report(report, affected)
-    selection = client_selection.select(sealed.report, sealed.affected, confirmations or {})
+    selection = client_selection.select(sealed.report, sealed.affected, confirmations or {}, business=business)
     content = client_appendix.build(selection, lang, sealed.affected,
                                     title=lambda cid, text: w.title(cid, text, lang)[0], fix=lambda text: w.fix(text, lang)[0],
                                     label=lambda text: w.label(text, lang)[0], line=lambda text: w.line(text, lang)[0])

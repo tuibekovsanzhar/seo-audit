@@ -314,6 +314,9 @@ class CrawlConfig:
 
     # User-marked key pages (spec §8 Q3). Auto-suggestion is not built yet.
     key_pages: tuple[str, ...] = ()
+    # The business type ("İşletme türü", DECISIONS 311): "auto" (suggested from the homepage and addresses), or a profile
+    # id of maya_audit.business_types. It weights page importance and key pages only; no check reads it.
+    business_type: str = "auto"
 
     # Additional hosts allowed for redirects or optional cross-origin checks.
     # The requested start host is added automatically for each audit.

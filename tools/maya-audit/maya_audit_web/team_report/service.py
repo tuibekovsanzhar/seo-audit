@@ -95,6 +95,7 @@ def _pages(pdf: Path):
         return list(fitz.open(str(pdf)))
 
 
-def appendix(report: dict, affected: dict | None, confirmations: dict | None, lang: str) -> bytes:
+def appendix(report: dict, affected: dict | None, confirmations: dict | None, lang: str,
+             business: str | None = None) -> bytes:
     """The XLSX appendix alone (the web app's "Ek (XLSX)" button): the skill writes the same file."""
-    return render.appendix_bytes(report, affected, confirmations, lang)[0]
+    return render.appendix_bytes(report, affected, confirmations, lang, business)[0]

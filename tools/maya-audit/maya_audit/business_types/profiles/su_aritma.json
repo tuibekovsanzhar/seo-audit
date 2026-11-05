@@ -1,0 +1,186 @@
+{
+ "id": "su_aritma",
+ "order": 8,
+ "label": {
+  "tr": "Su arıtma hizmetleri",
+  "en": "Water purification services"
+ },
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "suggest": {
+  "schema": [],
+  "platforms": [],
+  "url": [
+   "su-aritma",
+   "aritma",
+   "aritma-cihazlari",
+   "filtre",
+   "filtreler",
+   "sebil",
+   "su-aritma-cihazi"
+  ],
+  "words": [
+   "su arıtma",
+   "arıtma cihazı",
+   "filtre",
+   "sebil",
+   "filtre değişimi"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "products",
+   "label": {
+    "tr": "Ürün ve çözüm",
+    "en": "Products and solutions"
+   },
+   "citable": false,
+   "generic": [
+    "product",
+    "category"
+   ],
+   "signals": {
+    "url": [
+     "urunler",
+     "urun",
+     "su-aritma",
+     "aritma-cihazlari",
+     "cihazlar",
+     "cozumler",
+     "filtre",
+     "filtreler",
+     "sebil",
+     "products",
+     "solutions"
+    ],
+    "schema": [
+     "Product"
+    ],
+    "words": [
+     "su arıtma",
+     "arıtma cihazı",
+     "filtre",
+     "çözümler"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "apply",
+   "label": {
+    "tr": "Başvuru ve iletişim",
+    "en": "Application and contact"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "basvuru",
+     "iletisim",
+     "teklif",
+     "teklif-al",
+     "bize-ulasin",
+     "contact"
+    ],
+    "schema": [
+     "ContactPage"
+    ],
+    "words": [
+     "başvur",
+     "iletişim",
+     "teklif al",
+     "bize ulaşın"
+    ],
+    "content": [
+     "form"
+    ]
+   }
+  },
+  {
+   "id": "service",
+   "label": {
+    "tr": "Servis ve abonelik koşulları",
+    "en": "Service and subscription terms"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "servis",
+     "abonelik",
+     "kiralama",
+     "kosullar",
+     "filtre-degisimi",
+     "bakim",
+     "garanti",
+     "service",
+     "subscription"
+    ],
+    "schema": [],
+    "words": [
+     "servis",
+     "abonelik",
+     "kiralama",
+     "bakım",
+     "filtre değişimi",
+     "garanti"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ],
+   "added": "Stage 4: the homepage is at least 85 in every sector (owner); not in the sector list"
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber / SSS / blog",
+    "en": "Guide / FAQ / blog"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "blogs",
+     "rehber",
+     "haberler",
+     "makale",
+     "makaleler",
+     "sss",
+     "sikca-sorulan-sorular",
+     "faq",
+     "guide",
+     "guides",
+     "articles",
+     "news"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "blog",
+     "rehber",
+     "sıkça sorulan sorular",
+     "SSS",
+     "makaleler"
+    ],
+    "content": [
+     "faq"
+    ]
+   },
+   "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
+   "weight": 30
+  }
+ ]
+}

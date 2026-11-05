@@ -1,0 +1,215 @@
+{
+ "id": "gida",
+ "order": 11,
+ "label": {
+  "tr": "Gıda üreticisi",
+  "en": "Food producer"
+ },
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "suggest": {
+  "schema": [
+   "Recipe",
+   "NutritionInformation",
+   "Brand"
+  ],
+  "platforms": [],
+  "url": [
+   "markalar",
+   "markalarimiz",
+   "tarifler",
+   "besin-degerleri",
+   "icindekiler",
+   "alerjen",
+   "uretim"
+  ],
+  "words": [
+   "markalarımız",
+   "ürünlerimiz",
+   "tarifler",
+   "kalite",
+   "sürdürülebilirlik",
+   "üretim"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "brand_family",
+   "label": {
+    "tr": "Marka ve ürün ailesi",
+    "en": "Brand and product family"
+   },
+   "citable": false,
+   "generic": [
+    "category"
+   ],
+   "signals": {
+    "url": [
+     "markalar",
+     "markalarimiz",
+     "marka",
+     "urunlerimiz",
+     "urun-gruplari",
+     "kategoriler",
+     "brands"
+    ],
+    "schema": [
+     "Brand",
+     "CollectionPage",
+     "ItemList"
+    ],
+    "words": [
+     "markalarımız",
+     "ürün grupları",
+     "ürünlerimiz"
+    ],
+    "content": [
+     "list"
+    ]
+   }
+  },
+  {
+   "id": "product",
+   "label": {
+    "tr": "Ürün detayı",
+    "en": "Product detail"
+   },
+   "citable": false,
+   "generic": [
+    "product"
+   ],
+   "signals": {
+    "url": [
+     "urun/*",
+     "urunler/*",
+     "products/*",
+     "product/*"
+    ],
+    "schema": [
+     "Product"
+    ],
+    "words": [
+     "içindekiler",
+     "besin değerleri"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "ingredients",
+   "label": {
+    "tr": "İçerik ve alerjen bilgisi",
+    "en": "Ingredients and allergens"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "icindekiler",
+     "alerjen",
+     "besin-degerleri",
+     "beslenme",
+     "nutrition",
+     "ingredients",
+     "allergen"
+    ],
+    "schema": [
+     "NutritionInformation"
+    ],
+    "words": [
+     "içindekiler",
+     "alerjen",
+     "besin değerleri",
+     "ingredients",
+     "allergen"
+    ],
+    "content": [
+     "table"
+    ]
+   }
+  },
+  {
+   "id": "quality",
+   "label": {
+    "tr": "Kalite ve kurum bilgisi",
+    "en": "Quality and company"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "kalite",
+     "sertifikalar",
+     "hakkimizda",
+     "kurumsal",
+     "surdurulebilirlik",
+     "uretim",
+     "quality",
+     "about",
+     "sustainability"
+    ],
+    "schema": [
+     "AboutPage"
+    ],
+    "words": [
+     "kalite",
+     "sertifika",
+     "hakkımızda",
+     "sürdürülebilirlik",
+     "üretim tesisi"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ],
+   "added": "Stage 4: the homepage is at least 85 in every sector (owner); not in the sector list"
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber / SSS / blog",
+    "en": "Guide / FAQ / blog"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "tarifler",
+     "tarif",
+     "blog",
+     "rehber",
+     "recipes",
+     "haberler",
+     "sss",
+     "faq"
+    ],
+    "schema": [
+     "Recipe",
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "tarif",
+     "tarifler",
+     "blog",
+     "rehber",
+     "sıkça sorulan sorular"
+    ],
+    "content": [
+     "faq"
+    ]
+   },
+   "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
+   "weight": 30
+  }
+ ]
+}

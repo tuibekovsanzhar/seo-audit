@@ -113,6 +113,10 @@ def crawl_config(engine: Engine, audit: dict[str, Any], db_path: Path, *, resume
     if verification.get("requested") and verification.get("token"):
         # The owner's token, as a meta tag on the homepage or a DNS TXT record: either lets ACC-4 run.
         argv += ["--site-verification-token", verification["token"], "--verify-dns"]
+    # The business type (DECISIONS 311): "auto" unless the plan named one.
+    business = audit.get("business_type") or ((audit.get("document") or {}).get("business_type") or {}).get("chosen")
+    if business and business != "auto":
+        argv += ["--business-type", business]
     if not engine.allow_loopback:
         argv.append("--block-loopback")
     extra = engine.overrides_for(audit["url"]) if engine.overrides_for else {}
@@ -309,7 +313,8 @@ class Runner:
         already = pages_saved(db_path) if resume else 0
         planned = (store.plan(audit["plan_id"]) or {}).get("document") or {}
         audit = {**audit, "verification": planned.get("ownership"), "brand_family_domains": planned.get("brand_family_domains") or [],
-                 "switches": planned.get("switches") or {}}
+                 "switches": planned.get("switches") or {},
+                 "business_type": (planned.get("business_type") or {}).get("chosen") or "auto"}
         config = crawl_config(engine, audit, db_path, resume=resume, pages_already=already)
         cap = MODES[audit["mode"]]
         progress: dict[str, Any] = {"phase": "starting", "step": "access", "steps_seen": ["access"], "page_cap": cap,
@@ -336,6 +341,12 @@ class Runner:
         def on_progress(event: dict[str, Any]) -> None:
             phase = event.get("phase")
             if phase == "done":
+                return
+            if event.get("business_suggestion"):
+                # DECISIONS 311: the business type the homepage suggests, shown in the progress box at once.
+                progress["business_suggestion"] = event["business_suggestion"]
+                store.update_audit(audit_id, progress=progress)
+                self.emit(audit_id, "business", {"business_suggestion": event["business_suggestion"]})
                 return
             progress["elapsed_s"] = event.get("elapsed_s", progress["elapsed_s"])
             if phase != progress.get("phase"):
@@ -558,6 +569,13 @@ class Runner:
         rendered = report["crawl"].get("render") or {}
         progress.update(render_mode=rendered.get("mode"), render_reason=(rendered.get("reason") or "")[:300] or None)
         progress.pop("continuing", None)
+        # DECISIONS 311: the business type the audit used, small, so the plan of this site's next audit can suggest it
+        # without reading report.json.
+        chosen = report["crawl"].get("business_type") or {}
+        if chosen.get("id"):
+            sug = chosen.get("suggestion") or {}
+            progress["business_type"] = {"id": chosen["id"], "chosen_by": chosen.get("chosen_by"), "version": chosen.get("version"),
+                                         "suggestion": {k: sug.get(k) for k in ("id", "label", "reason", "version")}}
         progress.update(phase="done", pages_checked=counts["pages_checked"], redirects=counts["redirects"],
                         requests_sent=len(report["crawl"]["requests"]) or progress["requests_sent"], url=None, at=now())
         state = "stopped" if result.stopped else "finished"

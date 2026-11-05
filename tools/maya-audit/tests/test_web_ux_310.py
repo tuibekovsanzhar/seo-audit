@@ -107,16 +107,16 @@ def test_the_history_list_shows_site_date_mode_pages_path_status_and_short_id(fi
 
 # ---------------------------------------------------------------- time from recent runs
 
-def test_time_estimates_come_from_recent_runs_and_fall_back_to_a_range(finished):
+def test_time_estimates_come_from_recent_runs_and_fall_back_to_the_modes_default(finished):
+    # DECISIONS 311 (6) replaces the range of DECISIONS 310: fewer than three counted runs show the mode's default.
     client, audit, _ = finished
     modes = {m["id"]: m["typical"] for m in client.get(f"{API}/settings").json()["modes"]}
     mine = modes[audit["mode"]]
-    assert mine["known"] and mine["runs"] == 1 and mine["label"].startswith("about ")
-    others = [m for mode, m in modes.items() if mode != audit["mode"]]
-    assert others and all(not m["known"] and m["low_minutes"] <= m["high_minutes"] and "–" in m["label"] for m in others)
+    assert mine["known"] and mine["basis"] == "default" and mine["runs"] <= 1 and mine["label"].startswith("about ")
+    assert {mode: m["minutes"] for mode, m in modes.items()} == {"single": 1, "quick": 10, "standard": 25}
     client.cookies.set("maya_language", "tr")
     tr = {m["id"]: m["typical"] for m in client.get(f"{API}/settings").json()["modes"]}
-    assert tr[audit["mode"]]["label"].startswith("yaklaşık ") and "dk" in tr[audit["mode"]]["label"]
+    assert tr[audit["mode"]]["label"].startswith("yaklaşık ") and "varsayılan" in tr[audit["mode"]]["label"]
 
 
 # ---------------------------------------------------------------- the summary is the team report's

@@ -1,0 +1,248 @@
+{
+ "id": "kart",
+ "order": 4,
+ "group": "finans",
+ "label": {
+  "tr": "Kart ve sadakat programları",
+  "en": "Cards and loyalty programmes"
+ },
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "suggest": {
+  "schema": [
+   "CreditCard",
+   "PaymentCard",
+   "ProgramMembership",
+   "MemberProgram"
+  ],
+  "platforms": [],
+  "url": [
+   "kartlar",
+   "kredi-kartlari",
+   "puan",
+   "mil",
+   "chip-para",
+   "bonus",
+   "worldpuan",
+   "maxipuan",
+   "ayricaliklar",
+   "sadakat"
+  ],
+  "words": [
+   "kartlar",
+   "kampanyalar",
+   "puan",
+   "mil",
+   "ayrıcalık",
+   "kart başvurusu",
+   "sadakat"
+  ]
+ },
+ "page_types": [
+  {
+   "id": "cards",
+   "label": {
+    "tr": "Kart türleri",
+    "en": "Card types"
+   },
+   "citable": false,
+   "generic": [
+    "category",
+    "product"
+   ],
+   "signals": {
+    "url": [
+     "kartlar",
+     "kart",
+     "kredi-karti",
+     "kredi-kartlari",
+     "banka-karti",
+     "cards",
+     "card"
+    ],
+    "schema": [
+     "CreditCard",
+     "PaymentCard"
+    ],
+    "words": [
+     "kart",
+     "kartlar",
+     "kredi kartı"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "campaign",
+   "label": {
+    "tr": "Kampanya",
+    "en": "Campaign"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "kampanya",
+     "kampanyalar",
+     "firsat",
+     "firsatlar",
+     "campaign",
+     "campaigns",
+     "offers"
+    ],
+    "schema": [],
+    "words": [
+     "kampanya",
+     "fırsat"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "points",
+   "label": {
+    "tr": "Puan, mil ve ayrıcalıklar",
+    "en": "Points, miles and privileges"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "puan",
+     "mil",
+     "miles",
+     "ayricalik",
+     "ayricaliklar",
+     "avantaj",
+     "avantajlar",
+     "sadakat",
+     "chip-para",
+     "bonus",
+     "privileges",
+     "rewards"
+    ],
+    "schema": [
+     "ProgramMembership",
+     "MemberProgram"
+    ],
+    "words": [
+     "puan",
+     "mil",
+     "ayrıcalık",
+     "avantaj",
+     "sadakat"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "apply",
+   "label": {
+    "tr": "Başvuru",
+    "en": "Application"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "basvuru",
+     "basvur",
+     "apply",
+     "application"
+    ],
+    "schema": [],
+    "words": [
+     "başvur",
+     "başvuru"
+    ],
+    "content": [
+     "form"
+    ]
+   }
+  },
+  {
+   "id": "help",
+   "label": {
+    "tr": "Yardım",
+    "en": "Help"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "yardim",
+     "sss",
+     "destek",
+     "iletisim",
+     "help",
+     "faq",
+     "support"
+    ],
+    "schema": [],
+    "words": [
+     "yardım",
+     "sss",
+     "destek",
+     "sıkça sorulan"
+    ],
+    "content": [
+     "faq"
+    ]
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ],
+   "added": "Stage 4: the homepage is at least 85 in every sector (owner); not in the sector list"
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber / SSS / blog",
+    "en": "Guide / FAQ / blog"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "blogs",
+     "rehber",
+     "haberler",
+     "makale",
+     "makaleler",
+     "sss",
+     "sikca-sorulan-sorular",
+     "faq",
+     "guide",
+     "guides",
+     "articles",
+     "news"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "blog",
+     "rehber",
+     "sıkça sorulan sorular",
+     "SSS",
+     "makaleler"
+    ],
+    "content": [
+     "faq"
+    ]
+   },
+   "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
+   "weight": 30
+  }
+ ]
+}
