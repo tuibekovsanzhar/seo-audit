@@ -8,7 +8,7 @@ description: >
   göre ilk kartlar, sorumlu ve efor, hızlı kazanımlar) — Yapılacaklar sayfaları (öncelik puanına göre en çok
   15 onay kutulu kart: adım adım ne yapılacak, sorumlu, efor, takvim, nasıl doğrulanır, TR + EN örnek
   adresler) ve son sayfa Kapsam ve ek (Maya'nın kendi sınırları, "Teyit edin" listesi, kilit sayfalar
-  karnesi, eke işaret ve sayıları). Bütün bulgular ve etkilenen adresler XLSX ekindedir. Rapor dili her seferinde seçilir: Türkçe ya da İngilizce. Şu durumlarda
+  karnesi, eke işaret ve sayıları); isteğe bağlı olarak işletme sahibine en çok 5 sayfalık müşteri özeti. Bütün bulgular ve etkilenen adresler XLSX ekindedir. Rapor dili her seferinde seçilir: Türkçe ya da İngilizce. Şu durumlarda
   kullan: "profesyonel audit raporu", "Maya Audit Professional formatında rapor", "4 sayfalık audit
   özeti", "SEO audit raporunu bu tasarımla çıkar", "yönetici özeti audit PDF'i", "audit raporu
   İngilizce / Türkçe olsun", "audit to-do listesi", "etkilenen linklerle yapılacaklar". English:
@@ -52,6 +52,7 @@ Maya Audit'in report.json dosyasından, `Maya-Audit-Professional.pdf` tasarımı
 - `build_data.py`: report.json → data.json taslağı (`--lang tr|en` zorunlu, varsayılanı yok). Raporu Maya'nın ortak son sonucu üzerinden okur (`maya_audit.final.from_report`, DECISIONS 283); motor bulunamazsa taslak üretmez. `validate_data.py`, data.json'un raporun şimdiki son sonucundan üretildiğini (`_digest`) de denetler.
 - `validate_data.py`: data.json denetimi ve Maya Audit'in yayın kapısı (DECISIONS 278). Hata varsa 1 ile çıkar; kapı çalışamazsa da.
 - `render.py`: data.json → HTML + PDF (+ `--png` önizleme). Taşma varsa alanın adını yazar ve PDF'i basmaz.
+- `scripts/brief.py`: isteğe bağlı müşteri özeti (en çok 5 sayfa, DECISIONS 319): `maya_audit_web/team_report/brief.py`'yi çağırır; metni `texts/brief-tr.json`, `brief-en.json`.
 - `maya_audit_web/team_report/refs/etiketler.json`: Sabit etiketler (TR/EN). Yeni etiket eklenecekse iki dile birlikte eklenir.
 - `maya_audit_web/team_report/texts/tr.json`, `en.json`: metin kitaplığı (DECISIONS 307). Bir kural eklenince iki dile birlikte yazılır; `tests/test_team_report.py` eksik ya da boş alanı reddeder.
 - `references/veri_sozlesmesi.md`: data.json alanları; hangisini script, hangisini model yazar. **Alanları doldurmadan önce oku.**
@@ -180,6 +181,19 @@ python scripts/render.py data.json -o rapor.html --pdf rapor.pdf --png onizleme/
 - Denetleyicinin uyarıları.
 - Motor çevirisi kullanıldı mı (`_engine_wording`).
 - Raporun bir ölçüm değil, kayıtlı bir denetimin özeti olduğu. Laboratuvar skoru tek bir koşudur.
+
+### İsteğe bağlı: Müşteri özeti (DECISIONS 319)
+
+Kullanıcı "müşteri özeti", "client brief", "işletme sahibine kısa özet" isterse, ekip raporuyla aynı veriden (güncel motor, kart seçimi, `review.json`, işletme türü) en çok 5 sayfalık sade dilli özet basılır:
+
+```
+python scripts/brief.py <report.json> --lang tr --pdf ozet.pdf [--html ozet.html] [--png onizleme/] [--review <review.json>] [--maya-src <klasör>]
+```
+
+- Sayfalar: 1 kısaca durum, site sağlığı, en önemli 3 sorun, zaten iyi olanlar · 2 işletme türünün önemli sayfaları (neden önemli, durumu) · 3-4 en önemli 3-5 sorun (yalnız ölçülmüş ya da teyit edilmiş "Sorun" kartları; "Kontrol edin", "Fırsat", not ve "Teyit edin" bekleyenler asla) · 5 30/60/90 günlük plan, inceleyemediklerimiz, ekip raporuna işaret.
+- Metin Maya Audit'in kütüphanesindedir (`maya_audit_web/team_report/texts/brief-tr.json`, `brief-en.json`); skill metni yazmaz ve değiştirmez.
+- Kapı: 5 sayfadan uzun, bulgu kimliği / kural adı, teyit edilmemiş bulgu, hizmet sağlayıcı adı (tarayıcıları engelleyen koruma hizmeti dışında) ya da açıklamasız teknik terim içeren özet ve `client_brief_allowed` false olan denetim (ör. çok az sayfa okundu) basılmaz; nedeni düz cümleyle yazılır (çıkış kodu 1).
+- Web uygulamasında aynı özet "İndir" bölümündeki "Müşteri özeti (PDF)" düğmesidir.
 
 ## Motorun bilinen tuzakları (skill bunları şöyle ele alıyor)
 

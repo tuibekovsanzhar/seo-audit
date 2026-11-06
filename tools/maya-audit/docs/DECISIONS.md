@@ -3835,3 +3835,65 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      start page's record (`reassess_rules._decisions_318`). nihan (Cloudflare, its one page request 429 twice while
      robots.txt and 26 sitemaps were served): "Teyit edin" -> card, PDFs TR and EN print (6 pages each).
      Tests: `tests/test_blocked_reader_317.py` (4 more).
+319. **The client brief ("Müşteri özeti"): at most 5 pages for a business owner, Turkish and English (Owner, 2026-11-06:
+     the pages, their content, the gate and the TR/EN download as asked; the wording, the layout, which problems count as
+     "measured", the "already good" list, the plan's buckets and the term list are agent defaults).** Global for every
+     audit; nihan b3198942, moodisthastanesi c581ff0a and airastana d12146fb were the test cases.
+     (1) *One source.* `maya_audit_web/team_report/brief.py` builds the brief from the team report's data
+     (`build_data.build_from_files`: the current-engine copy, `client_selection`, `artifacts/review.json`, the business
+     type) and prints it in the same design family (the team report's fonts, colours, header, tabs and cards, landscape).
+     `build_from_files` now also keeps each card's place in the selection (`_cards`: merge group, confidence class,
+     placement, issue type, template line) and the findings waiting in "Teyit edin" (`_confirm_ids`); each key page row
+     carries its page type's id (`kind_id`). report.json is unchanged: no schema bump.
+     (2) *Pages.* 1 "Sitenizin durumu": a one-sentence verdict by the worst severity among the brief's problems, site
+     health in plain words (pages read, the severity band, how many problems the brief covers; no score and no "pages
+     with problems" count, which read as a contradiction beside a 494-page card), the first three problems, and up to
+     three things that already work. 2 "En önemli sayfalarınız": the team report's key pages (at most 8: one row per page
+     type first, so moodist's doctors' page is not pushed out by treatment pages), each with its business-type page
+     type, one line on why it matters for customers, Google and AI assistants (a line per page type of every profile and
+     Stage 3's types), and its state in brief problem numbers ("1 ve 5. sorun", "Problems 1 and 5"); a problem of the
+     whole site (certificate, robots.txt, bot protection, sitemap: `SITE_RULES`) is said once under the table, not on
+     each row. 3-4 "Önce düzeltilmesi gerekenler": at most 5 problems, 3 per page. 5 "Sonraki adımlar": 30/60/90 days, one
+     line on what the audit could not check (speed: no lab or field data; Search Console: no IDX-9 data), and a pointer
+     to the team report and its Excel appendix. Four pages when there are 3 problems or fewer.
+     (3) *Which problems.* The team report's problem cards in its order, only of type "Sorun" (never "Kontrol edin" or
+     "Fırsat", DECISIONS 315), severity S1-S4 (never a note), confidence class measured or estimated (agent default:
+     an estimate is measured, its extent estimated; said as "Ölçüldü; kapsamı tahmini"), or confirmed by hand ("Ölçüldü
+     ve elle teyit edildi"), and none of its findings waiting in "Teyit edin". Each says what is wrong and why it matters
+     for the business (customers, sales, AI answers) in the brief's words, an example address from the site and the
+     card's total, who fixes it (Geliştirici / İçerik ekibi; the catalogue's "SEO" owner is the developer), the effort,
+     and, when one template holds most of its pages, "Tek düzeltme yeter" with the page count. The plan: S1/S2, "this
+     week" and small "this month" cards in 30 days, other "this month" cards in 60, "later" in 90; the first problem always
+     starts in the first 30 days; 90 ends with "the other fixes in the team report" (when the team report has more cards)
+     and a re-audit.
+     (4) *Words.* `texts/brief-tr.json`, `texts/brief-en.json`: words for every rule family (rule id prefix), the rules
+     that need their own (specific high-impact ones), every merge group and the redirect chain, every page type, the
+     "already good" checks, the verdicts and the labels. No digits, IDs, rule names or vendor names in them; a test keeps
+     every rule the engine can name resolved to words. "Already good": a check that passed with no finding at all and no
+     finding of a check that would contradict it (ACC-2 "AI assistants may read the site" is not said when ACC-9 found a
+     block), plus "every top page type of your business type was found" when nothing was "not found"; at most 3.
+     (5) *The gate* (`brief.check`, on the brief's strings and on the printed PDF's text): blocked, with the reason in
+     plain words, when the brief has more than 5 pages; a finding ID, a check or gate name (ACC-9, RG-15) or a rule id;
+     an item that is not measured or confirmed or that waits in "Teyit edin"; a tool, provider or platform name (Firecrawl,
+     DataForSEO, Lighthouse, Shopify, WordPress, crawler user agents ...) or a protection service other than the one a
+     problem in the brief names from its evidence (airastana: "Sitenizin Imperva adlı koruma hizmeti ..."); a technical
+     term (robots.txt, HTML, TLS, structured data, sitemap, noindex, hreflang, canonical, meta description, JavaScript,
+     parameter, redirect, alt text, llms.txt, template, Search Console, http/https) without its short explanation in the
+     brief. Before any of that: `client_selection.client_brief_allowed` false (low coverage, DECISIONS 309) blocks it
+     ("Bu denetimde çok az sayfa okundu (4 sayfa); müşteri özeti sitenin tamamı için konuşamaz ..."), and a team report
+     that cannot be published (validator errors or a BLOCKED release gate) blocks the brief too.
+     (6) *Web app.* "Müşteri özeti — Yakında" is now "Müşteri özeti (PDF)" in the Downloads card, under the same TR/EN
+     switch: GET `/audits/{id}/client-brief?lang=` builds it and returns an ordinary link (`…-musteri-ozeti-tr.pdf`,
+     `…-client-brief-en.pdf`); GET `/downloads/brief?lang=` builds and serves it; blocked -> HTTP 422
+     `client_brief_blocked` with `reasons`, shown under the button. (7) *Skill.* `maya-audit-pro`'s
+     `scripts/brief.py` (a thin entry like the others) runs the same module: `--lang tr|en --pdf … [--html] [--png]
+     [--review]`; SKILL.md has the option. (8) *Also fixed (global):* when the key pages come from the page reader's
+     addresses (DECISIONS 316), a page type they were given is no longer listed as "not found" (airastana: "Destinasyonlar
+     ve uçuş rotaları" and "Uçuş arama" were both in the table and in the not-found list; now only "Bilet fiyatları ve
+     kampanyalar"), in the team report too.
+     Results offline (current-engine copies in a scratch folder, provider-free): all six briefs 5 pages, nothing blocked:
+     nihan 5 problems (page code weight, language versions, links to duplicate addresses, heading order, shared titles),
+     verdict S3; moodist 5 (redirect chain High, tracking parameters, duplicate-address links, heading order, brand name),
+     verdict S2; airastana 4 (certificate, Imperva block page, heading order, broken markup), verdict S3.
+     Tests: `tests/test_client_brief_319.py` (library, selection, plan, key pages, gate, low coverage, routes; one slow
+     through the real routes in both languages); `test_team_report` follows the Downloads card.

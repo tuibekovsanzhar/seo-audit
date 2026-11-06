@@ -1,0 +1,880 @@
+{
+ "_about": "Client brief (DECISIONS 319): at most 5 pages in plain words, for business owners. Numbers come from report.json; the problem, page-type and 'already good' texts here hold no digits. Every text that uses a technical term also carries the term's short explanation (terms).",
+ "labels": {
+  "doc_kind": "CLIENT BRIEF",
+  "tabs": [
+   "Summary",
+   "Key pages",
+   "Problems",
+   "Next steps"
+  ],
+  "p1_title": "Where your site stands",
+  "p1_sub": "The short version, the most important problems and what already works",
+  "verdict": "IN SHORT",
+  "health": "Site health",
+  "top": "The most important problems",
+  "top_none": "We found no measured or confirmed problem on the pages we checked.",
+  "top_more": "Details on page 3.",
+  "good": "Already working well",
+  "good_none": "This audit measured no particular strength worth calling out.",
+  "p2_title": "Your most important pages",
+  "p2_sub": "The pages that matter most for your type of business, and how they are doing",
+  "business": "Type of business: {label}",
+  "col_page": "Page",
+  "col_kind": "Page type",
+  "col_why": "Why it matters for customers, Google and AI assistants",
+  "col_state": "Status",
+  "state_ok": "No page-specific problem found",
+  "state_problems": "{word} {list}",
+  "state_minor": "Other fixes in the team report",
+  "state_plus_minor": "{word} {list} and other fixes",
+  "kp_none": "This audit did not have enough data to rank your key pages.",
+  "kp_languages": "Homepage ({n} languages)",
+  "not_found": "No {label} page was among the pages we checked (this does not mean the site has none).",
+  "p3_title": "What to fix first",
+  "p3_sub": "The most important problems we measured or confirmed",
+  "p4_title": "What to fix first (continued)",
+  "what": "What is wrong",
+  "why": "Why it matters for your business",
+  "example": "Example from your site",
+  "who": "Who fixes it",
+  "effort": "Effort",
+  "status": "Evidence",
+  "template": "One fix is enough",
+  "template_line": "{n} pages with this problem share one page template (the common design of pages with the same layout): one fix in the template fixes them all.",
+  "sitewide": "Across the whole site",
+  "p5_title": "Next steps",
+  "p5_sub": "A 30, 60 and 90 day plan",
+  "d30": "First 30 days",
+  "d60": "By day 60",
+  "d90": "By day 90",
+  "plan_item": "Problem {n}: {title} ({who})",
+  "plan_60_empty": "Check that the fixes of the first 30 days are live and work as expected.",
+  "plan_minor": "Schedule the other fixes listed in the team report.",
+  "plan_recheck": "After the fixes, we audit the site again and measure the effect in Google together.",
+  "not_checked": "What we could not check",
+  "not_checked_both": "This audit could not check page speed (a phone test and real-visitor data) or your Google Search Console data (Google's own records about your site).",
+  "not_checked_speed": "This audit could not check page speed (a phone test and real-visitor data).",
+  "not_checked_gsc": "This audit could not check your Google Search Console data (Google's own records about your site).",
+  "not_checked_none": "This audit checked every source we planned.",
+  "full_report": "Full report",
+  "full_report_line": "Every finding, the fixes step by step and every affected address are in the technical report for your team (the team report and its Excel appendix).",
+  "reach": "We checked {read:page|pages}.",
+  "in_brief": "This brief covers the {n:most important problem|most important problems}; the full list is in the team report.",
+  "footer": "Maya · {domain} · {date}",
+  "coverage_pill": "{read:page|pages} checked",
+  "owners": {
+   "developer": "Developer",
+   "content": "Content team",
+   "seo": "Developer"
+  },
+  "efforts": {
+   "S": "Small",
+   "M": "Medium",
+   "L": "Large"
+  },
+  "evidence": {
+   "measured": "Measured",
+   "confirmed": "Measured and checked by hand",
+   "estimated": "Measured; the extent is estimated"
+  },
+  "severity": {
+   "S1": "Urgent",
+   "S2": "High importance",
+   "S3": "Medium importance",
+   "S4": "Low importance"
+  },
+  "sitewide_note": "Problems that affect the whole site affect every page too: {word} {list}.",
+  "example_scope": "In all: {scope}",
+  "problem_word": [
+   "Problem",
+   "Problems"
+  ],
+  "and": "and"
+ },
+ "verdict": {
+  "S1": "{brand} has a problem that stops customers from finding you in Google and AI assistants; we recommend fixing it first.",
+  "S2": "{brand} has problems that directly affect how visible you are in Google and AI answers; we recommend handling them in the first 30 days.",
+  "S3": "{brand} has a sound base; a few fixes of medium importance can make you more visible in Google and in AI assistants' answers.",
+  "S4": "{brand} is in good shape; only small fixes are left.",
+  "none": "We found no measured or confirmed problem on the pages of {brand} we checked."
+ },
+ "health": {
+  "S1": "There is an urgent problem that blocks your visibility.",
+  "S2": "Nothing is urgent, but problems of high importance directly affect your visibility.",
+  "S3": "Nothing is urgent or of high importance; problems of medium importance limit your visibility.",
+  "S4": "Nothing is urgent or of high or medium importance; only small fixes remain.",
+  "none": "There is no measured or confirmed problem."
+ },
+ "good": {
+  "ACC-9": "Your site's protection does not block Google or automated visitors that say who they are: every page we checked opened.",
+  "ACC-2": "No rule blocks the programs AI assistants use to read sites; they can read your site and use it in their answers.",
+  "IDX-2": "Your site opens over a secure connection (https) and its security certificate is valid: visitors see no warning.",
+  "IDX-6": "We found no broken links between your site's own pages.",
+  "IDX-4": "Your pages show Google their correct main address.",
+  "PRF-2": "Your server answered without interruption throughout the audit: no page failed now and then.",
+  "IDX-5": "Your sitemap (the file that gives Google the list of your pages) works properly.",
+  "IDX-7": "Your pages can be reached from the homepage in a few clicks.",
+  "ACC-7": "You do not ask search engines or AI assistants to wait between pages; your site can be read quickly.",
+  "KEY_PAGES": "Among the pages we checked we found every one of the most important page types for your type of business.",
+  "STR-9": "Your pages tell Google their language correctly.",
+  "ACC-1": "The settings file that guides search engines is read without trouble."
+ },
+ "page_types": {
+  "home": "The first page customers and Google reach; AI assistants learn who you are and what you offer here first.",
+  "category": "Where customers compare products; in Google, broad product searches mostly show this kind of page.",
+  "product": "Where the buying decision is made; Google shows it in product searches, and AI assistants use its price and details when they recommend products.",
+  "blog_article": "Content that answers customers' questions; it appears in Google for information searches and is the kind of page AI assistants quote most.",
+  "guide": "Content that answers customers' questions; it appears in Google for information searches and is the kind of page AI assistants quote most.",
+  "policy": "Trust information such as returns, delivery and terms; customers read it before buying, and AI assistants answer these questions from it.",
+  "help": "Trust information such as returns, delivery and help; customers read it before buying, and AI assistants answer these questions from it.",
+  "utility": "A helper page such as the cart, an account or search; customers need it, but it does not need to appear in Google.",
+  "other": "One of your site's important pages; customers, Google and AI assistants look here too when they get to know you.",
+  "stores": "Where customers looking for your store find its address and hours; nearby searches in Google and AI assistants' location answers rely on it.",
+  "campaign": "Where sales and offers are announced; it appears in Google for discount searches and in AI answers about offers.",
+  "support": "Where customers solve problems; answers to how-to questions in Google and AI assistants come from here.",
+  "products": "Where your products and services are described; customers compare here, and Google and AI assistants answer product questions from it.",
+  "fees": "Where fees and application terms are explained; customers read it before deciding, and Google and AI assistants answer cost questions from it.",
+  "calculator": "A tool where customers do their own sums; it appears in Google for calculation searches and moves customers closer to applying.",
+  "service_location": "Where you say which service you offer in which area; in local searches Google and AI assistants recommend you through it.",
+  "contact": "Where customers reach you; Google and AI assistants take your phone, address and hours from it.",
+  "booking": "Where customers book an appointment or a reservation; visits that turn into sales pass through it.",
+  "brand_family": "Where your brands and product families are presented; it represents you in brand searches in Google and in AI answers.",
+  "ingredients": "Ingredients and allergens; customers look for it before buying, and AI assistants answer these questions from it.",
+  "quality": "Quality certificates and company information; it builds trust, and Google and AI assistants describe you with it.",
+  "services": "Where your services and solutions are described; customers compare here, and Google and AI assistants answer service questions from it.",
+  "pricing": "Where your plans and prices are; the buying decision is made here, and price questions are answered from it.",
+  "routes": "Where the cities and routes you fly are described; it appears in Google and AI answers for flights-to searches.",
+  "flight_search": "Where customers search for flights and pick dates; where sales begin.",
+  "fares": "Fares and offers; it appears in Google for cheap-ticket searches and in AI assistants' answers about prices.",
+  "baggage": "Baggage rules; what passengers ask most before flying, and AI assistants answer these questions from it.",
+  "checkin": "Where passengers check in and manage their booking; they use it most, and the right page showing in searches lowers the load on support.",
+  "terms_help": "Booking terms and help; customers look up cancellation and change rules here, and AI assistants answer these questions from it.",
+  "cards": "Where your card types are described; customers compare cards here, and Google and AI assistants answer card questions from it.",
+  "points": "Points, miles and privileges; customers look at it often, and AI assistants are often asked about it.",
+  "apply": "The application page; where a visit turns into a customer.",
+  "model": "A model's features and price; where the buying decision is made, and the page that appears in Google and AI answers for model searches.",
+  "pricelist": "The price list; what customers look for most, and Google and AI assistants answer price questions from it.",
+  "models": "The model list; where customers compare your range, and the page that appears in Google for broad searches.",
+  "dealers": "Dealers and service points; they appear in Google for nearby searches and in AI assistants' location answers.",
+  "configure": "Build and request a quote; where a visit turns into a sales request.",
+  "menu": "The menu; what customers check before they come, and AI assistants answer what-and-how-much questions from it.",
+  "branches": "Branch addresses and hours; they appear in Google for nearby searches and in AI assistants' location answers.",
+  "order": "Booking or ordering; where a visit turns straight into a sale.",
+  "features": "Where your product's features and integrations are described; customers compare here, and AI assistants answer product questions from it.",
+  "sales": "Where people reach your sales team; where a visit turns into a lead.",
+  "references": "References and customer stories; they build trust, and AI assistants use these examples when they describe you.",
+  "treatment": "Where your treatments and departments are described; patients find you through it when they search Google and AI assistants for a treatment.",
+  "doctors": "Doctors and team; patients choose their doctor here, and Google and AI assistants describe your expertise with it.",
+  "clinic": "Clinic and location; it appears in Google for nearby searches and in AI assistants' location answers.",
+  "appointment": "Appointments and contact; where a visit turns into a patient.",
+  "insurers": "Contracted insurers; what patients ask most before booking, and AI assistants answer that question from it.",
+  "listings": "Destination, hotel and tour lists; they appear in Google and in AI suggestions for broad holiday searches.",
+  "detail": "A hotel or tour detail page; where the buying decision is made.",
+  "account": "Account opening; where a visit turns into a customer.",
+  "company": "Company and support information; it builds trust, and Google and AI assistants describe you with it.",
+  "platform": "Where your trading platform is described; customers decide here, and AI assistants answer platform questions from it.",
+  "service": "Service and subscription terms; customers read them before deciding, and AI assistants answer these questions from them."
+ },
+ "families": {
+  "acc1": {
+   "title": "Repair the file that guides search engines",
+   "what": "Your site's robots.txt (the file that tells search engines and AI assistants which pages they may read) cannot be read properly.",
+   "why": "When this file cannot be read, Google and AI assistants may put off reading your site, or read pages you did not want read."
+  },
+  "acc2": {
+   "title": "Correct the permissions you give search engines",
+   "what": "The rules in your robots.txt (the file that tells search engines and AI assistants which pages they may read) give a different permission than you intend.",
+   "why": "Pages blocked by mistake do not appear in Google or AI answers; pages left open by mistake may be used where you did not want them."
+  },
+  "acc3": {
+   "title": "Review the settings that hide pages from Google",
+   "what": "Some pages carry settings that tell Google and AI assistants not to show the page or not to quote it.",
+   "why": "If these settings are not deliberate, the pages drop out of search results and AI answers, and customers cannot reach them by searching."
+  },
+  "acc4": {
+   "title": "Show search engines the page visitors see",
+   "what": "Your site's security or server settings give Google and AI assistants a different answer than visitors get.",
+   "why": "When Google and AI assistants do not see the page's real content, they cannot show it correctly or quote it."
+  },
+  "acc5": {
+   "title": "Bring forward the pages Google never visits",
+   "what": "According to your server logs, Google has never visited some of your pages.",
+   "why": "Pages that are not visited are not refreshed in search results, or do not appear at all."
+  },
+  "acc6": {
+   "title": "Make your permissions for AI assistants clear",
+   "what": "Your site's permissions treat the programs AI companies use to read sites for training differently from the ones they use to read sites while answering questions.",
+   "why": "Blocking the programs that answer questions stops your site being named as a source when customers ask AI assistants."
+  },
+  "acc7": {
+   "title": "Shorten the waiting time you ask of search engines",
+   "what": "Your robots.txt (the file that tells search engines and AI assistants which pages they may read) asks for a long wait between pages.",
+   "why": "A long wait means Google and AI assistants read only a small part of your site on each visit; new pages are noticed late."
+  },
+  "acc8": {
+   "title": "Fix the file you prepared for AI tools",
+   "what": "The summary file your site publishes for AI tools (llms.txt) links to pages that do not work or that move to another address.",
+   "why": "A tool that reads this file is sent to broken pages instead of the right ones."
+  },
+  "acc9": {
+   "title": "Stop your protection service from blocking Google and AI assistants",
+   "what": "Your [[{service} ]]protection service shows automated visitors that say who they are a block page instead of the page; our audit's requests got this page too.",
+   "why": "The programs AI assistants use to read sites may get the same block; then they cannot read your site, cannot name you as a source and give customers other sites' information."
+  },
+  "ans1": {
+   "title": "Repair the page AI answers cite",
+   "what": "A page of yours that AI assistants cite as a source has a problem.",
+   "why": "If the page cannot be read well, assistants may stop citing it, and customers go to other sites instead of yours."
+  },
+  "ans2": {
+   "title": "Make sure the facts in AI answers match your page",
+   "what": "What AI assistants say about you does not match the page of yours they cite.",
+   "why": "Customers get wrong information in your name, which directly affects trust and sales."
+  },
+  "ans4": {
+   "title": "Become a source in AI answers",
+   "what": "AI assistants cite other sites on this topic, not yours.",
+   "why": "Customers get their answer from your competitors' pages; your brand is not in those answers."
+  },
+  "idx1": {
+   "title": "Fix the pages that fail and the links to them",
+   "what": "Some pages, or the addresses links lead to, return an error or an empty answer instead of content.",
+   "why": "A customer who meets an error page leaves the site; Google and AI assistants cannot read or show these pages either."
+  },
+  "idx10": {
+   "title": "Make sure Bing can read your pages",
+   "what": "There is a problem with the settings Bing needs to read your site or to hear about changes.",
+   "why": "Bing's index also feeds several AI assistants; a page missing from Bing is missing from those answers too."
+  },
+  "idx2": {
+   "title": "Make every address use a secure connection",
+   "what": "Something is missing in your site's secure-connection setup: the security certificate or the move to the secure address does not work properly.",
+   "why": "Browsers show visitors a security warning and customers leave; Google and AI assistants may also stop reading the site."
+  },
+  "idx3": {
+   "title": "Shorten redirect chains",
+   "what": "Some addresses send visitors on to other addresses several times (redirects), or into a loop.",
+   "why": "Each extra step makes the page open later; Google and AI assistants may give up on long chains and not read the page."
+  },
+  "idx4": {
+   "title": "Make pages show Google the correct main address",
+   "what": "Some pages show a wrong, broken or moved address in the tag that tells Google their main address (the canonical address).",
+   "why": "Google cannot tell which address to show; the page may appear under the wrong address in searches, or not at all."
+  },
+  "idx5": {
+   "title": "Keep your sitemap current and correct",
+   "what": "Your sitemap (the file that gives Google the list of your pages) has wrong, old or misleading entries.",
+   "why": "Google trusts this file less and notices your new and changed pages later."
+  },
+  "idx6": {
+   "title": "Point internal links at the right addresses",
+   "what": "Some links between your site's own pages lead to broken, duplicate or moved addresses.",
+   "why": "Visitors may land on a broken page; Google spends its time on needless addresses and your important pages' strength is split."
+  },
+  "idx7": {
+   "title": "Make your important pages easier to reach",
+   "what": "Some pages are many clicks from the homepage, or no page links to them.",
+   "why": "Deep pages with few links are harder for customers and Google to find; they are read less often and count as less important."
+  },
+  "idx8": {
+   "title": "Separate pages that copy each other",
+   "what": "Some pages carry the same or nearly the same content and title.",
+   "why": "Google shows only one of these pages, and it may not be the one you want; the pages compete with each other in searches."
+  },
+  "idx9": {
+   "title": "Fix important pages that are not in Google",
+   "what": "According to Google's own records, some of your important pages are not in Google.",
+   "why": "A page that is not in Google does not appear in searches; customers cannot find it by searching."
+  },
+  "judgment": {
+   "title": "Fix addresses that answer inconsistently",
+   "what": "Some addresses and links behave inconsistently: now and then they give an empty answer or an error.",
+   "why": "Inconsistent pages look empty or broken to customers and Google on some visits."
+  },
+  "prf1": {
+   "title": "Make pages answer faster",
+   "what": "Your server is slow to start answering on some pages, or now and then does not answer at all.",
+   "why": "Customers leave a slow page without waiting; Google and AI assistants also read fewer pages on each visit."
+  },
+  "prf2": {
+   "title": "Fix pages that fail now and then",
+   "what": "Some pages failed now and then during the audit.",
+   "why": "If a page fails just when Google visits, it can drop out of searches; customers see an empty page too."
+  },
+  "prf3": {
+   "title": "Improve page speed for real visitors",
+   "what": "Some of the speed values Google measures from real visits are poor.",
+   "why": "Slow pages lose visitors and sales, and Google takes speed into account when ranking."
+  },
+  "rnd1": {
+   "title": "Make page content visible without running code",
+   "what": "On some pages the content is loaded by code that runs after the page opens (JavaScript); the page the server first sends has no content.",
+   "why": "Many AI assistants do not run this code; they never see the content and cannot quote you."
+  },
+  "rnd2": {
+   "title": "Show prices and key facts in the page's first version",
+   "what": "Key facts such as prices appear only through code that runs after the page opens (JavaScript), or not at all.",
+   "why": "AI assistants that do not run this code cannot see the price or the facts, and cannot answer customers with your information."
+  },
+  "rnd3": {
+   "title": "Make content that opens on a click visible",
+   "what": "On some pages part of the content appears only after a tab is clicked or the page is scrolled.",
+   "why": "Google and AI assistants do not click or scroll; they cannot read that part."
+  },
+  "rnd4": {
+   "title": "Put the facts in images and embedded content in text too",
+   "what": "Some facts are only inside an image or a window embedded in the page; they are not on the page as text.",
+   "why": "Search engines and AI assistants cannot read text inside an image; these facts do not appear in searches or answers."
+  },
+  "rnd5": {
+   "title": "Take content out from behind login and consent screens",
+   "what": "Some pages show a login, membership or consent screen instead of the content.",
+   "why": "Google and AI assistants cannot get past these screens and cannot see the content behind them."
+  },
+  "rnd6": {
+   "title": "Make the page code lighter",
+   "what": "The code of some pages (HTML) is very heavy; the real content starts far down in it.",
+   "why": "Heavy pages open late, on phones especially; Google and AI tools reach the real content late or may stop reading halfway."
+  },
+  "rnd7": {
+   "title": "Make the page's main content stand out",
+   "what": "On some pages the page's own content gets lost among the menu and footer text.",
+   "why": "Google and AI assistants struggle to find what the page is really about."
+  },
+  "shared": {
+   "title": "Fix the menu and footer errors repeated on every page",
+   "what": "The shared parts repeated on every page (menu, footer) hold links with no text or address, images with no description, or headings out of order.",
+   "why": "Because these parts repeat on every page, one error spreads across the whole site, and one fix corrects the whole site."
+  },
+  "str1": {
+   "title": "Write page titles that fit each page",
+   "what": "Some pages have no title in search results, a very general one, or the same one as other pages.",
+   "why": "The title is the first text a customer uses to decide whether to click a search result; a general title loses clicks."
+  },
+  "str10": {
+   "title": "Complete the sharing previews",
+   "what": "On some pages the title, description or image shown when the page is shared or cited is missing.",
+   "why": "A link with an incomplete preview gets fewer clicks on social media and in messages."
+  },
+  "str11": {
+   "title": "Merge conflicting markup facts",
+   "what": "Two blocks of structured data (code that describes the facts in a form machines read) describe the same thing with different values.",
+   "why": "Google and AI assistants have to guess which one is right, and may show the wrong fact."
+  },
+  "str12": {
+   "title": "Translate the language versions fully",
+   "what": "The content of some pages is not in the language the page declares: in one language version most of the text is still in another language.",
+   "why": "Google may show these pages for searches in the wrong language; customers who speak that language cannot read them, and AI assistants tie the facts to the wrong language."
+  },
+  "str13": {
+   "title": "Clean out unfilled template markers",
+   "what": "Some pages still have template markers that should have been filled in, or invisible characters, in their text.",
+   "why": "Google and AI assistants may take these markers for real facts and show them; visitors see broken text."
+  },
+  "str14": {
+   "title": "Give links text that says what they open",
+   "what": "Some links have no text, or only a general text such as click here or more.",
+   "why": "Google and AI assistants learn from the text which page a link opens; visitors who use screen readers cannot tell where it goes either."
+  },
+  "str15": {
+   "title": "Strengthen pages with thin content",
+   "what": "Some pages have very little text of their own, or list pages with no products at all.",
+   "why": "Empty or very short pages tell customers nothing; Google may treat them as worthless, and AI assistants find nothing to quote."
+  },
+  "str16": {
+   "title": "Write each page its own description",
+   "what": "Many pages use the same meta description (the short summary shown under the title in search results).",
+   "why": "Customers cannot tell the pages apart in search results, and Google struggles to tell which page covers what."
+  },
+  "str17": {
+   "title": "Add links to dead-end pages",
+   "what": "Some pages link to no other page of the site.",
+   "why": "Customers cannot move on from these pages, and Google cannot read the site beyond them."
+  },
+  "str18": {
+   "title": "Put your brand name in the homepage title",
+   "what": "Your brand name is not in the homepage title shown in search results.",
+   "why": "Customers searching for your brand cannot be sure they found the right site, and Google and AI assistants find it harder to tell who owns it."
+  },
+  "str19": {
+   "title": "Give links a real address",
+   "what": "Some links or buttons have no real page address; they work only on a click.",
+   "why": "Google and AI assistants follow addresses, they do not click; they cannot find the pages these links open."
+  },
+  "str2": {
+   "title": "Give every page one clear main heading",
+   "what": "Some pages have no main heading (the largest heading that states what the page is about), an empty or hidden one, or more than one.",
+   "why": "The main heading is the first text that tells visitors and Google what the page is about; without it the page may show up for the wrong searches."
+  },
+  "str20": {
+   "title": "Put the video's message in text too",
+   "what": "Some important messages are only inside a video or an animation.",
+   "why": "Google and AI assistants do not watch videos; a message that is not in text does not exist for them."
+  },
+  "str21": {
+   "title": "Add the missing basic pages",
+   "what": "We did not find a basic page, such as about us, contact or services, among the pages we checked.",
+   "why": "Customers and Google look for who is behind the site and how to reach you on these pages; AI assistants describe you with them too."
+  },
+  "str22": {
+   "title": "Add your own content to news pages",
+   "what": "Your news pages are mostly links to other sites.",
+   "why": "A page with no content of its own is not named as a source in Google or AI answers."
+  },
+  "str23": {
+   "title": "Mark up job ads so Google recognises them",
+   "what": "Your job ads have no structured data (code that describes the facts in a form machines read).",
+   "why": "Google shows jobs in job searches only with this code; candidates cannot see your ads there."
+  },
+  "str3": {
+   "title": "Mark up your pages' facts in a form Google reads",
+   "what": "The structured data on your pages (code that describes the facts in a form machines read) has missing, broken or conflicting parts.",
+   "why": "This code lets Google show product, price and company facts richly in search results, and helps AI assistants recognise you correctly."
+  },
+  "str4": {
+   "title": "Match the markup facts to the page",
+   "what": "The facts in the structured data (code that describes the facts in a form machines read) do not match what the page shows.",
+   "why": "Google and AI assistants may show the wrong price or fact, and Google counts such mismatches as a sign of unreliability."
+  },
+  "str5": {
+   "title": "Use one name for your brand across the site",
+   "what": "Your brand's name is written in different ways in different parts of the site.",
+   "why": "A consistent name helps Google and AI assistants recognise your brand as one organisation; different names weaken that."
+  },
+  "str6": {
+   "title": "Show correct page dates",
+   "what": "Some articles have no date, or the page's dates contradict each other.",
+   "why": "The date tells Google and AI assistants how fresh the content is; content with no date may be treated as old."
+  },
+  "str7": {
+   "title": "Make images lighter and describe them",
+   "what": "Some images are larger than needed, do not load, or lack the short text that describes them (alt text).",
+   "why": "Heavy images slow the page down; Google and AI assistants cannot understand undescribed images or show them in image searches."
+  },
+  "str8": {
+   "title": "Give comparisons and prices in real tables",
+   "what": "Some comparison and table facts are laid out in a way machines cannot read as a table.",
+   "why": "AI assistants cannot tell which value belongs to what, and may pass the facts on wrongly."
+  },
+  "str9": {
+   "title": "Introduce your language versions correctly to Google",
+   "what": "The tags that state a page's language and its other language versions (hreflang: the tag that links language versions to each other) have errors.",
+   "why": "Google may show visitors the page in the wrong language; a customer searching in another language lands on a page they cannot read."
+  },
+  "tseo1": {
+   "title": "Fix small technical errors in the page structure",
+   "what": "The pages' structure has small technical errors, such as heading order, how addresses are written, or code that slows the page opening.",
+   "why": "Small one by one, together these errors make it harder for Google and AI assistants to read the page and for visitors to use it."
+  }
+ },
+ "rules": {
+  "acc2.blocks.sitewide": {
+   "title": "Let AI assistants read your site",
+   "what": "A rule in your robots.txt (the file that tells search engines and AI assistants which pages they may read) stops some search engines or AI assistants from reading your whole site.",
+   "why": "They can show a site they cannot read neither in search results nor in AI answers; customers asking about you get the answer from other sites."
+  },
+  "acc2.blocks.sample": {
+   "title": "Let AI assistants read your pages",
+   "what": "A rule in your robots.txt (the file that tells search engines and AI assistants which pages they may read) stops some search engines or AI assistants from reading some of your pages.",
+   "why": "They can show pages they cannot read neither in search results nor in AI answers."
+  },
+  "acc3.noindex": {
+   "title": "Decide whether pages hidden from Google should stay hidden",
+   "what": "Some pages carry a setting that tells Google not to show them.",
+   "why": "If customers look for these pages, they appear neither in Google nor in AI answers."
+  },
+  "acc3.utility_indexable": {
+   "title": "Keep internal search and cart pages out of Google",
+   "what": "Pages such as internal search results and the cart are open to Google; they make endless, nearly empty pages.",
+   "why": "Google spends its time on these pages when it reads your site; your product and service pages are read later and less often."
+  },
+  "acc3.sitemap_noindex": {
+   "title": "Align the sitemap with the hidden pages",
+   "what": "Your sitemap (the file that gives Google the list of your pages) also lists pages that are meant to be hidden from Google.",
+   "why": "Conflicting signals make it harder for Google to know how far to trust your pages; the pages you want may be read later."
+  },
+  "acc3.noindex_listed": {
+   "title": "Align the sitemap with the hidden pages",
+   "what": "Your sitemap (the file that gives Google the list of your pages) also lists pages that are meant to be hidden from Google.",
+   "why": "Conflicting signals make it harder for Google to know how far to trust your pages; the pages you want may be read later."
+  },
+  "acc9.blocked_429": {
+   "title": "Stop your protection settings from turning away Google and AI assistants",
+   "what": "Your site's protection settings answer automated visitors that ask for several pages in a short time with a too-many-requests answer instead of the page; our audit's requests were turned away like this too.",
+   "why": "The programs AI assistants use to read sites may get the same answer; then they cannot read your site or name you as a source."
+  },
+  "acc9.rate_limited_429": {
+   "title": "Stop your protection settings from turning away Google and AI assistants",
+   "what": "Your site's protection settings now and then answer automated visitors that ask for several pages in a short time with a too-many-requests answer instead of the page.",
+   "why": "The programs AI assistants use to read sites may get the same answer; then they cannot read part of your site or use it in their answers."
+  },
+  "acc4.outcome": {
+   "title": "Stop your protection service from blocking Google and AI assistants",
+   "what": "Your site's firewall turns away some requests from search engines and AI assistants even though you allow them.",
+   "why": "The programs turned away cannot read your site, and cannot show you in search results or AI answers."
+  },
+  "idx1.soft404.200": {
+   "title": "Make pages that do not exist answer not found",
+   "what": "An address that does not exist answers as if it were a real page.",
+   "why": "Google cannot tell real pages from wrong addresses; wrong addresses may appear in searches, and visitors do not find what they look for."
+  },
+  "idx1.soft404.redirect": {
+   "title": "Make pages that do not exist answer not found",
+   "what": "An address that does not exist sends visitors on to the homepage (a redirect) instead of an error.",
+   "why": "Google cannot tell real pages from wrong addresses, and visitors do not understand why they did not find what they looked for."
+  },
+  "idx2.expires": {
+   "title": "Renew the security certificate before it expires",
+   "what": "Your site's secure connection certificate (TLS) expires soon.",
+   "why": "When it expires, browsers warn visitors that the site is not secure; sales stop, and Google and AI assistants cannot read the site either."
+  },
+  "idx2.invalid": {
+   "title": "Install a valid security certificate",
+   "what": "Your site's secure connection certificate (TLS) is not valid.",
+   "why": "Browsers show visitors a security warning and most customers do not enter; Google and AI assistants also refuse to read the site."
+  },
+  "idx2.no_redirect": {
+   "title": "Always send visitors to the secure address",
+   "what": "Your site's insecure address (http) does not send visitors on to the secure address (https).",
+   "why": "Two copies of your site exist; customers who type the insecure address may see a warning, and Google splits the site's strength between the two."
+  },
+  "idx2.no_redirect.hosts": {
+   "title": "Always send visitors to the secure address",
+   "what": "Your site's insecure address (http) does not send visitors on to the secure address (https).",
+   "why": "Two copies of your site exist; customers who type the insecure address may see a warning, and Google splits the site's strength between the two."
+  },
+  "idx3.loop": {
+   "title": "Fix addresses that go round in a loop",
+   "what": "Some addresses send visitors on to another address and back to the start (a redirect loop); the page never opens.",
+   "why": "Neither customers nor Google ever reach this page; it does not appear in searches."
+  },
+  "idx4.redirect_loop": {
+   "title": "Bring pages' main addresses and links to one address",
+   "what": "Some pages show another address in the tag that tells Google their main address (the canonical address), and that address sends visitors on again to other addresses (a redirect).",
+   "why": "Google cannot decide which address to show; your important pages stay weak in searches or appear under the wrong address."
+  },
+  "idx4.different": {
+   "title": "Give pages their own main address",
+   "what": "Some pages name a different page, with different content, in the tag that tells Google their main address (the canonical address).",
+   "why": "Google shows the other page instead of this one; this page's own content never appears in searches."
+  },
+  "idx5.stamped": {
+   "title": "Correct the change dates in the sitemap",
+   "what": "Your sitemap (the file that gives Google the list of your pages) gives nearly every page the same change date; the dates do not show when a page really changed.",
+   "why": "Google cannot tell which pages changed recently; the products and pages you update reach searches late."
+  },
+  "idx5.identical": {
+   "title": "Correct the change dates in the sitemap",
+   "what": "Your sitemap (the file that gives Google the list of your pages) gives every page the same change date.",
+   "why": "Google cannot tell which pages changed recently; the products and pages you update reach searches late."
+  },
+  "idx5.none": {
+   "title": "Publish a sitemap",
+   "what": "We found no usable sitemap (the file that gives Google the list of your pages) on your site.",
+   "why": "On larger sites, pages that are not well linked are found late by Google, or not at all."
+  },
+  "idx6.alias_links": {
+   "title": "Point links at pages' main addresses",
+   "what": "Some menu and page links lead not to the pages' main address but to duplicate addresses of the same page.",
+   "why": "Google reads the same page twice and the page's strength is split between two addresses; your important pages are weaker in searches than they should be."
+  },
+  "idx6.tracking": {
+   "title": "Remove tracking additions from internal links",
+   "what": "Some links to your site's own pages end in a tracking parameter (an addition at the end of the address that records where the visit came from).",
+   "why": "A second address for the same page is created; Google splits the page's strength between the two, and your visit statistics get mixed up."
+  },
+  "idx6.broken": {
+   "title": "Repair broken links",
+   "what": "Some links lead to pages that no longer exist or that return an error.",
+   "why": "A customer who clicks gets an error page and often leaves; Google also counts broken links as a sign of neglect."
+  },
+  "idx6.links_to_redirect": {
+   "title": "Link straight to the final address",
+   "what": "Some links lead to addresses that send visitors on to another address (a redirect).",
+   "why": "Each such link is an extra step; the page opens later and Google spends its time on these steps."
+  },
+  "idx1.4xx.referenced": {
+   "title": "Fix links to addresses that return an error",
+   "what": "Some links on your site, and some entries in your sitemap (the file that gives Google the list of your pages), lead to addresses that return an error.",
+   "why": "A customer who meets an error page leaves the site; Google spends its time on pages that do not exist."
+  },
+  "idx1.4xx.referenced.linked": {
+   "title": "Fix links to addresses that return an error",
+   "what": "Some links on your site lead to addresses that return an error.",
+   "why": "A customer who meets an error page leaves the site; Google spends its time on pages that do not exist."
+  },
+  "judgment.heading.home": {
+   "title": "Fill in the homepage's main heading",
+   "what": "Your homepage's main heading (the largest heading that states what the page is about) is empty.",
+   "why": "Google and AI assistants have to guess what your site offers from other clues."
+  },
+  "judgment.heading.pages": {
+   "title": "Fill in empty main headings",
+   "what": "Some pages' main heading (the largest heading that states what the page is about) is empty.",
+   "why": "Google and AI assistants have to guess what the page is about from other clues."
+  },
+  "judgment.generic": {
+   "title": "Give links text that says what they open",
+   "what": "Some links use general texts such as click here or more.",
+   "why": "Google and AI assistants learn from the text which page a link opens; a general text does not say it."
+  },
+  "judgment.generic.identity": {
+   "title": "Give links text that says what they open",
+   "what": "Some links use general texts such as click here or more.",
+   "why": "Google and AI assistants learn from the text which page a link opens; a general text does not say it."
+  },
+  "prf1.no_hsts": {
+   "title": "Add the basic security settings",
+   "what": "Your homepage does not send the setting that tells browsers to open the site only over a secure connection.",
+   "why": "This is a security measure; it protects visitors from insecure connections."
+  },
+  "prf1.security_headers": {
+   "title": "Add the basic security settings",
+   "what": "Your homepage does not send some basic security settings that protect visitors.",
+   "why": "This is a security measure; it protects visitors from injected harmful code and from leaks of information."
+  },
+  "rnd6.home_large": {
+   "title": "Make the homepage code lighter",
+   "what": "Your homepage's code (HTML) is very heavy; the real content starts far down in it.",
+   "why": "The homepage is the first page every customer and Google reaches; when it is heavy it opens late, on phones especially, and reading it may stop halfway."
+  },
+  "str1.no_title": {
+   "title": "Write a title for pages that have none",
+   "what": "Some pages have no title in search results.",
+   "why": "Without a title Google makes one up; the text that would persuade customers to click is lost."
+  },
+  "str2.no_h1": {
+   "title": "Add a main heading to pages that have none",
+   "what": "Some pages have no main heading (the largest heading that states what the page is about).",
+   "why": "The main heading is the first text that tells visitors and Google what the page is about; without it Google relies on weak clues."
+  },
+  "str2.home_no_h1": {
+   "title": "Add a main heading to the homepage",
+   "what": "Your homepage has no main heading (the largest heading that states what the page is about).",
+   "why": "Visitors and Google first read what your site is from this heading; without it they guess from other clues."
+  },
+  "str3.unparsed": {
+   "title": "Repair the broken markup code",
+   "what": "The structured data on one page (code that describes the facts in a form machines read) is broken; Google cannot read it at all.",
+   "why": "Broken code is ignored as if it were not there; the page's rich look in search results and the facts it gives AI assistants are lost."
+  },
+  "str3.no_organization": {
+   "title": "Introduce your organisation to Google on the homepage",
+   "what": "Your homepage has no structured data (code that describes the facts in a form machines read) with your organisation's name, logo and official profiles.",
+   "why": "Google and AI assistants recognise the organisation behind the site with this; without it they guess your brand from other sources."
+  },
+  "str5.names": {
+   "title": "Use one name for your brand across the site",
+   "what": "Your brand's name is written in different ways in different parts of the site.",
+   "why": "A consistent name helps Google and AI assistants recognise your brand as one organisation; different names weaken that."
+  },
+  "str7.over_100kb": {
+   "title": "Make large images lighter",
+   "what": "Some image files are larger than they need to be.",
+   "why": "Large images make the page open late, on phones especially; customers may leave without waiting."
+  },
+  "str7.heavy": {
+   "title": "Make large images lighter",
+   "what": "Some image files are very heavy.",
+   "why": "Heavy images make the page open late, on phones especially; customers may leave without waiting, and Google may rank slow pages lower."
+  },
+  "str7.alt_missing": {
+   "title": "Describe your images",
+   "what": "Some images lack the short text that describes them (alt text).",
+   "why": "Google and AI assistants learn from this text what an image shows; visitors with sight loss rely on it too."
+  },
+  "str7.alt_split": {
+   "title": "Describe your images",
+   "what": "Some images lack the short text that describes them (alt text), or have an empty one.",
+   "why": "Google and AI assistants learn from this text what an image shows; visitors with sight loss rely on it too."
+  },
+  "str7.no_alt": {
+   "title": "Describe your images",
+   "what": "Some images lack the short text that describes them (alt text).",
+   "why": "Google and AI assistants learn from this text what an image shows; visitors with sight loss rely on it too."
+  },
+  "str10.no_description": {
+   "title": "Write search result descriptions for your pages",
+   "what": "Some pages have no meta description (the short summary shown under the title in search results).",
+   "why": "Without one, Google picks a random part of the page; the summary that persuades customers to click is lost."
+  },
+  "str12.placeholder": {
+   "title": "Remove placeholder text",
+   "what": "Some pages hold placeholder text that was never filled in.",
+   "why": "A site that looks unfinished does not build trust; Google and AI assistants may also take the text for real facts."
+  },
+  "str19.controls": {
+   "title": "Code elements that act as buttons as buttons",
+   "what": "Some elements work like buttons but are coded as links.",
+   "why": "This is first of all an accessibility matter: visitors who use screen readers misunderstand what the element does."
+  },
+  "tseo1.heading_jumps": {
+   "title": "Put headings in order",
+   "what": "On some pages headings are not used in order: after a heading, a level is skipped and a smaller heading follows.",
+   "why": "Headings in order clearly tell Google, AI assistants and screen readers how the page is divided; a broken order blurs which fact belongs to which section."
+  },
+  "tseo1.url_decomposed": {
+   "title": "Write the letters in addresses one way",
+   "what": "In some page addresses, letters are written with two characters that look the same but are technically different; this makes a second address for the same page.",
+   "why": "Links typed on a normal keyboard may not reach these addresses; Google sees the same page at two addresses and splits its strength."
+  },
+  "tseo1.mixed": {
+   "title": "Do not load insecure files on secure pages",
+   "what": "Some secure (https) pages load their files over an insecure connection.",
+   "why": "Browsers block these files; part of the page breaks and the site looks not fully secure."
+  },
+  "tseo1.no_viewport": {
+   "title": "Make pages open correctly on phones",
+   "what": "Some pages lack the setting that makes them open at the right size on phones.",
+   "why": "Google judges your page by its phone version; a page that looks shrunken on a phone drives visitors away."
+  },
+  "tseo1.analytics_twice": {
+   "title": "Load the visit measuring code once",
+   "what": "The code that measures visits loads twice on some pages.",
+   "why": "Every visit is counted twice; your site's traffic and sales reports mislead you."
+  },
+  "tseo1.blocking_scripts": {
+   "title": "Leave code that delays the page for later",
+   "what": "Some pages hold code that stops the page from showing until it has loaded.",
+   "why": "The page shows late; customers may leave without waiting, and Google may rank slow pages lower."
+  },
+  "tseo1.head_closed_lost": {
+   "title": "Fix the error in the page code",
+   "what": "In the code of some pages (HTML), the part that holds important settings for Google closes early; these settings are not read.",
+   "why": "Google never sees some of these settings; your choices for the main address, language and visibility may be ignored."
+  }
+ },
+ "groups": {
+  "html_weight": {
+   "title": "Make the page code lighter",
+   "what": "The code of some pages (HTML) is very heavy; the real content starts far down in it.",
+   "why": "Heavy pages open late, on phones especially; Google and AI tools reach the real content late or may stop reading halfway."
+  },
+  "empty_pages": {
+   "title": "Fix pages that answer empty",
+   "what": "Some pages give an empty answer instead of content.",
+   "why": "Google and AI assistants cannot read an empty page; it may drop out of searches, and customers see a blank screen."
+  },
+  "heading_levels": {
+   "title": "Put headings in order",
+   "what": "On some pages headings are not used in order: after a heading, a level is skipped and a smaller heading follows.",
+   "why": "Headings in order clearly tell Google, AI assistants and screen readers how the page is divided."
+  },
+  "links_without_text": {
+   "title": "Give links text that says what they open",
+   "what": "Some links have no text; they hold only an icon or an image.",
+   "why": "Google and AI assistants learn from the text which page a link opens; visitors who use screen readers cannot tell where it goes either."
+  },
+  "links_without_address": {
+   "title": "Give links a real address",
+   "what": "Some links or buttons have no real page address; they work only on a click.",
+   "why": "Google and AI assistants follow addresses, they do not click; they cannot find the pages these links open."
+  },
+  "language_mismatch": {
+   "title": "Translate the language versions fully",
+   "what": "The content of some pages is not in the language the page declares: in one language version most of the text is still in another language.",
+   "why": "Google may show these pages for searches in the wrong language; customers who speak that language cannot read them, and AI assistants tie the facts to the wrong language."
+  },
+  "sitemap_lastmod": {
+   "title": "Correct the change dates in the sitemap",
+   "what": "The change dates in your sitemap (the file that gives Google the list of your pages) do not show when the pages really changed.",
+   "why": "Google cannot tell which pages changed recently; the products and pages you update reach searches late."
+  },
+  "template_meta": {
+   "title": "Write each page its own title and description",
+   "what": "Many pages use the same title and the same meta description (the short summary shown under the title in search results).",
+   "why": "Customers cannot tell the pages apart in search results, and Google struggles to tell which page covers what."
+  },
+  "redirect_chain": {
+   "title": "Bring pages' main addresses and links to one address",
+   "what": "Some pages show another address in the tag that tells Google their main address (the canonical address), that address sends visitors on again to other addresses (a redirect), and internal links lead into this chain too.",
+   "why": "Google cannot decide which address to show; your important pages stay weak in searches or appear under the wrong address, and visitors who click wait through several steps."
+  }
+ },
+ "terms": [
+  {
+   "term": "robots\\.txt",
+   "explain": "which pages they may read"
+  },
+  {
+   "term": "\\bHTML\\b",
+   "explain": "code of some pages \\(HTML\\)|code \\(HTML\\)"
+  },
+  {
+   "term": "\\bTLS\\b|\\bSSL\\b",
+   "explain": "secure connection certificate"
+  },
+  {
+   "term": "structured data|JSON-LD|\\bschema\\b",
+   "explain": "in a form machines read"
+  },
+  {
+   "term": "sitemap",
+   "explain": "the file that gives Google the list of your pages"
+  },
+  {
+   "term": "\\bnoindex\\b",
+   "explain": "hidden from Google"
+  },
+  {
+   "term": "hreflang",
+   "explain": "links language versions to each other"
+  },
+  {
+   "term": "canonical",
+   "explain": "main address"
+  },
+  {
+   "term": "meta description",
+   "explain": "short summary shown under the title"
+  },
+  {
+   "term": "JavaScript",
+   "explain": "code that runs after the page opens"
+  },
+  {
+   "term": "parameter",
+   "explain": "addition at the end of the address"
+  },
+  {
+   "term": "redirect",
+   "explain": "sends? visitors on"
+  },
+  {
+   "term": "alt text",
+   "explain": "short text that describes"
+  },
+  {
+   "term": "llms\\.txt",
+   "explain": "summary file your site publishes for AI tools"
+  },
+  {
+   "term": "template",
+   "explain": "common design of pages with the same layout|template markers"
+  },
+  {
+   "term": "Search Console",
+   "explain": "Google's own records about your site"
+  },
+  {
+   "term": "\\bhttps?\\b",
+   "explain": "secure"
+  }
+ ],
+ "blocked": {
+  "title": "The client brief could not be made",
+  "low_coverage": "This audit read very few pages ({read}); a client brief cannot speak for the whole site. Run a new audit that reads more pages.",
+  "low_coverage_planned": "This audit read only {read} of the {planned} planned pages; a client brief cannot speak for the whole site. Run a new audit that reads more pages.",
+  "team": "The team report cannot be made from this audit, so the client brief, built from the same data, was not made either. The reason is shown under the team report's button.",
+  "gate": "The release gate stops this audit from being sent to a client.",
+  "pages": "The client brief came to {pages} pages; it may have at most 5.",
+  "ids": "A finding ID or rule name was left in the client brief: {found}.",
+  "unconfirmed": "The client brief holds a finding that has not been checked; check it first in the Check these first list.",
+  "terms": "The client brief uses a technical term without explaining it: {found}.",
+  "vendors": "The client brief names a service provider: {found}.",
+  "overflow": "A text did not fit its box: {found}.",
+  "browser": "The PDF could not be printed on this computer (no browser found).",
+  "pdf": "The PDF did not pass its checks."
+ }
+}

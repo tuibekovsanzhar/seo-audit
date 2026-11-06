@@ -60,7 +60,9 @@ DOWNLOAD_NAMES = {"json": ("json", "application/json"), "markdown": ("md", "text
                   # The client report's appendix: every finding and affected address (DECISIONS 300).
                   "xlsx": ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
                   # The team report: the maya-audit-pro design, built here from the saved audit (DECISIONS 307).
-                  "team": ("pdf", "application/pdf")}
+                  "team": ("pdf", "application/pdf"),
+                  # The client brief ("Müşteri özeti"): at most 5 pages for the business owner (DECISIONS 319).
+                  "brief": ("pdf", "application/pdf")}
 _PROJECT_ID = re.compile(r"[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?")
 
 
@@ -1039,7 +1041,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                               for fmt in ("pdf", "markdown", "json", "evidence")
                               for draft in [fmt != "evidence" and gate_decision(report) == release_gate.BLOCKED]],
                 "team_report": {"prepare": f"{base}/team-report", "pdf": f"{base}/downloads/team", "xlsx": f"{base}/downloads/xlsx",
-                                "default_lang": "tr"},
+                                "default_lang": "tr", "brief": f"{base}/client-brief"},
                 "overview_url": f"{base}/overview",
                 "print_url": f"{base}/print", "review_url": f"{base}/review", "has_previous": not audit.get("analysis") and store.previous_audit(audit) is not None}
         # The practical report in brief: the executive summary, the scorecard and the timeline's counts. The whole of it,
@@ -1555,6 +1557,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
     def team_name(audit: dict[str, Any], lang: str) -> str:
         return download_name(audit, "pdf").replace(".pdf", "-ekip-raporu-tr.pdf" if lang == "tr" else f"-team-report-{lang}.pdf")
 
+    def brief_name(audit: dict[str, Any], lang: str) -> str:
+        return download_name(audit, "pdf").replace(".pdf", "-musteri-ozeti-tr.pdf" if lang == "tr" else f"-client-brief-{lang}.pdf")
+
     def download_label(audit: dict[str, Any], fmt: str) -> str:
         if fmt == "pdf":
             lang = audit.get("language") if audit.get("language") in STRINGS else current_language()
@@ -1664,6 +1669,38 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         headers = {"X-Maya-Release-Gate": str(built.decision), "X-Maya-Pages": str(built.pages), "X-Maya-Language": chosen}
         return built, reassessed, headers
 
+    def client_brief(audit: dict[str, Any], lang: str):
+        """The client brief of this audit in `lang` (DECISIONS 319): the team report's data (current engine, the
+        selection, review.json, the business type), at most 5 pages, gated; rebuilt on every request."""
+        from .team_report import brief
+        load_report(audit)
+        folder = artifact_folder(audit["id"])
+        return brief.build(report_path(audit["id"]), lang, review_path=review_path(audit),
+                           affected_path=folder / AFFECTED_JSON if (folder / AFFECTED_JSON).is_file() else None,
+                           audit_id=audit["id"])
+
+    def brief_built(audit: dict[str, Any], chosen: str):
+        built = client_brief(audit, chosen)
+        if built.blocked:
+            from .team_report import brief
+            raise ApiError(422, "client_brief_blocked", brief.library(chosen)["blocked"]["title"],
+                           reasons=built.reasons, details=built.details[:20], lang=chosen)
+        return built, {"X-Maya-Pages": str(built.pages), "X-Maya-Language": chosen}
+
+    @api.get("/audits/{audit_id}/client-brief", summary="Build the client brief in one language; the file is then one link away")
+    def prepare_client_brief(audit_id: str, lang: str | None = Query(default=None, pattern="^[a-z]{2}$")) -> dict[str, Any]:
+        import secrets
+        audit = need_audit(audit_id)
+        chosen = team_chosen(lang)
+        built, headers = brief_built(audit, chosen)
+        token = secrets.token_urlsafe(16)
+        name = brief_name(audit, chosen)
+        team_builds[token] = (audit["id"], "brief:" + chosen, built.pdf, name, headers)
+        while len(team_builds) > 6:
+            team_builds.pop(next(iter(team_builds)))
+        return {"lang": chosen, "pages": built.pages,
+                "pdf": {"url": f"/api/v1/audits/{audit['id']}/downloads/brief?lang={chosen}&build={token}", "filename": name}}
+
     @api.get("/audits/{audit_id}/team-report", summary="Build the team report in one language; the file is then one link away")
     def prepare_team_report(audit_id: str, lang: str | None = Query(default=None, pattern="^[a-z]{2}$")) -> dict[str, Any]:
         import secrets
@@ -1751,6 +1788,17 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         extension, media_type = DOWNLOAD_NAMES[format]
         name = download_name(audit, extension)
         load_report(audit)
+        if format == "brief":
+            # DECISIONS 319: the client brief in the chosen language; blocked says why in plain words.
+            chosen = team_chosen(lang)
+            kept = team_builds.get(build or "")
+            if kept and kept[0] == audit["id"] and kept[1] == "brief:" + chosen:
+                _, _, content, name, headers = kept
+            else:
+                built, headers = brief_built(audit, chosen)
+                content, name = built.pdf, brief_name(audit, chosen)
+            return Response(content, media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{name}"',
+                                                                     "Cache-Control": "no-store", **headers})
         if format == "team":
             # The chosen language only (Turkish unless asked), in the file name too; the validator and the release
             # gate decide, and a blocked report says why in plain words instead of downloading (DECISIONS 307, 308).

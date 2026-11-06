@@ -278,7 +278,7 @@ def test_the_history_list_and_the_results_order_in_the_browser():
                 throw new Error('offline');
             };
             const view = { audit: { id: 'a1', project_id: 'nihan.com.tr' }, follow_ups: ['Eylem planını göster'],
-                           team_report: { prepare: '/p', pdf: '/d', xlsx: '/x', default_lang: 'tr' } };
+                           team_report: { prepare: '/p', pdf: '/d', xlsx: '/x', default_lang: 'tr', brief: '/b' } };
             document.querySelector('#result').append(resultView(view, {}));
         }""")
         page.wait_for_selector(".summary .verdict")
@@ -288,7 +288,9 @@ def test_the_history_list_and_the_results_order_in_the_browser():
         assert page.locator(".fix .hint").count() == 1  # "kanonik" has its "?" hint
         page.locator(".fix .hint").click()
         assert "Kanonik adres" in page.locator(".fix .hint-tip").inner_text()
-        assert page.locator(".dl-card.off").inner_text().startswith("Müşteri özeti")
+        # DECISIONS 319: the client brief is a working card under the same language switch.
+        assert page.locator(".dl-card.brief").inner_text().startswith("Müşteri özeti (PDF)")
+        assert page.locator(".dl-card.brief button").inner_text() == "Özeti hazırla (Türkçe)"
         order = page.evaluate("""() => ['.summary', '.fixes', '.review-list', '.downloads', '.followups', '.tech-details']
             .map(s => document.querySelector(s).getBoundingClientRect().top)""")
         assert order == sorted(order)

@@ -588,6 +588,7 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         g["template_line"] = template_line(g, importance)
     by_finding = {fid: g for g in rows for fid in g["finding_ids"]}
     coverage_box = coverage(report, limits)
+    kp = key_pages(report, rows, importance) or reader_key_pages(report, rows, summary.get("business_type"))
     return {
         "method": {"severity_weight": SEVERITY_WEIGHT, "confidence_weight": CONFIDENCE_WEIGHT,
                    "reach": f"1 + ln(1 + summed importance of the pages read / {REACH_UNIT}), at most {REACH_CAP}; "
@@ -600,12 +601,15 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         "cards": cards, "confirm": confirm, "notes": notes, "own_limits": limits, "appendix_only": appendix_only,
         "rejected": [g for g in rows if g["placement"] == "rejected"],
         "groups": rows, "by_finding": by_finding,
-        "key_pages": key_pages(report, rows, importance) or reader_key_pages(report, rows, summary.get("business_type")),
+        "key_pages": kp,
         "key_pages_reason": None if importance else key_pages_reason(report),
         # DECISIONS 311: the business type, and its first page types no page read was typed as ("not found among the
         # pages read", never "missing on the site"); none on a low-coverage audit.
         "business_type": _business_view(summary.get("business_type")),
-        "key_pages_not_found": [] if low_coverage(report) else list((summary.get("business_type") or {}).get("not_found") or []),
+        # DECISIONS 319: a type the page reader's key pages were given (DECISIONS 316) was found (airastana: "routes").
+        "key_pages_not_found": [] if low_coverage(report) else
+        [n for n in (summary.get("business_type") or {}).get("not_found") or []
+         if n.get("type") not in {p.get("business_page_type") for p in kp}],
         "coverage": coverage_box,
         "low_coverage": low_coverage(report),
         # Stage 8a (DECISIONS 315): problems per template (segments).

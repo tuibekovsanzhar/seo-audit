@@ -1224,16 +1224,20 @@ function teamReport(team) {
   // One language at a time (DECISIONS 308): the switch decides both files, each click builds that language again, and
   // the file is then offered as an ordinary link under its own name (…-ekip-raporu-tr.pdf / …-team-report-en.pdf). A
   // download a script starts long after the click is blocked by browsers as "multiple downloads". DECISIONS 310: the
-  // Downloads card: the language, the team report PDF, the XLSX appendix, and the client brief (not yet).
+  // Downloads card: the language, the team report PDF, the XLSX appendix, and the client brief (DECISIONS 319: built
+  // the same way as the team report, in the chosen language, then one ordinary link; a blocked brief says why).
   let lang = team.default_lang || "tr";
   const why = el("div", { class: "team-blocked" });
   const ready = el("div", { class: "team-ready" });
   const langName = (code) => T("team.lang." + code);
   const pdfButton = el("button", { class: "button primary", type: "button" });
   const xlsxLink = el("a", { class: "button", download: "" });
-  const label = () => { pdfButton.textContent = T("download.pdf.build", { language: langName(lang) }); xlsxLink.textContent = T("download.xlsx.get", { language: langName(lang) }); xlsxLink.href = team.xlsx + "?lang=" + lang; };
+  const briefWhy = el("div", { class: "team-blocked" });
+  const briefReady = el("div", { class: "team-ready" });
+  const briefButton = el("button", { class: "button", type: "button" });
+  const label = () => { pdfButton.textContent = T("download.pdf.build", { language: langName(lang) }); xlsxLink.textContent = T("download.xlsx.get", { language: langName(lang) }); xlsxLink.href = team.xlsx + "?lang=" + lang; briefButton.textContent = T("download.brief.build", { language: langName(lang) }); };
   const choice = (code) => el("button", { class: "button lang" + (code === lang ? " selected" : ""), type: "button", "aria-pressed": String(code === lang), "data-lang": code,
-    onclick: (event) => { lang = code; for (const b of event.currentTarget.parentNode.children) { b.classList.toggle("selected", b === event.currentTarget); b.setAttribute("aria-pressed", String(b === event.currentTarget)); } fill(why); fill(ready); label(); } }, langName(code));
+    onclick: (event) => { lang = code; for (const b of event.currentTarget.parentNode.children) { b.classList.toggle("selected", b === event.currentTarget); b.setAttribute("aria-pressed", String(b === event.currentTarget)); } fill(why); fill(ready); fill(briefWhy); fill(briefReady); label(); } }, langName(code));
   pdfButton.onclick = async () => {
     const asked = lang;
     fill(ready);
@@ -1260,13 +1264,36 @@ function teamReport(team) {
         el("a", { class: "button", href: body.xlsx.url, download: body.xlsx.filename, "data-lang": body.lang }, body.xlsx.filename)),
       body.reassessed ? el("p", { class: "muted small", text: body.reassessed }) : null);
   };
+  briefButton.onclick = async () => {
+    const asked = lang;
+    fill(briefReady);
+    fill(briefWhy, el("p", { class: "busy small", role: "status", text: T("brief.building") + " (" + langName(asked) + ")" }));
+    briefButton.disabled = true;
+    let response;
+    try { response = await fetch(team.brief + "?lang=" + asked, { credentials: "same-origin", cache: "no-store" }); }
+    catch (error) { briefButton.disabled = false; fill(briefWhy); notice(T("error.offline")); return; }
+    briefButton.disabled = false;
+    let body = {};
+    try { body = (await response.json()) || {}; } catch (error) { body = {}; }
+    if (asked !== lang) { fill(briefWhy); return; }
+    if (!response.ok) {
+      const problem = body.error || {};
+      const reasons = (problem.details && problem.details.reasons) || [];
+      fill(briefWhy, el("p", {}, el("strong", { text: problem.message || T("brief.blocked") })),
+        reasons.length ? el("ul", { class: "list" }, reasons.map((line) => el("li", { text: line }))) : null);
+      return;
+    }
+    fill(briefWhy);
+    fill(briefReady, el("p", { class: "small", text: T("team.ready", { language: langName(body.lang), pages: body.pages }) }),
+      el("div", { class: "row" }, el("a", { class: "button primary", href: body.pdf.url, download: body.pdf.filename, "data-lang": body.lang }, T("download.get") + ": " + body.pdf.filename)));
+  };
   label();
   return el("section", { class: "card team-report downloads", "aria-labelledby": "downloads-title" }, sectionLabel(4, "download.title"),
     el("div", { class: "row" }, el("strong", { id: "downloads-title", text: T("team.lang") }), el("span", { class: "row", role: "group", "aria-label": T("team.lang") }, choice("tr"), choice("en"))),
     el("div", { class: "dl-grid" },
       el("div", { class: "dl-card" }, el("strong", { text: T("download.pdf.title") }), el("p", { class: "muted small", text: T("download.pdf.about") }), pdfButton, why, ready),
       el("div", { class: "dl-card" }, el("strong", { text: T("download.xlsx.title") }), el("p", { class: "muted small", text: T("download.xlsx.about") }), xlsxLink),
-      el("div", { class: "dl-card off", "aria-disabled": "true" }, el("strong", { text: T("download.brief.title") }), el("p", { class: "muted small", text: T("download.brief.soon") }))));
+      team.brief ? el("div", { class: "dl-card brief" }, el("strong", { text: T("download.brief.title") }), el("p", { class: "muted small", text: T("download.brief.about") }), briefButton, briefWhy, briefReady) : null));
 }
 
 function technicalView(view, context) {

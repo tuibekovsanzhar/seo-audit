@@ -1734,6 +1734,10 @@ class Builder:
             pages.append({"rank": p["rank"], "path": path_of(p["url"]) or urlsplit(p["url"]).netloc, "url": p["url"],
                           "type": kind or L["page_types"].get(str(p["page_type"]), "—"), "importance": shown,
                           "importance_unknown": bool(unknown),
+                          # DECISIONS 319: the page type's id, for the client brief's "why it matters" line
+                          "kind_id": ("home" if p.get("page_type") == "home" else
+                                      p.get("business_page_type") if business and business["id"] != "diger" else None)
+                          or p.get("page_type") or "other",
                           "cards": ", ".join(f"{n:02d}" for n in p["cards"]) or "—",
                           "worst": L["severity"].get(p["worst"], "—") if p["worst"] else "—", "confirm": p["confirm"]})
         try:  # DECISIONS 306: a fix that renames addresses (redirects) is never a quick win
@@ -2073,6 +2077,13 @@ def build_from_files(report_path, lang, *, rev=None, audit_id=None, source=None,
     data["_business"] = business  # the person's business-type choice (DECISIONS 311), for the appendix's selection
     data["_selection_business"] = selection.get("business_type")
     data["_selection_not_found"] = selection.get("key_pages_not_found") or []
+    # The client brief (DECISIONS 319) reads each card's place in the selection: its merge group, confidence class and
+    # placement, and which findings wait in "Teyit edin" (never in a brief).
+    data["_cards"] = [{"card": g.get("card"), "finding_ids": list(g["finding_ids"]), "merge_group": g.get("merge_group"),
+                       "confidence": g.get("confidence"), "placement": g.get("placement"), "issue_type": g.get("issue_type"),
+                       "severity": g.get("severity"), "rule_id": g.get("rule_id"), "template_line": g.get("template_line")}
+                      for g in selection["groups"] if g.get("placement") == "card"]
+    data["_confirm_ids"] = sorted({i for g in selection["confirm"] for i in g["finding_ids"]})
     # The engine that re-evaluated this saved audit (DECISIONS 308), None when the report was used as written.
     data["_engine"] = ((report.get("generation") or {}).get("analysis") or {}).get("engine")
     data["_reassess_failed"] = reassess_failed

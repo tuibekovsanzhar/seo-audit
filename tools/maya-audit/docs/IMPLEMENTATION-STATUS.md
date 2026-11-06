@@ -1391,3 +1391,36 @@ a page was read only through it; every title slot of the team report shrinks to 
 nihan's three saved 429 audits (0dc805b9, 50473193, 8b872028), current-engine copies offline: ACC-9 `acc9.blocked_429`
 Inferred ("Teyit edin") -> Verified, a card; PDFs TR and EN print, 6 pages each. A single or occasional 429 stays
 Inferred. Results of the suites are in the commit message of this change.
+
+## The client brief "Müşteri özeti" (DECISIONS 319, 2026-11-06)
+
+What changed: new `maya_audit_web/team_report/brief.py` and its words `texts/brief-tr.json`, `texts/brief-en.json`: at
+most 5 pages for a business owner (summary, key pages, the top 3-5 measured or confirmed problems, a 30/60/90 plan),
+built from the team report's data and gated (pages, IDs/rule names, unconfirmed items, vendor names, unexplained terms,
+`client_brief_allowed`). Web app: "Müşteri özeti (PDF)" in the Downloads card, TR/EN (GET `/client-brief`,
+`/downloads/brief`); skill: `maya-audit-pro/scripts/brief.py`. Also fixed: page-reader key-page types no longer listed
+as "not found" (airastana). No schema bump.
+
+**Offline on copies of the saved audits** (current-engine copies in a scratch folder, provider-free): every brief 5
+pages, nothing blocked; PDFs and page images in `reviews/2026-11-06/client-brief/` (git-ignored).
+
+| | nihan b3198942 | moodist c581ff0a | airastana d12146fb |
+|---|---|---|---|
+| Verdict band | S3 (sound base) | S2 (fix in 30 days) | S3 |
+| Problems | 5: page code weight, language versions (confirmed by hand), duplicate-address links, heading order, shared titles | 5: redirect chain (High), tracking parameters, duplicate-address links, heading order, brand name | 4: certificate, Imperva block page, heading order, broken markup |
+| Already good | https, server reliability, no crawl delay | protection lets crawlers in, AI programs allowed, https | correct main addresses, sitemap, click depth |
+| Key pages | 8, homepage (2 languages) first | 8, `/tr/ekibimiz/` kept | 8, site-wide note for problems 1 and 2; not found: fares only (was 3) |
+
+Team report, same copies: moodist 8 pages TR/EN, airastana 6 pages TR/EN, nihan TR 9 pages; nihan EN blocked by card
+02's box ("kutu: todos[1].title"), the same at HEAD (checked from a `git archive HEAD` copy): the owner's STR-12 note
+makes the English card too tall. Not changed here.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_client_brief_319.py tests/test_team_report.py` | `54 passed` |
+| fast suite (first run) | `1 failed, 2824 passed`: `test_web_ux_310` pinned the old "Yakında" card; now checks the working card in Chromium |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2825 passed, 4 skipped, 135 deselected, 1 warning in 499.92s (0:08:19)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `1 failed, 2959 passed, 4 skipped`: the fixture matrix (regenerated; with the brief tests `35 passed`) |
+| ruff E9/F821/F841, `python3.11 -m compileall`, `node --check` | clean / OK |
+| skill `scripts/brief.py` on moodist (EN), provider-free | exit 0, 5 pages |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |

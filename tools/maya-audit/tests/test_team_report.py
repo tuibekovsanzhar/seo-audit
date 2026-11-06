@@ -200,14 +200,15 @@ def test_the_results_page_offers_the_team_report_in_turkish_first(finished):
     result = client.get(f"{API}/audits/{audit['id']}/summary").json() if "team_report" not in view else view
     team = result.get("team_report") or {}
     assert team == {"prepare": f"/api/v1/audits/{audit['id']}/team-report", "pdf": f"/api/v1/audits/{audit['id']}/downloads/team",
-                    "xlsx": f"/api/v1/audits/{audit['id']}/downloads/xlsx", "default_lang": "tr"}
+                    "xlsx": f"/api/v1/audits/{audit['id']}/downloads/xlsx", "default_lang": "tr",
+                    "brief": f"/api/v1/audits/{audit['id']}/client-brief"}
     script = (ROOT / "maya_audit_web" / "static" / "app.js").read_text(encoding="utf-8")
-    # DECISIONS 310: the Downloads card (team report PDF, appendix XLSX, client brief "Yakında"), one language switch.
+    # DECISIONS 310: the Downloads card (team report PDF, appendix XLSX, client brief: DECISIONS 319), one language switch.
     assert 'T("download.pdf.title")' in script and 'T("download.xlsx.title")' in script and 'choice("tr"), choice("en")' in script
     assert 'team.prepare + "?lang=" + asked' in script and 'download: body.pdf.filename' in script
     tr = json.loads((ROOT / "maya_audit_web" / "locales" / "tr.json").read_text(encoding="utf-8"))
     assert tr["download.pdf.title"] == "Ekip raporu (PDF)" and tr["download.xlsx.title"] == "Ek (XLSX)"
-    assert tr["download.brief.title"] == "Müşteri özeti" and tr["download.brief.soon"] == "Yakında"
+    assert tr["download.brief.title"] == "Müşteri özeti (PDF)"
 
 
 def test_a_blocked_team_report_says_why_in_plain_words(finished):

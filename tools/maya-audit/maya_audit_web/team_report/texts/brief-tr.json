@@ -1,0 +1,880 @@
+{
+ "_about": "Müşteri özeti (DECISIONS 319): işletme sahibine en çok 5 sayfa, sade dil. Sayılar report.json'dan gelir; bu dosyanın sorun, sayfa türü ve 'iyi olanlar' metinlerinde rakam yoktur. Bir teknik terim geçen her metin terimin kısa açıklamasını da taşır (terms).",
+ "labels": {
+  "doc_kind": "MÜŞTERİ ÖZETİ",
+  "tabs": [
+   "Özet",
+   "Önemli sayfalar",
+   "Sorunlar",
+   "Sonraki adımlar"
+  ],
+  "p1_title": "Sitenizin durumu",
+  "p1_sub": "Kısaca durum, en önemli sorunlar ve zaten iyi olanlar",
+  "verdict": "KISACA",
+  "health": "Site sağlığı",
+  "top": "En önemli sorunlar",
+  "top_none": "İncelediğimiz sayfalarda ölçülmüş ya da teyit edilmiş bir sorun bulmadık.",
+  "top_more": "Ayrıntılar 3. sayfada.",
+  "good": "Zaten iyi olanlar",
+  "good_none": "Bu denetimde ayrıca öne çıkan bir güçlü yan ölçmedik.",
+  "p2_title": "En önemli sayfalarınız",
+  "p2_sub": "İşletme türünüz için en çok önem taşıyan sayfalar ve durumları",
+  "business": "İşletme türü: {label}",
+  "col_page": "Sayfa",
+  "col_kind": "Sayfa türü",
+  "col_why": "Müşteriler, Google ve yapay zekâ asistanları için neden önemli",
+  "col_state": "Durum",
+  "state_ok": "Sayfaya özgü sorun bulunmadı",
+  "state_problems": "{list}. sorun",
+  "state_minor": "Ekip raporundaki diğer düzeltmeler",
+  "state_plus_minor": "{list}. sorun ve diğer düzeltmeler",
+  "kp_none": "Bu denetimde önemli sayfaları sıralayacak kadar veri yoktu.",
+  "kp_languages": "Ana sayfa ({n} dil)",
+  "not_found": "{label} sayfası incelediğimiz sayfalar arasında yoktu (sitede olmadığı anlamına gelmez).",
+  "p3_title": "Önce düzeltilmesi gerekenler",
+  "p3_sub": "Ölçtüğümüz ya da teyit ettiğimiz en önemli sorunlar",
+  "p4_title": "Önce düzeltilmesi gerekenler (devam)",
+  "what": "Ne yanlış",
+  "why": "İşletmeniz için neden önemli",
+  "example": "Sitenizden örnek",
+  "who": "Kim düzeltir",
+  "effort": "İş yükü",
+  "status": "Kanıt",
+  "template": "Tek düzeltme yeter",
+  "template_line": "Bu sorunun {n} sayfası aynı sayfa şablonunu (aynı düzendeki sayfaların ortak tasarımı) kullanıyor: şablonda yapılacak tek düzeltme hepsini birden düzeltir.",
+  "sitewide": "Sitenin tamamında",
+  "p5_title": "Sonraki adımlar",
+  "p5_sub": "30, 60 ve 90 günlük plan",
+  "d30": "İlk 30 gün",
+  "d60": "60 güne kadar",
+  "d90": "90 güne kadar",
+  "plan_item": "{n}. sorun: {title} ({who})",
+  "plan_60_empty": "İlk 30 günde yapılan düzeltmelerin yayında olduğunu ve beklenen sonucu verdiğini kontrol edin.",
+  "plan_minor": "Ekip raporundaki diğer düzeltmeleri sıraya alın.",
+  "plan_recheck": "Düzeltmelerden sonra siteyi yeniden denetleyelim ve Google'daki etkisini birlikte ölçelim.",
+  "not_checked": "İnceleyemediklerimiz",
+  "not_checked_both": "Bu denetimde sayfa hızını (telefon ölçümü ve gerçek ziyaretçi verisi) ve Google Search Console verilerinizi (Google'ın sitenizle ilgili kendi kayıtları) inceleyemedik.",
+  "not_checked_speed": "Bu denetimde sayfa hızını (telefon ölçümü ve gerçek ziyaretçi verisi) inceleyemedik.",
+  "not_checked_gsc": "Bu denetimde Google Search Console verilerinizi (Google'ın sitenizle ilgili kendi kayıtları) inceleyemedik.",
+  "not_checked_none": "Bu denetimde planladığımız bütün kaynakları inceledik.",
+  "full_report": "Tam rapor",
+  "full_report_line": "Bütün bulgular, adım adım düzeltmeler ve etkilenen bütün adresler ekibinize verdiğimiz teknik raporda (ekip raporu ve Excel eki) yer alıyor.",
+  "reach": "{read} sayfayı inceledik.",
+  "in_brief": "Bu özette en önemli {n} soruna yer verdik; bütün liste ekip raporunda.",
+  "footer": "Maya · {domain} · {date}",
+  "coverage_pill": "{read} sayfa incelendi",
+  "owners": {
+   "developer": "Geliştirici",
+   "content": "İçerik ekibi",
+   "seo": "Geliştirici"
+  },
+  "efforts": {
+   "S": "Küçük",
+   "M": "Orta",
+   "L": "Büyük"
+  },
+  "evidence": {
+   "measured": "Ölçüldü",
+   "confirmed": "Ölçüldü ve elle teyit edildi",
+   "estimated": "Ölçüldü; kapsamı tahmini"
+  },
+  "severity": {
+   "S1": "Acil",
+   "S2": "Yüksek önem",
+   "S3": "Orta önem",
+   "S4": "Düşük önem"
+  },
+  "sitewide_note": "Sitenin tamamını etkileyen sorunlar her sayfayı da etkiler: {list}. sorun.",
+  "example_scope": "Toplam: {scope}",
+  "problem_word": [
+   "sorun",
+   "sorun"
+  ],
+  "and": "ve"
+ },
+ "verdict": {
+  "S1": "{brand} sitesinde, müşterilerin sizi Google'da ve yapay zekâ asistanlarında bulmasını engelleyen bir sorun var; önce onu düzeltmenizi öneriyoruz.",
+  "S2": "{brand} sitesinde, Google'da ve yapay zekâ yanıtlarında görünürlüğünüzü doğrudan etkileyen sorunlar var; bunları ilk 30 günde ele almanızı öneriyoruz.",
+  "S3": "{brand} sitesinin temeli sağlam; birkaç orta önemdeki düzeltmeyle Google'da ve yapay zekâ asistanlarının yanıtlarında daha görünür olabilirsiniz.",
+  "S4": "{brand} sitesi iyi durumda; yalnız küçük düzeltmeler kaldı.",
+  "none": "{brand} sitesinin incelediğimiz sayfalarında ölçülmüş ya da teyit edilmiş bir sorun bulmadık."
+ },
+ "health": {
+  "S1": "Sitenizin görünürlüğünü engelleyen acil bir sorun var.",
+  "S2": "Acil bir sorun yok; ama yüksek önemdeki sorunlar görünürlüğünüzü doğrudan etkiliyor.",
+  "S3": "Acil ya da yüksek önemde bir sorun yok; orta önemdeki sorunlar görünürlüğünüzü kısıtlıyor.",
+  "S4": "Acil, yüksek ya da orta önemde bir sorun yok; yalnız küçük düzeltmeler var.",
+  "none": "Ölçülmüş ya da teyit edilmiş bir sorun yok."
+ },
+ "good": {
+  "ACC-9": "Sitenizin koruma ayarları Google'ı ve kendini tanıtan otomatik ziyaretçileri engellemiyor: incelediğimiz sayfaların hepsi açıldı.",
+  "ACC-2": "Yapay zekâ asistanlarının site okuyan programlarını engelleyen bir kural yok; sitenizi okuyup yanıtlarında kullanabilirler.",
+  "IDX-2": "Siteniz güvenli bağlantıyla (https) açılıyor ve güvenlik sertifikası geçerli: ziyaretçiler uyarı görmüyor.",
+  "IDX-6": "Sitenin kendi sayfaları arasında kırık bağlantı bulmadık.",
+  "IDX-4": "Sayfalarınız Google'a doğru asıl adreslerini gösteriyor.",
+  "PRF-2": "Sunucunuz denetim boyunca kesintisiz yanıt verdi: arada bir hata veren sayfa olmadı.",
+  "IDX-5": "Site haritanız (Google'a sayfalarınızın listesini veren dosya) düzgün çalışıyor.",
+  "IDX-7": "Sayfalarınıza ana sayfadan birkaç tıklamayla ulaşılabiliyor.",
+  "ACC-7": "Arama motorlarından ve yapay zekâ asistanlarından sayfalar arasında beklemelerini istemiyorsunuz; siteniz hızla okunabiliyor.",
+  "KEY_PAGES": "İşletme türünüz için en önemli sayfa türlerinin hepsini incelediğimiz sayfalar arasında bulduk.",
+  "STR-9": "Sayfalarınızın dili Google'a doğru bildiriliyor.",
+  "ACC-1": "Arama motorlarına yol gösteren ayar dosyanız sorunsuz okunuyor."
+ },
+ "page_types": {
+  "home": "Müşterilerin ve Google'ın sitenize ilk girdiği sayfa; yapay zekâ asistanları kim olduğunuzu ve ne sunduğunuzu önce buradan öğrenir.",
+  "category": "Müşterilerin ürünleri karşılaştırdığı sayfa; Google'da genel ürün aramalarında en çok bu tür sayfalar görünür.",
+  "product": "Satın alma kararının verildiği sayfa; Google ürün aramalarında, yapay zekâ asistanları da ürün önerirken buradaki fiyat ve bilgiyi kullanır.",
+  "blog_article": "Müşterilerin sorularına cevap veren içerik; Google'da bilgi aramalarında görünür, yapay zekâ asistanlarının en çok alıntı yaptığı sayfa türüdür.",
+  "guide": "Müşterilerin sorularına cevap veren içerik; Google'da bilgi aramalarında görünür, yapay zekâ asistanlarının en çok alıntı yaptığı sayfa türüdür.",
+  "policy": "İade, teslimat ve sözleşme gibi güven veren bilgiler; müşteri satın almadan önce bakar, yapay zekâ asistanları bu soruları buradan yanıtlar.",
+  "help": "İade, teslimat ve yardım gibi güven veren bilgiler; müşteri satın almadan önce bakar, yapay zekâ asistanları bu soruları buradan yanıtlar.",
+  "utility": "Sepet, hesap ya da arama gibi yardımcı bir sayfa; müşteri için gerekli ama Google'da görünmesi gerekmez.",
+  "other": "Sitenizin önemli sayfalarından biri; müşteriler, Google ve yapay zekâ asistanları sizi tanırken buraya da bakar.",
+  "stores": "Mağazanızı arayan müşterinin adres ve saat bulduğu sayfa; Google'daki yakın konum aramaları ve yapay zekâ asistanlarının konum yanıtları bu bilgiye dayanır.",
+  "campaign": "İndirim ve kampanyaların duyurulduğu sayfa; indirim aramalarında Google'da, kampanya sorularında yapay zekâ yanıtlarında görünür.",
+  "support": "Müşterilerin sorun çözdüğü sayfa; Google'da ve yapay zekâ asistanlarında nasıl yapılır sorularının cevabı buradan gelir.",
+  "products": "Ürün ve hizmetlerinizi anlatan sayfa; müşteri burada karşılaştırır, Google ve yapay zekâ asistanları ürün sorularını buradaki bilgiyle yanıtlar.",
+  "fees": "Ücret ve başvuru koşullarının anlatıldığı sayfa; müşteri karar vermeden önce bakar, ne kadar sorularına Google ve yapay zekâ asistanları buradan cevap verir.",
+  "calculator": "Müşterinin kendi hesabını yaptığı araç; Google'da hesaplama aramalarında görünür ve müşteriyi başvuruya yaklaştırır.",
+  "service_location": "Hangi hizmeti hangi bölgede verdiğinizi anlatan sayfa; yerel aramalarda Google ve yapay zekâ asistanları sizi bu sayfayla önerir.",
+  "contact": "Müşterinin size ulaştığı sayfa; telefon, adres ve saat bilgisini Google ve yapay zekâ asistanları buradan alır.",
+  "booking": "Müşterinin randevu ya da rezervasyon yaptığı sayfa; doğrudan satışa dönen ziyaretler buradan geçer.",
+  "brand_family": "Markalarınızı ve ürün ailelerinizi tanıtan sayfa; Google'da marka aramalarında ve yapay zekâ yanıtlarında sizi temsil eder.",
+  "ingredients": "İçerik ve alerjen bilgisi; müşteri satın almadan önce arar, yapay zekâ asistanları da bu sorulara buradan cevap verir.",
+  "quality": "Kalite belgeleri ve kurum bilgisi; müşteriye güven verir, Google ve yapay zekâ asistanları sizi bu bilgiyle tanıtır.",
+  "services": "Hizmet ve çözümlerinizi anlatan sayfa; müşteri burada karşılaştırır, Google ve yapay zekâ asistanları hizmet sorularını buradan yanıtlar.",
+  "pricing": "Paket ve fiyatların olduğu sayfa; satın alma kararı burada verilir, fiyat sorularının cevabı da buradan gelir.",
+  "routes": "Uçtuğunuz şehir ve rotaları anlatan sayfa; şehre uçuş aramalarında Google'da ve yapay zekâ yanıtlarında görünür.",
+  "flight_search": "Müşterinin uçuş aradığı ve tarih seçtiği sayfa; satışın başladığı yer.",
+  "fares": "Bilet fiyatları ve kampanyalar; ucuz bilet aramalarında Google'da ve yapay zekâ asistanlarının fiyat yanıtlarında görünür.",
+  "baggage": "Bagaj kuralları; yolcuların uçuştan önce en çok sorduğu konu, yapay zekâ asistanları da bu soruları buradan yanıtlar.",
+  "checkin": "Yolcuların check-in yaptığı ve rezervasyonunu yönettiği sayfa; en sık kullanılan sayfadır, aramalarda doğru sayfanın çıkması destek yükünü azaltır.",
+  "terms_help": "Rezervasyon koşulları ve yardım; müşteri iptal ve değişiklik kurallarını burada arar, yapay zekâ asistanları bu soruları buradan yanıtlar.",
+  "cards": "Kart türlerini anlatan sayfa; müşteri kartları burada karşılaştırır, Google ve yapay zekâ asistanları kart sorularını buradan yanıtlar.",
+  "points": "Puan, mil ve ayrıcalıklar; müşterilerin sık baktığı ve yapay zekâ asistanlarına sık sorulan konu.",
+  "apply": "Başvuru sayfası; ziyaretin müşteriye dönüştüğü yer.",
+  "model": "Bir modelin özellik ve fiyat sayfası; satın alma kararının verildiği, model aramalarında Google'da ve yapay zekâ yanıtlarında görünen sayfa.",
+  "pricelist": "Fiyat listesi; müşterilerin en çok aradığı bilgi, fiyat sorularına Google ve yapay zekâ asistanları buradan cevap verir.",
+  "models": "Model listesi; müşterinin seçeneklerinizi karşılaştırdığı ve genel aramalarda Google'da görünen sayfa.",
+  "dealers": "Bayi ve servis noktaları; yakın konum aramalarında Google'da ve yapay zekâ asistanlarının konum yanıtlarında görünür.",
+  "configure": "Araç oluşturma ve teklif isteme sayfası; ziyaretin satış talebine dönüştüğü yer.",
+  "menu": "Menü; müşterinin gelmeden önce baktığı sayfa, yapay zekâ asistanları ne var ve ne kadar sorularını buradan yanıtlar.",
+  "branches": "Şube adres ve saatleri; yakın konum aramalarında Google'da ve yapay zekâ asistanlarının konum yanıtlarında görünür.",
+  "order": "Rezervasyon ya da sipariş sayfası; ziyaretin doğrudan satışa döndüğü yer.",
+  "features": "Ürününüzün özellik ve entegrasyonlarını anlatan sayfa; müşteri burada karşılaştırır, yapay zekâ asistanları ürün sorularını buradan yanıtlar.",
+  "sales": "Satış ekibinize ulaşılan sayfa; ziyaretin müşteri adayına döndüğü yer.",
+  "references": "Referanslar ve müşteri hikâyeleri; yeni müşteriye güven verir, yapay zekâ asistanları sizi tanıtırken bu örnekleri kullanır.",
+  "treatment": "Tedavi ve bölümlerinizi anlatan sayfa; hastalar Google'da ve yapay zekâ asistanlarında tedavi ararken sizi bu sayfayla bulur.",
+  "doctors": "Doktor ve ekip sayfası; hastalar hekimini burada seçer, Google ve yapay zekâ asistanları uzmanlığınızı bu bilgiyle tanıtır.",
+  "clinic": "Klinik ve konum bilgisi; yakın konum aramalarında Google'da ve yapay zekâ asistanlarının konum yanıtlarında görünür.",
+  "appointment": "Randevu ve iletişim sayfası; ziyaretin hastaya dönüştüğü yer.",
+  "insurers": "Anlaşmalı kurumlar; hastaların randevudan önce en çok sorduğu konu, yapay zekâ asistanları da bu soruyu buradan yanıtlar.",
+  "listings": "Destinasyon, otel ve tur listeleri; genel tatil aramalarında Google'da ve yapay zekâ önerilerinde görünür.",
+  "detail": "Otel ya da tur ayrıntısı; satın alma kararının verildiği sayfa.",
+  "account": "Hesap açma sayfası; ziyaretin müşteriye dönüştüğü yer.",
+  "company": "Kurum ve destek bilgisi; müşteriye güven verir, Google ve yapay zekâ asistanları sizi bu bilgiyle tanıtır.",
+  "platform": "İşlem platformunu anlatan sayfa; müşteri burada karar verir, yapay zekâ asistanları platform sorularını buradan yanıtlar.",
+  "service": "Servis ve abonelik koşulları; müşteri karar vermeden önce okur, yapay zekâ asistanları bu soruları buradan yanıtlar."
+ },
+ "families": {
+  "acc1": {
+   "title": "Arama motorlarına yol gösteren dosyayı onarın",
+   "what": "Sitenizin robots.txt dosyası (arama motorlarına ve yapay zekâ asistanlarına hangi sayfaları okuyabileceklerini söyleyen dosya) düzgün okunamıyor.",
+   "why": "Bu dosya okunamazsa Google ve yapay zekâ asistanları sitenizi okumayı erteleyebilir ya da istemediğiniz sayfaları okuyabilir."
+  },
+  "acc2": {
+   "title": "Arama motorlarına verdiğiniz izinleri düzeltin",
+   "what": "robots.txt dosyanızdaki (arama motorlarına ve yapay zekâ asistanlarına hangi sayfaları okuyabileceklerini söyleyen dosya) kurallar, istediğinizden farklı bir izin veriyor.",
+   "why": "Yanlış engellenen sayfalar Google'da ve yapay zekâ yanıtlarında görünmez; yanlış açık kalanlar ise istemediğiniz yerde kullanılabilir."
+  },
+  "acc3": {
+   "title": "Sayfaları Google'dan gizleyen ayarları gözden geçirin",
+   "what": "Bazı sayfalarda, Google'a ve yapay zekâ asistanlarına sayfayı göstermemesini ya da ondan alıntı yapmamasını söyleyen ayarlar var.",
+   "why": "Bu ayarlar bilinçli değilse sayfalar arama sonuçlarından ve yapay zekâ yanıtlarından düşer; müşteriler o sayfalara aramayla ulaşamaz."
+  },
+  "acc4": {
+   "title": "Arama motorlarına ziyaretçilerin gördüğü sayfayı gösterin",
+   "what": "Sitenizin güvenlik ya da sunucu ayarları, Google'a ve yapay zekâ asistanlarına ziyaretçilerden farklı bir yanıt veriyor.",
+   "why": "Google ve yapay zekâ asistanları sayfanın asıl içeriğini görmezse onu doğru gösteremez ve ondan alıntı yapamaz."
+  },
+  "acc5": {
+   "title": "Google'ın ziyaret etmediği sayfaları öne çıkarın",
+   "what": "Sunucu kayıtlarına göre Google bazı sayfalarınızı hiç ziyaret etmemiş.",
+   "why": "Ziyaret edilmeyen sayfalar arama sonuçlarında güncellenmez ya da hiç görünmez."
+  },
+  "acc6": {
+   "title": "Yapay zekâ asistanlarına verdiğiniz izinleri netleştirin",
+   "what": "Sitenizin izinleri, yapay zekâ şirketlerinin model eğitmek için siteyi okuyan programlarıyla, soru yanıtlarken siteyi okuyan programlarını farklı ele alıyor.",
+   "why": "Soru yanıtlayan programları engellemek, müşterilerin yapay zekâ asistanlarına sorduğu sorularda sitenizin kaynak gösterilmesini önler."
+  },
+  "acc7": {
+   "title": "Arama motorlarından istenen bekleme süresini kısaltın",
+   "what": "robots.txt dosyanız (arama motorlarına ve yapay zekâ asistanlarına hangi sayfaları okuyabileceklerini söyleyen dosya) sayfalar arasında uzun süre beklenmesini istiyor.",
+   "why": "Uzun bekleme, Google'ın ve yapay zekâ asistanlarının her ziyarette sitenizin küçük bir bölümünü okuması demektir; yeni sayfalar geç fark edilir."
+  },
+  "acc8": {
+   "title": "Yapay zekâ araçları için hazırladığınız dosyayı düzeltin",
+   "what": "Sitenizin yapay zekâ araçları için yayınladığı özet dosyası (llms.txt) çalışmayan ya da başka adrese giden sayfalara bağlantı veriyor.",
+   "why": "Bu dosyayı okuyan bir araç sitenizin doğru sayfaları yerine hatalı sayfalara yönelir."
+  },
+  "acc9": {
+   "title": "Koruma hizmetinizin Google'ı ve yapay zekâ asistanlarını engellemesini önleyin",
+   "what": "Sitenizin [[{service} adlı ]]koruma hizmeti, kendini tanıtan otomatik ziyaretçilere sayfa yerine bir engel sayfası gösteriyor; denetimimizin istekleri de bu sayfayla karşılandı.",
+   "why": "Yapay zekâ asistanlarının siteyi okuyan programları da aynı engeli görebilir; o zaman sitenizi okuyamaz, yanıtlarında sizi kaynak gösteremez ve müşterilere başka sitelerin bilgisini verir."
+  },
+  "ans1": {
+   "title": "Yapay zekâ yanıtlarının kaynak gösterdiği sayfayı onarın",
+   "what": "Yapay zekâ asistanlarının yanıtlarında kaynak gösterdiği bir sayfanızda bir sorun var.",
+   "why": "Bu sayfa iyi okunamazsa asistanlar onu kaynak göstermeyi bırakabilir; müşteriler sizin yerinize başka sitelere yönelir."
+  },
+  "ans2": {
+   "title": "Yapay zekâ yanıtlarındaki bilginin sayfanızda doğru durmasını sağlayın",
+   "what": "Yapay zekâ asistanlarının sizinle ilgili verdiği bilgi, kaynak gösterdikleri sayfanızdakiyle uyuşmuyor.",
+   "why": "Müşteriler sizin adınıza yanlış bilgi alır; bu güveni ve satışı doğrudan etkiler."
+  },
+  "ans4": {
+   "title": "Yapay zekâ yanıtlarında kaynak olarak görünün",
+   "what": "Yapay zekâ asistanları bu konuda başka siteleri kaynak gösteriyor, sizi göstermiyor.",
+   "why": "Müşteri sorusunun cevabını rakiplerinizin sayfasından alır; o yanıtlarda markanız geçmez."
+  },
+  "idx1": {
+   "title": "Hata veren sayfaları ve onlara giden bağlantıları düzeltin",
+   "what": "Bazı sayfalar ya da bağlantıların gittiği adresler hata veriyor veya içerik yerine boş yanıt dönüyor.",
+   "why": "Müşteri hata sayfasıyla karşılaşınca siteden ayrılır; Google ve yapay zekâ asistanları da bu sayfaları okuyamaz ve gösteremez."
+  },
+  "idx10": {
+   "title": "Bing'in sayfalarınızı okuyabilmesini sağlayın",
+   "what": "Bing'in sitenizi okuması ya da değişikliklerden haberdar olması için gereken ayarlarda bir sorun var.",
+   "why": "Bing'in dizini birçok yapay zekâ asistanını da besler; Bing'de olmayan bir sayfa o yanıtlarda da yoktur."
+  },
+  "idx2": {
+   "title": "Güvenli bağlantıyı her adreste sağlayın",
+   "what": "Sitenizin güvenli bağlantı ayarlarında bir eksik var: güvenlik sertifikası ya da güvenli adrese geçiş düzgün çalışmıyor.",
+   "why": "Tarayıcı ziyaretçiye güvenlik uyarısı gösterir ve müşteriler siteden çıkar; Google ve yapay zekâ asistanları da siteyi okumayı bırakabilir."
+  },
+  "idx3": {
+   "title": "Yönlendirme zincirlerini kısaltın",
+   "what": "Bazı adresler ziyaretçiyi birkaç kez başka adreslere gönderiyor (yönlendirme) ya da bir döngüye sokuyor.",
+   "why": "Her ek adım sayfanın geç açılması demektir; Google ve yapay zekâ asistanları uzun zincirlerde vazgeçip sayfayı okumayabilir."
+  },
+  "idx4": {
+   "title": "Sayfaların Google'a doğru asıl adresi göstermesini sağlayın",
+   "what": "Bazı sayfalar, Google'a asıl adresini söyleyen etikette (kanonik adres) yanlış, çalışmayan ya da başka yere giden bir adres gösteriyor.",
+   "why": "Google hangi adresi göstereceğini bilemez; sayfa aramalarda yanlış adresle görünebilir ya da hiç görünmeyebilir."
+  },
+  "idx5": {
+   "title": "Site haritanızı güncel ve doğru tutun",
+   "what": "Site haritanızda (Google'a sayfalarınızın listesini veren dosya) hatalı, eski ya da yanıltıcı kayıtlar var.",
+   "why": "Google bu dosyaya daha az güvenir; yeni ve değişen sayfalarınızı daha geç fark eder."
+  },
+  "idx6": {
+   "title": "Site içi bağlantıları doğru adreslere verin",
+   "what": "Sitenizin kendi sayfaları arasındaki bazı bağlantılar hatalı, kopya ya da başka adrese giden adreslere gidiyor.",
+   "why": "Ziyaretçi hatalı sayfaya düşebilir; Google zamanını gereksiz adreslere harcar ve önemli sayfalarınızın gücü bölünür."
+  },
+  "idx7": {
+   "title": "Önemli sayfalara daha kolay ulaşılmasını sağlayın",
+   "what": "Bazı sayfalara ana sayfadan çok sayıda tıklamayla ulaşılıyor ya da hiçbir sayfa onlara bağlantı vermiyor.",
+   "why": "Az bağlantı alan, derindeki sayfaları hem müşteriler hem Google daha zor bulur; bu sayfalar daha seyrek okunur ve daha az önemli sayılır."
+  },
+  "idx8": {
+   "title": "Birbirinin kopyası olan sayfaları ayırın",
+   "what": "Bazı sayfalar aynı ya da neredeyse aynı içeriği ve başlığı taşıyor.",
+   "why": "Google bu sayfalardan yalnız birini gösterir ve bu sizin istediğiniz sayfa olmayabilir; sayfalar aramalarda birbiriyle yarışır."
+  },
+  "idx9": {
+   "title": "Google'da yer almayan önemli sayfaları düzeltin",
+   "what": "Google'ın kendi kayıtlarına göre bazı önemli sayfalarınız Google'da yer almıyor.",
+   "why": "Google'da olmayan bir sayfa aramalarda görünmez; müşteriler o sayfayı aramayla bulamaz."
+  },
+  "judgment": {
+   "title": "Tutarsız yanıt veren adresleri düzeltin",
+   "what": "Bazı adresler ve bağlantılar tutarsız davranıyor: zaman zaman boş yanıt ya da hata veriyorlar.",
+   "why": "Tutarsız sayfalar bazı ziyaretlerde müşteriye ve Google'a boş ya da bozuk görünür."
+  },
+  "prf1": {
+   "title": "Sayfaların daha hızlı yanıt vermesini sağlayın",
+   "what": "Sunucunuz bazı sayfalarda yanıt vermeye geç başlıyor ya da zaman zaman hiç yanıt vermiyor.",
+   "why": "Yavaş açılan sayfada müşteri beklemeden çıkar; Google ve yapay zekâ asistanları da her ziyarette daha az sayfa okur."
+  },
+  "prf2": {
+   "title": "Zaman zaman hata veren sayfaları düzeltin",
+   "what": "Bazı sayfalar denetim sırasında arada bir hata verdi.",
+   "why": "Google ziyaret ettiği anda sayfa hata verirse sayfa aramalardan düşebilir; müşteri de boş sayfa görür."
+  },
+  "prf3": {
+   "title": "Gerçek ziyaretçiler için sayfa hızını iyileştirin",
+   "what": "Google'ın gerçek ziyaretlerden ölçtüğü hız değerlerinin bir kısmı zayıf.",
+   "why": "Yavaş sayfalar ziyaretçi ve satış kaybettirir; Google da hızı sıralamada dikkate alır."
+  },
+  "rnd1": {
+   "title": "Sayfa içeriğini kod çalışmadan da görünür yapın",
+   "what": "Bazı sayfaların içeriği, sayfa açıldıktan sonra çalışan kodla (JavaScript) yükleniyor; sunucunun ilk gönderdiği sayfada içerik yok.",
+   "why": "Birçok yapay zekâ asistanı bu kodu çalıştırmaz; içeriği hiç görmez ve sizden alıntı yapamaz."
+  },
+  "rnd2": {
+   "title": "Fiyat ve önemli bilgileri sayfanın ilk hâlinde gösterin",
+   "what": "Fiyat gibi önemli bilgiler yalnız sayfa açıldıktan sonra çalışan kodla (JavaScript) görünüyor ya da sayfada hiç görünmüyor.",
+   "why": "Bu kodu çalıştırmayan yapay zekâ asistanları fiyatı ve bilgiyi göremez; müşterinin sorusuna sizin bilginizle cevap veremez."
+  },
+  "rnd3": {
+   "title": "Tıklamayla açılan içeriği görünür yapın",
+   "what": "Bazı sayfalarda içeriğin bir bölümü yalnız bir sekmeye tıklanınca ya da sayfa kaydırılınca görünüyor.",
+   "why": "Google ve yapay zekâ asistanları tıklamaz ve kaydırmaz; o bölümü okuyamazlar."
+  },
+  "rnd4": {
+   "title": "Görsellerdeki ve gömülü içerikteki bilgiyi yazıyla da verin",
+   "what": "Bazı bilgiler yalnız bir görselin ya da sayfaya gömülü bir pencerenin içinde; sayfada yazı olarak yok.",
+   "why": "Arama motorları ve yapay zekâ asistanları görselin içindeki yazıyı okuyamaz; bu bilgi aramalarda ve yanıtlarda görünmez."
+  },
+  "rnd5": {
+   "title": "İçeriği giriş ve onay ekranlarının arkasından çıkarın",
+   "what": "Bazı sayfalar içerik yerine giriş, üyelik ya da onay ekranı gösteriyor.",
+   "why": "Google ve yapay zekâ asistanları bu ekranları geçemez; arkadaki içeriği göremez."
+  },
+  "rnd6": {
+   "title": "Sayfa kodunu hafifletin",
+   "what": "Bazı sayfaların kodu (HTML) çok ağır; asıl içerik kodun çok gerisinde başlıyor.",
+   "why": "Ağır sayfalar özellikle telefonda geç açılır; Google ve yapay zekâ araçları asıl içeriğe geç ulaşır ya da okumayı yarıda bırakabilir."
+  },
+  "rnd7": {
+   "title": "Sayfanın ana içeriğini belirginleştirin",
+   "what": "Bazı sayfalarda sayfanın kendi içeriği, menü ve alt bilgi yazılarının arasında kayboluyor.",
+   "why": "Google ve yapay zekâ asistanları sayfanın asıl konusunu bulmakta zorlanır."
+  },
+  "shared": {
+   "title": "Her sayfada tekrarlanan menü ve alt bilgi hatalarını düzeltin",
+   "what": "Her sayfada tekrarlanan ortak bölümlerde (menü, alt bilgi) metni ya da adresi olmayan bağlantılar, açıklamasız görseller ya da sırası bozuk başlıklar var.",
+   "why": "Bu bölümler her sayfada tekrarlandığı için tek bir hata bütün siteye yayılır; tek bir düzeltme de bütün siteyi düzeltir."
+  },
+  "str1": {
+   "title": "Sayfa başlıklarını sayfaya özgü yazın",
+   "what": "Bazı sayfaların arama sonuçlarında görünen başlığı yok, çok genel ya da başka sayfalarla aynı.",
+   "why": "Başlık, müşterinin arama sonucunda tıklayıp tıklamayacağına karar verdiği ilk yazıdır; genel bir başlık tıklama kaybettirir."
+  },
+  "str10": {
+   "title": "Paylaşım önizlemelerini tamamlayın",
+   "what": "Bazı sayfalarda, sayfa paylaşıldığında ya da kaynak olarak gösterildiğinde görünen başlık, açıklama veya görsel eksik.",
+   "why": "Önizlemesi eksik bir bağlantı sosyal medyada ve mesajlaşmada daha az tıklanır."
+  },
+  "str11": {
+   "title": "Çelişen işaretleme bilgilerini birleştirin",
+   "what": "Aynı şeyi anlatan iki yapısal veri (bilgiyi makinelerin okuyacağı biçimde anlatan kod) farklı değerler veriyor.",
+   "why": "Google ve yapay zekâ asistanları hangisinin doğru olduğunu tahmin etmek zorunda kalır; yanlış bilgi gösterebilirler."
+  },
+  "str12": {
+   "title": "Dil sürümlerini tam olarak çevirin",
+   "what": "Bazı sayfaların içeriği, sayfanın bildirdiği dilde değil: bir dil sürümünde metnin çoğu başka dilde kalmış.",
+   "why": "Google bu sayfaları yanlış dildeki aramalarda gösterebilir; o dili konuşan müşteri sayfayı okuyamaz, yapay zekâ asistanları da bilgiyi yanlış dile bağlar."
+  },
+  "str13": {
+   "title": "Doldurulmamış şablon işaretlerini temizleyin",
+   "what": "Bazı sayfalarda doldurulması gereken şablon işaretleri ya da görünmez karakterler metnin içinde kalmış.",
+   "why": "Google ve yapay zekâ asistanları bu işaretleri gerçek bilgi sanıp gösterebilir; ziyaretçi de bozuk metin görür."
+  },
+  "str14": {
+   "title": "Bağlantılara ne açtığını söyleyen metin verin",
+   "what": "Bazı bağlantıların metni yok ya da tıklayın, devamı gibi genel bir metin.",
+   "why": "Google ve yapay zekâ asistanları bağlantının hangi sayfaya gittiğini metinden anlar; görme engelli ziyaretçiler de bağlantının nereye gittiğini bilemez."
+  },
+  "str15": {
+   "title": "İçeriği zayıf sayfaları güçlendirin",
+   "what": "Bazı sayfalarda sayfanın kendi metni çok az ya da listeleme sayfalarında hiç ürün yok.",
+   "why": "Boş ya da çok kısa sayfalar müşteriye bir şey anlatmaz; Google bunları değersiz sayabilir, yapay zekâ asistanları da alıntı yapacak bir şey bulamaz."
+  },
+  "str16": {
+   "title": "Her sayfaya kendi açıklamasını yazın",
+   "what": "Birçok sayfa aynı meta açıklamayı (arama sonuçlarında başlığın altında görünen kısa özet) kullanıyor.",
+   "why": "Müşteri arama sonucunda sayfaların farkını göremez; Google da hangi sayfanın neyi anlattığını ayırt etmekte zorlanır."
+  },
+  "str17": {
+   "title": "Çıkmaz sayfalara bağlantı ekleyin",
+   "what": "Bazı sayfalar sitenin başka hiçbir sayfasına bağlantı vermiyor.",
+   "why": "Müşteri bu sayfadan başka bir yere geçemez; Google da siteyi bu sayfadan öteye okuyamaz."
+  },
+  "str18": {
+   "title": "Ana sayfa başlığına marka adınızı ekleyin",
+   "what": "Ana sayfanın arama sonuçlarında görünen başlığında marka adınız yok.",
+   "why": "Markanızı arayan müşteri doğru siteyi bulduğundan emin olamaz; Google ve yapay zekâ asistanları da sitenin kime ait olduğunu daha zor anlar."
+  },
+  "str19": {
+   "title": "Bağlantılara gerçek bir adres verin",
+   "what": "Bazı bağlantı ya da düğmelerin gerçek bir sayfa adresi yok; yalnız tıklamayla çalışıyorlar.",
+   "why": "Google ve yapay zekâ asistanları tıklamaz, adres izler; bu bağlantıların açtığı sayfaları bulamazlar."
+  },
+  "str2": {
+   "title": "Her sayfaya tek ve açık bir ana başlık verin",
+   "what": "Bazı sayfalarda ana başlık (sayfanın konusunu söyleyen en büyük başlık) yok, boş, gizli ya da birden fazla.",
+   "why": "Ana başlık, ziyaretçiye ve Google'a sayfanın ne hakkında olduğunu ilk anlatan yazıdır; eksik olunca sayfa yanlış aramalarda görünebilir."
+  },
+  "str20": {
+   "title": "Videodaki mesajı yazıyla da verin",
+   "what": "Bazı önemli mesajlar yalnız video ya da animasyon içinde.",
+   "why": "Google ve yapay zekâ asistanları videoyu izlemez; yazıyla verilmeyen mesaj onlar için yoktur."
+  },
+  "str21": {
+   "title": "Eksik temel sayfaları ekleyin",
+   "what": "Hakkımızda, iletişim ya da hizmetler gibi temel bir sayfayı incelediğimiz sayfalar arasında bulamadık.",
+   "why": "Müşteriler ve Google sitenin arkasında kimin olduğunu ve size nasıl ulaşacaklarını bu sayfalarda arar; yapay zekâ asistanları da sizi bu sayfalarla tanıtır."
+  },
+  "str22": {
+   "title": "Haber sayfalarına kendi içeriğinizi ekleyin",
+   "what": "Haber sayfalarınız çoğunlukla başka sitelere verilen bağlantılardan oluşuyor.",
+   "why": "Kendi içeriği olmayan bir sayfa Google'da ve yapay zekâ yanıtlarında kaynak olarak gösterilmez."
+  },
+  "str23": {
+   "title": "İş ilanlarını Google'ın tanıyacağı biçimde işaretleyin",
+   "what": "İş ilanlarınızda yapısal veri (bilgiyi makinelerin okuyacağı biçimde anlatan kod) yok.",
+   "why": "Google ilanları iş aramalarında ancak bu kodla gösterir; adaylar ilanlarınızı orada göremez."
+  },
+  "str3": {
+   "title": "Sayfalardaki bilgiyi Google'ın okuyacağı biçimde işaretleyin",
+   "what": "Sayfalarınızdaki yapısal veride (bilgiyi makinelerin okuyacağı biçimde anlatan kod) eksik, bozuk ya da çelişkili kısımlar var.",
+   "why": "Bu kod, Google'ın ürün, fiyat ve kurum bilgisini arama sonuçlarında zengin biçimde göstermesini ve yapay zekâ asistanlarının sizi doğru tanımasını sağlar."
+  },
+  "str4": {
+   "title": "İşaretleme bilgisini sayfayla eşleştirin",
+   "what": "Yapısal verideki (bilgiyi makinelerin okuyacağı biçimde anlatan kod) bilgi, sayfada görünenle uyuşmuyor.",
+   "why": "Google ve yapay zekâ asistanları yanlış fiyat ya da bilgi gösterebilir; Google bu tür uyuşmazlıkları güvenilmezlik işareti sayar."
+  },
+  "str5": {
+   "title": "Markanızı sitede tek bir adla anın",
+   "what": "Markanızın adı sitenin farklı yerlerinde farklı biçimlerde yazılıyor.",
+   "why": "Tutarlı bir ad, Google'ın ve yapay zekâ asistanlarının markanızı tek bir kurum olarak tanımasına yardım eder; farklı adlar bu tanımayı zayıflatır."
+  },
+  "str6": {
+   "title": "Sayfa tarihlerini doğru gösterin",
+   "what": "Bazı yazılarda tarih yok ya da sayfanın tarihleri birbiriyle çelişiyor.",
+   "why": "Tarih, Google'a ve yapay zekâ asistanlarına içeriğin ne kadar güncel olduğunu söyler; tarihsiz içerik eski sayılabilir."
+  },
+  "str7": {
+   "title": "Görselleri hafifletin ve açıklayın",
+   "what": "Bazı görseller gereğinden büyük, yüklenmiyor ya da görseli anlatan kısa yazıdan (alt metin) yoksun.",
+   "why": "Ağır görseller sayfayı yavaşlatır; açıklamasız görselleri Google ve yapay zekâ asistanları anlayamaz ve görsel aramalarda gösteremez."
+  },
+  "str8": {
+   "title": "Karşılaştırma ve fiyat bilgisini gerçek tablolarla verin",
+   "what": "Bazı karşılaştırma ve tablo bilgileri, makinelerin tablo olarak okuyamayacağı biçimde dizilmiş.",
+   "why": "Yapay zekâ asistanları hangi değerin neye ait olduğunu çıkaramaz; bilgiyi yanlış aktarabilir."
+  },
+  "str9": {
+   "title": "Dil sürümlerini Google'a doğru tanıtın",
+   "what": "Sayfaların dilini ve diğer dil sürümlerini gösteren etiketlerde (hreflang: dil sürümlerini birbirine bağlayan etiket) hatalar var.",
+   "why": "Google ziyaretçiye yanlış dildeki sayfayı gösterebilir; başka dilde arayan müşteri anlamadığı bir sayfaya düşer."
+  },
+  "tseo1": {
+   "title": "Sayfa yapısındaki küçük teknik hataları düzeltin",
+   "what": "Sayfaların yapısında başlık sırası, adres yazımı ya da sayfanın açılışını yavaşlatan kod gibi küçük teknik hatalar var.",
+   "why": "Tek tek küçük olan bu hatalar birlikte, Google'ın ve yapay zekâ asistanlarının sayfayı okumasını ve ziyaretçinin sayfayı kullanmasını zorlaştırır."
+  }
+ },
+ "rules": {
+  "acc2.blocks.sitewide": {
+   "title": "Yapay zekâ asistanlarının sitenizi okumasına izin verin",
+   "what": "robots.txt dosyanızdaki (arama motorlarına ve yapay zekâ asistanlarına hangi sayfaları okuyabileceklerini söyleyen dosya) bir kural, bazı arama motorlarının ya da yapay zekâ asistanlarının bütün sitenizi okumasını engelliyor.",
+   "why": "Okuyamadıkları sitenizi ne arama sonuçlarında ne de yapay zekâ yanıtlarında gösterebilirler; sizi soran müşteri cevabı başka sitelerden alır."
+  },
+  "acc2.blocks.sample": {
+   "title": "Yapay zekâ asistanlarının sayfalarınızı okumasına izin verin",
+   "what": "robots.txt dosyanızdaki (arama motorlarına ve yapay zekâ asistanlarına hangi sayfaları okuyabileceklerini söyleyen dosya) bir kural, bazı arama motorlarının ya da yapay zekâ asistanlarının bazı sayfalarınızı okumasını engelliyor.",
+   "why": "Okuyamadıkları sayfaları ne arama sonuçlarında ne de yapay zekâ yanıtlarında gösterebilirler."
+  },
+  "acc3.noindex": {
+   "title": "Google'dan gizlenen sayfaların gizli kalması gerekip gerekmediğine karar verin",
+   "what": "Bazı sayfalar Google'a bu sayfayı gösterme diyen bir ayar taşıyor.",
+   "why": "Bu sayfalar müşterilerin aradığı sayfalarsa Google'da da yapay zekâ yanıtlarında da görünmezler."
+  },
+  "acc3.utility_indexable": {
+   "title": "Site içi arama ve sepet sayfalarını Google dışında tutun",
+   "what": "Site içi arama sonuçları ve sepet gibi sayfalar Google'a açık; bunlar sonsuz sayıda, neredeyse boş sayfa üretir.",
+   "why": "Google sitenizi okurken zamanını bu sayfalara harcar; ürün ve hizmet sayfalarınız daha geç ve daha seyrek okunur."
+  },
+  "acc3.sitemap_noindex": {
+   "title": "Site haritası ile gizli sayfaları uyumlu hâle getirin",
+   "what": "Site haritanız (Google'a sayfalarınızın listesini veren dosya), Google'dan gizlenmesi istenen sayfaları da listeliyor.",
+   "why": "Çelişen işaretler Google'ın sayfalarınıza ne kadar güveneceğini zorlaştırır; istediğiniz sayfalar da geç okunabilir."
+  },
+  "acc3.noindex_listed": {
+   "title": "Site haritası ile gizli sayfaları uyumlu hâle getirin",
+   "what": "Site haritanız (Google'a sayfalarınızın listesini veren dosya), Google'dan gizlenmesi istenen sayfaları da listeliyor.",
+   "why": "Çelişen işaretler Google'ın sayfalarınıza ne kadar güveneceğini zorlaştırır; istediğiniz sayfalar da geç okunabilir."
+  },
+  "acc9.blocked_429": {
+   "title": "Koruma ayarlarınızın Google'ı ve yapay zekâ asistanlarını geri çevirmesini önleyin",
+   "what": "Sitenizin koruma ayarları, kısa sürede birkaç sayfa isteyen otomatik ziyaretçilere çok fazla istek yanıtı verip sayfayı göstermiyor; denetimimizin istekleri de böyle geri çevrildi.",
+   "why": "Yapay zekâ asistanlarının siteyi okuyan programları da aynı yanıtı alabilir; o zaman sitenizi okuyamaz ve yanıtlarında sizi kaynak gösteremez."
+  },
+  "acc9.rate_limited_429": {
+   "title": "Koruma ayarlarınızın Google'ı ve yapay zekâ asistanlarını geri çevirmesini önleyin",
+   "what": "Sitenizin koruma ayarları, kısa sürede birkaç sayfa isteyen otomatik ziyaretçilere zaman zaman çok fazla istek yanıtı verip sayfayı göstermiyor.",
+   "why": "Yapay zekâ asistanlarının siteyi okuyan programları da aynı yanıtı alabilir; o zaman sitenizin bir bölümünü okuyamaz ve yanıtlarında kullanamaz."
+  },
+  "acc4.outcome": {
+   "title": "Koruma hizmetinizin Google'ı ve yapay zekâ asistanlarını engellemesini önleyin",
+   "what": "Sitenizin güvenlik duvarı, izin verdiğiniz hâlde bazı arama motoru ve yapay zekâ asistanı isteklerini geri çeviriyor.",
+   "why": "Geri çevrilen programlar sitenizi okuyamaz; sizi arama sonuçlarında ve yapay zekâ yanıtlarında gösteremez."
+  },
+  "idx1.soft404.200": {
+   "title": "Var olmayan sayfaların bulunamadı yanıtı vermesini sağlayın",
+   "what": "Var olmayan bir adres, gerçek bir sayfaymış gibi yanıt veriyor.",
+   "why": "Google gerçek sayfalarla hatalı adresleri ayıramaz; hatalı adresler aramalarda görünebilir, ziyaretçi de aradığını bulamaz."
+  },
+  "idx1.soft404.redirect": {
+   "title": "Var olmayan sayfaların bulunamadı yanıtı vermesini sağlayın",
+   "what": "Var olmayan bir adres, hata göstermek yerine ziyaretçiyi ana sayfaya, yani başka bir adrese gönderiyor (yönlendirme).",
+   "why": "Google gerçek sayfalarla hatalı adresleri ayıramaz; ziyaretçi de aradığını neden bulamadığını anlamaz."
+  },
+  "idx2.expires": {
+   "title": "Güvenlik sertifikasını süresi dolmadan yenileyin",
+   "what": "Sitenizin güvenli bağlantı sertifikasının (TLS) süresi yakında doluyor.",
+   "why": "Süre dolduğunda tarayıcılar ziyaretçilere bu site güvenli değil uyarısı gösterir; satışlar durur, Google ve yapay zekâ asistanları da siteyi okuyamaz."
+  },
+  "idx2.invalid": {
+   "title": "Geçerli bir güvenlik sertifikası kurun",
+   "what": "Sitenizin güvenli bağlantı sertifikası (TLS) geçerli değil.",
+   "why": "Tarayıcılar ziyaretçilere güvenlik uyarısı gösterir ve çoğu müşteri siteye girmez; Google ve yapay zekâ asistanları da siteyi okumayı reddeder."
+  },
+  "idx2.no_redirect": {
+   "title": "Ziyaretçileri her zaman güvenli adrese gönderin",
+   "what": "Sitenizin güvenli olmayan adresi (http) ziyaretçiyi güvenli adrese (https) göndermiyor.",
+   "why": "Sitenizin iki kopyası oluşur; güvenli olmayan adresi yazan müşteri uyarı görebilir ve Google sitenin gücünü iki adres arasında böler."
+  },
+  "idx2.no_redirect.hosts": {
+   "title": "Ziyaretçileri her zaman güvenli adrese gönderin",
+   "what": "Sitenizin güvenli olmayan adresi (http) ziyaretçiyi güvenli adrese (https) göndermiyor.",
+   "why": "Sitenizin iki kopyası oluşur; güvenli olmayan adresi yazan müşteri uyarı görebilir ve Google sitenin gücünü iki adres arasında böler."
+  },
+  "idx3.loop": {
+   "title": "Döngüye giren adresleri düzeltin",
+   "what": "Bazı adresler ziyaretçiyi başka adrese gönderip yeniden başa döndürüyor (yönlendirme döngüsü); sayfa hiç açılmıyor.",
+   "why": "Müşteri de Google da bu sayfaya hiç ulaşamaz; sayfa aramalarda görünmez."
+  },
+  "idx4.redirect_loop": {
+   "title": "Sayfaların asıl adreslerini ve bağlantılarını tek adreste toplayın",
+   "what": "Bazı sayfalar Google'a asıl adresini söyleyen etikette (kanonik adres) başka bir adres gösteriyor ve o adres ziyaretçiyi yeniden başka adreslere gönderiyor (yönlendirme).",
+   "why": "Google hangi adresi göstereceğine karar veremez; önemli sayfalarınız aramalarda zayıf kalır ya da yanlış adresle görünür."
+  },
+  "idx4.different": {
+   "title": "Sayfaların asıl adresini kendi içeriklerine verin",
+   "what": "Bazı sayfalar Google'a asıl adresini söyleyen etikette (kanonik adres) içeriği farklı başka bir sayfayı gösteriyor.",
+   "why": "Google bu sayfanın yerine diğerini gösterir; sayfanın kendi içeriği aramalarda hiç görünmez."
+  },
+  "idx5.stamped": {
+   "title": "Site haritasındaki değişiklik tarihlerini düzeltin",
+   "what": "Site haritanız (Google'a sayfalarınızın listesini veren dosya) neredeyse her sayfaya aynı değişiklik tarihini veriyor; tarihler sayfanın gerçekten ne zaman değiştiğini göstermiyor.",
+   "why": "Google hangi sayfaların yeni değiştiğini anlayamaz; güncellediğiniz ürün ve sayfalar aramalara geç yansır."
+  },
+  "idx5.identical": {
+   "title": "Site haritasındaki değişiklik tarihlerini düzeltin",
+   "what": "Site haritanız (Google'a sayfalarınızın listesini veren dosya) bütün sayfalara aynı değişiklik tarihini veriyor.",
+   "why": "Google hangi sayfaların yeni değiştiğini anlayamaz; güncellediğiniz ürün ve sayfalar aramalara geç yansır."
+  },
+  "idx5.none": {
+   "title": "Bir site haritası yayınlayın",
+   "what": "Sitenizde kullanılabilir bir site haritası (Google'a sayfalarınızın listesini veren dosya) bulamadık.",
+   "why": "Büyük sitelerde iyi bağlantı almayan sayfalar Google tarafından geç bulunur ya da hiç bulunmaz."
+  },
+  "idx6.alias_links": {
+   "title": "Bağlantıları sayfaların asıl adresine verin",
+   "what": "Menü ve sayfa içi bağlantıların bir kısmı sayfaların asıl adresine değil, aynı sayfanın kopya adreslerine gidiyor.",
+   "why": "Google aynı sayfayı iki kez okur ve sayfanın gücü iki adrese bölünür; önemli sayfalarınız aramalarda olması gerekenden zayıf kalır."
+  },
+  "idx6.tracking": {
+   "title": "Site içi bağlantılardan izleme eklerini kaldırın",
+   "what": "Sitenizin kendi sayfalarına verdiği bazı bağlantıların sonunda izleme parametresi (adresin sonuna eklenen, ziyaretin nereden geldiğini kaydeden ek) var.",
+   "why": "Aynı sayfa için ikinci bir adres oluşur; Google sayfanın gücünü iki adres arasında böler ve ziyaret istatistikleriniz de karışır."
+  },
+  "idx6.broken": {
+   "title": "Kırık bağlantıları onarın",
+   "what": "Bazı bağlantılar artık var olmayan ya da hata veren sayfalara gidiyor.",
+   "why": "Müşteri bağlantıya tıklayınca hata sayfası görür ve çoğu zaman siteden çıkar; Google da kırık bağlantıları bakımsızlık işareti sayar."
+  },
+  "idx6.links_to_redirect": {
+   "title": "Bağlantıları doğrudan son adrese verin",
+   "what": "Bazı bağlantılar, ziyaretçiyi başka bir adrese gönderen (yönlendirme) adreslere gidiyor.",
+   "why": "Her bağlantı fazladan bir adım demektir; sayfa geç açılır, Google da zamanını bu adımlara harcar."
+  },
+  "idx1.4xx.referenced": {
+   "title": "Hata veren adreslere giden bağlantıları düzeltin",
+   "what": "Sitenizdeki bazı bağlantılar ve site haritanızdaki (Google'a sayfalarınızın listesini veren dosya) bazı kayıtlar hata veren adreslere gidiyor.",
+   "why": "Müşteri hata sayfasıyla karşılaşınca siteden çıkar; Google da zamanını var olmayan sayfalara harcar."
+  },
+  "idx1.4xx.referenced.linked": {
+   "title": "Hata veren adreslere giden bağlantıları düzeltin",
+   "what": "Sitenizdeki bazı bağlantılar hata veren adreslere gidiyor.",
+   "why": "Müşteri hata sayfasıyla karşılaşınca siteden çıkar; Google da zamanını var olmayan sayfalara harcar."
+  },
+  "judgment.heading.home": {
+   "title": "Ana sayfanın ana başlığını doldurun",
+   "what": "Ana sayfanızın ana başlığı (sayfanın konusunu söyleyen en büyük başlık) boş.",
+   "why": "Google ve yapay zekâ asistanları sitenizin ne sunduğunu başka ipuçlarından tahmin etmek zorunda kalır."
+  },
+  "judgment.heading.pages": {
+   "title": "Boş ana başlıkları doldurun",
+   "what": "Bazı sayfaların ana başlığı (sayfanın konusunu söyleyen en büyük başlık) boş.",
+   "why": "Google ve yapay zekâ asistanları sayfanın ne hakkında olduğunu başka ipuçlarından tahmin etmek zorunda kalır."
+  },
+  "judgment.generic": {
+   "title": "Bağlantılara ne açtığını söyleyen metin verin",
+   "what": "Bazı bağlantılarda tıklayın, devamı gibi genel metinler kullanılıyor.",
+   "why": "Google ve yapay zekâ asistanları bağlantının hangi sayfaya gittiğini metinden anlar; genel metin bunu söylemez."
+  },
+  "judgment.generic.identity": {
+   "title": "Bağlantılara ne açtığını söyleyen metin verin",
+   "what": "Bazı bağlantılarda tıklayın, devamı gibi genel metinler kullanılıyor.",
+   "why": "Google ve yapay zekâ asistanları bağlantının hangi sayfaya gittiğini metinden anlar; genel metin bunu söylemez."
+  },
+  "prf1.no_hsts": {
+   "title": "Temel güvenlik ayarlarını ekleyin",
+   "what": "Ana sayfanız, tarayıcıya siteyi yalnız güvenli bağlantıyla açmasını söyleyen ayarı göndermiyor.",
+   "why": "Bu bir güvenlik önlemidir; ziyaretçileri güvensiz bağlantılardan korur."
+  },
+  "prf1.security_headers": {
+   "title": "Temel güvenlik ayarlarını ekleyin",
+   "what": "Ana sayfanız, ziyaretçileri koruyan bazı temel güvenlik ayarlarını göndermiyor.",
+   "why": "Bu bir güvenlik önlemidir; ziyaretçileri araya sokulan zararlı kodlardan ve bilgi sızıntısından korur."
+  },
+  "rnd6.home_large": {
+   "title": "Ana sayfanın kodunu hafifletin",
+   "what": "Ana sayfanızın kodu (HTML) çok ağır; asıl içerik kodun çok gerisinde başlıyor.",
+   "why": "Ana sayfa her müşterinin ve Google'ın ilk girdiği sayfadır; ağır olunca özellikle telefonda geç açılır ve okunması yarıda kalabilir."
+  },
+  "str1.no_title": {
+   "title": "Başlığı olmayan sayfalara başlık yazın",
+   "what": "Bazı sayfaların arama sonuçlarında görünen başlığı yok.",
+   "why": "Başlık yoksa Google kendisi bir başlık uydurur; müşteriyi tıklamaya ikna edecek yazı kaybolur."
+  },
+  "str2.no_h1": {
+   "title": "Ana başlığı olmayan sayfalara ana başlık ekleyin",
+   "what": "Bazı sayfalarda ana başlık (sayfanın konusunu söyleyen en büyük başlık) yok.",
+   "why": "Ana başlık ziyaretçiye ve Google'a sayfanın ne hakkında olduğunu ilk anlatan yazıdır; yokken Google zayıf ipuçlarına dayanır."
+  },
+  "str2.home_no_h1": {
+   "title": "Ana sayfaya bir ana başlık ekleyin",
+   "what": "Ana sayfanızda ana başlık (sayfanın konusunu söyleyen en büyük başlık) yok.",
+   "why": "Ziyaretçiler ve Google sitenizin ne olduğunu önce bu başlıktan okur; yokken başka ipuçlarından tahmin ederler."
+  },
+  "str3.unparsed": {
+   "title": "Bozuk işaretleme kodunu onarın",
+   "what": "Bir sayfadaki yapısal veri (bilgiyi makinelerin okuyacağı biçimde anlatan kod) bozuk; Google onu hiç okuyamıyor.",
+   "why": "Bozuk kod hiç yokmuş gibi yok sayılır; o sayfanın arama sonuçlarındaki zengin görünümü ve yapay zekâ asistanlarına verdiği bilgi kaybolur."
+  },
+  "str3.no_organization": {
+   "title": "Ana sayfada kurumunuzu Google'a tanıtın",
+   "what": "Ana sayfanızda kurumunuzun adını, logosunu ve resmî hesaplarını anlatan yapısal veri (bilgiyi makinelerin okuyacağı biçimde anlatan kod) yok.",
+   "why": "Google ve yapay zekâ asistanları sitenin arkasındaki kurumu bu bilgiyle tanır; yokken markanızı başka kaynaklardan tahmin ederler."
+  },
+  "str5.names": {
+   "title": "Markanızı sitede tek bir adla anın",
+   "what": "Markanızın adı sitenin farklı yerlerinde farklı biçimlerde yazılıyor.",
+   "why": "Tutarlı bir ad, Google'ın ve yapay zekâ asistanlarının markanızı tek bir kurum olarak tanımasına yardım eder; farklı adlar bu tanımayı zayıflatır."
+  },
+  "str7.over_100kb": {
+   "title": "Büyük görselleri hafifletin",
+   "what": "Bazı görsel dosyaları gereğinden büyük.",
+   "why": "Büyük görseller sayfanın özellikle telefonda geç açılmasına yol açar; müşteri beklemeden çıkabilir."
+  },
+  "str7.heavy": {
+   "title": "Büyük görselleri hafifletin",
+   "what": "Bazı görsel dosyaları çok ağır.",
+   "why": "Ağır görseller sayfanın özellikle telefonda geç açılmasına yol açar; müşteri beklemeden çıkabilir ve Google yavaş sayfaları geriye atabilir."
+  },
+  "str7.alt_missing": {
+   "title": "Görsellere açıklama ekleyin",
+   "what": "Bazı görsellerde görseli anlatan kısa yazı (alt metin) yok.",
+   "why": "Google ve yapay zekâ asistanları görselin ne gösterdiğini bu yazıdan anlar; görme engelli ziyaretçiler de ona güvenir."
+  },
+  "str7.alt_split": {
+   "title": "Görsellere açıklama ekleyin",
+   "what": "Bazı görsellerde görseli anlatan kısa yazı (alt metin) yok ya da boş.",
+   "why": "Google ve yapay zekâ asistanları görselin ne gösterdiğini bu yazıdan anlar; görme engelli ziyaretçiler de ona güvenir."
+  },
+  "str7.no_alt": {
+   "title": "Görsellere açıklama ekleyin",
+   "what": "Bazı görsellerde görseli anlatan kısa yazı (alt metin) yok.",
+   "why": "Google ve yapay zekâ asistanları görselin ne gösterdiğini bu yazıdan anlar; görme engelli ziyaretçiler de ona güvenir."
+  },
+  "str10.no_description": {
+   "title": "Sayfalara arama sonucu açıklaması yazın",
+   "what": "Bazı sayfaların meta açıklaması (arama sonuçlarında başlığın altında görünen kısa özet) yok.",
+   "why": "Açıklama yoksa Google sayfadan rastgele bir parça seçer; müşteriyi tıklamaya ikna eden özet kaybolur."
+  },
+  "str12.placeholder": {
+   "title": "Yer tutucu metinleri kaldırın",
+   "what": "Bazı sayfalarda doldurulmamış yer tutucu metinler var.",
+   "why": "Bitmemiş görünen bir site müşteriye güven vermez; Google ve yapay zekâ asistanları da bu metni gerçek bilgi sanabilir."
+  },
+  "str19.controls": {
+   "title": "Düğme gibi çalışan öğeleri düğme olarak tanımlayın",
+   "what": "Bazı öğeler düğme gibi çalışıyor ama kodda bağlantı olarak tanımlı.",
+   "why": "Bu öncelikle erişilebilirlik konusudur: ekran okuyucu kullanan ziyaretçiler öğenin ne yaptığını yanlış anlar."
+  },
+  "tseo1.heading_jumps": {
+   "title": "Başlık sırasını düzeltin",
+   "what": "Bazı sayfalarda başlıklar sırayla kullanılmıyor: bir başlıktan sonra bir ara seviye atlanıp daha küçük bir başlığa geçiliyor.",
+   "why": "Sıralı başlıklar sayfanın bölümlerini Google'a, yapay zekâ asistanlarına ve ekran okuyuculara açıkça anlatır; bozuk sıra hangi bilginin hangi bölüme ait olduğunu bulanıklaştırır."
+  },
+  "tseo1.url_decomposed": {
+   "title": "Adreslerdeki harfleri tek biçimde yazın",
+   "what": "Bazı sayfa adreslerinde harfler, görünüşte aynı ama teknik olarak farklı iki karakterle yazılmış; aynı sayfa için ikinci bir adres oluşuyor.",
+   "why": "Normal klavyeyle yazılan bağlantılar bu adreslere ulaşmayabilir; Google aynı sayfayı iki adreste görür ve gücünü böler."
+  },
+  "tseo1.mixed": {
+   "title": "Güvenli sayfalarda güvensiz dosya kullanmayın",
+   "what": "Bazı güvenli (https) sayfalar dosyalarını güvensiz bağlantıyla yüklüyor.",
+   "why": "Tarayıcı bu dosyaları engeller; sayfanın bir bölümü bozulur ve site tam güvenli değil görünür."
+  },
+  "tseo1.no_viewport": {
+   "title": "Sayfaların telefonda doğru açılmasını sağlayın",
+   "what": "Bazı sayfalarda telefonda doğru boyutta açılmayı sağlayan ayar yok.",
+   "why": "Google sayfanızın telefon hâlini esas alır; telefonda küçülmüş görünen sayfa ziyaretçiyi kaçırır."
+  },
+  "tseo1.analytics_twice": {
+   "title": "Ziyaret ölçüm kodunu bir kez yükleyin",
+   "what": "Ziyaretleri ölçen kod bazı sayfalarda iki kez yükleniyor.",
+   "why": "Her ziyaret iki kez sayılır; sitenizin trafik ve satış raporları sizi yanıltır."
+  },
+  "tseo1.blocking_scripts": {
+   "title": "Sayfa açılışını geciktiren kodları sonraya bırakın",
+   "what": "Bazı sayfalarda, sayfanın görünmesini kendileri yüklenene kadar durduran kodlar var.",
+   "why": "Sayfa geç görünür; müşteri beklemeden çıkabilir ve Google yavaş sayfaları geriye atabilir."
+  },
+  "tseo1.head_closed_lost": {
+   "title": "Sayfa kodundaki hatayı düzeltin",
+   "what": "Bazı sayfaların kodunda (HTML), Google'a yönelik önemli ayarların bulunduğu bölüm erken kapanıyor; bu ayarlar okunmuyor.",
+   "why": "Google bu ayarların bir kısmını hiç görmez; asıl adres, dil ve görünürlük tercihleriniz yok sayılabilir."
+  }
+ },
+ "groups": {
+  "html_weight": {
+   "title": "Sayfa kodunu hafifletin",
+   "what": "Bazı sayfaların kodu (HTML) çok ağır; asıl içerik kodun çok gerisinde başlıyor.",
+   "why": "Ağır sayfalar özellikle telefonda geç açılır; Google ve yapay zekâ araçları asıl içeriğe geç ulaşır ya da okumayı yarıda bırakabilir."
+  },
+  "empty_pages": {
+   "title": "Boş yanıt veren sayfaları düzeltin",
+   "what": "Bazı sayfalar içerik yerine boş bir yanıt veriyor.",
+   "why": "Boş sayfayı Google ve yapay zekâ asistanları okuyamaz; sayfa aramalardan düşebilir, müşteri de boş ekran görür."
+  },
+  "heading_levels": {
+   "title": "Başlık sırasını düzeltin",
+   "what": "Bazı sayfalarda başlıklar sırayla kullanılmıyor: bir başlıktan sonra bir ara seviye atlanıp daha küçük bir başlığa geçiliyor.",
+   "why": "Sıralı başlıklar sayfanın bölümlerini Google'a, yapay zekâ asistanlarına ve ekran okuyuculara açıkça anlatır."
+  },
+  "links_without_text": {
+   "title": "Bağlantılara ne açtığını söyleyen metin verin",
+   "what": "Bazı bağlantıların metni yok; yalnız bir simge ya da görsel var.",
+   "why": "Google ve yapay zekâ asistanları bağlantının hangi sayfaya gittiğini metinden anlar; görme engelli ziyaretçiler de bağlantının nereye gittiğini bilemez."
+  },
+  "links_without_address": {
+   "title": "Bağlantılara gerçek bir adres verin",
+   "what": "Bazı bağlantı ya da düğmelerin gerçek bir sayfa adresi yok; yalnız tıklamayla çalışıyorlar.",
+   "why": "Google ve yapay zekâ asistanları tıklamaz, adres izler; bu bağlantıların açtığı sayfaları bulamazlar."
+  },
+  "language_mismatch": {
+   "title": "Dil sürümlerini tam olarak çevirin",
+   "what": "Bazı sayfaların içeriği, sayfanın bildirdiği dilde değil: bir dil sürümünde metnin çoğu başka dilde kalmış.",
+   "why": "Google bu sayfaları yanlış dildeki aramalarda gösterebilir; o dili konuşan müşteri sayfayı okuyamaz, yapay zekâ asistanları da bilgiyi yanlış dile bağlar."
+  },
+  "sitemap_lastmod": {
+   "title": "Site haritasındaki değişiklik tarihlerini düzeltin",
+   "what": "Site haritanızdaki (Google'a sayfalarınızın listesini veren dosya) değişiklik tarihleri, sayfaların gerçekten ne zaman değiştiğini göstermiyor.",
+   "why": "Google hangi sayfaların yeni değiştiğini anlayamaz; güncellediğiniz ürün ve sayfalar aramalara geç yansır."
+  },
+  "template_meta": {
+   "title": "Sayfalara kendi başlık ve açıklamasını yazın",
+   "what": "Birçok sayfa arama sonuçlarında aynı başlığı ve aynı meta açıklamayı (arama sonuçlarında başlığın altında görünen kısa özet) kullanıyor.",
+   "why": "Müşteri arama sonucunda sayfaların farkını göremez; Google da hangi sayfanın neyi anlattığını ayırt etmekte zorlanır."
+  },
+  "redirect_chain": {
+   "title": "Sayfaların asıl adreslerini ve bağlantılarını tek adreste toplayın",
+   "what": "Bazı sayfalar Google'a asıl adresini söyleyen etikette (kanonik adres) başka bir adres gösteriyor, o adres de ziyaretçiyi yeniden başka adreslere gönderiyor (yönlendirme); site içi bağlantılar da bu zincire gidiyor.",
+   "why": "Google hangi adresi göstereceğine karar veremez; önemli sayfalarınız aramalarda zayıf kalır ya da yanlış adresle görünür, bağlantıya tıklayan ziyaretçi de birkaç adım bekler."
+  }
+ },
+ "terms": [
+  {
+   "term": "robots\\.txt",
+   "explain": "hangi sayfaları okuyabileceklerini söyleyen dosya"
+  },
+  {
+   "term": "\\bHTML\\b",
+   "explain": "kodu? \\(HTML\\)|kodunda \\(HTML\\)"
+  },
+  {
+   "term": "\\bTLS\\b|\\bSSL\\b",
+   "explain": "güvenli bağlantı sertifika"
+  },
+  {
+   "term": "yapısal veri|JSON-LD|\\bschema\\b",
+   "explain": "makinelerin okuyacağı biçimde"
+  },
+  {
+   "term": "site harita|sitemap",
+   "explain": "Google'a sayfalarınızın listesini veren dosya"
+  },
+  {
+   "term": "\\bnoindex\\b",
+   "explain": "Google'dan gizle"
+  },
+  {
+   "term": "hreflang",
+   "explain": "dil sürümlerini birbirine bağlayan"
+  },
+  {
+   "term": "kanonik|canonical",
+   "explain": "asıl adres"
+  },
+  {
+   "term": "meta açıklama",
+   "explain": "başlığın altında görünen kısa özet"
+  },
+  {
+   "term": "JavaScript",
+   "explain": "sayfa açıldıktan sonra çalışan kod"
+  },
+  {
+   "term": "parametre",
+   "explain": "adresin sonuna eklenen"
+  },
+  {
+   "term": "yönlendirme",
+   "explain": "başka (bir )?adres(e|lere) gönder"
+  },
+  {
+   "term": "alt metin",
+   "explain": "görseli anlatan kısa yazı"
+  },
+  {
+   "term": "llms\\.txt",
+   "explain": "yapay zekâ araçları için yayınladığı özet dosyası"
+  },
+  {
+   "term": "şablon",
+   "explain": "aynı düzendeki sayfaların ortak tasarımı|şablon işaret"
+  },
+  {
+   "term": "Search Console",
+   "explain": "Google'ın sitenizle ilgili kendi kayıtları"
+  },
+  {
+   "term": "\\bhttps?\\b",
+   "explain": "güvenli"
+  }
+ ],
+ "blocked": {
+  "title": "Müşteri özeti hazırlanamadı",
+  "low_coverage": "Bu denetimde çok az sayfa okundu ({read} sayfa); müşteri özeti sitenin tamamı için konuşamaz. Daha çok sayfa okuyan yeni bir denetim yapın.",
+  "low_coverage_planned": "Bu denetimde planlanan {planned} sayfadan yalnız {read} sayfa okundu; müşteri özeti sitenin tamamı için konuşamaz. Daha çok sayfa okuyan yeni bir denetim yapın.",
+  "team": "Bu denetimden ekip raporu üretilemiyor; müşteri özeti de aynı veriden yapıldığı için üretilmedi. Nedeni ekip raporunun düğmesinin altında yazıyor.",
+  "gate": "Yayın kapısı bu denetimin müşteriye gönderilmesini engelliyor.",
+  "pages": "Müşteri özeti {pages} sayfa tuttu; en çok 5 sayfa olabilir.",
+  "ids": "Müşteri özetinde bulgu kimliği ya da kural adı kaldı: {found}.",
+  "unconfirmed": "Müşteri özetinde teyit edilmemiş bir bulgu var; önce Önce bunları kontrol edin listesinde kontrol edin.",
+  "terms": "Müşteri özetinde açıklaması olmayan bir teknik terim var: {found}.",
+  "vendors": "Müşteri özetinde bir hizmet sağlayıcının adı geçiyor: {found}.",
+  "overflow": "Bir metin kutusuna sığmadı: {found}.",
+  "browser": "PDF bu bilgisayarda basılamadı (tarayıcı bulunamadı).",
+  "pdf": "PDF denetimden geçmedi."
+ }
+}
