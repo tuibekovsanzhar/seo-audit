@@ -1212,6 +1212,14 @@ FIX_PROTECTION = ('In the bot settings of {who}, find the rule that answered May
                   'firewall logs: these crawlers should get pages, not the block page.')
 
 
+def consistent_429(blocked: int, start_retried: bool, widespread: bool) -> bool:
+    """DECISIONS 318: 429s on Maya's page requests are consistent, not occasional, when they are widespread (the homepage,
+    or the degraded share of pages) and either 2+ page requests got one or the homepage got one again after waiting the
+    Retry-After (nihan.com.tr: its one page request, twice). Then the block is measured (Verified, a status); a single
+    429 (one later page, even asked again) or occasional ones stay Inferred."""
+    return widespread and (blocked >= 2 or start_retried)
+
+
 def protection_service(blockers: list[dict]) -> str | None:
     """The bot-protection service that answered most of the blocked requests with its block page or challenge, when the
     responses name one (DECISIONS 317); None for a rate limit or an unnamed 403."""
@@ -1263,6 +1271,9 @@ def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResul
              "maya_blocked": maya_blocked.LABEL if blocked_429 else None,
              "pages": [{"url": p.url, "status": p.status, "why": p.classification_evidence} for p in impaired[:40]],
              "reproduce": f"curl -i -A {result.user_agent!r} {urls[0]}", "not_measured": "what any AI crawler receives (ACC-4 tests that, on verified sites)"})
+    start_retried = start_hit and bool(start.retried_after_429)
+    if (blocked_429 or rate_429) and consistent_429(len(impaired), start_retried, widespread):
+        rest = (rest[0], Confidence.VERIFIED, *rest[2:])  # DECISIONS 318: a consistent 429 block is measured, a card
     # Each title, fix and note is written out in its own call: the wording tests read them from this source.
     if blocked_429:
         finding = Finding("ACC-9", f"Maya's crawler blocked (429 on pages): {name} answered {len(impaired)} of {len(pages)} page request(s) with 429 "

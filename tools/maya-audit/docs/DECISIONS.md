@@ -3822,3 +3822,16 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      and EN) print.
      Tests: `tests/test_blocked_reader_317.py` (fake sites for the five services, a made-up Firecrawl, hand-made reports,
      and the long-title render in TR and EN); tests that pinned a named service's challenge as a note follow the new rule.
+
+318. **A consistent 429 block is measured and a card, as ACC-9's bot-protection finding (Owner, 2026-11-06, follow-up to
+     317; checked offline on nihan's three saved 429 audits 0dc805b9, 50473193, 8b872028. The rule's thresholds are agent
+     defaults: LG-104).** 317 gave `acc9.bot_protection` the measured confidence of its classification; the 429 cards
+     (288, 289) kept Inferred, which sends them to "Teyit edin". Now `checks.access.consistent_429`: when the 429s on Maya's
+     page requests are widespread (the homepage, or the degraded share of pages, 20%) and repeated (2+ page requests, or
+     the homepage again after waiting the Retry-After), `acc9.blocked_429` and `acc9.rate_limited_429` are Verified (a
+     429 is an HTTP status) and so a card; when Firecrawl read the site they stay the site's finding, as 317's does. A
+     single 429 (one later page, even asked again) or occasional ones keep Inferred, and a read site still shows them as
+     the reader's note. A saved audit's current-engine copy applies the same rule from the finding's evidence and the
+     start page's record (`reassess_rules._decisions_318`). nihan (Cloudflare, its one page request 429 twice while
+     robots.txt and 26 sitemaps were served): "Teyit edin" -> card, PDFs TR and EN print (6 pages each).
+     Tests: `tests/test_blocked_reader_317.py` (4 more).

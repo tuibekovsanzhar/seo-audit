@@ -490,6 +490,30 @@ def _decisions_317(report: dict, changes: list[str]) -> None:
                        f"{fc.get('pages_read') or 0} (DECISIONS 317)")
 
 
+def _decisions_318(report: dict, changes: list[str]) -> None:
+    """DECISIONS 318: a saved 429 block on Maya's page requests that was consistent (`checks.access.consistent_429`, read
+    from the finding's evidence and the saved page records) is measured: its confidence becomes Verified, so it is a card
+    and not "Teyit edin". A single or occasional 429 keeps Inferred."""
+    from .checks.access import consistent_429
+    crawl = report.get("crawl") or {}
+    threshold = float((crawl.get("config") or {}).get("degraded_threshold") or 0.20)
+    start = next((p for p in crawl.get("pages") or [] if isinstance(p, dict) and p.get("discovered_via") == "start"), {})
+    retried = bool(start.get("retried_after_429")) and start.get("status") == 429
+    for check in report.get("checks") or []:
+        if check.get("check_id") != "ACC-9":
+            continue
+        for f in check.get("findings") or []:
+            if f.get("rule_id") not in ("acc9.blocked_429", "acc9.rate_limited_429") or f.get("confidence") != "inferred":
+                continue
+            ev = f.get("evidence") or {}
+            blocked, asked = int(ev.get("pages_blocked_or_challenged") or 0), int(ev.get("pages_requested") or 0)
+            widespread = bool(ev.get("start_url_blocked")) or (asked > 0 and blocked / asked >= threshold)
+            if consistent_429(blocked, retried and bool(ev.get("start_url_blocked")), widespread):
+                f["confidence"] = "verified"
+                changes.append(f"{f['id']}: Verified, a card: the 429s on Maya's page requests were consistent "
+                               f"({blocked} of {asked}{', the homepage asked again after the wait' if retried else ''}) (DECISIONS 318)")
+
+
 def _order(report: dict) -> list[str]:
     from .findings import Severity, priority_key
     from .models import Confidence
@@ -529,6 +553,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_315(r, changes)
     _decisions_316(r, aff, changes)
     _decisions_317(r, changes)
+    _decisions_318(r, changes)
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -544,7 +569,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316 and 317, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317 and 318, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,

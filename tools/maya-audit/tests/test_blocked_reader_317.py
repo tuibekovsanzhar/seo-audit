@@ -224,3 +224,49 @@ def test_every_card_with_a_very_long_title_still_prints(tmp_path, lang):
     assert all(s.startswith(("findings", "actions")) for s in result["shortened"])
     html = (tmp_path / "r.html").read_text(encoding="utf-8")
     assert len(re.findall(r'data-slot="todos\[\d+\]\.title" data-fit=', html)) == len(data["todos"])
+
+
+# ---------------------------------------------------------------- DECISIONS 318: a consistent 429 block is measured, a card
+
+from test_rate_limited_start import CF, audit as bank_audit, rate_limited_audit, site as bank_site, slept  # noqa: E402,F401
+
+
+def test_the_429_rule_is_consistent_only_when_widespread_and_repeated():
+    from maya_audit.checks.access import consistent_429
+    assert consistent_429(1, True, True)            # nihan: the homepage, its one request, 429 again after the wait
+    assert consistent_429(5, False, True)           # five page requests answered 429
+    assert not consistent_429(1, False, True)       # one 429, never asked again
+    assert not consistent_429(3, True, False)       # occasional: under the degraded share, the homepage fine
+
+
+def test_a_consistent_429_block_on_mayas_pages_is_verified_and_a_card(slept, no_lookups):
+    outcome = rate_limited_audit(slept)  # the homepage answers 429, also after the wait; robots.txt is served
+    [finding] = next(c for c in outcome.checks if c.check_id == "ACC-9").findings
+    assert finding.rule_id == "acc9.blocked_429" and finding.confidence.value == "verified"
+    report = json.loads(json.dumps(to_jsonable({"checks": outcome.checks, "crawl": outcome.result})))
+    group = next(g for g in cs.groups(report, None, {}, {}) if finding.id in g["finding_ids"])
+    assert group["confirm_reason"] is None   # before: "low_confidence", so "Teyit edin"
+
+
+def test_a_single_429_on_a_later_page_stays_inferred(slept, no_lookups):
+    handler, _ = bank_site([(200, None)], other=lambda r: httpx.Response(429, headers={**HTML, **CF, "retry-after": "60"}, text="x"))
+    outcome = bank_audit(handler, max_pages=10)
+    [finding] = next(c for c in outcome.checks if c.check_id == "ACC-9").findings
+    assert finding.rule_id == "acc9.rate_limited_429" and finding.confidence.value == "inferred"
+
+
+def test_a_saved_nihan_shaped_429_block_becomes_verified_in_the_current_engine_copy():
+    r = _saved_blocked_report()
+    from test_airastana_316 import _block_record
+    page = {**_block_record("https://air.test/"), "status": 429, "fetch_class": "rate_limited", "discovered_via": "start",
+            "retried_after_429": True, "analysis": None, "body_bytes": 40, "classification_evidence": ["status 429"]}
+    r["crawl"]["pages"] = [page]
+    acc9 = {"id": "ACC-9-n", "check_id": "ACC-9", "rule_id": "acc9.blocked_429", "severity": "S3", "confidence": "inferred",
+            "title": "Maya's crawler blocked (429 on pages): Cloudflare answered 1 of 1 page request(s) with 429 while robots.txt "
+                     "and the sitemap were served. AI crawlers may get the same treatment", "scope": {"urls": ["https://air.test/"]},
+            "evidence": {"pages_requested": 1, "pages_blocked_or_challenged": 1, "start_url_blocked": True}}
+    r["checks"] = [{"check_id": "ACC-9", "status": "findings", "findings": [acc9]}]
+    r["findings_in_priority_order"] = ["ACC-9-n"]
+    new, _aff, record = reassess(r, {})
+    [f] = new["checks"][0]["findings"]
+    assert f["confidence"] == "verified" and any("ACC-9-n: Verified, a card" in c for c in record["changes"])

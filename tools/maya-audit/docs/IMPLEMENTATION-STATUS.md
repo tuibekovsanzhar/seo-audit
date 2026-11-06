@@ -1385,3 +1385,9 @@ a page was read only through it; every title slot of the team report shrinks to 
 | ruff E9/F821/F841, `python3.11 -m compileall` | clean / OK |
 | CLI, provider-free, loopback fake site serving Imperva's block page, `--max-pages 5 --no-firecrawl` | schema 1.28, no Firecrawl section, no provider ledger; ACC-9 `acc9.bot_protection` S3 Estimated; exit 1 (blocked audit) |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
+
+## A consistent 429 block is a card (DECISIONS 318, 2026-11-06)
+
+nihan's three saved 429 audits (0dc805b9, 50473193, 8b872028), current-engine copies offline: ACC-9 `acc9.blocked_429`
+Inferred ("Teyit edin") -> Verified, a card; PDFs TR and EN print, 6 pages each. A single or occasional 429 stays
+Inferred. Results of the suites are in the commit message of this change.

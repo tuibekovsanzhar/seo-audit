@@ -351,7 +351,8 @@ def note_the_challenge(checks: list[CheckResult], pages_read: int) -> None:
             continue
         for finding in check.findings:
             evidence = finding.evidence
-            if finding.rule_id == "acc9.bot_protection":
+            if finding.rule_id == "acc9.bot_protection" or (
+                    finding.rule_id in ("acc9.blocked_429", "acc9.rate_limited_429") and finding.confidence == Confidence.VERIFIED):
                 # DECISIONS 317: a named bot-protection service blocked Maya's crawler. Like the 429 card (288) it stays the
                 # site's finding, with its AI-crawler warning; the reader's pages are recorded beside it.
                 finding.evidence = {**evidence, "read_through": {"reader": "firecrawl", "pages_read": pages_read}}
@@ -378,7 +379,8 @@ def note_the_challenge(checks: list[CheckResult], pages_read: int) -> None:
                              "Not measured: what the AI vendors' own crawlers receive. Maya's crawler is an unverified bot, and a reader's "
                              "success is not evidence about them either. ACC-4, on ownership-verified sites, sends requests under those "
                              "crawlers' names from Maya's own network: a limited probe, not the vendors' real requests."]
-        if all(f.rule_id == "acc9.bot_protection" for f in check.findings):
+        if all(f.rule_id == "acc9.bot_protection" or "read_through" in f.evidence and f.severity != Severity.INFO
+               for f in check.findings):
             continue
         check.summary = (f"1 note: {blocker_phrase((check.evidence or {}).get('blocked_by') or [])} answered Maya's direct crawler; "
                          f"{pages_read} page(s) were read through Firecrawl. Genuine AI-crawler access was not measured.")
