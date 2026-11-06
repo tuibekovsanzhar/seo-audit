@@ -361,6 +361,10 @@
   "kp_not_found": "{label} sayfası okunan sayfalar arasında bulunamadı (sitede olmadığı anlamına gelmez).",
   "home_languages": "Ana sayfa ({n} dil)",
   "kp_importance_unknown": "önem hesaplanamadı ({reason}, bkz. kart #{card})",
+  "kp_importance_reader": "önem hesaplanamadı (yalnız sayfa okuyucuyla okundu)",
+  "sitemap_line_all": "Kontrol edilen {checked} sitemap adresinin tamamı {what}.",
+  "sitemap_line_most": "Kontrol edilen {checked} sitemap adresinin {n} tanesi {what}.",
+  "sitemap_kinds": {"redirect": "başka bir adrese yönleniyor", "redirect_locale": "bir ülke/dil sürümüne yönleniyor", "not_found": "4xx hatası veriyor", "server_error": "5xx hatası veriyor", "empty": "boş sayfa döndürüyor", "noindex": "noindex taşıyor", "canonical": "kanonik olarak başka bir adresi gösteriyor"},
   "kp_importance_reasons": {
    "canonical": "kanonik sorunu",
    "redirect": "yönlendirme sorunu"
@@ -758,6 +762,10 @@
   "kp_not_found": "No {label} page among the pages read (this does not mean the site has none).",
   "home_languages": "Homepage ({n} languages)",
   "kp_importance_unknown": "importance not computed ({reason}, see card #{card})",
+  "kp_importance_reader": "importance not computed (read only through the page reader)",
+  "sitemap_line_all": "All {checked} checked sitemap addresses {what}.",
+  "sitemap_line_most": "{n} of the {checked} checked sitemap addresses {what}.",
+  "sitemap_kinds": {"redirect": "redirect to another address", "redirect_locale": "redirect to a country/language version", "not_found": "return a 4xx error", "server_error": "return a 5xx error", "empty": "return an empty page", "noindex": "carry noindex", "canonical": "name another address as canonical"},
   "kp_importance_reasons": {
    "canonical": "canonical problem",
    "redirect": "redirect problem"

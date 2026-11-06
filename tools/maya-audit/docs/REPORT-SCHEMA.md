@@ -1,6 +1,6 @@
 # The JSON report format
 
-Current version: `1.26`
+Current version: `1.27`
 
 Every JSON report the tool writes (`--json`, and one per brand from `batch`) starts with `schema_version`.
 Anything that reads a report, including the web interface, reads that number first.
@@ -164,6 +164,7 @@ A `pass` with anything in `coverage.not_assessed` is written as `partial`, never
 | `reader_page_grouping` | The same grouping for the pages a page reader (Firecrawl) read when Maya's crawler was blocked or rate-limited (1.24, DECISIONS 304), or null: the keys of `page_grouping` plus `reader` (its name) and `pages` ({url: grouping record}, as a page record's `grouping`). Worked out while the reader's pages and their links were in memory; Maya's own page records hold no content then. `{"reader", "error"}` when the grouping failed. |
 | `business_type` | The business type the audit used (1.25, DECISIONS 311), or null in an older report: `id` (a profile of `maya_audit/business_types/profiles/`, `diger` for none), `label` {tr, en}, `chosen_by` (`user` or `suggestion`), `suggestion` {`id`, `label`, `reason` {tr, en}, `signals`, `scores`, `version`}, `page_types` (the importance summary: `profile`, `formula`, `weights`, `pages_by_type`), `not_found` (the profile's first three page types no page read was typed as: `type`, `label`, `rank`), `version`. Its inner keys are not covered by the version. |
 | `redirects` | Every requested address that redirected (1.26, DECISIONS 315), or null in an older report: `url`, `hops` ([{`url`, `status`, `target`}] in order), `final` (where the redirects end), `final_status` (its answer, null when not fetched), `loop` (the walk came back to an address already passed). Its inner keys are not covered by the version. |
+| `locales` | The site's country/language folders (1.27, DECISIONS 316), or null in an older report: `folders` (the locale folders, such as `global-en` or `tr`), `main` (the folder the homepage landed on, `""` for the root, null when unknown), `versions` (the folders, and the root when it holds a version), `root_is_version`, `basis` ({folder: why it counts}). Its inner keys are not covered by the version. |
 | `access`, `index`, `render`, `structure`, `perf`, `citations`, `citation_domains` | Not covered by the version. |
 
 ## Page record
@@ -391,6 +392,16 @@ page failures. Coverage stop reasons additionally distinguish `provider_timeout`
 credit/request limits. Existing 1.x reports remain readable; absent historical reasons are never invented.
 Keyword intent dimensions live inside open DataForSEO check evidence; originals and provider totals are preserved.
 
+
+## 1.27 — country/language versions (2026-11-06)
+
+Added for DECISIONS 316; nothing was removed or renamed, so 1.x readers keep working.
+
+- `crawl.locales`: the site's country/language folders, its main version and how many versions it has. The crawl and the
+  page reader read one version of each page before a second (at most two before the rest of the site), so the pages read
+  are no longer mostly copies of the same page.
+- `firecrawl.pages[].outcome` may be `over_page_cap`: a redirect led the page reader to a page Maya had not read after the
+  plan's one page limit was reached (the pages both readers read now stay within it).
 
 ## 1.26 — redirect hops, Stage 8a rules (2026-11-06)
 

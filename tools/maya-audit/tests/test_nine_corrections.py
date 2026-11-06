@@ -419,7 +419,7 @@ def test_legacy_card_uses_qualified_action_not_unsafe_original_repair():
         evidence={'pages':[{'url':'https://legacy.example/','status':200,'body_bytes':0}]})
     r['checks'][0].update(check_id='IDX-1',findings=[f]);before=deepcopy(r)
     c=C.all_cards(C.generate(r,'legacy-empty')['data'])[0]
-    assert 'Tek boş yanıta dayanarak adres kaldırmamalı'in c['steps'][0]
+    assert 'Tek boş yanıta dayanarak adres kaldırmayın'in c['steps'][0]
     assert 'GET'in c['steps'][0] and c['judgment']['status']=='diagnostic_concern'
     assert r==before
 

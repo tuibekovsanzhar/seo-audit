@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from collections import Counter
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -520,6 +521,54 @@ class Builder:
                 listed = re.search(r"sitemap lists (\d[\d,]*)", f.get("title") or "")
                 return num(m.group(1)), num(m.group(2)), num(listed.group(1)) if listed else None, f
         return None
+
+    def locales_line(self):
+        """DECISIONS 316: how many country/language versions the site has and how many of each page were read (the
+        pages read: Maya's own and the page reader's, `client_selection.pages_read`). None without versions."""
+        try:
+            from maya_audit import locales  # type: ignore
+            from maya_audit.client_selection import pages_read as read_set  # type: ignore
+        except ImportError:
+            return None
+        info = (self.r.get("crawl") or {}).get("locales")
+        line = locales.line(locales.summary(info, read_set(self.r)), self.lang)
+        if line:
+            self.fact(line)
+        return line
+
+    def sitemap_line(self, f):
+        """DECISIONS 316: a striking sitemap result (half or more of 10+ checked addresses unsuitable) said in plain words
+        on its card, the commonest cause named: "All 149 checked sitemap addresses carry noindex." None otherwise."""
+        ratio = self.sitemap_ratio()
+        if not ratio or ratio[3] is not f:
+            return None
+        bad, checked = ratio[0], ratio[1]
+        if not checked or checked < 10 or bad < 0.5 * checked:
+            return None
+        ev = f.get("evidence") or {}
+        br = ev.get("breakdown") or {}
+        kinds = Counter({k: int(v or 0) for k, v in (br.get("not_live") or {}).items()})
+        kinds["noindex"] += int(br.get("noindex_reported_under_acc3") or 0)
+        kinds["canonical"] += int(br.get("canonical_elsewhere") or 0)
+        if not kinds or not sum(kinds.values()):
+            return None
+        kind, n = kinds.most_common(1)[0]
+        if n < 0.8 * bad:
+            return None
+        if kind == "redirect":
+            from maya_audit.locales import locale_of  # type: ignore
+            folders = ((self.r.get("crawl") or {}).get("locales") or {}).get("folders") or []
+            targets = [u.get("location") for u in ev.get("bad_urls") or [] if isinstance(u, dict) and u.get("kind") == "redirect"]
+            if folders and targets and sum(1 for t in targets if t and locale_of(t, folders)) >= 0.8 * len(targets):
+                kind = "redirect_locale"
+        what = self.L["sitemap_kinds"].get(kind)
+        if not what:
+            return None
+        n = min(n, checked)
+        line = fmt(self.L["sitemap_line_all"] if n == checked else self.L["sitemap_line_most"],
+                   n=fmt_int(n, self.lang), checked=fmt_int(checked, self.lang), what=what)
+        self.fact(n, checked)
+        return line
 
     def lighthouse(self):
         for cid in ("DFS-9", "DFS-10", "DFS-11"):
@@ -1195,12 +1244,12 @@ class Builder:
              "sub": fmt(L["kpi_pages_sub"], n=fmt_int(unread, lang)) if unread else
              L["kpi_pages_sub_all"] if pages_read else L["kpi_pages_sub_none"], "state": "ok" if pages_read else "missing"},
         ]
-        if ratio:
-            bad, checked, listed, f = ratio
-            self.fact(bad, checked, listed)
-            kpis.append({"label": L["kpi_sitemap"], "value": fmt_int(bad, lang), "of": fmt_int(checked, lang),
-                         "sub": fmt(L["kpi_sitemap_sub"], conf=L["confidence"].get(f.get("confidence"), "")), "state": "ok"})
-        elif pages_read:
+        # DECISIONS 316: the same four tiles for every audit (issues, pages read, pages with Medium+ issues, mobile lab);
+        # a striking sitemap result is said in plain words on its card (`sitemap_line`), not as a tile of its own.
+        if not pages_read:
+            kpis.append({"label": L["kpi_problem_pages"], "value": "—", "of": None, "sub": L["kpi_pages_sub_none"],
+                         "state": "missing"})
+        else:
             # yalnız gerçekten okunan sayfalar: yoklanıp okunmayan adresler paydayı aşmasın
             # (DECISIONS 287: nothing read, no "0 / 0" tile; the pages box already says nothing could be read)
             read = self.read_urls()
@@ -1478,7 +1527,8 @@ class Builder:
                 # Stage 8a (DECISIONS 315): the chain a merged card is about, and the template one fix covers.
                 chain_line = self.chain_text((group or {}).get("chain"))
                 template_line = None if chain_line else self.template_text((group or {}).get("template_line"))
-                for line in (template_line,):
+                sitemap_line = self.sitemap_line(f)
+                for line in (template_line, sitemap_line):
                     if line:
                         sub = [line] + list(sub or [])
                         self.fact(line)
@@ -1525,7 +1575,7 @@ class Builder:
                     # Stage 8a (DECISIONS 315): Sorun / Kontrol edin / Fırsat beside the severity, never instead of it.
                     "issue_type": (group or {}).get("issue_type") or "issue",
                     "issue_type_label": self.issue_label((group or {}).get("issue_type")),
-                    "template_line": template_line, "chain_line": chain_line,
+                    "template_line": template_line, "chain_line": chain_line, "sitemap_line": sitemap_line,
                     # The release gate (DECISIONS 278) compares what the card shows with the finding's own state.
                     "verification_state": state,
                     "when": L["when"][when_key], "owner": L["owners"][owner], "effort": L["efforts"][effort],
@@ -1565,6 +1615,9 @@ class Builder:
         prov = [{"k": L["prov_content"], "v": fmt(L["prov_content_line"], read=fmt_int(pages_read, lang), unread=fmt_int(unread, lang), gaps=gaps)}]
         if ratio and listed:
             prov.append({"k": L["prov_sitemap"], "v": fmt(L["prov_sitemap_line"], listed=fmt_int(listed, lang), checked=fmt_int(checked, lang))})
+        # DECISIONS 316: "20 country/language versions found; one version per page was read." (web summary; the PDF
+        # says it under Maya's own limits, `client_page`)
+        locales_line = self.locales_line()
         prov.append({"k": L["prov_engine"], "v": fmt(L["prov_engine_line"], version=version, audit_id=audit_id)})
         # DECISIONS 308: a saved audit re-evaluated with the current engine says so, with that engine and its date.
         from maya_audit_web.team_report.current import line_of
@@ -1581,8 +1634,9 @@ class Builder:
                      "coverage_level": cov.get("level") or "partial",
                      "coverage_label": L["coverage_level"].get(cov.get("level") or "partial", cov.get("level"))},
             "kpis": kpis,
+            "locales_line": locales_line,
             "low_coverage": self.low_coverage_banner(),
-            "assessment": {"headline": self.slot("assessment.headline", "raporun tek cümlelik hükmü", None, 90,
+            "assessment": {"headline": self.slot("assessment.headline", "raporun tek cümlelik hükmü", None, 100,
                                                  fallback=T.headline([f["severity"] for f in card_leads], summaries, lang,
                                                                      pages_read=pages_read, counts=sev)),
                            "text": self.slot("assessment.text", "hangi sırayla ne yapılmalı, tek cümle", None, 190,
@@ -1632,6 +1686,9 @@ class Builder:
                 text, _ = self.w.title(None, line.get("title") or "")
                 limits.append(text or line.get("title"))
                 self.fact(line.get("title"))
+        versions = self.locales_line()  # DECISIONS 316
+        if versions:
+            limits.append(versions)
         gaps = self.gaps()
         if gaps:
             limits.append(fmt(L["own_gaps"], n=fmt_int(gaps, lang)))
@@ -1664,7 +1721,8 @@ class Builder:
             if p.get("languages"):  # DECISIONS 312: the homepage's language versions, one row
                 kind = fmt(L["home_languages"], n=len(p["languages"]))
             unknown = p.get("importance_unknown")  # DECISIONS 313: a canonical or redirect problem holds it down
-            shown = (fmt(L["kp_importance_unknown"], reason=L["kp_importance_reasons"][unknown["reason"]], card=unknown["card"])
+            shown = (L["kp_importance_reader"] if unknown and unknown.get("reason") == "reader_only" else
+                     fmt(L["kp_importance_unknown"], reason=L["kp_importance_reasons"][unknown["reason"]], card=unknown["card"])
                      if unknown else p["importance"])
             pages.append({"rank": p["rank"], "path": path_of(p["url"]) or urlsplit(p["url"]).netloc, "url": p["url"],
                           "type": kind or L["page_types"].get(str(p["page_type"]), "—"), "importance": shown,
@@ -1689,7 +1747,11 @@ class Builder:
             business_line = fmt(L["business_line"], label=(business.get("label") or {}).get(lang) or business["id"], how=how)
             not_found = [fmt(L["kp_not_found"], label=(n.get("label") or {}).get(lang) or n.get("type"))
                          for n in sel.get("key_pages_not_found") or []]
-        return {"own_limits": limits, "confirm": confirm, "confirm_more": more_confirm, "key_pages": pages,
+        # DECISIONS 316: what "Teyit edin" holds, so the count beside "Kayıtlı sorun" explains itself: issues (already
+        # counted among the recorded issues) and notes.
+        split = {"problems": sum(1 for g in sel["confirm"] if g["severity"] in SEVERITIES),
+                 "notes": sum(1 for g in sel["confirm"] if g["severity"] not in SEVERITIES)}
+        return {"own_limits": limits, "confirm": confirm, "confirm_more": more_confirm, "confirm_split": split, "key_pages": pages,
                 "business_line": business_line, "key_pages_not_found": not_found,
                 "templates": self.templates_rows(),
                 "key_pages_note": L["key_pages_empty"][reason] if reason and not pages else None,

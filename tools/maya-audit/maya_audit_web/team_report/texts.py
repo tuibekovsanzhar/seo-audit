@@ -190,8 +190,13 @@ def fits(text: str | None, limit: int | None) -> bool:
 
 # ---------------------------------------------------------------- page 1
 
-def _focus(summaries: list[str], lang: str) -> list[str]:
-    return [lower_first(s, lang) for s in summaries if s]
+def _focus(summaries: list[str], lang: str, article: bool = False) -> list[str]:
+    """The cards' summaries as they stand inside a sentence. `article`: in English, "the" before each one ("start with the
+    certificate expiry", DECISIONS 316); Turkish has no article."""
+    out = [lower_first(s, lang) for s in summaries if s]
+    if article and lang == "en":
+        out = [s if s.lower().startswith(("the ", "a ", "an ")) else "the " + s for s in out]
+    return out
 
 
 def counts_band(counts: dict, lang: str) -> str | None:
@@ -207,7 +212,7 @@ def counts_band(counts: dict, lang: str) -> str | None:
     return fill(p["band_counts_one"] if total == 1 else p["band_counts"], list=listed)
 
 
-def headline(severities: list[str], summaries: list[str], lang: str, *, pages_read: int = 1, limit: int = 90,
+def headline(severities: list[str], summaries: list[str], lang: str, *, pages_read: int = 1, limit: int = 100,
              counts: dict | None = None) -> str:
     """The report's one-line verdict from the problem cards' severities (S1-S4) and the top cards' summaries. With
     `counts` (problems by severity, DECISIONS 313) it says the exact numbers."""
@@ -224,7 +229,7 @@ def headline(severities: list[str], summaries: list[str], lang: str, *, pages_re
     else:
         levels = [p["level_names"][s] for s in ("S3", "S4") if s in severities]
         band = fill(p["band"], levels=p["levels_join"].join(levels))
-    focus = _focus(summaries, lang)
+    focus = _focus(summaries, lang, article=True)
     for n in (2, 1):
         if len(focus) >= n:
             text = fill(p["headline"], band=band, focus=join(focus[:n], lang))
@@ -235,7 +240,7 @@ def headline(severities: list[str], summaries: list[str], lang: str, *, pages_re
 
 def assessment(summaries: list[str], has_confirm: bool, lang: str, *, limit: int = 190) -> str:
     p = library(lang)["page1"]
-    focus = _focus(summaries, lang)
+    focus = _focus(summaries, lang, article=True)
     tail = p["tail_confirm"] if has_confirm else p["tail_plain"]
     for key, n in (("assessment_three", 3), ("assessment_two", 2), ("assessment_one", 1)):
         if len(focus) >= n:

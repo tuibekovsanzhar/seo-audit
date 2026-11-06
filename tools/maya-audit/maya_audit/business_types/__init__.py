@@ -26,7 +26,9 @@ from urllib.parse import unquote, urlsplit
 
 from ..page_words import fold
 
-VERSION = 1
+# 2 (DECISIONS 316): "Havayolu" split from "Seyahat / rezervasyon" (now "Tur / otel"), and country-language folders
+# left out of address words; a saved suggestion of version 1 is worked out again.
+VERSION = 2
 AUTO = "auto"
 DEFAULT = "diger"
 # Weights by rank in a profile's list (owner, configurable here or per profile with "weights").
@@ -42,7 +44,8 @@ FORMULA = {"page_type": 0.5, "internal_link_score": 0.35, "click_depth": 0.15}  
 SCORES = {"url": 4, "schema": 3, "heading": 2, "menu": 2, "content": 1}
 MIN_SCORE = 3
 NOT_FOUND_TOP = 3        # "not found" notes for the profile's first three page types (owner)
-GROUPS = {"finans": {"tr": "Finans", "en": "Finance"}}
+GROUPS = {"finans": {"tr": "Finans", "en": "Finance"},
+          "seyahat": {"tr": "Seyahat / rezervasyon", "en": "Travel / booking"}}  # DECISIONS 316
 KIND_LABELS = {"url": {"tr": "adres sözcüğü", "en": "address word"},
                "schema": {"tr": "yapısal veri türü", "en": "structured-data type"},
                "heading": {"tr": "başlık sözcüğü", "en": "heading word"},
@@ -131,10 +134,13 @@ def valid(pid: str | None) -> bool:
 
 # ---------------------------------------------------------------- what a page shows
 
-def _segments(url: str) -> list[str]:
+def _segments(url: str, folders: Iterable[str] = ()) -> list[str]:
+    """The address's words by segment, its language folder left out: a plain one (/en) always, a country-language one
+    (/global-en, /tur-tr) when the site's locale folders (`locales.detect`) name it (DECISIONS 316: "tur" in /tur-en/
+    is Turkey, not a tour)."""
     from ..page_groups import is_locale
     segs = [unquote(s) for s in urlsplit(url).path.split("/") if s]
-    if segs and is_locale(segs[0]):
+    if segs and (is_locale(segs[0]) or segs[0].lower() in set(folders)):
         segs = segs[1:]
     return [_norm(s.rsplit(".", 1)[0] if s.endswith((".html", ".htm", ".php", ".aspx")) else s) for s in segs]
 
@@ -215,11 +221,11 @@ def sitewide_schema(analyses: Iterable[dict | None]) -> set[str]:
 
 
 def page_facts(url: str, analysis: dict | None, menu: Iterable[str] = (), generic: str | None = None,
-               sitewide: set[str] = frozenset()) -> dict:
+               sitewide: set[str] = frozenset(), folders: Iterable[str] = ()) -> dict:
     a = analysis or {}
     # The page's own name: its title and H1. Lower headings name sections (an FAQ block on a product page).
     heads = [a.get("title") or ""] + [h.get("text") or "" for h in a.get("h1_elements") or [] if isinstance(h, dict)]
-    return {"url": url, "segments": _segments(url), "generic": generic,
+    return {"url": url, "segments": _segments(url, folders), "generic": generic,
             "schema": set((a.get("structured_data") or {}).get("types") or []) - set(sitewide),
             "heading": _norm(" | ".join(heads)), "menu": _norm(" | ".join(menu)),
             "content": content_signals(a, generic) if a else ({"list"} if generic == "category" else set())}
@@ -324,7 +330,7 @@ def reset(g: dict) -> None:
     g["importance_source"] = "links"
 
 
-def apply(records: dict[str, dict], facts: dict[str, dict], pid: str | None) -> dict:
+def apply(records: dict[str, dict], facts: dict[str, dict], pid: str | None, folders: Iterable[str] = ()) -> dict:
     """Re-score `records` ({url: grouping record}, changed in place) for profile `pid`; Stage 3's importance and rank
     are kept in `importance_links` / `importance_rank_links`. "Diğer" (or no profile) leaves Stage 3's values.
     Returns the summary for the report."""
@@ -337,7 +343,7 @@ def apply(records: dict[str, dict], facts: dict[str, dict], pid: str | None) -> 
                 "50% link score, 25% click depth, 25% general page type"}
     counts: Counter = Counter()
     for url, g in scored.items():
-        f = facts.get(url) or page_facts(url, None, (), g.get("page_type"))
+        f = facts.get(url) or page_facts(url, None, (), g.get("page_type"), folders=folders)
         if f.get("generic") is None:
             f = {**f, "generic": g.get("page_type")}
         kind, basis, signals = classify(prof, f)
@@ -394,14 +400,25 @@ def not_found(records: dict[str, dict], pid: str | None, top: int = NOT_FOUND_TO
 # ---------------------------------------------------------------- suggestion
 
 def suggest(home_analysis: dict | None, home_outlinks: list | None, platform: str | None,
-            urls: Iterable[str] = ()) -> dict:
+            urls: Iterable[str] = (), folders: Iterable[str] = ()) -> dict:
     """{id, label, reason{tr,en}, signals, scores}: the business type the homepage's structured data, the platform,
     the site's addresses and the homepage's menu point to; "diger" when no type stands out."""
     a = home_analysis or {}
     schema = set((a.get("structured_data") or {}).get("types") or [])
     menu = _norm(" | ".join(x for e in home_outlinks or [] if e.get("nav")
                             for x in (e.get("anchors") or ([e.get("anchor")] if e.get("anchor") else [])) if x))
-    paths = [_segments(u) for u in dict.fromkeys(u for u in urls if isinstance(u, str))]
+    # One address per page: the same page in 20 country folders is one page, not 20 (DECISIONS 316).
+    from ..locales import page_key
+    folders = tuple(folders)
+    paths = [_segments(u, folders) for u in dict.fromkeys(u for u in urls if isinstance(u, str))]
+    if folders:
+        seen_keys: set[str] = set()
+        paths = []
+        for u in dict.fromkeys(u for u in urls if isinstance(u, str)):
+            k = page_key(u, folders)
+            if k not in seen_keys:
+                seen_keys.add(k)
+                paths.append(_segments(u, folders))
     total = len(paths) or 1
     rows = []
     for p in profiles().values():
@@ -431,6 +448,11 @@ def suggest(home_analysis: dict | None, home_outlinks: list | None, platform: st
             score += 1
         if n:
             signals.append({"kind": "urls", "count": n, "values": [w for w, _ in hit_words.most_common(2)]})
+        if s.get("routes"):
+            found_routes = iata_routes(paths)
+            if len(found_routes) >= ROUTES_MIN:
+                score += 3
+                signals.append({"kind": "routes", "count": len(found_routes), "values": found_routes[:2]})
         words = _has(s.get("words") or [], menu)
         if words:
             score += min(4, len(words))
@@ -450,6 +472,22 @@ def suggest(home_analysis: dict | None, home_outlinks: list | None, platform: st
             "scores": scores, "version": VERSION}
 
 
+# An airline's route pages name two airports (/flights/ala-ist, /ucak-bileti/ist-ayt). A three-letter pair counts only
+# when both codes appear in another pair too (a route network shares its airports; "big-sale" shares nothing), and only
+# from ROUTES_MIN addresses (DECISIONS 316, agent default).
+_ROUTE = re.compile(r"^([a-z]{3}) ([a-z]{3})$")
+ROUTES_MIN = 3
+
+
+def iata_routes(paths: Iterable[list[str]]) -> list[str]:
+    """The route segments ("ala ist") of the addresses, in order, that pass the shared-airport rule."""
+    pairs = [m.groups() for segs in paths for seg in segs if (m := _ROUTE.match(seg)) and m.group(1) != m.group(2)]
+    seen: Counter = Counter()
+    for pair in set(pairs):
+        seen.update(pair)
+    return [f"{a}-{b}" for a, b in dict.fromkeys(pairs) if seen[a] >= 2 and seen[b] >= 2]
+
+
 def _reason(signals: list[dict]) -> dict:
     tr, en = [], []
     for s in signals:
@@ -466,6 +504,9 @@ def _reason(signals: list[dict]) -> dict:
         elif s["kind"] == "menu":
             tr.append(f"menüde {v}")
             en.append(f"menu words {v}")
+        elif s["kind"] == "routes":
+            tr.append(f"{s['count']:,}".replace(",", ".") + f" adreste havalimanı kodlu rota ({v})")
+            en.append(f"{s['count']:,} addresses with airport-code routes ({v})")
     return {"tr": "; ".join(tr), "en": "; ".join(en)}
 
 
@@ -495,7 +536,8 @@ def attach(result) -> dict | None:
         platform = None
     urls = [p.url for p in pages] + list(getattr(result, "discovered_urls", None) or []) + list(
         getattr(result, "sitemap_urls", None) or [])
-    suggestion = suggest(home.analysis if home else None, home.outlinks if home else None, platform, urls)
+    folders = _folders(getattr(result, "locales", None), urls, getattr(result, "start_url", None))
+    suggestion = suggest(home.analysis if home else None, home.outlinks if home else None, platform, urls, folders)
     config = getattr(result, "config", None)
     choice = (config.get("business_type") if isinstance(config, dict) else getattr(config, "business_type", None))
     chosen = resolve(choice, suggestion)
@@ -505,12 +547,13 @@ def attach(result) -> dict | None:
         records.setdefault(url, g)
     texts = link_texts((p.url, p.outlinks) for p in read)
     common = sitewide_schema(p.analysis for p in read)
-    facts = {p.url: page_facts(p.url, p.analysis, texts.get(p.url, ()), p.grouping.get("page_type"), common) for p in read}
-    chosen["page_types"] = apply(records, facts, chosen["id"])
+    facts = {p.url: page_facts(p.url, p.analysis, texts.get(p.url, ()), p.grouping.get("page_type"), common, folders)
+             for p in read}
+    chosen["page_types"] = apply(records, facts, chosen["id"], folders)
     chosen["not_found"] = not_found(records, chosen["id"])
     reader = getattr(result, "reader_page_grouping", None)
     if isinstance(reader, dict) and isinstance(reader.get("pages"), dict):
-        apply(reader["pages"], {}, chosen["id"])
+        apply(reader["pages"], {}, chosen["id"], folders)
     if isinstance(summary, dict):
         summary["business_type"] = {k: chosen[k] for k in ("id", "chosen_by", "version")}
         summary["importance_source"] = "links" if chosen["id"] == DEFAULT else f"profile:{chosen['id']}"
@@ -519,6 +562,33 @@ def attach(result) -> dict | None:
 
 
 # ---------------------------------------------------------------- a saved report
+
+def _report_urls(crawl: dict) -> list[str]:
+    return [p.get("url") for p in crawl.get("pages") or [] if isinstance(p, dict)] + list(
+        crawl.get("discovered_urls") or []) + list(crawl.get("sitemap_urls") or [])
+
+
+def _folders(saved: dict | None, urls: Iterable[str], start: str | None) -> tuple[str, ...]:
+    """The site's locale folders: the report's own (`crawl.locales`, schema 1.27), else worked out from its addresses."""
+    if isinstance(saved, dict) and isinstance(saved.get("folders"), list):
+        return tuple(saved["folders"])
+    from ..locales import detect
+    return tuple(detect(urls, start_url=start)["folders"])
+
+
+def key_type_test(choice: str | None, urls: Iterable[str], folders: Iterable[str] = ()):
+    """DECISIONS 316: a test for the business type's first three page types by address word, so a capped crawl reads
+    them first within each round of sections. The type is the person's choice, else the one the sitemap's addresses
+    suggest; None for "Diğer" or when no type stands out. A hint for the crawl order only."""
+    folders = tuple(folders)
+    pid = choice if choice and choice != AUTO and choice in profiles() else suggest(None, None, None, urls, folders)["id"]
+    if pid == DEFAULT:
+        return None
+    words = [w for t in profile(pid)["page_types"] if t.get("rank") and t["rank"] <= 3 for w in (t.get("signals") or {}).get("url") or []]
+    if not words:
+        return None
+    return lambda url: any(url_hit(w, _segments(url, folders)) for w in words)
+
 
 def home_record(report: dict, records: dict[str, dict]) -> dict | None:
     crawl = report.get("crawl") or {}
@@ -547,19 +617,19 @@ def for_report(report: dict, records: dict[str, dict], choice: str | None = None
                 platform = (recognise_saved(report) or {}).get("name")
             except Exception:  # noqa: BLE001
                 platform = None
-        urls = [p.get("url") for p in crawl.get("pages") or [] if isinstance(p, dict)] + list(
-            crawl.get("discovered_urls") or []) + list(crawl.get("sitemap_urls") or [])
-        suggestion = suggest(home.get("analysis"), home.get("outlinks"), platform, urls)
+        suggestion = suggest(home.get("analysis"), home.get("outlinks"), platform, _report_urls(crawl),
+                             _folders(crawl.get("locales"), _report_urls(crawl), crawl.get("start_url")))
     if not choice and saved and saved.get("chosen_by") == "user":
         choice = saved.get("id")
     chosen = resolve(choice, suggestion)
     pages = [p for p in crawl.get("pages") or [] if isinstance(p, dict) and p.get("analysis")]
     texts = link_texts((p.get("url"), p.get("outlinks")) for p in pages)
     common = sitewide_schema(p.get("analysis") for p in pages if p.get("url") in records)
+    folders = _folders(crawl.get("locales"), _report_urls(crawl), crawl.get("start_url"))
     facts = {p["url"]: page_facts(p["url"], p.get("analysis"), texts.get(p["url"], ()),
-                                  (records.get(p["url"]) or {}).get("page_type"), common)
+                                  (records.get(p["url"]) or {}).get("page_type"), common, folders)
              for p in pages if p.get("url") in records}
-    chosen["page_types"] = apply(records, facts, chosen["id"])
+    chosen["page_types"] = apply(records, facts, chosen["id"], folders)
     chosen["not_found"] = not_found(records, chosen["id"])
     return chosen
 

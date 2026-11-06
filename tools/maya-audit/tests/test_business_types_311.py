@@ -44,6 +44,7 @@ def test_one_profile_per_sector_of_the_owners_file_in_its_order_plus_restaurant_
     rows = _sector_rows()
     assert len(rows) == 12
     by_label = {p["label"]["tr"]: p for p in bt.profiles().values()}
+    by_label["Seyahat / rezervasyon"] = bt.profile("seyahat")  # DECISIONS 316: the owner's row is now "Tur / otel"
     for sector, types in rows:
         prof = by_label[sector]
         ranked = [t for t in sorted((t for t in prof["page_types"] if t["rank"]), key=lambda t: t["rank"])]
@@ -54,7 +55,7 @@ def test_one_profile_per_sector_of_the_owners_file_in_its_order_plus_restaurant_
     assert [t["label"]["tr"] for t in restaurant["page_types"] if t["rank"]] == [
         "Menü", "Şube ve konum", "Rezervasyon / sipariş", "Ana sayfa", "İletişim"]
     assert set(bt.profiles()) == {"eticaret", "bankacilik", "yatirim", "kart", "saglik", "otomotiv", "saas", "su_aritma",
-                                  "guvenlik", "ev_hizmetleri", "gida", "seyahat", "restoran", "diger"}
+                                  "guvenlik", "ev_hizmetleri", "gida", "havayolu", "seyahat", "restoran", "diger"}
     assert bt.profile("diger")["page_types"] == []
 
 
@@ -74,8 +75,9 @@ def test_the_homepage_is_at_least_85_everywhere_and_a_citable_guide_type_exists_
 def test_finance_is_one_group_in_the_choices():
     finance = [c["id"] for c in bt.choices("tr") if c["group"] == "finans"]
     assert finance == ["bankacilik", "yatirim", "kart"]
-    assert {c["group_label"] for c in bt.choices("tr") if c["group"]} == {"Finans"}
-    assert {c["group_label"] for c in bt.choices("en") if c["group"]} == {"Finance"}
+    assert {c["group_label"] for c in bt.choices("tr") if c["group"]} == {"Finans", "Seyahat / rezervasyon"}
+    assert {c["group_label"] for c in bt.choices("en") if c["group"]} == {"Finance", "Travel / booking"}
+    assert [c["id"] for c in bt.choices("tr") if c["group"] == "seyahat"] == ["havayolu", "seyahat"]  # DECISIONS 316
 
 
 # ---------------------------------------------------------------- page types per profile

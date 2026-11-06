@@ -107,7 +107,7 @@ def synthetic(batch, severity="S4"):
                          "how_to_fix": "", "expected": "", "evidence": {"pages": [url]},
                          "verification": {"state": "not_retested", "reason": "not re-tested in this test"}})
     pages = [{"url": f"{SITE}/p{n}", "status": 200} for n in range(len(batch))] + [{"url": SITE + "/", "status": 200}]
-    return {"schema_version": "1.26", "checks": [{"check_id": f["check_id"], "findings": [f]} for f in findings],
+    return {"schema_version": "1.27", "checks": [{"check_id": f["check_id"], "findings": [f]} for f in findings],
             "findings_in_priority_order": [f["id"] for f in findings],
             "problem_summary": {"problems": len(findings), "by_severity": {severity: len(findings)}, "by_page": [],
                                 "whole_site": {"problems": 0}},
@@ -149,13 +149,13 @@ def test_page_one_is_built_from_the_top_cards(tmp_path):
     batch = [("RND-6", "rnd6.large"), ("STR-1", "str1.shared"), ("STR-2", "str2.no_h1")]
     data = built(tmp_path, synthetic(batch, "S3"), "tr")
     first = texts.group("html_weight", "tr")
-    assert data["assessment"]["headline"] == "3 orta önemde sorun var; önce sayfa HTML ağırlığı ve ortak başlık ve açıklamalar."  # DECISIONS 313: exact counts
+    assert data["assessment"]["headline"] == "3 orta önemde sorun var; öncelik: sayfa HTML ağırlığı ve ortak başlık ve açıklamalar."  # DECISIONS 313: exact counts
     assert data["priorities"][0]["title"] == first["summary"]
     assert data["priorities"][0]["text"] == first["explanation"]
     assert data["next_action"]["lead"] == "Önce sayfa HTML'ini hafifletin."
     assert data["next_action"]["text"].startswith(first["explanation"])
     en = built(tmp_path, synthetic(batch, "S3"), "en")
-    assert en["assessment"]["headline"].startswith("There are 3 medium-severity issues; start with page HTML weight")
+    assert en["assessment"]["headline"].startswith("There are 3 medium-severity issues; start with the page HTML weight")
 
 
 def test_polishing_words_is_allowed_but_not_severity_count_or_order(tmp_path):

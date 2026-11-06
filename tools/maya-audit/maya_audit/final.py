@@ -30,6 +30,23 @@ FINAL_KEYS = ("checks", "answer_engine_panel", "findings_in_priority_order", "re
 # ---------------------------------------------------------------- finalization
 
 
+def locale_record(result) -> dict:
+    """`crawl.locales` (schema 1.27): `locales.detect` on every address the audit knows, the hreflang links of the pages
+    read and the homepage it landed on."""
+    from .access_data import homepage_url
+    from .locales import detect
+    pages = list(getattr(result, "pages", None) or [])
+    hreflang = [h.get("href") for p in pages for h in ((getattr(p, "analysis", None) or {}).get("hreflang") or [])
+                if isinstance(h, dict)]
+    urls = [p.url for p in pages] + list(getattr(result, "sitemap_urls", None) or []) + list(
+        getattr(result, "discovered_urls", None) or [])
+    try:
+        home = homepage_url(result)
+    except Exception:  # noqa: BLE001
+        home = getattr(result, "start_url", None)
+    return detect(urls, hreflang, home)
+
+
 def settle(checks, result) -> None:
     """The steps after severity, in order. Idempotent; no request is sent."""
     from .checks.index import broken_link_sources
@@ -44,6 +61,8 @@ def settle(checks, result) -> None:
     # Templates, page types, link scores, click depth, importance (DECISIONS 297): stored, never a severity.
     from .page_groups import annotate as annotate_groups
     annotate_groups(result)
+    # Country/language versions of the same pages (DECISIONS 316): the site's locale folders and its main version.
+    result.locales = locale_record(result)
     # The business type (DECISIONS 311): page importance weighted by the profile; never a severity.
     from .business_types import attach as attach_business
     attach_business(result)

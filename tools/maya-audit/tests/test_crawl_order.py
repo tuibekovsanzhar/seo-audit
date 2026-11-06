@@ -134,12 +134,16 @@ def test_a_capped_crawl_takes_the_homepage_then_the_navigation_then_one_page_per
     assert set(fetched[1:5]) == {"/tr/tibbi-bolumlerimiz/", "/tr/hakkimizda/", "/tr/iletisim/", "/en/"}  # its navigation
     rest = fetched[5:]
     in_group = lambda name: [path for path in rest if path in groups[name]]
-    assert len(in_group("services")) == 1 and len(in_group("methods")) == 1 and len(in_group("team")) == 1
+    assert len(in_group("services")) >= 1 and len(in_group("methods")) == 1 and len(in_group("team")) == 1
     assert any(path.startswith("/en/medical-units/") for path in rest)
     # Sixty blog posts, linked from everywhere and first in the sitemap, do not crowd the rest out. They share
     # the /tr/* section with three navigation pages already fetched, so here they wait for the next round.
     assert len(in_group("posts")) <= 1
-    assert len({section_key(origin + path) for path in rest}) == len(rest)
+    # DECISIONS 316: /tr/ and /en/ are language folders, so /en/team/* and /tr/team/* are one section (/_l/team/*):
+    # the first round takes one page of each of the four sections not sampled yet, then a second round begins.
+    from maya_audit.locales import section_url
+    keys = [section_key(section_url(origin + path, ["tr", "en"])) for path in rest]
+    assert len(set(keys[:4])) == 4 and set(keys) == set(keys[:4])
 
 
 def test_once_every_section_has_a_page_the_crawl_goes_round_again_and_an_uncapped_crawl_still_fetches_everything():

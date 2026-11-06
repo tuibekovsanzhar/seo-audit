@@ -1,11 +1,11 @@
 {
  "id": "seyahat",
- "order": 12,
+ "order": 12.5,
  "label": {
-  "tr": "Seyahat / rezervasyon",
-  "en": "Travel / booking"
+  "tr": "Tur / otel",
+  "en": "Tours / hotels"
  },
- "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx; owner, 2026-11-06: the tour and hotel variant of \"Seyahat / rezervasyon\" (DECISIONS 316)",
  "suggest": {
   "schema": [
    "Hotel",
@@ -229,5 +229,6 @@
    "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
    "weight": 30
   }
- ]
+ ],
+ "group": "seyahat"
 }

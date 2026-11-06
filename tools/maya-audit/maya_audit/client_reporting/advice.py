@@ -17,51 +17,51 @@ def procedure(finding, row):
             for key in ('element_id','selector','component'):
                 if record.get(key):elements.append(str(record[key]))
     targets=list(dict.fromkeys(targets));elements=list(dict.fromkeys(elements))
-    where='Bu adreslerde kaydı incelemelisiniz. Kaynak adresler: '+(', '.join(urls[:3])if urls else 'kayıtlı kapsamda adres belirtilmemiş')+'.'
+    where='Bu adreslerde kaydı inceleyin. Kaynak adresler: '+(', '.join(urls[:3])if urls else 'kayıtlı kapsamda adres belirtilmemiş')+'.'
     if len(urls)>3:where+=' Tam adres listesi raporun JSON ekindedir.'
     if targets:where+=' Kayıtlı hedef / öğe: '+', '.join(targets[:3])+'.'
     if elements:where+=' Kayıtlı öğe referansı: '+', '.join(elements[:3])+'.'
     from maya_audit_web import wording
     qualified_action=(row.get('judgment')or{}).get('action')or{}
     translated_fix,fix_ok=wording.fix(qualified_action.get('text')or finding.get('how_to_fix')or'', 'tr')
-    repair=(translated_fix if fix_ok else None)or'Kanıtın kapsamını ve sayfanın amacını incelemelisiniz; neden belirlenmeden değişiklik seçmemelisiniz.'
+    repair=(translated_fix if fix_ok else None)or'Kanıtın kapsamını ve sayfanın amacını inceleyin; neden belirlenmeden değişiklik seçmeyin.'
     if not re.search(r'm[ae]l[ıi]s[ıi]n[ıi]z',repair,re.I):
-        repair='Kayıtlı öneriyi ve kapsam koşullarını değerlendirerek karar vermelisiniz: '+repair
+        repair='Kayıtlı öneriyi ve kapsam koşullarını değerlendirerek karar verin: '+repair
     subtype=cid+':'+str((row.get('judgment')or{}).get('kind')or title)
     expected,expected_ok=wording.expected(finding.get('expected')or'', 'tr')
-    verify='Beklenen özellik: '+str(expected if expected_ok else 'kayıtlı gözlemin koşulları; tam teknik tanım JSON ekindedir')+'. Aynı adres/istemci koşullarında sonucu ve zamanı kanıtla kaydetmelisiniz.'
-    decide='Karar vermelisiniz: '+repair
+    verify='Beklenen özellik: '+str(expected if expected_ok else 'kayıtlı gözlemin koşulları; tam teknik tanım JSON ekindedir')+'. Aynı adres/istemci koşullarında sonucu ve zamanı kanıtla kaydedin.'
+    decide='Karar verin: '+repair
     if cid=='STR-2' and ('no <h1>'in title or 'no meaningful <h1>'in title):
         subtype='STR-2:missing-h1'
-        repair='Mevcut boş h1 varsa sayfanın gerçek konusuyla doldurmalısınız; h1 öğesi yoksa boş olmayan anlamlı bir ana başlık eklemelisiniz. Eski özetler boş öğeleri saklamamış olabilir.'
-        verify='Kaynak HTML ve erişilebilir başlık ağacında sayfanın konusunu belirten boş olmayan bir h1 bulunduğunu doğrulamalısınız; yalnızca boş etiketi eklemek yeterli değildir.'
-        decide='Karar vermelisiniz: Sayfanın gerçek konusunu belirten ana başlığı içerik sahibiyle seçmelisiniz; yeni iş bilgileri uydurulmamalıdır.'
+        repair='Mevcut boş h1 varsa sayfanın gerçek konusuyla doldurun; h1 öğesi yoksa boş olmayan anlamlı bir ana başlık ekleyin. Eski özetler boş öğeleri saklamamış olabilir.'
+        verify='Kaynak HTML ve erişilebilir başlık ağacında sayfanın konusunu belirten boş olmayan bir h1 bulunduğunu doğrulayın; yalnızca boş etiketi eklemek yeterli değildir.'
+        decide='Karar verin: Sayfanın gerçek konusunu belirten ana başlığı içerik sahibiyle seçin; yeni iş bilgileri uydurulmamalı.'
     elif cid=='STR-2' and 'no subheadings'in title:
         subtype='STR-2:missing-subheadings'
-        verify='Okuma sırasını ve bölüm başlıklarını incelemelisiniz. Tablolar veya listeler zaten yeterli yapı sağlıyorsa ek başlık zorunlu sayılmamalıdır.'
+        verify='Okuma sırasını ve bölüm başlıklarını inceleyin. Tablolar veya listeler zaten yeterli yapı sağlıyorsa ek başlık zorunlu sayılmamalı.'
     elif cid=='ACC-3' and ('noindex'in title.lower() or 'nosnippet'in title.lower()):
         subtype='ACC-3:indexing-intent'
-        repair='İçerik sahibiyle dizine ekleme amacını doğrulamalısınız. Bilinçli dışlamayı korumalı; yalnızca dizine girmesi istenen sayfada noindex değiştirmelisiniz. Sitemap üyeliğini ayrıca değerlendirmelisiniz.'
-        verify='Aynı URL için yönergeyi ve içerik sahibinin dizine ekleme kararını kaydetmelisiniz; rapor onayı canlı doğrulama değildir.'
-        decide='Karar vermelisiniz: Bu sayfanın aramada yer alması isteniyor mu? Bilinçli dışlamayı otomatik kaldırmamalısınız.'
+        repair='Sayfaların aramada yer alması istenip istenmediğini içerik sahibiyle netleştirin. Bilerek dizin dışında tutulan sayfalara dokunmayın; noindex\'i yalnızca aramada yer alması istenen sayfalardan kaldırın. Site haritasında kalıp kalmayacaklarına ayrıca karar verin.'
+        verify='Aynı URL için yönergeyi ve içerik sahibinin dizine ekleme kararını kaydedin; rapor onayı canlı doğrulama değildir.'
+        decide='Karar verin: Bu sayfanın aramada yer alması isteniyor mu? Bilerek dizin dışında tutulan bir sayfanın noindex\'ini kendiliğinden kaldırmayın.'
     elif cid=='STR-7' and ('WebP'in title or 'AVIF'in title):
         subtype='STR-7:format-evidence'
-        repair='İşaretlemedeki biçim referanslarını kayıtlı HTTP yanıt biçimlerinden ayırmalısınız. Bayt boyutu, görsel kalite ve uygun alternatifleri karşılaştırmadan dönüşüm kararı vermemelisiniz.'
-        verify='Aynı istemci ve zamanda Content-Type, Accept/Vary, dosya boyutu ve görsel kaliteyi karşılaştırmalısınız. Dosya uzantısı sunulan biçimi kanıtlamaz; eksik yanıt bilgisi ölçülmemiştir.'
-        decide='Karar vermelisiniz: Ölçülen boyut ve kaliteye göre hangi teslim seçeneği uygundur? Her WebP/AVIF dönüşümü iyileşme garantilemez.'
+        repair='İşaretlemedeki biçim referanslarını kayıtlı HTTP yanıt biçimlerinden ayırın. Bayt boyutu, görsel kalite ve uygun alternatifleri karşılaştırmadan dönüşüm kararı vermeyin.'
+        verify='Aynı istemci ve zamanda Content-Type, Accept/Vary, dosya boyutu ve görsel kaliteyi karşılaştırın. Dosya uzantısı sunulan biçimi kanıtlamaz; eksik yanıt bilgisi ölçülmemiştir.'
+        decide='Karar verin: Ölçülen boyut ve kaliteye göre hangi teslim seçeneği uygundur? Her WebP/AVIF dönüşümü iyileşme garantilemez.'
     elif cid=='IDX-6':
         subtype='IDX-6:'+str((row.get('judgment')or{}).get('status'))
-        verify='Kayıtlı kaynak bağlantısını ve hedefini aynı istemciyle, izinler ve istek sınırları içinde GET ile doğrulamalısınız; son durum kodunu, yönlendirmeleri, içeriği ve zamanı kaydetmelisiniz. HEAD hatası tek başına hedefin kaldırıldığını kanıtlamaz.'
-        decide='Karar vermelisiniz: Hedefin beklenen işlevini ve GET sonucunu doğrulamadan bağlantıyı kaldırmamalısınız; doğrulanan hatada doğru hedefi içerik sahibiyle seçmelisiniz.'
+        verify='Kayıtlı kaynak bağlantısını ve hedefini aynı istemciyle, izinler ve istek sınırları içinde GET ile doğrulayın; son durum kodunu, yönlendirmeleri, içeriği ve zamanı kaydedin. HEAD hatası tek başına hedefin kaldırıldığını kanıtlamaz.'
+        decide='Karar verin: Hedefin beklenen işlevini ve GET sonucunu doğrulamadan bağlantıyı kaldırmayın; doğrulanan hatada doğru hedefi içerik sahibiyle seçin.'
     elif cid=='RND-4' and 'accessible name'in title:
         subtype='RND-4:iframe-name'
-        verify='Tarayıcının erişilebilirlik ağacında her iframe için açıklayıcı erişilebilir ad bulunduğunu doğrulamalısınız; title, aria-label veya çözümlenebilir aria-labelledby metni ilgili çerçeveyi açıklamalıdır.'
+        verify='Tarayıcının erişilebilirlik ağacında her iframe için açıklayıcı erişilebilir ad bulunduğunu doğrulayın; title, aria-label veya çözümlenebilir aria-labelledby metni ilgili çerçeveyi açıklamalı.'
     elif cid=='STR-7' and 'placeholder'in title:
         subtype='STR-7:placeholder-alt'
-        verify='Görselin işlevini ve eşdeğer metni incelemelisiniz. Bilgi aktarıyorsa alt gerçek içeriğini açıklamalı; dekoratifse boş alt ve uygun sunum amacı korunmalıdır.'
+        verify='Görselin işlevini ve eşdeğer metni inceleyin. Görsel bilgi aktarıyorsa alt metninde bu bilgiyi yazın; dekoratifse alt metnini boş bırakın.'
     if cid=='STR-2' and subtype=='STR-2:missing-subheadings':
-        repair='Sayfanın okuma sırasını incelemelisiniz. Tablo ve listeler bilgiyi zaten yapılandırıyorsa zorunlu başlık eklememeli; anlamlı bölümler varsa açıklayıcı alt başlıklar kullanmalısınız.'
-        decide='Karar vermelisiniz: Sayfanın gerçek bölüm yapısını ve amacını içerik sahibiyle belirlemelisiniz.'
+        repair='Sayfanın okuma sırasını inceleyin. Tablo ve listeler bilgiyi zaten yapılandırıyorsa zorunlu başlık eklemeyin; anlamlı bölümler varsa açıklayıcı alt başlıklar kullanın.'
+        decide='Karar verin: Sayfanın gerçek bölüm yapısını ve amacını içerik sahibiyle belirleyin.'
     # The addresses are said once, in the steps (CR-11): the verification refers to "the same addresses".
     return {'subtype':subtype,'repair':repair,'verification':verify,'decision':decide,'where':where,
             'steps':[repair,where],'verify':verify,'decide':decide,'targets':targets}

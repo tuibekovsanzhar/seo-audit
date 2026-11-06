@@ -54,7 +54,7 @@ def test_the_business_type_is_a_chip_with_its_reason_folded_and_the_dropdown_sho
 
 def test_the_headline_says_the_exact_counts_and_blocking_only_with_a_blocker():
     one = T.headline(["S2"], ["geri dönen kanonik adres"], "tr", counts={"S2": 1})
-    assert one == "1 yüksek önemde sorun var; önce geri dönen kanonik adres."
+    assert one == "1 yüksek önemde sorun var; öncelik: geri dönen kanonik adres."
     many = T.headline(["S2", "S3"], ["a"], "tr", counts={"S2": 1, "S3": 7, "S4": 11, "Info": 6})
     assert many.startswith("1 yüksek, 7 orta ve 11 düşük önemde sorun var") and "Engelleyici" not in many
     assert "engelleyici" not in many.casefold()

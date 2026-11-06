@@ -278,6 +278,195 @@ def _decisions_309(report: dict, changes: list[str], saved_texts: list[str]) -> 
             changes.append(f"{f['id']}: measured on Firecrawl's rendered HTML, labelled and sent to confirm first (DECISIONS 309)")
 
 
+# ---------------------------------------------------------------- DECISIONS 316
+
+# What a saved page record shows of a bot-protection page that answered 200 with the vendor's own document (the live
+# classifier reads the body; a saved record keeps the iframes and the visible word count). Imperva's block page:
+# "Request unsuccessful. Incapsula incident ID: ..." in an iframe of /_Incapsula_Resource (airastana.com, 2026-11-05).
+BLOCK_PAGE_MAX_WORDS = 50
+# Checks that are about the request, not the page's content: what was measured on a block page stays measured.
+REQUEST_CHECKS = ("ACC-1", "ACC-2", "ACC-4", "ACC-5", "ACC-6", "ACC-7", "ACC-8", "IDX-2", "INT-1", "INT-2", "INT-3", "INT-4")
+BLOCK_SIZE_MARGIN = 200  # bytes: a light request's answer this close to the block pages' size, with their robots tag
+
+
+def saved_block_page(record: dict) -> str | None:
+    """The vendor whose block page a saved page record holds, or None (DECISIONS 316)."""
+    if not isinstance(record, dict) or record.get("fetch_class") != "ok":
+        return None
+    a = record.get("analysis") or {}
+    if int(a.get("visible_words") or 0) > BLOCK_PAGE_MAX_WORDS:
+        return None
+    if any("/_Incapsula_Resource" in str((f or {}).get("src") or "") for f in a.get("iframes") or [] if isinstance(f, dict)):
+        return "Imperva"
+    return None
+
+
+def _robots_of(record: dict) -> str:
+    meta = (record.get("analysis") or {}).get("meta") or []
+    return next((str(m.get("content") or "").strip().lower() for m in meta
+                 if isinstance(m, dict) and str(m.get("name") or "").lower() == "robots"), "")
+
+
+def _decisions_316(report: dict, affected: dict, changes: list[str]) -> None:
+    """Block pages in the saved data, and the site's country/language folders (DECISIONS 316).
+
+    A page Maya's crawler saved as read that is a bot-protection page (`saved_block_page`) is marked blocked: it is not
+    a page read, and what was measured only on it (its noindex, its iframe, its timing, the sitemap addresses that gave
+    the same document) is left out, each removal listed. Findings judged on the page reader's own copy of a page stay.
+    The soft-404 probe's answer is the same document when every page was blocked: it goes to "confirm first"."""
+    crawl = report.get("crawl") or {}
+    if crawl.get("locales") is None:
+        from .final import locale_record
+        from .models import page_from_record
+        pages = [page_from_record(p) for p in crawl.get("pages") or [] if isinstance(p, dict)]
+        view = SimpleNamespace(pages=pages, start_url=crawl.get("start_url") or "", origin=crawl.get("origin"),
+                               sitemap_urls=crawl.get("sitemap_urls") or [], discovered_urls=crawl.get("discovered_urls") or [])
+        crawl["locales"] = locale_record(view)
+        if int(crawl["locales"].get("versions") or 0) >= 2:
+            changes.append(f"{crawl['locales']['versions']} country/language versions recorded (crawl.locales, DECISIONS 316)")
+    records = [p for p in crawl.get("pages") or [] if isinstance(p, dict)]
+    blocked = {p["url"]: saved_block_page(p) for p in records if saved_block_page(p)}
+    if not blocked:
+        return
+    vendor = sorted(set(blocked.values()))[0]
+    sizes = [int(p.get("body_bytes") or 0) for p in records if p["url"] in blocked]
+    robots = {_robots_of(p) for p in records if p["url"] in blocked} - {""}
+    for p in records:
+        if p["url"] in blocked:
+            p["fetch_class"] = "blocked"
+            p["content_checks_eligible"] = False
+            if isinstance(p.get("grouping"), dict):
+                p["grouping"]["read"] = False  # not a page read: never a key page
+            p["classification_confidence"] = "estimated"
+            p["classification_evidence"] = list(p.get("classification_evidence") or []) + [
+                f"body signature imperva_incapsula_iframe: {vendor}'s block page, recognised from the saved page record "
+                "(DECISIONS 316)"]
+    changes.append(f"{len(blocked)} page(s) Maya's crawler saved as read are {vendor}'s block page: marked blocked, "
+                   "not counted as read (DECISIONS 316)")
+    fc = report.get("firecrawl") or {}
+    fc_read = {r.get("url") for r in fc.get("pages") or [] if isinstance(r, dict) and r.get("outcome") == "read"} if fc.get("used") else set()
+    fc_checks = set(fc.get("checks_from_firecrawl") or []) if fc.get("used") else set()
+
+    def same_document(attempt: dict) -> bool:
+        if attempt.get("url") in blocked or attempt.get("fetch_class") == "blocked":
+            return True
+        noindex = " ".join(attempt.get("noindex") or []).lower()
+        size = attempt.get("body_bytes", attempt.get("bytes"))
+        return (bool(sizes) and isinstance(size, int) and min(sizes) - BLOCK_SIZE_MARGIN <= size <= max(sizes) + BLOCK_SIZE_MARGIN
+                and bool(robots) and any(r in noindex for r in robots))
+
+    for check in report.get("checks") or []:
+        cid = check.get("check_id") or ""
+        if cid in REQUEST_CHECKS or cid.startswith(("ANS", "DFS")):
+            continue
+        kept = []
+        for f in check.get("findings") or []:
+            urls = list(affected.get(f["id"]) or (f.get("scope") or {}).get("urls") or [])
+            if cid == "IDX-5":
+                decisions = (f.get("evidence") or {}).get("sitemap_decisions") or []
+                attempts = [d["attempts"][-1] for d in decisions if isinstance(d, dict) and d.get("attempts")]
+                if attempts and all(same_document(a) for a in attempts):
+                    changes.append(f"{f['id']}: removed; all {len(attempts)} sitemap address(es) checked answered with "
+                                   f"{vendor}'s block page, not the site's page (DECISIONS 316)")
+                    affected.pop(f["id"], None)
+                    continue
+            elif cid == "IDX-1" and ((f.get("evidence") or {}).get("probe") or {}).get("title") is None \
+                    and len(blocked) >= len([p for p in records if p.get("status") and 200 <= p["status"] < 300]):
+                f["confidence"] = "estimated"
+                note = (f"Every page Maya requested answered with {vendor}'s block page, so this answer is most likely the "
+                        "same block page, not the site's own: check a made-up address in a normal browser.")
+                if note not in (f.get("notes") or []):
+                    f["notes"] = list(f.get("notes") or []) + [note]
+                    changes.append(f"{f['id']}: estimated, confirm first: the probe most likely got {vendor}'s block page (DECISIONS 316)")
+            else:
+                bad = [u for u in urls if u in blocked and not (cid in fc_checks and u in fc_read)]
+                if urls and len(bad) == len(urls):
+                    changes.append(f"{f['id']}: removed; measured only on {vendor}'s block page ({len(bad)} page(s)): "
+                                   f"{(f.get('title') or '')[:80]} (DECISIONS 316)")
+                    affected.pop(f["id"], None)
+                    continue
+                if bad:
+                    affected[f["id"]] = [u for u in urls if u not in set(bad)]
+                    f["notes"] = list(f.get("notes") or []) + [
+                        f"{len(bad)} of its pages were {vendor}'s block page and are left out (DECISIONS 316)."]
+                    changes.append(f"{f['id']}: {len(bad)} block page(s) left out of its pages (DECISIONS 316)")
+            kept.append(f)
+        if len(kept) != len(check.get("findings") or []):
+            from .checks.access import _status
+            check["findings"] = kept
+            check["status"] = _status(kept, check.get("review_items") or ())
+    _no_comparison(report, records, vendor, changes)
+    _block_status(report, blocked, vendor, changes)
+
+
+def _no_comparison(report: dict, records: list[dict], vendor: str, changes: list[str]) -> None:
+    """"Seen only in Firecrawl's copy" (DECISIONS 300 (9)) compares the reader's copy with Maya's own. When every page
+    Maya's crawler saved was a block page there is nothing to compare: a fresh audit of a blocked site sets no such mark
+    (`double_reading.applies`), so it is taken off; the finding keeps its own confidence and notes otherwise."""
+    from .double_reading import NOTE, SEEN_IN
+    own = [p for p in records if p.get("analysis") and p.get("view") != "provider"]
+    if not own or any(p.get("fetch_class") == "ok" and p.get("content_checks_eligible") is not False for p in own):
+        return
+    cleared = 0
+    for check in report.get("checks") or []:
+        for f in check.get("findings") or []:
+            ev = f.get("evidence") or {}
+            if (ev.get("reading") or {}).get("seen_in") == SEEN_IN:
+                ev.pop("reading", None)
+                f["notes"] = [n for n in f.get("notes") or [] if n != NOTE]
+                cleared += 1
+    if cleared:
+        changes.append(f"{cleared} finding(s) no longer marked \"seen only in Firecrawl's copy\": every page of Maya's own "
+                       f"copy was {vendor}'s block page, so there was nothing to compare (DECISIONS 316)")
+
+
+def _block_status(report: dict, blocked: dict, vendor: str, changes: list[str]) -> None:
+    """ACC-9, the direct-access line and the pages-read count of a copy whose block pages were recognised."""
+    from .checks.access import acc9_automated_visitors
+    from .models import page_from_record, to_jsonable
+    from .report import read_counts, read_status_summary, coverage_note, also_fetched
+    crawl = report.get("crawl") or {}
+    pages = [page_from_record(p) for p in crawl.get("pages") or [] if isinstance(p, dict)]
+    requests = [SimpleNamespace(url=r.get("url"), purpose=r.get("purpose"), status=r.get("status"))
+                for r in crawl.get("requests") or [] if isinstance(r, dict)]
+    view = SimpleNamespace(pages=pages, start_url=crawl.get("start_url") or "", origin=crawl.get("origin"),
+                           requests=requests, user_agent=crawl.get("user_agent") or "")
+    cfg = SimpleNamespace(degraded_threshold=float((crawl.get("config") or {}).get("degraded_threshold") or 0.20),
+                          product_token=crawl.get("product_token") or "Maya-Audit")
+    result = acc9_automated_visitors(view, cfg)
+    fc = report.get("firecrawl") or {}
+    if fc.get("used") and fc.get("pages_read") and result.findings:
+        from .firecrawl.reader import note_the_challenge
+        note_the_challenge([result], int(fc["pages_read"]))
+    acc9 = to_jsonable(result)
+    for i, check in enumerate(report.get("checks") or []):
+        if check.get("check_id") == "ACC-9":
+            report["checks"][i] = {**check, **{k: acc9[k] for k in ("status", "summary", "findings", "evidence") if k in acc9}}
+            changes.append(f"ACC-9: {acc9.get('summary')} (DECISIONS 316)")
+    status = report.get("audit_status") or {}
+    direct = status.get("direct_access")
+    own = [p for p in pages if not (p.status is not None and 300 <= p.status < 400)]
+    if isinstance(direct, dict) and own:
+        by = {name: sum(1 for p in own if p.fetch_class.value == name) for name in ("ok", "blocked", "rate_limited", "error")}
+        direct.update(state="challenged" if by["blocked"] else direct.get("state"), by_response=by,
+                      note=f"Maya's direct crawler was challenged or blocked on {by['blocked']} of {len(own)} page "
+                           f"request(s) ({vendor}'s block page, answered with status 200).")
+    counts = read_counts(crawl, report.get("firecrawl"))
+    cov = status.get("content_coverage")
+    if isinstance(cov, dict):
+        cov.update(pages_read=counts["pages"], readable_unique_urls=counts["pages"], read_by=counts["read_by"],
+                   other_addresses=counts["other_addresses"])
+        if not counts["pages"]:
+            cov["level"] = "none"
+        also = also_fetched(counts["other_addresses"])
+        cov["note"] = coverage_note(cov["level"], counts["pages"]) + (" " + also if also else "")
+        if direct and status.get("vendor_crawler_evidence"):
+            status["summary"] = read_status_summary(status, counts)
+    summary = report.get("problem_summary")
+    if isinstance(summary, dict):
+        summary["pages_checked"] = counts["pages"]
+
+
 def _order(report: dict) -> list[str]:
     from .findings import Severity, priority_key
     from .models import Confidence
@@ -315,6 +504,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_304(r, aff, changes, quick_unassessed)
     _decisions_309(r, changes, saved_texts or [])
     _decisions_315(r, changes)
+    _decisions_316(r, aff, changes)
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -330,7 +520,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304 and 309, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315 and 316, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,

@@ -99,7 +99,9 @@ def save_evidence(result: CrawlResult, cfg: CrawlConfig, folder: str | Path, mod
             continue
         name = f"{number:03d}-{_slug(page.url)}.json"
         (folder / name).write_bytes(body)
-        index["pages"].append({"file": name, "url": page.url, "status": page.status, "bytes": len(body)})
+        index["pages"].append({"file": name, "url": page.url, "status": page.status, "bytes": len(body),
+                               # DECISIONS 316: a block page answers 200 too; the history list counts only readable ones
+                               "fetch_class": getattr(getattr(page, "fetch_class", None), "value", None)})
         index["total_bytes"] += len(body)
     (folder / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
     return index

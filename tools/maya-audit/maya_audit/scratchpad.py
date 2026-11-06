@@ -72,7 +72,10 @@ CREATE TABLE IF NOT EXISTS frontier (
     seq         INTEGER NOT NULL,
     session_no  INTEGER,
     updated_at  TEXT,
-    section     TEXT
+    section     TEXT,
+    page_key    TEXT,
+    locale      TEXT,
+    boost       INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS frontier_next_idx ON frontier (status, priority, seq);
 
@@ -104,6 +107,10 @@ CREATE TABLE IF NOT EXISTS skipped (url TEXT PRIMARY KEY, n INTEGER NOT NULL, re
 
 -- How many URLs of each section have been fetched, so the next pick can prefer a section not sampled yet.
 CREATE TABLE IF NOT EXISTS section_fetches (section TEXT PRIMARY KEY, n INTEGER NOT NULL);
+
+-- DECISIONS 316: how many versions of each page (its address without the locale folder) have been fetched, so a
+-- capped crawl reads one version of a page before a second, and a third only when nothing else is waiting.
+CREATE TABLE IF NOT EXISTS page_copies (page_key TEXT PRIMARY KEY, n INTEGER NOT NULL);
 """
 
 
@@ -150,9 +157,12 @@ class Scratchpad:
         self._db.row_factory = sqlite3.Row
         self._db.execute("PRAGMA journal_mode=WAL" if path != MEMORY else "PRAGMA journal_mode=MEMORY")
         self._db.execute("PRAGMA synchronous=NORMAL")
-        if self._db.execute("SELECT 1 FROM sqlite_master WHERE name = 'frontier'").fetchone() and "section" not in {
-                row["name"] for row in self._db.execute("PRAGMA table_info(frontier)")}:
-            self._db.execute("ALTER TABLE frontier ADD COLUMN section TEXT")  # a frontier from before sections
+        if self._db.execute("SELECT 1 FROM sqlite_master WHERE name = 'frontier'").fetchone():
+            columns = {row["name"] for row in self._db.execute("PRAGMA table_info(frontier)")}
+            for name, kind in (("section", "TEXT"), ("page_key", "TEXT"), ("locale", "TEXT"),
+                               ("boost", "INTEGER NOT NULL DEFAULT 0")):
+                if name not in columns:  # a frontier from before sections (or before DECISIONS 316)
+                    self._db.execute(f"ALTER TABLE frontier ADD COLUMN {name} {kind}")
         self._db.executescript(SCHEMA)
         existing = self._db.execute("SELECT COUNT(*) AS n FROM sessions").fetchone()["n"]
         if existing and not resume:
@@ -171,6 +181,44 @@ class Scratchpad:
             self._db.execute("INSERT INTO sessions (session_no, started_at) VALUES (?, ?)",
                              (self.session_no, utc_now()))
         self._seq = self._db.execute("SELECT COALESCE(MAX(seq), 0) AS s FROM frontier").fetchone()["s"]
+        # DECISIONS 316: the site's locale folders, its main version and the business type's key page types.
+        saved = self.get_meta("locales") or {}
+        self.locale_folders: frozenset[str] = frozenset(saved.get("folders") or [])
+        self.main_locale: str | None = saved.get("main")
+        self._boost = None
+
+    def set_locales(self, folders, main: str | None, boost=None) -> None:
+        """The site's locale folders (`locales.detect`), its main version ("" for the root) and a test for the business
+        type's key page types; set before the URLs are queued. URLs already waiting are keyed again."""
+        self.locale_folders = frozenset(folders or ())
+        self.main_locale = main
+        self._boost = boost
+        self.set_meta("locales", {"folders": sorted(self.locale_folders), "main": main})
+        rows = [(*self._keys(r["url"]), r["url"]) for r in self._db.execute("SELECT url FROM frontier WHERE status = ?", (QUEUED,))]
+        if rows:
+            with self._transaction():
+                self._db.executemany("UPDATE frontier SET section = ?, page_key = ?, locale = ?, boost = ? WHERE url = ?", rows)
+
+    def set_main_locale(self, main: str | None) -> None:
+        """The version the homepage landed on: its pages go first among copies of the same page."""
+        if main != self.main_locale:
+            self.main_locale = main
+            self.set_meta("locales", {"folders": sorted(self.locale_folders), "main": main})
+
+    def _keys(self, url: str) -> tuple[str, str, str, int]:
+        """(section, page key, locale folder, boost) of one URL."""
+        from .locales import locale_of, page_key, section_url
+        folders = self.locale_folders
+        from .locales import HOME_KEY
+        key = page_key(url, folders)
+        boost = 1 if key == HOME_KEY else 0  # the homepage is a key page of every business type
+        if self._boost is not None and not boost:
+            try:
+                boost = 1 if self._boost(url) else 0
+            except Exception:  # noqa: BLE001  a hint only
+                boost = 0
+        return (section_key(section_url(url, folders)) if folders else section_key(url),
+                key, locale_of(url, folders), boost)
 
     def bind(self, binding: dict) -> None:
         """Refuse mixed-target/settings evidence before creating a resume session."""
@@ -202,14 +250,14 @@ class Scratchpad:
             if item.via in ("link", "rendered_link", "sitemap") and is_pagination(item.url):
                 priority = PAGINATION_PRIORITY
             rows.append((item.url, QUEUED, item.depth, item.parent_url, item.via, priority, seq, utc_now(),
-                         section_key(item.url)))
+                         *self._keys(item.url)))
         if not rows:
             return 0
         with self._transaction():
             before = self._db.total_changes
             self._db.executemany(
-                "INSERT INTO frontier (url, status, depth, parent_url, via, priority, seq, updated_at, section) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "INSERT INTO frontier (url, status, depth, parent_url, via, priority, seq, updated_at, section, page_key, "
+                "locale, boost) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(url) DO UPDATE SET depth=excluded.depth, parent_url=excluded.parent_url, "
                 "via=CASE WHEN excluded.via='alternate' THEN frontier.via ELSE excluded.via END, "
                 "priority=excluded.priority, updated_at=excluded.updated_at, "
@@ -229,11 +277,25 @@ class Scratchpad:
             # Redirect targets, the start URL and key pages go strictly in priority order. After them come
             # navigation links, then the rest; inside each of those two groups a section with fewer pages
             # fetched so far goes first, so a capped crawl samples the site instead of one long list.
+            # DECISIONS 316: a page already read in COPIES versions (other country/language folders) waits until
+            # nothing else does (the start URL, key pages and redirect targets excepted); among the rest a page not read
+            # in any version goes before a second version; within a section round the business type's key page types
+            # and then the main version go first.
+            from .locales import COPIES, HOME_COPIES, HOME_KEY
             row = self._db.execute(
                 "SELECT f.url, f.depth, f.via, f.parent_url, f.priority FROM frontier f "
-                "LEFT JOIN section_fetches s ON s.section = f.section WHERE f.status = ? "
-                "ORDER BY f.priority >= ?, MIN(f.priority, ?), CASE WHEN f.priority < ? THEN 0 ELSE COALESCE(s.n, 0) END, "
-                "f.priority, f.seq LIMIT 1", (QUEUED, PAGINATION_PRIORITY, PRIORITY["link"], NAV_PRIORITY)).fetchone()
+                "LEFT JOIN section_fetches s ON s.section = f.section "
+                "LEFT JOIN page_copies c ON c.page_key = f.page_key WHERE f.status = ? "
+                "ORDER BY f.priority >= ?, "
+                "CASE WHEN f.via IN ('start', 'key_page', 'redirect') THEN 0 "
+                "WHEN COALESCE(c.n, 0) >= (CASE WHEN f.page_key = ? THEN ? ELSE ? END) THEN 1 ELSE 0 END, "
+                "MIN(f.priority, ?), CASE WHEN f.priority < ? OR f.page_key IS ? THEN 0 ELSE MIN(COALESCE(c.n, 0), 1) END, "
+                "CASE WHEN f.priority < ? THEN 0 ELSE COALESCE(s.n, 0) END, "
+                "CASE WHEN f.priority < ? THEN 0 ELSE 1 - COALESCE(f.boost, 0) END, "
+                "CASE WHEN f.locale IS ? THEN 0 ELSE 1 END, f.priority, f.seq LIMIT 1",
+                (QUEUED, PAGINATION_PRIORITY, HOME_KEY if self.locale_folders else None, HOME_COPIES, COPIES, PRIORITY["link"],
+                 NAV_PRIORITY, HOME_KEY if self.locale_folders else None, NAV_PRIORITY, NAV_PRIORITY,
+                 self.main_locale if self.locale_folders else None)).fetchone()
             if row is None:
                 return None
             self._db.execute("UPDATE frontier SET session_no = ?, updated_at = ? WHERE url = ?",
@@ -244,13 +306,16 @@ class Scratchpad:
         if status not in TERMINAL and status != QUEUED:
             raise ValueError(f"unknown frontier status {status!r}")
         with self._transaction():
-            before = self._db.execute("SELECT status, section FROM frontier WHERE url = ?", (url,)).fetchone()
+            before = self._db.execute("SELECT status, section, page_key FROM frontier WHERE url = ?", (url,)).fetchone()
             self._db.execute("UPDATE frontier SET status = ?, session_no = ?, updated_at = ? WHERE url = ?",
                              (status, self.session_no, utc_now(), url))
             # A URL that was actually requested counts towards its section; one skipped for robots.txt does not.
             if before is not None and before["status"] == QUEUED and status not in (QUEUED, SKIPPED):
                 self._db.execute("INSERT INTO section_fetches (section, n) VALUES (?, 1) "
                                  "ON CONFLICT(section) DO UPDATE SET n = n + 1", (before["section"] or "",))
+                if before["page_key"] is not None:
+                    self._db.execute("INSERT INTO page_copies (page_key, n) VALUES (?, 1) "
+                                     "ON CONFLICT(page_key) DO UPDATE SET n = n + 1", (before["page_key"],))
 
     def counts(self) -> dict[str, int]:
         return {r["status"]: r["n"] for r in

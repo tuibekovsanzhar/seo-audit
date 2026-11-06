@@ -600,7 +600,7 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         "cards": cards, "confirm": confirm, "notes": notes, "own_limits": limits, "appendix_only": appendix_only,
         "rejected": [g for g in rows if g["placement"] == "rejected"],
         "groups": rows, "by_finding": by_finding,
-        "key_pages": key_pages(report, rows, importance),
+        "key_pages": key_pages(report, rows, importance) or reader_key_pages(report, rows, summary.get("business_type")),
         "key_pages_reason": None if importance else key_pages_reason(report),
         # DECISIONS 311: the business type, and its first page types no page read was typed as ("not found among the
         # pages read", never "missing on the site"); none on a low-coverage audit.
@@ -862,6 +862,41 @@ def importance_unknown(g: dict, cards: list[dict]) -> dict | None:
             if rule.startswith(prefix):
                 return {"reason": reason, "card": card["card"]}
     return None
+
+
+def reader_key_pages(report: dict, rows: list[dict], business: dict | None, limit: int = KEY_PAGES) -> list[dict]:
+    """DECISIONS 316: when no page read could be scored because the pages were read only through the page reader (its
+    copies keep no links, and importance needs them), the pages it read: the homepage first, then by the business
+    type's page-type rank, then in reading order; importance "not computed (read only through the page reader)"."""
+    fc = report.get("firecrawl") or {}
+    read = [r.get("url") for r in fc.get("pages") or [] if isinstance(r, dict) and r.get("outcome") == "read"] if fc.get("used") else []
+    read = [u for u in dict.fromkeys(read) if isinstance(u, str)]
+    if not read:
+        return []
+    from . import business_types as bt
+    crawl = report.get("crawl") or {}
+    folders = tuple(((crawl.get("locales") or {}).get("folders")) or ())
+    pid = (business or {}).get("id") or bt.DEFAULT
+    prof = bt.profile(pid)
+    ranks = {t["id"]: t.get("rank") or 99 for t in prof["page_types"]}
+    out = []
+    for i, url in enumerate(read):
+        segs = [s for s in urlsplit(url).path.split("/") if s]
+        home = not segs or (len(segs) == 1 and (segs[0].lower() in folders or language_of(url, None)))
+        kind = "home" if home else bt.classify(prof, bt.page_facts(url, None, folders=folders))[0] if pid != bt.DEFAULT else "other"
+        out.append((0 if home else ranks.get(kind, 99), i, url, kind))
+    out.sort()
+    rows_out = []
+    for n, (_, _, url, kind) in enumerate(out[:limit], 1):
+        cards = [x for x in rows if x.get("placement") == "card" and url in x["urls"]]
+        confirm = [x for x in rows if x.get("placement") == "confirm" and url in x["urls"]]
+        rows_out.append({"importance_unknown": {"reason": "reader_only", "card": None}, "url": url,
+                         "page_type": "home" if kind == "home" else None,
+                         "business_page_type": kind if pid != bt.DEFAULT else None, "importance_source": "reader",
+                         "importance": None, "rank": n, "importance_rank": None, "main_homepage": kind == "home" and n == 1,
+                         "languages": [], "cards": sorted({x["card"] for x in cards}),
+                         "worst": max((x["severity"] for x in cards), key=_weight, default=None), "confirm": len(confirm)})
+    return rows_out
 
 
 def key_pages_reason(report: dict) -> str:

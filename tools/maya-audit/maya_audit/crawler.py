@@ -403,6 +403,7 @@ class Crawler:
     def _crawl(self, fetcher: Fetcher, start: str, started_at: str, t0: float) -> CrawlResult:
         cfg = self.config
         self._t0 = t0
+        self._locale_info = None
         self._sitemap_notes: list[str] = []
         token = cfg.product_token
         origin = origin_of(start)
@@ -439,6 +440,8 @@ class Crawler:
         # The frontier lives in SQLite (see scratchpad.py). `INSERT OR IGNORE` on the URL primary key
         # is the seen-set, so a URL already crawled can never be re-queued by a later link to it.
         frontier.set_meta("origin", origin)
+        if not cfg.single_page:
+            self._locales(frontier, start, sitemap_urls)
         frontier.add_urls([FrontierUrl(start, 0, "start", None)])
         # Key pages are fetched because the owner marked them, not because the crawl happened to reach
         # them. Without this, a key page outside the first `max_pages` links is never audited at all: the
@@ -672,6 +675,10 @@ class Crawler:
                     frontier.add_urls([FrontierUrl(target, depth, "redirect", url)])
                 continue
 
+            if start_chain and frontier.locale_folders:
+                # DECISIONS 316: the version the homepage landed on (/global-en) is the main one among copies of a page.
+                from .locales import locale_of
+                frontier.set_main_locale(locale_of(url, frontier.locale_folders))
             start_chain = False
             if classification.fetch_class == FetchClass.OK and response.status and 200 <= response.status < 300 and (is_html(content_type) or empty):
                 text = decode_body(response.body, content_type)
@@ -764,6 +771,9 @@ class Crawler:
             backoff={"configured_delay_s": cfg.request_delay_s, "final_delay_s": fetcher.delay_s,
                      "widenings": list(fetcher.delay_widenings), "notes": rate_limit_notes,
                      "total_cooldown_s": round(total_cooldown_s, 1), **pacing_record(fetcher, cfg)},
+            # DECISIONS 316: known from the start for the page reader that reads right after the crawl; worked out again
+            # with the pages' hreflang links when the audit settles (`final.locale_record`).
+            locales=({**self._locale_info, "main": frontier.main_locale} if getattr(self, "_locale_info", None) else None),
         )
 
     def _announce_rate_limit(self, fetcher, url, response, start, origin, started_at, token, policies, pages, skipped,
@@ -787,6 +797,22 @@ class Crawler:
             started = False
             self.rate_limited_at["error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
         self.rate_limited_at["reader_started"] = bool(started)
+
+    def _locales(self, frontier, start: str, sitemap_urls: list[str]) -> None:
+        """DECISIONS 316: the site's country/language folders from the addresses known before the first page (the
+        sitemap, the start address and key pages), and the business type's key page types, so the crawl reads one
+        version of each page first. A resumed crawl keeps the main version its first session found."""
+        from .business_types import key_type_test
+        from .locales import detect
+        known = [start, *sorted(self._key_urls), *sitemap_urls]
+        info = detect(known, start_url=start)
+        self._locale_info = info
+        main = frontier.main_locale if frontier.resumed and frontier.locale_folders else info["main"]
+        try:
+            boost = key_type_test(self.config.business_type, sitemap_urls, info["folders"])
+        except Exception:  # noqa: BLE001  a hint only: the crawl goes on in its usual order
+            boost = None
+        frontier.set_locales(info["folders"], main, boost)
 
     def _discover_sitemaps(
         self, fetcher: Fetcher, policy: RobotsPolicy, origin: str, skipped: list[SkippedUrl]

@@ -125,6 +125,17 @@ def _saved_texts(folder: Path) -> list[str]:
     return out
 
 
+def read_of(report: dict) -> dict | None:
+    """DECISIONS 316: the pages read as the summary, the PDF and the history list count them (`content_coverage`), kept
+    in the small meta file so the history list can say the same number without reading report.json."""
+    cov = (report.get("audit_status") or {}).get("content_coverage") or {}
+    by = cov.get("read_by") or {}
+    if not isinstance(cov.get("pages_read"), int):
+        return None
+    return {"pages_read": cov["pages_read"], "maya": int(by.get("maya_only") or 0) + int(by.get("both") or 0),
+            "firecrawl": int(by.get("firecrawl") or 0)}
+
+
 def _write(path: Path, value) -> None:
     tmp = path.with_name(path.name + ".part")
     tmp.write_text(json.dumps(value, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -167,7 +178,7 @@ def current(source: Path, affected_path: Path | None = None, *, folder: Path | N
             new, changes = saved_data(report, affected, texts)
             if not changes:
                 folder.mkdir(parents=True, exist_ok=True)
-                _write(meta_path, {"key": key, "reassessed": False, "engine": eng})
+                _write(meta_path, {"key": key, "reassessed": False, "engine": eng, "read": read_of(new)})
                 return Current(source, affected_path, source, False, eng)
             record = {"kind": "saved-data additions", "rules": "DECISIONS 309", "source_audit_id": audit_id,
                       "processed_at": datetime.now(timezone.utc).isoformat(), "requests": 0, "changes": changes,
@@ -192,7 +203,7 @@ def current(source: Path, affected_path: Path | None = None, *, folder: Path | N
             _write(folder / "affected-urls.json", aff)
         elif (folder / "affected-urls.json").exists():
             (folder / "affected-urls.json").unlink()
-        _write(meta_path, {"key": key, "reassessed": True, "engine": eng, "changes": record["changes"],
+        _write(meta_path, {"key": key, "reassessed": True, "engine": eng, "changes": record["changes"], "read": read_of(new),
                            "made_at": datetime.now(timezone.utc).isoformat()})
         return Current(folder / "report.json", folder / "affected-urls.json" if affected is not None else None, source,
                        True, eng, list(record["changes"]))

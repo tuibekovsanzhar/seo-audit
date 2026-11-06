@@ -1205,10 +1205,28 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
     # row per page saved), never from report.json (it can be hundreds of MB); kept while the indexes are unchanged.
     reading_cache: dict[str, tuple[tuple, dict[str, Any]]] = {}
 
+    def _derived_reading(folder: Path) -> dict[str, Any] | None:
+        """The pages-read count the current-engine copy recorded (`team_report.current.read_of`), when that copy was
+        made from this audit's report.json as it is now; else None."""
+        meta_path = folder.parent / "current-engine" / "meta.json"
+        report_file = folder / "report.json"
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.is_file() else None
+            st = report_file.stat()
+        except (OSError, ValueError):
+            return None
+        if not isinstance(meta, dict) or not isinstance(meta.get("read"), dict):
+            return None
+        if (meta.get("key") or {}).get("report") != [st.st_size, st.st_mtime_ns]:
+            return None
+        return meta["read"]
+
     def reading_of(audit: dict[str, Any]) -> dict[str, Any]:
         folder = runner.artifacts(audit["id"])
         indexes = [folder / "evidence" / "index.json", folder / "evidence-firecrawl" / "index.json"]
-        key = tuple((st.st_size, st.st_mtime_ns) if (st := (i.stat() if i.is_file() else None)) else None for i in indexes)
+        derived_meta = folder.parent / "current-engine" / "meta.json"
+        key = tuple((st.st_size, st.st_mtime_ns) if (st := (i.stat() if i.is_file() else None)) else None
+                    for i in [*indexes, derived_meta])
         hit = reading_cache.get(audit["id"])
         if hit and hit[0] == key:
             return hit[1]
@@ -1219,9 +1237,13 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             except (OSError, ValueError, AttributeError):
                 pages = []
             read.append({p["url"] for p in pages if isinstance(p, dict) and isinstance(p.get("url"), str)
-                         and isinstance(p.get("status"), int) and 200 <= p["status"] < 300})
+                         and isinstance(p.get("status"), int) and 200 <= p["status"] < 300
+                         and p.get("fetch_class") in (None, "ok")})  # DECISIONS 316: not a block page
         maya, reader = read
-        if key == (None, None):  # no evidence saved: the progress counters (Maya's include refused requests)
+        derived = _derived_reading(folder)
+        if derived is not None:  # DECISIONS 316: the count the summary and the PDF print (the current-engine copy)
+            maya_n, reader_n, total = derived["maya"], derived["firecrawl"], derived["pages_read"]
+        elif key[:2] == (None, None):  # no evidence saved: the progress counters (Maya's include refused requests)
             progress = audit.get("progress") or {}
             maya_n, reader_n = int(progress.get("pages_checked") or 0), int((progress.get("firecrawl") or {}).get("read") or 0)
             total = max(maya_n, reader_n)
@@ -1231,7 +1253,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         out = {"pages_read": total, "read_by_maya": maya_n, "read_by_firecrawl": reader_n, "path": path,
                "path_label": t(f"history.path.{path}") if path else t("history.path.none"),
                "mode_label": t(f"plan.mode.{audit['mode']}") if audit.get("mode") in MODES else audit.get("mode")}
-        if key != (None, None):  # a running audit's counters move: read again next time
+        if key[:2] != (None, None):  # a running audit's counters move: read again next time
             reading_cache[audit["id"]] = (key, out)
         return out
 
@@ -1931,14 +1953,20 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         notes = [todo for todo in data["todos"] if todo["severity"] not in ("S1", "S2", "S3", "S4")]
         waiting = len(data.get("confirm") or []) + int(data.get("confirm_more") or 0)
         kpis = [{"label": k["label"], "value": k["value"], "of": k.get("of"), "sub": k["sub"]} for k in data["kpis"][:3]]
-        kpis.append({"label": t("overview.waiting"), "value": str(waiting), "of": None, "sub": t("overview.waiting.sub")})
+        split = data.get("confirm_split") or {}
+        # DECISIONS 316: the issues in it are among the recorded issues; the notes are not counted there.
+        sub = (strings_module.t("overview.waiting.split", lang, problems=int(split.get("problems") or 0),
+                                notes=int(split.get("notes") or 0)) if waiting else strings_module.t("overview.waiting.sub", lang))
+        kpis.append({"label": strings_module.t("overview.waiting", lang), "value": str(waiting), "of": None, "sub": sub})
         out = {"available": True, "lang": lang, "headline": data["assessment"]["headline"], "text": data["assessment"]["text"],
                "kpis": kpis, "low_coverage": (data.get("low_coverage") or {}).get("text"),
+               "locales": data.get("locales_line"),  # DECISIONS 316
                "fixes": [{"n": todo["n"], "title": todo["title"], "why": todo.get("why"), "scope": todo.get("scope"),
                           "severity": todo["severity"], "severity_label": todo["severity_label"], "owner": todo["owner"],
                           # Stage 8a (DECISIONS 315): Sorun / Kontrol edin / Fırsat, and the template or chain line.
                           "issue_type": todo.get("issue_type") or "issue", "issue_type_label": todo.get("issue_type_label"),
                           "template_line": todo.get("template_line"), "chain_line": todo.get("chain_line"),
+                          "sitemap_line": todo.get("sitemap_line"),  # DECISIONS 316
                           "effort": todo["effort"], "finding_ids": todo["finding_ids"], "note": (todo.get("sub") or [None])[0]
                           if str((todo.get("sub") or [""])[0]).startswith(("Elle kontrol", "Manual check")) else None}
                          for todo in problems],

@@ -48,7 +48,9 @@ def lg_ids(c):
     return [x for x in ((c.get("maya") or {}).get("launch_gated") or []) if re.match(r"^LG-\d+$", str(x))]
 
 
-MALISINIZ = re.compile(r"m[ae]l[ıi]s[ıi]n[ıi]z", re.I)  # müşteriye hitap: "…yapmalısınız / …etmelisiniz"
+# müşteriye hitap: "…yapmalısınız / …etmelisiniz", or (DECISIONS 316: one Turkish instruction form across the reports)
+# the polite imperative "…doğrulayın / …kaldırmayın" the engine's fix translations now use.
+MALISINIZ = re.compile(r"m[ae]l[ıi]s[ıi]n[ıi]z|\w{2,}(?<!iç)(?:y?[ıiuü]n)(?=[\s.;,:!)]|$)", re.I)
 
 
 ENGLISH = re.compile(r"\b(the|of|and|page\(s\)|pages|was|were|not assessed|could not|requires|none|missing|returns?)\b", re.I)
@@ -124,9 +126,9 @@ def _validate(d, fix=False):
             hitap = list(enumerate(c.get("steps") or [])) if strict else list(enumerate((c.get("steps") or [])[:1]))
             for i, st in hitap:
                 if st and not MALISINIZ.search(st):
-                    errs.append(f"{p}.steps[{i}]: '-malısınız / -melisiniz' biçiminde yazılmalı: {st[:60]}")
+                    errs.append(f"{p}.steps[{i}]: '-ın / -malısınız' biçiminde yazılmalı: {st[:60]}")
             if strict and c.get("verify") and not MALISINIZ.search(c["verify"]):
-                errs.append(f"{p}.verify: '-malısınız / -melisiniz' biçiminde yazılmalı: {c['verify'][:60]}")
+                errs.append(f"{p}.verify: '-ın / -malısınız' biçiminde yazılmalı: {c['verify'][:60]}")
             if strict:
                 if lg_ids(c) and not fully_verified(c):
                     errs.append(f"{p}: doğrulanmamış kontrol ana bölümde; canlıda doğrulayın ya da --fix ile eke taşıyın")

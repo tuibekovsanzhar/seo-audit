@@ -247,6 +247,9 @@ class CrawlResult:
     # Every requested address that redirected (Stage 8a, DECISIONS 315, schema 1.26): {url, hops [{url, status,
     # target}], final, final_status, loop}. None in a report saved before it.
     redirects: list[dict[str, Any]] | None = None
+    # The site's country/language folders (DECISIONS 316, schema 1.27): {folders, main, versions, root_is_version,
+    # basis}. None in a report saved before it.
+    locales: dict[str, Any] | None = None
     _sitemap_named_in: dict[str, str] = field(default_factory=dict, repr=False)
     # In memory only: the sitemap file that listed each sitemap URL, for the sitemap check's sample (DECISIONS 294).
     _sitemap_file_of: dict[str, str] = field(default_factory=dict, repr=False)

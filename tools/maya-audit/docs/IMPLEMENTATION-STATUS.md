@@ -1324,6 +1324,35 @@ XLSX sheet, card line). Research file: `docs/research/screaming-frog-research-fo
 | ruff E9/F821/F841, `python3.11 -m compileall`, `node --check` | clean / OK |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 
+## Fixes from the airastana.com audit (DECISIONS 316, 2026-11-06)
+
+What changed: Imperva's 200 block page is recognised (live and in saved data); one page limit for Maya's crawler and the
+page reader together; country/language folders found (`crawl.locales`, schema 1.27) and one version of each page read
+first; "Havayolu" split from "Seyahat / rezervasyon" (now "Tur / otel"); the same four summary tiles and a plain sitemap
+line on its card; "Teyit edin" explained and freed of meaningless "seen only in Firecrawl's copy" marks; "the" in English
+headlines, "öncelik:" in Turkish ones; one Turkish instruction form (imperative).
+
+**Before / after, offline on copies of the saved audits** (current-engine copies made in a scratch folder):
+
+| | airastana d12146fb | moodist c581ff0a | nihan b3198942 |
+|---|---|---|---|
+| Tiles | 10 · 61 · sitemap 149/149 · lab not measured -> 6 · 13 · Medium+ pages 1/13 · not measured | unchanged (20 · 50 · 7/50 · —) | unchanged (32 · 500 · 49/500 · —) |
+| Suggested type | Seyahat / rezervasyon ('tur' from /tur-en/) -> Havayolu | Sağlık (58 -> 54 addresses) | E-ticaret (22,114 -> 12,220 addresses) |
+| Top cards | 01 noindex in sitemap (block pages), 02 TLS, 03 slow pages -> 01 TLS, 02 heading levels, 03 JSON-LD | unchanged | unchanged |
+| Key pages | 10 block pages, importance 20 -> Firecrawl's pages typed (routes, flight search, check-in …), importance not computed | unchanged | unchanged |
+| Teyit edin | 17 -> 3 | 13 | 9 |
+| Versions line | — -> "20 versions; at most 2 of a page" | "4 versions; one per page (homepage in 4)" | "2 versions; at most 2 (homepage in 2)" |
+| PDF | 6 pages TR and EN, nothing cut | 8 pages TR and EN | 9 pages TR; EN blocked by card 02's title box, as at HEAD |
+
+| Command | Result |
+|---|---|
+| fast suite (first run) | `18 failed`: pinned wording/headlines, business-type list and groups, schema file name, the deprecated client brief's "-malısınız" check, two crawl-order and one grouping expectation, the demo shop's homepage in Turkish read late (fixed: homepage versions exempt), a request-allowance reason (fixed); all fixed |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `1 failed, 2772 passed, 4 skipped, 134 deselected` (LG-103 not registered; fixed, its test file `8 passed`) |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `2907 passed, 4 skipped, 1 warning in 926.62s (0:15:26)` |
+| ruff E9/F821/F841, `python3.11 -m compileall`, `node --check` | clean / OK |
+| CLI, provider-free, loopback fake site with 5 locale folders, `--max-pages 10 --no-firecrawl` | schema 1.27, no Firecrawl section, no provider ledger; 6 pages of /global-en/ before any second version |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+
 ## Next step
 
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).

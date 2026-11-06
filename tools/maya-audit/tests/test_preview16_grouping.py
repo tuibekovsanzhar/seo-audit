@@ -76,7 +76,10 @@ def test_empty_pages_in_the_sitemap_and_llms_txt_are_said_once_under_idx1_with_t
             assert ok and "IDX-1'de bildirilen 12 boş veya hatalı sayfa bunlara dahil değil" in turkish
         finally:
             strings.set_language("en")
-    assert section_counts == {"/semt/": 6, "/sube/": 6}
+    # DECISIONS 316: the crawl reads the business type's key pages first (/sube/1 here), so how the twelve split between a
+    # group with sections and a single page varies; every one of them is counted once, by section where listed.
+    singles = sum(e.scope["count"] for e in empties if not e.evidence.get("by_section"))
+    assert set(section_counts) == {"/semt/", "/sube/"} and sum(section_counts.values()) + singles == 12
     findings = [f for c in outcome.checks if not c.check_id.startswith("ANS") for f in c.findings]
     rows = problem_summary(to_jsonable(findings), {f.id: f.scope["_all_urls"] for f in findings}, pages_checked=3)
     # Each strength group is represented, never duplicated by IDX-5 or ACC-8.

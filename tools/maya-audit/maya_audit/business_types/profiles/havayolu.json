@@ -1,0 +1,329 @@
+{
+ "id": "havayolu",
+ "order": 12,
+ "group": "seyahat",
+ "label": {
+  "tr": "Havayolu",
+  "en": "Airline"
+ },
+ "source": "owner, 2026-11-06 (airastana.com audit): \"Seyahat / rezervasyon\" split into Havayolu and Tur / otel (DECISIONS 316)",
+ "suggest": {
+  "schema": [
+   "Airline",
+   "Flight",
+   "FlightReservation",
+   "Airport"
+  ],
+  "platforms": [],
+  "url": [
+   "flights",
+   "flight",
+   "ucus",
+   "ucuslar",
+   "ucak-bileti",
+   "baggage",
+   "bagaj",
+   "check-in",
+   "checkin",
+   "online-check-in",
+   "flight-status",
+   "ucus-durumu",
+   "timetable",
+   "boarding",
+   "fleet",
+   "airports",
+   "havalimani",
+   "fare-rules",
+   "mmb",
+   "manage-booking",
+   "seat-maps"
+  ],
+  "words": [
+   "uçuş",
+   "uçak bileti",
+   "bagaj",
+   "check-in",
+   "online check-in",
+   "uçuş durumu",
+   "flight status",
+   "baggage",
+   "manage booking",
+   "book a flight"
+  ],
+  "routes": true
+ },
+ "page_types": [
+  {
+   "id": "routes",
+   "label": {
+    "tr": "Destinasyonlar ve uçuş rotaları",
+    "en": "Destinations and routes"
+   },
+   "citable": false,
+   "generic": [
+    "category"
+   ],
+   "signals": {
+    "url": [
+     "destinations",
+     "destinasyonlar",
+     "routes",
+     "rotalar",
+     "route-map",
+     "flights-to",
+     "flights-from",
+     "ucus-noktalari",
+     "where-we-fly",
+     "booking-form/*",
+     "ucak-bileti/*"
+    ],
+    "schema": [
+     "TouristDestination",
+     "ItemList"
+    ],
+    "words": [
+     "destinasyonlar",
+     "uçuş noktaları",
+     "destinations",
+     "where we fly",
+     "route map",
+     "flights to"
+    ],
+    "content": [
+     "list"
+    ]
+   }
+  },
+  {
+   "id": "flight_search",
+   "label": {
+    "tr": "Uçuş arama ve uçuş takvimi",
+    "en": "Flight search and schedule"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "flight-status",
+     "ucus-durumu",
+     "timetable",
+     "flight-schedule",
+     "ucus-takvimi",
+     "book-a-flight",
+     "multi-stop-booking",
+     "ucus-ara",
+     "flight-search"
+    ],
+    "schema": [
+     "Flight"
+    ],
+    "words": [
+     "uçuş durumu",
+     "uçuş takvimi",
+     "flight status",
+     "timetable",
+     "flight schedule",
+     "book a flight",
+     "uçuş ara"
+    ],
+    "content": [
+     "form"
+    ]
+   }
+  },
+  {
+   "id": "fares",
+   "label": {
+    "tr": "Bilet fiyatları ve kampanyalar",
+    "en": "Fares and campaigns"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "fares",
+     "fare",
+     "offers",
+     "special-offers",
+     "deals",
+     "promo",
+     "kampanya",
+     "kampanyalar",
+     "ucuz-ucak-bileti",
+     "low-fares",
+     "business-class",
+     "economy-class"
+    ],
+    "schema": [
+     "Offer",
+     "AggregateOffer"
+    ],
+    "words": [
+     "kampanya",
+     "fırsat",
+     "fares",
+     "special offers",
+     "promo",
+     "bilet fiyatları"
+    ],
+    "content": [
+     "price"
+    ]
+   }
+  },
+  {
+   "id": "baggage",
+   "label": {
+    "tr": "Bagaj",
+    "en": "Baggage"
+   },
+   "citable": true,
+   "generic": [],
+   "signals": {
+    "url": [
+     "baggage",
+     "bagaj",
+     "luggage",
+     "carry-on",
+     "kabin-bagaji"
+    ],
+    "schema": [],
+    "words": [
+     "bagaj",
+     "baggage",
+     "luggage",
+     "kabin bagajı",
+     "bagaj hakkı",
+     "baggage allowance"
+    ],
+    "content": [
+     "table"
+    ]
+   }
+  },
+  {
+   "id": "checkin",
+   "label": {
+    "tr": "Check-in ve online işlemler",
+    "en": "Check-in and online services"
+   },
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "check-in",
+     "checkin",
+     "online-check-in",
+     "mmb",
+     "manage-booking",
+     "manage-my-booking",
+     "booking-manage",
+     "rezervasyonum",
+     "seat-selection",
+     "koltuk-secimi"
+    ],
+    "schema": [],
+    "words": [
+     "check-in",
+     "online check-in",
+     "rezervasyonumu yönet",
+     "manage booking",
+     "koltuk seçimi",
+     "seat selection"
+    ],
+    "content": [
+     "form"
+    ]
+   }
+  },
+  {
+   "id": "terms_help",
+   "label": {
+    "tr": "Rezervasyon yardımı ve koşullar",
+    "en": "Booking help and terms"
+   },
+   "citable": true,
+   "generic": [
+    "policy"
+   ],
+   "signals": {
+    "url": [
+     "help",
+     "faq",
+     "sss",
+     "yardim",
+     "refund",
+     "iade",
+     "conditions-of-carriage",
+     "general-conditions",
+     "fare-rules",
+     "tasima-kosullari",
+     "customer-service"
+    ],
+    "schema": [
+     "FAQPage"
+    ],
+    "words": [
+     "yardım",
+     "sss",
+     "iade",
+     "taşıma koşulları",
+     "conditions of carriage",
+     "refund",
+     "faq"
+    ],
+    "content": [
+     "faq"
+    ]
+   }
+  },
+  {
+   "id": "home",
+   "label": {
+    "tr": "Ana sayfa",
+    "en": "Homepage"
+   },
+   "generic": [
+    "home"
+   ],
+   "added": "Stage 4: the homepage is at least 85 in every sector (owner); not in the sector list"
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Rehber / SSS / blog",
+    "en": "Guide / FAQ / blog"
+   },
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "rehber",
+     "travel-guide",
+     "guide",
+     "haberler",
+     "news",
+     "inspiration"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting",
+     "NewsArticle"
+    ],
+    "words": [
+     "blog",
+     "rehber",
+     "haberler",
+     "news",
+     "travel guide"
+    ],
+    "content": []
+   },
+   "added": "Stage 4: low-priority citable type added where the sector list has none (owner)",
+   "weight": 30
+  }
+ ]
+}

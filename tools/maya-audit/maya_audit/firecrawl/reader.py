@@ -547,7 +547,8 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
         return None
     # The homepage, the pages the person marked, what Maya's crawler found, then what the pages read lead to: taken in
     # the crawler's own order (key pages, navigation, the least-read section first) rather than first come, first served.
-    queue = ReadingQueue(spread=options.spread_by_section)
+    locales = getattr(result, "locales", None) or {}
+    queue = ReadingQueue(spread=options.spread_by_section, folders=locales.get("folders") or (), main=locales.get("main"))
     queue.add(home, "start", 0)
     for url in ([] if cfg.single_page else key_page_urls(result, cfg)):
         queue.add(url, "key_page", 1)
@@ -565,6 +566,16 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
     seen: set[str] = set()
     pages: list[PageFetch] = []
     rows = info.setdefault("pages", [])
+    # DECISIONS 316: one page limit for the audit. The pages Maya's own crawler read count against it; the reader may
+    # read those again (its copy is the one the content checks judge) and reads a page Maya did not read only while the
+    # two together stay within the plan's limit (airastana: 50 + 11 = 61 pages on a 50-page plan before).
+    own_read = {url for url, page in own.items() if _usable(page)}
+    budget_new = max(0, options.max_pages - len(own_read)) if own_read else None
+    over_budget: list[str] = []
+
+    def new_count() -> int:
+        return (sum(1 for p in pages if p.url not in own_read)
+                + sum(1 for item in in_flight if item[0] not in own_read))
     skipped_robots = 0
     unread = 0
     run_unreadable = 0
@@ -668,6 +679,10 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
                 continue  # a redirect or an error page in Maya's own crawl: its status is the finding, there is no content to read
             if not allowed(url):
                 skipped_robots += 1
+                continue
+            if budget_new is not None and url not in own_read and new_count() >= budget_new:
+                seen.discard(url)
+                over_budget.append(url)  # left for the page limit (DECISIONS 316): known and unread
                 continue
             return url, via, depth, False
         return None
@@ -821,6 +836,10 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
             run_unreadable = 0
             if len(pages) >= options.max_pages:
                 continue  # an answer still in flight when the cap was reached: asked for and recorded, not a page over the cap
+            if budget_new is not None and page.url not in own_read and sum(1 for p in pages if p.url not in own_read) >= budget_new:
+                # A redirect led to a page Maya did not read after the limit was reached: asked for, not counted.
+                rows[-1].update(outcome="over_page_cap", reason="the plan's page limit was reached with the pages already read")
+                continue
             pages.append(page)
             if wants_sitemap and len(pages) == 1:
                 ask_for_the_sitemap()
@@ -847,7 +866,7 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
     # and addresses asked for that gave no readable document.
     # Addresses Maya's own crawl found and did not fetch are known too, whether or not a page the reader read links to them:
     # one count of what is known and unread, not one for each reader.
-    known = list(dict.fromkeys([*queue.waiting(), *(normalize_url(u) or u for u in (result.not_fetched_urls or []))]))
+    known = list(dict.fromkeys([*over_budget, *queue.waiting(), *(normalize_url(u) or u for u in (result.not_fetched_urls or []))]))
     unseen = [u for u in known if u not in seen and _in_scope(u, origin)]
     waiting = [u for u in unseen if allowed(u) and not non_page_kind(u)]
     # Known addresses that are not counted as unread, and why: one figure for "not read", and what it leaves out.
@@ -856,13 +875,18 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
     # A page that answered with an error status (a 404, a 500) was read: that status is the site's answer, and a broken
     # link is the finding. What counts as unread is a challenge, a provider failure, an empty document, another site.
     answered = [row for row in rows if row["outcome"] == "error" and isinstance(row.get("status"), int) and row["status"] >= 400]
-    failed = [row["url"] for row in rows if row["outcome"] not in ("read", "redirected", "unsupported_resource") and row not in answered]
+    failed = [row["url"] for row in rows if row["outcome"] not in ("read", "redirected", "unsupported_resource", "over_page_cap")
+              and row not in answered]
     key = [normalize_url(u) or u for u in key_page_urls(result, cfg)]
     read_urls = {page.url for page in pages}
     for row in rows:  # why each page that was asked for is not among the pages read
         row.setdefault("cause", page_cause(row))
     stopped = info.get("stopped_because") or ""
-    why_waiting = (None if not waiting else "page_cap" if len(pages) >= options.max_pages
+    # The shared limit (DECISIONS 316) is the reason only when nothing more specific stopped the reading.
+    shared_limit = (budget_new is not None and bool(over_budget)
+                    and sum(1 for p in pages if p.url not in own_read) >= budget_new)
+    at_limit = len(pages) >= options.max_pages or (shared_limit and not info.get("stopped_because"))
+    why_waiting = (None if not waiting else "page_cap" if at_limit
                    else "time_limit" if "time limit" in stopped else "stopped_on_request" if "stopped on request" in stopped
                    else "reader_kept_failing" if "came back unreadable" in stopped
                    # The request allowance (what is paid for) ran out before the pages read reached the cap: some requests
@@ -877,7 +901,7 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
             causes[row["cause"]] = causes.get(row["cause"], 0) + 1
     info.update(pages_read=len(pages), skipped_by_robots=skipped_robots,
                 pages_blocked_for_firecrawl_too=sum(1 for row in rows if row["outcome"] == "blocked"),
-                coverage={"attempted": len(rows), "read": len(pages), "page_cap": options.max_pages, "cap_reached": len(pages) >= options.max_pages and bool(waiting),
+                coverage={"attempted": len(rows), "read": len(pages), "page_cap": options.max_pages, "cap_reached": at_limit and bool(waiting),
                           "known_urls_not_requested": len(waiting), "not_requested_because": why_waiting,
                           "requested_without_a_readable_document": len(failed), "causes": causes,
                           "sections_sampled": queue.sections_read(),

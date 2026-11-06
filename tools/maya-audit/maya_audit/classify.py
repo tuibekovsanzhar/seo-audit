@@ -44,6 +44,11 @@ SIGNATURES = (
     Signature("cloudflare_browser_verification", re.compile(r"cf-browser-verification", re.I), "script"),
     Signature("cloudflare_verifying_human", re.compile(r"verifying you are human", re.I), "script"),
     Signature("cloudflare_just_a_moment_text", re.compile(r"just a moment\.\.\.", re.I), "script"),
+    # Imperva (Incapsula)'s block page, served with status 200 and a NOINDEX robots tag (airastana.com, DECISIONS 316):
+    # "Request unsuccessful. Incapsula incident ID: ..." and an iframe of /_Incapsula_Resource. Imperva also injects
+    # /_Incapsula_Resource scripts into normal pages, so only the incident text or the resource as an iframe counts.
+    Signature("imperva_incapsula_incident", re.compile(r"Incapsula incident ID", re.I), "page"),
+    Signature("imperva_incapsula_iframe", re.compile(r"<iframe[^>]+src=[\"']?/_Incapsula_Resource", re.I), "page"),
     # Akamai's "Access Denied ... Reference #18.xxxx" page. Counts only beside a denial status.
     Signature("akamai_access_denied", re.compile(r"errors\.edgesuite\.net|Reference&#32;&#35;[0-9a-f.]+", re.I), "script"),
 )
@@ -128,7 +133,7 @@ _BLOCKER_HEADERS = (
     ("Vercel", lambda h: h.get("server", "").lower() == "vercel"),
 )
 _BLOCKER_SIGNATURES = (("cloudflare", "Cloudflare"), ("akamai", "Akamai"), ("datadome", "DataDome"),
-                       ("perimeterx", "HUMAN (PerimeterX)"), ("vercel", "Vercel"))
+                       ("perimeterx", "HUMAN (PerimeterX)"), ("vercel", "Vercel"), ("imperva", "Imperva"))
 
 
 def identify_blocker(status: int | None, headers: dict[str, str], evidence: list[str], fetch_class: str) -> dict | None:

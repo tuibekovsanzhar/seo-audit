@@ -3687,3 +3687,89 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      custom extraction (the research file's 4, 6-9).
      Tests: `tests/test_stage8a_315.py` (11, fake sites and hand-made reports); `test_normal_report_accuracy` gives its
      hand-made copies their own rule id; `test_v03_client_report` follows the new sheet; schema literals 1.25 -> 1.26.
+316. **Fixes from the airastana.com audit: one page limit, one version per page, Imperva's block page, the airline type,
+     four tiles, "Teyit edin" explained, headline and Turkish forms (Owner, 2026-11-06, audit d12146fb, Quick 50; tested
+     offline on it and on moodist c581ff0a and nihan b3198942. Global rules; brands are only test cases. Thresholds, the
+     airline signals and every wording are agent defaults: LG-103).**
+     *Root cause found first:* every page Maya's own crawler read on airastana (50 of 50, the homepage included) was
+     Imperva (Incapsula)'s block page: status 200, ~1 KB, `<meta name="robots" content="NOINDEX, NOFOLLOW">`, an iframe of
+     `/_Incapsula_Resource` saying "Request unsuccessful. Incapsula incident ID …". The classifier knew no Imperva page, so
+     the block page was read as the site's page: 49 "noindex in the sitemap" pages, "149 / 149 unsuitable sitemap
+     addresses" (the 100 light requests got the same page), 50 iframes without a name, the HTML timing and the homepage's
+     headers, and every key page capped at importance 20. Firecrawl, the main reader, read the real pages.
+     (1) *Pages read never exceed the plan's limit, one number everywhere.* "61" was 50 pages of Maya's crawler + 11
+     different pages of Firecrawl, each with its own 50-page cap (13 read, 2 the same). Now one limit: the page reader may
+     read again the pages Maya read (its copy is the one the content checks judge) and reads a page Maya did not read only
+     while both together stay within the plan (`firecrawl.reader._read_pages`, `over_budget`; a redirect onto a new page
+     past the limit is `outcome: over_page_cap`, not counted). On airastana's saved audit the block pages are not pages
+     read (below), so it counts Firecrawl's 13. The history list takes the count of the current-engine copy (its
+     `meta.json` keeps `read`), so the history, the summary, the PDF and the XLSX say the same number (the XLSX prints
+     no total).
+     (2) *Country/language copies.* `maya_audit/locales.py`: a site's locale folders from its own addresses: a plain
+     language folder (`/en`, `/tr`, `/en-us`) with a known language code, or any pair-shaped folder (`/global-en`,
+     `/chn-zh`, `/kaz-kk`) when another such folder holds 2+ of the same pages or an hreflang link names it (`/how-to/`
+     and `/tv/` are not locales). The root is a version only when the homepage lives there. `crawl.locales` (schema
+     **1.27**): folders, main (where the homepage landed), versions, basis. The crawl frontier (`scratchpad`, new columns
+     `page_key`, `locale`, `boost`; table `page_copies`) and the page reader's queue (`firecrawl.reading`) key sections
+     with the folder replaced by one placeholder (`/tr/post/` and `/en/post/` are both `/_l/*`; taking the folder out
+     would make every post a section of its own), read a page in no version before a second version, a page already read in 2 versions (the
+     homepage: 4, for the hreflang and wrong-language checks; its versions are read like new pages, and it is always a
+     key page) only when nothing else waits, and within a section round
+     the business type's first three page types (by address word; the person's type, else the sitemap's suggestion) and
+     then the main version first. A fake site shaped like airastana (6 pages × 5 folders, 10-page cap) reads all 6 pages
+     in `/global-en/` before any second version. The report says it once: "20 country/language versions found; one
+     version per page was read" (or "at most 2 versions of a page"; an older audit that read more says "up to N …
+     (read by an older engine)"; the homepage's versions are said apart): on the web summary under the tiles and in the
+     PDF under Maya's own limits. The per-locale checks are unchanged (they read the pages read).
+     (3) *Travel split.* "Seyahat / rezervasyon" is a group of two profiles: `havayolu` "Havayolu" / "Airline" (new:
+     destinations and routes 100, flight search and schedule 85, fares and campaigns 70, baggage 55, check-in and online
+     services 40, booking help and terms 30; homepage 85, guide 30) and `seyahat` "Tur / otel" / "Tours / hotels" (the old
+     profile, id kept). The suggestion reads address words with the locale folder left out (airastana's "tur" was
+     `/tur-en/`, Turkey) and counts one address per page across folders; the airline profile adds Airline/Flight/Airport
+     markup, flight/baggage/check-in/mmb words and airport-code routes (`/ala-ist`, counted when both codes appear in
+     another route, from 3 addresses). Business-type version 2: a saved version-1 suggestion is worked out again.
+     airastana: "Havayolu" (37 pages with 'mmb', 'baggage' …; tours 3 from 4 hotel pages); moodist "Sağlık", nihan
+     "E-ticaret" unchanged (their counts now count one address per page: 58 -> 54, 22,114 -> 12,220). signals.md and
+     signals.xlsx regenerated.
+     (4) *The same four tiles.* PDF: recorded issues, pages read, pages with Medium+ issues, mobile lab; web: the first
+     three and "waiting for a check". The sitemap tile is gone; a striking sitemap result (half or more of 10+ checked
+     addresses) is said on its card in plain words, its commonest cause named when it is 80% of them: "All 149 checked
+     sitemap addresses redirect to a country/language version." (`sitemap_line`, PDF card and web card). airastana's
+     149/149 was not a sitemap problem: all 149 got Imperva's block page (49 read by the crawl, 100 light requests of the
+     same size and robots tag).
+     *Imperva:* `classify` knows the block page (the incident text, or the resource as an iframe: Imperva also injects
+     `/_Incapsula_Resource` scripts into normal pages, which stay OK); a new audit marks those answers blocked and the
+     reader takes the site as a blocked one. A saved audit's current-engine copy (`reassess_rules._decisions_316`)
+     recognises the block page from the saved record (the iframe, 50 visible words or fewer), marks those records blocked
+     and not read, removes what was measured only on them (each removal listed in the copy's changes; findings the page
+     reader's own copy produced stay), sends the soft-404 probe that got the same answer to "confirm first", re-runs
+     ACC-9 ("Imperva … 50 of 50 … 13 page(s) were read through Firecrawl instead") and the direct-access line, and counts
+     the pages read again. report.json is never written.
+     (5) *"Teyit edin" vs recorded issues.* The two count different things: "Kayıtlı sorun" counts findings with a
+     severity (S1-S4); "Teyit edin" counts groups, Info notes included. On airastana 14 of the 17 were Info notes marked
+     "seen only in Firecrawl's copy", compared with Maya's copy, which was the block page: a fresh audit of a blocked site
+     sets no such mark (`double_reading.applies`), so the copy takes it off when every page of Maya's copy was a block
+     page (an automatic check, no person needed). airastana 17 -> 3. The web tile now says what it holds: "2 sorun
+     (kayıtlı sorunların içinde) ve 1 not". Duplicates per root cause were already one group (the rule and cause key);
+     none remained on the three audits.
+     (6) *Wording.* EN headline: "start with the certificate expiry" ("the" before each focus, also in the assessment
+     line; checked against all 302 summaries); TR: "…; öncelik: sertifika süresi." (was "önce sertifika süresi."); the
+     headline may be 100 characters (was 90; moodist's EN headline kept its focus). Turkish instructions use one form,
+     the polite imperative ("doğrulayın", "koruyun"); impersonal statements keep "-meli" without "-dır": 488 lines of
+     the team report's text library, 56 engine fix translations, 8 web strings and the client brief advice (the
+     deprecated client brief's card check, `client_reporting.validate_cards`, now accepts this form beside
+     "-malısınız"); "Bilinçli
+     dışlamayı korumalı" is now "Bilerek dizin dışında tutulan sayfalara dokunmayın; noindex'i yalnızca aramada yer alması
+     istenen sayfalardan kaldırın."
+     *Before / after on airastana's saved audit (current-engine copy, offline):* tiles "Kayıtlı sorun 10 · Okunan sayfa
+     61 · Uygun olmayan sitemap adresi 149/149 · Mobil lab ölçülmedi" -> "6 · 13 · Orta ve üstü sorunlu sayfa 1/13 ·
+     ölçülmedi"; type "Seyahat / rezervasyon" -> "Havayolu"; card 01 "Site haritasındaki noindex'li sayfaları netleştirin
+     (49 sayfa)" removed, card 01 now the TLS certificate; key pages: ten block pages at importance 20 -> the pages
+     Firecrawl read, typed (Destinasyonlar ve uçuş rotaları, Uçuş arama, Check-in …), importance "not computed (read only
+     through the page reader)"; "Teyit edin" 17 -> 3. moodist and nihan: the same tiles, cards, key pages and types; only
+     the headline wording, the versions line and the suggestion's address counts differ.
+     Not changed: nihan's English card 02 title box overflows the PDF at HEAD already (`todos[1].title`); left as it was.
+     Tests: `tests/test_airastana_316.py` (17, fake sites, a made-up Firecrawl and hand-made reports); schema literals
+     1.26 -> 1.27; tests that pinned the old wording, the business-type list, the hospital fixture's sections (its
+     `/en/team/` and `/tr/team/` are now one section) and one empty-page split (the restaurant's `/sube/` is read first)
+     follow the new rules. The demo shop's crawl is page for page the same as before.

@@ -134,6 +134,9 @@ AT_SOURCE: dict[str, str] = {
 
 # Every other OPEN item, and why no finding carries it.
 NOT_LABELLED: dict[str, str] = {
+    "LG-103": ("The crawl's reading order across country/language folders, the business-type suggestion, the sitemap "
+               "card's plain line and the saved-audit block-page rule (decision 316): they choose pages, order or wording "
+               "and drop measurements of a block page; no finding is made by them."),
     "LG-08": "The thresholds are unset, so ACC-5 records these measurements as observations without a severity: there is no finding to label.",
     "LG-09": "Code-enforced: no call is made to a real Bing endpoint, so IDX-10 makes no finding from it.",
     "LG-12": "An unmatched Search Console state already becomes a review item for a person, not a finding (IDX-9).",
