@@ -933,6 +933,18 @@ def not_assessed_parts(report: dict) -> list[dict]:
     return list(gaps.values())
 
 
+def block_pages_line(report: dict) -> dict | None:
+    """DECISIONS 317: Maya's crawler got block pages and the page reader read the site: the block answers did not use
+    up the page limit. {"kind": "block_pages", "blocked", "allowed", "read", "plan", "stopped"}; None otherwise."""
+    reader = report.get("firecrawl") or {}
+    cov = reader.get("coverage") or {}
+    limit = cov.get("page_limit")
+    if not reader.get("used") or not isinstance(limit, dict) or not limit.get("block_answers"):
+        return None
+    return {"kind": "block_pages", "blocked": limit["block_answers"], "allowed": limit.get("reader_new_pages_allowed"),
+            "read": reader.get("pages_read") or 0, "plan": limit.get("plan"), "stopped": cov.get("not_requested_because")}
+
+
 def coverage(report: dict, limits: list[dict]) -> dict:
     """What Maya read and what it could not, for the coverage section: our limits, never a client problem."""
     crawl = report.get("crawl") or {}
@@ -949,6 +961,9 @@ def coverage(report: dict, limits: list[dict]) -> dict:
                       "cut": len(cuts) if isinstance(cuts, list) else cuts or None})
     for g in limits:
         lines.append({"kind": "reader", "finding_ids": g["finding_ids"], "title": g["title"]})
+    block = block_pages_line(report)
+    if block:
+        lines.append(block)
     for gap in not_assessed_parts(report):
         lines.append({"kind": "not_assessed", **gap})
     reader = report.get("firecrawl") or {}

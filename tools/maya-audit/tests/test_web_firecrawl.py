@@ -135,7 +135,7 @@ def test_a_challenged_site_is_read_through_firecrawl_with_no_block_headline_and_
     assert "direct crawler was challenged" in audit["outcome"]["reason"] and "Genuine AI-crawler access was not measured" in audit["outcome"]["reason"]
     assert audit["firecrawl"]["state"] == "done" and audit["firecrawl"]["requested"]
     report = client.get(f"{API}/audits/{audit['id']}/result").json()
-    assert report["schema_version"] == "1.27"
+    assert report["schema_version"] == "1.28"
 
     def access(rep):
         return {c["check_id"]: (c["status"], c["summary"], [f["title"] for f in c["findings"]]) for c in rep["checks"]
@@ -143,10 +143,10 @@ def test_a_challenged_site_is_read_through_firecrawl_with_no_block_headline_and_
     now = access(report)
     acc9 = now.pop("ACC-9")
     assert {k: v for k, v in access(before).items() if k != "ACC-9"} == now and access(before)["ACC-9"][0] == "findings"
-    assert acc9[2] == ["Cloudflare challenged Maya's direct crawler on 1 of 1 request(s). 3 page(s) were read through Firecrawl instead. "
-                       "Genuine AI-crawler access was not measured."]
-    [note] = next(c for c in report["checks"] if c["check_id"] == "ACC-9")["findings"]
-    assert note["severity"] == "Info" and note["evidence"]["pages_blocked_or_challenged"] == 1
+    assert acc9[2] == ["Maya's crawler blocked by bot protection (Cloudflare): 1 of 1 page request(s) got its block page. "
+                       "AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended) may be blocked the same way"]
+    [finding] = next(c for c in report["checks"] if c["check_id"] == "ACC-9")["findings"]  # DECISIONS 317: a finding, not a note
+    assert finding["severity"] == "S3" and finding["evidence"]["pages_blocked_or_challenged"] == 1
     assert [(g["check_id"], g["state"]) for g in report["gates"]] == [(g["check_id"], g["state"]) for g in before["gates"]]
     assert [p["status"] for p in report["crawl"]["pages"]] == [403]
 
@@ -167,7 +167,8 @@ def test_a_challenged_site_is_read_through_firecrawl_with_no_block_headline_and_
     assert view["pages_stat"] == {**view["pages_stat"], "value": 3, "label": "Pages read", "detail": "via Firecrawl", "line": "Pages read: 3 (via Firecrawl)"}
     assert view["summary_line"].startswith("3 pages checked.") and view["outcome"]["code"] == "COMPLETED" and view["first_action_withheld"] is None
     assert view["counts"]["by_severity"]["S3"] == sum(1 for row in view["top"] if row["severity"] == "S3")
-    assert not [row for row in view["top"] if row["check_id"] == "ACC-9" and row["requires_fix"]]
+    # DECISIONS 317: Cloudflare's block of Maya's crawler is a problem to fix (its AI-crawler warning), not a note.
+    assert [row["title"][:40] for row in view["top"] if row["check_id"] == "ACC-9" and row["requires_fix"]] == ["Maya's crawler blocked by bot protection"]
     [gap] = [g for g in view["coverage"]["gaps"] if g.get("blocked")]
     assert gap["part"] == "Needs Maya’s own direct requests" and "read through Firecrawl" in gap["reason"]
     assert view["firecrawl"]["decision"] is None and any("Pages read through Firecrawl: 3" in line for line in view["firecrawl"]["lines"])
@@ -177,7 +178,7 @@ def test_a_challenged_site_is_read_through_firecrawl_with_no_block_headline_and_
     assert all(row["check_id"].split("-")[0] in ("STR", "TSEO", "IDX") for row in sourced)
     assert all(row["source"] is None for row in rows if row["check_id"].startswith(("ACC", "PRF")))
     [note] = [row for row in rows if row["check_id"] == "ACC-9"]
-    assert note["severity"] == "Info" and note["title"].startswith("Cloudflare challenged Maya's direct crawler on 1 of 1 request(s).")
+    assert note["severity"] == "S3" and note["title"].startswith("Maya's crawler blocked by bot protection (Cloudflare): 1 of 1 page request(s)")
 
     printed = client.get(f"{API}/audits/{audit['id']}/print?full=true").text
     assert "Source: Firecrawl" in printed and "AI crawlers may not see this content" not in printed and "The site blocked this audit" not in printed

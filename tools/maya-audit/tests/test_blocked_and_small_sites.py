@@ -78,12 +78,15 @@ def test_a_site_behind_a_challenge_gets_one_access_finding_that_names_the_blocke
     assert int1.evidence["blocked_by"] == [{"name": "Cloudflare", "kind": "bot challenge", "status": 403, "responses": 1}]
     check = outcome.by_id["ACC-9"]
     [finding] = check.findings
-    assert finding.title == ("The site blocks or challenges automated visitors: Cloudflare (bot challenge) answered 1 of 1 page "
-                             "request(s). AI crawlers may be affected too")
-    assert (finding.severity.value, finding.confidence.value, finding.scope["kind"]) == ("S3", "inferred", "sitewide")
+    # DECISIONS 317: a named bot-protection service gets its own finding, with the AI crawlers named; the block is measured
+    # (Cloudflare's cf-mitigated header), so its confidence is Verified.
+    assert finding.title == ("Maya's crawler blocked by bot protection (Cloudflare): 1 of 1 page request(s) got its block page. "
+                             "AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended) may be blocked the same way")
+    assert (finding.severity.value, finding.confidence.value, finding.scope["kind"]) == ("S3", "verified", "sitewide")
     assert finding.evidence["pages_read"] == 0 and finding.evidence["start_url_blocked"] is True
     assert {"https://shop.test/robots.txt", "https://shop.test/sitemap.xml"} <= set(finding.evidence["robots_or_sitemap_also_refused"])
-    assert "Maya-Audit" in finding.how_to_fix and "verify ownership" in finding.how_to_fix and "try again later" in finding.how_to_fix
+    assert "Maya-Audit" in finding.how_to_fix and "In the bot settings of Cloudflare" in finding.how_to_fix
+    assert "GPTBot" in finding.how_to_fix and "Google-Extended is a robots.txt setting" in finding.how_to_fix
     assert any("not tested here" in note for note in finding.notes) and any("does not try to get past" in note for note in finding.notes)
     assert "not_measured" in finding.evidence
     # Nothing was retried under another identity: every request carried Maya's own user agent, once per address.

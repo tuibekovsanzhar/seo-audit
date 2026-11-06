@@ -180,6 +180,9 @@ def render(view, rows, generated_at, practical, companions, demo=False, selectio
             out.append(f'<li class="small wrap">{e(t("c6.limit.page_cap", pages=line.get("pages") or 0, not_read=line.get("not_read") or 0))}</li>')
         elif line["kind"] == "time_budget":
             out.append(f'<li class="small wrap">{e(t("c6.limit.time", seconds=int(line.get("seconds") or 0)))}</li>')
+        elif line["kind"] == "block_pages":  # DECISIONS 317
+            from maya_audit.client_appendix import block_pages_text
+            out.append(f'<li class="small wrap">{e(block_pages_text(line, lang))}</li>')
         elif line["kind"] == "reader":
             row = by_id.get((line.get("finding_ids") or [None])[0]) or {}
             out.append(f'<li class="small wrap">{e(row.get("title_shown") or line.get("title"))}</li>')

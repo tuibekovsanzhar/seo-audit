@@ -263,6 +263,9 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 .p6 .card h3 { font-size: 11.5pt; }
 .p6 ul { margin: 7pt 0 0 0; padding-left: 13pt; font-size: 8.8pt; line-height: 1.32; color: var(--ink); }
 .p6 li { margin-top: 3pt; }
+/* DECISIONS 317: a "confirm first" title is a box of its own (at most two lines), so a long one shrinks instead of
+   pushing the card past its edge */
+.p6 li .ct { display: inline-block; max-width: 100%; max-height: 2.7em; overflow: hidden; vertical-align: top; }
 .p6 .why { color: var(--muted); }
 .p6 .note { font-size: 8.4pt; color: var(--faint); margin-top: 6pt; line-height: 1.3; }
 .p6 table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 7pt; font-size: 8.4pt; }
@@ -337,7 +340,7 @@ def page1(d, L):
     pr = []
     for i, p in enumerate(d["priorities"]):
         pr.append(f'<div class="pitem"><span class="n">{p["n"]:02d}</span><div class="tx">'
-                  f'<b data-slot="priorities[{i}].title">{e(p["title"])}</b><p data-slot="priorities[{i}].text">{e(p["text"])}</p></div>'
+                  f'<b data-slot="priorities[{i}].title" data-fit="9">{e(p["title"])}</b><p data-slot="priorities[{i}].text">{e(p["text"])}</p></div>'
                   f'<div class="val tone-{p["tone"]}">{e(p["value"])}</div></div>')
     low = (f'\n  <div class="lowcov" data-banner="low_coverage">{e(d["low_coverage"]["text"])}</div>'
            if d.get("low_coverage") else "")
@@ -359,7 +362,7 @@ def page1(d, L):
 def page2(d, L):
     trs = []
     for i, f in enumerate(d["findings"]):
-        trs.append(f'<tr><td><div class="t" data-slot="findings[{i}].title">{e(f["title"])}</div><div class="id mono">{e(f["id"])}</div></td>'
+        trs.append(f'<tr><td><div class="t" data-slot="findings[{i}].title" data-fit="8.5">{e(f["title"])}</div><div class="id mono">{e(f["id"])}</div></td>'
                    f'<td class="sc">{e(f["scope"])}</td><td><span class="sev {e(f["severity"])}">{e(f["severity_label"])}</span></td>'
                    f'<td class="st">{e(f["status"])}</td></tr>')
     ftable = (f'<div class="card ftable"><table><colgroup><col style="width:56%"><col style="width:11%"><col style="width:11%"><col></colgroup>'
@@ -432,7 +435,7 @@ def page3(d, L):
 def page4(d, L):
     trs = ""
     for i, a in enumerate(d["actions"]):
-        trs += (f'<tr><td class="no">{a["n"]:02d}</td><td><div class="t" data-slot="actions[{i}].title">{e(a["title"])}</div>'
+        trs += (f'<tr><td class="no">{a["n"]:02d}</td><td><div class="t" data-slot="actions[{i}].title" data-fit="8.5">{e(a["title"])}</div>'
                 f'<div class="id mono">{e(a["ref"])}</div></td><td class="o">{e(a["owner"])}</td><td class="ef">{e(a["effort"])}</td></tr>')
     acts = (f'<div class="card acts"><div class="cardhead"><h3>{e(L["priority_actions"])}</h3><span>{e(d["actions_schedule"])}</span></div>'
             f'<table><colgroup><col style="width:44pt"><col><col style="width:150pt"><col style="width:110pt"></colgroup>'
@@ -534,7 +537,7 @@ def todo_pages(d, L):
                 links = f'<div class="sw">{e(L["todo_sitewide"])}</div>'
             cards.append(
                 f'<div class="card todo{" sub" if t.get("sub") else ""}"><div class="th"><span class="box"></span><span class="tn">{t["n"]:02d}</span>'
-                f'<b data-slot="todos[{i}].title">{e(t["title"])}</b></div>'
+                f'<b data-slot="todos[{i}].title" data-fit="8.5">{e(t["title"])}</b></div>'
                 f'<div class="tm"><span class="sev {e(t["severity"])}">{e(t["severity_label"])}</span>'
                 # Stage 8a (DECISIONS 315): the issue type beside the severity.
                 + (f'<span class="itype {e(t.get("issue_type") or "issue")}">{e(t["issue_type_label"])}</span>' if t.get("issue_type_label") else "")
@@ -580,7 +583,7 @@ def page6(d, L):
     own = "".join(f"<li>{e(x)}</li>" for x in d.get("own_limits") or []) or "<li>—</li>"
     limits = (f'<div class="card"><div class="cardhead"><h3>{e(L["own_title"])}</h3></div><ul>{own}</ul>'
               f'<div class="note">{e(L["own_note"])}</div></div>')
-    rows = "".join(f'<li><span data-slot="confirm[{i}].title">{e(c["title"])}</span> · {e(c["severity_label"])} · {e(c["scope"])}'
+    rows = "".join(f'<li><span class="ct" data-slot="confirm[{i}].title" data-fit="7.5">{e(c["title"])}</span> · {e(c["severity_label"])} · {e(c["scope"])}'
                    f' <span class="why">· {e(c["reason"])}</span></li>' for i, c in enumerate(d.get("confirm") or []))
     if d.get("confirm_more"):
         rows += f'<li class="why">{e(fmt(L["confirm_more"], n=d["confirm_more"]))}</li>'
@@ -633,6 +636,30 @@ def build_html(d):
             f'<style>{font_css()}\n{CSS}</style></head><body>{body}</body></html>')
 
 
+# DECISIONS 317: a long title never stops the PDF. Every title slot carries `data-fit` (its smallest size in pt): it
+# keeps its box, and its letters get smaller, step by step, until it fits (two lines for a card title, one for a table
+# row). Only a title that does not fit even at that size is cut at a word, with "…", the whole title kept in the
+# element's `title` and in the XLSX appendix. Returns the slots that were cut.
+FIT_JS = """() => {
+  const cut = [];
+  const over = (el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
+  for (const el of document.querySelectorAll('[data-fit]')) {
+    const min = parseFloat(el.dataset.fit) * 4 / 3;
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    while (over(el) && size > min) { size = Math.max(min, size - 0.25); el.style.fontSize = size + 'px'; }
+    if (!over(el)) continue;
+    const full = el.textContent;
+    el.title = full;
+    const words = full.split(/\s+/);
+    while (words.length > 1 && over(el)) { words.pop(); el.textContent = words.join(' ').replace(/[\s,;:·–-]+$/, '') + '…'; }
+    let text = el.textContent;
+    while (text.length > 2 && over(el)) { text = text.slice(0, -2) + '…'; el.textContent = text; }
+    cut.push(el.dataset.slot);
+  }
+  return cut;
+}"""
+
+
 OVERFLOW_JS = """() => {
   const out = [];
   for (const el of document.querySelectorAll('[data-slot]')) {
@@ -655,7 +682,7 @@ OVERFLOW_JS = """() => {
 }"""
 
 
-def render(html_path, pdf_path):
+def render(html_path, pdf_path, fitted=None):
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
         b = p.chromium.launch()
@@ -664,10 +691,13 @@ def render(html_path, pdf_path):
         page.goto(html_path.resolve().as_uri())
         page.wait_for_load_state("networkidle")
         page.evaluate("document.fonts.ready")
+        cut = page.evaluate(FIT_JS)
         over = page.evaluate(OVERFLOW_JS)
         if pdf_path:
             page.pdf(path=str(pdf_path), prefer_css_page_size=True, print_background=True)
         b.close()
+    if fitted is not None:
+        fitted.extend(cut)
     return over
 
 
@@ -816,7 +846,7 @@ def produce(d, out, pdf=None, *, png=None, force=False):
     "overflow": [field], "problems": [line]}. The skill's render step and the web app's team report (DECISIONS 307)."""
     lines, problems = [], []
     result = {"lines": lines, "stop": None, "html": None, "pdf": None, "appendix": None, "previews": None, "overflow": [],
-              "problems": problems}
+              "shortened": [], "problems": problems}
     raw = json.dumps({k: v for k, v in d.items() if not k.startswith("_")}, ensure_ascii=False)
     if MARK in raw and not force:
         result["stop"] = "HATA: data.json'da doldurulmamış ⟪YAZ⟫ alanı var. Önce: python validate_data.py data.json"
@@ -853,7 +883,11 @@ def produce(d, out, pdf=None, *, png=None, force=False):
         addresses = write_address_list(d, out)
         if addresses:
             lines.append(f"Adres listesi (rapora eklenir): {addresses}")
-    over = render(out, pdf)
+    cut = []
+    over = render(out, pdf, cut)
+    result["shortened"] = cut
+    if cut:  # DECISIONS 317: said, never a stop: the whole title is in the appendix
+        lines.append("KISALTILDI (en küçük boyutta da sığmadı; tam metin ekte): " + ", ".join(cut))
     if over:
         result["overflow"] = list(dict.fromkeys(over))
         lines.append("TAŞMA: şu alanlar kutusuna sığmıyor, kısaltın:")

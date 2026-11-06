@@ -1,6 +1,6 @@
 # The JSON report format
 
-Current version: `1.27`
+Current version: `1.28`
 
 Every JSON report the tool writes (`--json`, and one per brand from `batch`) starts with `schema_version`.
 Anything that reads a report, including the web interface, reads that number first.
@@ -392,6 +392,20 @@ page failures. Coverage stop reasons additionally distinguish `provider_timeout`
 credit/request limits. Existing 1.x reports remain readable; absent historical reasons are never invented.
 Keyword intent dimensions live inside open DataForSEO check evidence; originals and provider totals are preserved.
 
+
+## 1.28 — block pages and the page limit (2026-11-06)
+
+Added for DECISIONS 317; nothing was removed or renamed, so 1.x readers keep working.
+
+- `firecrawl.coverage.page_limit`: how the plan's one page limit was shared: `plan`, `maya_pages_read` (Maya's own pages
+  read, which count), `block_answers` (page requests Maya's crawler got a block page, a challenge or a 429 for),
+  `block_answers_counted` (always 0: a block answer is not a page read and never uses up the limit) and
+  `reader_new_pages_allowed` (what the page reader could read beside Maya's pages). A saved audit's current-engine copy
+  works it out from the saved data and adds `worked_out_offline: true`.
+- Not covered by the version: the ACC-9 finding `acc9.bot_protection` (a named bot-protection service answered Maya's
+  page requests with its block page; its evidence adds `ai_crawlers_named` and, when a page reader read the site,
+  `read_through`), and `crawl.reader_page_grouping`, now also written when the main page reader read pages Maya's crawler
+  did not read (or got a block page for).
 
 ## 1.27 — country/language versions (2026-11-06)
 

@@ -78,7 +78,9 @@ def test_the_report_of_a_challenged_site_read_through_firecrawl_is_practical_end
     assert not any("already rank in positions 4 to 20" in line for line in brief["executive"]["opportunities"])  # this fixture has rank rows but no supported relevance evidence
     assert get(client, audit, "/result")["dataforseo"]["checks"]  # provider observations remain available
     assert any("not found in DataForSEO's sample of ChatGPT answers" in line for line in brief["executive"]["opportunities"])
-    assert brief["executive"]["problems"] and len(brief["executive"]["actions"]) == len(brief["executive"]["problems"]) + 1 <= 5
+    # DECISIONS 317: Cloudflare's challenge to Maya's crawler is a problem of its own (with its AI-crawler warning), not a note.
+    assert any("bot protection (Cloudflare)" in p["title"] for p in brief["executive"]["problems"])
+    assert brief["executive"]["problems"] and len(brief["executive"]["actions"]) <= 5
     full = get(client, audit, "/practical")
     # The page table comes from what Firecrawl read: Maya's own crawler was challenged on the only page it asked for.
     table = {r["url"]: r for r in full["pages"]["rows"]}

@@ -108,7 +108,7 @@ def test_a_capped_crawl_of_a_site_with_country_folders_reads_different_pages():
     assert max(keys.count(k) for k in keys) <= locales.COPIES             # never more than two copies of one page
     assert all("/global-en/" in u for u in read[:len(PAGES)])             # the main version first
     assert r["crawl"]["locales"]["folders"] == sorted(FOLDERS) and r["crawl"]["locales"]["main"] == "global-en"
-    assert r["schema_version"] == "1.27"
+    assert r["schema_version"] == "1.28"
     line = locales.line(locales.summary(r["crawl"]["locales"], cs.pages_read(r)), "en")
     assert line == "5 country/language versions found; at most 2 versions of a page were read."
 

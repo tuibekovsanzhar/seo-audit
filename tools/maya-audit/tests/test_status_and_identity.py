@@ -46,8 +46,8 @@ def test_a_direct_challenge_and_a_readable_sample_keep_the_challenge_and_claim_n
     # The raw gate and the direct observation are untouched; only the finding's presentation is a note.
     assert next(g for g in report["gates"] if g["check_id"] == "INT-1")["state"] == "degraded"
     assert report["crawl"]["pages"][0]["status"] == 403 and report["crawl"]["pages"][0]["fetch_class"] == "blocked"
-    [note] = next(c for c in report["checks"] if c["check_id"] == "ACC-9")["findings"]
-    assert note["severity"] == "Info" and note["evidence"]["severity_before_reader"] == "S3" and note["evidence"]["pages"][0]["status"] == 403
+    [acc9] = next(c for c in report["checks"] if c["check_id"] == "ACC-9")["findings"]  # DECISIONS 317: a finding, not a note
+    assert acc9["severity"] == "S3" and acc9["rule_id"] == "acc9.bot_protection" and acc9["evidence"]["pages"][0]["status"] == 403
     code, word, sentence = run_outcome(outcome.result, outcome.gates, section)
     assert (code, word) == (0, "COMPLETED") and "some direct-request checks could not be completed" in sentence
     everything = json.dumps(report) + sentence + render_text(outcome.result, outcome.gates, outcome.checks, firecrawl=section) \

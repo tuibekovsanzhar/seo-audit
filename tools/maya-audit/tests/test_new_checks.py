@@ -123,5 +123,5 @@ def test_the_new_checks_are_in_the_report_and_named_when_structure_data_is_unava
     outcome = audit({"/a/": described("x"), "/b/": described("x")}, image_checks_max=0)
     report = build_report(outcome.result, outcome.gates, outcome.checks)
     ids = [c["check_id"] for c in report["checks"]]
-    assert "STR-16" in ids and "STR-17" in ids and report["schema_version"] == "1.27"
+    assert "STR-16" in ids and "STR-17" in ids and report["schema_version"] == "1.28"
     assert "STR-16" in render_markdown(outcome.result, outcome.gates, outcome.checks)

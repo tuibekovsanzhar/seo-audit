@@ -56,6 +56,7 @@
   "acc8.redirecting": "issue",
   "acc9.blocked_429": "issue",
   "acc9.rate_limited_429": "issue",
+  "acc9.bot_protection": "issue",
   "acc9.blocked": "issue",
   "acc9.reader.site.counted": "warning",
   "acc9.reader.site": "warning",

@@ -798,7 +798,7 @@ def standard(web):
 
 def test_a_500_page_audit_of_english_and_turkish_pages_is_shown_from_its_report(standard):
     client, audit, report = standard
-    assert audit["state"] == "finished" and report["page_counts"]["pages_checked"] == 500 and report["schema_version"] == "1.27"
+    assert audit["state"] == "finished" and report["page_counts"]["pages_checked"] == 500 and report["schema_version"] == "1.28"
     view = get(client, audit, "/summary")
     counts = view["counts"]
     # Severity counts are the report's own findings, counted; nothing is added or re-judged.
@@ -1273,7 +1273,7 @@ def test_a_blocked_audit_leads_with_who_blocked_it_and_what_to_do(web):
     assert "allow the user agent “Maya-Audit”" in steps and "Verify ownership" in steps and "try again later" in steps
     # With nothing read there is no "first action", and the access finding is the one thing reported.
     assert view["first_action"] is None and view["pages_read"] == 0
-    assert view["top"][0]["check_id"] == "ACC-9" and "AI crawlers may be affected too" in view["top"][0]["title"]
+    assert view["top"][0]["check_id"] == "ACC-9" and "may be blocked the same way" in view["top"][0]["title"]  # DECISIONS 317
     assert view["first_action_withheld"] == strings.t("result.first_action.withheld", read=0, needed=3)
     assert "Only Maya's own crawler was measured" in view["top"][0]["why"]
     # One line for everything the block made impossible, not one per check.

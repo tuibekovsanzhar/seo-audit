@@ -207,6 +207,11 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "Maya's crawler blocked (429 on pages): {who} answered {blocked} of {requested:page request|page requests} with 429 while robots.txt and the sitemap were served. AI crawlers may get the same treatment"),
         ("acc9.rate_limited_429", "Maya's crawler rate-limited (429 on pages): {who~:.+?} answered {blocked#} of {requested#} page request(s) with 429. AI crawlers may get the same treatment",
          "Maya's crawler rate-limited (429 on pages): {who} answered {blocked} of {requested:page request|page requests} with 429. AI crawlers may get the same treatment"),
+        # DECISIONS 317: a named bot-protection service answered with its block page or challenge.
+        ("acc9.bot_protection", "Maya's crawler blocked by bot protection ({who~:.+?}): {blocked#} of {requested#} page request(s) got its block page. "
+                                "AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended) may be blocked the same way",
+         "Maya's crawler blocked by bot protection ({who}): {blocked} of {requested:page request|page requests} got its block page. "
+         "AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended) may be blocked the same way"),
         ("acc9.blocked", "The site blocks or challenges automated visitors: {who~:.+?} answered {blocked#} of {requested#} page request(s). AI crawlers may be affected too",
          "The site blocks or challenges automated visitors: {who} answered {blocked} of {requested:page request|page requests}. AI crawlers may be affected too"),
         # The same finding after the pages were read through Firecrawl (maya_audit.firecrawl.reader.note_the_challenge).
@@ -821,6 +826,11 @@ FIX_PATTERNS = _frames((
     ("acc9.allow_rate_429", "Check the bot and rate-limit rules in {who~:.+?} that answer page requests with 429: allow the user agent "
                             "\"{agent}\" and run the audit again. AI crawlers may get the same treatment: check the same rules for "
                             "OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you."),
+    ("acc9.allow_protection", "In the bot settings of {who~:.+?}, find the rule that answered Maya's page requests with its block page. Allow the "
+                              "user agent \"{agent}\" and run the audit again. AI crawlers may be blocked the same way: allow GPTBot, "
+                              "OAI-SearchBot, ClaudeBot and PerplexityBot by user agent together with the IP ranges each vendor publishes, "
+                              "and allow Googlebot (Google-Extended is a robots.txt setting, not a separate crawler: keep it allowed in "
+                              "robots.txt). Then check the firewall logs: these crawlers should get pages, not the block page."),
     ("acc9.allow_429", "Check the bot and rate-limit rules in {who~:.+?} that answer page requests with 429 while robots.txt and the sitemap "
                        "are served: allow the user agent \"{agent}\" and run the audit again. AI crawlers may get the same treatment: check "
                        "the same rules for OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you."),

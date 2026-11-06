@@ -55,10 +55,10 @@ def test_the_switch_changes_the_interface_the_reports_own_text_stays_english_and
     assert row["severity_label"] in ("Orta", "Düşük") and row["why"].startswith("Bir sitenin koruması")
     report = client.get(f"{API}/audits/{english['id']}/result").json()
     # The report's own words stay English; what the reader is shown is Turkish, with the numbers and names kept.
-    assert row["title"] in [f["title"] for check in report["checks"] for f in check["findings"]] and row["title"].startswith("The site blocks or challenges")
-    assert row["title_shown"].startswith("Site otomatik ziyaretçileri engelliyor") and "Cloudflare" in row["title_shown"] and row["untranslated"] is False
-    assert row["fix_shown"].startswith("Bu sitenin sahibiyseniz") and "(İngilizce)" not in row["title_shown"] + row["fix_shown"] + row["expected_shown"]
-    assert row["fix"].startswith("If you own this site") and row["expected"] == "a crawler that identifies itself honestly receives the page"
+    assert row["title"] in [f["title"] for check in report["checks"] for f in check["findings"]] and row["title"].startswith("Maya's crawler blocked by bot protection")
+    assert row["title_shown"].startswith("Maya'nın tarayıcısı bot korumasına takıldı") and "Cloudflare" in row["title_shown"] and row["untranslated"] is False
+    assert row["fix_shown"].startswith("Cloudflare bot ayarlarında") and "(İngilizce)" not in row["title_shown"] + row["fix_shown"] + row["expected_shown"]
+    assert row["fix"].startswith("In the bot settings of Cloudflare") and row["expected"] == "a crawler that identifies itself honestly receives the page"
     # The printed report is written in the audit's language (C61): Turkish only when asked for explicitly.
     assert "Okunabilen sayfalar" in client.get(f"{API}/audits/{english['id']}/print?full=true&lang=tr").text
     assert "Readable pages" in client.get(f"{API}/audits/{english['id']}/print?full=true").text

@@ -869,6 +869,19 @@
    "verify": "Check the firewall or CDN logs; page requests from named crawlers should get pages, not too-many-requests answers.",
    "summary": "Crawler rate limits"
   },
+  "acc9.bot_protection": {
+   "title": "Let crawlers past the bot protection's block page",
+   "finding": "Bot protection serves its block page to a self-identified crawler",
+   "explanation": "Find the bot-protection rule that serves the block page; allow the audit crawler and the AI crawlers you want to reach you.",
+   "why": "When protection serves a crawler that says who it is a block page, AI crawlers may get the same page; they cannot read or cite the site.",
+   "steps": [
+    "Find the bot-protection rule that serves the block page",
+    "Allow AI crawlers by user agent and their published IP ranges",
+    "Allow the audit crawler and run the audit again"
+   ],
+   "verify": "Check the firewall logs; the named crawlers should get pages, not the block page.",
+   "summary": "Bot protection block page"
+  },
   "acc9.reader": {
    "title": "Allow the audit's crawler so the next audit can read the site directly",
    "finding": "The audit's direct crawler was turned away",

@@ -78,7 +78,8 @@ def test_firecrawl_can_be_switched_on_afterwards_and_the_website_is_not_asked_ag
     assert after["crawl"]["requests"] == before["crawl"]["requests"] and after["gates"] == before["gates"]
     access = lambda report: [c for c in report["checks"] if c["check_id"].startswith(("ACC", "PRF"))]
     assert {k: v for k, v in enumerate(access(after)) if v["check_id"] != "ACC-9"} == {k: v for k, v in enumerate(access(before)) if v["check_id"] != "ACC-9"}
-    assert next(c for c in after["checks"] if c["check_id"] == "ACC-9")["findings"][0]["severity"] == "Info"  # the one change: a note, not a problem
+    # The one change: the reader's pages recorded beside it; Cloudflare's block stays a problem (DECISIONS 317).
+    assert next(c for c in after["checks"] if c["check_id"] == "ACC-9")["findings"][0]["evidence"]["read_through"]["pages_read"] == 3
     section = after["firecrawl"]
     assert section["used"] and section["pages_read"] == 3 and section["proxy"] == "basic" and all(body["zeroDataRetention"] for body in api.bodies)
     view = get(client, audit, "/summary")

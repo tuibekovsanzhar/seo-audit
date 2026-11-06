@@ -467,6 +467,29 @@ def _block_status(report: dict, blocked: dict, vendor: str, changes: list[str]) 
         summary["pages_checked"] = counts["pages"]
 
 
+def _decisions_317(report: dict, changes: list[str]) -> None:
+    """DECISIONS 317: how the plan's page limit is shared, for a saved audit the page reader read: Maya's pages read
+    count, its block answers do not (`firecrawl.coverage.page_limit`, worked out from the saved data; the reading
+    itself is what the audit's engine did, so it is marked `worked_out_offline`)."""
+    fc = report.get("firecrawl") or {}
+    cov = fc.get("coverage")
+    if not fc.get("used") or not isinstance(cov, dict) or isinstance(cov.get("page_limit"), dict):
+        return
+    from .firecrawl.reader import page_limit_record
+    crawl = report.get("crawl") or {}
+    plan = fc.get("page_cap") or (fc.get("options") or {}).get("max_pages") or (crawl.get("config") or {}).get("max_pages")
+    if not isinstance(plan, int):
+        return
+    read = sum(1 for p in crawl.get("pages") or [] if isinstance(p, dict) and p.get("fetch_class") == "ok"
+               and isinstance(p.get("status"), int) and 200 <= p["status"] < 300 and p.get("content_checks_eligible") is not False
+               and p.get("analysis"))
+    cov["page_limit"] = {**page_limit_record(crawl, plan, read), "worked_out_offline": True}
+    if cov["page_limit"]["block_answers"]:
+        changes.append(f"Page limit: {cov['page_limit']['block_answers']} block answer(s) to Maya's crawler not counted; the page "
+                       f"reader could read up to {cov['page_limit']['reader_new_pages_allowed']} of {plan} page(s) and read "
+                       f"{fc.get('pages_read') or 0} (DECISIONS 317)")
+
+
 def _order(report: dict) -> list[str]:
     from .findings import Severity, priority_key
     from .models import Confidence
@@ -505,6 +528,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_309(r, changes, saved_texts or [])
     _decisions_315(r, changes)
     _decisions_316(r, aff, changes)
+    _decisions_317(r, changes)
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -520,7 +544,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315 and 316, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316 and 317, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,

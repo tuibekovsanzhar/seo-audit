@@ -191,6 +191,10 @@
     "Maya's\\ crawler\\ rate\\-limited\\ \\(429\\ on\\ pages\\):\\ (?P<who>.+?)\\ answered\\ (?P<blocked>\\d+(?:\\.\\d+)?)\\ of\\ (?P<requested>\\d+(?:\\.\\d+)?)\\ page\\ request\\(s\\)\\ with\\ 429\\.\\ AI\\ crawlers\\ may\\ get\\ the\\ same\\ treatment"
    ],
    [
+    "acc9.bot_protection",
+    "Maya's\\ crawler\\ blocked\\ by\\ bot\\ protection\\ \\((?P<who>.+?)\\):\\ (?P<blocked>\\d+(?:\\.\\d+)?)\\ of\\ (?P<requested>\\d+(?:\\.\\d+)?)\\ page\\ request\\(s\\)\\ got\\ its\\ block\\ page\\.\\ AI\\ crawlers\\ \\(GPTBot,\\ ClaudeBot,\\ PerplexityBot,\\ Google\\-Extended\\)\\ may\\ be\\ blocked\\ the\\ same\\ way"
+   ],
+   [
     "acc9.blocked",
     "The\\ site\\ blocks\\ or\\ challenges\\ automated\\ visitors:\\ (?P<who>.+?)\\ answered\\ (?P<blocked>\\d+(?:\\.\\d+)?)\\ of\\ (?P<requested>\\d+(?:\\.\\d+)?)\\ page\\ request\\(s\\)\\.\\ AI\\ crawlers\\ may\\ be\\ affected\\ too"
    ],

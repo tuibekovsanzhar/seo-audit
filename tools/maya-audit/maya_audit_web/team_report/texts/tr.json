@@ -869,6 +869,19 @@
    "verify": "Güvenlik duvarı veya CDN günlüklerine bakın; adı geçen tarayıcıların sayfa istekleri ret değil, sayfa almalı.",
    "summary": "Tarayıcı hız sınırları"
   },
+  "acc9.bot_protection": {
+   "title": "Bot korumasında tarayıcıların sayfa almasını sağlayın",
+   "finding": "Bot koruması kendini tanıtan tarayıcıya engel sayfası döndürüyor",
+   "explanation": "Engel sayfasını döndüren bot koruması kuralını bulun; denetim tarayıcısına ve ulaşmasını istediğiniz yapay zekâ tarayıcılarına izin verin.",
+   "why": "Koruma kim olduğunu söyleyen bir tarayıcıya engel sayfası döndürdüğünde yapay zekâ tarayıcıları da aynı sayfayı alabilir; siteyi okuyamaz, alıntılayamazlar.",
+   "steps": [
+    "Engel sayfasını döndüren bot koruması kuralını bulun",
+    "Yapay zekâ tarayıcılarına kullanıcı aracısı ve yayımlanan IP aralıklarıyla izin verin",
+    "Denetim tarayıcısına izin verip denetimi yeniden çalıştırın"
+   ],
+   "verify": "Güvenlik duvarı günlüklerine bakın; adı geçen tarayıcılar engel sayfası değil, sayfa almalı.",
+   "summary": "Bot korumasının engel sayfası"
+  },
   "acc9.reader": {
    "title": "Sonraki denetim siteyi doğrudan okusun diye denetim tarayıcısına izin verin",
    "finding": "Denetimin doğrudan tarayıcısı geri çevrildi",

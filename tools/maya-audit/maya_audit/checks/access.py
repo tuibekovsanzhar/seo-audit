@@ -1201,6 +1201,24 @@ FIX_429 = ('Check the bot and rate-limit rules in {who} that answer page request
 FIX_RATE_429 = ('Check the bot and rate-limit rules in {who} that answer page requests with 429: allow the user agent "{token}" and run the audit again. AI crawlers may get the same treatment: check the same rules for OAI-SearchBot, ClaudeBot, PerplexityBot and the others you want to reach you.')
 
 
+# DECISIONS 317: a named bot-protection service (Imperva, Cloudflare, Akamai, DataDome, HUMAN/PerimeterX ...) answered
+# Maya's page requests with its block page or challenge. The AI crawlers named are the ones the owner asked to be named;
+# Google-Extended is a robots.txt setting (Google fetches as Googlebot), so the steps say that rather than "allow it".
+AI_CRAWLERS = ("GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended")
+FIX_PROTECTION = ('In the bot settings of {who}, find the rule that answered Maya\'s page requests with its block page. Allow the user '
+                  'agent "{token}" and run the audit again. AI crawlers may be blocked the same way: allow GPTBot, OAI-SearchBot, '
+                  'ClaudeBot and PerplexityBot by user agent together with the IP ranges each vendor publishes, and allow Googlebot '
+                  '(Google-Extended is a robots.txt setting, not a separate crawler: keep it allowed in robots.txt). Then check the '
+                  'firewall logs: these crawlers should get pages, not the block page.')
+
+
+def protection_service(blockers: list[dict]) -> str | None:
+    """The bot-protection service that answered most of the blocked requests with its block page or challenge, when the
+    responses name one (DECISIONS 317); None for a rate limit or an unnamed 403."""
+    top = blockers[0] if blockers else {}
+    return top.get("name") if top.get("name") and top.get("kind") != "rate limit" else None
+
+
 def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     """What the site did to an automated visitor that says who it is: Maya's own crawler.
 
@@ -1235,6 +1253,7 @@ def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResul
     blocked_429 = maya_blocked.holds(result)  # DECISIONS 288: 429 on every page while the site's files are served
     name = (blockers[0]["name"] if blockers and blockers[0].get("name") else "the site's firewall")
     rate_429 = not blocked_429 and bool(blockers) and blockers[0].get("kind") == "rate limit"
+    service = None if blocked_429 or rate_429 else protection_service(blockers)
     rest = (Severity.S3 if widespread else Severity.S4, Confidence.INFERRED,
             "Measured (Maya's own requests) / Hypothesis (what AI crawlers receive)",
             ["all crawlers that identify themselves", "AI search and live-fetch bots"],
@@ -1263,6 +1282,20 @@ def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResul
                                  "self-identified crawler often stops others, but AI crawlers were not tested here and may be allowed by name.",
                                  "This is common on banks, large retailers and sites behind a managed firewall, and is often not deliberate.",
                                  "Maya does not try to get past bot protection."])
+    elif service:
+        # DECISIONS 317: the block itself is measured, so the finding's confidence is the classification's (Verified from
+        # a header or a status, Estimated from the block page's body); what AI crawlers get stays a "may" in its words.
+        measured = (Confidence.VERIFIED if all(p.classification_confidence == Confidence.VERIFIED for p in impaired)
+                    else Confidence.ESTIMATED)
+        finding = Finding("ACC-9", f"Maya's crawler blocked by bot protection ({service}): {len(impaired)} of {len(pages)} page request(s) "
+                          "got its block page. AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended) may be blocked the same way",
+                          rest[0], measured, *rest[2:], expected="a crawler that identifies itself honestly receives the page",
+                          how_to_fix=FIX_PROTECTION.format(who=service, token=cfg.product_token), importance_tier=0 if start_hit else 2,
+                          notes=["Measured: Maya's crawler was blocked, challenged or rate-limited. Inferred: bot protection that stops one "
+                                 "self-identified crawler often stops others, but AI crawlers were not tested here and may be allowed by name.",
+                                 "This is common on banks, large retailers and sites behind a managed firewall, and is often not deliberate.",
+                                 "Maya does not try to get past bot protection."])
+        finding.evidence["ai_crawlers_named"] = list(AI_CRAWLERS)
     else:
         finding = Finding("ACC-9", f"The site blocks or challenges automated visitors: {who} answered {len(impaired)} of {len(pages)} page "
                           "request(s). AI crawlers may be affected too",
@@ -1279,6 +1312,8 @@ def acc9_automated_visitors(result: CrawlResult, cfg: CrawlConfig) -> CheckResul
                f"Maya's crawler read {read} page(s)." if blocked_429 else
                f"1 finding: {name} rate-limited Maya's crawler (429 on pages) on {len(impaired)} of {len(pages)} page request(s); "
                f"Maya's crawler read {read} page(s)." if rate_429 else
+               f"1 finding: {service}'s bot protection blocked Maya's crawler on {len(impaired)} of {len(pages)} page request(s); "
+               f"Maya's crawler read {read} page(s)." if service else
                f"1 finding: {who} answered {len(impaired)} of {len(pages)} page request(s) to Maya's crawler; {read} page(s) "
                "were read.")
     return CheckResult("ACC-9", title, _status([finding]), summary, [finding], {"blocked_by": blockers, "pages_read": read})

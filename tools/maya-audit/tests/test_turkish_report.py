@@ -920,11 +920,11 @@ def test_the_turkish_report_of_an_audit_read_through_the_reader_has_no_english_s
     # A state the report names in one English word is worded too ("applied"), in the section and in the cost line.
     assert "Sıfır veri saklama: uygulandı." in page and "sıfır veri saklama: uygulandı" in page and ": applied" not in page
     assert card["spend"]["firecrawl"]["zero_data_retention"] == "applied" and card["spend"]["firecrawl"]["zero_data_retention_shown"] == "uygulandı"
-    # The challenge is a note in both languages, with its numbers.
+    # The challenge is a finding in both languages, with its numbers (DECISIONS 317).
     row = next(row for row in get(client, audit, "/findings", limit=100)["items"] if row["check_id"] == "ACC-9")
-    assert row["title"].startswith("Cloudflare challenged Maya's direct crawler on 1 of 1 request(s).") and not row["untranslated"] and row["notes_untranslated"] == 0
-    assert row["title_shown"].startswith("Cloudflare, Maya'nın doğrudan tarayıcısını 1 istekten 1 tanesinde doğrulamaya aldı. Bunun yerine 3 sayfa Firecrawl üzerinden okundu.")
-    assert "direct crawler on 1 of 1 request. 3 pages were read through Firecrawl instead." in english_page and "1 of 1 request(s)" not in english_page
+    assert row["title"].startswith("Maya's crawler blocked by bot protection (Cloudflare): 1 of 1 page request(s)") and not row["untranslated"] and row["notes_untranslated"] == 0
+    assert row["title_shown"].startswith("Maya'nın tarayıcısı bot korumasına takıldı (Cloudflare): 1 sayfa isteğinden 1 tanesine engel sayfası döndü.")
+    assert "bot protection (Cloudflare): 1 of 1 page request got its block page." in english_page and "1 of 1 page request(s)" not in english_page
 
 
 def test_the_turkish_report_of_a_blocked_site_has_no_english_sentence(web):

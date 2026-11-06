@@ -36,7 +36,7 @@ WORDS = {
            "reason": {"unverified_check": "kontrol gerçek sitelerde doğrulanmadı", "low_confidence": "düşük güven",
                       "intent": "kasıtlı olabilir", "firecrawl_only": "yalnız Firecrawl kopyasında görüldü", "rendered_html": "işlenmiş HTML (Firecrawl), ham boyutla karşılaştırılamaz",
                       "spoofed_googlebot": "Googlebot kimliğiyle yapılan isteğe 403/429"},
-           "kind": {"page_cap": "Sayfa sınırı", "time_budget": "Süre sınırı", "reader": "Okuma yolu",
+           "kind": {"page_cap": "Sayfa sınırı", "time_budget": "Süre sınırı", "reader": "Okuma yolu", "block_pages": "Engel sayfaları",
                     "not_assessed": "Değerlendirilmedi"},
            "page_type": {"home": "ana sayfa", "category": "kategori", "product": "ürün", "blog_article": "blog yazısı",
                          "policy": "politika sayfası", "utility": "yardımcı sayfa (arama, sepet, hesap)", "other": "diğer"},
@@ -75,7 +75,7 @@ WORDS = {
            "reason": {"unverified_check": "check not yet validated on real sites", "low_confidence": "low confidence",
                       "intent": "may be intentional", "firecrawl_only": "seen only in Firecrawl's copy", "rendered_html": "rendered HTML (Firecrawl), not comparable with a raw size",
                       "spoofed_googlebot": "403/429 to a request with Googlebot's user agent"},
-           "kind": {"page_cap": "Page cap", "time_budget": "Time budget", "reader": "How pages were read",
+           "kind": {"page_cap": "Page cap", "time_budget": "Time budget", "reader": "How pages were read", "block_pages": "Block pages",
                     "not_assessed": "Not assessed"},
            "page_type": {"home": "homepage", "category": "category", "product": "product", "blog_article": "blog article",
                          "policy": "policy page", "utility": "utility page (search, cart, account)", "other": "other"},
@@ -105,6 +105,20 @@ def _manual(text: str, W: dict) -> str:
     return f"{W['manual'].get(word, word)}{sep}{rest}" if text else ""
 
 
+def block_pages_text(line: dict, lang: str) -> str:
+    """DECISIONS 317: the block answers Maya's crawler got did not use up the page limit; what the page reader could
+    read and read. One sentence for the PDF, the web summary and the appendix."""
+    blocked, allowed, read = int(line.get("blocked") or 0), int(line.get("allowed") or 0), int(line.get("read") or 0)
+    time_first = line.get("stopped") == "time_limit" and read < allowed
+    if lang == "tr":
+        return (f"Engel sayfaları sayfa sınırına sayılmadı: Maya'nın tarayıcısı {blocked} istekte engel sayfası aldı; sayfa "
+                f"okuyucu en çok {allowed} sayfa okuyabilirdi, {read} sayfa okudu" + (" (süre sınırı daha önce doldu)." if time_first else "."))
+    req = "request" if blocked == 1 else "requests"
+    pages = "page" if allowed == 1 else "pages"
+    return (f"Block pages did not count toward the page limit: Maya's crawler got a block page on {blocked} {req}; the page "
+            f"reader could read up to {allowed} {pages} and read {read}" + (" (the time limit came first)." if time_first else "."))
+
+
 def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = None,
                   sentence: Callable[[str], str] | None = None, title: Callable[[str, str], str] | None = None) -> str:
     """A coverage line in the report's language (DECISIONS 306): the engine's part and reason through the reader's
@@ -117,6 +131,8 @@ def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = No
     if kind == "time_budget":
         return (f"Süre sınırı {line.get('seconds')} sn; süre yüzünden atlanan adım: {line.get('cut') or '—'}" if lang == "tr"
                 else f"Time budget {line.get('seconds')} s; steps cut by time: {line.get('cut') or '—'}")
+    if kind == "block_pages":
+        return block_pages_text(line, lang)
     if kind == "reader":
         shown = (title(None, line.get("title") or "") if title else None) or line.get("title")
         return f"{shown} ({', '.join(line.get('finding_ids') or [])})"

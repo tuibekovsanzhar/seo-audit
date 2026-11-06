@@ -134,6 +134,9 @@ AT_SOURCE: dict[str, str] = {
 
 # Every other OPEN item, and why no finding carries it.
 NOT_LABELLED: dict[str, str] = {
+    "LG-104": ("The block-page follow-up (decision 317): the page limit, the reader's reading order and page grouping, and "
+               "the team report's title fitting choose pages, order or type size; the access finding it adds is the owner's "
+               "request (2026-11-06), and its wording, confidence class and steps are what this item keeps open."),
     "LG-103": ("The crawl's reading order across country/language folders, the business-type suggestion, the sitemap "
                "card's plain line and the saved-audit block-page rule (decision 316): they choose pages, order or wording "
                "and drop measurements of a block page; no finding is made by them."),

@@ -41,19 +41,18 @@ def test_a_challenged_site_read_through_firecrawl_is_not_called_blocked(tmp_path
     assert [(g.check_id, g.state) for g in outcome.gates] == gates_before
     assert run_outcome(outcome.result, outcome.gates)[1] == "DEGRADED"  # without the reader's section, Maya's crawl alone
 
-    # The challenge is one Info note under AI crawler access, with the measurement kept as evidence.
+    # DECISIONS 317 (replaces the Info note for a named service): Cloudflare's challenge stays the site's finding, with its
+    # AI-crawler warning, and the reader's pages are kept beside it as evidence.
     acc9 = outcome.by_id()["ACC-9"]
-    [note] = acc9.findings
-    assert note.severity.value == "Info" and note.title == (
-        "Cloudflare challenged Maya's direct crawler on 1 of 1 request(s). 4 page(s) were read through Firecrawl instead. "
-        "Genuine AI-crawler access was not measured.")
-    assert note.evidence["pages_blocked_or_challenged"] == 1 and note.evidence["read_through"] == {"reader": "firecrawl", "pages_read": 4}
-    assert note.evidence["severity_before_reader"] == "S3" and "presentation choice" in note.evidence["shown_as_a_note_because"]
-    said = " ".join([note.title, note.how_to_fix, *note.notes, outcome.by_id()["ACC-9"].summary])
+    [finding] = acc9.findings
+    assert finding.severity.value == "S3" and finding.rule_id == "acc9.bot_protection" and finding.title == (
+        "Maya's crawler blocked by bot protection (Cloudflare): 1 of 1 page request(s) got its block page. "
+        "AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended) may be blocked the same way")
+    assert finding.evidence["pages_blocked_or_challenged"] == 1 and finding.evidence["read_through"] == {"reader": "firecrawl", "pages_read": 4}
+    said = " ".join([finding.title, finding.how_to_fix, *finding.notes, acc9.summary])
     for claim in ("not affected", "unaffected", "Nothing needs fixing", "can read this", "bots can read"):
         assert claim not in said, claim  # nothing was measured about real AI crawlers, so nothing is claimed
-    assert "Not measured" in note.notes[1] and "not the vendors' real requests" in note.notes[1] and "This audit cannot say" in note.how_to_fix
-    assert not [f for c in outcome.checks for f in c.findings if f.check_id == "ACC-9" and f.severity.value != "Info"]
+    assert "AI crawlers were not tested here" in finding.notes[0] and "may be blocked the same way" in finding.how_to_fix
 
     # Content checks carry the plain source, without the old warning.
     titles = outcome.by_id()["STR-1"]
@@ -76,7 +75,7 @@ def test_a_site_is_still_called_blocked_when_firecrawl_failed_too(tmp_path, no_l
     assert info["used"] is False and reader.also_blocked(info) and "Firecrawl basic was also blocked" in info["reason"]
     assert run_outcome(outcome.result, outcome.gates, info)[1] == "DEGRADED"
     [finding] = outcome.by_id()["ACC-9"].findings
-    assert finding.severity.value == "S3" and finding.title.startswith("The site blocks or challenges automated visitors")
+    assert finding.severity.value == "S3" and finding.rule_id == "acc9.bot_protection"
 
 
 def test_a_normal_site_is_read_through_firecrawl_and_keeps_mayas_own_direct_evidence(tmp_path, no_lookups):

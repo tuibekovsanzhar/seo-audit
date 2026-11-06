@@ -224,6 +224,7 @@
   "sitemap_part": "{label} {n}",
   "blocked_429_line": "Yapay zekâ tarayıcıları da aynı muameleyi görebilir; {who} üzerindeki bot ve hız sınırı kurallarını kontrol edin.",
   "blocked_429_firewall": "sitenin güvenlik duvarı",
+  "protection_line": "GPTBot, ClaudeBot, PerplexityBot ve Google-Extended da engellenebilir; {who} kurallarında izin verin.",
   "sitemap_reasons": {
    "redirect_404": [
     "hata sayfasına yönlenen",
@@ -626,6 +627,7 @@
   "sitemap_part": "{n} {label}",
   "blocked_429_line": "AI crawlers may get the same treatment; check the bot and rate-limit rules in {who}.",
   "blocked_429_firewall": "the site's firewall",
+  "protection_line": "GPTBot, ClaudeBot, PerplexityBot and Google-Extended may be blocked too; allow them in {who}.",
   "sitemap_reasons": {
    "redirect_404": [
     "redirect to an error page",

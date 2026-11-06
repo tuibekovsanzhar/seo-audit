@@ -3773,3 +3773,52 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      1.26 -> 1.27; tests that pinned the old wording, the business-type list, the hospital fixture's sections (its
      `/en/team/` and `/tr/team/` are now one section) and one empty-page split (the restaurant's `/sube/` is read first)
      follow the new rules. The demo shop's crawl is page for page the same as before.
+
+317. **Block pages never use up the page limit; an access finding for a named bot-protection service; link data for pages
+     read only through the page reader; long titles never stop the team report's PDF (Owner, 2026-11-06, follow-up to
+     316; tested offline on airastana d12146fb, nihan b3198942 and moodist c581ff0a. Global rules; brands are test cases.
+     The finding's wording, confidence class and steps, and the title sizes, are agent defaults: LG-104).**
+     (1) *Page limit.* A block page (Imperva, Cloudflare, Akamai, DataDome, HUMAN/PerimeterX …) or a 429 is not a page read
+     and never counts. Two gaps closed in `firecrawl.reader._read_pages`: when the crawl as a whole counted as blocked, Maya's
+     few good pages were left out of the limit (a fake site with 4 good pages and 6 block pages on a 10-page plan counted 12
+     pages read → now 10: Maya's 4, read again by Firecrawl, and 6 new); and as the main page reader, Firecrawl skipped every page Maya got a block page for (treated
+     like a redirect or an error, whose status is the finding) → it now reads it, within the limit. When every page was a
+     block page (airastana) a live run already left Firecrawl the whole plan; that is now recorded and said:
+     `firecrawl.coverage.page_limit` (schema **1.28**: `plan`, `maya_pages_read`, `block_answers`, `block_answers_counted`
+     = 0, `reader_new_pages_allowed`; a saved copy's is `worked_out_offline`). One line under Maya's own limits (PDF, web
+     summary, XLSX Coverage): "Block pages did not count toward the page limit: Maya's crawler got a block page on 50
+     requests; the page reader could read up to 50 pages and read 13 (the time limit came first)." *airastana:* the 50 block
+     pages do not count, so Firecrawl could read up to 50; it read 13 because the audit's time ran out (Firecrawl took
+     ~35 s a call there, timed out twice and backed off to one request at a time), not because of the limit. A new audit
+     of airastana would read up to 50 pages if time allows; nothing was requested to show it.
+     (2) *Access finding.* ACC-9 `acc9.bot_protection` when the commonest blocker is a named service and not a rate limit:
+     "Maya's crawler blocked by bot protection (Imperva): 50 of 50 page request(s) got its block page. AI crawlers (GPTBot,
+     ClaudeBot, PerplexityBot, Google-Extended) may be blocked the same way", S3 when the homepage or 20%+ of pages (S4
+     otherwise), fix: find the rule in the service's bot settings, allow Maya's user agent and re-run, allow GPTBot,
+     OAI-SearchBot, ClaudeBot and PerplexityBot by user agent with each vendor's published IP ranges, allow Googlebot
+     (Google-Extended is a robots.txt setting, not a crawler), check the firewall logs. Like the 429 card (288) it stays a
+     finding when Firecrawl reads the pages (`note_the_challenge` leaves it, adding `read_through`), and its PDF card has
+     one line naming the service and the four crawlers. Its confidence is the classification's (Verified from a header or
+     a status, Estimated from a block page's body): the block is measured, what AI crawlers get stays a "may" in its words;
+     the 429 card's Inferred would have sent it to "Teyit edin". Turkish title, fix and summary; the vendor names are terms.
+     A 429 keeps 288/289's cards; an unnamed 403 keeps "The site blocks or challenges automated visitors".
+     (3) *Link data.* Firecrawl's `rawHtml` already holds every anchor of the rendered page, and the reader already parsed
+     them (`outlinks`), so no other format is requested. What was missing: the page grouping (link score, click depth,
+     importance) ran on the reader's pages only when the crawl counted as blocked. It now also runs, on one link graph with
+     Maya's own pages, whenever some page was read only through the reader (Maya never asked for it, or got a block page);
+     `crawl.reader_page_grouping` keeps it. *airastana's saved audit keeps no links* (neither the report nor the evidence
+     copies hold the reader's outlinks), so its copy still says "not computed (read only through the page reader)"; a new
+     audit computes them.
+     (4) *Titles.* The team report's PDF stopped on any slot that overflowed its box. Every title slot (priorities,
+     findings, action plan, to-do cards, "Teyit edin") now has `data-fit` (its smallest size): a fit step before the overflow
+     check makes the letters smaller until the title fits its box; only a title that does not fit at that size is cut at
+     a word with "…" (the whole title stays in the element's `title` and the XLSX), listed as "KISALTILDI", never a stop. A
+     170-character title on every slot: card titles shrink to two full lines, the one-line table rows are cut. nihan's
+     English PDF at HEAD prints (its card titles are short since 316's wording); it no longer depends on that.
+     *Before / after on the three saved audits (current-engine copies in a scratch folder, offline):* airastana's ACC-9 note
+     "Imperva challenged Maya's direct crawler … Genuine AI-crawler access was not measured." (Info) → the S3 card above
+     (recorded issues 6 → 7; in "Teyit edin" without the confidence rule); the page-limit line added; the other cards, tiles
+     and key pages unchanged. moodist and nihan: no block answers, no change to cards, tiles or key pages. All six PDFs (TR
+     and EN) print.
+     Tests: `tests/test_blocked_reader_317.py` (fake sites for the five services, a made-up Firecrawl, hand-made reports,
+     and the long-title render in TR and EN); tests that pinned a named service's challenge as a note follow the new rule.

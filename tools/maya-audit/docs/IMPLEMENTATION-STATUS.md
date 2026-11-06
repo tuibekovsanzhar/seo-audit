@@ -1358,3 +1358,30 @@ headlines, "öncelik:" in Turkish ones; one Turkish instruction form (imperative
 1. A live nihan Standard 500 run on this code (owner's explicit request needed: it is paid and live).
 2. Push to withmaya/seo-audit when the owner asks.
 3. Backlog: `docs/BACKLOG.md`.
+
+## Block pages, bot protection, reader links, long titles (DECISIONS 317, 2026-11-06)
+
+What changed: block pages and 429s never use up the page limit (`firecrawl.coverage.page_limit`, schema 1.28, and one
+line under Maya's own limits); Firecrawl reads pages Maya got a block page for; ACC-9 `acc9.bot_protection` names the
+service, the blocked requests and the AI crawlers that may be blocked the same way, with steps, and stays a card when
+Firecrawl read the site; the page grouping (link score, click depth, importance) runs on Firecrawl's own links whenever
+a page was read only through it; every title slot of the team report shrinks to fit and never stops the PDF.
+
+**Before / after, offline on copies of the saved audits** (current-engine copies in a scratch folder):
+
+| | airastana d12146fb | moodist c581ff0a | nihan b3198942 |
+|---|---|---|---|
+| ACC-9 | Info note "Imperva challenged Maya's direct crawler …" -> S3 card 02 "Let crawlers past the bot protection's block page" (Imperva, 50 of 50, GPTBot/ClaudeBot/PerplexityBot/Google-Extended) | no block, unchanged | no block, unchanged |
+| Recorded issues | 6 -> 7 (pages read 13, Medium+ pages 1, lab not measured: unchanged) | 20 | 32 |
+| Page limit | new line: 50 block answers not counted; the reader could read up to 50, read 13 (the time limit came first) | no line | no line |
+| Key pages | unchanged (saved copies hold no reader links: "not computed") | unchanged | unchanged |
+| PDF | 6 pages TR and EN | 8 pages TR and EN | 8 pages TR and EN |
+
+| Command | Result |
+|---|---|
+| fast suite (first run) | `14 failed`: tests that pinned a named service's challenge as an Info note, the schema history list, LG-104 not registered, a title written with a join (not readable by the wording test); all fixed |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2790 passed, 4 skipped, 134 deselected, 1 warning in 485.71s` (final run, after every change) |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `2 failed, 2922 passed, 4 skipped` : the fixture matrix (regenerated) and one sitemap-sampling test that failed while a second pytest ran beside it (passes alone) |
+| ruff E9/F821/F841, `python3.11 -m compileall` | clean / OK |
+| CLI, provider-free, loopback fake site serving Imperva's block page, `--max-pages 5 --no-firecrawl` | schema 1.28, no Firecrawl section, no provider ledger; ACC-9 `acc9.bot_protection` S3 Estimated; exit 1 (blocked audit) |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |

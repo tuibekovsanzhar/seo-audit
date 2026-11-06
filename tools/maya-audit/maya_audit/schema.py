@@ -28,7 +28,7 @@ from .index_data import HTTP_REDIRECT_LINES
 from .models import (Confidence, CrawlResult, FetchClass, GateResult, PageFetch, RequestRecord, SitemapDoc, SkippedUrl,
                      StopReason)
 
-SCHEMA_VERSION = "1.27"
+SCHEMA_VERSION = "1.28"
 
 # Always present.
 REPORT_KEYS = ("generation", "schema_version", "report_version", "status_meanings", "scope", "gates", "checks", "answer_engine_panel",
@@ -78,6 +78,8 @@ FIRECRAWL_COVERAGE_KEYS = ("attempted", "read", "page_cap", "cap_reached", "know
                            # left unread, and whether it read beside Maya's own steps.
                            "seconds_per_page_measured", "call_seconds_measured", "seconds_per_page_assumed", "skipped_for_time",
                            "ran_beside_maya",
+                           # 1.28 (DECISIONS 317): how the plan's one page limit was shared; block answers never count.
+                           "page_limit",
                            # 1.22 (DECISIONS 295): calls that timed out: pages asked for once more, read on that try, skipped.
                            "timeouts")
 # Why known addresses were not asked for. "request_allowance_used" (1.11): the audit's request allowance was spent

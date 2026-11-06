@@ -280,6 +280,21 @@ def _usable(page: PageFetch | None) -> bool:
             and page.readable_document())
 
 
+def page_limit_record(result, plan: int, maya_pages_read: int) -> dict[str, Any]:
+    """How the plan's one page limit was shared (DECISIONS 316, 317): Maya's pages read count, its block answers do not.
+
+    `result` is a CrawlResult or a saved report's crawl section. `block_answers` are page requests Maya's crawler got a
+    block page, a challenge or a rate limit for; `reader_new_pages_allowed` is what the page reader could read beside
+    Maya's pages (the whole plan when Maya read none)."""
+    pages = result.get("pages") if isinstance(result, dict) else result.pages
+    blocked = 0
+    for page in pages or []:
+        kind = page.get("fetch_class") if isinstance(page, dict) else getattr(page.fetch_class, "value", page.fetch_class)
+        blocked += kind in ("blocked", "rate_limited")
+    return {"plan": plan, "maya_pages_read": maya_pages_read, "block_answers": blocked, "block_answers_counted": 0,
+            "reader_new_pages_allowed": max(0, plan - maya_pages_read)}
+
+
 def _merged(own: PageFetch | None, read: PageFetch, disagreements: list[dict[str, Any]] | None = None) -> PageFetch:
     """One page from two requests: Maya's own answer (status, headers, timing, how it was found) with the content
     Firecrawl read. A page Maya's crawler did not get keeps Firecrawl's record as it is.
@@ -336,6 +351,11 @@ def note_the_challenge(checks: list[CheckResult], pages_read: int) -> None:
             continue
         for finding in check.findings:
             evidence = finding.evidence
+            if finding.rule_id == "acc9.bot_protection":
+                # DECISIONS 317: a named bot-protection service blocked Maya's crawler. Like the 429 card (288) it stays the
+                # site's finding, with its AI-crawler warning; the reader's pages are recorded beside it.
+                finding.evidence = {**evidence, "read_through": {"reader": "firecrawl", "pages_read": pages_read}}
+                continue
             blockers = evidence.get("blocked_by") or []
             top = blockers[0] if blockers else {}
             who = top.get("name") or "The site's bot protection"
@@ -358,6 +378,8 @@ def note_the_challenge(checks: list[CheckResult], pages_read: int) -> None:
                              "Not measured: what the AI vendors' own crawlers receive. Maya's crawler is an unverified bot, and a reader's "
                              "success is not evidence about them either. ACC-4, on ownership-verified sites, sends requests under those "
                              "crawlers' names from Maya's own network: a limited probe, not the vendors' real requests."]
+        if all(f.rule_id == "acc9.bot_protection" for f in check.findings):
+            continue
         check.summary = (f"1 note: {blocker_phrase((check.evidence or {}).get('blocked_by') or [])} answered Maya's direct crawler; "
                          f"{pages_read} page(s) were read through Firecrawl. Genuine AI-crawler access was not measured.")
 
@@ -480,10 +502,16 @@ def read_blocked_site(result: CrawlResult, cfg: CrawlConfig, client: ContentProv
                            "measured_on": "the rendered HTML Firecrawl returned (rawHtml: its browser's page after "
                                           "JavaScript) for the pages it read; not comparable with Maya's raw size"}
         checks.append(weight)
-    if blocked or result.stop_reason == StopReason.RATE_LIMIT:
+    mayas = {page.url: page for page in result.pages}
+    reader_only = [page.url for page in pages if not _usable(mayas.get(page.url))]
+    if blocked or result.stop_reason == StopReason.RATE_LIMIT or reader_only:
         # DECISIONS 304: Maya's own page records hold no content (or few pages) here, so the page grouping (templates,
         # page types, importance) is worked out on the pages the reader read, with their links, while they are in
         # memory, and kept with the report (`crawl.reader_page_grouping`); the saved copies keep no links.
+        # DECISIONS 317: also when the reader is the main page reader and some pages were read only through it (Maya's
+        # copy was a block page, or Maya never asked for the page): the links of the reader's documents (its rendered
+        # HTML holds every anchor, so no other format is asked for) give those pages their link score, click depth and
+        # importance, on one link graph with Maya's own pages, instead of "not computed".
         reader_page_grouping(result, view, client.identity.name)
     if main:
         _label(checks, MAIN_SOURCE, MAIN_WHY, client.identity, notice=None)
@@ -569,7 +597,10 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
     # DECISIONS 316: one page limit for the audit. The pages Maya's own crawler read count against it; the reader may
     # read those again (its copy is the one the content checks judge) and reads a page Maya did not read only while the
     # two together stay within the plan's limit (airastana: 50 + 11 = 61 pages on a 50-page plan before).
-    own_read = {url for url, page in own.items() if _usable(page)}
+    # DECISIONS 317: a block page (Imperva, Cloudflare, Akamai, DataDome, PerimeterX ...) or a 429 is not a page read,
+    # so it never uses up the limit; Maya's pages that were read count also when the crawl as a whole counted as blocked
+    # (before, a blocked crawl's few good pages were left out, and the two together could pass the plan).
+    own_read = {page.url for page in result.pages if _usable(page)}
     budget_new = max(0, options.max_pages - len(own_read)) if own_read else None
     over_budget: list[str] = []
 
@@ -675,8 +706,10 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
             if url in seen or not same_origin(url, origin):
                 continue
             seen.add(url)
-            if url in own and not _usable(own[url]):
-                continue  # a redirect or an error page in Maya's own crawl: its status is the finding, there is no content to read
+            if url in own and not _usable(own[url]) and own[url].fetch_class not in (FetchClass.BLOCKED, FetchClass.RATE_LIMITED):
+                # A redirect or an error page in Maya's own crawl: its status is the finding, there is no content to read.
+                # A block page or a 429 is the protection's answer, not the page's (DECISIONS 317): the reader reads it.
+                continue
             if not allowed(url):
                 skipped_robots += 1
                 continue
@@ -902,6 +935,7 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
     info.update(pages_read=len(pages), skipped_by_robots=skipped_robots,
                 pages_blocked_for_firecrawl_too=sum(1 for row in rows if row["outcome"] == "blocked"),
                 coverage={"attempted": len(rows), "read": len(pages), "page_cap": options.max_pages, "cap_reached": at_limit and bool(waiting),
+                          "page_limit": page_limit_record(result, options.max_pages, len(own_read)),
                           "known_urls_not_requested": len(waiting), "not_requested_because": why_waiting,
                           "requested_without_a_readable_document": len(failed), "causes": causes,
                           "sections_sampled": queue.sections_read(),

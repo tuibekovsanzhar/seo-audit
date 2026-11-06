@@ -528,14 +528,14 @@ def test_cli_reads_a_blocked_site_through_firecrawl_and_labels_every_output(monk
     assert section["checks_from_firecrawl"] == sorted(section["checks_from_firecrawl"], key=check_id_key)
     assert section["checks_from_firecrawl"].index("STR-2") < section["checks_from_firecrawl"].index("STR-10")
     assert "**Pages read:** 4 (via Firecrawl)" in md_path.read_text(encoding="utf-8") and client_ledger(tmp_path) == 12  # five pages and the sitemap, asked for once the homepage was read
-    assert report["schema_version"] == "1.27" and section["used"] and section["proxy"] == "basic" and section["pages_read"] == 4
+    assert report["schema_version"] == "1.28" and section["used"] and section["proxy"] == "basic" and section["pages_read"] == 4
     assert section["zero_data_retention"]["status"] == "applied" and section["owner_approved_bypass"] is False
     from maya_audit import schema
     assert set(section) <= set(schema.FIRECRAWL_KEYS) and "view_pages" not in section
     str1 = next(c for c in report["checks"] if c["check_id"] == "STR-1")
     assert str1["summary"].startswith("Source: Firecrawl. ") and str1["findings"][0]["notes"][0] == "Source: Firecrawl."
-    [note] = next(c for c in report["checks"] if c["check_id"] == "ACC-9")["findings"]
-    assert note["severity"] == "Info" and note["title"].startswith("Cloudflare challenged Maya's direct crawler on 1 of 1 request(s).")
+    [acc9] = next(c for c in report["checks"] if c["check_id"] == "ACC-9")["findings"]  # DECISIONS 317: a finding, not a note
+    assert acc9["severity"] == "S3" and acc9["rule_id"] == "acc9.bot_protection" and acc9["evidence"]["read_through"]["pages_read"] == 4
     assert report["crawl"]["pages"][0]["status"] == 403 and section["purpose"] == "main page reader"
     markdown = md_path.read_text(encoding="utf-8")
     assert "## Firecrawl (third-party page reader)" in markdown and "Source: Firecrawl." in markdown and "was blocked)" not in markdown
