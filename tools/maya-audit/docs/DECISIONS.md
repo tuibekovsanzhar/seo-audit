@@ -3897,3 +3897,31 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      verdict S2; airastana 4 (certificate, Imperva block page, heading order, broken markup), verdict S3.
      Tests: `tests/test_client_brief_319.py` (library, selection, plan, key pages, gate, low coverage, routes; one slow
      through the real routes in both languages); `test_team_report` follows the Downloads card.
+
+320. **No card content ever blocks printing; the brief's "SEO" owner; a 429 block names its service and what loaded (Owner,
+     2026-11-07: the three fixes as asked; the shrink floor (80%), the line floor (6.8 pt), the order lines give way and
+     the words are agent defaults).** Global for every audit; nihan b3198942 (EN team report blocked: card 02's
+     confirmation note was its fifth line under the status, "kutu/kart: todos[1].title") and nihan 0dc805b9 (429) were
+     the test cases.
+     (1) *Cards fit, never block.* A line under a card's status (the owner's confirmation note, a member, the template,
+     language and sitemap lines) and the evidence/target line now wrap to two lines and shrink like a title (`data-fit`,
+     floor `render.LINE_FIT` 6.8 pt; only a line that does not fit two lines even then is cut at a word, whole text in its
+     `title`). Then `render.CARD_FIT_JS` runs on every fixed-height box (to-do cards, every summary card, the brief's
+     cards, the priority lines): a box still too tall, or holding a part too tall for its own box, first shrinks its parts
+     below the title row together (CSS zoom, down to 80%, every line kept); still too tall, the least important lines go,
+     last first, each counted: lines under the status fold into "+N more" (the confirmation note last: the card carries
+     it as `todos[].sub_keep`), then link rows and links, then the last steps (one stays), then list and table rows.
+     A card that lost a line is listed in `shortened` ("kart: todos[i]…"); the XLSX appendix keeps everything. The
+     overflow check is unchanged and still runs after the fitter. nihan EN/TR: card 02 shrinks, nothing cut, PDFs print.
+     (2) *Brief owner.* The catalogue's "SEO" owner is "SEO / pazarlama ekibi" / "SEO / marketing team" in the brief
+     (was "Geliştirici"/"Developer", DECISIONS 319 (3)); moodist's brief shows it, still 5 pages.
+     (3) *429 words.* The team card of `acc9.blocked_429` / `acc9.rate_limited_429` gets a first line naming the service
+     from the evidence (`blocked_by`, else "the site's firewall") and saying what was refused and what loaded: "Cloudflare
+     refused 1 of 1 page request with 429 (too many requests); robots.txt, 26 sitemap files and llms.txt loaded." What
+     loaded is read from the crawl's request log (`maya_blocked.served_files`: 200 on the start page's host, "www."
+     aside), so saved audits say it too; nothing loaded and robots.txt/sitemap refused (evidence) says that instead. The
+     brief's words for both rules name the service ("Sitenizin Cloudflare adlı koruma hizmeti …", as the Imperva words)
+     and, when they loaded, the robots file and the sitemap with their explanations; the gate still passes. report.json is
+     unchanged: no schema bump.
+     Tests: `tests/test_card_fit_320.py` (a long note on every card type and issue type in TR and EN, an overfull card,
+     owner words, served files, the 429 card and brief lines with and without a service and files).

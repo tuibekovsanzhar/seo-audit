@@ -66,7 +66,7 @@
   "owners": {
    "developer": "Geliştirici",
    "content": "İçerik ekibi",
-   "seo": "Geliştirici"
+   "seo": "SEO / pazarlama ekibi"
   },
   "efforts": {
    "S": "Küçük",
@@ -90,7 +90,12 @@
    "sorun",
    "sorun"
   ],
-  "and": "ve"
+  "and": "ve",
+  "served": {
+   "robots": "tarayıcılara hangi sayfaları okuyabileceklerini söyleyen dosya (robots.txt)",
+   "sitemap": "Google'a sayfalarınızın listesini veren dosya (site haritası)",
+   "and": " ile "
+  }
  },
  "verdict": {
   "S1": "{brand} sitesinde, müşterilerin sizi Google'da ve yapay zekâ asistanlarında bulmasını engelleyen bir sorun var; önce onu düzeltmenizi öneriyoruz.",
@@ -501,12 +506,12 @@
   },
   "acc9.blocked_429": {
    "title": "Koruma ayarlarınızın Google'ı ve yapay zekâ asistanlarını geri çevirmesini önleyin",
-   "what": "Sitenizin koruma ayarları, kısa sürede birkaç sayfa isteyen otomatik ziyaretçilere çok fazla istek yanıtı verip sayfayı göstermiyor; denetimimizin istekleri de böyle geri çevrildi.",
+   "what": "Sitenizin [[{service} adlı ]]koruma hizmeti, denetimimizin sayfa isteklerini sayfa yerine çok fazla istek yanıtıyla geri çevirdi[[; {loaded} ise normal açıldı]].",
    "why": "Yapay zekâ asistanlarının siteyi okuyan programları da aynı yanıtı alabilir; o zaman sitenizi okuyamaz ve yanıtlarında sizi kaynak gösteremez."
   },
   "acc9.rate_limited_429": {
    "title": "Koruma ayarlarınızın Google'ı ve yapay zekâ asistanlarını geri çevirmesini önleyin",
-   "what": "Sitenizin koruma ayarları, kısa sürede birkaç sayfa isteyen otomatik ziyaretçilere zaman zaman çok fazla istek yanıtı verip sayfayı göstermiyor.",
+   "what": "Sitenizin [[{service} adlı ]]koruma hizmeti, kısa sürede birkaç sayfa isteyen otomatik ziyaretçilere zaman zaman sayfa yerine çok fazla istek yanıtı veriyor[[; {loaded} ise normal açıldı]].",
    "why": "Yapay zekâ asistanlarının siteyi okuyan programları da aynı yanıtı alabilir; o zaman sitenizin bir bölümünü okuyamaz ve yanıtlarında kullanamaz."
   },
   "acc4.outcome": {

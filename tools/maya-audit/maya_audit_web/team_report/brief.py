@@ -135,6 +135,17 @@ def _service(findings: list[dict]) -> str | None:
     return None
 
 
+def _loaded(rule: str | None, report: dict, L: dict) -> str | None:
+    """DECISIONS 320: for a 429 block, the site files that loaded while pages were refused (robots.txt, the sitemap), in
+    the brief's words with each term's explanation; None when neither loaded (the sentence then ends after the pages)."""
+    if rule not in ("acc9.blocked_429", "acc9.rate_limited_429"):
+        return None
+    from maya_audit import maya_blocked
+    served = maya_blocked.served_files(report.get("crawl") or {})
+    words = [L["served"][k] for k, on in (("robots", served["robots"]), ("sitemap", served["sitemaps"] > 0)) if on]
+    return L["served"]["and"].join(words) or None
+
+
 def _good(report: dict, lang: str, data: dict | None = None) -> list[str]:
     """What already works: a check that passed with no finding at all, and no finding of a check that would contradict
     it (ACC-2 'AI assistants may read the site' is not said when bot protection blocks crawlers)."""
@@ -212,7 +223,7 @@ def problems(data: dict, report: dict, lang: str) -> list[dict]:
         out.append({
             "n": len(out) + 1, "card": t.get("n"), "severity": card["severity"],
             "severity_label": L["severity"][card["severity"]],
-            "title": words["title"], "what": fmt(words["what"], service=service), "why": words["why"],
+            "title": words["title"], "what": fmt(words["what"], service=service, loaded=_loaded(rule, report, L)), "why": words["why"],
             "example": example or L["sitewide"], "scope": fmt(L["example_scope"], scope=scope) if scope else None,
             "site": bool(rule and rule.startswith(SITE_RULES)),
             "who": L["owners"][owner], "owner": owner, "effort": L["efforts"][effort], "effort_key": effort,

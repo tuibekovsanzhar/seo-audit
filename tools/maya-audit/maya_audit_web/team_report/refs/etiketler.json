@@ -224,6 +224,14 @@
   "sitemap_part": "{label} {n}",
   "blocked_429_line": "Yapay zekâ tarayıcıları da aynı muameleyi görebilir; {who} üzerindeki bot ve hız sınırı kurallarını kontrol edin.",
   "blocked_429_firewall": "sitenin güvenlik duvarı",
+  "refused_429_line": "{who}, {requested} sayfa isteğinden {blocked} tanesini 429 (çok fazla istek) yanıtıyla reddetti{loaded}.",
+  "refused_429_loaded": "; {files} yüklendi",
+  "refused_429_also": "; robots.txt ve site haritası da reddedildi",
+  "served_robots": "robots.txt",
+  "served_sitemap_one": "1 site haritası dosyası",
+  "served_sitemaps": "{n} site haritası dosyası",
+  "served_llms": "llms.txt",
+  "served_and": " ve ",
   "protection_line": "GPTBot, ClaudeBot, PerplexityBot ve Google-Extended da engellenebilir; {who} kurallarında izin verin.",
   "sitemap_reasons": {
    "redirect_404": [
@@ -627,6 +635,14 @@
   "sitemap_part": "{n} {label}",
   "blocked_429_line": "AI crawlers may get the same treatment; check the bot and rate-limit rules in {who}.",
   "blocked_429_firewall": "the site's firewall",
+  "refused_429_line": "{who} refused {blocked} of {requested} {requests} with 429 (too many requests){loaded}.",
+  "refused_429_loaded": "; {files} loaded",
+  "refused_429_also": "; robots.txt and the sitemap were refused too",
+  "served_robots": "robots.txt",
+  "served_sitemap_one": "1 sitemap file",
+  "served_sitemaps": "{n} sitemap files",
+  "served_llms": "llms.txt",
+  "served_and": " and ",
   "protection_line": "GPTBot, ClaudeBot, PerplexityBot and Google-Extended may be blocked too; allow them in {who}.",
   "sitemap_reasons": {
    "redirect_404": [

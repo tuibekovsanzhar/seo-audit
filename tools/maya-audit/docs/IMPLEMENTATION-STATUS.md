@@ -1424,3 +1424,28 @@ makes the English card too tall. Not changed here.
 | ruff E9/F821/F841, `python3.11 -m compileall`, `node --check` | clean / OK |
 | skill `scripts/brief.py` on moodist (EN), provider-free | exit 0, 5 pages |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
+
+## Cards never block printing, brief SEO owner, 429 service words (2026-11-07, DECISIONS 320)
+
+Owner's three small fixes, global for every audit. (1) A long confirmation note or any long card part wraps and shrinks
+like a title; a too-tall card shrinks its parts (to 80%), then folds its least important lines into "+N more" (the
+note last); the overflow check still runs after. nihan b3198942 EN, blocked before by card 02 ("kutu/kart:
+todos[1].title"), now prints (9 pages), card 02 shrunk, nothing cut. (2) The brief's "SEO" owner reads "SEO / pazarlama
+ekibi" / "SEO / marketing team". (3) The 429 card names the service and what was refused and what loaded (nihan
+0dc805b9: "Cloudflare refused 1 of 1 page request with 429 (too many requests); robots.txt, 26 sitemap files and
+llms.txt loaded."); the brief's 429 words name the service and the robots file and sitemap with their explanations.
+No schema bump.
+
+**Offline on copies of the saved audits** (scratch folder, provider-free, no provider ledger created): team report TR and
+EN of nihan b3198942, nihan 0dc805b9, moodist c581ff0a, airastana d12146fb: all print, no overflow, nothing shortened.
+Briefs: nihan, moodist, airastana 5 pages, not blocked (moodist shows "SEO / pazarlama ekibi"); nihan 0dc805b9
+correctly blocked for low coverage (1 of 500 pages).
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_card_fit_320.py` | `18 passed`; with the card fitter switched off, its 4 render tests fail (overflow) |
+| related suites (team report, brief 319, 317, files naming the changed parts) | `113 passed` |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2843 passed, 4 skipped, 135 deselected, 1 warning in 524.94s (0:08:44)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` (one run, on its own) | `2978 passed, 4 skipped, 1 warning in 920.54s (0:15:20)` |
+| ruff E9/F821/F841 on `maya_audit maya_audit_web` and the new test; `python3.11 -m compileall` | clean / OK (ruff on all of `tests/` shows 4 old F841 in untouched files) |
+| Owner's web app on port 8770 | NOT RUN (restart needed to pick up the change) |

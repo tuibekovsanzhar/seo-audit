@@ -232,10 +232,12 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 .tpl th:nth-child(6) { width: 14%; }
 .todo .tm .mono { color: var(--faint); font-size: 8pt; }
 .todo-status {font-size:8.3pt;color:var(--muted);margin:2pt 0 0 41pt;line-height:1.2;}
-.todo-fact {font-size:8.3pt;color:var(--ink);margin:2pt 0 0 41pt;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* DECISIONS 320: a line under the status (a confirmation note, a member, the evidence) wraps to two lines and shrinks
+   like a card title (data-fit); never cut silently at the card's edge */
+.todo-fact {font-size:8.3pt;color:var(--ink);margin:2pt 0 0 41pt;line-height:1.2;max-height:2.4em;overflow:hidden;overflow-wrap:anywhere;}
 .todo-fact b {color:var(--muted);font-weight:600;}
 .todo-sub {font-size:8.1pt;color:var(--ink);margin:2pt 0 0 41pt;line-height:1.25;}
-.todo-sub div {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.todo-sub div {max-height:2.5em;overflow:hidden;overflow-wrap:anywhere;}
 .todo-sub div::before {content:'• ';color:var(--faint);}
 .todo.sub ol { height: auto; max-height: 60pt; }
 .todo .sec { margin-top: 6pt; padding-left: 41pt; }
@@ -502,16 +504,22 @@ def path_or_host(url):
 
 
 SUB_LINES = 5  # lines under a card's status (the overflow check measures them); more are counted
+LINE_FIT = 6.8  # pt: the smallest size a line under a card's status shrinks to before it is cut (DECISIONS 320)
 
 
 def sub_lines(t, L):
     lines = list(t.get("sub") or [])
     shown = lines[:SUB_LINES] if len(lines) <= SUB_LINES else lines[:SUB_LINES - 1]
     rest = len(lines) - len(shown)
-    body = "".join(f"<div>{e(x)}</div>" for x in shown)
+    i = t["n"] - 1
+    # DECISIONS 320: each line wraps and shrinks (data-fit); the card fitter may fold the last lines into "+N more".
+    keep = t.get("sub_keep")
+    marked = ' class="keep"'
+    body = "".join(f'<div{marked if keep and x == keep else ""} data-slot="todos[{i}].sub[{j}]" data-fit="{LINE_FIT}">{e(x)}</div>'
+                   for j, x in enumerate(shown))
     if rest:
-        body += f"<div>{e(fmt(L['sub_more'], n=rest))}</div>"
-    return f'<div class="todo-sub">{body}</div>'
+        body += f'<div class="more-line" data-rest="{rest}">{e(fmt(L["sub_more"], n=rest))}</div>'
+    return f'<div class="todo-sub" data-more="{e(L["sub_more"])}">{body}</div>'
 
 
 def score_text(score, lang):
@@ -553,9 +561,9 @@ def todo_pages(d, L):
                 # one per line where the single evidence line would be.
                 + (sub_lines(t, L) if t.get("sub") else
                    "" if t.get("link_rows") else
-                   f'<div class="todo-fact"><b>{e(L["todo_targets"])}:</b> {e(target_line(t["target_urls"]))}</div>'
+                   f'<div class="todo-fact" data-slot="todos[{i}].fact" data-fit="{LINE_FIT}"><b>{e(L["todo_targets"])}:</b> {e(target_line(t["target_urls"]))}</div>'
                    if t.get("target_urls") else
-                   f'<div class="todo-fact"><b>{e(L["todo_fact"])}:</b> {e(t["fact"])}</div>' if t.get("fact") else "")
+                   f'<div class="todo-fact" data-slot="todos[{i}].fact" data-fit="{LINE_FIT}"><b>{e(L["todo_fact"])}:</b> {e(t["fact"])}</div>' if t.get("fact") else "")
                 + ''
                 f'<div class="sec"><div class="eyebrow">{e(L["todo_steps"])}</div><ol data-slot="todos[{i}].steps">{steps}</ol></div>'
                 f'<div class="sec"><div class="eyebrow">{e(L["todo_verify"])}</div><div class="vf" data-slot="todos[{i}].verify">{e(t["verify"])}</div></div>'
@@ -640,7 +648,7 @@ def build_html(d):
 # keeps its box, and its letters get smaller, step by step, until it fits (two lines for a card title, one for a table
 # row). Only a title that does not fit even at that size is cut at a word, with "…", the whole title kept in the
 # element's `title` and in the XLSX appendix. Returns the slots that were cut.
-FIT_JS = """() => {
+FIT_JS = r"""() => {
   const cut = [];
   const over = (el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
   for (const el of document.querySelectorAll('[data-fit]')) {
@@ -655,6 +663,60 @@ FIT_JS = """() => {
     let text = el.textContent;
     while (text.length > 2 && over(el)) { text = text.slice(0, -2) + '…'; el.textContent = text; }
     cut.push(el.dataset.slot);
+  }
+  return cut;
+}"""
+
+
+# DECISIONS 320: no card's content ever stops the PDF (nihan EN: card 02's confirmation note, five lines under the status,
+# made the card too tall). After the titles and lines are fitted, a card (a to-do card, any summary card, the brief's
+# cards) that is still too tall, or holds a part too tall for its own box, is fitted in two steps:
+#   1. its parts below the title row get smaller together (CSS zoom, down to 80%), so every line stays;
+#   2. still too tall: the least important lines go, last first, each counted: the lines under the status (a member, the
+#      template line; the confirmation note last) fold into "+N more", then link rows and links, then the last steps
+#      (one always stays), then list and table rows. The whole text stays in the XLSX appendix.
+# Returns the cards that lost a line (as "kart: <slot>"); the shrunk ones keep everything and are not listed.
+CARD_FIT_JS = """() => {
+  const cut = [];
+  const MIN = 0.8;
+  const tooTall = (el) => el.scrollHeight > el.clientHeight + 1;
+  const partOver = (box) => Array.from(box.querySelectorAll('[data-slot], ol')).some(
+    (el) => el.scrollHeight > el.clientHeight + 1 || (el.matches('[data-slot]') && el.scrollWidth > el.clientWidth + 1));
+  const over = (box) => tooTall(box) || partOver(box);
+  const name = (box) => { const s = box.querySelector('[data-slot]') || box.querySelector('h3');
+                          return s ? (s.dataset.slot || s.textContent.trim().slice(0, 60)) : box.className; };
+  const HEAD = '.th, .cardhead, .eyebrow-row';
+  const ORDER = ['.todo-sub > div[data-slot]:not(.keep)', 'table.lk tbody tr', '.links a', 'ol > li', '.todo-sub > div[data-slot]',
+                 'ul > li', 'tbody > tr', 'p'];
+  for (const box of document.querySelectorAll('.todo, .card, .next, .pitem .tx')) {
+    if (!over(box)) continue;
+    const parts = Array.from(box.children).filter((el) => !el.matches(HEAD));
+    let zoom = 1;
+    while (over(box) && zoom > MIN + 1e-6) {
+      zoom = Math.max(MIN, Math.round((zoom - 0.02) * 100) / 100);
+      parts.forEach((el) => { el.style.zoom = zoom; });
+    }
+    if (!over(box)) continue;
+    let removed = false;
+    for (const sel of ORDER) {
+      while (over(box)) {
+        const all = Array.from(box.querySelectorAll(sel)).filter((el) => !el.closest(HEAD));
+        if (sel === 'ol > li' && all.length <= 1) break;
+        if (!all.length) break;
+        const last = all[all.length - 1];
+        const sub = last.closest('.todo-sub');
+        last.remove();
+        removed = true;
+        if (sub && sub.dataset.more) {
+          let more = sub.querySelector('.more-line');
+          if (!more) { more = document.createElement('div'); more.className = 'more-line'; more.dataset.rest = '0'; sub.appendChild(more); }
+          more.dataset.rest = String(parseInt(more.dataset.rest, 10) + 1);
+          more.textContent = sub.dataset.more.replace('{n}', more.dataset.rest);
+        }
+      }
+      if (!over(box)) break;
+    }
+    if (removed) cut.push('kart: ' + name(box));
   }
   return cut;
 }"""
@@ -692,6 +754,7 @@ def render(html_path, pdf_path, fitted=None):
         page.wait_for_load_state("networkidle")
         page.evaluate("document.fonts.ready")
         cut = page.evaluate(FIT_JS)
+        cut += page.evaluate(CARD_FIT_JS)  # DECISIONS 320: a card's content never stops the PDF
         over = page.evaluate(OVERFLOW_JS)
         if pdf_path:
             page.pdf(path=str(pdf_path), prefer_css_page_size=True, print_background=True)

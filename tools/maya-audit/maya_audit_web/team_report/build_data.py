@@ -1112,7 +1112,32 @@ class Builder:
         named = next((b.get("name") for b in (f.get("evidence") or {}).get("blocked_by") or [] if b.get("name")), None)
         if rule == "acc9.bot_protection":
             return [self.L["protection_line"].format(who=named or self.L["blocked_429_firewall"])]
-        return [self.L["blocked_429_line"].format(who=named or self.L["blocked_429_firewall"])]
+        return [line for line in (self.refused_429_line(f, named),) if line] + [
+            self.L["blocked_429_line"].format(who=named or self.L["blocked_429_firewall"])]
+
+    def refused_429_line(self, f, named):
+        """DECISIONS 320: what the 429s refused and what loaded, in plain words, as the Imperva card names its service:
+        "Cloudflare refused 1 of 1 page request with 429 (too many requests); robots.txt and 26 sitemap files loaded."
+        What loaded comes from the crawl's request log (200 on the site's host); robots.txt and the sitemap refused too
+        (the finding's evidence) is said instead; neither known, the line ends after the pages."""
+        from maya_audit import maya_blocked  # type: ignore
+        L, ev = self.L, f.get("evidence") or {}
+        blocked, requested = ev.get("pages_blocked_or_challenged"), ev.get("pages_requested")
+        if not isinstance(blocked, int) or not isinstance(requested, int) or not blocked:
+            return None
+        served = maya_blocked.served_files(self.r.get("crawl") or {})
+        files = [L["served_robots"]] if served["robots"] else []
+        if served["sitemaps"]:
+            files.append(L["served_sitemap_one"] if served["sitemaps"] == 1 else
+                         fmt(L["served_sitemaps"], n=fmt_int(served["sitemaps"], self.lang)))
+        if served["llms"]:
+            files.append(L["served_llms"])
+        loaded = (fmt(L["refused_429_loaded"], files=", ".join(files[:-1]) + L["served_and"] + files[-1] if len(files) > 1 else files[0])
+                  if files else L["refused_429_also"] if ev.get("robots_or_sitemap_also_refused") else "")
+        words = L["scope_units"]["request"]
+        return fmt(L["refused_429_line"], who=first_upper(named or L["blocked_429_firewall"], self.lang),
+                   blocked=fmt_int(blocked, self.lang), requested=fmt_int(requested, self.lang),
+                   requests=words[0] if requested == 1 else words[1], loaded=loaded)
 
     def merged_lines(self, members):
         """One line per finding of a merged card: severity, scope and the finding's own title (DECISIONS 284 (1))."""
@@ -1525,8 +1550,9 @@ class Builder:
                         sub = [fmt(L["regions_line"], regions=where)] + list(sub or [])
                         self.fact(where)
                 check = self.manual_check(f)
-                if check and check.get("note"):
-                    sub = [fmt(L["manual_note"], note=check["note"])] + list(sub or [])
+                note_line = fmt(L["manual_note"], note=check["note"]) if check and check.get("note") else None
+                if note_line:
+                    sub = [note_line] + list(sub or [])
                 # Stage 8a (DECISIONS 315): the chain a merged card is about, and the template one fix covers.
                 chain_line = self.chain_text((group or {}).get("chain"))
                 template_line = None if chain_line else self.template_text((group or {}).get("template_line"))
@@ -1584,6 +1610,8 @@ class Builder:
                     "when": L["when"][when_key], "owner": L["owners"][owner], "effort": L["efforts"][effort],
                     "status": self.status_text(f, state),
                     "sub": sub,
+                    # DECISIONS 320: the owner's confirmation note is the last line a too-tall card gives up
+                    "sub_keep": note_line,
                     "rule_id": rule,
                     "fact": fact_line(self._w("facts")(rule, f.get("evidence")), L),
                     "known_paths": sorted({p for m in members for p in known_paths(m.get("title"), m.get("scope"), m.get("evidence"),

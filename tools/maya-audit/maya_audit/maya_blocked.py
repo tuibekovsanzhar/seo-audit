@@ -33,6 +33,21 @@ def holds(result: Any) -> bool:
                and (urlsplit(_get(r, "url") or "").hostname or "").lower() == host for r in _get(result, "requests") or [])
 
 
+def served_files(result: Any) -> dict:
+    """DECISIONS 320: which site files the site served (200, on the start page's host, "www." aside) while pages were
+    refused: {"robots": bool, "sitemaps": int, "llms": bool}. Read from the crawl's request log, so a saved report says it
+    too; the report's words name what loaded, never more than the log shows."""
+    def bare(url):
+        host = (urlsplit(url or "").hostname or "").lower()
+        return host[4:] if host.startswith("www.") else host
+    start = next((p for p in _get(result, "pages") or [] if _get(p, "discovered_via") == "start"), None)
+    host = bare(_get(start, "url") if start is not None else _get(result, "start_url"))
+    ok = [r for r in _get(result, "requests") or [] if _get(r, "status") == 200 and bare(_get(r, "url")) == host]
+    sitemaps = {_get(r, "url") for r in ok if _get(r, "purpose") == "sitemap"}
+    return {"robots": any(_get(r, "purpose") in ("robots", "robots_sample") for r in ok), "sitemaps": len(sitemaps),
+            "llms": any(_get(r, "purpose") == "llms" for r in ok)}
+
+
 def label(result: Any) -> None:
     """Name it in the crawl's stop detail, once, so every output says the same."""
     detail = _get(result, "stop_detail") or ""

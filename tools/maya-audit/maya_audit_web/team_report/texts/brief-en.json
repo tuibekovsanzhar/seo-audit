@@ -66,7 +66,7 @@
   "owners": {
    "developer": "Developer",
    "content": "Content team",
-   "seo": "Developer"
+   "seo": "SEO / marketing team"
   },
   "efforts": {
    "S": "Small",
@@ -90,7 +90,12 @@
    "Problem",
    "Problems"
   ],
-  "and": "and"
+  "and": "and",
+  "served": {
+   "robots": "the file that tells crawlers which pages they may read (robots.txt)",
+   "sitemap": "the file that gives Google the list of your pages (the sitemap)",
+   "and": " and "
+  }
  },
  "verdict": {
   "S1": "{brand} has a problem that stops customers from finding you in Google and AI assistants; we recommend fixing it first.",
@@ -501,12 +506,12 @@
   },
   "acc9.blocked_429": {
    "title": "Stop your protection settings from turning away Google and AI assistants",
-   "what": "Your site's protection settings answer automated visitors that ask for several pages in a short time with a too-many-requests answer instead of the page; our audit's requests were turned away like this too.",
+   "what": "Your [[{service} ]]protection service refused our audit's page requests with a too-many-requests answer instead of the page[[, while {loaded} loaded normally]].",
    "why": "The programs AI assistants use to read sites may get the same answer; then they cannot read your site or name you as a source."
   },
   "acc9.rate_limited_429": {
    "title": "Stop your protection settings from turning away Google and AI assistants",
-   "what": "Your site's protection settings now and then answer automated visitors that ask for several pages in a short time with a too-many-requests answer instead of the page.",
+   "what": "Your [[{service} ]]protection service now and then answers automated visitors that ask for several pages in a short time with a too-many-requests answer instead of the page[[, while {loaded} loaded normally]].",
    "why": "The programs AI assistants use to read sites may get the same answer; then they cannot read part of your site or use it in their answers."
   },
   "acc4.outcome": {
