@@ -523,8 +523,8 @@ def _not_retested(f: dict) -> None:
 
 
 def _decisions_321(report: dict, changes: list[str]) -> None:
-    """DECISIONS 321: a saved certificate expiry gets its severity by the days left at the audit (under 7 Blocker, under
-    14 High, under 30 Medium), and a certificate the saved IDX-2 evidence shows inside the new 30-day window, with no
+    """DECISIONS 321/322: a saved certificate expiry gets its severity by the days left at the audit (7 days or fewer
+    Blocker, 14 or fewer High, 30 or fewer Medium; inclusive since DECISIONS 322), and a certificate the saved IDX-2 evidence shows inside the new 30-day window, with no
     expiry finding (the old window was 14 days), gets the finding this engine would write (same title, same id)."""
     from .checks.index import expiry_finding, expiry_severity
     from .config import CrawlConfig
@@ -552,7 +552,7 @@ def _decisions_321(report: dict, changes: list[str]) -> None:
         expiring: dict[str, list[dict]] = {}
         for entry in (check.get("evidence") or {}).get("hosts") or []:
             tls = (entry or {}).get("tls") or {}
-            if (tls.get("valid") and isinstance(tls.get("days_left"), (int, float)) and tls["days_left"] < window
+            if (tls.get("valid") and isinstance(tls.get("days_left"), (int, float)) and tls["days_left"] <= window
                     and tls.get("not_after") and tls["not_after"] not in dated):
                 expiring.setdefault(tls["not_after"], []).append(entry)
         for not_after, entries in expiring.items():

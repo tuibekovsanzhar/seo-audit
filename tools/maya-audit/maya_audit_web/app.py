@@ -1630,12 +1630,18 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                 "entries": manual_review.load(review_path(audit))["entries"]}
 
     def appendix_xlsx(audit: dict[str, Any], now: tuple | None = None) -> bytes:
-        """The XLSX appendix: the same function the maya-audit-pro skill writes its `-ek.xlsx` with (DECISIONS 307)."""
+        """The XLSX appendix: the same function the maya-audit-pro skill writes its `-ek.xlsx` with (DECISIONS 307),
+        with the team report's cards in this language, so "Özet" lists the PDF's cards (DECISIONS 322)."""
         from maya_audit import manual_review
-        from .team_report import service
+        from .team_report import build_data, service
         report, aff = now if now is not None else current_report(audit)[:2]
+        lang = current_language()
+        try:
+            todos = team_data(audit, lang)["todos"]
+        except build_data.BuildError:
+            todos = None  # the selection's cards; the file is still the whole appendix
         return service.appendix(report, aff or None, manual_review.confirmations(manual_review.load(review_path(audit))),
-                                current_language(), business_choice(audit))
+                                lang, business_choice(audit), todos=todos)
 
     def team_report(audit: dict[str, Any], lang: str):
         """The team report of this audit in `lang` (DECISIONS 307), rebuilt on every request so a manual check counts at
@@ -1981,22 +1987,53 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
     # copy re-evaluated with the current engine), so the page and the PDF say the same numbers in the same words.
     overview_cache: dict[tuple, dict[str, Any]] = {}
 
+    team_data_cache: dict[tuple, Any] = {}
+
+    def team_key(audit: dict[str, Any], lang: str) -> tuple:
+        cur = current_of(audit)
+        stamp = lambda p: (p.stat().st_size, p.stat().st_mtime_ns) if p and Path(p).is_file() else None  # noqa: E731
+        return (audit["id"], lang, str(cur.report_path), stamp(cur.report_path), stamp(review_path(audit)), stamp(business_path(audit)))
+
+    def team_data(audit: dict[str, Any], lang: str) -> dict[str, Any]:
+        """The team report's data in one language (its cards, `todos`), built once per saved state: the summary, the
+        appendix's "Özet" and the web page lists read the same cards (DECISIONS 310, 322). Raises BuildError."""
+        from .team_report import build_data
+        load_report(audit)
+        key = team_key(audit, lang)
+        if key not in team_data_cache:
+            folder = artifact_folder(audit["id"])
+            data, _ = build_data.build_from_files(report_path(audit["id"]), lang, review=review_path(audit), audit_id=audit["id"],
+                                                  affected_path=folder / AFFECTED_JSON if (folder / AFFECTED_JSON).is_file() else None)
+            if len(team_data_cache) > 8:
+                team_data_cache.clear()
+            team_data_cache[key] = data
+        return team_data_cache[key]
+
+    def card_rows(audit: dict[str, Any], lang: str, todos: list[dict]) -> list[dict]:
+        """DECISIONS 322: one row per finding and affected page, numbered by the PDF's cards: the appendix's
+        "Bulgu bazında" rows, read by the web app's "Etkilenen sayfalar" list."""
+        from maya_audit import page_rows
+        from .team_report import render as team_render
+        from . import wording
+        report, aff, _ = current_report(audit)
+        selection = client_selection_of(audit, report, aff)
+        return page_rows.finding_rows(selection, aff or None, lang, todos=todos, words=team_render.plain_words(lang),
+                                      title=lambda cid, text: wording.title(cid, text, lang)[0],
+                                      fix=lambda text: wording.fix(text, lang)[0])
+
     def overview_of(audit: dict[str, Any], lang: str) -> dict[str, Any]:
+        from maya_audit import page_rows
         from .team_report import build_data, texts as team_texts
         load_report(audit)
-        folder = artifact_folder(audit["id"])
-        cur = current_of(audit)
-        review = review_path(audit)
-        stamp = lambda p: (p.stat().st_size, p.stat().st_mtime_ns) if p and Path(p).is_file() else None  # noqa: E731
-        key = (audit["id"], lang, str(cur.report_path), stamp(cur.report_path), stamp(review), stamp(business_path(audit)))
+        key = team_key(audit, lang)
         if key in overview_cache:
             return overview_cache[key]
         try:
-            data, _ = build_data.build_from_files(report_path(audit["id"]), lang, review=review, audit_id=audit["id"],
-                                                  affected_path=folder / AFFECTED_JSON if (folder / AFFECTED_JSON).is_file() else None)
+            data = team_data(audit, lang)
         except build_data.BuildError as exc:
             words = team_texts.library(lang)["blocked"]
             return {"available": False, "reason": words.get("build") or words["gate"], "detail": str(exc)[:300]}
+        rows = card_rows(audit, lang, data["todos"])
         problems = [todo for todo in data["todos"] if todo["severity"] in ("S1", "S2", "S3", "S4")]
         notes = [todo for todo in data["todos"] if todo["severity"] not in ("S1", "S2", "S3", "S4")]
         waiting = len(data.get("confirm") or []) + int(data.get("confirm_more") or 0)
@@ -2017,6 +2054,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                           "sitemap_line": todo.get("sitemap_line"),  # DECISIONS 316
                           # DECISIONS 321: a certificate's expiry date and days left; a host-level card's hosts
                           "certificate_line": todo.get("certificate_line"), "hosts_line": todo.get("hosts_line"),
+                          # DECISIONS 322: "Etkilenen sayfalar (N)": the card's addresses, the list one click away
+                          "pages": len(page_rows.card_pages(rows, todo["n"])),
                           "effort": todo["effort"], "finding_ids": todo["finding_ids"], "note": (todo.get("sub") or [None])[0]
                           if str((todo.get("sub") or [""])[0]).startswith(("Elle kontrol", "Manual check")) else None}
                          for todo in problems],
@@ -2077,6 +2116,32 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         audit = need_audit(audit_id)
         chosen = lang or (current_language() if current_language() in ("tr", "en") else "tr")
         return overview_of(audit, chosen)
+
+    @api.get("/audits/{audit_id}/cards/{n}/pages", summary="One card's affected pages: address, page type, importance, the value measured there")
+    def get_card_pages(audit_id: str, n: int, lang: str | None = Query(default=None, pattern="^(tr|en)$")) -> dict[str, Any]:
+        """DECISIONS 322: the full list behind a card's "Etkilenen sayfalar (N)" (the web page searches it and saves it
+        as CSV): the same rows as the appendix's "Bulgu bazında" for that card, one per address."""
+        from maya_audit import client_appendix, page_rows
+        from .team_report import build_data
+        audit = need_audit(audit_id)
+        chosen = lang or (current_language() if current_language() in ("tr", "en") else "tr")
+        try:
+            data = team_data(audit, chosen)
+        except build_data.BuildError as exc:
+            raise ApiError(422, "team_report_blocked", str(exc)[:300]) from None
+        todo = next((t for t in data["todos"] if t.get("n") == n), None)
+        if todo is None:
+            raise ApiError(404, "card_not_found", strings_module.t("cards.not_found", chosen))
+        W = client_appendix.WORDS[chosen]
+        rows = page_rows.card_pages(card_rows(audit, chosen, data["todos"]), n)
+        say = lambda key: strings_module.t(key, chosen)  # noqa: E731
+        return {"n": n, "title": todo.get("title"), "severity": todo.get("severity"), "severity_label": todo.get("severity_label"),
+                "count": len(rows), "lang": chosen,
+                "columns": {k: say(f"cards.col.{k}") for k in ("address", "page_type", "importance", "value", "finding")},
+                "rows": [{"url": r["url"], "address": r["address"],
+                          "page_type": W["page_type"].get(r["page_type"], r["page_type"] or "") if r["page_type"] else "",
+                          "importance": r["importance"] if isinstance(r["importance"], (int, float)) else None,
+                          "value": "; ".join(r["values"]), "finding_ids": r["finding_ids"]} for r in rows]}
 
     @api.get("/audits/{audit_id}/review", summary="The findings to confirm first and the owner's manual checks")
     def get_review(audit_id: str) -> dict[str, Any]:

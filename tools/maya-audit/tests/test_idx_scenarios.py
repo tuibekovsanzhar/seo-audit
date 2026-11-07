@@ -279,7 +279,7 @@ def www_localhost_does_not_resolve(monkeypatch):
 
 @pytest.mark.parametrize("kind,redirect,expected", [
     ("valid", True, []),
-    ("near_expiry", True, [("S2", "on localhost, www.localhost expires in 7")]),  # under 14 days: High (DECISIONS 321)
+    ("near_expiry", True, [("S1", "on localhost, www.localhost expires in 7")]),  # 7 days or fewer: Blocker (DECISIONS 322)
     ("expired", True, [("S1", "not valid on localhost, www.localhost: certificate has expired")]),
     ("mismatch", True, [("S1", "not valid on localhost: Hostname mismatch"),
                         ("S1", "not valid on www.localhost: Hostname mismatch")]),

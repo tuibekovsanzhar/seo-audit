@@ -3970,3 +3970,64 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      airastana certificate High with its date in card, table and brief, coverage line on p1; moodist card 1 "Developer
      + SEO"; airastana Templates sheet explains why it is empty.
      Tests: `tests/test_brief_review_321.py`; `test_idx_scenarios` (7-day certificate: High).
+322. **The XLSX appendix for teammates who are not technical; "Etkilenen sayfalar" on the web cards; inclusive
+     certificate bands and plain host names (Owner, 2026-11-07: items 1-7 as asked; the sheet order, the columns past
+     the ones named, the measured-value words, what counts as a "problem" on a page and the dialog are agent
+     defaults).** Global for every audit; nihan b3198942, moodisthastanesi c581ff0a and airastana d12146fb were the test
+     cases.
+     (1) *Four sheets first.* The appendix opens with "Nasıl okunur" / "How to read" (six lines: what each sheet is, how
+     to filter, what importance and "Bilgi" mean; no frozen row, no filter), "Özet" / "Summary", "Sayfa bazında" / "By
+     page", "Bulgu bazında" / "By finding"; the technical sheets (Bulgular, Etkilenen adresler, Kilit sayfalar,
+     Şablonlar, Kapsam, Yöntem) follow unchanged. RG-17 reads the technical findings sheet by its name
+     (`client_appendix.finding_ids`), so the gate is the same.
+     (2) *One source for the rows* (`maya_audit/page_rows.py`): `finding_rows` is one row per finding and affected
+     address (a finding with no address: one "site geneli" row), every finding except Maya's own limits and rejected
+     ones; the problem name and fix are the text library's plain words (`texts.rule`: "finding", "summary",
+     "explanation"; `render.plain_words`), else the engine's worded title and fix. Order: the PDF's cards in their order,
+     then severity, then the more important page. `page_table` is one row per page with a Blocker-to-Low problem: page
+     type, importance, the number of problems (root-cause groups, so three HTML-weight rules on one page are one),
+     the worst severity and the groups' short names ("summary"); hosts, "site geneli" rows and Info notes are not page
+     problems and stay in "Bulgu bazında". Sorted by importance (a page not scored last, its importance cell empty and
+     explained in "Nasıl okunur", never 0), then severity.
+     (3) *Measured value* (`page_rows.measured`): read from that finding's evidence for that address only: a record with
+     the address (`url`, `source`, `sitemap`), a group listing it (shared description/title, copy groups), a redirect
+     target linked from it, the IDX-2 certificate of that host (expiry date, days left); TSEO-1 decomposed letters are
+     read from the address itself with the engine's `composed()`. Known keys become plain words (HTML size and its
+     limit, heading jumps, declared vs content language and share, words, characters, first response, links,
+     products, parameters, hreflang target and status, alt text, tag IDs, expected/found schema types, header values).
+     A page in the evidence's plain list says "bu sayfada görüldü (bkz. Sorun)"; a page outside the evidence's sample
+     says "ayrıntı kaydedilmedi (rapor yalnız örnek sayfaları saklar)" — never empty, zero or made up. Unknown keys are
+     left out.
+     (4) *"Özet"* has the team report's cards (`todos`: number, title, severity, issue type, owner, effort, affected
+     addresses) with "Satırlara git →", a link to the card's first row in "Bulgu bazında"; rows carry the PDF card
+     number in "Kart". The skill passes its data.json's todos (`render.write_appendix`); the web app builds the team
+     report data once per saved state (`team_data`, cached like the overview) and passes the same todos
+     (`appendix_xlsx`), falling back to the selection's cards (titles worded) if the build fails. A note card that
+     names checks ("STR-2 · STR-9") is about their observations, not findings: no finding row takes its number and it
+     has no link; its count is the card's own addresses.
+     (5) *File.* `maya_audit/xlsx.py`: header row bold on grey, frozen, with filter buttons; every text cell wrapped and
+     top-aligned; addresses are hyperlinks (external relationships, `TargetMode="External"`; only http(s), at most 2,000
+     characters, at most 65,000 per sheet, else plain text); "Satırlara git" is an in-file link (`location`); column
+     widths per sheet; `xlsx.links()` reads them back for tests. Headers in the file's language (TR file Turkish, EN
+     file English). Checked: every XML part parses, element order per the schema; not opened in Excel or Google Sheets
+     on this machine (neither is installed) — NOT RUN.
+     (6) *Web.* Each problem card under "Neyi düzeltmeli" has "Etkilenen sayfalar (N)" when N > 0 (`overview` fixes carry
+     `pages`); it opens a dialog with the full list (`GET /audits/{id}/cards/{n}/pages?lang=`: address, page type,
+     importance, measured value, finding IDs; the rows of "Bulgu bazında" for that card, one per address), a search box
+     (address, type, value, ID; first 500 drawn, the count says how many match) and "CSV indir" made in the browser
+     (UTF-8 with BOM; ";" in Turkish, "," in English, DECISIONS 283 (6)). Unknown card: 404 `card_not_found`.
+     (7) *Certificate.* The bands are inclusive: 30 days or fewer Medium (the warning window, `<=`), 14 or fewer High, 7
+     or fewer Blocker (`checks.index`, `reassess_rules._decisions_321`, the brief's `worst_severity` through
+     `expiry_severity`). moodist's certificate at exactly 30.0 days is now a Medium card (card 3; was no finding under
+     321). Certificate hosts are plain host names everywhere they were addresses: the new sheets and the web list
+     (`page_rows.display_address`, still linking to the host's root) and the technical "Etkilenen adresler" sheet; the
+     PDF card, evidence table, brief and Markdown already named hosts.
+     report.json's shape is unchanged: no schema bump (`select()` gains an internal `_importance`, appendix rows carry
+     their finding).
+     Results offline (scratch copies, provider-free, no provider ledger): team reports TR/EN print (nihan 9 pages / 13
+     cards, moodist 8 / 10, airastana 6 / 6; gate PASS), briefs 5 pages; appendices 10 sheets, RG-17 ok. nihan TR:
+     Özet 13 cards, Sayfa bazında 2,119 addresses (pages read and addresses known but not read, such as the decomposed-letter ones), Bulgu bazında
+     4,902 rows; moodist 52 / 705; airastana EN 35 / 86.
+     Tests: `tests/test_xlsx_pages_322.py`; `test_brief_review_321` bands (7 Blocker, 14 High, 30 a finding),
+     `test_idx_scenarios` (7-day certificate: Blocker), sheet lists in `test_v03_client_report`/`test_v03_report_fixes`,
+     `test_team_report` (web and skill appendix with the same todos).

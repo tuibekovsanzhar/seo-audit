@@ -96,6 +96,7 @@ def _pages(pdf: Path):
 
 
 def appendix(report: dict, affected: dict | None, confirmations: dict | None, lang: str,
-             business: str | None = None) -> bytes:
-    """The XLSX appendix alone (the web app's "Ek (XLSX)" button): the skill writes the same file."""
-    return render.appendix_bytes(report, affected, confirmations, lang, business)[0]
+             business: str | None = None, todos: list[dict] | None = None) -> bytes:
+    """The XLSX appendix alone (the web app's "Ek (XLSX)" button): the skill writes the same file. `todos`: the team
+    report's cards in this language (DECISIONS 322)."""
+    return render.appendix_bytes(report, affected, confirmations, lang, business, todos=todos)[0]

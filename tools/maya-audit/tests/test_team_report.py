@@ -229,9 +229,14 @@ def test_the_web_appendix_is_the_skills_appendix(finished, tmp_path):
     web_file = client.get(f"{API}/audits/{audit['id']}/downloads/xlsx", params={"lang": "tr"}).content
     report = json.loads((folder / REPORT_JSON).read_text(encoding="utf-8"))
     affected = json.loads((folder / "affected-urls.json").read_text(encoding="utf-8")) if (folder / "affected-urls.json").is_file() else None
-    from maya_audit_web.team_report import render
+    from maya_audit_web.team_report import build_data, render
     from maya_audit import xlsx
-    assert xlsx.read(web_file) == xlsx.read(render.appendix_bytes(report, affected, {}, "tr")[0])
+    # DECISIONS 322: both carry the team report's cards ("Özet"); the skill passes its data.json's todos.
+    data, _ = build_data.build_from_files(folder / REPORT_JSON, "tr", audit_id=audit["id"],
+                                          affected_path=folder / "affected-urls.json" if (folder / "affected-urls.json").is_file() else None)
+    current = json.loads(Path(data["_report_path"]).read_text(encoding="utf-8"))
+    current_affected = json.loads(Path(data["_affected_path"]).read_text(encoding="utf-8")) if data.get("_affected_path") else None
+    assert xlsx.read(web_file) == xlsx.read(render.appendix_bytes(current, current_affected, {}, "tr", todos=data["todos"])[0])
 
 
 def _skill(*args, cwd):

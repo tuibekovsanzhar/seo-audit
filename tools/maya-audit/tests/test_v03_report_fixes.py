@@ -63,8 +63,8 @@ def test_addresses_that_were_never_read_add_nothing_to_reach_and_are_counted_apa
 
 def test_the_appendix_lists_pages_read_and_addresses_not_read_per_finding():
     r = report([finding("WIDE", "r.wide", urls=[SITE + "/a", SITE + "/never"])])
-    sheets = client_appendix.sheets(cs.select(r), "en")
-    header, row = sheets[0]["header"], sheets[0]["rows"][0]
+    sheets = {s["name"]: s for s in client_appendix.sheets(cs.select(r), "en")}
+    header, row = sheets["Findings"]["header"], sheets["Findings"]["rows"][0]
     assert row[header.index("Pages read (reach)")] == 1 and row[header.index("Not read")] == 1
 
 

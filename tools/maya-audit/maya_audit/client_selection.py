@@ -653,6 +653,8 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         "grouping_summary": {k: summary.get(k) for k in ("method_version", "pages_scored", "page_types") if k in summary},
         "platform": (report.get("platform") or {}).get("name"),
         "_confirmations": confirmations or {},
+        # DECISIONS 322: every scored page's type and importance, for the appendix's page sheets and the web page list.
+        "_importance": importance,
     }
 
 
@@ -1036,7 +1038,8 @@ def appendix_rows(selection: dict, lists: dict | None = None) -> list[dict]:
                                    + (f" · {c['note']}" if c.get("note") else ""))(manual(m, selection.get("_confirmations")))
                         if manual(m, selection.get("_confirmations")) else "",
                         "title": m.get("title"), "how_to_fix": m.get("how_to_fix"),
-                        "scope_count": (m.get("scope") or {}).get("count"), "urls": affected(m, lists)})
+                        "scope_count": (m.get("scope") or {}).get("count"), "urls": affected(m, lists),
+                        "finding": m})
     return out
 
 

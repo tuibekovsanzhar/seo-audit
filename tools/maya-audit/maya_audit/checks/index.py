@@ -430,13 +430,14 @@ def idx1_http_status(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
 TEMPORARY_REDIRECTS = (302, 303, 307)
 TEMPORARY_FIX = "Make the http:// to https:// redirect permanent (301 or 308) on each hostname."
 
-# DECISIONS 321: a certificate's expiry severity by the days left at the audit: under 7 Blocker, under 14 High, else
-# (inside the warning window, 30 days) Medium. Once it expires every fetch fails, so the nearer it is, the higher.
+# DECISIONS 321, made inclusive by DECISIONS 322: a certificate's expiry severity by the days left at the audit: 7 days
+# or fewer Blocker, 14 or fewer High, else (inside the warning window, 30 days or fewer) Medium. Once it expires every
+# fetch fails, so the nearer it is, the higher.
 TLS_EXPIRY_BANDS = ((7, Severity.S1), (14, Severity.S2))
 
 
 def expiry_severity(days_left: float) -> Severity:
-    return next((sev for limit, sev in TLS_EXPIRY_BANDS if days_left < limit), Severity.S3)
+    return next((sev for limit, sev in TLS_EXPIRY_BANDS if days_left <= limit), Severity.S3)
 
 
 def expiry_finding(not_after: str, entries: list[dict], warning_days: float) -> Finding:
@@ -473,7 +474,7 @@ def idx2_tls(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
         tls = entry.get("tls", {})
         if tls.get("valid") is False:
             invalid[tls.get("verify_message") or tls.get("error") or "invalid"].append(entry)
-        elif tls.get("valid") and tls.get("days_left") is not None and tls["days_left"] < cfg.tls_expiry_warning_days:
+        elif tls.get("valid") and tls.get("days_left") is not None and tls["days_left"] <= cfg.tls_expiry_warning_days:
             expiring[tls["not_after"]].append(entry)
 
     for message, entries in invalid.items():

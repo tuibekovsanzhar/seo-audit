@@ -21,7 +21,9 @@ HOST = SITE.split("//")[1]
 
 # ---------------------------------------------------------------- 1: the certificate
 
-@pytest.mark.parametrize("days,want", [(0.5, "S1"), (6.9, "S1"), (7, "S2"), (9.1, "S2"), (13.9, "S2"), (14, "S3"), (29.9, "S3")])
+# DECISIONS 322 made the bands inclusive: 7 days or fewer Blocker, 14 or fewer High, 30 or fewer Medium.
+@pytest.mark.parametrize("days,want", [(0.5, "S1"), (6.9, "S1"), (7, "S1"), (7.1, "S2"), (9.1, "S2"), (13.9, "S2"), (14, "S2"),
+                                       (14.1, "S3"), (29.9, "S3"), (30, "S3")])
 def test_certificate_severity_by_days_left(days, want):
     assert expiry_severity(days).value == want
 
@@ -69,7 +71,7 @@ def test_a_current_schema_report_gets_the_rule_too():
     assert copy_["findings_in_priority_order"][0] == f["id"]
 
 
-@pytest.mark.parametrize("days,made", [(20.0, True), (30.0, False), (45.0, False)])
+@pytest.mark.parametrize("days,made", [(20.0, True), (30.0, True), (30.1, False), (45.0, False)])  # 30 inclusive (322)
 def test_a_saved_certificate_inside_the_new_window_gets_its_finding(days, made):
     new, _changes = saved_data(_cert_report(days=days, finding=False), {})
     found = next(c for c in new["checks"] if c["check_id"] == "IDX-2")["findings"]

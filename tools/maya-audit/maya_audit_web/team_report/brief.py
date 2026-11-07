@@ -166,7 +166,7 @@ def _expiry(rule: str | None, members: list[dict], report: dict, lang: str) -> d
 def worst_severity(items: list[dict], data: dict, report: dict) -> str:
     """DECISIONS 321 (1): the severity the verdict and the health line speak for: the worst of the brief's problems,
     of every card in the team report (a High card the brief leaves out is still there) and of a certificate that
-    expires in under 14 days (under 7: Blocker), so "nothing is urgent" is never said beside one."""
+    expires in 14 days or fewer (7 or fewer: Blocker; inclusive since DECISIONS 322), so "nothing is urgent" is never said beside one."""
     found = {p.get("severity") for p in items} | {c.get("severity") for c in data.get("_cards") or []
                                                    if c.get("severity") in ("S1", "S2")}
     from maya_audit.checks.index import expiry_severity
@@ -176,7 +176,7 @@ def worst_severity(items: list[dict], data: dict, report: dict) -> str:
                 continue
             days = next((h.get("days_left") for h in (f.get("evidence") or {}).get("hosts") or []
                          if isinstance(h, dict) and isinstance(h.get("days_left"), (int, float))), None)
-            if days is not None and days < 14:
+            if days is not None and expiry_severity(days).value in ("S1", "S2"):
                 found.add(expiry_severity(days).value)
     return next((s for s in SEVERITIES if s in found), "none")
 

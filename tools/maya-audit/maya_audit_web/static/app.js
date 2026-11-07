@@ -1089,6 +1089,7 @@ async function showOverview(box, view) {
       f.hosts_line ? el("p", { class: "small", text: f.hosts_line }) : null,
       f.why || f.scope ? el("p", { class: "muted small", text: [f.why, f.scope].filter(Boolean).join(" · ") }) : null,
       f.note ? el("p", { class: "small", text: f.note }) : null,
+      f.pages ? el("button", { class: "button quiet small pages-button", type: "button", onclick: () => cardPages(view.audit.id, f.n, lang) }, T("cards.pages", { count: f.pages })) : null,
       el("div", { class: "id", text: f.finding_ids.slice(0, 3).join(" · ") + (f.finding_ids.length > 3 ? " +" + (f.finding_ids.length - 3) : "") })),
     el("div", { class: "fix-who" }, el("span", { text: f.owner }), el("span", { class: "muted small", text: f.effort })));
   CONFIRM_SCOPES[view.audit.id] = data.confirm_scopes || {};
@@ -1106,6 +1107,54 @@ async function showOverview(box, view) {
       el("ol", { class: "fix-list" }, first.map(fixRow)),
       rest.length ? el("details", { class: "more" }, el("summary", { text: T("fixes.more", { count: rest.length }) }), el("ol", { class: "fix-list" }, rest.map(fixRow))) : null,
       data.notes ? el("p", { class: "muted small", text: T("fixes.notes", { count: data.notes }) }) : null));
+}
+
+/* DECISIONS 322: a card's affected pages, one click away: the full list (the appendix's "Bulgu bazında" rows of the
+   card, one per address) in a dialog, with a search box and a CSV download made in the browser. */
+const PAGE_ROWS_SHOWN = 500;
+async function cardPages(auditId, n, lang) {
+  const dialog = el("dialog", { class: "pages-dialog", "aria-labelledby": "pages-title" });
+  const close = () => { dialog.close(); dialog.remove(); };
+  dialog.addEventListener("close", () => dialog.remove());
+  const body = el("div", { class: "pages-body" }, el("p", { class: "busy", role: "status", text: T("cards.loading") }));
+  add(dialog, el("div", { class: "drawer-head" }, el("h2", { id: "pages-title", text: T("cards.pages", { count: "…" }) }),
+    el("button", { class: "button quiet", type: "button", onclick: close }, T("cards.close"))), body);
+  document.body.append(dialog);
+  dialog.showModal();
+  let data;
+  try { data = await api("GET", "/audits/" + auditId + "/cards/" + n + "/pages?lang=" + lang); }
+  catch (error) { fill(body, el("p", { class: "field-error", role: "alert", text: error.message })); return; }
+  dialog.querySelector("#pages-title").textContent = T("cards.title", { n: data.n, title: data.title }) + " · " + T("cards.pages", { count: data.count });
+  const cols = data.columns;
+  const search = el("input", { class: "field-input", type: "search", placeholder: T("cards.search"), "aria-label": T("cards.search") });
+  const shown = el("p", { class: "muted small", role: "status" });
+  const tbody = el("tbody");
+  const text = (r) => [r.address, r.page_type, r.importance === null ? "" : String(r.importance), r.value, r.finding_ids.join(" ")].join(" ").toLocaleLowerCase(lang);
+  const draw = () => {
+    const q = search.value.trim().toLocaleLowerCase(lang);
+    const rows = q ? data.rows.filter((r) => text(r).includes(q)) : data.rows;
+    fill(tbody, rows.slice(0, PAGE_ROWS_SHOWN).map((r) => el("tr", {},
+      el("td", { class: "wrap" }, r.url && r.address === r.url ? link(r.url) : el("span", { class: "url", text: r.address })),
+      el("td", { text: r.page_type || "—" }), el("td", { text: r.importance === null ? "—" : String(r.importance) }),
+      el("td", { class: "wrap", text: r.value || "—" }), el("td", { class: "id", text: r.finding_ids.join(" · ") }))));
+    shown.textContent = T("cards.shown", { shown: Math.min(rows.length, PAGE_ROWS_SHOWN), count: rows.length });
+  };
+  search.addEventListener("input", draw);
+  const csv = () => {
+    const cell = (v) => { const t = String(v === null || v === undefined ? "" : v); return /[";\n\r,]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+    const sep = lang === "tr" ? ";" : ",";  /* Turkish Excel reads "," as the decimal mark (DECISIONS 283 (6)) */
+    const lines = [[cols.address, cols.page_type, cols.importance, cols.value, cols.finding].map(cell).join(sep)]
+      .concat(data.rows.map((r) => [r.url || r.address, r.page_type, r.importance, r.value, r.finding_ids.join(" ")].map(cell).join(sep)));
+    const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = el("a", { href: url, download: "maya-" + String(auditId).slice(0, 8) + "-" + (lang === "tr" ? "kart" : "card") + "-" + data.n + ".csv" });
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+  };
+  fill(body, el("div", { class: "row pages-tools" }, search, el("button", { class: "button", type: "button", onclick: csv }, T("cards.csv"))), shown,
+    el("div", { class: "table-scroll" }, el("table", { class: "data pages-table" },
+      el("thead", {}, el("tr", {}, [cols.address, cols.page_type, cols.importance, cols.value, cols.finding].map((c) => el("th", { text: c })))), tbody)));
+  draw();
+  search.focus();
 }
 
 /* DECISIONS 311: the business type the summary and key pages use, why, and a dropdown to change it. Saved beside the

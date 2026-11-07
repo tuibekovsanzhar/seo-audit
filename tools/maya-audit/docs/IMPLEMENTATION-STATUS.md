@@ -1481,3 +1481,38 @@ No schema bump.
 | ruff E9/F821/F841 (package + changed tests), `python3.11 -m compileall`, `node --check app.js` | clean / OK / OK |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+
+## XLSX appendix for non-technical teammates, web affected pages, inclusive certificate bands (2026-11-07, DECISIONS 322)
+
+Owner's seven items, global for every audit. (1-5) The appendix opens with "Nasıl okunur" (six lines), "Özet" (the PDF's
+cards, each linked to its first row), "Sayfa bazında" (one row per page with a problem: clickable address, page type,
+importance, problem count, worst severity, short Turkish list; by importance then severity) and "Bulgu bazında" (one row
+per finding and page: problem, severity, type, clickable address, the value measured on that page, what to do; IDs at
+the end); the technical sheets follow. Frozen bold headers, filters, widths, wrapped text, hyperlinks; TR headers in the
+TR file, EN in the EN file. New `maya_audit/page_rows.py` feeds the sheets and the web list. (6) Web: "Etkilenen
+sayfalar (N)" on each problem card opens the full list (`GET /audits/{id}/cards/{n}/pages`) with search and CSV
+download. (7) Certificate bands inclusive (30 or fewer Medium, 14 or fewer High, 7 or fewer Blocker: moodist's 30.0-day
+certificate is now a Medium card); certificate hosts as plain host names in the address sheets and the web list.
+No schema bump.
+
+**Offline on copies of the saved audits** (scratch folder, provider-free, no provider ledger created):
+
+| | nihan b3198942 | moodist c581ff0a | airastana d12146fb |
+|---|---|---|---|
+| Team report TR/EN | 9 pages, 13 cards, PASS | 8 pages, 10 cards (certificate card 3, 30 days, Medium), PASS | 6 pages, 6 cards, PASS |
+| Brief TR/EN | 5 pages | 5 pages | 5 pages |
+| XLSX (10 sheets, RG-17 ok) | Özet 13, Sayfa bazında 2,119, Bulgu bazında 4,902 | 10 / 52 / 705 | 6 / 35 / 86 (EN) |
+| Certificate rows | — | "moodisthastanesi.com", "www.moodisthastanesi.com" | "airastana.com", "www.airastana.com" (9 days) |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_xlsx_pages_322.py` | `30 passed` |
+| related suites (321, 320, 319, idx scenarios, reassess, 315, team report, v03 client report and fixes, 317) | `13 failed, 253 passed` first (old band and sheet-list expectations, test fixture without groups); after updates `149 passed` on the affected files |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2931 passed, 4 skipped, 135 deselected, 1 warning in 509.75s (0:08:29)` |
+| full suite, first run | `1 failed, 3065 passed, 4 skipped`: the fixture matrix (regenerated with `scripts/fixture_matrix.py`; its tests `3 passed`) |
+| full suite, second run, `pytest -q -rfEs -p no:cacheprovider` | `3066 passed, 4 skipped, 1 warning in 904.11s (0:15:04)` |
+| ruff E9/F821/F841 (package + new test), `python3.11 -m compileall`, `node --check app.js` | clean / OK / OK |
+| Opening the XLSX in Excel or Google Sheets | NOT RUN (neither available here; every XML part parses, schema element order tested) |
+| The web dialog in a browser | NOT RUN (API and script covered by tests) |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+| Push | NOT DONE (owner: don't push) |

@@ -315,6 +315,14 @@ table.data th { white-space: nowrap; overflow-wrap: normal; font-weight: 600; co
 .fix-body { flex: 1; min-width: 0; }
 .fix-body p { margin: 2px 0; }
 .fix-who { display: flex; flex-direction: column; align-items: flex-end; font-size: 13px; text-align: right; white-space: nowrap; }
+/* DECISIONS 322: a card's affected pages */
+.pages-button { margin: 6px 0 2px; }
+.pages-dialog { width: min(1100px, 96vw); max-height: 90vh; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: inherit; }
+.pages-dialog::backdrop { background: rgba(0, 0, 0, .35); }
+.pages-body { padding: var(--space-4) var(--space-5); overflow: auto; max-height: calc(90vh - 70px); }
+.pages-tools { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.pages-tools input { flex: 1; min-width: 220px; }
+.pages-table td.wrap { overflow-wrap: anywhere; }
 .check-item, .checked-item { border-top: 1px solid var(--border); padding: var(--space-3) 0; }
 .check-item:first-child, .checked-item:first-child { border-top: 0; }
 .check-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }

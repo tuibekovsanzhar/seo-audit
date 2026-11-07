@@ -12,6 +12,40 @@ from typing import Callable
 from . import xlsx
 from .client_selection import CONFIDENCE_WEIGHT, SEVERITY_NAME, SEVERITY_WEIGHT, appendix_rows
 
+# DECISIONS 322: four sheets for teammates who are not technical come first; the technical sheets follow unchanged.
+READ = {
+    "tr": {"how": "Nasıl okunur", "summary": "Özet", "by_page": "Sayfa bazında", "by_finding": "Bulgu bazında",
+           "lines": ["Bu dosya, denetimde bulunan sorunları sayfa sayfa gösterir; okumak için teknik bilgi gerekmez.",
+                     "«Özet»: PDF raporundaki kartlar, aynı sıra ve numarayla. Bir kartın «Satırlara git» bağlantısı, o kartın sayfalarını «Bulgu bazında» sayfasında açar.",
+                     "«Sayfa bazında»: sorunlu her sayfa bir satır, en önemli sayfa en üstte. Önem puanı 0-100 arasıdır; boşsa sayfa taranmadığı için hesaplanmadı.",
+                     "«Bulgu bazında»: her sorun ve sayfa bir satır: o sayfada ölçülen değer ve ne yapılacağı. Teknik kimlikler en sağdaki sütunlardadır.",
+                     "Süzmek için başlık satırındaki ok düğmelerini kullanın (ör. Kart = 3 ya da Önem = Yüksek). Bir adrese tıklayınca sayfa tarayıcıda açılır.",
+                     "Önem sırası: Engelleyici, Yüksek, Orta, Düşük, Bilgi. «Bilgi» satırları sorun değil nottur. «Bulgular» ve sonraki sayfalar ekibin teknik ayrıntılarıdır."],
+           "summary_cols": ["Kart", "Başlık", "Önem", "Sorun türü", "Sorumlu", "Efor", "Etkilenen adres", "Satırlara git"],
+           "go": "Satırlara git →",
+           "page_cols": ["Sayfa", "Sayfa türü", "Önem puanı (0-100)", "Sorun sayısı", "En yüksek önem", "Sorunlar", "Kartlar"],
+           "finding_cols": ["Sorun", "Önem", "Sorun türü", "Sayfa", "Ölçülen değer", "Ne yapılmalı", "Kart", "Durum",
+                            "Sayfa türü", "Sayfa önemi (0-100)", "Bulgu kimliği", "Kural", "Kontrol"],
+           "empty": {"summary": "Bu denetimde PDF raporunda kart yok.",
+                     "by_page": "Sayfa düzeyinde sorun yok: bulgular sitenin bütününü ya da alan adlarını ilgilendiriyor (bkz. «Bulgu bazında»).",
+                     "by_finding": "Bu denetimde sitenin sorunu olarak listelenecek bulgu yok."}},
+    "en": {"how": "How to read", "summary": "Summary", "by_page": "By page", "by_finding": "By finding",
+           "lines": ["This file shows the problems the audit found, page by page; no technical knowledge is needed to read it.",
+                     "\"Summary\": the cards of the PDF report, in the same order and with the same numbers. A card's \"Go to rows\" link opens that card's pages in \"By finding\".",
+                     "\"By page\": one row per page with a problem, the most important page first. Importance is 0-100; when it is empty the page was not crawled, so it was not computed.",
+                     "\"By finding\": one row per problem and page: the value measured on that page and what to do. Technical IDs are in the right-most columns.",
+                     "To filter, use the arrow buttons in the header row (e.g. Card = 3 or Severity = High). Clicking an address opens the page in your browser.",
+                     "Severity order: Blocker, High, Medium, Low, Info. \"Info\" rows are notes, not problems. \"Findings\" and the sheets after it are the team's technical detail."],
+           "summary_cols": ["Card", "Title", "Severity", "Issue type", "Owner", "Effort", "Affected addresses", "Go to rows"],
+           "go": "Go to rows →",
+           "page_cols": ["Page", "Page type", "Importance (0-100)", "Problems", "Highest severity", "Problems found", "Cards"],
+           "finding_cols": ["Problem", "Severity", "Issue type", "Page", "Measured value", "What to do", "Card", "Placement",
+                            "Page type", "Page importance (0-100)", "Finding ID", "Rule", "Check"],
+           "empty": {"summary": "The PDF report of this audit has no cards.",
+                     "by_page": "No problem concerns single pages: the findings are about the whole site or its hosts (see \"By finding\").",
+                     "by_finding": "This audit has no finding to list as a problem of the site."}},
+}
+
 WORDS = {
     "tr": {"findings": "Bulgular", "urls": "Etkilenen adresler", "key_pages": "Kilit sayfalar", "coverage": "Kapsam",
            "method_sheet": "Yöntem", "note": "Not",
@@ -161,7 +195,68 @@ def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = No
 
 def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
            title: Callable[[str, str], str] | None = None, fix: Callable[[str], str] | None = None,
-           label: Callable[[str], str] | None = None, line: Callable[[str], str] | None = None) -> list[dict]:
+           label: Callable[[str], str] | None = None, line: Callable[[str], str] | None = None,
+           todos: list[dict] | None = None, words: Callable[[dict], dict | None] | None = None) -> list[dict]:
+    """The appendix's sheets: the four for readers who are not technical (DECISIONS 322), then the technical ones.
+    `todos`: the team report's cards, so "Özet" has the PDF's cards and the rows their numbers; `words(finding)`: the
+    text library's plain problem name and fix."""
+    return reader_sheets(selection, lang, lists, title=title, fix=fix, todos=todos, words=words) + \
+        technical_sheets(selection, lang, lists, title, fix, label, line)
+
+
+def _link(url: str | None, text: str) -> dict | str:
+    return {"text": text, "link": url} if url and url.startswith(("http://", "https://")) else text
+
+
+def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, *, title=None, fix=None,
+                  todos: list[dict] | None = None, words=None) -> list[dict]:
+    """DECISIONS 322: "Nasıl okunur", "Özet" (the PDF's cards, each linked to its first row), "Sayfa bazında" (one row
+    per page with a problem) and "Bulgu bazında" (one row per finding and page, with the value measured there)."""
+    from . import page_rows
+    W, R = WORDS[lang], READ[lang]
+    rows = page_rows.finding_rows(selection, lists, lang, todos=todos, words=words, title=title, fix=fix)
+    _, cards = page_rows.card_of(selection, todos, lang, title)
+    sev = lambda s: W["severity"].get(s, s or "")  # noqa: E731
+    ptype = lambda t: W["page_type"].get(t, t or "") if t else ""  # noqa: E731
+    found = [[r["title"], sev(r["severity"]), W["itype"].get(r["issue_type"], ""),
+              _link(r["url"], r["address"]), r["value"], r["fix"], r["card"] if r["card"] is not None else "",
+              W["placement"].get(r["placement"], r["placement"] or ""), ptype(r["page_type"]),
+              r["importance"] if isinstance(r["importance"], (int, float)) else "",
+              r["finding_id"], r["rule_id"] or "", r["check_id"] or ""] for r in rows]
+    first_row: dict[int, int] = {}
+    for i, r in enumerate(rows, 2):
+        if r["card"] is not None:
+            first_row.setdefault(r["card"], i)
+    addresses: dict[int, set] = {}
+    for r in rows:
+        if r["card"] is not None:
+            addresses.setdefault(r["card"], set()).add(r["url"] or r["address"])
+    where = "'" + R["by_finding"].replace("'", "''") + "'"
+    summary = [[c["n"], c.get("title") or "", sev(c.get("severity")),
+                W["itype"].get(c.get("issue_type") or "", "") if c.get("severity") in ("S1", "S2", "S3", "S4") else "",
+                c.get("owner") or "", c.get("effort") or "", len(addresses[c["n"]]) if c["n"] in addresses else c.get("addresses") or 0,
+                {"text": R["go"], "location": f"{where}!A{first_row[c['n']]}"} if c["n"] in first_row else ""]
+               for c in cards]
+    by_page = [[_link(p["url"], p["url"]), ptype(p["page_type"]),
+                p["importance"] if isinstance(p["importance"], (int, float)) else "", p["problems"], sev(p["worst"]),
+                "; ".join(p["names"]), ", ".join(str(n) for n in p["cards"])] for p in page_rows.page_table(rows)]
+    out = [{"name": R["how"], "header": [R["how"]], "rows": [[x] for x in R["lines"]], "widths": [140],
+            "frozen": False, "filter": False}]
+    for key, header, body, widths in (("summary", R["summary_cols"], summary, [7, 60, 12, 14, 22, 10, 12, 18]),
+                                      ("by_page", R["page_cols"], by_page, [70, 22, 12, 10, 14, 80, 10]),
+                                      ("by_finding", R["finding_cols"], found, [42, 12, 13, 60, 48, 60, 7, 16, 20, 12, 18, 24, 10])):
+        if body:
+            out.append({"name": R[key], "header": header, "rows": body, "widths": widths})
+        else:  # one line saying why, never an empty sheet (DECISIONS 321 (5))
+            out.append({"name": R[key], "header": [W["note"]], "rows": [[R["empty"][key]]], "widths": [140]})
+    return out
+
+
+def technical_sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
+                     title: Callable[[str, str], str] | None = None, fix: Callable[[str], str] | None = None,
+                     label: Callable[[str], str] | None = None, line: Callable[[str], str] | None = None) -> list[dict]:
+    from .client_selection import host_level
+    from .page_rows import display_address
     W = WORDS[lang]
     rows, urls = [], []
     for r in appendix_rows(selection, lists):
@@ -174,8 +269,9 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
                      W["reason"].get(r["confirm_reason"], r["confirm_reason"]) if r["confirm_reason"] else "",
                      t, x, r["scope_count"], len(r["urls"]), r.get("pages_read"), r.get("not_read"),
                      r.get("merge_group") or "", _manual(r.get("manual") or "", W)])
-        for u in r["urls"]:
-            urls.append([r["finding_id"], placement, W["severity"].get(r["severity"], r["severity"]), u])
+        hosts = host_level(r["finding"]) if r.get("finding") else None
+        for u in r["urls"]:  # DECISIONS 322 (7): a host-level finding's host roots as plain host names
+            urls.append([r["finding_id"], placement, W["severity"].get(r["severity"], r["severity"]), display_address(u, hosts)])
     # DECISIONS 312: the homepage's language versions are one row; the cell lists every address.
     pages = [[p["rank"], "\n".join(p.get("languages") or [p["url"]]),
               W["home_languages"].format(n=len(p["languages"])) if p.get("languages") else W["page_type"].get(p["page_type"], p["page_type"]),
@@ -227,8 +323,13 @@ def build(selection: dict, lang: str = "tr", lists: dict | None = None, **wordin
 
 
 def finding_ids(data: bytes, lang: str = "tr") -> set[str]:
-    """The finding ids an appendix file lists (its first sheet's first column), for RG-17 on the written file."""
-    first = next(iter(xlsx.read(data).values()), [])
+    """The finding ids an appendix file lists (the technical findings sheet's first column), for RG-17 on the written
+    file. The reader sheets come first since DECISIONS 322, so the sheet is found by its name in either language."""
+    book = xlsx.read(data)
+    names = [WORDS[lang]["findings"]] + [w["findings"] for w in WORDS.values()]
+    first = next((book[n] for n in names if n in book), None)
+    if first is None:
+        first = next(iter(book.values()), [])
     if first and first[0] and first[0][0] in {w["note"] for w in WORDS.values()}:
         return set()  # an empty findings sheet holds one line saying why (DECISIONS 321 (5)), not an id
     return {row[0] for row in first[1:] if row and row[0]}

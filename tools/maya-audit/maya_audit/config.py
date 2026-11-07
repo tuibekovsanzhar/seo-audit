@@ -364,7 +364,7 @@ class CrawlConfig:
     # IDX-1: a 2xx answer under this many bytes, with no title and no visible text, is an empty page (DECISIONS 204,
     # LG-75). Empty pages are refetched once too, within max_refetches.
     empty_response_max_bytes: int = 512
-    # IDX-2: warn when the certificate expires within this many days (DECISIONS 321: 30; under 14 High, under 7 Blocker).
+    # IDX-2: warn when the certificate expires within this many days (DECISIONS 321/322: 30 or fewer Medium, 14 or fewer High, 7 or fewer Blocker).
     tls_expiry_warning_days: float = 30.0
     # IDX-2: port for the HTTP -> HTTPS redirect check (None = 80). Tests use a local port.
     http_port: int | None = None
