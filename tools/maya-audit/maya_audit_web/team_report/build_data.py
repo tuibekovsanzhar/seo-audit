@@ -1093,11 +1093,43 @@ class Builder:
         self.fact(n)
         return f"{fmt_int(n, self.lang)} {unit[0] if n == 1 else unit[1]}"
 
+    @staticmethod
+    def hosts_of(f):
+        """DECISIONS 321 (2): the hosts of a host-level finding (certificate, robots.txt, sitemap files), or None."""
+        from maya_audit.client_selection import host_level  # type: ignore
+        return host_level(f)
+
+    def audit_date(self):
+        return parse_dt((self.r.get("crawl") or {}).get("started_at"))
+
+    def cert_expiry(self, f):
+        """DECISIONS 321 (1): (expiry date, days left at the audit, audit date) of a certificate that expires soon, the
+        days counted from the audit's date to the expiry's date (airastana: 14 Nov - 5 Nov = 9 days); None otherwise."""
+        if self.rule_of(f) != "idx2.expires":
+            return None
+        tls = next((h for h in (f.get("evidence") or {}).get("hosts") or [] if isinstance(h, dict) and h.get("not_after")), None)
+        end, start = parse_dt((tls or {}).get("not_after")), self.audit_date()
+        if not end or not start:
+            return None
+        return end, (end.date() - start.date()).days, start
+
+    def cert_line(self, f):
+        found = self.cert_expiry(f)
+        if not found:
+            return None
+        end, days, start = found
+        L = self.L
+        return fmt(L["cert_line"], date=date_long(end.isoformat(), L), audit=date_long(start.isoformat(), L),
+                   days=fmt(L["cert_days_one"] if days == 1 else L["cert_days"], n=fmt_int(days, self.lang)))
+
     def unit_for(self, f, members=None):
         """The scope's unit (DECISIONS 309): "request" for blocked page requests (ACC-9), "address" when most of the
         addresses were never read (a page that was not read is not "a page" the audit saw), else URL or page."""
         if f.get("check_id") == "ACC-9":
             return "request"
+        # DECISIONS 321 (2): a finding about the site's hosts (the certificate, the https redirect) counts hosts.
+        if self.hosts_of(f) and all(urlsplit(u).path in ("", "/") for u in (f.get("scope") or {}).get("urls") or []):
+            return "host"
         group = ((self.sel or {}).get("by_finding") or {}).get(f.get("id")) or {}
         if (group.get("addresses_not_read") or 0) > (group.get("pages_counted") or 0):
             return "address"
@@ -1170,6 +1202,23 @@ class Builder:
         if rows:
             return rows[0]["owner"], rows[0]["effort"]
         return self.cat["default"]["owner"], self.cat["default"]["effort"]
+
+    OWNER_RANK = ("developer", "seo", "content")  # most technical first (DECISIONS 321 (4))
+
+    def card_owner(self, members):
+        """DECISIONS 321 (4): a merged card's owner is the owner of its most technical part, and the next one when its
+        parts need two ("Developer + SEO": moodist's canonical (SEO) and redirect-chain (Developer) card). One part,
+        or parts with one owner: that owner. The effort stays the lead's."""
+        keys = []
+        for m in members or []:
+            k = self.owner_effort(m)[0]
+            if k not in keys:
+                keys.append(k)
+        keys.sort(key=lambda k: self.OWNER_RANK.index(k) if k in self.OWNER_RANK else len(self.OWNER_RANK))
+        return " + ".join(self.L["owners"][k] for k in keys[:2] if k in self.L["owners"])
+
+    def members_of(self, f):
+        return next((g for g in self.groups() or [] if g and g[0].get("id") == f.get("id")), [f])
 
     def when(self, f):
         """maya_audit_web.practical.when ile aynı kural."""
@@ -1425,7 +1474,8 @@ class Builder:
             owner, effort = self.owner_effort(f)
             i = len(actions)
             fx, _ = self.w.fix(f.get("how_to_fix") or "")
-            actions.append({"n": i + 1, "ref": f["id"], "owner": L["owners"][owner], "effort": L["efforts"][effort],
+            actions.append({"n": i + 1, "ref": f["id"], "owner": self.card_owner(self.members_of(f)) or L["owners"][owner],
+                            "effort": L["efforts"][effort],
                             "title": self.slot(f"actions[{i}].title", "aksiyon cümlesi, fiille başlar, kısa",
                                                (fx or f.get("how_to_fix") or f.get("title")), 75,
                                                prefill=self.merge_title(f) or
@@ -1491,9 +1541,18 @@ class Builder:
                 sub = self.merged_lines(members) or self.reason_lines(f) or self.blocked_429_line(f)
                 if (group or {}).get("chain"):  # DECISIONS 315: the chain and its canonicals, not one line per member
                     sub = self.chain_lines(group["chain"])
-                # DECISIONS 305: addresses that were not read add nothing to the score; the card says how many.
-                if group.get("addresses_not_read"):
+                # DECISIONS 305: addresses that were not read add nothing to the score; the card says how many. Never
+                # of a host-level finding (DECISIONS 321 (2)): its "addresses" are hosts and files; the card names them.
+                hosts = self.hosts_of(f)
+                hosts_line = fmt(L["hosts_line"], hosts=", ".join(hosts)) if hosts else None
+                if hosts_line:
+                    sub = list(sub or []) + [hosts_line]
+                elif group.get("addresses_not_read"):
                     sub = list(sub or []) + [self.counted("not_read_line", group["addresses_not_read"])]
+                certificate_line = self.cert_line(f)
+                if certificate_line:  # DECISIONS 321 (1): the expiry date and the days left, first
+                    sub = [certificate_line] + list(sub or [])
+                    self.fact(certificate_line)
                 # DECISIONS 309: read through the page reader with no importance: neutral reach, never "not read".
                 if group.get("pages_read_unscored"):
                     sub = list(sub or []) + [self.counted("read_unscored_line", group["pages_read_unscored"])]
@@ -1605,10 +1664,11 @@ class Builder:
                     "issue_type": (group or {}).get("issue_type") or "issue",
                     "issue_type_label": self.issue_label((group or {}).get("issue_type")),
                     "template_line": template_line, "chain_line": chain_line, "sitemap_line": sitemap_line,
+                    "certificate_line": certificate_line, "hosts_line": hosts_line,  # DECISIONS 321
                     # The release gate (DECISIONS 278) compares what the card shows with the finding's own state.
                     "verification_state": state,
-                    "when": L["when"][when_key], "owner": L["owners"][owner], "effort": L["efforts"][effort],
-                    "status": self.status_text(f, state),
+                    "when": L["when"][when_key], "owner": self.card_owner(members) or L["owners"][owner],
+                    "effort": L["efforts"][effort], "status": self.status_text(f, state),
                     "sub": sub,
                     # DECISIONS 320: the owner's confirmation note is the last line a too-tall card gives up
                     "sub_keep": note_line,
@@ -1828,8 +1888,42 @@ class Builder:
         sample["rows"] = [[row[j] for j in keep] for row in sample["rows"]]
         return sample
 
+    def host_sample(self, f):
+        """DECISIONS 321: a host-level finding's evidence table: the certificate on each host (expiry date, days left at
+        the audit, issuer; or the problem when it is not valid), else the hosts and files it names. Never empty."""
+        L, ev = self.L, f.get("evidence") or {}
+        tls = [h for h in ev.get("hosts") or [] if isinstance(h, dict) and h.get("host") and ("valid" in h or "not_after" in h)]
+        start = self.audit_date()
+        if tls and f.get("check_id") == "IDX-2":
+            out, invalid = [], any(h.get("valid") is False for h in tls)
+            for h in tls[:EV_ROWS]:
+                end = parse_dt(h.get("not_after"))
+                days = (end.date() - start.date()).days if end and start else None
+                issuer = ((h.get("issuer") or {}).get("organizationName") or (h.get("issuer") or {}).get("commonName") or "—")
+                if invalid:
+                    out.append([h["host"], str(h.get("verify_message") or h.get("error") or "—")])
+                else:
+                    out.append([h["host"], date_long(h.get("not_after"), L),
+                                fmt(L["cert_days_one"] if days == 1 else L["cert_days"], n=fmt_int(days, self.lang)) if days is not None else "—",
+                                issuer])
+                self.fact(days)
+            cols = [L["ev_host"], L["ev_problem"]] if invalid else [L["ev_host"], L["ev_expires"], L["ev_days_left"], L["ev_issuer"]]
+            return self._without_empty_columns(
+                {"finding_id": f["id"], "kind": "rows", "caption": f.get("id"), "columns": cols, "rows": out,
+                 "alert_col": None if invalid else 2,
+                 "note": fmt(L["ev_note_cert"], audit=date_long(start.isoformat(), L) if start else "—")})
+        urls = (f.get("scope") or {}).get("urls") or []
+        rows = []
+        for u in urls[:EV_ROWS]:
+            parts = urlsplit(u)
+            rows.append([(parts.hostname or "") + (parts.path if parts.path not in ("", "/") else "")])
+        return {"finding_id": f["id"], "kind": "urls", "caption": f.get("id"), "columns": [L["ev_host"]], "rows": rows,
+                "alert_col": None, "note": L["ev_note_hosts"]}
+
     def evidence_sample(self, f):
         L, ev = self.L, f.get("evidence") or {}
+        if self.hosts_of(f):  # DECISIONS 321 (2): hosts, never "/" for each host's root
+            return self.host_sample(f)
         rows = None
         for value in ev.values():
             if isinstance(value, list) and value and isinstance(value[0], dict) and "url" in value[0]:

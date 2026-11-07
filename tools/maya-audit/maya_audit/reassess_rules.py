@@ -514,6 +514,57 @@ def _decisions_318(report: dict, changes: list[str]) -> None:
                                f"({blocked} of {asked}{', the homepage asked again after the wait' if retried else ''}) (DECISIONS 318)")
 
 
+def _not_retested(f: dict) -> None:
+    """A High or Blocker finding carries a re-test state (RG-5); a certificate's expiry date has no re-test, so it says
+    "not_retested" with the reason, as the engine's verification stage writes it."""
+    if f.get("severity") in ("S1", "S2") and not f.get("verification"):
+        f["verification"] = {"state": "not_retested", "checked": [], "reason": "no re-test for this rule",
+                             "subjects": list((f.get("scope") or {}).get("urls") or [])}
+
+
+def _decisions_321(report: dict, changes: list[str]) -> None:
+    """DECISIONS 321: a saved certificate expiry gets its severity by the days left at the audit (under 7 Blocker, under
+    14 High, under 30 Medium), and a certificate the saved IDX-2 evidence shows inside the new 30-day window, with no
+    expiry finding (the old window was 14 days), gets the finding this engine would write (same title, same id)."""
+    from .checks.index import expiry_finding, expiry_severity
+    from .config import CrawlConfig
+    from .models import to_jsonable
+    window = CrawlConfig.tls_expiry_warning_days
+    for check in report.get("checks") or []:
+        if check.get("check_id") != "IDX-2":
+            continue
+        findings = check.setdefault("findings", [])
+        dated = set()
+        for f in findings:
+            if f.get("rule_id") != "idx2.expires":
+                continue
+            hosts = (f.get("evidence") or {}).get("hosts") or []
+            days = next((h.get("days_left") for h in hosts if isinstance(h.get("days_left"), (int, float))), None)
+            dated |= {h.get("not_after") for h in hosts}
+            if days is None:
+                continue
+            target = expiry_severity(days).value
+            if f.get("severity") != target:
+                changes.append(f"{f['id']}: certificate expires in {days:g} day(s): {f.get('severity')} -> {target} (DECISIONS 321)")
+                _set_severity(f, target)
+            f["expected"] = f"more than {window:g} days of validity left"  # the 30-day window, not the old 14
+            _not_retested(f)
+        expiring: dict[str, list[dict]] = {}
+        for entry in (check.get("evidence") or {}).get("hosts") or []:
+            tls = (entry or {}).get("tls") or {}
+            if (tls.get("valid") and isinstance(tls.get("days_left"), (int, float)) and tls["days_left"] < window
+                    and tls.get("not_after") and tls["not_after"] not in dated):
+                expiring.setdefault(tls["not_after"], []).append(entry)
+        for not_after, entries in expiring.items():
+            new = to_jsonable(expiry_finding(not_after, entries, window))
+            _not_retested(new)
+            findings.append(new)
+            changes.append(f"{new['id']}: certificate expires in {new['evidence']['hosts'][0]['days_left']:g} day(s), inside "
+                           f"the 30-day window: a {new['severity']} finding (DECISIONS 321)")
+        if findings:
+            check["status"] = "findings"
+
+
 def _order(report: dict) -> list[str]:
     from .findings import Severity, priority_key
     from .models import Confidence
@@ -554,6 +605,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_316(r, aff, changes)
     _decisions_317(r, changes)
     _decisions_318(r, changes)
+    _decisions_321(r, changes)
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -569,7 +621,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317 and 318, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318 and 321, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
@@ -588,6 +640,24 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
     r = deepcopy(report)
     changes: list[str] = []
     _decisions_309(r, changes, saved_texts or [])
+    # DECISIONS 321: a certificate's expiry severity is read from the saved evidence, so a report of the current schema
+    # written before it gets it too; the order and the problem summary follow.
+    cert: list[str] = []
+    _decisions_321(r, cert)
+    if cert:
+        from .report import problem_summary
+        from .severity import apply as apply_severity
+        changes += cert
+        apply_severity(r.get("checks") or [], r.get("crawl") or {})
+        order = _order(r)
+        r["findings_in_priority_order"] = order
+        by_id = {f["id"]: f for c in r.get("checks") or [] for f in c.get("findings") or []}
+        old = r.get("problem_summary") or {}
+        single = old.get("single_page")
+        r["problem_summary"] = problem_summary([by_id[i] for i in order], affected or {}, pages_checked=old.get("pages_checked") or 0,
+                                               checks=r.get("checks"),
+                                               single_page=single.get("url") if isinstance(single, dict) else single,
+                                               start_address=old.get("start_address"))
     if changes:
         from . import release_gate
         r["release_gate"] = release_gate.run(r, affected or {})

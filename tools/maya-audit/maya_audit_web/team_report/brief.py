@@ -146,6 +146,61 @@ def _loaded(rule: str | None, report: dict, L: dict) -> str | None:
     return L["served"]["and"].join(words) or None
 
 
+def _expiry(rule: str | None, members: list[dict], report: dict, lang: str) -> dict:
+    """DECISIONS 321 (1): {date, days} of a certificate that expires soon: its expiry date and the days left at the
+    audit (from the audit's date); {} for any other problem or when the evidence has no date."""
+    if rule != "idx2.expires":
+        return {}
+    from maya_audit_web.team_report.build_data import date_long, fmt_int, parse_dt
+    tls = next((h for f in members for h in (f.get("evidence") or {}).get("hosts") or []
+                if isinstance(h, dict) and h.get("not_after")), None)
+    end, start = parse_dt((tls or {}).get("not_after")), parse_dt((report.get("crawl") or {}).get("started_at"))
+    if not end or not start:
+        return {}
+    days = (end.date() - start.date()).days
+    L = library(lang)["labels"]
+    return {"date": date_long(end.isoformat(), _team_labels(lang)),
+            "days": fmt(L["cert_days_one"] if days == 1 else L["cert_days"], n=fmt_int(days, lang))}
+
+
+def worst_severity(items: list[dict], data: dict, report: dict) -> str:
+    """DECISIONS 321 (1): the severity the verdict and the health line speak for: the worst of the brief's problems,
+    of every card in the team report (a High card the brief leaves out is still there) and of a certificate that
+    expires in under 14 days (under 7: Blocker), so "nothing is urgent" is never said beside one."""
+    found = {p.get("severity") for p in items} | {c.get("severity") for c in data.get("_cards") or []
+                                                   if c.get("severity") in ("S1", "S2")}
+    from maya_audit.checks.index import expiry_severity
+    for check in report.get("checks") or []:
+        for f in check.get("findings") or [] if check.get("check_id") == "IDX-2" else []:
+            if f.get("rule_id") != "idx2.expires":
+                continue
+            days = next((h.get("days_left") for h in (f.get("evidence") or {}).get("hosts") or []
+                         if isinstance(h, dict) and isinstance(h.get("days_left"), (int, float))), None)
+            if days is not None and days < 14:
+                found.add(expiry_severity(days).value)
+    return next((s for s in SEVERITIES if s in found), "none")
+
+
+def coverage_line(report: dict, read: int, lang: str) -> str | None:
+    """DECISIONS 321 (3): one plain line when fewer pages were read than the audit planned, with why: the site's
+    protection service (a block or rate-limit finding of ACC-9), the time limit, a site smaller than the plan, or some
+    addresses that could not be read. None when the plan was read."""
+    crawl = report.get("crawl") or {}
+    planned = (crawl.get("config") or {}).get("max_pages")
+    if not isinstance(planned, int) or planned <= 0 or read >= planned:
+        return None
+    acc9 = [f for c in report.get("checks") or [] if c.get("check_id") == "ACC-9" for f in c.get("findings") or []
+            if not str(f.get("rule_id") or "").startswith("acc9.reader")]
+    reasons = " ".join(str(x) for x in ((report.get("audit_status") or {}).get("content_coverage") or {}).get("reasons") or [])
+    stop = str(crawl.get("stop_reason") or "")
+    kind = ("protection" if acc9 or stop == "rate_limit" else
+            "time" if stop == "time_limit" or crawl.get("deadline_hit") or "time limit" in reasons else
+            "small" if stop == "exhausted" else "other")
+    words = library(lang)["labels"]["coverage"][kind]
+    sep = "." if lang == "tr" else ","
+    return fmt(words, read=f"{read:,}".replace(",", sep), planned=f"{planned:,}".replace(",", sep))
+
+
 def _good(report: dict, lang: str, data: dict | None = None) -> list[str]:
     """What already works: a check that passed with no finding at all, and no finding of a check that would contradict
     it (ACC-2 'AI assistants may read the site' is not said when bot protection blocks crawlers)."""
@@ -216,17 +271,20 @@ def problems(data: dict, report: dict, lang: str) -> list[dict]:
         links = t.get("links") or []
         example = _example(links[0]["href"]) if links else None
         scope = plain_scope(t.get("scope"), lang)
-        owner = owners.get(t.get("owner"), "developer")
+        # DECISIONS 321 (4): a merged card may have two owners ("Developer + SEO"); the brief says both in its words.
+        keys = [owners[part] for part in str(t.get("owner") or "").split(" + ") if part in owners] or ["developer"]
+        owner = keys[0]
         effort = efforts.get(t.get("effort"), "M")
         tpl = card.get("template_line") or {}
         evidence = ("confirmed" if confirmed & set(ids) or any(r in confirmed for r in [rule] if r) else card["confidence"])
         out.append({
             "n": len(out) + 1, "card": t.get("n"), "severity": card["severity"],
             "severity_label": L["severity"][card["severity"]],
-            "title": words["title"], "what": fmt(words["what"], service=service, loaded=_loaded(rule, report, L)), "why": words["why"],
+            "title": words["title"], "what": fmt(words["what"], service=service, loaded=_loaded(rule, report, L),
+                                                 **_expiry(rule, members, report, lang)), "why": words["why"],
             "example": example or L["sitewide"], "scope": fmt(L["example_scope"], scope=scope) if scope else None,
             "site": bool(rule and rule.startswith(SITE_RULES)),
-            "who": L["owners"][owner], "owner": owner, "effort": L["efforts"][effort], "effort_key": effort,
+            "who": " + ".join(L["owners"][k] for k in keys), "owner": owner, "effort": L["efforts"][effort], "effort_key": effort,
             "when": whens.get(t.get("when"), "later"),
             "evidence": L["evidence"][evidence],
             "template": fmt(L["template_line"], n=tpl["pages"]) if tpl.get("pages") else None,
@@ -302,13 +360,14 @@ def compose(data: dict, report: dict, lang: str) -> dict:
     meta = data.get("meta") or {}
     brand = meta.get("brand") or meta.get("domain") or ""
     items = problems(data, report, lang)
-    worst = next((s for s in SEVERITIES if any(p["severity"] == s for p in items)), "none")
+    worst = worst_severity(items, data, report)
     read = ((report.get("audit_status") or {}).get("content_coverage") or {}).get("pages_read")
     if not isinstance(read, int):
         from maya_audit.client_selection import pages_read
         read = len(pages_read(report))
     read_text = f"{read:,}".replace(",", "." if lang == "tr" else ",")
-    health = [fmt(L["reach"], read=read_text), lib["health"][worst]]
+    # DECISIONS 321 (3): fewer pages read than planned: the line says how many and why, in place of "We checked N pages".
+    health = [coverage_line(report, read, lang) or fmt(L["reach"], read=read_text), lib["health"][worst]]
     if items:
         health.append(fmt(L["in_brief"], n=str(len(items))))
     business = data.get("_selection_business") or {}

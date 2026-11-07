@@ -2015,6 +2015,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                           "issue_type": todo.get("issue_type") or "issue", "issue_type_label": todo.get("issue_type_label"),
                           "template_line": todo.get("template_line"), "chain_line": todo.get("chain_line"),
                           "sitemap_line": todo.get("sitemap_line"),  # DECISIONS 316
+                          # DECISIONS 321: a certificate's expiry date and days left; a host-level card's hosts
+                          "certificate_line": todo.get("certificate_line"), "hosts_line": todo.get("hosts_line"),
                           "effort": todo["effort"], "finding_ids": todo["finding_ids"], "note": (todo.get("sub") or [None])[0]
                           if str((todo.get("sub") or [""])[0]).startswith(("Elle kontrol", "Manual check")) else None}
                          for todo in problems],

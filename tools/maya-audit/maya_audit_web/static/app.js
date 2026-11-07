@@ -1085,6 +1085,8 @@ async function showOverview(box, view) {
       f.chain_line ? el("p", { class: "small", text: f.chain_line }) : null,
       f.template_line ? el("p", { class: "small", text: f.template_line }) : null,
       f.sitemap_line ? el("p", { class: "small", text: f.sitemap_line }) : null,
+      f.certificate_line ? el("p", { class: "small", text: f.certificate_line }) : null,
+      f.hosts_line ? el("p", { class: "small", text: f.hosts_line }) : null,
       f.why || f.scope ? el("p", { class: "muted small", text: [f.why, f.scope].filter(Boolean).join(" · ") }) : null,
       f.note ? el("p", { class: "small", text: f.note }) : null,
       el("div", { class: "id", text: f.finding_ids.slice(0, 3).join(" · ") + (f.finding_ids.length > 3 ? " +" + (f.finding_ids.length - 3) : "") })),

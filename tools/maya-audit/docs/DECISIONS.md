@@ -3925,3 +3925,48 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      unchanged: no schema bump.
      Tests: `tests/test_card_fit_320.py` (a long note on every card type and issue type in TR and EN, an overfull card,
      owner words, served files, the 429 card and brief lines with and without a service and files).
+
+321. **Fixes from reviewing the client briefs (Owner, 2026-11-07: the five fixes and the certificate bands as asked; the
+     words, the "Developer + second owner" form, the coverage reasons and their order, and the sheet notes are agent
+     defaults).** Global for every audit; airastana d12146fb, moodisthastanesi c581ff0a and nihan b3198942 were the test
+     cases.
+     (1) *Certificate expiry.* Severity by the days left at the audit (`checks.index.expiry_severity`): under 7 days
+     Blocker, under 14 High, under 30 Medium; the warning window is now 30 days (`tls_expiry_warning_days`, was 14;
+     strictly under: moodist's certificate at exactly 30.0 days is not a finding). A saved audit gets the same from its
+     evidence (`reassess_rules._decisions_321`, also in `saved_data`, so a report of the current schema written before
+     it is re-rated too): an expiry finding re-rated (its "how to verify" says the 30-day window), and a certificate the
+     saved IDX-2 evidence shows inside the new window gets the finding this engine would write (same title and id). A
+     certificate raised to High or Blocker carries `not_retested` ("no re-test for this rule"), as the engine's
+     verification stage writes it, so RG-5 holds. The expiry date and the days left, counted from the audit's date to the
+     expiry's date, are on the card's first line ("Expires 14 November 2026; 9 days left at the audit (5 November
+     2026)."), in the evidence table (host, expiry date, days left, issuer; a certificate that is not valid: host and
+     problem; never an empty table, never "/" for each host), in the brief's problem ("… expires on 14 November 2026;
+     9 days were left when we ran our audit.") and in the web results (`certificate_line`). The brief's verdict and
+     health line speak for the worst of its problems, every team-report card of High or Blocker (one the brief leaves
+     out too) and a certificate under 14 days (`brief.worst_severity`); the High health line no longer says "nothing is
+     urgent", so that sentence appears only when nothing is High or Blocker. airastana: 9.1 days, S3 -> High.
+     (2) *Host-level findings* (`client_selection.host_level`: IDX-2, the robots.txt checks ACC-1/2/6/7, llms.txt ACC-8,
+     and IDX-5 when every address is a sitemap or robots file): the card names the hosts ("Hosts: airastana.com,
+     www.airastana.com"; `hosts_line`, also in the web results) instead of "addresses not read … add nothing to the
+     priority score"; a certificate or https card counts hosts ("2 hosts"); the evidence table shows host names.
+     (3) *Brief coverage line.* When fewer pages were read than planned (`max_pages`), page 1's first health line says how
+     many and why, in place of "We checked N pages" (`brief.coverage_line`): the site's protection service (an ACC-9 block
+     or rate-limit finding, or a rate-limit stop), the time limit, a site smaller than the plan (the crawl ran out of
+     addresses), or some addresses that could not be read. airastana: "The site's protection service slowed our reading,
+     so this brief is based on 13 pages (we planned 50)."
+     (4) *Owner of merged cards* (`card_owner`): the owner of the most technical part (Developer, then SEO, then
+     Content) and, when the parts need two, the next one: moodist's canonical + redirect chain card "Developer + SEO"
+     (brief "Developer + SEO / marketing team"), nihan's language card "Developer + Content"; a card whose parts share
+     one owner keeps it. The effort stays the lead's. Same on the to-do cards and the action plan; a test runs every merge
+     group and the redirect chain with mixed owners.
+     (5) *XLSX.* A sheet with no rows has one line saying why (findings, addresses, templates, coverage; key pages as
+     before). Templates: no page scored (the key pages' reasons), the pages with an address pattern were all not read
+     (`templates_reason` "not_read": airastana, Imperva answered Maya's 50 requests and the 13 pages read another way
+     are not grouped), or no shared pattern. RG-17 ignores the note line. "Importance not computed" says why in plain
+     words ("our crawler was blocked, the page was read another way and which pages link to it is not known"), in the
+     XLSX and the team report's key pages.
+     report.json's shape is unchanged (evidence is outside the frozen schema): no schema bump.
+     Results offline (scratch copies, provider-free): all six team reports print, all six briefs 5 pages, not blocked;
+     airastana certificate High with its date in card, table and brief, coverage line on p1; moodist card 1 "Developer
+     + SEO"; airastana Templates sheet explains why it is empty.
+     Tests: `tests/test_brief_review_321.py`; `test_idx_scenarios` (7-day certificate: High).

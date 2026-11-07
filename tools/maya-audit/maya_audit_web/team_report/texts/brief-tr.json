@@ -95,6 +95,14 @@
    "robots": "tarayıcılara hangi sayfaları okuyabileceklerini söyleyen dosya (robots.txt)",
    "sitemap": "Google'a sayfalarınızın listesini veren dosya (site haritası)",
    "and": " ile "
+  },
+  "cert_days": "{n} gün",
+  "cert_days_one": "{n} gün",
+  "coverage": {
+   "protection": "Sitenin koruma hizmeti okumamızı yavaşlattı; bu yüzden bu özet {read} sayfaya dayanıyor (planlanan: {planned}).",
+   "time": "Denetimin süresi planlanan {planned} sayfayı okumaya yetmedi; bu yüzden bu özet {read} sayfaya dayanıyor.",
+   "small": "Sitede bulabildiğimiz bütün sayfaları okuduk: {read} sayfa (planlanan: {planned}).",
+   "other": "Bazı adresler okunamadı; bu yüzden bu özet planlanan {planned} sayfa yerine {read} sayfaya dayanıyor."
   }
  },
  "verdict": {
@@ -106,7 +114,7 @@
  },
  "health": {
   "S1": "Sitenizin görünürlüğünü engelleyen acil bir sorun var.",
-  "S2": "Acil bir sorun yok; ama yüksek önemdeki sorunlar görünürlüğünüzü doğrudan etkiliyor.",
+  "S2": "Yüksek önemde sorunlar var; görünürlüğünüzü doğrudan etkiliyorlar, ilk 30 günde ele alın.",
   "S3": "Acil ya da yüksek önemde bir sorun yok; orta önemdeki sorunlar görünürlüğünüzü kısıtlıyor.",
   "S4": "Acil, yüksek ya da orta önemde bir sorun yok; yalnız küçük düzeltmeler var.",
   "none": "Ölçülmüş ya da teyit edilmiş bir sorun yok."
@@ -531,7 +539,7 @@
   },
   "idx2.expires": {
    "title": "Güvenlik sertifikasını süresi dolmadan yenileyin",
-   "what": "Sitenizin güvenli bağlantı sertifikasının (TLS) süresi yakında doluyor.",
+   "what": "Sitenizin güvenli bağlantı sertifikasının (TLS) süresi[[ {date} tarihinde]] doluyor[[; denetimimiz sırasında {days} kalmıştı]].",
    "why": "Süre dolduğunda tarayıcılar ziyaretçilere bu site güvenli değil uyarısı gösterir; satışlar durur, Google ve yapay zekâ asistanları da siteyi okuyamaz."
   },
   "idx2.invalid": {

@@ -430,6 +430,30 @@ def idx1_http_status(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
 TEMPORARY_REDIRECTS = (302, 303, 307)
 TEMPORARY_FIX = "Make the http:// to https:// redirect permanent (301 or 308) on each hostname."
 
+# DECISIONS 321: a certificate's expiry severity by the days left at the audit: under 7 Blocker, under 14 High, else
+# (inside the warning window, 30 days) Medium. Once it expires every fetch fails, so the nearer it is, the higher.
+TLS_EXPIRY_BANDS = ((7, Severity.S1), (14, Severity.S2))
+
+
+def expiry_severity(days_left: float) -> Severity:
+    return next((sev for limit, sev in TLS_EXPIRY_BANDS if days_left < limit), Severity.S3)
+
+
+def expiry_finding(not_after: str, entries: list[dict], warning_days: float) -> Finding:
+    """One finding per certificate expiry date, for the hosts that share it (also rebuilt offline for a saved audit,
+    `reassess_rules._decisions_321`, so the id is the one this engine would give)."""
+    days = entries[0]["tls"]["days_left"]
+    hosts = ", ".join(e["host"] for e in entries)
+    return Finding(
+        "IDX-2", f"TLS certificate on {hosts} expires in {days:g} day(s) ({not_after})", expiry_severity(days),
+        Confidence.VERIFIED, "Documented (fetch fails once expired)", ALL_ENGINES,
+        scope_for([f"https://{e['host']}/" for e in entries], sitewide=True),
+        {"hosts": [e["tls"] for e in entries]},
+        f"more than {warning_days:g} days of validity left",
+        "Renew the certificate now, and check that automatic renewal is working.",
+    )
+
+
 def idx2_tls(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     title = "TLS / HTTPS validity"
     data = _index(result)
@@ -449,7 +473,7 @@ def idx2_tls(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
         tls = entry.get("tls", {})
         if tls.get("valid") is False:
             invalid[tls.get("verify_message") or tls.get("error") or "invalid"].append(entry)
-        elif tls.get("valid") and tls.get("days_left") is not None and tls["days_left"] <= cfg.tls_expiry_warning_days:
+        elif tls.get("valid") and tls.get("days_left") is not None and tls["days_left"] < cfg.tls_expiry_warning_days:
             expiring[tls["not_after"]].append(entry)
 
     for message, entries in invalid.items():
@@ -467,14 +491,7 @@ def idx2_tls(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
                    if any(e["role"] == "variant" for e in entries) else []),
         ))
     for not_after, entries in expiring.items():
-        days = entries[0]["tls"]["days_left"]
-        findings.append(Finding(
-            "IDX-2", f"TLS certificate on {names(entries)} expires in {days:g} day(s) ({not_after})", Severity.S3,
-            Confidence.VERIFIED, "Documented (fetch fails once expired)", ALL_ENGINES,
-            scope_for([f"https://{e['host']}/" for e in entries], sitewide=True), {"hosts": [e["tls"] for e in entries]},
-            f"more than {cfg.tls_expiry_warning_days:g} days of validity left",
-            "Renew the certificate now, and check that automatic renewal is working.",
-        ))
+        findings.append(expiry_finding(not_after, entries, cfg.tls_expiry_warning_days))
     # ONE finding for the fact "http:// is not redirected to https://", whatever each host answers (decision 188,
     # which amends 181). Its severity is the highest of its parts: High when the site is reachable, whole, on http://
     # (a host answers 200 there, or redirects to another host's http:// address that does); Low when the request is

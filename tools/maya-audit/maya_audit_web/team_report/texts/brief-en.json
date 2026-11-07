@@ -95,6 +95,14 @@
    "robots": "the file that tells crawlers which pages they may read (robots.txt)",
    "sitemap": "the file that gives Google the list of your pages (the sitemap)",
    "and": " and "
+  },
+  "cert_days": "{n} days",
+  "cert_days_one": "{n} day",
+  "coverage": {
+   "protection": "The site's protection service slowed our reading, so this brief is based on {read:page|pages} (we planned {planned}).",
+   "time": "The audit's time ran out before the {planned} planned pages could be read, so this brief is based on {read:page|pages}.",
+   "small": "We read every page we could find on the site: {read:page|pages} (we planned {planned}).",
+   "other": "Some addresses could not be read, so this brief is based on {read:page|pages} instead of the {planned} we planned."
   }
  },
  "verdict": {
@@ -106,7 +114,7 @@
  },
  "health": {
   "S1": "There is an urgent problem that blocks your visibility.",
-  "S2": "Nothing is urgent, but problems of high importance directly affect your visibility.",
+  "S2": "There are problems of high importance; they directly affect your visibility, so handle them in the first 30 days.",
   "S3": "Nothing is urgent or of high importance; problems of medium importance limit your visibility.",
   "S4": "Nothing is urgent or of high or medium importance; only small fixes remain.",
   "none": "There is no measured or confirmed problem."
@@ -531,7 +539,7 @@
   },
   "idx2.expires": {
    "title": "Renew the security certificate before it expires",
-   "what": "Your site's secure connection certificate (TLS) expires soon.",
+   "what": "Your site's secure connection certificate (TLS) expires[[ on {date}]][[; {days} were left when we ran our audit]].",
    "why": "When it expires, browsers warn visitors that the site is not secure; sales stop, and Google and AI assistants cannot read the site either."
   },
   "idx2.invalid": {

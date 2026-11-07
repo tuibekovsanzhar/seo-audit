@@ -1449,3 +1449,35 @@ correctly blocked for low coverage (1 of 500 pages).
 | full suite, `pytest -q -rfEs -p no:cacheprovider` (one run, on its own) | `2978 passed, 4 skipped, 1 warning in 920.54s (0:15:20)` |
 | ruff E9/F821/F841 on `maya_audit maya_audit_web` and the new test; `python3.11 -m compileall` | clean / OK (ruff on all of `tests/` shows 4 old F841 in untouched files) |
 | Owner's web app on port 8770 | NOT RUN (restart needed to pick up the change) |
+
+## Fixes from reviewing the client briefs (2026-11-07, DECISIONS 321)
+
+Owner's five fixes, global for every audit. (1) Certificate expiry: severity by days left at the audit (under 7 Blocker,
+under 14 High, under 30 Medium; window 30 days), also for saved audits (`reassess_rules._decisions_321`, in `apply` and
+`saved_data`); expiry date and days left on the card, in the evidence table, in the brief and in the web results; the
+brief's verdict/health speak for every High card and a certificate under 14 days, and the High health line no longer
+says "nothing is urgent". (2) Host-level cards name their hosts, never "addresses not read". (3) Brief p1: one line
+when fewer pages were read than planned, with why. (4) Merged cards: owner of the most technical part, plus the next
+when two are needed ("Developer + SEO"). (5) XLSX: an empty sheet says why; "importance not computed" in plain words.
+No schema bump.
+
+**Offline on copies of the saved audits** (scratch folder, provider-free, no provider ledger): team reports TR/EN print
+(airastana 6, moodist 8, nihan 9 pages; no overflow, nothing shortened); briefs TR/EN 5 pages, none blocked.
+
+| | airastana d12146fb | moodist c581ff0a | nihan b3198942 |
+|---|---|---|---|
+| Certificate | 9.1 days: S3 -> High; "Expires 14 November 2026; 9 days left at the audit (5 November 2026)"; table host/date/days/issuer | exactly 30.0 days: no finding (strictly under 30) | 52 days: none |
+| Brief p1 | coverage line "protection service slowed our reading … 13 pages (we planned 50)"; High health line | High health line (no "nothing is urgent") | calm S3 line (nothing High) |
+| Merged owner | — | card 1 "Developer + SEO" | card 2 "Developer + Content" |
+| XLSX | Templates: "none of the pages our crawler asked for could be read …" | all sheets have rows | all sheets have rows |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_brief_review_321.py` | `54 passed` |
+| related suites (team report, briefs 319/320, 317, idx scenarios, reassess, v03 client report, appendix users) | `1 failed, 108 passed`: `test_idx_scenarios` near_expiry pinned S3 for 7 days; now High, expectation updated, `6 passed` |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2897 passed, 4 skipped, 135 deselected, 1 warning in 492.54s (0:08:12)` |
+| full suite, first run | `1 failed, 3031 passed, 4 skipped`: the fixture matrix (regenerated with `scripts/fixture_matrix.py`; its tests `3 passed`) |
+| full suite, second run, `pytest -q -rfEs -p no:cacheprovider` | `3032 passed, 4 skipped, 1 warning in 928.60s (0:15:28)` |
+| ruff E9/F821/F841 (package + changed tests), `python3.11 -m compileall`, `node --check app.js` | clean / OK / OK |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+| Push | NOT DONE (owner: don't push) |

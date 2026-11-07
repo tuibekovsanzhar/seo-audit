@@ -42,7 +42,15 @@ WORDS = {
                          "policy": "politika sayfası", "utility": "yardımcı sayfa (arama, sepet, hesap)", "other": "diğer"},
            "home_languages": "ana sayfa ({n} dil)",
            "importance_unknown": "önem hesaplanamadı ({reason}, bkz. kart #{card})",
-           "importance_reader": "önem hesaplanamadı (yalnız sayfa okuyucuyla okundu)",
+           "importance_reader": "önem hesaplanamadı: tarayıcımız engellendi, sayfa başka bir yolla okundu ve hangi sayfaların ona bağlantı verdiği bilinmiyor",
+           # DECISIONS 321 (5): a sheet with no rows says why, in one line, never an empty sheet.
+           "empty": {"findings": "Bu denetimde bulgu yok.",
+                     "urls": "Hiçbir bulgu tek tek adres göstermiyor: bulgular sitenin bütününü ilgilendiriyor.",
+                     "templates": {"reader_only": "Şablonlar çıkarılamadı: tarayıcımız engellendi, sayfalar başka bir yolla okundu ve sayfaların bağlantıları bilinmiyor; şablonlar okunan sayfaların adres düzeninden çıkarılır.",
+                                   "no_pages": "Şablonlar çıkarılamadı: bu denetimde içeriği okunan sayfa yok.",
+                                   "not_read": "Şablonlar çıkarılamadı: tarayıcımızın istediği sayfaların hiçbiri okunamadı (engel sayfası ya da hata); başka bir yolla okunan sayfalar şablonlara göre gruplanmıyor.",
+                                   "no_template": "Okunan sayfalar arasında aynı adres düzenini (şablonu) paylaşan bir sayfa grubu bulunmadı; gruplanacak bir şey yok."},
+                     "coverage": "Bu denetimde kayıtlı bir kapsam sınırı yok."},
            "importance_reasons": {"canonical": "kanonik sorunu", "redirect": "yönlendirme sorunu"},
            "method": [("Önem ağırlığı", "Engelleyici 100, Yüksek 40, Orta 15, Düşük 5, Bilgi 0"),
                       ("Güven ağırlığı", "ölçüldü 1,0 · tahmini 0,6 · çıkarım 0,5 · doğrulanmamış 0,4"),
@@ -81,7 +89,15 @@ WORDS = {
                          "policy": "policy page", "utility": "utility page (search, cart, account)", "other": "other"},
            "home_languages": "homepage ({n} languages)",
            "importance_unknown": "importance not computed ({reason}, see card #{card})",
-           "importance_reader": "importance not computed (read only through the page reader)",
+           "importance_reader": "importance not computed: our crawler was blocked, the page was read another way and which pages link to it is not known",
+           # DECISIONS 321 (5): a sheet with no rows says why, in one line, never an empty sheet.
+           "empty": {"findings": "This audit has no findings.",
+                     "urls": "No finding names single addresses: the findings are about the site as a whole.",
+                     "templates": {"reader_only": "Templates could not be worked out: our crawler was blocked, the pages were read another way and their links are not known; templates come from the address patterns of the pages read.",
+                                   "no_pages": "Templates could not be worked out: no page's content was read in this audit.",
+                                   "not_read": "Templates could not be worked out: none of the pages our crawler asked for could be read (a block page or an error), and pages read another way are not grouped by template.",
+                                   "no_template": "Among the pages read, no group of pages shares one address pattern (a template); there is nothing to group."},
+                     "coverage": "No coverage limit was recorded for this audit."},
            "importance_reasons": {"canonical": "canonical problem", "redirect": "redirect problem"},
            "method": [("Severity weight", "Blocker 100, High 40, Medium 15, Low 5, Info 0"),
                       ("Confidence weight", "measured 1.0 · estimated 0.6 · inferred 0.5 · unverified 0.4"),
@@ -186,10 +202,24 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
         if name == W["key_pages"] and not selection["key_pages"]:
             out.append({"name": name, "header": [W["note"]], "rows": body, "widths": [140]})
             continue
+        if not body:  # DECISIONS 321 (5): one line saying why the sheet has no rows
+            out.append({"name": name, "header": [W["note"]], "rows": [[_empty_reason(name, selection, W)]], "widths": [140]})
+            continue
         h, b = _drop_empty_columns(header, body) if body else (header, body)
         keep = [header.index(c) for c in h]
         out.append({"name": name, "header": h, "rows": b, "widths": [widths[i] for i in keep]})
     return out
+
+
+def _empty_reason(name: str, selection: dict, W: dict) -> str:
+    """Why a sheet has no rows (DECISIONS 321 (5)). Templates: no page could be scored (the key pages' reason: the
+    crawler was blocked and the pages were read another way, or nothing was read), else no shared address pattern."""
+    empty = W["empty"]
+    if name == W["templates"]:
+        reason = selection.get("templates_reason")
+        return empty["templates"].get(reason) or empty["templates"]["no_template"]
+    key = {W["findings"]: "findings", W["urls"]: "urls", W["coverage"]: "coverage"}.get(name)
+    return empty.get(key) or empty["findings"]
 
 
 def build(selection: dict, lang: str = "tr", lists: dict | None = None, **wording) -> bytes:
@@ -199,6 +229,8 @@ def build(selection: dict, lang: str = "tr", lists: dict | None = None, **wordin
 def finding_ids(data: bytes, lang: str = "tr") -> set[str]:
     """The finding ids an appendix file lists (its first sheet's first column), for RG-17 on the written file."""
     first = next(iter(xlsx.read(data).values()), [])
+    if first and first[0] and first[0][0] in {w["note"] for w in WORDS.values()}:
+        return set()  # an empty findings sheet holds one line saying why (DECISIONS 321 (5)), not an id
     return {row[0] for row in first[1:] if row and row[0]}
 
 

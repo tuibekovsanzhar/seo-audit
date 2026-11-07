@@ -284,6 +284,31 @@ def retest_state(f: dict) -> str:
     return (f.get("verification") or {}).get("state") or "not_retested"
 
 
+# DECISIONS 321 (2): a finding about the site's hosts, not its pages (the certificate, robots.txt, the sitemap files,
+# llms.txt): every address it names is a host's root or one of those files, and the check is one that reads them. A
+# card for it names the hosts; "addresses not read ... add nothing to the priority score" is never said of it.
+HOST_CHECKS = frozenset({"IDX-2", "ACC-1", "ACC-2", "ACC-6", "ACC-7", "ACC-8", "IDX-5"})
+SITE_FILE = re.compile(r"/(?:robots\.txt|llms(?:-full)?\.txt|[^/]*sitemap[^/]*\.xml(?:\.gz)?)$", re.I)
+
+
+def host_level(f: dict) -> list[str] | None:
+    """The hosts a host-level finding is about, in order ("airastana.com", "www.airastana.com"), or None for a finding
+    about pages. IDX-5 counts only when all its addresses are sitemap or robots files (its lastmod findings name pages)."""
+    if f.get("check_id") not in HOST_CHECKS:
+        return None
+    urls = [u for u in (f.get("scope") or {}).get("urls") or [] if isinstance(u, str)]
+    if not urls:
+        return None
+    hosts = []
+    for u in urls:
+        parts = urlsplit(u)
+        if not parts.hostname or not (parts.path in ("", "/") and not parts.query or SITE_FILE.search(parts.path)):
+            return None
+        if parts.hostname not in hosts:
+            hosts.append(parts.hostname)
+    return hosts
+
+
 def merge_group(f: dict) -> dict | None:
     if f.get("_chain_cluster"):
         return CHAIN_GROUP
@@ -614,6 +639,7 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         "low_coverage": low_coverage(report),
         # Stage 8a (DECISIONS 315): problems per template (segments).
         "templates": templates_table(rows, importance),
+        "templates_reason": templates_reason(importance, report),  # DECISIONS 321 (5): why the table is empty
         "counts": {"findings": len(by_finding), "groups": len(rows), "cards": len(cards), "confirm": len(confirm),
                    "notes": len(notes), "own_limits": len(limits), "appendix_only": len(appendix_only),
                    "rejected": len([g for g in rows if g["placement"] == "rejected"]),
@@ -732,6 +758,19 @@ def templates_table(rows: list[dict], importance: dict[str, dict], limit: int | 
                     "finding_ids": sorted({fid for g in hit for fid in g["finding_ids"]})})
     out.sort(key=lambda r: (-r["pages"], -r["problem_groups"], r["template"]))
     return out[:limit] if limit else out
+
+
+def templates_reason(importance: dict[str, dict], report: dict) -> str | None:
+    """Why the templates table is empty (DECISIONS 321 (5)), None when it has rows: "reader_only" / "no_pages" (no page
+    scored, the key pages' reasons); "not_read" when the pages that have an address pattern were all not read (block
+    pages or errors; airastana: Imperva answered Maya's 50 requests, the 13 pages read another way are not grouped);
+    "no_template" when pages were read and none shares a pattern."""
+    if not importance:
+        return key_pages_reason(report)
+    keyed = [r for r in importance.values() if _template_of(r)]
+    if any(r.get("read") is not False for r in keyed):
+        return None
+    return "not_read" if keyed else "no_template"
 
 
 def platform_steps(rule_id: str | None, platform: str | None, lang: str) -> list[str] | None:
