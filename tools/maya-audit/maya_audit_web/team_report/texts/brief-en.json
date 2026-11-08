@@ -79,7 +79,7 @@
    "estimated": "Measured; the extent is estimated"
   },
   "severity": {
-   "S1": "Urgent",
+   "S1": "Very high importance",
    "S2": "High importance",
    "S3": "Medium importance",
    "S4": "Low importance"
@@ -113,10 +113,10 @@
   "none": "We found no measured or confirmed problem on the pages of {brand} we checked."
  },
  "health": {
-  "S1": "There is an urgent problem that blocks your visibility.",
+  "S1": "There is a problem of very high importance that blocks your visibility.",
   "S2": "There are problems of high importance; they directly affect your visibility, so handle them in the first 30 days.",
-  "S3": "Nothing is urgent or of high importance; problems of medium importance limit your visibility.",
-  "S4": "Nothing is urgent or of high or medium importance; only small fixes remain.",
+  "S3": "Nothing is of very high or high importance; problems of medium importance limit your visibility.",
+  "S4": "Nothing is of very high, high or medium importance; only small fixes remain.",
   "none": "There is no measured or confirmed problem."
  },
  "good": {

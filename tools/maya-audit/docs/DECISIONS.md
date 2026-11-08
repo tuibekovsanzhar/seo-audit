@@ -4069,3 +4069,64 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      on a local static site writes schema 1.29 with a record for each page read.
      Tests: `tests/test_page_values_323.py`; `tests/test_xlsx_pages_322.py` (the new column, seven lines, a page's own
      value in place of "not kept").
+324. **The team's sector audit method in Maya Audit: homepage weights by rank, P0-P3 on the cards, the "Sektör audit"
+     XLSX, the measured value of a finding with no value of its own (Owner, 2026-11-08: the Step 1 proposal approved
+     with answers 1-4 and the scope; the rules below the owner did not name are agent defaults).** Source:
+     `docs/business-types/Sektor_Bazli_SEO_Audit_Onceligi.xlsm` (İlginay, from Efsa's sector list; read with openpyxl
+     only, data only; it holds no macro). Global for every audit; nihan b3198942, moodisthastanesi c581ff0a and
+     airastana d12146fb were the test cases.
+     (1) *Homepage weight (owner).* A homepage the sector list ranks takes its rank's weight, as the team's sheet:
+     E-ticaret 70, Sağlık 55, Ev hizmetleri 55, and Restoran 55 (4th in the owner's own list); the 85 floor
+     (`HOME_MIN`) is removed. A homepage added where the list has none stays 85 (`ADDED_HOME`). The importance mix
+     (50% type, 35% links, 15% depth) is unchanged. `seyahat` is "Seyahat / rezervasyon (tur, otel)" / "Travel /
+     booking (tours, hotels)" (id kept). `docs/business-types/signals.md` regenerated.
+     (2) *P0-P3 (owner: impact from severity, effort a neutral 3, the team's thresholds, order unchanged).* New
+     `maya_audit/priority_levels.py`, called by `client_selection.select` after placement: per finding of a card,
+     20 × impact (Blocker 5, High 4, Medium 3, Low 2, Info 0) × page weight × spread × status factor / 3; the card takes
+     its highest; P0 at 160+, P1 80+, P2 30+, P3 above 0, none at 0. Agent defaults: page weight = the profile's weight
+     of the page's type / 100 ("Diğer": Stage 3's type weight); spread = the method's 1-5 scale over the pages read of
+     that type (one page of several 1, a homepage 5: it is its own template); a finding with no address, a host-level
+     one or one about site files only (robots.txt, sitemaps) is site-wide (weight 1, spread 5); addresses none of them
+     read weigh 0.25 (spread 1 or 2); a page read with no grouping record is "other"; status factor 1 for an
+     issue-type Blocker/High/Medium, else 0.5 (the method's Hatalı / Kısmen Uygun). A Low card can never be above P2.
+     It never changes a severity, confidence, placement, card order, priority score or the quick wins
+     (`test_p_levels_never_change_order_severity_or_score`).
+     (3) *Automatic P0 (owner: yes, with the homepage).* An indexing blocker (`acc2.blocks`, `acc3.noindex`,
+     `acc3.robots_noindex`, `idx1.5xx`, `idx1.empty`, `idx4.other_site/broken/different/redirect_loop`,
+     `rnd1.missing`) on a homepage, or on 31%+ (spread 4) of the profile's rank 1-2 page types, or robots.txt
+     blocking the whole site, is P0 whatever it scores, with the reason ("otomatik: indeksleme engeli (ana sayfa)").
+     Not for a card waiting in "Teyit edin", and not for ACC-9 (Maya's crawler blocked says nothing of Google). A
+     person's marks: review.json `p0` entries (`set` / `removed`, by, date, note; `manual_review.record_p0/undo_p0`;
+     `confirmations()` gives them as `p0:<finding id>`); "removed" caps an automatic P0 at P1. Web: a "Kartların P0-P3
+     önceliği" block in "Önce bunları kontrol edin" (each card's level and reason, "P0 yap" / "P0'ı kaldır" / "Geri
+     al"), `POST /audits/{id}/review/p0`, `DELETE /audits/{id}/review/p0/{finding_id}`.
+     (4) *Where it shows.* Team report cards and web cards: a chip beside the issue type (the web card says why it is P0
+     and the score in its tooltip); XLSX appendix: "Öncelik (P0-P3)" in "Özet" and "Bulgular", an eighth "Nasıl okunur"
+     line and a "Yöntem" row. Client brief: plain words only, P0 "Acil", P1 "Öncelikli", P2 "Planlı", P3 "Sırası
+     gelince" (EN Urgent, Priority, Planned, When convenient), as a second chip beside the severity; a P0-P3 code in a
+     brief is blocked by the gate (`ID_PATTERNS`). So that "Acil" means P0 only, the brief's Blocker word is now "Çok
+     yüksek önem" / "Very high importance" (and its health lines say so).
+     (5) *"Sektör audit" XLSX* (`GET /audits/{id}/downloads/sector`, `…-sektor-audit.xlsx`, Turkish; a card in
+     Downloads; gated like the appendix). `maya_audit/sector_method.json` holds the team's rows and texts (44 CORE,
+     174 SEC, 58 page types, the methodology) with Maya's mapping per check (A/K/G/P/M, rules, the report checks needed,
+     covered, missing), built by `tools/sector_method_build.py` (openpyxl, not a dependency; the product reads only the
+     JSON). `maya_audit/sector_audit.py` writes the five sheets with the team's columns, formulas (score, P level,
+     VLOOKUP of the rank weight, COUNTIF(S) of "Audit Özeti", ranges widened to the draft rows) and dropdowns (Durum,
+     1-5), plus four columns of Maya's ("Maya: Durum nedeni", "Maya kapsamı", "Maya kuralları", "Not"). The stdlib
+     writer gains formula cells with their computed value, list validations and `fullCalcOnLoad`. Durum: Hatalı for an
+     issue-type Blocker/High/Medium of the check's rules (on that page type for a sector row), Kısmen Uygun for Low or
+     warning/opportunity ones, Uygun only for an automatic check that ran with no finding on an audit that is not
+     low-coverage (a sector row also needs a page of its type read), Uygulanamaz when the needed checks were not
+     applicable, else Kontrol Edilmedi with the reason; a finding waiting in "Teyit edin" leaves the row unchecked and
+     says so; rejected findings, Maya's own limits and Info notes never count. Spread, effort (S 1, M 3, L 4), example
+     (the most important page), evidence (finding names, pages, one measured value), action (Maya's fix, else the
+     team's) and owner are filled; the team's formulas include effort (only Maya's card labels hold it at 3). Draft
+     rows for Havayolu (6 types) and Restoran / kafe (5 types), 33 rows, IDs `SEC-T01`..., marked "taslak —
+     İlginay/Efsa onayı bekliyor"; an airline audit fills them.
+     (6) *"Ölçülen değer"* (`page_rows`): the generic fallback (the page's status and HTML size) is gone. A finding with
+     no value of its kind shows the field it is about (`about`: no breadcrumb / category link for IDX-7, the blocked
+     bots of ACC-6, browser vs Googlebot status of ACC-4, the field and its two values of STR-11, the brand names of
+     STR-5), else "—"; IDX-1 keeps its status (that is its field).
+     (7) *Left for Stage 7* (BACKLOG): the 7 checks missing but automatable (CORE-011, SEC-001, -013, -052, -097, -163,
+     -172). Schema: no bump (nothing new in report.json; the P level and the workbook are worked out at selection
+     time). Tests: `tests/test_sector_method_324.py` (20).

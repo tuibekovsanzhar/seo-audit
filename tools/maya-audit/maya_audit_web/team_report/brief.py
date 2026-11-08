@@ -45,6 +45,8 @@ ID_PATTERNS = (
     re.compile(r"\b(?:ACC|IDX|STR|RND|PRF|ANS|TSEO|DFS|LG|RG)-\d{1,3}\b"),  # check and gate names: ACC-9, RG-15
     re.compile(r"\b(?:acc|idx|str|rnd|prf|ans|tseo)\d{1,2}\.[a-z_0-9.]+"),  # rule ids: idx6.alias_links
     re.compile(r"\b(?:judgment|shared)\.[a-z_.]+"),
+    # DECISIONS 324: the team's priority codes; the brief says them in plain words (not inside base64 font data)
+    re.compile(r"(?<![A-Za-z0-9+/])P[0-3](?![A-Za-z0-9+/=])"),
 )
 # Tools, providers and platforms: never in a brief. A bot-protection service is allowed only when a problem in the
 # brief is that service blocking crawlers (its name comes from the finding's evidence).
@@ -248,6 +250,7 @@ def _example(url: str | None) -> str | None:
 def problems(data: dict, report: dict, lang: str) -> list[dict]:
     """The brief's problems: the team report's problem cards in its order, measured or confirmed, of type "Sorun",
     nothing waiting in "Teyit edin"; at most MAX_PROBLEMS."""
+    from maya_audit.priority_levels import word as priority_word
     L, T = library(lang)["labels"], _team_labels(lang)
     owners, efforts, whens = _invert(T["owners"]), _invert(T["efforts"]), _invert(T["when"])
     cards = {c["finding_ids"][0]: c for c in data.get("_cards") or [] if c.get("finding_ids")}
@@ -280,6 +283,8 @@ def problems(data: dict, report: dict, lang: str) -> list[dict]:
         out.append({
             "n": len(out) + 1, "card": t.get("n"), "severity": card["severity"],
             "severity_label": L["severity"][card["severity"]],
+            # DECISIONS 324: the team's P0-P3 in plain words only ("Acil" for P0), never the code
+            "urgency": priority_word(t.get("p_level"), lang), "_urgency_level": t.get("p_level"),
             "title": words["title"], "what": fmt(words["what"], service=service, loaded=_loaded(rule, report, L),
                                                  **_expiry(rule, members, report, lang)), "why": words["why"],
             "example": example or L["sitewide"], "scope": fmt(L["example_scope"], scope=scope) if scope else None,
@@ -489,6 +494,8 @@ CSS = """
 .prob .ph .n { font-size: 12pt; font-weight: 600; color: var(--accent); width: 26pt; flex: 0 0 26pt; }
 .prob .ph b { flex: 1; font-size: 12.4pt; font-weight: 600; white-space: nowrap; overflow: hidden; }
 .prob .ph .s { font-size: 8.6pt; padding: 3pt 7pt; border-radius: 3pt; margin-left: 12pt; white-space: nowrap; }
+.prob .ph .u { font-size: 8.6pt; padding: 2.4pt 7pt; border-radius: 3pt; margin-left: 6pt; white-space: nowrap; border: .6pt solid var(--line); }
+.prob .ph .u.p0 { border-color: var(--high); color: var(--high); font-weight: 600; }
 .prob .pb { display: flex; gap: 22pt; margin-top: 8pt; flex: 1; min-height: 0; }
 .prob .l { flex: 0 0 600pt; } .prob .r { flex: 1; border-left: .6pt solid var(--line); padding-left: 16pt; }
 .prob .eyebrow { font-size: 7.8pt; }
@@ -568,7 +575,9 @@ def _problem(p: dict, L: dict) -> str:
         right.append(f'<div class="eyebrow">{e(L["template"])}</div><div class="v tpl">{e(p["template"])}</div>')
     return (f'<div class="card prob"><div class="ph"><span class="n">{p["n"]:02d}</span>'
             f'<b data-slot="problems[{p["n"] - 1}].title" data-fit="9.5">{e(p["title"])}</b>'
-            f'<span class="s {e(p["severity"])}">{e(p["severity_label"])}</span></div>'
+            f'<span class="s {e(p["severity"])}">{e(p["severity_label"])}</span>'
+            + (f'<span class="u {e(str(p.get("_urgency_level") or "").lower())}">{e(p["urgency"])}</span>' if p.get("urgency") else "")
+            + '</div>'
             f'<div class="pb"><div class="l"><div class="eyebrow">{e(L["what"])}</div>'
             f'<p data-slot="problems[{p["n"] - 1}].what">{e(p["what"])}</p>'
             f'<div class="eyebrow">{e(L["why"])}</div><p class="why" data-slot="problems[{p["n"] - 1}].why">{e(p["why"])}</p></div>'

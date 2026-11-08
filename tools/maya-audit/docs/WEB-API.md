@@ -86,6 +86,9 @@ and no file path is returned.
 | `GET /audits/{id}/findings/{finding_id}/pages?q=&limit=&offset=` | Every page a finding affects. |
 | `GET /audits/{id}/evidence/{evidence_id}` | A finding's evidence (`evidence_id` = the finding's id), or one saved page record (`page-<n>`). |
 | `GET /audits/{id}/downloads/{format}?full=&lang=` | `pdf`, `markdown`, `json`, `evidence` (a zip; its `index.json` names the evidence folder, never a path on this computer). The PDF is the concise report unless `full=true`. |
+| `GET /audits/{id}/downloads/sector` | The team's sector audit workbook filled from the audit (DECISIONS 324): five sheets in the team's format, formulas and dropdowns kept, Turkish. Gated like the appendix (`-draft` in the name when blocked). |
+| `POST /audits/{id}/review/p0` | `{finding_id, action: "set" \| "removed", by, note?}`: a person sets a card to P0 or takes its automatic P0 off (DECISIONS 324); written to the audit's review.json under `p0`. `GET /audits/{id}/review` lists every card's level under `p0`. |
+| `DELETE /audits/{id}/review/p0/{finding_id}` | Undo that mark (kept under `replaced`). |
 | `GET /audits/{id}/print?full=&lang=` | The PDF's content as a printable HTML page: the concise report by default, the full technical report with `full=true`. Both are written in the audit's language (the one it was started in); `lang=en` or `lang=tr` asks for another. |
 | `GET /audits/{id}/comparison?with=` | Against the previous audit of the same site, or the one named. |
 | `GET /audits/{id}/conversation` | Saved messages and cards. |

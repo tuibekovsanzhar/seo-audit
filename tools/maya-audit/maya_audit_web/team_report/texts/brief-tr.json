@@ -79,7 +79,7 @@
    "estimated": "Ölçüldü; kapsamı tahmini"
   },
   "severity": {
-   "S1": "Acil",
+   "S1": "Çok yüksek önem",
    "S2": "Yüksek önem",
    "S3": "Orta önem",
    "S4": "Düşük önem"
@@ -113,10 +113,10 @@
   "none": "{brand} sitesinin incelediğimiz sayfalarında ölçülmüş ya da teyit edilmiş bir sorun bulmadık."
  },
  "health": {
-  "S1": "Sitenizin görünürlüğünü engelleyen acil bir sorun var.",
+  "S1": "Sitenizin görünürlüğünü engelleyen çok yüksek önemde bir sorun var.",
   "S2": "Yüksek önemde sorunlar var; görünürlüğünüzü doğrudan etkiliyorlar, ilk 30 günde ele alın.",
-  "S3": "Acil ya da yüksek önemde bir sorun yok; orta önemdeki sorunlar görünürlüğünüzü kısıtlıyor.",
-  "S4": "Acil, yüksek ya da orta önemde bir sorun yok; yalnız küçük düzeltmeler var.",
+  "S3": "Çok yüksek ya da yüksek önemde bir sorun yok; orta önemdeki sorunlar görünürlüğünüzü kısıtlıyor.",
+  "S4": "Çok yüksek, yüksek ya da orta önemde bir sorun yok; yalnız küçük düzeltmeler var.",
   "none": "Ölçülmüş ya da teyit edilmiş bir sorun yok."
  },
  "good": {

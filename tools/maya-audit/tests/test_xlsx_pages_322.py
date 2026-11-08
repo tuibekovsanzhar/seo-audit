@@ -55,9 +55,9 @@ def test_the_reader_sheets_come_first_in_the_file_language():
 
 
 @pytest.mark.parametrize("lang", ["tr", "en"])
-def test_how_to_read_is_seven_lines_without_a_filter(lang):  # six, plus "Okundu mu?" (DECISIONS 323)
+def test_how_to_read_is_eight_lines_without_a_filter(lang):  # six, "Okundu mu?" (323), P0-P3 (324)
     how = _sheets(lang)[client_appendix.READ[lang]["how"]]
-    assert len(how["rows"]) == 7 and how["frozen"] is False and how["filter"] is False
+    assert len(how["rows"]) == 8 and how["frozen"] is False and how["filter"] is False
     assert all(len(row) == 1 and 40 < len(row[0]) < 260 for row in how["rows"])
 
 
@@ -72,8 +72,8 @@ def test_by_finding_has_one_row_per_finding_and_page_with_the_value_measured_the
     value = {(r[col["Bulgu kimliği"]], r[col["Sayfa"]]): r[col["Ölçülen değer"]] for r in body}
     assert value[("RND-6-a", SITE + "/a")] == "HTML 1.460 KB; sınır 1.000 KB"
     assert value[("TSEO-1-j", SITE + "/cart")] == "1 başlık düzeyi atlaması"
-    # a page outside the evidence's sample: what was measured on the page itself (DECISIONS 323), here its status
-    assert value[("RND-6-a", SITE + "/en/a")] == "HTTP 200"
+    # a page outside the evidence's sample with no HTML size kept: "—", never the page's generic status (DECISIONS 324)
+    assert value[("RND-6-a", SITE + "/en/a")] == "—"
     assert value[("IDX-2-c", "shop.test")].startswith("sertifika 2026-11-14 tarihinde bitiyor; denetimde 9 gün")
     # ordered by severity: the High certificate first, the Info note last
     assert [r[col["Önem"]] for r in body][0] == "Yüksek" and body[-1][col["Önem"]] == "Bilgi"
@@ -109,16 +109,16 @@ def test_summary_has_the_pdf_cards_each_linked_to_its_first_row():
     summary = book["Summary"]
     assert [r[:3] for r in summary[1:]] == [["1", "Renew the TLS certificate", "High"], ["2", "Make heavy pages lighter", "Medium"],
                                            ["3", "Small fixes", "Info"]]
-    assert [r[6] for r in summary[1:]] == ["2", "2", "0"]  # addresses; a note card about observations has none
+    assert [r[7] for r in summary[1:]] == ["2", "2", "0"]  # addresses (after "Priority (P0-P3)", DECISIONS 324)
     found = book["By finding"]
     card = found[0].index("Card")
-    for n, ref in ((1, "H2"), (2, "H3")):
+    for n, ref in ((1, "I2"), (2, "I3")):
         target = links["Summary"][ref]
         m = re.fullmatch(r"#'By finding'!A(\d+)", target)
         assert m, target
         row = int(m.group(1))
         assert found[row - 1][card] == str(n) and all(r[card] != str(n) for r in found[1:row - 1])
-    assert "H4" not in links["Summary"]  # card 3 names checks' observations, no finding row: no link
+    assert "I4" not in links["Summary"]  # card 3 names checks' observations, no finding row: no link
     assert all(r[card] != "3" for r in found[1:])  # a check id on a note card never takes a finding
 
 

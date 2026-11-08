@@ -621,6 +621,9 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
     for g in rows:
         g["issue_type"] = issue_type(g)
         g["template_line"] = template_line(g, importance)
+    # DECISIONS 324: P0-P3 of the team's sector method beside the severity; it changes no order, placement or score.
+    from .priority_levels import annotate as p_levels
+    p_levels(rows, importance, summary, pages_read(report), lists, confirmations)
     by_finding = {fid: g for g in rows for fid in g["finding_ids"]}
     coverage_box = coverage(report, limits)
     kp = key_pages(report, rows, importance) or reader_key_pages(report, rows, summary.get("business_type"))
@@ -1045,6 +1048,7 @@ def appendix_rows(selection: dict, lists: dict | None = None) -> list[dict]:
                         "confidence_class": g["confidence"], "priority": g["priority"], "placement": g["placement"],
                         "card": g.get("card"), "group_lead": g["finding_ids"][0], "confirm_reason": g["confirm_reason"],
                         "merge_group": g.get("merge_group"), "issue_type": g.get("issue_type"),
+                        "p_level": (g.get("p_level") or {}).get("level"),
                         "pages_read": g.get("pages_counted"), "not_read": g.get("addresses_not_read"),
                         "read_unscored": g.get("pages_read_unscored"),
                         "manual": (lambda c: " · ".join(str(c[k]) for k in ("result", "by", "date", "seen") if c.get(k))

@@ -47,7 +47,10 @@ WORDS = {
            "no_jumps": "atlanan başlık düzeyi yok", "jumps_m": "{n} başlık düzeyi atlaması ({v})", "alt_missing": "{n} görselin alt metni yok",
            "images_m": "{n} görsel", "dead": "{n} adressiz bağlantı", "controls": "{n} düğme gibi kullanılan bağlantı",
            "hreflang_m": "{n} hreflang etiketi", "no_tags": "ölçüm etiketi yok",
-           "not_read": "okunmadı: bu adresin içeriği ölçülmedi", "yes": "Evet", "no": "Hayır, okunmadı", "na": "—"},
+           "not_read": "okunmadı: bu adresin içeriği ölçülmedi", "yes": "Evet", "no": "Hayır, okunmadı", "na": "—",
+           # DECISIONS 324: the field a finding is about, when it has no value of its own on the page
+           "no_crumb": "breadcrumb yok; içerikte kategori bağlantısı yok", "bots_blocked": "engellenen botlar: {v}",
+           "ua_pair": "tarayıcı {a}, {bot} {b}", "two_values": "{field}: {v}", "names": "marka adı: {v}"},
     "en": {"not_kept": "detail not kept (the report keeps sample pages only)",
            "site": "whole site", "kb": "{n} KB", "html": "HTML {n}", "size": "size {n}", "main_offset": "main content starts after {n}",
            "threshold": "limit {n}", "jumps": "{n} heading level jump(s)", "jump": "h{a} → h{b}",
@@ -71,7 +74,9 @@ WORDS = {
            "no_jumps": "no skipped heading level", "jumps_m": "{n} heading level jump(s) ({v})", "alt_missing": "{n} image(s) without alt text",
            "images_m": "{n} image(s)", "dead": "{n} link(s) without an address", "controls": "{n} link(s) used as buttons",
            "hreflang_m": "{n} hreflang tag(s)", "no_tags": "no measurement tag",
-           "not_read": "not read: this address's content was not measured", "yes": "Yes", "no": "No, not read", "na": "—"},
+           "not_read": "not read: this address's content was not measured", "yes": "Yes", "no": "No, not read", "na": "—",
+           "no_crumb": "no breadcrumb; no category link in the content", "bots_blocked": "blocked bots: {v}",
+           "ua_pair": "browser {a}, {bot} {b}", "two_values": "{field}: {v}", "names": "brand name: {v}"},
 }
 
 
@@ -295,10 +300,44 @@ def from_page(finding: dict, rec: dict, lang: str = "tr") -> list[str]:
             out.append(W["dead"].format(n=rec["dead_link_total"]))
         if rec.get("link_control_total"):
             out.append(W["controls"].format(n=rec["link_control_total"]))
-    if not out:  # a kind with no value of its own: the page's status and size, as measured
-        status()
-        size()
+    elif check == "IDX-1":
+        status()  # the status is what IDX-1 is about
+    # DECISIONS 324: no generic fallback (the page's status and size said nothing about most findings): the caller
+    # gives the field the finding is about (`about`) or "—".
     return out
+
+
+def about(finding: dict, url: str, lang: str = "tr") -> list[str]:
+    """DECISIONS 324: the field a finding is about, from its own evidence, when the page holds no value of its kind:
+    the category link of IDX-7, the bots each AI-access finding names, the two user agents' answers of ACC-4, the field
+    and its two values of STR-11, the brand names of STR-5."""
+    W, ev = WORDS[lang], finding.get("evidence") or {}
+    rule, check = str(finding.get("rule_id") or ""), str(finding.get("check_id") or "")
+    if rule == "idx7.product_no_category":
+        return [W["no_crumb"]]
+    if check == "ACC-6" and ev.get("blocked_tokens"):
+        return [W["bots_blocked"].format(v=", ".join(map(str, ev["blocked_tokens"][:6])))]
+    if check == "ACC-4":
+        for pair in ev.get("pairs") or []:
+            if isinstance(pair, dict) and _same(pair.get("url"), url):
+                bot = next((k for k in pair if k not in ("url", "outcome", "notes", "browser") and isinstance(pair[k], dict)), None)
+                a = (pair.get("browser") or {}).get("status")
+                b = (pair.get(bot) or {}).get("status") if bot else None
+                if a is not None and b is not None:
+                    return [W["ua_pair"].format(a=a, bot=str(bot).capitalize() if bot != "googlebot" else "Googlebot", b=b)]
+    if check == "STR-11":
+        out = []
+        for c in ev.get("contradictions") or []:
+            if isinstance(c, dict) and _same(c.get("url"), url) and c.get("field"):
+                values = [", ".join(map(str, d.get("value") or [])) for d in c.get("descriptions") or [] if isinstance(d, dict)]
+                out.append(W["two_values"].format(field=c["field"], v=" / ".join(v for v in values if v)))
+        return out
+    if check == "STR-5":
+        variants = [v for v in ev.get("variants") or [] if isinstance(v, dict) and v.get("name")]
+        here = [v["name"] for v in variants if any(isinstance(s, dict) and _same(s.get("url"), url) for s in v.get("seen_as") or [])]
+        names = here or [v["name"] for v in sorted(variants, key=lambda v: -(v.get("pages") or 0))]
+        return [W["names"].format(v=", ".join(dict.fromkeys(names[:3])))] if names else []
+    return []
 
 
 def measured(finding: dict, url: str, lang: str = "tr", page: dict | None = None, read: bool | None = None) -> str:
@@ -346,9 +385,13 @@ def measured(finding: dict, url: str, lang: str = "tr", page: dict | None = None
         found = _record_words(ev, ev, lang, finding.get("check_id"))
     if not found and page:
         found = from_page(finding, page, lang)
+    if not found:
+        found = about(finding, url, lang)
     if not found and any(isinstance(v, list) and any(isinstance(u, str) and _same(u, url) for u in v)
                          for k, v in ev.items() if k not in SKIP_KEYS and k != "urls"):
         found = [W["seen"]]  # the page is in the evidence's list; the finding itself is what was measured there
+    if not found and page:
+        return W["na"]  # DECISIONS 324: a page read with no value of this kind: "—", never its generic status and size
     if not found and read is False:
         return W["not_read"]
     return "; ".join(found[:4]) if found else W["not_kept"]
@@ -368,6 +411,7 @@ def card_of(selection: dict, todos: list[dict] | None = None, lang: str = "tr",
             cards.append({"n": t.get("n"), "title": t.get("title"), "addresses": len(t.get("all_urls") or []), "severity": t.get("severity"),
                           "severity_label": t.get("severity_label"), "issue_type": t.get("issue_type"),
                           "issue_type_label": t.get("issue_type_label"), "owner": t.get("owner"), "effort": t.get("effort"),
+                          "p_level": t.get("p_level"),
                           "finding_ids": list(t.get("finding_ids") or [])})
             for fid in t.get("finding_ids") or []:
                 by_id.setdefault(fid, t.get("n"))
@@ -377,7 +421,8 @@ def card_of(selection: dict, todos: list[dict] | None = None, lang: str = "tr",
             name = ((merged["title"].get(lang) or merged["title"]["en"]) if merged else
                     (title(g.get("check_id"), g.get("title") or "") if title else None) or g.get("title"))
             cards.append({"n": g.get("card"), "title": name, "severity": g.get("severity"),
-                          "issue_type": g.get("issue_type"), "finding_ids": list(g["finding_ids"])})
+                          "issue_type": g.get("issue_type"), "p_level": (g.get("p_level") or {}).get("level"),
+                          "finding_ids": list(g["finding_ids"])})
             for fid in g["finding_ids"]:
                 by_id.setdefault(fid, g.get("card"))
     return by_id, cards

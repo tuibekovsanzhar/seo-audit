@@ -373,3 +373,8 @@ table.data th { white-space: nowrap; overflow-wrap: normal; font-weight: 600; co
 .itype { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border-strong); color: var(--text); }
 .itype.warning { border-color: var(--s2); color: var(--s2); }
 .itype.opportunity { border-color: var(--ok); color: var(--ok); }
+/* DECISIONS 324: the team's P0-P3 */
+.plevel { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--border-strong); color: var(--text); }
+.plevel.p0 { background: var(--s1-soft); border-color: var(--s1); color: var(--s1); }
+.plevel.p1 { border-color: var(--s1); color: var(--s1); }
+.plevel.p2 { border-color: var(--s2); color: var(--s2); }

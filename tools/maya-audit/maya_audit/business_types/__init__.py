@@ -33,7 +33,9 @@ AUTO = "auto"
 DEFAULT = "diger"
 # Weights by rank in a profile's list (owner, configurable here or per profile with "weights").
 RANK_WEIGHTS = (100, 85, 70, 55, 40, 30)
-HOME_MIN = 85            # the homepage is at least this in every sector (owner)
+# DECISIONS 324 (owner, 2026-11-08): a homepage the sector list ranks takes its rank's weight, as the team's sector
+# method does (E-ticaret 70, Sağlık 55, Ev hizmetleri 55); a homepage added where the list has none is ADDED_HOME.
+ADDED_HOME = 85
 GUIDE_WEIGHT = 30        # "Rehber / SSS / blog" where a profile has no guide of its own (owner)
 UNMATCHED_WEIGHT = 25    # a page that matches no type of the profile (agent default)
 POLICY_WEIGHT = 15       # as Stage 3
@@ -91,13 +93,11 @@ def profiles() -> dict[str, dict]:
             t = dict(t)
             if t.get("added"):
                 t["rank"] = None
-                t["weight"] = HOME_MIN if t["id"] == "home" else int(t.get("weight", GUIDE_WEIGHT))
+                t["weight"] = ADDED_HOME if t["id"] == "home" else int(t.get("weight", GUIDE_WEIGHT))
             else:
                 rank += 1
                 t["rank"] = rank
                 t["weight"] = int(t.get("weight", weights[min(rank, len(weights)) - 1]))
-            if t["id"] == "home":
-                t["weight"] = max(t["weight"], HOME_MIN)
             t.setdefault("signals", {})
             t.setdefault("generic", [])
             types.append(t)
@@ -302,7 +302,7 @@ def classify(prof: dict, facts: dict) -> tuple[str, str, list[dict]]:
 def weight(prof: dict, type_id: str) -> int:
     if type_id == "home":
         home = next((t for t in prof["page_types"] if t["id"] == "home"), None)
-        return max(HOME_MIN, home["weight"] if home else HOME_MIN)
+        return home["weight"] if home else ADDED_HOME
     if type_id == "policy":
         return POLICY_WEIGHT
     if type_id == "utility":

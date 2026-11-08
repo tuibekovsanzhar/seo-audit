@@ -62,7 +62,9 @@ DOWNLOAD_NAMES = {"json": ("json", "application/json"), "markdown": ("md", "text
                   # The team report: the maya-audit-pro design, built here from the saved audit (DECISIONS 307).
                   "team": ("pdf", "application/pdf"),
                   # The client brief ("Müşteri özeti"): at most 5 pages for the business owner (DECISIONS 319).
-                  "brief": ("pdf", "application/pdf")}
+                  "brief": ("pdf", "application/pdf"),
+                  # The team's sector audit workbook filled from the audit (DECISIONS 324).
+                  "sector": ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
 _PROJECT_ID = re.compile(r"[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?")
 
 
@@ -144,6 +146,14 @@ class ClientReviewIn(Strict):
     revision: int = Field(ge=1)
     reviewer: str = Field(min_length=1, max_length=120)
     reason: str = Field(min_length=1, max_length=2000)
+
+
+class P0MarkIn(Strict):
+    """A person's P0 mark of one card in "Önce bunları kontrol edin" (DECISIONS 324): set P0, or take the automatic one off."""
+    finding_id: str = Field(min_length=3, max_length=80)
+    action: Literal["set", "removed"]
+    by: str | None = Field(default=None, max_length=120)
+    note: str | None = Field(default=None, max_length=1000)
 
 
 class ManualCheckIn(Strict):
@@ -1041,7 +1051,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                               for fmt in ("pdf", "markdown", "json", "evidence")
                               for draft in [fmt != "evidence" and gate_decision(report) == release_gate.BLOCKED]],
                 "team_report": {"prepare": f"{base}/team-report", "pdf": f"{base}/downloads/team", "xlsx": f"{base}/downloads/xlsx",
-                                "default_lang": "tr", "brief": f"{base}/client-brief"},
+                                "default_lang": "tr", "brief": f"{base}/client-brief",
+                                "sector": f"{base}/downloads/sector", "sector_name": sector_name(audit)},  # DECISIONS 324
                 "overview_url": f"{base}/overview",
                 "print_url": f"{base}/print", "review_url": f"{base}/review", "has_previous": not audit.get("analysis") and store.previous_audit(audit) is not None}
         # The practical report in brief: the executive summary, the scorecard and the timeline's counts. The whole of it,
@@ -1554,6 +1565,10 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         lang = lang or current_language()
         return download_name(audit, "xlsx").replace(".xlsx", f"-ek-{lang}.xlsx" if lang == "tr" else f"-appendix-{lang}.xlsx")
 
+    def sector_name(audit: dict[str, Any]) -> str:
+        """DECISIONS 324: the sector audit workbook's file name (Turkish only, as the team's file)."""
+        return download_name(audit, "xlsx").replace(".xlsx", "-sektor-audit.xlsx")
+
     def team_name(audit: dict[str, Any], lang: str) -> str:
         return download_name(audit, "pdf").replace(".pdf", "-ekip-raporu-tr.pdf" if lang == "tr" else f"-team-report-{lang}.pdf")
 
@@ -1626,8 +1641,17 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                     "reason": g.get("confirm_reason"), "reason_label": t("c6.reason." + g["confirm_reason"]) if g.get("confirm_reason") else "",
                     "placement": g["placement"], "manual": g.get("manual"), "addresses": len(g["urls"])}
         reviewed = [g for g in selection["groups"] if g.get("manual")]
+
+        def p0_row(g):  # DECISIONS 324: each card's P0-P3, why it is P0, and the person's mark
+            lead, info = g["lead"], g.get("p_level_en" if lang == "en" else "p_level") or {}
+            return {"card": g.get("card"), "finding_id": lead.get("id"), "finding_ids": g["finding_ids"],
+                    "title": wording.title(lead.get("check_id"), lead.get("title") or "", lang)[0] or lead.get("title"),
+                    "severity": g["severity"], "severity_label": t(f"result.severity.{g['severity']}"),
+                    "level": info.get("level"), "score": info.get("score"), "auto_p0": info.get("auto_p0"),
+                    "reason": info.get("reason"), "manual": info.get("manual")}
+        review = manual_review.load(review_path(audit))
         return {"confirm": [row(g) for g in selection["confirm"]], "reviewed": [row(g) for g in reviewed],
-                "entries": manual_review.load(review_path(audit))["entries"]}
+                "entries": review["entries"], "p0": [p0_row(g) for g in selection["cards"]], "p0_entries": review.get("p0") or []}
 
     def appendix_xlsx(audit: dict[str, Any], now: tuple | None = None) -> bytes:
         """The XLSX appendix: the same function the maya-audit-pro skill writes its `-ek.xlsx` with (DECISIONS 307),
@@ -1822,7 +1846,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         blocked = False
         if format != "evidence":  # the raw evidence is not a report; every report form passes the release gate
             # The appendix belongs to the team report: it is gated and built on the current-engine copy (DECISIONS 308).
-            now = current_report(audit)[:2] if format == "xlsx" else None
+            now = current_report(audit)[:2] if format in ("xlsx", "sector") else None
             sealed = publishable(audit, draft, now)
             blocked = sealed.decision == release_gate.BLOCKED
             gate = {"X-Maya-Release-Gate": str(sealed.decision)}
@@ -1852,6 +1876,17 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             return Response(appendix_xlsx(audit, now), media_type=media_type,
                             headers={"Content-Disposition": f'attachment; filename="{name}"', "Cache-Control": "no-store",
                                      "X-Maya-Language": chosen, **gate})
+        if format == "sector":
+            # DECISIONS 324: built on the current-engine copy and gated as the appendix is; Turkish, as the team's file
+            from maya_audit import manual_review
+            from .team_report import render as team_render
+            report_now, aff_now = now
+            content, _ = team_render.sector_bytes(report_now, aff_now or None,
+                                                  manual_review.confirmations(manual_review.load(review_path(audit))),
+                                                  business_choice(audit))
+            name = sector_name(audit).replace(".xlsx", "-draft.xlsx") if blocked else sector_name(audit)
+            return Response(content, media_type=media_type,
+                            headers={"Content-Disposition": f'attachment; filename="{name}"', "Cache-Control": "no-store", **gate})
         if format == "evidence":
             return Response(evidence_zip(audit), media_type=media_type,
                             headers={"Content-Disposition": f'attachment; filename="{name.replace(".zip", "-evidence.zip")}"'})
@@ -2050,6 +2085,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                           "severity": todo["severity"], "severity_label": todo["severity_label"], "owner": todo["owner"],
                           # Stage 8a (DECISIONS 315): Sorun / Kontrol edin / Fırsat, and the template or chain line.
                           "issue_type": todo.get("issue_type") or "issue", "issue_type_label": todo.get("issue_type_label"),
+                          # DECISIONS 324: the team's P0-P3, its score and why it is P0
+                          "p_level": todo.get("p_level"), "p_level_score": todo.get("p_level_score"),
+                          "p_level_reason": todo.get("p_level_reason"),
                           "template_line": todo.get("template_line"), "chain_line": todo.get("chain_line"),
                           "sitemap_line": todo.get("sitemap_line"),  # DECISIONS 316
                           # DECISIONS 321: a certificate's expiry date and days left; a host-level card's hosts
@@ -2169,6 +2207,33 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             manual_review.record(path, manual_review.entry(
                 fid, body.result, by=body.by, seen=body.seen, note=body.note, rule_id=findings[fid].get("rule_id")))
         return {**review_view(audit), "saved": {"finding_ids": ids, "result": body.result, "file": str(path)}}
+
+    @api.post("/audits/{audit_id}/review/p0", summary="Set a card to P0 by hand, or take its automatic P0 off (DECISIONS 324)")
+    def post_p0(audit_id: str, body: P0MarkIn) -> dict[str, Any]:
+        from maya_audit import manual_review
+        from maya_audit.release_gate import findings_of
+        audit = need_audit(audit_id)
+        if not (body.by or "").strip():
+            raise ApiError(422, "invalid_review", t("review.error.by"), fields={"by": t("review.error.by")})
+        report, aff, _ = current_report(audit)
+        if body.finding_id not in findings_of(report):
+            raise ApiError(404, "finding_not_found", t("review.unknown_finding"))
+        path = review_path(audit)
+        manual_review.record_p0(path, manual_review.p0_entry(body.finding_id, body.action, by=body.by, note=body.note))
+        return {**review_view(audit), "saved": {"finding_id": body.finding_id, "action": body.action, "file": str(path)}}
+
+    @api.delete("/audits/{audit_id}/review/p0/{finding_id}", summary="Undo a person's P0 mark of one card (DECISIONS 324)")
+    def undo_p0(audit_id: str, finding_id: str) -> dict[str, Any]:
+        from maya_audit import manual_review
+        audit = need_audit(audit_id)
+        report, aff, _ = current_report(audit)
+        group = client_selection_of(audit, report, aff)["by_finding"].get(finding_id) or {}
+        ids = list(dict.fromkeys([finding_id] + list(group.get("finding_ids") or [])))
+        path = review_path(audit)
+        undone = manual_review.undo_p0(path, ids) if path.is_file() else []
+        if not undone:
+            raise ApiError(404, "review_not_found", t("review.error.nothing_to_undo"))
+        return {**review_view(audit), "undone": {"finding_ids": undone, "file": str(path)}}
 
     @api.delete("/audits/{audit_id}/review/{finding_id}", summary="Undo the owner's manual check of one finding (and its group)")
     def undo_review(audit_id: str, finding_id: str) -> dict[str, Any]:

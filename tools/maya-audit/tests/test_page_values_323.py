@@ -69,7 +69,7 @@ def test_within_a_card_the_read_rows_come_first_so_its_link_still_lands_on_its_f
 def test_how_to_read_explains_the_column_in_one_line():
     for lang, word in (("tr", "Okundu mu?"), ("en", "Read?")):
         lines = client_appendix.READ[lang]["lines"]
-        assert len(lines) == 7 and sum(word in line for line in lines) == 1
+        assert len(lines) == 8 and sum(word in line for line in lines) == 1  # 8: P0-P3 (DECISIONS 324)
 
 
 def test_hosts_and_the_whole_site_are_not_pages():
@@ -102,7 +102,8 @@ def test_the_value_matches_the_kind_of_finding():
     assert say("str9.lang_mismatch", "STR-9") == "<html lang> tr; 120 words"
     assert say("str3.expected_type", "STR-3") == "structured data: Product"
     assert say("str7.no_alt", "STR-7") == "4 image(s); 1 image(s) without alt text"
-    assert say("acc3.utility_indexable", "ACC-3") == "HTTP 200; HTML 1,460 KB"  # no value of its own: status and size
+    # DECISIONS 324: no value of its own: nothing from the page (the appendix then says "—"), never its status and size
+    assert say("acc3.utility_indexable", "ACC-3") == ""
 
 
 def test_the_findings_own_evidence_wins_over_the_page_record():

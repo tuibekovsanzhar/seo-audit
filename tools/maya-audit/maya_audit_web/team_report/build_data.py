@@ -1663,6 +1663,10 @@ class Builder:
                     # Stage 8a (DECISIONS 315): Sorun / Kontrol edin / Fırsat beside the severity, never instead of it.
                     "issue_type": (group or {}).get("issue_type") or "issue",
                     "issue_type_label": self.issue_label((group or {}).get("issue_type")),
+                    # DECISIONS 324: P0-P3 of the team's sector method beside the severity, with why when it is P0
+                    "p_level": ((group or {}).get("p_level") or {}).get("level"),
+                    "p_level_score": ((group or {}).get("p_level") or {}).get("score"),
+                    "p_level_reason": ((group or {}).get("p_level_en" if self.lang == "en" else "p_level") or {}).get("reason"),
                     "template_line": template_line, "chain_line": chain_line, "sitemap_line": sitemap_line,
                     "certificate_line": certificate_line, "hosts_line": hosts_line,  # DECISIONS 321
                     # The release gate (DECISIONS 278) compares what the card shows with the finding's own state.

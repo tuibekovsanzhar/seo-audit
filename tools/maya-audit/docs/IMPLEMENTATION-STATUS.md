@@ -1554,3 +1554,36 @@ nihan "Sayfa bazında": 498 pages read first, then 1,621 addresses not read. "Be
 | Opening the XLSX in Excel or Google Sheets | NOT RUN here |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+
+## The team's sector audit method: P0-P3, the "Sektör audit" XLSX, homepage weights (2026-11-08, DECISIONS 324)
+
+Owner's Step 2 after the Step 1 analysis (`reviews/sector-method/`, offline, not in git). Source:
+`docs/business-types/Sektor_Bazli_SEO_Audit_Onceligi.xlsm` (read with openpyxl, data only; no macro in it), turned into
+`maya_audit/sector_method.json` by `tools/sector_method_build.py`. New `maya_audit/priority_levels.py` and
+`maya_audit/sector_audit.py`; P0 marks in review.json (`manual_review.record_p0/undo_p0`); web: chips, the P0 block in
+"Önce bunları kontrol edin", `POST/DELETE /audits/{id}/review/p0`, `GET /audits/{id}/downloads/sector`; the stdlib XLSX
+writer gains formulas, dropdowns and recalculation on opening; `page_rows` drops the generic "status; size" value.
+Homepage weight follows the sector's rank (E-ticaret 70, Sağlık 55, Ev hizmetleri 55, Restoran 55); `seyahat` renamed.
+
+**Offline on current-engine copies of the saved audits** (scratch folder, provider-free, no provider ledger). Card order,
+severities and priority scores are those of the selection (unchanged by the labels):
+
+| Audit (type) | Cards: P-label (score) | Sector workbook: rows filled of 62 |
+|---|---|---|
+| nihan b3198942 (E-ticaret) | 1 P2 (70), 2 P1 (80), 3 P2 (33.3), 4-9 P3 (13.3-23.3), 10 P2 (33.3), 11 none (utility pages, weight 0) | 27: Uygun 12, Kısmen Uygun 13, Hatalı 2 |
+| moodist c581ff0a (Sağlık) | 1 P0 automatic: canonical loop on the homepage `/tr/` (73.3), 2 P2 (40), 3 P1 certificate (100), 4 P2, 5 P3, 6 P2, 7-8 P3 | 20: Uygun 9, Kısmen Uygun 6, Hatalı 5; 9 rows "page type not found" (Klinik, Randevu, Anlaşmalı kurumlar) |
+| airastana d12146fb (Havayolu, draft rows) | 1 P1 certificate (133.3), 2-4 P3 | 13: Uygun 8, Kısmen Uygun 2, Hatalı 3 (44 common + 18 draft rows) |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_sector_method_324.py` | `20 passed` |
+| related suites (311, 312, 315-323, team report, v03 client report, web UX) | `11 failed, 344 passed` first (old expectations: the 85 floor, "Tur / otel", seven "Nasıl okunur" lines, the downloads dict, the generic value, the summary column; a P-code pattern matching a CSS comment, fixed); after updates `155 passed` |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `2963 passed, 4 skipped, 135 deselected, 1 warning in 508.03s (0:08:28)` |
+| full suite, first run | `1 failed, 3097 passed, 4 skipped in 923.81s`: the fixture matrix (regenerated with `scripts/fixture_matrix.py`; its tests `3 passed`) |
+| full suite, second run, `pytest -q -rfEs -p no:cacheprovider` | `3098 passed, 4 skipped, 1 warning in 936.26s (0:15:36)` |
+| ruff E9/F821/F841 (package, new test, tool), `python3.11 -m compileall`, `node --check app.js` | clean / OK / OK |
+| CLI on a local static site, provider-free (`--no-firecrawl`, empty keys, temp home and env file) | exit 0; schema 1.29; 2 pages; no `firecrawl` section; no home folder or ledger created |
+| The workbook opened with openpyxl (scratch) | five sheets, the team's formulas (ranges to row 208), dropdowns on Durum and 1-5; cached values agree |
+| Opening the workbooks in Excel, Numbers or LibreOffice | NOT RUN here |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+| Push | NOT DONE (owner: don't push) |

@@ -1081,7 +1081,10 @@ async function showOverview(box, view) {
   const fixRow = (f) => el("li", { class: "fix" }, el("span", { class: "fix-n", text: String(f.n).padStart(2, "0") }),
     el("div", { class: "fix-body" },
       el("div", { class: "fix-title" }, el("strong", {}, hinted(f.title)), " ", el("span", { class: "sev " + f.severity, text: f.severity_label }),
-        f.issue_type_label ? el("span", { class: "itype " + (f.issue_type || "issue"), text: f.issue_type_label }) : null),
+        f.issue_type_label ? el("span", { class: "itype " + (f.issue_type || "issue"), text: f.issue_type_label }) : null,
+        // DECISIONS 324: the team's P0-P3 beside the severity; the reason when it is P0
+        f.p_level ? el("span", { class: "plevel " + f.p_level.toLowerCase(), title: T("plevel.title", { level: f.p_level, score: f.p_level_score }), text: f.p_level }) : null),
+      f.p_level_reason ? el("p", { class: "small", text: T("plevel.reason", { reason: f.p_level_reason }) }) : null,
       f.chain_line ? el("p", { class: "small", text: f.chain_line }) : null,
       f.template_line ? el("p", { class: "small", text: f.template_line }) : null,
       f.sitemap_line ? el("p", { class: "small", text: f.sitemap_line }) : null,
@@ -1268,7 +1271,43 @@ function drawReview(box, auditId, data, onChange, justSaved) {
     open.length ? el("ul", { class: "check-list" }, first.map(item)) : null,
     rest.length ? el("details", { class: "more" }, el("summary", { text: T("check.more", { count: rest.length }) }), el("ul", { class: "check-list" }, rest.map((row, i) => item(row, i + first.length)))) : null,
     data.reviewed.length ? el("details", { class: "more checked", open: Boolean(justSaved) }, el("summary", { text: T("check.done_title", { count: data.reviewed.length }) }),
-      el("ul", { class: "check-list" }, data.reviewed.map(checked))) : null);
+      el("ul", { class: "check-list" }, data.reviewed.map(checked))) : null,
+    p0Block(auditId, data, redraw));
+}
+
+/* DECISIONS 324: each card's P0-P3 (the team's sector method), why it is P0, and a button to set P0 by hand or take the
+   automatic P0 off; a person's mark has an Undo. Who marked it is the name remembered for the checks above. */
+function p0Block(auditId, data, redraw) {
+  const rows = data.p0 || [];
+  if (!rows.length) return null;
+  const error = el("p", { class: "field-error", role: "alert", hidden: true });
+  const nameInput = el("input", { class: "field-input", type: "text", maxlength: "120", id: "p0-by", autocomplete: "name" });
+  nameInput.value = rememberedName();
+  const send = async (method, path, body) => {
+    const by = nameInput.value.trim();
+    if (method === "POST" && !by) { error.textContent = T("check.error.by"); error.hidden = false; nameInput.focus(); return; }
+    error.hidden = true;
+    try { const next = await api(method, path, body); if (by) rememberName(by); redraw(next, null); }
+    catch (problem) { error.textContent = problem.message || T("check.error.save"); error.hidden = false; }
+  };
+  const base = "/audits/" + auditId + "/review/p0";
+  const line = (row) => {
+    const isP0 = row.level === "P0";
+    const action = row.manual
+      ? el("button", { class: "button", type: "button", onclick: () => send("DELETE", base + "/" + encodeURIComponent(row.finding_id)) }, T("check.undo"))
+      : el("button", { class: "button", type: "button", onclick: () => send("POST", base, { finding_id: row.finding_id, action: isP0 ? "removed" : "set", by: nameInput.value.trim() }) },
+        isP0 ? T("plevel.remove") : T("plevel.set"));
+    return el("li", { class: "check-item", "data-finding": row.finding_id },
+      el("div", { class: "check-head" }, el("span", { class: "muted small", text: String(row.card || "").padStart(2, "0") }),
+        el("strong", {}, hinted(row.title)), el("span", { class: "sev " + row.severity, text: row.severity_label }),
+        row.level ? el("span", { class: "plevel " + row.level.toLowerCase(), text: row.level }) : el("span", { class: "muted small", text: T("plevel.none") }), action),
+      row.reason ? el("p", { class: "muted small", text: row.reason }) : null);
+  };
+  return el("details", { class: "more p0-block", open: rows.some((r) => r.level === "P0") },
+    el("summary", { text: T("plevel.block", { count: rows.filter((r) => r.level === "P0").length }) }),
+    el("p", { class: "muted small", text: T("plevel.how") }),
+    el("div", { class: "field" }, el("label", { class: "field-label", for: nameInput.id, text: T("check.by") }), nameInput), error,
+    el("ul", { class: "check-list" }, rows.map(line)));
 }
 
 function teamReport(team) {
@@ -1344,7 +1383,10 @@ function teamReport(team) {
     el("div", { class: "dl-grid" },
       el("div", { class: "dl-card" }, el("strong", { text: T("download.pdf.title") }), el("p", { class: "muted small", text: T("download.pdf.about") }), pdfButton, why, ready),
       el("div", { class: "dl-card" }, el("strong", { text: T("download.xlsx.title") }), el("p", { class: "muted small", text: T("download.xlsx.about") }), xlsxLink),
-      team.brief ? el("div", { class: "dl-card brief" }, el("strong", { text: T("download.brief.title") }), el("p", { class: "muted small", text: T("download.brief.about") }), briefButton, briefWhy, briefReady) : null));
+      team.brief ? el("div", { class: "dl-card brief" }, el("strong", { text: T("download.brief.title") }), el("p", { class: "muted small", text: T("download.brief.about") }), briefButton, briefWhy, briefReady) : null,
+      // DECISIONS 324: the team's sector audit workbook, filled from this audit (Turkish, as the team's own file)
+      team.sector ? el("div", { class: "dl-card" }, el("strong", { text: T("download.sector.title") }), el("p", { class: "muted small", text: T("download.sector.about") }),
+        el("a", { class: "button", href: team.sector, download: team.sector_name || "" }, T("download.sector.get"))) : null));
 }
 
 function technicalView(view, context) {

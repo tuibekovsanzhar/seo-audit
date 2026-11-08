@@ -286,7 +286,7 @@
    "generic": [
     "home"
    ],
-   "added": "Stage 4: the homepage is at least 85 in every sector (owner); not in the sector list"
+   "added": "Stage 4: a homepage added at 85 where the sector list has none (owner); a ranked homepage keeps its rank's weight (DECISIONS 324)"
   },
   {
    "id": "guide",

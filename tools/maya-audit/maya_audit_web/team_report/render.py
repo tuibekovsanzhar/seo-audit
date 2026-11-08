@@ -223,6 +223,11 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 .itype { display: inline-block; font-size: 8pt; padding: 3pt 6pt; border-radius: 3pt; margin-right: 4pt; border: .6pt solid var(--line); color: var(--ink); }
 .itype.warning { border-color: var(--med); color: var(--med); }
 .itype.opportunity { border-color: #2f7d4f; color: #2f7d4f; }
+/* DECISIONS 324: the team's priority level of a card */
+.plevel { display: inline-block; font-size: 8pt; font-weight: 600; padding: 3pt 6pt; border-radius: 3pt; margin-right: 4pt; border: .6pt solid var(--line); color: var(--ink); }
+.plevel.p0 { background: var(--high-bg, #fdecea); border-color: var(--high, #b42318); color: var(--high, #b42318); }
+.plevel.p1 { border-color: var(--high, #b42318); color: var(--high, #b42318); }
+.plevel.p2 { border-color: var(--med); color: var(--med); }
 .card.tpl { padding: 16pt 20pt; }
 .tpl .note { font-size: 8.4pt; color: var(--faint); margin-top: 10pt; line-height: 1.3; }
 .tpl table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9pt; margin-top: 8pt; }
@@ -549,6 +554,8 @@ def todo_pages(d, L):
                 f'<div class="tm"><span class="sev {e(t["severity"])}">{e(t["severity_label"])}</span>'
                 # Stage 8a (DECISIONS 315): the issue type beside the severity.
                 + (f'<span class="itype {e(t.get("issue_type") or "issue")}">{e(t["issue_type_label"])}</span>' if t.get("issue_type_label") else "")
+                # DECISIONS 324: the team's P0-P3 beside them
+                + (f'<span class="plevel {e(str(t["p_level"]).lower())}">{e(t["p_level"])}</span>' if t.get("p_level") else "")
                 + f' {e(t["when"])} · {e(t["owner"])} · '
                 f'{e(L["col_effort"].title() if d["lang"] == "en" else "Efor")}: {e(t["effort"])}'
                 + (f' · {e(fmt(L["todo_priority"], score=score_text(t["priority"], d["lang"])))}' if t.get("priority") is not None else "")
@@ -825,6 +832,18 @@ def appendix_bytes(report, affected, confirmations, lang, business=None, todos=N
                                     title=lambda cid, text: w.title(cid, text, lang)[0], fix=lambda text: w.fix(text, lang)[0],
                                     label=lambda text: w.label(text, lang)[0], line=lambda text: w.line(text, lang)[0],
                                     todos=todos, words=plain_words(lang))
+    return content, sealed
+
+
+def sector_bytes(report, affected, confirmations, business=None):
+    """DECISIONS 324: the team's sector audit workbook filled from this audit (Turkish: the team's own file is), from
+    the same final result and selection as the appendix. (bytes, the final result)."""
+    from maya_audit import client_selection, final, sector_audit  # type: ignore
+    from maya_audit_web import wording as w
+    sealed = final.from_report(report, affected)
+    selection = client_selection.select(sealed.report, sealed.affected, confirmations or {}, business=business)
+    content = sector_audit.build(sealed.report, selection, sealed.affected, business,
+                                 title=lambda cid, text: w.title(cid, text, "tr")[0], words=plain_words("tr"))
     return content, sealed
 
 

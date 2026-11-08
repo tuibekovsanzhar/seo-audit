@@ -1,5 +1,6 @@
 """A small XLSX (Office Open XML) writer: text and number cells, a bold frozen header, column widths, a filter,
-wrapped text and clickable links (DECISIONS 322).
+wrapped text and clickable links (DECISIONS 322); formula cells with their computed value, and list dropdowns
+(DECISIONS 324: the team's sector audit workbook recalculates when a teammate edits a row).
 
 Only the standard library: the project adds no dependency for one file format (AGENTS.md). Enough for the client
 report's appendix (DECISIONS 300); Excel, Numbers, LibreOffice and Google Sheets open it.
@@ -32,10 +33,22 @@ MAX_LINKS = 65000  # Excel keeps at most 65,530 hyperlinks per sheet; past that 
 MAX_LINK_LENGTH = 2000  # Excel refuses a hyperlink address longer than 2,079 characters
 
 
+def _formula(ref: str, value: dict, s: str) -> str:
+    """A formula cell with its value worked out by the writer (shown as is by readers that do not calculate; Excel
+    and LibreOffice calculate again on opening, `fullCalcOnLoad`)."""
+    f = escape(_BAD.sub("", str(value["formula"])).lstrip("="))
+    v = value.get("value")
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return f'<c r="{ref}"{s}><f>{f}</f><v>{v}</v></c>'
+    return f'<c r="{ref}"{s} t="str"><f>{f}</f><v>{escape(_BAD.sub("", str(v or "")))}</v></c>'
+
+
 def _cell(ref: str, value: Any, style: int = 0) -> str:
+    s = f' s="{style}"' if style else ""
+    if isinstance(value, dict) and "formula" in value:
+        return _formula(ref, value, s)
     if isinstance(value, dict):
         value = value.get("text")
-    s = f' s="{style}"' if style else ""
     if value is None or value == "":
         return ""
     if isinstance(value, bool):
@@ -59,7 +72,8 @@ def _link_of(value: Any) -> tuple[str, str] | None:
 
 
 def _sheet(header: list[str], rows: Iterable[list[Any]], widths: list[int] | None, *, frozen: bool = True,
-           filter: bool = True, wrap: bool = True, title_rows: int = 0) -> tuple[str, list[str]]:
+           filter: bool = True, wrap: bool = True, title_rows: int = 0,
+           validations: list[dict] | None = None) -> tuple[str, list[str]]:
     """(the worksheet's XML, the external link targets in order: relationship rId1, rId2, ...)."""
     rows = list(rows)
     cols = max([len(header)] + [len(r) for r in rows]) or 1
@@ -93,6 +107,13 @@ def _sheet(header: list[str], rows: Iterable[list[Any]], widths: list[int] | Non
     out.append("</sheetData>")
     if filter and header:
         out.append(f'<autoFilter ref="A1:{_col(cols)}{len(rows) + 1}"/>')
+    if validations:  # list dropdowns: {"ref": "N2:N208", "list": ["Uygun", ...]} (DECISIONS 324)
+        out.append(f'<dataValidations count="{len(validations)}">')
+        for v in validations:
+            items = ",".join(str(x).replace('"', "") for x in v["list"])
+            out.append(f'<dataValidation type="list" allowBlank="1" showErrorMessage="1" sqref="{escape(v["ref"])}">'
+                       f'<formula1>{escape(chr(34) + items + chr(34))}</formula1></dataValidation>')
+        out.append("</dataValidations>")
     targets: list[str] = []
     if links:
         out.append("<hyperlinks>")
@@ -124,7 +145,9 @@ def workbook(sheets: list[dict]) -> bytes:
     Optional per sheet: "frozen" and "filter" (default True: the header row stays in view and has filter buttons),
     "wrap" (default True), "title_rows" (that many first rows after the header are bold titles). A cell may be
     {"text": ..., "link": "https://..."} (a clickable address) or {"text": ..., "location": "'Sheet'!A5"} (a link to
-    a cell of this file)."""
+    a cell of this file), or {"formula": "=SUM(A1:A3)", "value": 6} (a formula and its value). Optional per sheet:
+    "validations" ([{"ref", "list"}]: a dropdown of those values)."""
+    sheets = [{**s, "rows": list(s["rows"])} for s in sheets]  # read twice below (formulas, then cells)
     used: set[str] = set()
     names = [_safe_name(s["name"], used) for s in sheets]
     buf = io.BytesIO()
@@ -148,7 +171,11 @@ def workbook(sheets: list[dict]) -> bytes:
                    '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
                    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'
                    + "".join(f'<sheet name="{escape(n, {chr(34): "&quot;"})}" sheetId="{i}" r:id="rId{i}"/>'
-                             for i, n in enumerate(names, 1)) + "</sheets></workbook>")
+                             for i, n in enumerate(names, 1)) + "</sheets>"
+                   # formulas are calculated again when the file is opened (DECISIONS 324)
+                   + ('<calcPr calcId="191029" fullCalcOnLoad="1"/>' if any(
+                       isinstance(v, dict) and "formula" in v for s in sheets for r in s["rows"] for v in r) else "")
+                   + "</workbook>")
         z.writestr("xl/_rels/workbook.xml.rels",
                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
                    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
@@ -176,7 +203,8 @@ def workbook(sheets: list[dict]) -> bytes:
                    "</styleSheet>")
         for i, s in enumerate(sheets, 1):
             xml, targets = _sheet(s["header"], s["rows"], s.get("widths"), frozen=s.get("frozen", True),
-                                  filter=s.get("filter", True), wrap=s.get("wrap", True), title_rows=s.get("title_rows", 0))
+                                  filter=s.get("filter", True), wrap=s.get("wrap", True), title_rows=s.get("title_rows", 0),
+                                  validations=s.get("validations"))
             z.writestr(f"xl/worksheets/sheet{i}.xml", xml)
             if targets:
                 z.writestr(f"xl/worksheets/_rels/sheet{i}.xml.rels",
@@ -210,7 +238,7 @@ def read(data: bytes | str | Path) -> dict[str, list[list[str]]]:
                         n = n * 26 + ord(ch) - 64
                     t = c.find(".//m:t", ns)
                     v = c.find("m:v", ns)
-                    values[n] = t.text if t is not None else (v.text if v is not None else "")
+                    values[n] = t.text if t is not None else ((v.text or "") if v is not None else "")
                 rows.append([values.get(k, "") for k in range(1, max(values, default=0) + 1)])
             out[sheet.get("name")] = rows
     return out

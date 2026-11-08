@@ -44,13 +44,13 @@ def test_one_profile_per_sector_of_the_owners_file_in_its_order_plus_restaurant_
     rows = _sector_rows()
     assert len(rows) == 12
     by_label = {p["label"]["tr"]: p for p in bt.profiles().values()}
-    by_label["Seyahat / rezervasyon"] = bt.profile("seyahat")  # DECISIONS 316: the owner's row is now "Tur / otel"
+    by_label["Seyahat / rezervasyon"] = bt.profile("seyahat")  # DECISIONS 316/324: now "Seyahat / rezervasyon (tur, otel)"
     for sector, types in rows:
         prof = by_label[sector]
         ranked = [t for t in sorted((t for t in prof["page_types"] if t["rank"]), key=lambda t: t["rank"])]
         assert [t["label"]["tr"] for t in ranked] == types, sector
-        assert [t["weight"] for t in ranked] == [max(w, bt.HOME_MIN) if t["id"] == "home" else w
-                                                for t, w in zip(ranked, bt.RANK_WEIGHTS)], sector
+        # DECISIONS 324: a ranked homepage keeps its rank's weight, as the team's sector method (no 85 floor)
+        assert [t["weight"] for t in ranked] == list(bt.RANK_WEIGHTS[:len(ranked)]), sector
     restaurant = bt.profile("restoran")
     assert [t["label"]["tr"] for t in restaurant["page_types"] if t["rank"]] == [
         "Menü", "Şube ve konum", "Rezervasyon / sipariş", "Ana sayfa", "İletişim"]
@@ -59,16 +59,17 @@ def test_one_profile_per_sector_of_the_owners_file_in_its_order_plus_restaurant_
     assert bt.profile("diger")["page_types"] == []
 
 
-def test_the_homepage_is_at_least_85_everywhere_and_a_citable_guide_type_exists_in_every_sector():
+def test_an_added_homepage_is_85_and_a_citable_guide_type_exists_in_every_sector():
     for pid, prof in bt.profiles().items():
         if pid == "diger":
             continue
-        assert bt.weight(prof, "home") >= 85, pid
+        home = next((t for t in prof["page_types"] if t["id"] == "home"), None)
+        assert home and bt.weight(prof, "home") == (85 if home.get("added") else home["weight"]), pid
         assert any(t.get("citable") for t in prof["page_types"]), pid
         for t in prof["page_types"]:
             if t.get("added") and t["id"] == "guide":
                 assert t["weight"] == 30 and t["citable"] and t["label"]["tr"] == "Rehber / SSS / blog", pid
-    assert bt.weight(bt.profile("eticaret"), "home") == 85  # rank 3 (70) raised to the floor
+    assert bt.weight(bt.profile("eticaret"), "home") == 70  # rank 3 (DECISIONS 324: no 85 floor)
     assert bt.weight(bt.profile("bankacilik"), "home") == 100  # rank 1
 
 

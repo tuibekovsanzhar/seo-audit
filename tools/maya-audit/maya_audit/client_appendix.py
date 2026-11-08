@@ -21,8 +21,9 @@ READ = {
                      "«Bulgu bazında»: her sorun ve sayfa bir satır: o sayfada ölçülen değer ve ne yapılacağı. Teknik kimlikler en sağdaki sütunlardadır.",
                      "Süzmek için başlık satırındaki ok düğmelerini kullanın (ör. Kart = 3 ya da Önem = Yüksek). Bir adrese tıklayınca sayfa tarayıcıda açılır.",
                      "Önem sırası: Engelleyici, Yüksek, Orta, Düşük, Bilgi. «Bilgi» satırları sorun değil nottur. «Bulgular» ve sonraki sayfalar ekibin teknik ayrıntılarıdır.",
-                     "«Okundu mu?»: «Evet» içeriği okunup ölçülen sayfa, «Hayır, okunmadı» bilinen ama okunmayan adrestir; okunan sayfalar önce, okunmayan adresler ayrı bir grup olarak sonra gelir."],
-           "summary_cols": ["Kart", "Başlık", "Önem", "Sorun türü", "Sorumlu", "Efor", "Etkilenen adres", "Satırlara git"],
+                     "«Okundu mu?»: «Evet» içeriği okunup ölçülen sayfa, «Hayır, okunmadı» bilinen ama okunmayan adrestir; okunan sayfalar önce, okunmayan adresler ayrı bir grup olarak sonra gelir.",
+                     "«Öncelik (P0-P3)»: ekibin sektör yöntemine göre ne kadar acil olduğu: P0 hemen, P1 yakında, P2 planlanmalı, P3 sırası gelince. Kartların sırasını değiştirmez; hesap «Yöntem» sayfasında."],
+           "summary_cols": ["Kart", "Başlık", "Önem", "Sorun türü", "Öncelik (P0-P3)", "Sorumlu", "Efor", "Etkilenen adres", "Satırlara git"],
            "go": "Satırlara git →",
            "page_cols": ["Sayfa", "Okundu mu?", "Sayfa türü", "Önem puanı (0-100)", "Sorun sayısı", "En yüksek önem", "Sorunlar", "Kartlar"],
            "finding_cols": ["Sorun", "Önem", "Sorun türü", "Sayfa", "Okundu mu?", "Ölçülen değer", "Ne yapılmalı", "Kart", "Durum",
@@ -37,8 +38,9 @@ READ = {
                      "\"By finding\": one row per problem and page: the value measured on that page and what to do. Technical IDs are in the right-most columns.",
                      "To filter, use the arrow buttons in the header row (e.g. Card = 3 or Severity = High). Clicking an address opens the page in your browser.",
                      "Severity order: Blocker, High, Medium, Low, Info. \"Info\" rows are notes, not problems. \"Findings\" and the sheets after it are the team's technical detail.",
-                     "\"Read?\": \"Yes\" is a page whose content was read and measured, \"No, not read\" an address known but not read; pages read come first, addresses not read follow as their own group."],
-           "summary_cols": ["Card", "Title", "Severity", "Issue type", "Owner", "Effort", "Affected addresses", "Go to rows"],
+                     "\"Read?\": \"Yes\" is a page whose content was read and measured, \"No, not read\" an address known but not read; pages read come first, addresses not read follow as their own group.",
+                     "\"Priority (P0-P3)\": how urgent a card is by the team's sector method: P0 now, P1 soon, P2 to plan, P3 when convenient. It does not change the card order; the formula is on the \"Method\" sheet."],
+           "summary_cols": ["Card", "Title", "Severity", "Issue type", "Priority (P0-P3)", "Owner", "Effort", "Affected addresses", "Go to rows"],
            "go": "Go to rows →",
            "page_cols": ["Page", "Read?", "Page type", "Importance (0-100)", "Problems", "Highest severity", "Problems found", "Cards"],
            "finding_cols": ["Problem", "Severity", "Issue type", "Page", "Read?", "Measured value", "What to do", "Card", "Placement",
@@ -57,7 +59,7 @@ WORDS = {
            "tpl_cols": ["Şablon", "Tür", "Okunan sayfa", "Sorunlu sayfa", "Sorun grubu", "Kartlar", "En yüksek önem", "Bulgu kimlikleri"],
            "tpl_kinds": {"home": "ana sayfa", "category": "kategori", "product": "ürün", "blog_article": "blog yazısı",
                          "policy": "politika", "utility": "yardımcı sayfa", "other": "diğer"},
-           "cols": ["Bulgu kimliği", "Kontrol", "Kural", "Önem", "Sorun türü", "Güven (motor)", "Güven sınıfı", "Öncelik puanı",
+           "cols": ["Bulgu kimliği", "Kontrol", "Kural", "Önem", "Sorun türü", "Güven (motor)", "Güven sınıfı", "Öncelik puanı", "Öncelik (P0-P3)",
                     "Yer", "Kart", "Grubun ilk bulgusu", "Teyit nedeni", "Bulgu", "Ne yapılmalı", "Kapsam (sayı)",
                     "Etkilenen adres sayısı", "Okunan sayfa (erişim)", "Okunmayan adres", "Kök neden grubu", "Elle kontrol"],
            "url_cols": ["Bulgu kimliği", "Yer", "Önem", "Adres"],
@@ -95,7 +97,8 @@ WORDS = {
                       ("Kök neden grupları", "aynı nedeni ve tek düzeltmeyi paylaşan kurallar tek kart (sütun: Kök neden grubu)"),
                       ("İş önemi", "1,0 (iş türü profilleri gelene kadar)"),
                       ("Öncelik puanı", "önem x güven x erişim x iş önemi; efor gösterilir, puana girmez"),
-                      ("Kartlar", "en çok 15: bütün Engelleyici/Yüksek gruplar, sonra bant ve puan sırasıyla")]},
+                      ("Kartlar", "en çok 15: bütün Engelleyici/Yüksek gruplar, sonra bant ve puan sırasıyla"),
+                      ("Öncelik (P0-P3)", "ekibin sektör yöntemi: 20 x etki (Engelleyici 5, Yüksek 4, Orta 3, Düşük 2) x sayfa ağırlığı x yaygınlık (1-5) x durum (1 ya da 0,5) / 3; P0 160 ve üstü, P1 80, P2 30, P3 0'dan büyük; ana sayfada ya da ilk iki sayfa türünün geniş bölümünde indeksleme engeli P0; elle P0 yapılabilir ya da kaldırılabilir; sırayı değiştirmez")]},
     "en": {"findings": "Findings", "urls": "Affected URLs", "key_pages": "Key pages", "coverage": "Coverage",
            "method_sheet": "Method", "note": "Note",
            "key_pages_empty": {"reader_only": "Page importance could not be worked out for this audit: Maya's crawler was blocked, the pages were read another way, and the saved copies keep no links between pages, which importance is computed from.",
@@ -105,7 +108,7 @@ WORDS = {
            "tpl_kinds": {"home": "homepage", "category": "category", "product": "product", "blog_article": "blog article",
                          "policy": "policy", "utility": "utility page", "other": "other"},
            "cols": ["Finding ID", "Check", "Rule", "Severity", "Issue type", "Confidence (engine)", "Confidence class",
-                    "Priority score", "Placement", "Card", "Group lead", "Confirm because", "Finding", "What to do",
+                    "Priority score", "Priority (P0-P3)", "Placement", "Card", "Group lead", "Confirm because", "Finding", "What to do",
                     "Scope (count)", "Affected URLs (count)", "Pages read (reach)", "Not read", "Root-cause group", "Manual check"],
            "url_cols": ["Finding ID", "Placement", "Severity", "URL"],
            "page_cols": ["Rank", "URL", "Page type", "Importance (0-100)", "Cards", "Highest severity",
@@ -142,7 +145,8 @@ WORDS = {
                       ("Root-cause groups", "rules sharing one cause and one fix are one card (column: Root-cause group)"),
                       ("Business relevance", "1.0 (until business-type profiles exist)"),
                       ("Priority score", "severity x confidence x reach x business; effort is shown, not scored"),
-                      ("Cards", "at most 15: every Blocker/High group, then by band and score")]},
+                      ("Cards", "at most 15: every Blocker/High group, then by band and score"),
+                      ("Priority (P0-P3)", "the team's sector method: 20 x impact (Blocker 5, High 4, Medium 3, Low 2) x page weight x spread (1-5) x status (1 or 0.5) / 3; P0 at 160 or more, P1 80, P2 30, P3 above 0; an indexing blocker on the homepage or a large part of the first two page types is P0; P0 can be set or taken off by hand; it changes no order")]},
 }
 
 
@@ -236,6 +240,7 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
     where = "'" + R["by_finding"].replace("'", "''") + "'"
     summary = [[c["n"], c.get("title") or "", sev(c.get("severity")),
                 W["itype"].get(c.get("issue_type") or "", "") if c.get("severity") in ("S1", "S2", "S3", "S4") else "",
+                c.get("p_level") or "",  # DECISIONS 324
                 c.get("owner") or "", c.get("effort") or "", len(addresses[c["n"]]) if c["n"] in addresses else c.get("addresses") or 0,
                 {"text": R["go"], "location": f"{where}!A{first_row[c['n']]}"} if c["n"] in first_row else ""]
                for c in cards]
@@ -244,7 +249,7 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
                 "; ".join(p["names"]), ", ".join(str(n) for n in p["cards"])] for p in page_rows.page_table(rows)]
     out = [{"name": R["how"], "header": [R["how"]], "rows": [[x] for x in R["lines"]], "widths": [140],
             "frozen": False, "filter": False}]
-    for key, header, body, widths in (("summary", R["summary_cols"], summary, [7, 60, 12, 14, 22, 10, 12, 18]),
+    for key, header, body, widths in (("summary", R["summary_cols"], summary, [7, 60, 12, 14, 12, 22, 10, 12, 18]),
                                       ("by_page", R["page_cols"], by_page, [70, 16, 22, 12, 10, 14, 80, 10]),
                                       ("by_finding", R["finding_cols"], found, [42, 12, 13, 60, 16, 48, 60, 7, 16, 20, 12, 18, 24, 10])):
         if body:
@@ -266,7 +271,7 @@ def technical_sheets(selection: dict, lang: str = "tr", lists: dict | None = Non
         x = (fix(r["how_to_fix"]) if fix and r["how_to_fix"] else None) or r["how_to_fix"]
         placement = W["placement"].get(r["placement"], r["placement"])
         rows.append([r["finding_id"], r["check_id"], r["rule_id"], W["severity"].get(r["severity"], r["severity"]),
-                     W["itype"].get(r.get("issue_type") or "issue", ""), r["confidence"], W["class"].get(r["confidence_class"], r["confidence_class"]), r["priority"],
+                     W["itype"].get(r.get("issue_type") or "issue", ""), r["confidence"], W["class"].get(r["confidence_class"], r["confidence_class"]), r["priority"], r.get("p_level") or "",
                      placement, r["card"], r["group_lead"] if r["group_lead"] != r["finding_id"] else "",
                      W["reason"].get(r["confirm_reason"], r["confirm_reason"]) if r["confirm_reason"] else "",
                      t, x, r["scope_count"], len(r["urls"]), r.get("pages_read"), r.get("not_read"),
@@ -291,7 +296,7 @@ def technical_sheets(selection: dict, lang: str = "tr", lists: dict | None = Non
     cov = [[W["kind"].get(row["kind"], row["kind"]), coverage_text(row, lang, label, line, title),
             ", ".join(row.get("checks") or [])] for row in selection["coverage"]["lines"]]
     out = []
-    for name, header, body, widths in ((W["findings"], W["cols"], rows, [16, 8, 22, 11, 13, 11, 16, 9, 16, 6, 16, 26, 70, 70, 9, 9, 10, 10, 20, 60]),
+    for name, header, body, widths in ((W["findings"], W["cols"], rows, [16, 8, 22, 11, 13, 11, 16, 9, 10, 16, 6, 16, 26, 70, 70, 9, 9, 10, 10, 20, 60]),
                                        (W["urls"], W["url_cols"], urls, [16, 16, 11, 90]),
                                        (W["key_pages"], W["page_cols"], pages, [6, 70, 12, 10, 14, 12, 10]),
                                        (W["templates"], W["tpl_cols"], tpls, [40, 16, 12, 12, 12, 16, 14, 60]),

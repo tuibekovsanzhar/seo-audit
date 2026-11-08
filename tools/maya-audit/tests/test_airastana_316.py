@@ -243,7 +243,7 @@ def test_airastana_shaped_addresses_suggest_havayolu_and_tur_in_a_country_folder
     assert "tur-en" in folders
     s = bt.suggest(None, None, None, urls, folders)
     assert s["id"] == "havayolu" and s["scores"]["havayolu"] > s["scores"]["seyahat"]
-    assert bt.label("havayolu", "tr") == "Havayolu" and bt.label("seyahat", "tr") == "Tur / otel"
+    assert bt.label("havayolu", "tr") == "Havayolu" and bt.label("seyahat", "tr") == "Seyahat / rezervasyon (tur, otel)"  # DECISIONS 324
     groups = {c["id"]: c["group_label"] for c in bt.choices("tr")}
     assert groups["havayolu"] == groups["seyahat"] == "Seyahat / rezervasyon"
     tours = ["https://tatil.test/turlar/kapadokya-turu", "https://tatil.test/oteller/antalya", "https://tatil.test/otel/x",
@@ -261,7 +261,7 @@ def test_iata_style_routes_count_only_when_the_airports_form_a_network():
 
 def test_signals_table_lists_the_airline_profile():
     md = (ROOT / "docs" / "business-types" / "signals.md").read_text(encoding="utf-8")
-    assert "## Havayolu" in md and "## Tur / otel" in md and "Bagaj" in md
+    assert "## Havayolu" in md and "## Seyahat / rezervasyon (tur, otel)" in md and "Bagaj" in md
 
 
 # ---------------------------------------------------------------- 4, 5, 6: the summary

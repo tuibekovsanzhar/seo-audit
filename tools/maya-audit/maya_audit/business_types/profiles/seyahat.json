@@ -2,8 +2,8 @@
  "id": "seyahat",
  "order": 12.5,
  "label": {
-  "tr": "Tur / otel",
-  "en": "Tours / hotels"
+  "tr": "Seyahat / rezervasyon (tur, otel)",
+  "en": "Travel / booking (tours, hotels)"
  },
  "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx; owner, 2026-11-06: the tour and hotel variant of \"Seyahat / rezervasyon\" (DECISIONS 316)",
  "suggest": {
@@ -189,7 +189,7 @@
    "generic": [
     "home"
    ],
-   "added": "Stage 4: the homepage is at least 85 in every sector (owner); not in the sector list"
+   "added": "Stage 4: a homepage added at 85 where the sector list has none (owner); a ranked homepage keeps its rank's weight (DECISIONS 324)"
   },
   {
    "id": "guide",
