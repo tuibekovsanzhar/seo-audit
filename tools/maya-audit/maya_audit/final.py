@@ -69,6 +69,9 @@ def settle(checks, result) -> None:
     # Every redirect hop of the crawl, per requested address (Stage 8a, DECISIONS 315).
     from .checks.stage8_rules import redirect_records
     result.redirects = redirect_records(result.pages)
+    # What was measured on every page read (DECISIONS 323): Maya's own pages over a page reader's copy of the same page.
+    from .page_measures import of_pages
+    result.page_measures = {**(result.page_measures or {}), **of_pages(result.pages)} or None
 
 
 def verify(checks, result, cfg, transport=None, hooks=None, pace_s: float | None = None, *,

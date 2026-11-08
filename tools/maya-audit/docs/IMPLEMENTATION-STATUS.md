@@ -1516,3 +1516,41 @@ No schema bump.
 | The web dialog in a browser | NOT RUN (API and script covered by tests) |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+
+## "Okundu mu?" and a measured value for every page read, schema 1.29 (2026-11-08, DECISIONS 323)
+
+Owner's two XLSX follow-ups, global for every audit. (1) "Sayfa bazında" and "Bulgu bazında" have "Okundu mu?" (Evet /
+Hayır, okunmadı; "—" for hosts and the whole site); pages read first (importance, then severity), addresses never read
+after them as one group (inside each card in "Bulgu bazında", so the card links still land on the card's first row);
+"Nasıl okunur" has a seventh line; the web "Etkilenen sayfalar" list and its CSV have the column. (2) New
+`maya_audit/page_measures.py`: one compact record per page read (status, HTML size, content start, headings and skipped
+levels, title/description, canonical, language, words, first response, cache, images, scripts, tags, structured data).
+New audits store `crawl.page_measures` (schema 1.29: a new field of the frozen crawl shape; the checks' evidence keeps
+a sample and a page read only through a page reader keeps no record otherwise); older reports work the records out
+from the saved `crawl.pages[].analysis`. "Ölçülen değer": the finding's own evidence first, then the page record's
+values for that kind of finding; an address not read says "okunmadı"; "ayrıntı kaydedilmedi" only where nothing can be
+worked out.
+
+**Offline on copies of the saved audits** (scratch folder, provider-free, no provider ledger). "Bulgu bazında", TR:
+
+| | nihan b3198942 | moodist c581ff0a | airastana d12146fb |
+|---|---|---|---|
+| "ayrıntı kaydedilmedi" before -> after | 1,877 -> 10 | 272 -> 0 | 15 -> 11 |
+| what is left | pages read only through Firecrawl, agents.md | — | pages read only through Firecrawl |
+| "okunmadı" rows | 103 | 2 | 4 |
+| Team report / brief | 9 pages / 5, PASS | 8 / 5, PASS | 6 / 5, PASS |
+
+nihan "Sayfa bazında": 498 pages read first, then 1,621 addresses not read. "Before" was measured on the committed code
+(`549b1e5`) in a separate scratch worktree; the working tree was not touched.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_page_values_323.py tests/test_xlsx_pages_322.py` | `42 passed` |
+| CLI on a local static site, provider-free (`--no-firecrawl`, empty keys, temp home and env file) | exit 0; schema 1.29; `crawl.page_measures` for both pages read; no `firecrawl` section; no provider home or ledger |
+| fast suite, first run | `15 failed, 2928 passed`: tests pinned to schema 1.28 (version asserts; a synthetic "current schema" report, now `SCHEMA_VERSION`); fixed |
+| fast suite, second run | `1 failed, 2942 passed, 4 skipped, 135 deselected`: `page_measures` not described in `docs/REPORT-SCHEMA.md`; added, file `26 passed` |
+| full suite (fixture matrix regenerated first), `pytest -q -rfEs -p no:cacheprovider` | `3078 passed, 4 skipped, 1 warning in 966.33s (0:16:06)` |
+| ruff E9/F821/F841 (package + new tests), `python3.11 -m compileall`, `node --check app.js` | clean / OK / OK |
+| Opening the XLSX in Excel or Google Sheets | NOT RUN here |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+| Push | NOT DONE (owner: don't push) |

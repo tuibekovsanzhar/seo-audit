@@ -2137,8 +2137,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         say = lambda key: strings_module.t(key, chosen)  # noqa: E731
         return {"n": n, "title": todo.get("title"), "severity": todo.get("severity"), "severity_label": todo.get("severity_label"),
                 "count": len(rows), "lang": chosen,
-                "columns": {k: say(f"cards.col.{k}") for k in ("address", "page_type", "importance", "value", "finding")},
-                "rows": [{"url": r["url"], "address": r["address"],
+                "columns": {k: say(f"cards.col.{k}") for k in ("address", "read", "page_type", "importance", "value", "finding")},
+                "rows": [{"url": r["url"], "address": r["address"], "read": r["read"],  # DECISIONS 323
+                          "read_label": page_rows.read_word(r["read"], chosen),
                           "page_type": W["page_type"].get(r["page_type"], r["page_type"] or "") if r["page_type"] else "",
                           "importance": r["importance"] if isinstance(r["importance"], (int, float)) else None,
                           "value": "; ".join(r["values"]), "finding_ids": r["finding_ids"]} for r in rows]}

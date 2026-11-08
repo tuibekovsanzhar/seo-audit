@@ -1277,6 +1277,7 @@
  "cards.shown": "{count} adresin {shown} tanesi gösteriliyor",
  "cards.not_found": "Bu kart raporda yok.",
  "cards.col.address": "Adres",
+ "cards.col.read": "Okundu mu?",
  "cards.col.page_type": "Sayfa türü",
  "cards.col.importance": "Önem (0-100)",
  "cards.col.value": "Ölçülen değer",

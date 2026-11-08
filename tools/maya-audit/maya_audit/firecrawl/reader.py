@@ -515,6 +515,10 @@ def read_blocked_site(result: CrawlResult, cfg: CrawlConfig, client: ContentProv
         # HTML holds every anchor, so no other format is asked for) give those pages their link score, click depth and
         # importance, on one link graph with Maya's own pages, instead of "not computed".
         reader_page_grouping(result, view, client.identity.name)
+    # DECISIONS 323: the measurements of the pages the reader read, kept with the report (its copies are not); a page
+    # Maya's crawler also read keeps Maya's (`final.settle` runs after this and lays Maya's pages over these).
+    from ..page_measures import of_pages
+    result.page_measures = {**of_pages(pages), **(result.page_measures or {})} or None
     if main:
         _label(checks, MAIN_SOURCE, MAIN_WHY, client.identity, notice=None)
     else:

@@ -47,17 +47,17 @@ def test_the_reader_sheets_come_first_in_the_file_language():
     assert list(_sheets("tr")) == TR_SHEETS
     assert list(_sheets("en")) == EN_SHEETS
     book = xlsx.read(client_appendix.build(cs.select(_report()), "en"))
-    assert book["By finding"][0][:6] == ["Problem", "Severity", "Issue type", "Page", "Measured value", "What to do"]
+    assert book["By finding"][0][:7] == ["Problem", "Severity", "Issue type", "Page", "Read?", "Measured value", "What to do"]  # 323
     assert book["By finding"][0][-3:] == ["Finding ID", "Rule", "Check"]  # technical IDs at the end
     tr = xlsx.read(client_appendix.build(cs.select(_report()), "tr"))
-    assert tr["Bulgu bazında"][0][:6] == ["Sorun", "Önem", "Sorun türü", "Sayfa", "Ölçülen değer", "Ne yapılmalı"]
-    assert tr["Sayfa bazında"][0] == ["Sayfa", "Sayfa türü", "Önem puanı (0-100)", "Sorun sayısı", "En yüksek önem", "Sorunlar", "Kartlar"]
+    assert tr["Bulgu bazında"][0][:7] == ["Sorun", "Önem", "Sorun türü", "Sayfa", "Okundu mu?", "Ölçülen değer", "Ne yapılmalı"]
+    assert tr["Sayfa bazında"][0] == ["Sayfa", "Okundu mu?", "Sayfa türü", "Önem puanı (0-100)", "Sorun sayısı", "En yüksek önem", "Sorunlar", "Kartlar"]
 
 
 @pytest.mark.parametrize("lang", ["tr", "en"])
-def test_how_to_read_is_six_lines_without_a_filter(lang):
+def test_how_to_read_is_seven_lines_without_a_filter(lang):  # six, plus "Okundu mu?" (DECISIONS 323)
     how = _sheets(lang)[client_appendix.READ[lang]["how"]]
-    assert len(how["rows"]) == 6 and how["frozen"] is False and how["filter"] is False
+    assert len(how["rows"]) == 7 and how["frozen"] is False and how["filter"] is False
     assert all(len(row) == 1 and 40 < len(row[0]) < 260 for row in how["rows"])
 
 
@@ -72,8 +72,8 @@ def test_by_finding_has_one_row_per_finding_and_page_with_the_value_measured_the
     value = {(r[col["Bulgu kimliği"]], r[col["Sayfa"]]): r[col["Ölçülen değer"]] for r in body}
     assert value[("RND-6-a", SITE + "/a")] == "HTML 1.460 KB; sınır 1.000 KB"
     assert value[("TSEO-1-j", SITE + "/cart")] == "1 başlık düzeyi atlaması"
-    # a page outside the evidence's sample says so: never empty, never zero
-    assert value[("RND-6-a", SITE + "/en/a")] == page_rows.WORDS["tr"]["not_kept"]
+    # a page outside the evidence's sample: what was measured on the page itself (DECISIONS 323), here its status
+    assert value[("RND-6-a", SITE + "/en/a")] == "HTTP 200"
     assert value[("IDX-2-c", "shop.test")].startswith("sertifika 2026-11-14 tarihinde bitiyor; denetimde 9 gün")
     # ordered by severity: the High certificate first, the Info note last
     assert [r[col["Önem"]] for r in body][0] == "Yüksek" and body[-1][col["Önem"]] == "Bilgi"
@@ -84,6 +84,7 @@ def test_by_page_lists_pages_with_problems_by_importance_then_severity():
     body = rows[1:]
     assert [r[0] for r in body] == [SITE + "/a", SITE + "/en/a", SITE + "/cart"]  # importance 80, 60, 20
     first = dict(zip(rows[0], body[0]))
+    assert first["Read?"] == "Yes"
     assert first["Problems"] == "2" and first["Highest severity"] == "Medium" and first["Page type"] == "category"
     # hosts are not pages, and an Info note is not a problem: neither has a row here
     assert not any("www.shop.test" in r[0] or r[0] == SITE + "/en" for r in body)
@@ -93,7 +94,7 @@ def test_by_page_puts_pages_without_importance_last():
     r = _report()
     r["checks"][0]["findings"][1]["scope"]["urls"].append(SITE + "/never-read")
     body = xlsx.read(client_appendix.build(cs.select(r), "en"))["By page"][1:]
-    assert body[-1][0] == SITE + "/never-read" and body[-1][2] == ""
+    assert body[-1][0] == SITE + "/never-read" and body[-1][1] == "No, not read" and body[-1][3] == ""
 
 
 def test_summary_has_the_pdf_cards_each_linked_to_its_first_row():

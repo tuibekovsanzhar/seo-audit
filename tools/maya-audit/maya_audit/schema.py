@@ -28,7 +28,7 @@ from .index_data import HTTP_REDIRECT_LINES
 from .models import (Confidence, CrawlResult, FetchClass, GateResult, PageFetch, RequestRecord, SitemapDoc, SkippedUrl,
                      StopReason)
 
-SCHEMA_VERSION = "1.28"
+SCHEMA_VERSION = "1.29"
 
 # Always present.
 REPORT_KEYS = ("generation", "schema_version", "report_version", "status_meanings", "scope", "gates", "checks", "answer_engine_panel",

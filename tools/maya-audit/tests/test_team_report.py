@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from maya_audit.client_selection import MERGE_GROUPS
+from maya_audit.schema import SCHEMA_VERSION
 from maya_audit_web.team_report import build_data, service, texts, validate_data
 from maya_audit_web.runner import REPORT_JSON
 from test_web_app import API, audit_of, error, web  # noqa: F401  (fixture)
@@ -107,7 +108,7 @@ def synthetic(batch, severity="S4"):
                          "how_to_fix": "", "expected": "", "evidence": {"pages": [url]},
                          "verification": {"state": "not_retested", "reason": "not re-tested in this test"}})
     pages = [{"url": f"{SITE}/p{n}", "status": 200} for n in range(len(batch))] + [{"url": SITE + "/", "status": 200}]
-    return {"schema_version": "1.28", "checks": [{"check_id": f["check_id"], "findings": [f]} for f in findings],
+    return {"schema_version": SCHEMA_VERSION, "checks": [{"check_id": f["check_id"], "findings": [f]} for f in findings],
             "findings_in_priority_order": [f["id"] for f in findings],
             "problem_summary": {"problems": len(findings), "by_severity": {severity: len(findings)}, "by_page": [],
                                 "whole_site": {"problems": 0}},

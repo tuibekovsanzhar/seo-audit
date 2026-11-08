@@ -1,6 +1,6 @@
 # The JSON report format
 
-Current version: `1.28`
+Current version: `1.29`
 
 Every JSON report the tool writes (`--json`, and one per brand from `batch`) starts with `schema_version`.
 Anything that reads a report, including the web interface, reads that number first.
@@ -165,6 +165,7 @@ A `pass` with anything in `coverage.not_assessed` is written as `partial`, never
 | `business_type` | The business type the audit used (1.25, DECISIONS 311), or null in an older report: `id` (a profile of `maya_audit/business_types/profiles/`, `diger` for none), `label` {tr, en}, `chosen_by` (`user` or `suggestion`), `suggestion` {`id`, `label`, `reason` {tr, en}, `signals`, `scores`, `version`}, `page_types` (the importance summary: `profile`, `formula`, `weights`, `pages_by_type`), `not_found` (the profile's first three page types no page read was typed as: `type`, `label`, `rank`), `version`. Its inner keys are not covered by the version. |
 | `redirects` | Every requested address that redirected (1.26, DECISIONS 315), or null in an older report: `url`, `hops` ([{`url`, `status`, `target`}] in order), `final` (where the redirects end), `final_status` (its answer, null when not fetched), `loop` (the walk came back to an address already passed). Its inner keys are not covered by the version. |
 | `locales` | The site's country/language folders (1.27, DECISIONS 316), or null in an older report: `folders` (the locale folders, such as `global-en` or `tr`), `main` (the folder the homepage landed on, `""` for the root, null when unknown), `versions` (the folders, and the root when it holds a version), `root_is_version`, `basis` ({folder: why it counts}). Its inner keys are not covered by the version. |
+| `page_measures` | What was measured on each page whose content was read (1.29, DECISIONS 323), or null in an older report: {url: record}, Maya's pages and a page reader's (a page both read keeps Maya's). A record holds only what was measured: `status`, `html_bytes`, `main_offset_bytes`, `ttfb_ms`, `cache`, `title`, `description` (and their lengths), `canonical`, `h1_count`, `heading_jumps`, `html_lang`, `hreflang`, `words`, `main_chars`, `images`, `blocking_scripts`, `analytics`, `schema_types` and the link counts (see the 1.29 section). Its inner keys are not covered by the version. |
 | `access`, `index`, `render`, `structure`, `perf`, `citations`, `citation_domains` | Not covered by the version. |
 
 ## Page record
@@ -392,6 +393,21 @@ page failures. Coverage stop reasons additionally distinguish `provider_timeout`
 credit/request limits. Existing 1.x reports remain readable; absent historical reasons are never invented.
 Keyword intent dimensions live inside open DataForSEO check evidence; originals and provider totals are preserved.
 
+
+## 1.29 — what was measured on every page read (2026-11-08)
+
+Added for DECISIONS 323; nothing was removed or renamed, so 1.x readers keep working.
+
+- `crawl.page_measures`: `{url: record}` for every page whose content was read, Maya's own pages and the pages a page
+  reader (Firecrawl) read; a page both read keeps Maya's record. A record holds only what was measured on that page:
+  `status`, `view` (when not Maya's raw copy), `html_bytes` (and `html_truncated`), `main_offset_bytes`, `ttfb_ms`,
+  `cache`, `title` and `title_chars`, `description` and `description_chars` (texts cut at 160 characters), `canonical`
+  (and `canonicals` when a page declares several), `h1_count`, `heading_jumps` and `heading_jump_examples`, `html_lang`,
+  `hreflang` (how many), `words`, `main_chars`, `images` and `images_missing_alt`, `blocking_scripts`, `analytics`,
+  `schema_types`, `dead_link_total`, `link_control_total` (`maya_audit.page_measures`). Why a version: the checks'
+  evidence keeps a sample of pages, and a page read only through a page reader keeps no record in the report, so
+  without this field those pages' values would be lost once the audit ends. For a report saved before 1.29 the same
+  records are worked out offline from `crawl.pages[].analysis`; a page read only through a page reader there has none.
 
 ## 1.28 — block pages and the page limit (2026-11-06)
 

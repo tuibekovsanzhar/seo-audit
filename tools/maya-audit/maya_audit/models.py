@@ -250,6 +250,11 @@ class CrawlResult:
     # The site's country/language folders (DECISIONS 316, schema 1.27): {folders, main, versions, root_is_version,
     # basis}. None in a report saved before it.
     locales: dict[str, Any] | None = None
+    # What was measured on each page whose content was read (maya_audit.page_measures, DECISIONS 323, schema 1.29):
+    # {url: {status, html_bytes, main_offset_bytes, title, description, canonical, h1_count, heading_jumps, html_lang,
+    # words, ttfb_ms, cache, images, blocking_scripts, analytics, schema_types, ...}}, Maya's pages and a page reader's.
+    # None in a report saved before it.
+    page_measures: dict[str, dict[str, Any]] | None = None
     _sitemap_named_in: dict[str, str] = field(default_factory=dict, repr=False)
     # In memory only: the sitemap file that listed each sitemap URL, for the sitemap check's sample (DECISIONS 294).
     _sitemap_file_of: dict[str, str] = field(default_factory=dict, repr=False)

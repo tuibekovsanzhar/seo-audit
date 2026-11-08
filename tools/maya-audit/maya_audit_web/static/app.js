@@ -1129,13 +1129,13 @@ async function cardPages(auditId, n, lang) {
   const search = el("input", { class: "field-input", type: "search", placeholder: T("cards.search"), "aria-label": T("cards.search") });
   const shown = el("p", { class: "muted small", role: "status" });
   const tbody = el("tbody");
-  const text = (r) => [r.address, r.page_type, r.importance === null ? "" : String(r.importance), r.value, r.finding_ids.join(" ")].join(" ").toLocaleLowerCase(lang);
+  const text = (r) => [r.address, r.read_label, r.page_type, r.importance === null ? "" : String(r.importance), r.value, r.finding_ids.join(" ")].join(" ").toLocaleLowerCase(lang);
   const draw = () => {
     const q = search.value.trim().toLocaleLowerCase(lang);
     const rows = q ? data.rows.filter((r) => text(r).includes(q)) : data.rows;
     fill(tbody, rows.slice(0, PAGE_ROWS_SHOWN).map((r) => el("tr", {},
       el("td", { class: "wrap" }, r.url && r.address === r.url ? link(r.url) : el("span", { class: "url", text: r.address })),
-      el("td", { text: r.page_type || "—" }), el("td", { text: r.importance === null ? "—" : String(r.importance) }),
+      el("td", { text: r.read_label || "—" }), el("td", { text: r.page_type || "—" }), el("td", { text: r.importance === null ? "—" : String(r.importance) }),
       el("td", { class: "wrap", text: r.value || "—" }), el("td", { class: "id", text: r.finding_ids.join(" · ") }))));
     shown.textContent = T("cards.shown", { shown: Math.min(rows.length, PAGE_ROWS_SHOWN), count: rows.length });
   };
@@ -1143,8 +1143,8 @@ async function cardPages(auditId, n, lang) {
   const csv = () => {
     const cell = (v) => { const t = String(v === null || v === undefined ? "" : v); return /[";\n\r,]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
     const sep = lang === "tr" ? ";" : ",";  /* Turkish Excel reads "," as the decimal mark (DECISIONS 283 (6)) */
-    const lines = [[cols.address, cols.page_type, cols.importance, cols.value, cols.finding].map(cell).join(sep)]
-      .concat(data.rows.map((r) => [r.url || r.address, r.page_type, r.importance, r.value, r.finding_ids.join(" ")].map(cell).join(sep)));
+    const lines = [[cols.address, cols.read, cols.page_type, cols.importance, cols.value, cols.finding].map(cell).join(sep)]
+      .concat(data.rows.map((r) => [r.url || r.address, r.read_label, r.page_type, r.importance, r.value, r.finding_ids.join(" ")].map(cell).join(sep)));
     const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = el("a", { href: url, download: "maya-" + String(auditId).slice(0, 8) + "-" + (lang === "tr" ? "kart" : "card") + "-" + data.n + ".csv" });
@@ -1152,7 +1152,7 @@ async function cardPages(auditId, n, lang) {
   };
   fill(body, el("div", { class: "row pages-tools" }, search, el("button", { class: "button", type: "button", onclick: csv }, T("cards.csv"))), shown,
     el("div", { class: "table-scroll" }, el("table", { class: "data pages-table" },
-      el("thead", {}, el("tr", {}, [cols.address, cols.page_type, cols.importance, cols.value, cols.finding].map((c) => el("th", { text: c })))), tbody)));
+      el("thead", {}, el("tr", {}, [cols.address, cols.read, cols.page_type, cols.importance, cols.value, cols.finding].map((c) => el("th", { text: c })))), tbody)));
   draw();
   search.focus();
 }

@@ -425,6 +425,16 @@ def reach_of(total: float) -> float:
 NEUTRAL_IMPORTANCE = 50  # DECISIONS 309: a page read but not scored (a page reader's copy keeps no links) counts this
 
 
+def _measures(report: dict) -> dict[str, dict]:
+    from .page_measures import index
+    return index(report)
+
+
+def read_set(report: dict) -> set[str]:
+    """Every address whose content was read: `pages_read` and the pages with a stored measurement (DECISIONS 323)."""
+    return pages_read(report) | set(((report.get("crawl") or {}).get("page_measures") or {}).keys())
+
+
 def pages_read(report: dict) -> set[str]:
     """The addresses whose content was read: Maya's own pages (2xx with content) and the page reader's."""
     crawl = report.get("crawl") or {}
@@ -655,6 +665,9 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         "_confirmations": confirmations or {},
         # DECISIONS 322: every scored page's type and importance, for the appendix's page sheets and the web page list.
         "_importance": importance,
+        # DECISIONS 323: which addresses were read, and what was measured on each page read (stored, else worked out).
+        "_pages_read": read_set(report),
+        "_page_measures": _measures(report),
     }
 
 

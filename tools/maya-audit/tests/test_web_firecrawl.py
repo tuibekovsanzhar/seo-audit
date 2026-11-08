@@ -135,7 +135,7 @@ def test_a_challenged_site_is_read_through_firecrawl_with_no_block_headline_and_
     assert "direct crawler was challenged" in audit["outcome"]["reason"] and "Genuine AI-crawler access was not measured" in audit["outcome"]["reason"]
     assert audit["firecrawl"]["state"] == "done" and audit["firecrawl"]["requested"]
     report = client.get(f"{API}/audits/{audit['id']}/result").json()
-    assert report["schema_version"] == "1.28"
+    assert report["schema_version"] == "1.29"
 
     def access(rep):
         return {c["check_id"]: (c["status"], c["summary"], [f["title"] for f in c["findings"]]) for c in rep["checks"]

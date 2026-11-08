@@ -20,11 +20,12 @@ READ = {
                      "«Sayfa bazında»: sorunlu her sayfa bir satır, en önemli sayfa en üstte. Önem puanı 0-100 arasıdır; boşsa sayfa taranmadığı için hesaplanmadı.",
                      "«Bulgu bazında»: her sorun ve sayfa bir satır: o sayfada ölçülen değer ve ne yapılacağı. Teknik kimlikler en sağdaki sütunlardadır.",
                      "Süzmek için başlık satırındaki ok düğmelerini kullanın (ör. Kart = 3 ya da Önem = Yüksek). Bir adrese tıklayınca sayfa tarayıcıda açılır.",
-                     "Önem sırası: Engelleyici, Yüksek, Orta, Düşük, Bilgi. «Bilgi» satırları sorun değil nottur. «Bulgular» ve sonraki sayfalar ekibin teknik ayrıntılarıdır."],
+                     "Önem sırası: Engelleyici, Yüksek, Orta, Düşük, Bilgi. «Bilgi» satırları sorun değil nottur. «Bulgular» ve sonraki sayfalar ekibin teknik ayrıntılarıdır.",
+                     "«Okundu mu?»: «Evet» içeriği okunup ölçülen sayfa, «Hayır, okunmadı» bilinen ama okunmayan adrestir; okunan sayfalar önce, okunmayan adresler ayrı bir grup olarak sonra gelir."],
            "summary_cols": ["Kart", "Başlık", "Önem", "Sorun türü", "Sorumlu", "Efor", "Etkilenen adres", "Satırlara git"],
            "go": "Satırlara git →",
-           "page_cols": ["Sayfa", "Sayfa türü", "Önem puanı (0-100)", "Sorun sayısı", "En yüksek önem", "Sorunlar", "Kartlar"],
-           "finding_cols": ["Sorun", "Önem", "Sorun türü", "Sayfa", "Ölçülen değer", "Ne yapılmalı", "Kart", "Durum",
+           "page_cols": ["Sayfa", "Okundu mu?", "Sayfa türü", "Önem puanı (0-100)", "Sorun sayısı", "En yüksek önem", "Sorunlar", "Kartlar"],
+           "finding_cols": ["Sorun", "Önem", "Sorun türü", "Sayfa", "Okundu mu?", "Ölçülen değer", "Ne yapılmalı", "Kart", "Durum",
                             "Sayfa türü", "Sayfa önemi (0-100)", "Bulgu kimliği", "Kural", "Kontrol"],
            "empty": {"summary": "Bu denetimde PDF raporunda kart yok.",
                      "by_page": "Sayfa düzeyinde sorun yok: bulgular sitenin bütününü ya da alan adlarını ilgilendiriyor (bkz. «Bulgu bazında»).",
@@ -35,11 +36,12 @@ READ = {
                      "\"By page\": one row per page with a problem, the most important page first. Importance is 0-100; when it is empty the page was not crawled, so it was not computed.",
                      "\"By finding\": one row per problem and page: the value measured on that page and what to do. Technical IDs are in the right-most columns.",
                      "To filter, use the arrow buttons in the header row (e.g. Card = 3 or Severity = High). Clicking an address opens the page in your browser.",
-                     "Severity order: Blocker, High, Medium, Low, Info. \"Info\" rows are notes, not problems. \"Findings\" and the sheets after it are the team's technical detail."],
+                     "Severity order: Blocker, High, Medium, Low, Info. \"Info\" rows are notes, not problems. \"Findings\" and the sheets after it are the team's technical detail.",
+                     "\"Read?\": \"Yes\" is a page whose content was read and measured, \"No, not read\" an address known but not read; pages read come first, addresses not read follow as their own group."],
            "summary_cols": ["Card", "Title", "Severity", "Issue type", "Owner", "Effort", "Affected addresses", "Go to rows"],
            "go": "Go to rows →",
-           "page_cols": ["Page", "Page type", "Importance (0-100)", "Problems", "Highest severity", "Problems found", "Cards"],
-           "finding_cols": ["Problem", "Severity", "Issue type", "Page", "Measured value", "What to do", "Card", "Placement",
+           "page_cols": ["Page", "Read?", "Page type", "Importance (0-100)", "Problems", "Highest severity", "Problems found", "Cards"],
+           "finding_cols": ["Problem", "Severity", "Issue type", "Page", "Read?", "Measured value", "What to do", "Card", "Placement",
                             "Page type", "Page importance (0-100)", "Finding ID", "Rule", "Check"],
            "empty": {"summary": "The PDF report of this audit has no cards.",
                      "by_page": "No problem concerns single pages: the findings are about the whole site or its hosts (see \"By finding\").",
@@ -219,7 +221,7 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
     sev = lambda s: W["severity"].get(s, s or "")  # noqa: E731
     ptype = lambda t: W["page_type"].get(t, t or "") if t else ""  # noqa: E731
     found = [[r["title"], sev(r["severity"]), W["itype"].get(r["issue_type"], ""),
-              _link(r["url"], r["address"]), r["value"], r["fix"], r["card"] if r["card"] is not None else "",
+              _link(r["url"], r["address"]), page_rows.read_word(r["read"], lang), r["value"], r["fix"], r["card"] if r["card"] is not None else "",
               W["placement"].get(r["placement"], r["placement"] or ""), ptype(r["page_type"]),
               r["importance"] if isinstance(r["importance"], (int, float)) else "",
               r["finding_id"], r["rule_id"] or "", r["check_id"] or ""] for r in rows]
@@ -237,14 +239,14 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
                 c.get("owner") or "", c.get("effort") or "", len(addresses[c["n"]]) if c["n"] in addresses else c.get("addresses") or 0,
                 {"text": R["go"], "location": f"{where}!A{first_row[c['n']]}"} if c["n"] in first_row else ""]
                for c in cards]
-    by_page = [[_link(p["url"], p["url"]), ptype(p["page_type"]),
+    by_page = [[_link(p["url"], p["url"]), page_rows.read_word(p["read"], lang), ptype(p["page_type"]),
                 p["importance"] if isinstance(p["importance"], (int, float)) else "", p["problems"], sev(p["worst"]),
                 "; ".join(p["names"]), ", ".join(str(n) for n in p["cards"])] for p in page_rows.page_table(rows)]
     out = [{"name": R["how"], "header": [R["how"]], "rows": [[x] for x in R["lines"]], "widths": [140],
             "frozen": False, "filter": False}]
     for key, header, body, widths in (("summary", R["summary_cols"], summary, [7, 60, 12, 14, 22, 10, 12, 18]),
-                                      ("by_page", R["page_cols"], by_page, [70, 22, 12, 10, 14, 80, 10]),
-                                      ("by_finding", R["finding_cols"], found, [42, 12, 13, 60, 48, 60, 7, 16, 20, 12, 18, 24, 10])):
+                                      ("by_page", R["page_cols"], by_page, [70, 16, 22, 12, 10, 14, 80, 10]),
+                                      ("by_finding", R["finding_cols"], found, [42, 12, 13, 60, 16, 48, 60, 7, 16, 20, 12, 18, 24, 10])):
         if body:
             out.append({"name": R[key], "header": header, "rows": body, "widths": widths})
         else:  # one line saying why, never an empty sheet (DECISIONS 321 (5))

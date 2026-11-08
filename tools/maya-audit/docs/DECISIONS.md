@@ -4031,3 +4031,41 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Tests: `tests/test_xlsx_pages_322.py`; `test_brief_review_321` bands (7 Blocker, 14 High, 30 a finding),
      `test_idx_scenarios` (7-day certificate: Blocker), sheet lists in `test_v03_client_report`/`test_v03_report_fixes`,
      `test_team_report` (web and skill appendix with the same todos).
+323. **"Okundu mu?" in the appendix's page sheets, and a measured value for every page read; schema 1.29 (Owner,
+     2026-11-08: items 1-2 as asked; the record's fields, the value per kind of finding, the order inside a card and the
+     wording are agent defaults).** Global for every audit; nihan b3198942, moodisthastanesi c581ff0a and airastana
+     d12146fb were the test cases.
+     (1) *Read or not.* "Sayfa bazında" and "Bulgu bazında" have "Okundu mu?" / "Read?" after the address: "Evet" /
+     "Yes" for a page whose content was read (`client_selection.read_set`: Maya's 2xx pages with content, the page
+     reader's pages read, and every page with a stored measurement), "Hayır, okunmadı" / "No, not read" for an address
+     known but not read, "—" for a host's file or the whole site. "Sayfa bazında": the pages read first (importance,
+     then severity), the addresses never read after them as one group. "Bulgu bazında": the same inside each card (and
+     among the rows of no card), so a card's rows stay together and "Satırlara git" still lands on its first row. The
+     web list ("Etkilenen sayfalar") has the same column and order, and its CSV the column. "Nasıl okunur" has a
+     seventh line saying this.
+     (2) *A value for every page read* (`maya_audit/page_measures.py`). One compact record per page read: status, HTML
+     size, where the main content starts, first response, cache header, title and description (text and length),
+     canonical, h1 count, skipped heading levels (with examples), `<html lang>` and hreflang count, words, main content
+     size, images and those without alt, blocking scripts in the head, tag IDs, structured data types, links without
+     an address or used as buttons. Only what was measured; nothing is written as 0 when it was not measured.
+     New audits: `crawl.page_measures` ({url: record}), written in `final.settle` for Maya's pages and in
+     `firecrawl.reader.apply` for the reader's pages (a page both read keeps Maya's). *Schema 1.29* because it is a new
+     field of the report's frozen `crawl` shape; it is needed because the checks' evidence keeps a sample of pages
+     (often 40) and a page read only through a page reader keeps no record in the report at all, so its values would
+     otherwise be lost when the audit ends. Older reports: the same records are worked out from the saved
+     `crawl.pages[].analysis` (`page_measures.index`, offline).
+     The appendix's value (`page_rows.measured`): the finding's own evidence for that page first (it holds what only
+     the check works out, e.g. a language share), then the page record's values for that kind of finding
+     (`page_rows.from_page`: RND-6 size or content start with the limit; heading rules the skipped levels; title and
+     description rules; STR-2 h1 count; STR-9/12 language; STR-15, RND-3/7 words; STR-7 images; STR-3/6/10 structured
+     data; IDX-3/4/6/8 canonical and status; PRF-1 first response and cache; link rules), else the page's status and
+     size. An address not read says "okunmadı: bu adresin içeriği ölçülmedi"; "ayrıntı kaydedilmedi" is left only for a
+     page read whose values cannot be worked out from the saved data (in old reports: pages read only through the page
+     reader, and non-HTML files such as agents.md).
+     Results ("Bulgu bazında", TR, scratch copies, provider-free): "ayrıntı kaydedilmedi" nihan 1,877 -> 10 (every one a
+     page read only through Firecrawl or a text file), moodist 272 -> 0, airastana 15 -> 11 (pages read only through
+     Firecrawl); "okunmadı" rows 103 / 2 / 4. nihan "Sayfa bazında": 498 pages read first, then 1,621 addresses not
+     read. Team reports and briefs unchanged (nihan 9, moodist 8, airastana 6 pages; briefs 5). A provider-free CLI run
+     on a local static site writes schema 1.29 with a record for each page read.
+     Tests: `tests/test_page_values_323.py`; `tests/test_xlsx_pages_322.py` (the new column, seven lines, a page's own
+     value in place of "not kept").

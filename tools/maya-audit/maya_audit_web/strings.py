@@ -1351,6 +1351,7 @@ STRINGS["en"].update({
     "cards.shown": "{shown} of {count} shown",
     "cards.not_found": "This card is not in the report.",
     "cards.col.address": "Address",
+    "cards.col.read": "Read?",
     "cards.col.page_type": "Page type",
     "cards.col.importance": "Importance (0-100)",
     "cards.col.value": "Measured value",

@@ -40,7 +40,14 @@ WORDS = {
            "seen": "bu sayfada görüldü (bkz. Sorun)", "params": "bağlantıda izleme parametresi: {v}",
            "redirect_link": "yönlendiren adrese bağlantı: {a} → {b}", "hreflang": "hreflang {a} → {b} (HTTP {n})",
            "alt": "alt metni: \"{v}\"", "scripts": "{n} engelleyen betik", "images": "{n} boyutsuz görsel",
-           "ids": "ölçüm kimlikleri: {v}", "types": "beklenen tür: {a}; bulunan: {b}", "clash": "aynı öğe için türler: {v}"},
+           "ids": "ölçüm kimlikleri: {v}", "types": "beklenen tür: {a}; bulunan: {b}", "clash": "aynı öğe için türler: {v}",
+           "title_m": "başlık \"{v}\" ({n} karakter)", "desc_m": "açıklama {n} karakter: \"{v}\"", "no_desc": "açıklama yok",
+           "lang_m": "<html lang> {v}", "no_lang": "<html lang> yok", "schema_m": "yapısal veri: {v}", "no_schema": "yapısal veri yok",
+           "cache_m": "önbellek: {v}", "main_chars": "ana içerik {n} karakter", "h1_none": "ana başlık (h1) yok",
+           "no_jumps": "atlanan başlık düzeyi yok", "jumps_m": "{n} başlık düzeyi atlaması ({v})", "alt_missing": "{n} görselin alt metni yok",
+           "images_m": "{n} görsel", "dead": "{n} adressiz bağlantı", "controls": "{n} düğme gibi kullanılan bağlantı",
+           "hreflang_m": "{n} hreflang etiketi", "no_tags": "ölçüm etiketi yok",
+           "not_read": "okunmadı: bu adresin içeriği ölçülmedi", "yes": "Evet", "no": "Hayır, okunmadı", "na": "—"},
     "en": {"not_kept": "detail not kept (the report keeps sample pages only)",
            "site": "whole site", "kb": "{n} KB", "html": "HTML {n}", "size": "size {n}", "main_offset": "main content starts after {n}",
            "threshold": "limit {n}", "jumps": "{n} heading level jump(s)", "jump": "h{a} → h{b}",
@@ -57,7 +64,14 @@ WORDS = {
            "seen": "seen on this page (see Problem)", "params": "tracking parameter in a link: {v}",
            "redirect_link": "link to a redirecting address: {a} → {b}", "hreflang": "hreflang {a} → {b} (HTTP {n})",
            "alt": "alt text: \"{v}\"", "scripts": "{n} blocking script(s)", "images": "{n} image(s) without size",
-           "ids": "measurement IDs: {v}", "types": "expected type: {a}; found: {b}", "clash": "types for one item: {v}"},
+           "ids": "measurement IDs: {v}", "types": "expected type: {a}; found: {b}", "clash": "types for one item: {v}",
+           "title_m": "title \"{v}\" ({n} characters)", "desc_m": "description {n} characters: \"{v}\"", "no_desc": "no description",
+           "lang_m": "<html lang> {v}", "no_lang": "no <html lang>", "schema_m": "structured data: {v}", "no_schema": "no structured data",
+           "cache_m": "cache: {v}", "main_chars": "main content {n} characters", "h1_none": "no main heading (h1)",
+           "no_jumps": "no skipped heading level", "jumps_m": "{n} heading level jump(s) ({v})", "alt_missing": "{n} image(s) without alt text",
+           "images_m": "{n} image(s)", "dead": "{n} link(s) without an address", "controls": "{n} link(s) used as buttons",
+           "hreflang_m": "{n} hreflang tag(s)", "no_tags": "no measurement tag",
+           "not_read": "not read: this address's content was not measured", "yes": "Yes", "no": "No, not read", "na": "—"},
 }
 
 
@@ -188,9 +202,110 @@ def _decomposed(url: str, lang: str) -> str | None:
     return W["chars_list"].format(v=", ".join(marks)) + "; " + W["fixed"].format(u=fixed)
 
 
-def measured(finding: dict, url: str, lang: str = "tr") -> str:
-    """What was measured on this page for this finding, in plain words, from the finding's evidence; the "not kept"
-    sentence when the evidence holds no record of this page."""
+def from_page(finding: dict, rec: dict, lang: str = "tr") -> list[str]:
+    """DECISIONS 323: the values of this finding's kind, from what was measured on the page (`page_measures`): HTML
+    size and where the main content starts, headings, title and description, canonical, language, words, first
+    response and cache, images, scripts, tags, structured data, status. Only values the record holds."""
+    W, ev = WORDS[lang], finding.get("evidence") or {}
+    rule, check = str(finding.get("rule_id") or ""), str(finding.get("check_id") or "")
+    out: list[str] = []
+
+    def size():
+        if isinstance(rec.get("html_bytes"), int):
+            out.append(W["html"].format(n=_kb(rec["html_bytes"], lang)))
+
+    def start():
+        if isinstance(rec.get("main_offset_bytes"), int):
+            out.append(W["main_offset"].format(n=_kb(rec["main_offset_bytes"], lang)))
+
+    def jumps():
+        if isinstance(rec.get("heading_jumps"), int):
+            out.append(W["jumps_m"].format(n=rec["heading_jumps"], v=", ".join(rec.get("heading_jump_examples") or []))
+                       if rec["heading_jumps"] else W["no_jumps"])
+
+    def title_():
+        if isinstance(rec.get("title"), str):
+            out.append(W["title_m"].format(v=_short(rec["title"], 70), n=rec.get("title_chars", len(rec["title"]))))
+
+    def desc():
+        if isinstance(rec.get("description"), str):
+            out.append(W["desc_m"].format(n=rec.get("description_chars", len(rec["description"])), v=_short(rec["description"], 60)))
+        elif "title" in rec:
+            out.append(W["no_desc"])
+
+    def canonical():
+        if rec.get("canonical"):
+            out.append(W["canonical"].format(u=rec["canonical"]))
+
+    def lang_():
+        out.append(W["lang_m"].format(v=rec["html_lang"]) if rec.get("html_lang") else W["no_lang"])
+        if rec.get("hreflang"):
+            out.append(W["hreflang_m"].format(n=rec["hreflang"]))
+
+    def words():
+        if isinstance(rec.get("words"), int):
+            out.append(W["words"].format(n=rec["words"]))
+
+    def status():
+        if isinstance(rec.get("status"), int):
+            out.append(W["status"].format(n=rec["status"]))
+
+    if check == "RND-6":
+        (start if "late" in rule else size)()
+        if out and isinstance(ev.get("threshold_bytes"), (int, float)):
+            out.append(W["threshold"].format(n=_kb(ev["threshold_bytes"], lang)))
+    elif "heading" in rule:
+        jumps()
+    elif rule.startswith("tseo1.title") or check == "STR-1":
+        title_()
+    elif rule.startswith("tseo1.description") or check == "STR-16":
+        desc()
+    elif rule.startswith("tseo1.blocking"):
+        if isinstance(rec.get("blocking_scripts"), int):
+            out.append(W["scripts"].format(n=rec["blocking_scripts"]))
+    elif rule.startswith("tseo1.analytics"):
+        out.append(W["ids"].format(v=", ".join(rec["analytics"])) if rec.get("analytics") else W["no_tags"])
+    elif check == "STR-2":
+        if isinstance(rec.get("h1_count"), int):
+            out.append(W["h1"].format(n=rec["h1_count"]) if rec["h1_count"] else W["h1_none"])
+    elif check in ("STR-12", "STR-9"):
+        lang_()
+        words()
+    elif check in ("STR-15", "RND-3", "RND-7"):
+        words()
+        if isinstance(rec.get("main_chars"), int):
+            out.append(W["main_chars"].format(n=rec["main_chars"]))
+    elif check == "STR-7":
+        if isinstance(rec.get("images"), int):
+            out.append(W["images_m"].format(n=rec["images"]))
+        if rec.get("images_missing_alt"):
+            out.append(W["alt_missing"].format(n=rec["images_missing_alt"]))
+    elif check in ("STR-3", "STR-6", "STR-10"):
+        out.append(W["schema_m"].format(v=", ".join(rec["schema_types"])) if rec.get("schema_types") else W["no_schema"])
+    elif check in ("IDX-3", "IDX-4", "IDX-6", "IDX-8"):
+        canonical()
+        status()
+    elif check == "PRF-1":
+        if isinstance(rec.get("ttfb_ms"), (int, float)):
+            out.append(W["ttfb"].format(n=round(rec["ttfb_ms"])))
+        if rec.get("cache"):
+            out.append(W["cache_m"].format(v=rec["cache"]))
+    elif check in ("STR-14", "STR-19") or rule.startswith("shared.link"):
+        if rec.get("dead_link_total"):
+            out.append(W["dead"].format(n=rec["dead_link_total"]))
+        if rec.get("link_control_total"):
+            out.append(W["controls"].format(n=rec["link_control_total"]))
+    if not out:  # a kind with no value of its own: the page's status and size, as measured
+        status()
+        size()
+    return out
+
+
+def measured(finding: dict, url: str, lang: str = "tr", page: dict | None = None, read: bool | None = None) -> str:
+    """What was measured on this page for this finding, in plain words: the finding's own evidence for this page
+    first (it holds values only the check works out, e.g. a language share), then what was measured on the page
+    (`page`, a `page_measures` record, DECISIONS 323). An address that was not read says so; a page read whose values
+    were not kept says "not kept" — never empty, zero or made up."""
     W, ev = WORDS[lang], finding.get("evidence") or {}
     if finding.get("rule_id") == "tseo1.url_decomposed":
         found_in_address = _decomposed(url, lang)
@@ -229,9 +344,13 @@ def measured(finding: dict, url: str, lang: str = "tr") -> str:
                     found.append(W["copy_group"].format(n=n))
     if not found and isinstance(ev.get("url"), str) and _same(ev["url"], url):
         found = _record_words(ev, ev, lang, finding.get("check_id"))
+    if not found and page:
+        found = from_page(finding, page, lang)
     if not found and any(isinstance(v, list) and any(isinstance(u, str) and _same(u, url) for u in v)
                          for k, v in ev.items() if k not in SKIP_KEYS and k != "urls"):
         found = [W["seen"]]  # the page is in the evidence's list; the finding itself is what was measured there
+    if not found and read is False:
+        return W["not_read"]
     return "; ".join(found[:4]) if found else W["not_kept"]
 
 
@@ -273,6 +392,8 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
     Order: the PDF's cards in their order, then by severity, then the more important page first."""
     W = WORDS[lang]
     importance = selection.get("_importance") or {}
+    read_urls = {u.rstrip("/") for u in selection.get("_pages_read") or ()}
+    measures = {u.rstrip("/"): r for u, r in (selection.get("_page_measures") or {}).items()}
     by_id, _ = card_of(selection, todos, lang, title)
     rows = []
     for gi, g in enumerate(selection.get("groups") or []):
@@ -289,6 +410,8 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
             sev = severity(m)
             for url in urls:
                 rec = importance.get(url) or {} if url else {}
+                # DECISIONS 323: read or not; a host's file or the whole site is not a page (None)
+                read = None if hosts or not url else url.rstrip("/") in read_urls
                 rows.append({
                     "finding_id": m.get("id"), "check_id": m.get("check_id"), "rule_id": m.get("rule_id"),
                     "title": name, "short": short, "fix": todo, "severity": sev, "issue_type": g.get("issue_type") or "issue",
@@ -296,25 +419,35 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
                     "url": url, "address": display_address(url, hosts) if url else W["site"],
                     "host_level": bool(hosts), "page": bool(url) and not hosts,
                     "page_type": rec.get("page_type"), "importance": rec.get("importance"),
-                    "value": measured(m, url, lang) if url else "",
+                    "value": measured(m, url, lang, measures.get(url.rstrip("/")) if read else None, read) if url else "",
+                    "read": read,
                     "_group": gi,
                 })
     order = {s: i for i, s in enumerate(SEVERITIES)}
-    rows.sort(key=lambda r: (r["card"] is None, r["card"] or 0, order.get(r["severity"], 9), r["_group"],
+    # DECISIONS 323: within each card (and among the rows of no card), the pages read first, the addresses never read
+    # after them, grouped; then severity, the finding, the more important page.
+    rows.sort(key=lambda r: (r["card"] is None, r["card"] or 0, r["read"] is False, order.get(r["severity"], 9), r["_group"],
                              -(r["importance"] if isinstance(r["importance"], (int, float)) else -1)))
     return rows
+
+
+def read_word(read: bool | None, lang: str) -> str:
+    """"Evet" / "Hayır, okunmadı" ("Yes" / "No, not read"); "—" for a host's file or the whole site."""
+    W = WORDS[lang]
+    return W["na"] if read is None else W["yes"] if read else W["no"]
 
 
 def page_table(rows: list[dict]) -> list[dict]:
     """One row per affected page with at least one problem (Blocker to Low): its type and importance, how many
     problems (root-cause groups) concern it, the worst severity, and their short names. Hosts and "whole site" rows
-    are not pages and stay in the per-finding rows. Sorted by importance (not computed last), then severity."""
+    are not pages and stay in the per-finding rows. The pages read first, by importance (not computed last), then
+    severity; the addresses never read after them (DECISIONS 323)."""
     pages: dict[str, dict] = {}
     for r in rows:
         if not r["page"] or r["severity"] not in PROBLEM:
             continue
         p = pages.setdefault(r["url"], {"url": r["url"], "page_type": r["page_type"], "importance": r["importance"],
-                                        "groups": {}, "cards": [], "worst": r["severity"]})
+                                        "groups": {}, "cards": [], "worst": r["severity"], "read": r["read"]})
         p["groups"].setdefault(r["_group"], (r["severity"], r["short"]))
         if r["card"] is not None and r["card"] not in p["cards"]:
             p["cards"].append(r["card"])
@@ -323,10 +456,11 @@ def page_table(rows: list[dict]) -> list[dict]:
     out = []
     for p in pages.values():
         names = [name for _, name in sorted(p["groups"].values(), key=lambda x: SEVERITIES.index(x[0]))]
-        out.append({"url": p["url"], "page_type": p["page_type"], "importance": p["importance"],
+        out.append({"url": p["url"], "page_type": p["page_type"], "importance": p["importance"], "read": p["read"],
                     "problems": len(p["groups"]), "worst": p["worst"], "names": list(dict.fromkeys(names)),
                     "cards": sorted(p["cards"])})
-    out.sort(key=lambda p: (not isinstance(p["importance"], (int, float)), -(p["importance"] or 0),
+    # DECISIONS 323: the pages read first (by importance, then severity), the addresses never read after them.
+    out.sort(key=lambda p: (p["read"] is False, not isinstance(p["importance"], (int, float)), -(p["importance"] or 0),
                             SEVERITIES.index(p["worst"]), -p["problems"], p["url"]))
     return out
 
@@ -340,11 +474,11 @@ def card_pages(rows: list[dict], n: int) -> list[dict]:
             continue
         key = r["url"] or r["address"]
         row = out.setdefault(key, {"url": r["url"], "address": r["address"], "page_type": r["page_type"],
-                                   "importance": r["importance"], "values": [], "finding_ids": []})
+                                   "importance": r["importance"], "read": r["read"], "values": [], "finding_ids": []})
         if r["value"] and r["value"] not in row["values"]:
             row["values"].append(r["value"])
         if r["finding_id"] not in row["finding_ids"]:
             row["finding_ids"].append(r["finding_id"])
     result = list(out.values())
-    result.sort(key=lambda p: (not isinstance(p["importance"], (int, float)), -(p["importance"] or 0)))
+    result.sort(key=lambda p: (p["read"] is False, not isinstance(p["importance"], (int, float)), -(p["importance"] or 0)))
     return result
