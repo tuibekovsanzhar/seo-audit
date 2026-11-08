@@ -4171,3 +4171,13 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Results (current-engine copies, provider-free): nihan Uygun 12 -> 13, Kısmen 13 -> 12, Hatalı 2, Kontrol Edilmedi
      35 (3 rows changed); moodist 9 / 6 -> 4 / 5 -> 3 / 42 -> 46 (7 rows); airastana 8 / 2 -> 0 / 3 -> 1 / 49 -> 53
      (4 rows). Schema: no bump. Tests: `tests/test_sector_precision_325.py` (8).
+326. **"Sektör audit" XLSX: Yaygınlık and Efor on every row (Owner, 2026-11-08: the rule as asked; the note's wording is an
+     agent default).** Every row, "Uygun" and "Kontrol Edilmedi" included, has Yaygınlık (1-5) and Efor (1-5), so a
+     teammate who changes Durum to Hatalı or Kısmen Uygun gets the team formula's score and P level at once. Yaygınlık:
+     the measured spread when a finding gives one (also an estimated finding that sets no Durum), else 1. Efor: the
+     largest catalogue default effort (`recommendation_catalog.note`, S 1, M 3, L 4) of the checks the row's rules
+     belong to, else 3. An "Uygun" row now shows the team formula's own "0 / Yok". A last line on the Metodoloji sheet
+     ("Ön doldurulan değerler (Maya)") says both are pre-filled and can be edited (below the VLOOKUP range A22:B27).
+     Checked in Numbers (LibreOffice is not installed here) on the moodist workbook: CORE-001 Uygun -> Hatalı gave
+     100 / P1; SEC-066 Uygun -> Hatalı gave 33,3 / P2 and the Audit Özeti row "Sağlık / klinikler" went Hatalı 1 -> 2,
+     Uygun 2 -> 1. Schema: no bump. Tests: `tests/test_sector_prefill_326.py` (5).

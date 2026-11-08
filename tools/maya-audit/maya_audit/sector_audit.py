@@ -58,6 +58,9 @@ REASON = {
     "checked_host": "Bulgu yok: {n} alan adında {what} kontrol edildi.",
 }
 EXTRA = ["Maya: Durum nedeni", "Maya kapsamı", "Maya kuralları", "Not"]
+PREFILL_NOTE = ["Ön doldurulan değerler (Maya)",
+                "Yaygınlık ve Efor her satırda önceden dolduruldu (ölçülen yaygınlık, yoksa 1; kuralın varsayılan eforu, yoksa 3) "
+                "ve düzenlenebilir: Durum «Hatalı» ya da «Kısmen Uygun» yapılınca Öncelik Skoru ve Öncelik hemen hesaplanır."]
 SEVERE = ("S1", "S2", "S3")
 
 
@@ -155,6 +158,40 @@ class _Audit:
 
 
 def _evaluate(a: _Audit, row: dict, kind: str | None) -> dict:
+    """Durum and the filled columns of one row, with Yaygınlık and Efor always filled (DECISIONS 326)."""
+    return prefill(row, _judge(a, row, kind))
+
+
+def prefill(row: dict, out: dict) -> dict:
+    """DECISIONS 326: every row has Yaygınlık and Efor, so a teammate who changes "Durum" to Hatalı or Kısmen Uygun gets
+    a score and a level at once: the measured spread when a finding gives one, else 1; the effort of the row's rules
+    (the catalogue's default per check, the largest of them), else 3. Both stay editable."""
+    if out.get("spread") is None:
+        out["spread"] = 1
+    if out.get("effort") is None:
+        out["effort"] = default_effort(row)
+    return out
+
+
+@lru_cache(maxsize=1)
+def _check_of() -> dict[str, str]:
+    """{rule id: check id} from the rule catalogue."""
+    rules = json.loads(resources.files(__package__).joinpath("rule_ids.json").read_text(encoding="utf-8"))["rules"]
+    return {r[0]: check for check, rows in rules.items() for r in rows}
+
+
+def default_effort(row: dict) -> int:
+    checks = set()
+    for ref in row.get("rules") or []:
+        if ref[:1].isupper():
+            checks.add(ref)
+        else:
+            checks.update(c for rid, c in _check_of().items() if rid == ref or rid.startswith(ref + "."))
+    efforts = [EFFORT.get(note(c, "")["effort"], 3) for c in sorted(checks)]
+    return max(efforts) if efforts else 3
+
+
+def _judge(a: _Audit, row: dict, kind: str | None) -> dict:
     """Durum and the filled columns of one check row (`kind`: the page type of a sector row, None for a common one)."""
     from .page_rows import measured
     st = row["status"]
@@ -202,6 +239,8 @@ def _evaluate(a: _Audit, row: dict, kind: str | None) -> dict:
         out["maya_action"] = "\n".join(dict.fromkeys(a.fix(x["f"]) for x, _ in acted if a.fix(x["f"])))[:2000]
         return out
     if tentative:
+        total = a.count.get(kind, 0) if kind is not None else len(a.read)  # the measured spread, kept as a default
+        out["spread"] = max((_spread(len(u), total) if u and kind != "home" and not x["host"] else 5) for x, u in tentative)
         rules = ", ".join(sorted({x["f"].get("rule_id") or "" for x, _ in tentative}))
         out["reason"] = REASON["waiting" if any(x["waiting"] for x, _ in tentative) else "tentative"].format(rules=rules)
         return out
@@ -248,12 +287,13 @@ def evaluate(report: dict, selection: dict, lists: dict | None = None, business:
             if a.count.get(row["type_id"], 0):
                 sec.append({**row, **_evaluate(a, row, row["type_id"])})
             else:
-                sec.append({**row, "durum": "Kontrol Edilmedi", "reason": REASON["type"], "spread": None, "effort": None,
-                            "example": None, "evidence": "", "maya_action": "", "owner": ""})
+                sec.append({**row, **prefill(row, {"durum": "Kontrol Edilmedi", "reason": REASON["type"], "spread": None,
+                                                    "effort": None, "example": None, "evidence": "", "maya_action": "",
+                                                    "owner": ""})})
         else:
-            sec.append({**row, "durum": "Kontrol Edilmedi", "reason": REASON["sector"] if a.sector else REASON["no_sector"],
-                        "spread": None, "effort": None, "example": None, "evidence": "", "maya_action": "", "owner": "",
-                        "_other": True})
+            sec.append({**row, **prefill(row, {"durum": "Kontrol Edilmedi", "reason": REASON["sector"] if a.sector else REASON["no_sector"],
+                                                "spread": None, "effort": None, "example": None, "evidence": "",
+                                                "maya_action": "", "owner": ""}), "_other": True})
     order = {d: i for i, d in enumerate(("Hatalı", "Kısmen Uygun", "Uygun", "Uygulanamaz", "Kontrol Edilmedi"))}
     types = []
     for t in m["page_types"]:
@@ -298,7 +338,7 @@ def sheets(result: dict) -> list[dict]:
     H = m["headers"]
     weights = {r[0]: r[1] for r in m["methodology"][21:27]}  # Metodoloji!A22:B27, rank -> weight
     meth = {"name": "Metodoloji", "header": [x if x is not None else "" for x in m["methodology"][0]],
-            "rows": [[x if x is not None else "" for x in r] for r in m["methodology"][1:]], "widths": [28, 120],
+            "rows": [[x if x is not None else "" for x in r] for r in m["methodology"][1:]] + [[], PREFILL_NOTE], "widths": [28, 120],
             "frozen": False, "filter": False}
     last_type = len(result["types"]) + 1
     trows = []

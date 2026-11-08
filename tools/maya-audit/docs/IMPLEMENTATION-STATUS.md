@@ -1614,3 +1614,20 @@ Cards: nihan 11 now P3 (search/cart pages weigh 0); the other levels unchanged.
 | Opening the workbooks in Excel or Numbers | NOT RUN here |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+
+## "Sektör audit" XLSX: Yaygınlık and Efor on every row (2026-11-08, DECISIONS 326)
+
+Every row has Yaygınlık (measured spread, else 1) and Efor (the rules' catalogue default, else 3); a Metodoloji line says
+they are pre-filled and editable. Workbooks rebuilt from current-engine copies (scratch, provider-free): moodist
+c581ff0a, nihan b3198942, airastana d12146fb: 0 rows of 44 + 207 without Yaygınlık or Efor in each; "Uygun" rows show
+"0 / Yok".
+
+| Command | Result |
+|---|---|
+| Recalculation in Numbers (AppleScript, scratch copy of the moodist workbook, closed without saving) | CORE-001 Uygun -> Hatalı: 0 / Yok -> 100 / P1; SEC-066 Uygun -> Hatalı: 0 / Yok -> 33,3 / P2; Audit Özeti "Sağlık / klinikler": Hatalı 1 -> 2, Uygun 2 -> 1, Denetlenen 3 |
+| LibreOffice headless | NOT RUN: not installed (no install without authorization) |
+| `pytest tests/test_sector_prefill_326.py tests/test_sector_precision_325.py tests/test_sector_method_324.py` | `33 passed` |
+| fast suite (fixture matrix regenerated first) | `2976 passed, 4 skipped, 135 deselected, 1 warning in 529.38s (0:08:49)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `3111 passed, 4 skipped, 1 warning in 924.75s (0:15:24)` |
+| ruff E9/F821/F841, `python3.11 -m compileall` | clean / OK |
+| Push of 14e104f, b15aa40 and this commit; GitHub CI | see the owner's summary of this session (not a status-only commit) |
