@@ -1587,3 +1587,30 @@ severities and priority scores are those of the selection (unchanged by the labe
 | Opening the workbooks in Excel, Numbers or LibreOffice | NOT RUN here |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+
+## "Sektör audit" XLSX precision pass (2026-11-08, DECISIONS 325)
+
+Owner's five items, global. The mapping is exact per rule id (each rule in at most one common row; one sector row per
+finding and page type); only measured or confirmed findings set a Durum; a valid certificate is "Hatalı" only at High;
+host-level findings count host names and are site-wide; "Uygun" rows say what was checked on how many pages or hosts;
+every problem card has a P level (0-weight pages: P3). Every mapping change is listed in DECISIONS 325.
+
+**Offline on current-engine copies** (scratch folder, provider-free). Rows of 62 (44 common + the sector's 18):
+
+| Audit | Uygun | Kısmen Uygun | Hatalı | Kontrol Edilmedi | Rows changed |
+|---|---|---|---|---|---|
+| nihan b3198942 | 12 -> 13 | 13 -> 12 | 2 -> 2 | 35 -> 35 | CORE-006 KE -> Kısmen (`idx6.alias_links`); CORE-012 Kısmen -> Uygun (`str9.lang_mismatch` is CORE-027); CORE-031 Kısmen -> KE (`idx5.stamped` is a sitemap date) |
+| moodist c581ff0a | 9 -> 9 | 6 -> 4 | 5 -> 3 | 42 -> 46 | CORE-008 Hatalı -> KE (certificate not a host variant); CORE-016 Kısmen -> KE (placeholder alt is not image size); CORE-021 KE -> Kısmen (`str19.no_target`); CORE-026 Kısmen -> KE (placeholder alt estimated); CORE-036 Kısmen -> KE (`str5.names` estimated); CORE-038 Kısmen -> KE (STR-5 no longer here; STR-21 not run); CORE-041 Hatalı -> Kısmen (30-day certificate, Medium) |
+| airastana d12146fb | 8 -> 8 | 2 -> 0 | 3 -> 1 | 49 -> 53 | CORE-008 Hatalı -> KE; CORE-024 Kısmen -> KE (heading jumps estimated); CORE-034 Kısmen -> KE (`str3.unparsed` estimated); CORE-044 Hatalı -> KE (Maya's crawler blocked, ACC-9) |
+
+Cards: nihan 11 now P3 (search/cart pages weigh 0); the other levels unchanged.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_sector_precision_325.py tests/test_sector_method_324.py` | `28 passed` |
+| fast suite (fixture matrix regenerated first) | `2971 passed, 4 skipped, 135 deselected, 1 warning in 533.46s (0:08:53)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `3106 passed, 4 skipped, 1 warning in 928.07s (0:15:28)` |
+| ruff E9/F821/F841, `python3.11 -m compileall` | clean / OK |
+| Opening the workbooks in Excel or Numbers | NOT RUN here |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+| Push | NOT DONE (owner: don't push) |

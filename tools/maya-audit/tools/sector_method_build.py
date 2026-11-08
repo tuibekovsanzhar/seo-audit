@@ -28,58 +28,82 @@ SECTOR_PROFILE = {
 }
 
 # id: (status, rule refs, report checks needed for "Uygun", what Maya covers, what is missing)
+# DECISIONS 325: exact rule ids, each rule id in at most one common row (the row whose question it answers); a check id
+# ("IDX-4") only where every rule of that check answers the row. A rule id matches itself and its sub-ids
+# ("acc2.blocks" -> "acc2.blocks.sample"), nothing else.
 CORE = {
-    "CORE-001": ("A", ["ACC-1", "ACC-2"], ["ACC-1", "ACC-2"], "robots.txt durumu, boyutu, HTML dönmesi; bot başına kurallar; engellenen kilit sayfalar (ACC-1, ACC-2)", ""),
-    "CORE-002": ("A", ["IDX-5", "acc3.sitemap_noindex", "acc3.noindex_listed"], ["IDX-5"], "sitemap bulunuyor; yönlenen/404/noindex/taslak adresler (örneklem), lastmod (IDX-5, ACC-3)", "sitemap adresinin canonical'ı başka sayfayı gösteriyorsa raporlanmıyor (S)"),
-    "CORE-003": ("G", ["IDX-9"], ["IDX-9"], "GSC anahtarı verilirse en çok 20 kilit sayfa için URL Inspection (IDX-9)", "GSC Sayfalar raporu (sayfa türüne göre nedenler) GSC bağlantısı ister"),
-    "CORE-004": ("A", ["acc3.noindex", "acc3.robots_noindex", "acc3.robots_outside_head", "acc3.sitemap_noindex"], ["ACC-3"], "her yanıtta meta robots ve X-Robots-Tag (ACC-3)", ""),
-    "CORE-005": ("A", ["IDX-1"], ["IDX-1"], "okunan her sayfanın durumu, 5xx, soft 404, boş şablonlar (IDX-1)", "GSC soft-404 raporu (isteğe bağlı)"),
-    "CORE-006": ("K", ["IDX-4", "idx9.canonical"], ["IDX-4"], "varlık, hedef durumu, çakışmalar, kendine/başka sayfaya (IDX-4)", "Google'ın seçtiği canonical GSC ister (IDX-9, 20 sayfa)"),
-    "CORE-007": ("A", ["IDX-3", "idx6.links_to_redirect", "idx4.chain"], ["IDX-3"], "zincirler, döngüler, geçici yönlendirmeler, yönlenen adrese bağlantılar (IDX-3, Stage 8a)", ""),
-    "CORE-008": ("K", ["IDX-2"], ["IDX-2"], "http→https ve www/www'suz tek host'ta bitiyor (IDX-2)", "sondaki eğik çizgi ve büyük harf varyantları denenmiyor (S)"),
-    "CORE-009": ("K", ["RND-1", "RND-2", "RND-3"], ["RND-1", "RND-2"], "işlenmemiş ve işlenmiş HTML'de metin ve bağlantılar, işleme örneklemi (RND-1/2/3)", "işlemedeki konsol/API hataları (M); Google'ın kendi görünümü GSC canlı testi ister"),
-    "CORE-010": ("A", ["idx7.deep", "idx7.orphan", "idx5.sitemap"], ["IDX-7"], "sayfa başına tıklama derinliği, yalnız sitemap'te olan sayfalar (IDX-7, sayfa gruplama)", "GSC adres envanteri (isteğe bağlı)"),
-    "CORE-011": ("M-M", ["idx6.tracking", "IDX-8"], [], "yalnız izleme parametreli bağlantılar ve kopyalar (IDX-6, IDX-8)", "şablon başına parametre/filtre kombinasyonları (Stage 7); hangi filtrenin dizine girmesi gerektiği kişinin kararı"),
-    "CORE-012": ("A", ["STR-9"], ["STR-9"], "hreflang söz dizimi, karşılıklı bağlantı, hedefler, dil (STR-9); tek dilli sitede uygulanamaz", ""),
+    "CORE-001": ("A", ["ACC-1", "acc2.blocks", "acc2.mismatch", "acc2.precedence", "acc2.retired"], ["ACC-1", "ACC-2"], "robots.txt durumu, boyutu, HTML dönmesi; bot başına kurallar; engellenen kilit sayfalar (ACC-1, ACC-2)", ""),
+    "CORE-002": ("A", ["IDX-5", "acc3.sitemap_noindex"], ["IDX-5"], "sitemap bulunuyor; yönlenen/404/noindex/taslak adresler (örneklem), lastmod (IDX-5, ACC-3)", "sitemap adresinin canonical'ı başka sayfayı gösteriyorsa raporlanmıyor (S)"),
+    "CORE-003": ("G", ["idx9.no_rule", "idx9.noindex", "idx9.robots", "idx9.state"], ["IDX-9"], "GSC anahtarı verilirse en çok 20 kilit sayfa için URL Inspection (IDX-9)", "GSC Sayfalar raporu (sayfa türüne göre nedenler) GSC bağlantısı ister"),
+    "CORE-004": ("A", ["acc3.noindex", "acc3.noindex_listed", "acc3.robots_noindex", "acc3.robots_outside_head", "acc3.unavailable_passed",
+                       "acc3.unavailable_listed", "acc3.unavailable_future"], ["ACC-3"], "her yanıtta meta robots ve X-Robots-Tag (ACC-3)", ""),
+    "CORE-005": ("A", ["idx1.4xx.unreferenced", "idx1.5xx", "idx1.connection", "idx1.empty", "idx1.error_text", "idx1.soft404", "idx1.timeout",
+                       "judgment.empty"], ["IDX-1"], "okunan her sayfanın durumu, 5xx, soft 404, boş sayfalar (IDX-1)", "GSC soft-404 raporu (isteğe bağlı)"),
+    "CORE-006": ("K", ["IDX-4", "idx9.canonical", "idx6.alias_links"], ["IDX-4"], "varlık, hedef durumu, çakışmalar, kendine/başka sayfaya; kanonik olmayan adrese iç bağlantılar (IDX-4, IDX-6)", "Google'ın seçtiği canonical GSC ister (IDX-9, 20 sayfa)"),
+    "CORE-007": ("A", ["IDX-3", "idx6.links_to_redirect"], ["IDX-3"], "zincirler, döngüler, geçici yönlendirmeler, yönlenen adrese bağlantılar (IDX-3, IDX-6)", ""),
+    "CORE-008": ("K", ["idx2.no_redirect", "idx2.temporary"], ["IDX-2"], "http→https ve www/www'suz tek host'ta bitiyor (IDX-2)", "sondaki eğik çizgi ve büyük harf varyantları denenmiyor (S)"),
+    "CORE-009": ("K", ["RND-1", "RND-2", "RND-3", "RND-4"], ["RND-1", "RND-2"], "işlenmemiş ve işlenmiş HTML'de metin ve bağlantılar, tıklama/kaydırma ile açılan içerik, canvas/iframe (RND-1/2/3/4)", "işlemedeki konsol/API hataları (M); Google'ın kendi görünümü GSC canlı testi ister"),
+    "CORE-010": ("A", ["idx7.deep"], ["IDX-7"], "sayfa başına tıklama derinliği (IDX-7, sayfa gruplama)", "GSC adres envanteri (isteğe bağlı)"),
+    "CORE-011": ("M-M", ["idx6.tracking"], [], "yalnız izleme parametreli iç bağlantılar (IDX-6)", "şablon başına parametre/filtre kombinasyonları (Stage 7); hangi filtrenin dizine girmesi gerektiği kişinin kararı"),
+    "CORE-012": ("A", ["str9.bad_codes", "str9.relative", "str9.same_code", "str9.no_return", "str9.status", "str9.target_page", "str9.cluster",
+                       "str9.wrong_language"], ["STR-9"], "hreflang söz dizimi, karşılıklı bağlantı, hedefler (STR-9); tek dilli sitede uygulanamaz", ""),
     "CORE-013": ("K", ["PRF-3"], ["PRF-3"], "ücretsiz anahtarla CrUX saha verisi: alan adı ve en çok 5 adres (PRF-3)", "sayfa türü başına örneklem (S); GSC CWV raporu"),
     "CORE-014": ("K", ["tseo1.blocking_scripts", "RND-6"], ["TSEO-1"], "<head> içinde engelleyen script'ler, HTML ağırlığı, geç başlayan içerik (TSEO-1, RND-6)", "render'ı engelleyen CSS ve üçüncü taraf script bütçesi (M)"),
-    "CORE-015": ("K", ["tseo1.no_viewport", "tseo1.no_zoom", "RND-4"], ["TSEO-1"], "viewport, yakınlaştırma, canvas/iframe içerik (TSEO-1, RND-4)", "dokunma hedefleri, yazı boyutu, mobil menü: mobil işleme (M) ya da kişi"),
-    "CORE-016": ("K", ["STR-7"], ["STR-7"], "100 KB üstü görseller, boyutsuz görseller, biçimler, preload türü (STR-7)", "gerçek LCP öğesi ve onun lazy-load'u (M)"),
+    "CORE-015": ("K", ["tseo1.no_viewport", "tseo1.no_zoom"], ["TSEO-1"], "viewport, yakınlaştırma (TSEO-1)", "dokunma hedefleri, yazı boyutu, mobil menü: mobil işleme (M) ya da kişi"),
+    "CORE-016": ("K", ["str7.heavy", "str7.over_100kb", "str7.unsized", "str7.formats", "str7.format_references", "str7.format_unassessed",
+                       "str7.preload_type"], ["STR-7"], "100 KB üstü görseller, boyutsuz görseller, biçimler, preload türü (STR-7)", "gerçek LCP öğesi ve onun lazy-load'u (M)"),
     "CORE-017": ("K", ["tseo1.url_slug_unclear", "tseo1.url_decomposed"], ["TSEO-1"], "adres düzenine göre şablonlar, anlaşılmaz adres parçaları (sayfa gruplama, TSEO-1)", "hiyerarşinin doğru olup olmadığı kişinin kararı"),
     "CORE-018": ("K", ["idx7.orphan"], ["IDX-7"], "tam taramada iç bağlantısı olmayan sitemap sayfaları (IDX-7)", "GSC/GA4'teki yetim sayfalar GSC ister"),
-    "CORE-019": ("K", ["str3.crumb_no_list", "idx7.product_no_category"], ["STR-3"], "BreadcrumbList'siz iz, kategoriye bağlantısı olmayan ürün (STR-3, IDX-7)", "iz ile adres ağacının eşleşmesi (S)"),
-    "CORE-020": ("K", ["STR-14"], ["STR-14"], "boş ve genel bağlantı metinleri, sayfa başına bağlantı puanı (STR-14, sayfa gruplama)", "bağlantı metninin bağlama uygunluğu: AI/kişi"),
-    "CORE-021": ("K", ["idx7.pagination_unlinked", "RND-3"], ["IDX-7"], "<a href> olmayan sayfalama, kaydırma/tıklama arkasındaki içerik (IDX-7, RND-3)", "sonsuz kaydırma için taranabilir yedek (M)"),
+    "CORE-019": ("K", ["idx7.product_no_category"], ["IDX-7"], "breadcrumb ya da içerikte kategori bağlantısı olmayan ürünler (IDX-7)", "iz ile adres ağacının eşleşmesi (S)"),
+    "CORE-020": ("K", ["STR-14"], ["STR-14"], "boş ve genel bağlantı metinleri (STR-14)", "bağlantı metninin bağlama uygunluğu: AI/kişi"),
+    "CORE-021": ("K", ["idx7.pagination_unlinked", "STR-19"], ["IDX-7"], "<a href> olmayan sayfalama, adressiz tıklanabilir kartlar ve bağlantılar (IDX-7, STR-19)", "sonsuz kaydırma için taranabilir yedek (M)"),
     "CORE-022": ("A", ["idx6.broken", "idx1.4xx.referenced"], ["IDX-6"], "kaynak sayfalarıyla kırık iç bağlantılar (IDX-6, IDX-1)", ""),
     "CORE-023": ("K", ["STR-1", "tseo1.title_short", "tseo1.title_long"], ["STR-1"], "eksik, ortak, genel title'lar, uzunluk bantları (STR-1, TSEO-1)", "niyet uyumu GSC sorguları ister"),
-    "CORE-024": ("A", ["STR-2", "tseo1.heading_jump"], ["STR-2"], "eksik/boş/gizli/birden çok H1, atlanan düzeyler, ham ve işlenmiş (STR-2, TSEO-1)", ""),
+    "CORE-024": ("A", ["STR-2", "tseo1.heading_jump", "tseo1.heading_jumps", "tseo1.heading_jump_varied", "shared.heading_jump",
+                       "shared.heading_jump_varied"], ["STR-2"], "eksik/boş/gizli/birden çok H1, atlanan düzeyler, ham ve işlenmiş (STR-2, TSEO-1)", ""),
     "CORE-025": ("K", ["STR-16", "tseo1.description_short", "tseo1.description_long"], ["STR-16"], "ortak açıklamalar, uzunluk bantları (STR-16, TSEO-1)", "doğru ve yanıltıcı olmaması: kişi"),
-    "CORE-026": ("K", ["str7.alt_missing", "str7.no_alt", "str7.image_no_alt", "str7.placeholder", "str7.alt_split"], ["STR-7"], "eksik ve yer tutucu alt metinler (STR-7)", "açıklayıcılık, anahtar kelime doldurma: AI/kişi"),
+    "CORE-026": ("K", ["str7.alt_missing", "str7.no_alt", "str7.image_no_alt", "str7.placeholder", "str7.alt_split", "shared.image_no_alt"],
+                 ["STR-7"], "eksik ve yer tutucu alt metinler (STR-7)", "açıklayıcılık, anahtar kelime doldurma: AI/kişi"),
     "CORE-027": ("A", ["STR-12", "str9.lang_mismatch", "str9.no_lang", "str9.bad_lang"], ["STR-12"], "bildirilen ve gerçek dil, başka dildeki bölgeler (STR-9, STR-12)", ""),
     "CORE-028": ("G", [], [], "", "GSC sorguları ve SERP örnekleri ister"),
     "CORE-029": ("G", [], [], "", "GSC sorgu+sayfa verisi ister"),
     "CORE-030": ("A", ["IDX-8", "STR-15", "RND-7"], ["IDX-8"], "birebir ve yakın kopyalar, konum şablonları, ince sayfalar, ortak blok payı (IDX-8, STR-15, RND-7)", ""),
-    "CORE-031": ("K", ["STR-6", "idx5.stamped"], ["STR-6"], "eksik/gelecek/üretilmiş tarihler (STR-6, IDX-5)", "iddiaların doğruluğu: kişi"),
-    "CORE-032": ("P", ["STR-21"], [], "temel sayfalar var mı (STR-21)", "sayfanın kullanıcı sorularını karşılaması: kişi/AI"),
+    "CORE-031": ("K", ["STR-6"], ["STR-6"], "eksik/gelecek/üretilmiş tarihler (STR-6)", "iddiaların doğruluğu: kişi"),
+    "CORE-032": ("P", [], [], "", "sayfanın kullanıcı sorularını karşılaması: kişi/AI"),
     "CORE-033": ("P", [], [], "", "özgün, doğrulanabilir fayda: kişi"),
-    "CORE-034": ("A", ["str3.required", "str3.invalid_values", "str3.unparsed", "str3.url_error", "str3.dangling_id", "str3.type_clash", "STR-11"], ["STR-3"], "ayrıştırma hataları, zorunlu alanlar, geçersiz değerler, çelişkiler (STR-3, STR-11)", "önerilen ('uyarı') alanlar (S)"),
-    "CORE-035": ("K", ["str3.expected_type", "str3.maybe_product", "STR-4"], ["STR-3"], "ürün sayfalarında Product, fiyat/stok ile sayfa (STR-3, STR-4)", "liste sayfasında tek ürün gibi Product işaretlemesi: kural yok (S)"),
-    "CORE-036": ("K", ["str3.no_organization", "str3.organization_broken", "str3.organization_gaps", "STR-5"], ["STR-3"], "Organization var, eksiksiz, adlar tutarlı (STR-3, STR-5)", "gerçek şirkete uygunluk: kişi"),
-    "CORE-037": ("K", ["STR-4", "STR-11"], ["STR-4"], "işaretleme değerleri ile sayfa, çelişen değerler (STR-4, STR-11)", "sahte veri: kişi"),
-    "CORE-038": ("K", ["STR-21", "STR-5"], ["STR-21"], "hakkımızda/iletişim sayfaları bulundu, adlar tutarlı (STR-21, STR-5)", "gerçek kimlik: kişi"),
+    "CORE-034": ("A", ["str3.required", "str3.invalid_values", "str3.unparsed", "str3.url_error", "str3.url_differs", "str3.dangling_id",
+                       "str3.type_clash", "str3.crumb_no_list", "STR-11"], ["STR-3"], "ayrıştırma hataları, zorunlu alanlar, geçersiz değerler, çelişkiler (STR-3, STR-11)", "önerilen ('uyarı') alanlar (S)"),
+    "CORE-035": ("K", ["str3.expected_type", "str3.maybe_product"], ["STR-3"], "sayfa türüne uygun yapısal veri türü (STR-3)", "liste sayfasında tek ürün gibi Product işaretlemesi: kural yok (S)"),
+    "CORE-036": ("K", ["str3.no_organization", "str3.organization_broken", "str3.organization_gaps", "STR-5"], ["STR-3"], "Organization var, eksiksiz, marka adı tutarlı (STR-3, STR-5)", "gerçek şirkete uygunluk: kişi"),
+    "CORE-037": ("K", ["str4.differs", "str4.not_shown", "str4.other_state"], ["STR-4"], "işaretleme değerleri ile görünen sayfa (STR-4)", "sahte veri: kişi"),
+    "CORE-038": ("K", ["STR-21"], ["STR-21"], "hakkımızda/iletişim gibi temel sayfalar bulundu (STR-21)", "gerçek kimlik: kişi"),
     "CORE-039": ("K", ["str3.article_no_author"], ["STR-3"], "yazarı olmayan yazılar (STR-3)", "gerçek uzman, kaynaklar: kişi"),
-    "CORE-040": ("K", ["STR-21", "STR-8", "str4.price_unclear"], ["STR-21"], "koşul/politika sayfaları, fiyat tabloları, belirsiz fiyatlar (STR-21, STR-8, STR-4)", "kolay ulaşılır ve açık olması: kişi"),
+    "CORE-040": ("K", ["str8.pricing", "str4.price_unclear"], ["STR-8"], "fiyat tabloları, belirsiz fiyatlar (STR-8, STR-4)", "kolay ulaşılır ve açık olması: kişi"),
     "CORE-041": ("A", ["idx2.expires", "idx2.invalid", "tseo1.mixed", "RND-5"], ["IDX-2"], "sertifika, karışık içerik, giriş/ödeme duvarları (IDX-2, TSEO-1, RND-5)", ""),
     "CORE-042": ("P", [], [], "", "iddiaların kanıtlanabilirliği: uzman/hukuk"),
     "CORE-043": ("G", [], [], "", "sayfa türüne göre GSC performansı"),
-    "CORE-044": ("K", ["ACC-5", "ACC-4", "ACC-9"], ["ACC-4"], "kullanıcı aracısına göre bot erişimi, hız sınırları, verilirse loglar (ACC-4, ACC-5, ACC-9)", "taşıma kayıpları GSC geçmişi ister"),
+    "CORE-044": ("K", ["ACC-5", "ACC-4"], ["ACC-4"], "arama motoru botunun kullanıcı aracısıyla erişim, verilirse loglar (ACC-4, ACC-5)", "taşıma kayıpları GSC geçmişi ister; Maya'nın kendi tarayıcısının engellenmesi (ACC-9) Google'ın erişimini göstermez"),
+}
+# DECISIONS 325: what an "Uygun" row says was checked ("Bulgu yok: 50 sayfada canonical kontrol edildi"), and its unit:
+# "page" (the pages read, or of that page type) or "host" (the site's host names).
+CHECKED = {
+    "CORE-001": ("robots.txt erişimi ve kuralları", "host"), "CORE-002": ("XML sitemap dosyaları ve adresleri", "host"),
+    "CORE-004": ("meta robots ve X-Robots-Tag", "page"), "CORE-005": ("HTTP durum kodu, soft 404 ve boş sayfa", "page"),
+    "CORE-007": ("yönlendirme zinciri ve döngüsü", "page"), "CORE-010": ("ana sayfadan tıklama derinliği", "page"),
+    "CORE-012": ("hreflang etiketleri", "page"), "CORE-022": ("kırık iç bağlantı", "page"),
+    "CORE-024": ("H1 ve başlık düzeyleri", "page"), "CORE-027": ("dil etiketi ve içeriğin dili", "page"),
+    "CORE-030": ("birebir ve yakın kopya, ince içerik", "page"), "CORE-034": ("yapısal verinin ayrıştırılması ve zorunlu alanları", "page"),
+    "CORE-041": ("HTTPS sertifikası ve karışık içerik", "host"),
+    "İndeksleme & İç Link": ("durum kodu, noindex, robots, canonical ve tıklama derinliği", "page"),
+    "SEC-046": ("metnin HTML'de görünmesi ve indeksleme", "page"), "SEC-088": ("kartların bağlantısı, sayfalama, boş ve kopya listeler", "page"),
+    "SEC-109": ("noindex, robots, site içi arama ve hreflang", "page"),
 }
 GENERIC = {
     "On-Page & Arama Niyeti": ("K", ["STR-1", "STR-2", "STR-16", "tseo1.title_short", "tseo1.title_long", "tseo1.description_short",
                                      "tseo1.description_long", "IDX-8", "STR-15"], ["STR-1", "STR-2"],
                                "bu türün sayfalarında title, H1, açıklama, kopya ve ince sayfa (STR-1/2/16, TSEO-1, IDX-8, STR-15)",
                                "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister"),
-    "İndeksleme & İç Link": ("A", ["IDX-1", "acc3.noindex", "acc3.robots_noindex", "acc2.blocks", "IDX-4", "IDX-7", "idx1.4xx"],
+    "İndeksleme & İç Link": ("A", ["IDX-1", "acc3.noindex", "acc3.robots_noindex", "acc2.blocks", "IDX-4", "IDX-7"],
                              ["IDX-1", "ACC-3", "IDX-4"],
                              "bu türün sayfalarında durum, noindex, robots, canonical, iç bağlantı ve tıklama derinliği (IDX-1, ACC-3, ACC-2, IDX-4, IDX-7)",
                              "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)"),
@@ -88,7 +112,7 @@ SEC_SPECIFIC = {
     "SEC-001": ("M-M", ["idx6.tracking", "IDX-8"], [], "izleme parametreleri, kopyalar", "şablon başına filtre/parametre kombinasyonları (Stage 7); hangi filtrenin dizine gireceği: kişi"),
     "SEC-004": ("K", ["STR-4", "str3.product_no_identifier", "IDX-4"], ["STR-4"], "fiyat/stok işaretlemesi ile sayfa, GTIN/MPN, varyant canonical'ları (STR-4, STR-3, IDX-4)", "ProductGroup/hasVariant (S); gerçek stok: Merchant Center/kişi"),
     "SEC-007": ("K", ["idx7.deep"], ["IDX-7"], "kategori sayfalarının ana sayfadan derinliği", "ana sayfadan bağlantısı olmayan 1. sıra türü kuralı (S); marka niyeti: kişi"),
-    "SEC-010": ("K", ["idx8.location_template", "str3.required", "STR-5"], ["IDX-8"], "konum şablonu kopyaları, LocalBusiness alanları (IDX-8, STR-3)", "mağazalar arasında adres/saat tutarlılığı (M)"),
+    "SEC-010": ("K", ["idx8.location_template", "str3.required"], ["IDX-8"], "konum şablonu kopyaları, LocalBusiness alanları (IDX-8, STR-3)", "mağazalar arasında adres/saat tutarlılığı (M)"),
     "SEC-013": ("M-M", ["acc3.unavailable_passed"], [], "unavailable_after tarihi geçmiş (ACC-3)", "bitiş tarihi geçmiş ama 200 dönen ve bağlantı alan kampanya sayfaları (M)"),
     "SEC-016": ("K", ["STR-21"], ["STR-21"], "iade/kargo/iletişim sayfaları bulundu ve erişilebilir (STR-21, IDX-1)", "güncellik: kişi"),
     "SEC-019": ("K", ["idx7.deep"], ["IDX-7"], "ürün/destek sayfalarının tıklama derinliği (sayfa gruplama)", "sayfa türü başına derinlik eşiği kuralı (S)"),
@@ -99,7 +123,7 @@ SEC_SPECIFIC = {
     "SEC-034": ("P", ["STR-6"], [], "belge tarihleri (STR-6)", "risk ve kapsam metni: uyum ekibi"),
     "SEC-037": ("K", ["STR-8", "STR-6", "idx7.deep"], ["STR-8"], "ücret tabloları, tarihler, derinlik (STR-8, STR-6)", "mobilde okunurluk: kişi"),
     "SEC-040": ("K", ["acc3.noindex", "IDX-1", "RND-5"], ["ACC-3"], "indeksleme, giriş duvarları (ACC-3, IDX-1, RND-5)", "adımlar ve ön koşullar: kişi"),
-    "SEC-043": ("K", ["STR-21", "STR-5"], ["STR-21"], "hakkımızda/iletişim/destek sayfaları, tutarlı adlar (STR-21, STR-5)", "lisans bilgisi: kişi"),
+    "SEC-043": ("K", ["STR-21"], ["STR-21"], "hakkımızda/iletişim/destek sayfaları (STR-21)", "lisans bilgisi: kişi"),
     "SEC-046": ("A", ["RND-1", "RND-2", "acc3.noindex", "IDX-1"], ["RND-1"], "platform sayfalarının metni HTML'de, indeksleme (RND-1/2, ACC-3)", ""),
     "SEC-049": ("K", ["IDX-8"], ["IDX-8"], "birbirine çok benzeyen kart sayfaları (IDX-8)", "avantaj/ücret farkları: kişi"),
     "SEC-052": ("M-M", ["acc3.unavailable_passed"], [], "unavailable_after tarihi geçmiş (ACC-3)", "biten kampanya sayfaları (M), SEC-013 gibi"),
@@ -108,14 +132,14 @@ SEC_SPECIFIC = {
     "SEC-061": ("G", [], [], "", "aranabilir çözümler ile sorgular GSC ister"),
     "SEC-064": ("K", ["str3.article_no_author", "STR-6"], ["STR-3"], "yazar ve tarihler (STR-3, STR-6)", "inceleyen/lastReviewed işaretlemesi ya da görünür 'inceleyen' (S); tıbbi doğruluk: hekim"),
     "SEC-067": ("K", ["IDX-8", "str3.expected_type"], ["IDX-8"], "birbirine çok benzeyen biyografiler (IDX-8)", "doktor sayfalarında Physician/Person işaretlemesi (S); özgeçmiş doğruluğu: kişi"),
-    "SEC-070": ("K", ["idx8.location_template", "str3.required", "STR-5"], ["IDX-8"], "konum kopyaları, LocalBusiness alanları (IDX-8, STR-3)", "sayfalar arasında NAP tutarlılığı (M)"),
+    "SEC-070": ("K", ["idx8.location_template", "str3.required"], ["IDX-8"], "konum kopyaları, LocalBusiness alanları (IDX-8, STR-3)", "sayfalar arasında NAP tutarlılığı (M)"),
     "SEC-073": ("K", ["idx7.deep", "STR-21"], ["IDX-7"], "tedavi sayfalarının derinliği, hakkımızda/iletişim (sayfa gruplama, STR-21)", "acil/yasal iletişimin görünürlüğü: kişi; ana sayfadan bağlantısı olmayan 1. sıra türü (S)"),
     "SEC-076": ("K", ["RND-1", "RND-2"], ["RND-1"], "yalnız JS sonrası gelen içerik (RND-1/2)", "ham HTML'de tel: bağlantısı ve form (S); mobil akış: kişi"),
     "SEC-079": ("P", [], [], "", "anlaşmalı kurum listesinin güncelliği: kişi"),
     "SEC-082": ("K", ["IDX-4", "IDX-8", "RND-3"], ["IDX-4"], "varyant canonical'ları, kopyalar, sekme içeriği (IDX-4, IDX-8, RND-3)", "teknik verilerin doğruluğu: kişi"),
     "SEC-085": ("K", ["STR-6"], ["STR-6"], "tarihler (STR-6)", "PDF fiyat listeleri: okunur, bağlantılı, dizinlenebilir (M)"),
     "SEC-088": ("A", ["STR-19", "idx7.pagination_unlinked", "str15.empty_collections", "IDX-8"], ["STR-19", "IDX-7"], "href'siz kartlar, sayfalama, boş listeler, kopyalar (STR-19, IDX-7, STR-15, IDX-8)", ""),
-    "SEC-091": ("K", ["idx8.location_template", "str3.required", "STR-5"], ["IDX-8"], "konum kopyaları, LocalBusiness (IDX-8, STR-3)", "saat/NAP tutarlılığı (M)"),
+    "SEC-091": ("K", ["idx8.location_template", "str3.required"], ["IDX-8"], "konum kopyaları, LocalBusiness (IDX-8, STR-3)", "saat/NAP tutarlılığı (M)"),
     "SEC-094": ("K", ["RND-1", "RND-2", "RND-3"], ["RND-1"], "yalnız JS sonrası gelen konfigüratör içeriği (RND-1/2/3)", "seçilen donanım bağlantıları: kişi"),
     "SEC-097": ("M-S", [], [], "bağlantı grafiği var", "rehberlerin 1. sıra model sayfalarına bağlantısı (S)"),
     "SEC-100": ("K", ["STR-8", "RND-1", "RND-2"], ["STR-8"], "fiyat tabloları, yalnız JS sonrası tablo (STR-8, RND-1/2)", "aylık/yıllık, limitlerin açıklığı: kişi"),
@@ -124,14 +148,14 @@ SEC_SPECIFIC = {
     "SEC-109": ("A", ["ACC-3", "ACC-2", "acc3.utility_indexable", "STR-9"], ["ACC-3", "ACC-2"], "doküman index/noindex, robots, dizinlenebilir site içi arama, hreflang (ACC-3, ACC-2, STR-9)", "dokümanlardan özellik sayfalarına bağlantılar (S)"),
     "SEC-112": ("P", [], [], "", "referanslarda ölçülebilir sonuç: kişi"),
     "SEC-115": ("K", ["str3.expected_type"], ["STR-3"], "beklenen Product/Service işaretlemesi (STR-3)", "kapasite/bakım bilgisi: kişi"),
-    "SEC-118": ("K", ["STR-21", "STR-5"], ["STR-21"], "iletişim sayfası, adlar (STR-21, STR-5)", "hizmet bölgesi, form akışı: kişi"),
+    "SEC-118": ("K", ["STR-21"], ["STR-21"], "iletişim sayfası (STR-21)", "hizmet bölgesi, form akışı: kişi"),
     "SEC-121": ("P", [], [], "", "koşulların güncelliği: kişi"),
     "SEC-124": ("K", ["IDX-8", "STR-1"], ["IDX-8"], "birbirine çok benzeyen çözüm sayfaları, ortak title'lar (IDX-8, STR-1)", "niyet/anahtar kelime örtüşmesi GSC ister"),
     "SEC-127": ("P", ["STR-8", "STR-4"], [], "fiyat tabloları (STR-8)", "kapsam ve fiyat koşulları: kişi"),
     "SEC-130": ("K", ["RND-1", "RND-2"], ["RND-1"], "yalnız JS sonrası CTA/form (RND-1/2)", "mobil test: kişi"),
     "SEC-133": ("P", [], [], "", "sözleşme ve iddialar: hukuk"),
     "SEC-136": ("K", ["idx8.location_template", "IDX-8"], ["IDX-8"], "şehir/ilçe şablon kopyaları (IDX-8)", "gerçek hizmet kapsamı: kişi"),
-    "SEC-139": ("K", ["STR-5"], ["STR-21"], "iletişim sayfası, adlar (STR-21, STR-5)", "HTML'de/işaretlemede tel: bağlantısı ve çalışma saatleri (S); mobil CTA: kişi"),
+    "SEC-139": ("K", ["STR-21"], ["STR-21"], "iletişim sayfası (STR-21)", "HTML'de/işaretlemede tel: bağlantısı ve çalışma saatleri (S); mobil CTA: kişi"),
     "SEC-142": ("K", ["RND-1", "RND-2"], ["RND-1"], "yalnız JS sonrası gelen içerik (RND-1/2)", "ücret/iptal metni: kişi"),
     "SEC-145": ("K", ["idx7.deep"], ["IDX-7"], "hizmet sayfalarının tıklama derinliği (sayfa gruplama)", "ana sayfadan bağlantısı olmayan 1. sıra türü (S)"),
     "SEC-148": ("G", [], [], "", "karar soruları ile sorgu niyeti GSC ister"),
@@ -191,7 +215,7 @@ DRAFTS = [
          "Her şubenin ayrı adresini, adres/telefon/çalışma saatini ve Restaurant/LocalBusiness işaretlemesini denetle.",
          "Her şube tekil sayfada; adres ve saatler sayfada ve işaretlemede tutarlı.",
          "Crawler + Rich Results Test", 5, "Her şubeye ayrı sayfa ve tutarlı LocalBusiness bilgisi ver.",
-         ("K", ["idx8.location_template", "str3.required", "STR-5"], ["IDX-8"], "konum kopyaları, LocalBusiness alanları (IDX-8, STR-3)", "şubeler arası NAP tutarlılığı (M)"))),
+         ("K", ["idx8.location_template", "str3.required"], ["IDX-8"], "konum kopyaları, LocalBusiness alanları (IDX-8, STR-3)", "şubeler arası NAP tutarlılığı (M)"))),
         ("Rezervasyon / sipariş", ("Rezervasyon ve sipariş yolu",
          "Rezervasyon/sipariş CTA'larını, üçüncü taraf bağlantılarını ve JS formunun mobil erişimini test et.",
          "Rezervasyon/sipariş yolu çalışır; form öncesi gerekli bilgi HTML'de.",
@@ -206,7 +230,7 @@ DRAFTS = [
          "Telefon, adres, çalışma saatleri ve harita bilgisinin görünürlüğünü kontrol et.",
          "İletişim bilgileri ve saatler açık, tıklanabilir ve güncel.",
          "Crawler + manuel", 4, "Telefonu tıklanabilir, saatleri güncel ve görünür yap.",
-         ("K", ["STR-5"], ["STR-21"], "iletişim sayfası, adlar (STR-21, STR-5)", "saatlerin güncelliği: kişi"))),
+         ("K", ["STR-21"], ["STR-21"], "iletişim sayfası (STR-21)", "saatlerin güncelliği: kişi"))),
     ]),
 ]
 RANK_WEIGHTS = (1.0, 0.85, 0.7, 0.55, 0.4, 0.3)
@@ -247,7 +271,8 @@ def build() -> dict:
         st, rules, need, cov, miss = CORE[c["ID"]]
         out_core.append({"id": c["ID"], "group": c["Audit Grubu"], "check": c["SEO Kontrolü"], "how": c["Nasıl Kontrol Edilir?"],
                          "criterion": c["Başarı Kriteri"], "tool": c["Araç / Kanıt"], "impact": _num(c["Etki (1-5)"]),
-                         "action": c["Önerilen Aksiyon"], "status": st, "rules": rules, "needs": need, "covered": cov, "missing": miss})
+                         "action": c["Önerilen Aksiyon"], "status": st, "rules": rules, "needs": need, "covered": cov, "missing": miss,
+                         "checked": CHECKED.get(c["ID"])})
     type_id = {(t["sector"], t["page_type"]): (t["profile"], t["type_id"]) for t in out_types}
     for c in sec:
         dim = c["Audit Boyutu"]
@@ -257,7 +282,7 @@ def build() -> dict:
                         "dimension": dim, "check": c["SEO Kontrolü"], "how": c["Nasıl Kontrol Edilir?"], "criterion": c["Başarı Kriteri"],
                         "tool": c["Araç / Kanıt"], "impact": _num(c["Etki (1-5)"]), "weight": _num(c["Sayfa Ağırlığı"]),
                         "action": c["Önerilen Aksiyon"], "status": st, "rules": rules, "needs": need, "covered": cov, "missing": miss,
-                        "profile": pid, "type_id": tid, "draft": False})
+                        "profile": pid, "type_id": tid, "draft": False, "checked": CHECKED.get(c["ID"]) or CHECKED.get(dim)})
     # draft rows: the generic two from the team's own generic wording (SEC-002/003, "Kategori ve listeleme")
     gen = {r["dimension"]: r for r in out_sec if r["id"] in ("SEC-002", "SEC-003")}
     n = 0
@@ -273,7 +298,7 @@ def build() -> dict:
             out_sec.append({"id": f"SEC-T{n:02d}", "sector": sector, "rank": rank, "page_type": name, "dimension": "Sektöre Özel",
                             "check": check, "how": how, "criterion": crit, "tool": tool, "impact": impact, "weight": weight,
                             "action": action, "status": st, "rules": rules, "needs": need, "covered": cov, "missing": miss,
-                            "profile": pid, "type_id": ids[name], "draft": True})
+                            "profile": pid, "type_id": ids[name], "draft": True, "checked": None})
             for dim in ("On-Page & Arama Niyeti", "İndeksleme & İç Link"):
                 g = gen[dim]
                 st, rules, need, cov, miss = GENERIC[dim]
@@ -282,7 +307,7 @@ def build() -> dict:
                                 "check": g["check"].replace("Kategori ve listeleme", name), "how": g["how"].replace("Kategori ve listeleme", name),
                                 "criterion": g["criterion"], "tool": g["tool"], "impact": g["impact"], "weight": weight,
                                 "action": g["action"], "status": st, "rules": rules, "needs": need, "covered": cov, "missing": miss,
-                                "profile": pid, "type_id": ids[name], "draft": True})
+                                "profile": pid, "type_id": ids[name], "draft": True, "checked": CHECKED.get(dim)})
     sectors = list(dict.fromkeys(t["sector"] for t in out_types))
     return {"_about": "Built by tools/sector_method_build.py from the team's workbook (DECISIONS 324); do not edit by hand.",
             "source": str(SOURCE.relative_to(ROOT)), "draft_note": DRAFT,

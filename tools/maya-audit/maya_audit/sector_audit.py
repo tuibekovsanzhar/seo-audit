@@ -52,6 +52,10 @@ REASON = {
     "clean_partial": "Bulgu yok ({covered}); kontrolün kapsamı kısmi.",
     "found": "Maya'nın bulgusu: {rules}.",
     "waiting": "Teyit bekliyor (Önce bunları kontrol edin): {rules}.",
+    "tentative": "Tahmini bulgu, teyit edilmedi: {rules}. Ölçülmüş ya da elle teyit edilmiş bir bulgu Durum'u belirler.",
+    "checked_pages": "Bulgu yok: {n} sayfada {what} kontrol edildi.",
+    "checked_type": "Bulgu yok: «{type}» türünden {n} sayfada {what} kontrol edildi.",
+    "checked_host": "Bulgu yok: {n} alan adında {what} kontrol edildi.",
 }
 EXTRA = ["Maya: Durum nedeni", "Maya kapsamı", "Maya kuralları", "Not"]
 SEVERE = ("S1", "S2", "S3")
@@ -68,8 +72,24 @@ def sector_of(profile_id: str | None) -> str | None:
 
 
 def _matches(f: dict, refs: list[str]) -> bool:
+    """DECISIONS 325: a check id ("IDX-4") matches every finding of that check; a rule id matches itself and its sub-ids
+    ("acc2.blocks" -> "acc2.blocks.sample"), never another rule that only starts the same ("acc3.noindex_listed")."""
     rid, cid = f.get("rule_id") or "", f.get("check_id") or ""
-    return any(r == cid or rid == r or rid.startswith(r + ".") or (r[:1].islower() and rid.startswith(r)) for r in refs)
+    return any(r == cid or rid == r or rid.startswith(r + ".") for r in refs)
+
+
+# DECISIONS 325: a problem that has not happened yet (a certificate still valid): "Hatalı" only at High or Blocker.
+FUTURE_RULES = ("idx2.expires",)
+HOST_CHECKS = ("ACC-1", "ACC-2", "IDX-2", "IDX-5")  # robots.txt, hosts and certificates, sitemaps: counted in host names
+
+
+def _host_level(f: dict) -> bool:
+    return bool(cs.host_level(f)) or (f.get("check_id") or "") in HOST_CHECKS
+
+
+def _hosts(urls: list[str]) -> int:
+    from urllib.parse import urlsplit
+    return len({(urlsplit(u).hostname or "").lower() for u in urls if u} - {""})
 
 
 def _spread(n: int, total: int) -> int:
@@ -98,6 +118,7 @@ class _Audit:
         self.low = bool(cs.low_coverage(report))
         self.measures = {u.rstrip("/"): r for u, r in (selection.get("_page_measures") or {}).items()}
         self.lists, self.title, self.words = lists, title, words
+        confirmations = selection.get("_confirmations") or {}
         self.items = []
         for g in selection["groups"]:
             if g.get("placement") in ("rejected", "own_limit"):
@@ -107,9 +128,13 @@ class _Audit:
                 if sev not in cs.PROBLEM:
                     continue
                 urls = cs.affected(m, lists)
-                self.items.append({"f": m, "sev": sev, "waiting": g.get("placement") == "confirm",
-                                   "kind": cs.rule_type(m.get("rule_id")), "urls": urls,
+                # DECISIONS 325: only a measured finding, or one a person confirmed, sets a Durum
+                conf = cs.confidence_class(m, confirmations)
+                self.items.append({"f": m, "sev": sev, "waiting": g.get("placement") == "confirm", "measured": conf == "measured",
+                                   "kind": cs.rule_type(m.get("rule_id")), "urls": urls, "host": _host_level(m),
                                    "read": [u for u in urls if u.rstrip("/") in read]})
+        self.hosts = max(_hosts(list(read)), 1)
+        self.claims: dict[tuple[str, str], str] = {}  # (finding id, page type) -> the one sector row it marks
 
     def best_page(self, urls: list[str]) -> str | None:
         return max(urls, key=lambda u: self.importance.get(u.rstrip("/")) or 0) if urls else None
@@ -139,21 +164,25 @@ def _evaluate(a: _Audit, row: dict, kind: str | None) -> dict:
             continue
         if kind is not None:
             urls = [u for u in x["read"] if a.ptype.get(u.rstrip("/")) == kind]
-            if not urls:
+            # one finding marks one sector row of a page type: the first of its rows that names its rule (DECISIONS 325)
+            if not urls or a.claims.setdefault((x["f"].get("id"), kind), row["id"]) != row["id"]:
                 continue
-        else:
-            urls = x["read"] if x["read"] else x["urls"]
+        else:  # a host-level finding names hosts, read or not: all of them (DECISIONS 325)
+            urls = x["urls"] if x["host"] or not x["read"] else x["read"]
         rel.append((x, urls))
-    acted = [(x, u) for x, u in rel if not x["waiting"]]
-    waiting = [(x, u) for x, u in rel if x["waiting"]]
+    acted = [(x, u) for x, u in rel if not x["waiting"] and x["measured"]]
+    tentative = [(x, u) for x, u in rel if x["waiting"] or not x["measured"]]
     out = {"durum": "Kontrol Edilmedi", "reason": "", "spread": None, "effort": None, "example": None, "evidence": "",
            "maya_action": "", "owner": ""}
     if acted:
-        out["durum"] = "Hatalı" if any(x["sev"] in SEVERE and x["kind"] == "issue" for x, _ in acted) else "Kısmen Uygun"
+        def fault(x):  # a confirmed issue of Blocker/High/Medium; a future problem (a valid certificate) only at High+
+            limit = ("S1", "S2") if (x["f"].get("rule_id") or "") in FUTURE_RULES else SEVERE
+            return x["sev"] in limit and x["kind"] == "issue"
+        out["durum"] = "Hatalı" if any(fault(x) for x, _ in acted) else "Kısmen Uygun"
         rules = sorted({x["f"].get("rule_id") or x["f"].get("check_id") or "" for x, _ in acted})
         out["reason"] = REASON["found"].format(rules=", ".join(rules))
         total = a.count.get(kind, 0) if kind is not None else len(a.read)
-        out["spread"] = max((_spread(len(u), total) if u and (kind != "home") else 5) for _, u in acted)
+        out["spread"] = max((_spread(len(u), total) if u and kind != "home" and not x["host"] else 5) for x, u in acted)
         notes = [note(x["f"].get("check_id") or "", x["f"].get("title") or "") for x, _ in acted]
         out["effort"] = max(EFFORT.get(n["effort"], 3) for n in notes)
         out["owner"] = " + ".join(dict.fromkeys(OWNERS.get(n["owner"], n["owner"]) for n in notes))
@@ -161,8 +190,8 @@ def _evaluate(a: _Audit, row: dict, kind: str | None) -> dict:
         out["example"] = a.best_page(urls)
         lines = []
         for x, us in sorted(acted, key=lambda p: ("S1", "S2", "S3", "S4").index(p[0]["sev"]))[:3]:
-            n = len(us)
-            line = a.name(x["f"]) + (f" ({n} sayfa)" if n else "")
+            n = _hosts(us) if x["host"] else len(us)
+            line = a.name(x["f"]) + ((f" ({n} alan adı)" if x["host"] else f" ({n} sayfa)") if n else "")
             ex = a.best_page(us)
             if ex:
                 value = measured(x["f"], ex, "tr", page=a.measures.get(ex.rstrip("/")), read=ex.rstrip("/") in a.read)
@@ -172,8 +201,9 @@ def _evaluate(a: _Audit, row: dict, kind: str | None) -> dict:
         out["evidence"] = "\n".join(lines)
         out["maya_action"] = "\n".join(dict.fromkeys(a.fix(x["f"]) for x, _ in acted if a.fix(x["f"])))[:2000]
         return out
-    if waiting:
-        out["reason"] = REASON["waiting"].format(rules=", ".join(sorted({x["f"].get("rule_id") or "" for x, _ in waiting})))
+    if tentative:
+        rules = ", ".join(sorted({x["f"].get("rule_id") or "" for x, _ in tentative}))
+        out["reason"] = REASON["waiting" if any(x["waiting"] for x, _ in tentative) else "tentative"].format(rules=rules)
         return out
     if kind is not None:
         out["example"] = a.top_of_type(kind)
@@ -195,6 +225,14 @@ def _evaluate(a: _Audit, row: dict, kind: str | None) -> dict:
         return out
     out["durum"] = "Uygun"
     out["reason"] = (REASON["clean_partial"] if any(s == "partial" for s in states) else REASON["clean"]).format(covered=row["covered"])
+    # DECISIONS 325: what was checked, and on how many pages or host names
+    what, unit = row.get("checked") or (row["covered"], "page")
+    if unit == "host":
+        out["evidence"] = REASON["checked_host"].format(n=a.hosts, what=what)
+    elif kind is not None:
+        out["evidence"] = REASON["checked_type"].format(n=a.count.get(kind, 0), type=row["page_type"], what=what)
+    else:
+        out["evidence"] = REASON["checked_pages"].format(n=len(a.read), what=what)
     return out
 
 

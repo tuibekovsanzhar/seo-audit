@@ -4130,3 +4130,44 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      (7) *Left for Stage 7* (BACKLOG): the 7 checks missing but automatable (CORE-011, SEC-001, -013, -052, -097, -163,
      -172). Schema: no bump (nothing new in report.json; the P level and the workbook are worked out at selection
      time). Tests: `tests/test_sector_method_324.py` (20).
+325. **"Sektör audit" XLSX precision pass: a finding answers only the check it answers; Durum by confirmed severity;
+     host names; what an "Uygun" row checked; a level on every card (Owner, 2026-11-08: items 1-5 as asked; the rule
+     lists, the "future problem" rule and the wording are agent defaults).** Global; nihan b3198942, moodisthastanesi
+     c581ff0a and airastana d12146fb were the test cases.
+     (1) *Mapping* (`tools/sector_method_build.py`, `maya_audit/sector_method.json`). A rule id matches itself and its
+     sub-ids only (`acc2.blocks` -> `acc2.blocks.sample`; no longer `acc3.noindex` -> `acc3.noindex_utility`); a check id
+     only where every rule of the check answers the row; every rule id is in at most one common row
+     (`test_each_rule_marks_at_most_one_common_row`). Changed: CORE-001 ACC-2 -> its four robots rules; CORE-002 without
+     `acc3.noindex_listed` (to CORE-004); CORE-003 IDX-9 -> its four state rules (`idx9.canonical` stays CORE-006);
+     CORE-004 + `acc3.noindex_listed`, `acc3.unavailable_*`, without `acc3.sitemap_noindex` (CORE-002); CORE-005 IDX-1
+     -> status/soft 404/empty rules, without `idx1.4xx.referenced` (CORE-022); CORE-006 + `idx6.alias_links`; CORE-007
+     without `idx4.chain` (a canonical chain, CORE-006); CORE-008 IDX-2 -> `idx2.no_redirect`, `idx2.temporary` (the
+     certificate is CORE-041 only); CORE-009 + RND-4; CORE-010 without `idx5.sitemap` (CORE-002) and `idx7.orphan`
+     (CORE-018); CORE-011 without IDX-8 (CORE-030); CORE-012 STR-9 -> the hreflang rules only (`str9.lang_mismatch`,
+     `no_lang`, `bad_lang` are CORE-027); CORE-015 without RND-4; CORE-016 STR-7 -> size, format, preload rules (alt text
+     is CORE-026, incl. `shared.image_no_alt`); CORE-019 without `str3.crumb_no_list` (CORE-034, with `str3.url_differs`);
+     CORE-021 RND-3 -> STR-19 (RND-3 is CORE-009); CORE-024 + the TSEO-1/shared heading-jump ids; CORE-031 without
+     `idx5.stamped` (a sitemap date, CORE-002); CORE-032 without STR-21; CORE-035 without STR-4; CORE-037 STR-4/STR-11 ->
+     `str4.differs/not_shown/other_state` (STR-11 is CORE-034); CORE-038 without STR-5 (the brand's naming is CORE-036);
+     CORE-040 STR-21/STR-8 -> `str8.pricing`, `str4.price_unclear`; CORE-044 without ACC-9 (Maya's crawler blocked says
+     nothing of Google); sector rows SEC-010/043/070/091/118/139 and the draft branch/contact rows without STR-5 (not
+     an address or contact detail); the generic "İndeksleme & İç Link" row without the duplicate `idx1.4xx`. Inside one
+     page type a finding marks one sector row: the first of the type's rows that names its rule (the specific row before
+     the two generic ones). The common (whole-site) row and the page type's row stay separate layers, as in the team's
+     method.
+     (2) *Durum.* Only a measured finding (engine `verified`) or one a person confirmed (review.json) sets a Durum;
+     estimated, inferred or unverified ones, and anything waiting in "Teyit edin", leave the row "Kontrol Edilmedi"
+     with "Tahmini bulgu, teyit edilmedi: …" / "Teyit bekliyor: …". "Hatalı" = an issue-type Blocker/High/Medium; a
+     problem that has not happened yet (`idx2.expires`, a valid certificate) is "Hatalı" only at High or Blocker
+     (14 days or fewer), else "Kısmen Uygun".
+     (3) *Units.* A host-level finding (certificate, host redirects, robots.txt, sitemaps: `host_level` or ACC-1/ACC-2/
+     IDX-2/IDX-5) counts its host names, read or not ("TLS sertifikasını yenileyin (2 alan adı)"), and is site-wide
+     (spread 5).
+     (4) *"Uygun".* "Bulgu / Kanıt" says what was checked and on how many: "Bulgu yok: 501 sayfada meta robots ve
+     X-Robots-Tag kontrol edildi.", "… 1 alan adında robots.txt erişimi ve kuralları …", "… «Kategori ve listeleme»
+     türünden 101 sayfada …" (a `checked` phrase and unit per row that can be "Uygun").
+     (5) *P levels.* Every problem card has one: pages that weigh 0 (search, cart) make it P3 (nihan card 11); Info
+     groups have none.
+     Results (current-engine copies, provider-free): nihan Uygun 12 -> 13, Kısmen 13 -> 12, Hatalı 2, Kontrol Edilmedi
+     35 (3 rows changed); moodist 9 / 6 -> 4 / 5 -> 3 / 42 -> 46 (7 rows); airastana 8 / 2 -> 0 / 3 -> 1 / 49 -> 53
+     (4 rows). Schema: no bump. Tests: `tests/test_sector_precision_325.py` (8).

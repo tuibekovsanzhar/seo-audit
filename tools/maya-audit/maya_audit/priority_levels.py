@@ -115,7 +115,7 @@ def _spots(ctx: Context, urls: list[str], finding: dict | None = None) -> list[t
 
 
 def label(group: dict, ctx: Context, lists: dict | None, confirmations: dict | None, lang: str = "tr") -> dict:
-    """{"level", "score", "auto_p0", "manual", "basis"} for one card-group; level None when nothing scores (Info)."""
+    """{"level", "score", "auto_p0", "manual", "basis"} for one card-group; level None only for an Info group."""
     best: dict | None = None
     auto: str | None = None
     words = REASONS[lang]
@@ -139,6 +139,8 @@ def label(group: dict, ctx: Context, lists: dict | None, confirmations: dict | N
             auto = auto or words["auto"].format(where=words["site"])
     score = best["score"] if best else 0.0
     computed = level(score)
+    if computed is None and any(severity(m) in PROBLEM for m in group.get("members") or []):
+        computed = "P3"  # DECISIONS 325: every problem card has a level; pages that weigh 0 (search, cart) make it P3
     if group.get("placement") == "confirm":
         auto = None  # not established yet: no automatic P0 for a finding waiting in "Teyit edin"
     mark = None

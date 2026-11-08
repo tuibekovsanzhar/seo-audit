@@ -1009,14 +1009,21 @@
    "status": "A",
    "rules": [
     "ACC-1",
-    "ACC-2"
+    "acc2.blocks",
+    "acc2.mismatch",
+    "acc2.precedence",
+    "acc2.retired"
    ],
    "needs": [
     "ACC-1",
     "ACC-2"
    ],
    "covered": "robots.txt durumu, boyutu, HTML dönmesi; bot başına kurallar; engellenen kilit sayfalar (ACC-1, ACC-2)",
-   "missing": ""
+   "missing": "",
+   "checked": [
+    "robots.txt erişimi ve kuralları",
+    "host"
+   ]
   },
   {
    "id": "CORE-002",
@@ -1030,14 +1037,17 @@
    "status": "A",
    "rules": [
     "IDX-5",
-    "acc3.sitemap_noindex",
-    "acc3.noindex_listed"
+    "acc3.sitemap_noindex"
    ],
    "needs": [
     "IDX-5"
    ],
    "covered": "sitemap bulunuyor; yönlenen/404/noindex/taslak adresler (örneklem), lastmod (IDX-5, ACC-3)",
-   "missing": "sitemap adresinin canonical'ı başka sayfayı gösteriyorsa raporlanmıyor (S)"
+   "missing": "sitemap adresinin canonical'ı başka sayfayı gösteriyorsa raporlanmıyor (S)",
+   "checked": [
+    "XML sitemap dosyaları ve adresleri",
+    "host"
+   ]
   },
   {
    "id": "CORE-003",
@@ -1050,13 +1060,17 @@
    "action": "Sayfa tipine göre indeksleme sorunlarını gider.",
    "status": "G",
    "rules": [
-    "IDX-9"
+    "idx9.no_rule",
+    "idx9.noindex",
+    "idx9.robots",
+    "idx9.state"
    ],
    "needs": [
     "IDX-9"
    ],
    "covered": "GSC anahtarı verilirse en çok 20 kilit sayfa için URL Inspection (IDX-9)",
-   "missing": "GSC Sayfalar raporu (sayfa türüne göre nedenler) GSC bağlantısı ister"
+   "missing": "GSC Sayfalar raporu (sayfa türüne göre nedenler) GSC bağlantısı ister",
+   "checked": null
   },
   {
    "id": "CORE-004",
@@ -1070,15 +1084,22 @@
    "status": "A",
    "rules": [
     "acc3.noindex",
+    "acc3.noindex_listed",
     "acc3.robots_noindex",
     "acc3.robots_outside_head",
-    "acc3.sitemap_noindex"
+    "acc3.unavailable_passed",
+    "acc3.unavailable_listed",
+    "acc3.unavailable_future"
    ],
    "needs": [
     "ACC-3"
    ],
    "covered": "her yanıtta meta robots ve X-Robots-Tag (ACC-3)",
-   "missing": ""
+   "missing": "",
+   "checked": [
+    "meta robots ve X-Robots-Tag",
+    "page"
+   ]
   },
   {
    "id": "CORE-005",
@@ -1091,13 +1112,24 @@
    "action": "Hatalı status ve soft-404 şablonlarını düzelt.",
    "status": "A",
    "rules": [
-    "IDX-1"
+    "idx1.4xx.unreferenced",
+    "idx1.5xx",
+    "idx1.connection",
+    "idx1.empty",
+    "idx1.error_text",
+    "idx1.soft404",
+    "idx1.timeout",
+    "judgment.empty"
    ],
    "needs": [
     "IDX-1"
    ],
-   "covered": "okunan her sayfanın durumu, 5xx, soft 404, boş şablonlar (IDX-1)",
-   "missing": "GSC soft-404 raporu (isteğe bağlı)"
+   "covered": "okunan her sayfanın durumu, 5xx, soft 404, boş sayfalar (IDX-1)",
+   "missing": "GSC soft-404 raporu (isteğe bağlı)",
+   "checked": [
+    "HTTP durum kodu, soft 404 ve boş sayfa",
+    "page"
+   ]
   },
   {
    "id": "CORE-006",
@@ -1111,13 +1143,15 @@
    "status": "K",
    "rules": [
     "IDX-4",
-    "idx9.canonical"
+    "idx9.canonical",
+    "idx6.alias_links"
    ],
    "needs": [
     "IDX-4"
    ],
-   "covered": "varlık, hedef durumu, çakışmalar, kendine/başka sayfaya (IDX-4)",
-   "missing": "Google'ın seçtiği canonical GSC ister (IDX-9, 20 sayfa)"
+   "covered": "varlık, hedef durumu, çakışmalar, kendine/başka sayfaya; kanonik olmayan adrese iç bağlantılar (IDX-4, IDX-6)",
+   "missing": "Google'ın seçtiği canonical GSC ister (IDX-9, 20 sayfa)",
+   "checked": null
   },
   {
    "id": "CORE-007",
@@ -1131,14 +1165,17 @@
    "status": "A",
    "rules": [
     "IDX-3",
-    "idx6.links_to_redirect",
-    "idx4.chain"
+    "idx6.links_to_redirect"
    ],
    "needs": [
     "IDX-3"
    ],
-   "covered": "zincirler, döngüler, geçici yönlendirmeler, yönlenen adrese bağlantılar (IDX-3, Stage 8a)",
-   "missing": ""
+   "covered": "zincirler, döngüler, geçici yönlendirmeler, yönlenen adrese bağlantılar (IDX-3, IDX-6)",
+   "missing": "",
+   "checked": [
+    "yönlendirme zinciri ve döngüsü",
+    "page"
+   ]
   },
   {
    "id": "CORE-008",
@@ -1151,13 +1188,15 @@
    "action": "Host/protokol standardını redirect + canonical ile sabitle.",
    "status": "K",
    "rules": [
-    "IDX-2"
+    "idx2.no_redirect",
+    "idx2.temporary"
    ],
    "needs": [
     "IDX-2"
    ],
    "covered": "http→https ve www/www'suz tek host'ta bitiyor (IDX-2)",
-   "missing": "sondaki eğik çizgi ve büyük harf varyantları denenmiyor (S)"
+   "missing": "sondaki eğik çizgi ve büyük harf varyantları denenmiyor (S)",
+   "checked": null
   },
   {
    "id": "CORE-009",
@@ -1172,14 +1211,16 @@
    "rules": [
     "RND-1",
     "RND-2",
-    "RND-3"
+    "RND-3",
+    "RND-4"
    ],
    "needs": [
     "RND-1",
     "RND-2"
    ],
-   "covered": "işlenmemiş ve işlenmiş HTML'de metin ve bağlantılar, işleme örneklemi (RND-1/2/3)",
-   "missing": "işlemedeki konsol/API hataları (M); Google'ın kendi görünümü GSC canlı testi ister"
+   "covered": "işlenmemiş ve işlenmiş HTML'de metin ve bağlantılar, tıklama/kaydırma ile açılan içerik, canvas/iframe (RND-1/2/3/4)",
+   "missing": "işlemedeki konsol/API hataları (M); Google'ın kendi görünümü GSC canlı testi ister",
+   "checked": null
   },
   {
    "id": "CORE-010",
@@ -1192,15 +1233,17 @@
    "action": "Link ağacını ve sitemap kapsamını iyileştir.",
    "status": "A",
    "rules": [
-    "idx7.deep",
-    "idx7.orphan",
-    "idx5.sitemap"
+    "idx7.deep"
    ],
    "needs": [
     "IDX-7"
    ],
-   "covered": "sayfa başına tıklama derinliği, yalnız sitemap'te olan sayfalar (IDX-7, sayfa gruplama)",
-   "missing": "GSC adres envanteri (isteğe bağlı)"
+   "covered": "sayfa başına tıklama derinliği (IDX-7, sayfa gruplama)",
+   "missing": "GSC adres envanteri (isteğe bağlı)",
+   "checked": [
+    "ana sayfadan tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "CORE-011",
@@ -1213,12 +1256,12 @@
    "action": "Parametre/filtre sayfaları için indeksleme politikası yaz.",
    "status": "M-M",
    "rules": [
-    "idx6.tracking",
-    "IDX-8"
+    "idx6.tracking"
    ],
    "needs": [],
-   "covered": "yalnız izleme parametreli bağlantılar ve kopyalar (IDX-6, IDX-8)",
-   "missing": "şablon başına parametre/filtre kombinasyonları (Stage 7); hangi filtrenin dizine girmesi gerektiği kişinin kararı"
+   "covered": "yalnız izleme parametreli iç bağlantılar (IDX-6)",
+   "missing": "şablon başına parametre/filtre kombinasyonları (Stage 7); hangi filtrenin dizine girmesi gerektiği kişinin kararı",
+   "checked": null
   },
   {
    "id": "CORE-012",
@@ -1231,13 +1274,24 @@
    "action": "Dil varyantı eşleşmelerini ve karşılıklı işaretlemeyi düzelt.",
    "status": "A",
    "rules": [
-    "STR-9"
+    "str9.bad_codes",
+    "str9.relative",
+    "str9.same_code",
+    "str9.no_return",
+    "str9.status",
+    "str9.target_page",
+    "str9.cluster",
+    "str9.wrong_language"
    ],
    "needs": [
     "STR-9"
    ],
-   "covered": "hreflang söz dizimi, karşılıklı bağlantı, hedefler, dil (STR-9); tek dilli sitede uygulanamaz",
-   "missing": ""
+   "covered": "hreflang söz dizimi, karşılıklı bağlantı, hedefler (STR-9); tek dilli sitede uygulanamaz",
+   "missing": "",
+   "checked": [
+    "hreflang etiketleri",
+    "page"
+   ]
   },
   {
    "id": "CORE-013",
@@ -1256,7 +1310,8 @@
     "PRF-3"
    ],
    "covered": "ücretsiz anahtarla CrUX saha verisi: alan adı ve en çok 5 adres (PRF-3)",
-   "missing": "sayfa türü başına örneklem (S); GSC CWV raporu"
+   "missing": "sayfa türü başına örneklem (S); GSC CWV raporu",
+   "checked": null
   },
   {
    "id": "CORE-014",
@@ -1276,7 +1331,8 @@
     "TSEO-1"
    ],
    "covered": "<head> içinde engelleyen script'ler, HTML ağırlığı, geç başlayan içerik (TSEO-1, RND-6)",
-   "missing": "render'ı engelleyen CSS ve üçüncü taraf script bütçesi (M)"
+   "missing": "render'ı engelleyen CSS ve üçüncü taraf script bütçesi (M)",
+   "checked": null
   },
   {
    "id": "CORE-015",
@@ -1290,14 +1346,14 @@
    "status": "K",
    "rules": [
     "tseo1.no_viewport",
-    "tseo1.no_zoom",
-    "RND-4"
+    "tseo1.no_zoom"
    ],
    "needs": [
     "TSEO-1"
    ],
-   "covered": "viewport, yakınlaştırma, canvas/iframe içerik (TSEO-1, RND-4)",
-   "missing": "dokunma hedefleri, yazı boyutu, mobil menü: mobil işleme (M) ya da kişi"
+   "covered": "viewport, yakınlaştırma (TSEO-1)",
+   "missing": "dokunma hedefleri, yazı boyutu, mobil menü: mobil işleme (M) ya da kişi",
+   "checked": null
   },
   {
    "id": "CORE-016",
@@ -1310,13 +1366,20 @@
    "action": "Görsel optimizasyonu ve lazy-load kullanımını düzenle.",
    "status": "K",
    "rules": [
-    "STR-7"
+    "str7.heavy",
+    "str7.over_100kb",
+    "str7.unsized",
+    "str7.formats",
+    "str7.format_references",
+    "str7.format_unassessed",
+    "str7.preload_type"
    ],
    "needs": [
     "STR-7"
    ],
    "covered": "100 KB üstü görseller, boyutsuz görseller, biçimler, preload türü (STR-7)",
-   "missing": "gerçek LCP öğesi ve onun lazy-load'u (M)"
+   "missing": "gerçek LCP öğesi ve onun lazy-load'u (M)",
+   "checked": null
   },
   {
    "id": "CORE-017",
@@ -1336,7 +1399,8 @@
     "TSEO-1"
    ],
    "covered": "adres düzenine göre şablonlar, anlaşılmaz adres parçaları (sayfa gruplama, TSEO-1)",
-   "missing": "hiyerarşinin doğru olup olmadığı kişinin kararı"
+   "missing": "hiyerarşinin doğru olup olmadığı kişinin kararı",
+   "checked": null
   },
   {
    "id": "CORE-018",
@@ -1355,7 +1419,8 @@
     "IDX-7"
    ],
    "covered": "tam taramada iç bağlantısı olmayan sitemap sayfaları (IDX-7)",
-   "missing": "GSC/GA4'teki yetim sayfalar GSC ister"
+   "missing": "GSC/GA4'teki yetim sayfalar GSC ister",
+   "checked": null
   },
   {
    "id": "CORE-019",
@@ -1368,14 +1433,14 @@
    "action": "Breadcrumb ve ilgili işaretleme tutarsızlıklarını düzelt.",
    "status": "K",
    "rules": [
-    "str3.crumb_no_list",
     "idx7.product_no_category"
    ],
    "needs": [
-    "STR-3"
+    "IDX-7"
    ],
-   "covered": "BreadcrumbList'siz iz, kategoriye bağlantısı olmayan ürün (STR-3, IDX-7)",
-   "missing": "iz ile adres ağacının eşleşmesi (S)"
+   "covered": "breadcrumb ya da içerikte kategori bağlantısı olmayan ürünler (IDX-7)",
+   "missing": "iz ile adres ağacının eşleşmesi (S)",
+   "checked": null
   },
   {
    "id": "CORE-020",
@@ -1393,8 +1458,9 @@
    "needs": [
     "STR-14"
    ],
-   "covered": "boş ve genel bağlantı metinleri, sayfa başına bağlantı puanı (STR-14, sayfa gruplama)",
-   "missing": "bağlantı metninin bağlama uygunluğu: AI/kişi"
+   "covered": "boş ve genel bağlantı metinleri (STR-14)",
+   "missing": "bağlantı metninin bağlama uygunluğu: AI/kişi",
+   "checked": null
   },
   {
    "id": "CORE-021",
@@ -1408,13 +1474,14 @@
    "status": "K",
    "rules": [
     "idx7.pagination_unlinked",
-    "RND-3"
+    "STR-19"
    ],
    "needs": [
     "IDX-7"
    ],
-   "covered": "<a href> olmayan sayfalama, kaydırma/tıklama arkasındaki içerik (IDX-7, RND-3)",
-   "missing": "sonsuz kaydırma için taranabilir yedek (M)"
+   "covered": "<a href> olmayan sayfalama, adressiz tıklanabilir kartlar ve bağlantılar (IDX-7, STR-19)",
+   "missing": "sonsuz kaydırma için taranabilir yedek (M)",
+   "checked": null
   },
   {
    "id": "CORE-022",
@@ -1434,7 +1501,11 @@
     "IDX-6"
    ],
    "covered": "kaynak sayfalarıyla kırık iç bağlantılar (IDX-6, IDX-1)",
-   "missing": ""
+   "missing": "",
+   "checked": [
+    "kırık iç bağlantı",
+    "page"
+   ]
   },
   {
    "id": "CORE-023",
@@ -1455,7 +1526,8 @@
     "STR-1"
    ],
    "covered": "eksik, ortak, genel title'lar, uzunluk bantları (STR-1, TSEO-1)",
-   "missing": "niyet uyumu GSC sorguları ister"
+   "missing": "niyet uyumu GSC sorguları ister",
+   "checked": null
   },
   {
    "id": "CORE-024",
@@ -1469,13 +1541,21 @@
    "status": "A",
    "rules": [
     "STR-2",
-    "tseo1.heading_jump"
+    "tseo1.heading_jump",
+    "tseo1.heading_jumps",
+    "tseo1.heading_jump_varied",
+    "shared.heading_jump",
+    "shared.heading_jump_varied"
    ],
    "needs": [
     "STR-2"
    ],
    "covered": "eksik/boş/gizli/birden çok H1, atlanan düzeyler, ham ve işlenmiş (STR-2, TSEO-1)",
-   "missing": ""
+   "missing": "",
+   "checked": [
+    "H1 ve başlık düzeyleri",
+    "page"
+   ]
   },
   {
    "id": "CORE-025",
@@ -1496,7 +1576,8 @@
     "STR-16"
    ],
    "covered": "ortak açıklamalar, uzunluk bantları (STR-16, TSEO-1)",
-   "missing": "doğru ve yanıltıcı olmaması: kişi"
+   "missing": "doğru ve yanıltıcı olmaması: kişi",
+   "checked": null
   },
   {
    "id": "CORE-026",
@@ -1513,13 +1594,15 @@
     "str7.no_alt",
     "str7.image_no_alt",
     "str7.placeholder",
-    "str7.alt_split"
+    "str7.alt_split",
+    "shared.image_no_alt"
    ],
    "needs": [
     "STR-7"
    ],
    "covered": "eksik ve yer tutucu alt metinler (STR-7)",
-   "missing": "açıklayıcılık, anahtar kelime doldurma: AI/kişi"
+   "missing": "açıklayıcılık, anahtar kelime doldurma: AI/kişi",
+   "checked": null
   },
   {
    "id": "CORE-027",
@@ -1541,7 +1624,11 @@
     "STR-12"
    ],
    "covered": "bildirilen ve gerçek dil, başka dildeki bölgeler (STR-9, STR-12)",
-   "missing": ""
+   "missing": "",
+   "checked": [
+    "dil etiketi ve içeriğin dili",
+    "page"
+   ]
   },
   {
    "id": "CORE-028",
@@ -1556,7 +1643,8 @@
    "rules": [],
    "needs": [],
    "covered": "",
-   "missing": "GSC sorguları ve SERP örnekleri ister"
+   "missing": "GSC sorguları ve SERP örnekleri ister",
+   "checked": null
   },
   {
    "id": "CORE-029",
@@ -1571,7 +1659,8 @@
    "rules": [],
    "needs": [],
    "covered": "",
-   "missing": "GSC sorgu+sayfa verisi ister"
+   "missing": "GSC sorgu+sayfa verisi ister",
+   "checked": null
   },
   {
    "id": "CORE-030",
@@ -1592,7 +1681,11 @@
     "IDX-8"
    ],
    "covered": "birebir ve yakın kopyalar, konum şablonları, ince sayfalar, ortak blok payı (IDX-8, STR-15, RND-7)",
-   "missing": ""
+   "missing": "",
+   "checked": [
+    "birebir ve yakın kopya, ince içerik",
+    "page"
+   ]
   },
   {
    "id": "CORE-031",
@@ -1605,14 +1698,14 @@
    "action": "İçerik kaynaklarını doğrula ve gerçek revizyon yap.",
    "status": "K",
    "rules": [
-    "STR-6",
-    "idx5.stamped"
+    "STR-6"
    ],
    "needs": [
     "STR-6"
    ],
-   "covered": "eksik/gelecek/üretilmiş tarihler (STR-6, IDX-5)",
-   "missing": "iddiaların doğruluğu: kişi"
+   "covered": "eksik/gelecek/üretilmiş tarihler (STR-6)",
+   "missing": "iddiaların doğruluğu: kişi",
+   "checked": null
   },
   {
    "id": "CORE-032",
@@ -1624,12 +1717,11 @@
    "impact": 4,
    "action": "Eksik kullanıcı sorusu/kriterlerini ekle.",
    "status": "P",
-   "rules": [
-    "STR-21"
-   ],
+   "rules": [],
    "needs": [],
-   "covered": "temel sayfalar var mı (STR-21)",
-   "missing": "sayfanın kullanıcı sorularını karşılaması: kişi/AI"
+   "covered": "",
+   "missing": "sayfanın kullanıcı sorularını karşılaması: kişi/AI",
+   "checked": null
   },
   {
    "id": "CORE-033",
@@ -1644,7 +1736,8 @@
    "rules": [],
    "needs": [],
    "covered": "",
-   "missing": "özgün, doğrulanabilir fayda: kişi"
+   "missing": "özgün, doğrulanabilir fayda: kişi",
+   "checked": null
   },
   {
    "id": "CORE-034",
@@ -1661,15 +1754,21 @@
     "str3.invalid_values",
     "str3.unparsed",
     "str3.url_error",
+    "str3.url_differs",
     "str3.dangling_id",
     "str3.type_clash",
+    "str3.crumb_no_list",
     "STR-11"
    ],
    "needs": [
     "STR-3"
    ],
    "covered": "ayrıştırma hataları, zorunlu alanlar, geçersiz değerler, çelişkiler (STR-3, STR-11)",
-   "missing": "önerilen ('uyarı') alanlar (S)"
+   "missing": "önerilen ('uyarı') alanlar (S)",
+   "checked": [
+    "yapısal verinin ayrıştırılması ve zorunlu alanları",
+    "page"
+   ]
   },
   {
    "id": "CORE-035",
@@ -1683,14 +1782,14 @@
    "status": "K",
    "rules": [
     "str3.expected_type",
-    "str3.maybe_product",
-    "STR-4"
+    "str3.maybe_product"
    ],
    "needs": [
     "STR-3"
    ],
-   "covered": "ürün sayfalarında Product, fiyat/stok ile sayfa (STR-3, STR-4)",
-   "missing": "liste sayfasında tek ürün gibi Product işaretlemesi: kural yok (S)"
+   "covered": "sayfa türüne uygun yapısal veri türü (STR-3)",
+   "missing": "liste sayfasında tek ürün gibi Product işaretlemesi: kural yok (S)",
+   "checked": null
   },
   {
    "id": "CORE-036",
@@ -1711,8 +1810,9 @@
    "needs": [
     "STR-3"
    ],
-   "covered": "Organization var, eksiksiz, adlar tutarlı (STR-3, STR-5)",
-   "missing": "gerçek şirkete uygunluk: kişi"
+   "covered": "Organization var, eksiksiz, marka adı tutarlı (STR-3, STR-5)",
+   "missing": "gerçek şirkete uygunluk: kişi",
+   "checked": null
   },
   {
    "id": "CORE-037",
@@ -1725,14 +1825,16 @@
    "action": "Desteksiz veya yanıltıcı işaretlemeyi kaldır.",
    "status": "K",
    "rules": [
-    "STR-4",
-    "STR-11"
+    "str4.differs",
+    "str4.not_shown",
+    "str4.other_state"
    ],
    "needs": [
     "STR-4"
    ],
-   "covered": "işaretleme değerleri ile sayfa, çelişen değerler (STR-4, STR-11)",
-   "missing": "sahte veri: kişi"
+   "covered": "işaretleme değerleri ile görünen sayfa (STR-4)",
+   "missing": "sahte veri: kişi",
+   "checked": null
   },
   {
    "id": "CORE-038",
@@ -1745,14 +1847,14 @@
    "action": "Kurumsal güven sayfalarını tamamla.",
    "status": "K",
    "rules": [
-    "STR-21",
-    "STR-5"
+    "STR-21"
    ],
    "needs": [
     "STR-21"
    ],
-   "covered": "hakkımızda/iletişim sayfaları bulundu, adlar tutarlı (STR-21, STR-5)",
-   "missing": "gerçek kimlik: kişi"
+   "covered": "hakkımızda/iletişim gibi temel sayfalar bulundu (STR-21)",
+   "missing": "gerçek kimlik: kişi",
+   "checked": null
   },
   {
    "id": "CORE-039",
@@ -1771,7 +1873,8 @@
     "STR-3"
    ],
    "covered": "yazarı olmayan yazılar (STR-3)",
-   "missing": "gerçek uzman, kaynaklar: kişi"
+   "missing": "gerçek uzman, kaynaklar: kişi",
+   "checked": null
   },
   {
    "id": "CORE-040",
@@ -1784,15 +1887,15 @@
    "action": "Koşul sayfalarını güncelle ve ticari landing'lere bağla.",
    "status": "K",
    "rules": [
-    "STR-21",
-    "STR-8",
+    "str8.pricing",
     "str4.price_unclear"
    ],
    "needs": [
-    "STR-21"
+    "STR-8"
    ],
-   "covered": "koşul/politika sayfaları, fiyat tabloları, belirsiz fiyatlar (STR-21, STR-8, STR-4)",
-   "missing": "kolay ulaşılır ve açık olması: kişi"
+   "covered": "fiyat tabloları, belirsiz fiyatlar (STR-8, STR-4)",
+   "missing": "kolay ulaşılır ve açık olması: kişi",
+   "checked": null
   },
   {
    "id": "CORE-041",
@@ -1814,7 +1917,11 @@
     "IDX-2"
    ],
    "covered": "sertifika, karışık içerik, giriş/ödeme duvarları (IDX-2, TSEO-1, RND-5)",
-   "missing": ""
+   "missing": "",
+   "checked": [
+    "HTTPS sertifikası ve karışık içerik",
+    "host"
+   ]
   },
   {
    "id": "CORE-042",
@@ -1829,7 +1936,8 @@
    "rules": [],
    "needs": [],
    "covered": "",
-   "missing": "iddiaların kanıtlanabilirliği: uzman/hukuk"
+   "missing": "iddiaların kanıtlanabilirliği: uzman/hukuk",
+   "checked": null
   },
   {
    "id": "CORE-043",
@@ -1844,7 +1952,8 @@
    "rules": [],
    "needs": [],
    "covered": "",
-   "missing": "sayfa türüne göre GSC performansı"
+   "missing": "sayfa türüne göre GSC performansı",
+   "checked": null
   },
   {
    "id": "CORE-044",
@@ -1858,14 +1967,14 @@
    "status": "K",
    "rules": [
     "ACC-5",
-    "ACC-4",
-    "ACC-9"
+    "ACC-4"
    ],
    "needs": [
     "ACC-4"
    ],
-   "covered": "kullanıcı aracısına göre bot erişimi, hız sınırları, verilirse loglar (ACC-4, ACC-5, ACC-9)",
-   "missing": "taşıma kayıpları GSC geçmişi ister"
+   "covered": "arama motoru botunun kullanıcı aracısıyla erişim, verilirse loglar (ACC-4, ACC-5)",
+   "missing": "taşıma kayıpları GSC geçmişi ister; Maya'nın kendi tarayıcısının engellenmesi (ACC-9) Google'ın erişimini göstermez",
+   "checked": null
   }
  ],
  "sec": [
@@ -1892,7 +2001,8 @@
    "missing": "şablon başına filtre/parametre kombinasyonları (Stage 7); hangi filtrenin dizine gireceği: kişi",
    "profile": "eticaret",
    "type_id": "category",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-002",
@@ -1927,7 +2037,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "eticaret",
    "type_id": "category",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-003",
@@ -1949,8 +2060,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -1961,7 +2071,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "eticaret",
    "type_id": "category",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-004",
@@ -1989,7 +2103,8 @@
    "missing": "ProductGroup/hasVariant (S); gerçek stok: Merchant Center/kişi",
    "profile": "eticaret",
    "type_id": "product",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-005",
@@ -2024,7 +2139,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "eticaret",
    "type_id": "product",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-006",
@@ -2046,8 +2162,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -2058,7 +2173,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "eticaret",
    "type_id": "product",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-007",
@@ -2084,7 +2203,8 @@
    "missing": "ana sayfadan bağlantısı olmayan 1. sıra türü kuralı (S); marka niyeti: kişi",
    "profile": "eticaret",
    "type_id": "home",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-008",
@@ -2119,7 +2239,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "eticaret",
    "type_id": "home",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-009",
@@ -2141,8 +2262,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -2153,7 +2273,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "eticaret",
    "type_id": "home",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-010",
@@ -2171,8 +2295,7 @@
    "status": "K",
    "rules": [
     "idx8.location_template",
-    "str3.required",
-    "STR-5"
+    "str3.required"
    ],
    "needs": [
     "IDX-8"
@@ -2181,7 +2304,8 @@
    "missing": "mağazalar arasında adres/saat tutarlılığı (M)",
    "profile": "eticaret",
    "type_id": "stores",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-011",
@@ -2216,7 +2340,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "eticaret",
    "type_id": "stores",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-012",
@@ -2238,8 +2363,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -2250,7 +2374,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "eticaret",
    "type_id": "stores",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-013",
@@ -2274,7 +2402,8 @@
    "missing": "bitiş tarihi geçmiş ama 200 dönen ve bağlantı alan kampanya sayfaları (M)",
    "profile": "eticaret",
    "type_id": "campaign",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-014",
@@ -2309,7 +2438,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "eticaret",
    "type_id": "campaign",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-015",
@@ -2331,8 +2461,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -2343,7 +2472,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "eticaret",
    "type_id": "campaign",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-016",
@@ -2369,7 +2502,8 @@
    "missing": "güncellik: kişi",
    "profile": "eticaret",
    "type_id": "help",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-017",
@@ -2404,7 +2538,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "eticaret",
    "type_id": "help",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-018",
@@ -2426,8 +2561,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -2438,7 +2572,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "eticaret",
    "type_id": "help",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-019",
@@ -2464,7 +2602,8 @@
    "missing": "sayfa türü başına derinlik eşiği kuralı (S)",
    "profile": "bankacilik",
    "type_id": "home",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-020",
@@ -2499,7 +2638,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "bankacilik",
    "type_id": "home",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-021",
@@ -2521,8 +2661,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -2533,7 +2672,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "bankacilik",
    "type_id": "home",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-022",
@@ -2558,7 +2701,8 @@
    "missing": "konuların gerçek aramalarla eşleşmesi GSC ister",
    "profile": "bankacilik",
    "type_id": "support",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-023",
@@ -2593,7 +2737,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "bankacilik",
    "type_id": "support",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-024",
@@ -2615,8 +2760,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -2627,7 +2771,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "bankacilik",
    "type_id": "support",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-025",
@@ -2651,7 +2799,8 @@
    "missing": "faiz/uygunluk koşullarının doğruluğu: iş birimi",
    "profile": "bankacilik",
    "type_id": "products",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-026",
@@ -2686,7 +2835,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "bankacilik",
    "type_id": "products",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-027",
@@ -2708,8 +2858,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -2720,7 +2869,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "bankacilik",
    "type_id": "products",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-028",
@@ -2748,7 +2901,8 @@
    "missing": "yalnız işlenmiş HTML'de olan form (S)",
    "profile": "bankacilik",
    "type_id": "fees",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-029",
@@ -2783,7 +2937,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "bankacilik",
    "type_id": "fees",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-030",
@@ -2805,8 +2960,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -2817,7 +2971,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "bankacilik",
    "type_id": "fees",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-031",
@@ -2845,7 +3003,8 @@
    "missing": "varsayımların açıklanması: kişi",
    "profile": "bankacilik",
    "type_id": "calculator",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-032",
@@ -2880,7 +3039,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "bankacilik",
    "type_id": "calculator",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-033",
@@ -2902,8 +3062,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -2914,7 +3073,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "bankacilik",
    "type_id": "calculator",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-034",
@@ -2938,7 +3101,8 @@
    "missing": "risk ve kapsam metni: uyum ekibi",
    "profile": "yatirim",
    "type_id": "products",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-035",
@@ -2973,7 +3137,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "yatirim",
    "type_id": "products",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-036",
@@ -2995,8 +3160,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -3007,7 +3171,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "yatirim",
    "type_id": "products",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-037",
@@ -3035,7 +3203,8 @@
    "missing": "mobilde okunurluk: kişi",
    "profile": "yatirim",
    "type_id": "fees",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-038",
@@ -3070,7 +3239,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "yatirim",
    "type_id": "fees",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-039",
@@ -3092,8 +3262,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -3104,7 +3273,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "yatirim",
    "type_id": "fees",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-040",
@@ -3132,7 +3305,8 @@
    "missing": "adımlar ve ön koşullar: kişi",
    "profile": "yatirim",
    "type_id": "account",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-041",
@@ -3167,7 +3341,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "yatirim",
    "type_id": "account",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-042",
@@ -3189,8 +3364,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -3201,7 +3375,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "yatirim",
    "type_id": "account",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-043",
@@ -3218,17 +3396,17 @@
    "action": "Kurumsal kimlik, lisans ve iletişim sayfalarını doğrulanabilir biçimde tamamla.",
    "status": "K",
    "rules": [
-    "STR-21",
-    "STR-5"
+    "STR-21"
    ],
    "needs": [
     "STR-21"
    ],
-   "covered": "hakkımızda/iletişim/destek sayfaları, tutarlı adlar (STR-21, STR-5)",
+   "covered": "hakkımızda/iletişim/destek sayfaları (STR-21)",
    "missing": "lisans bilgisi: kişi",
    "profile": "yatirim",
    "type_id": "company",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-044",
@@ -3263,7 +3441,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "yatirim",
    "type_id": "company",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-045",
@@ -3285,8 +3464,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -3297,7 +3475,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "yatirim",
    "type_id": "company",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-046",
@@ -3326,7 +3508,11 @@
    "missing": "",
    "profile": "yatirim",
    "type_id": "platform",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "metnin HTML'de görünmesi ve indeksleme",
+    "page"
+   ]
   },
   {
    "id": "SEC-047",
@@ -3361,7 +3547,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "yatirim",
    "type_id": "platform",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-048",
@@ -3383,8 +3570,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -3395,7 +3581,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "yatirim",
    "type_id": "platform",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-049",
@@ -3421,7 +3611,8 @@
    "missing": "avantaj/ücret farkları: kişi",
    "profile": "kart",
    "type_id": "cards",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-050",
@@ -3456,7 +3647,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "kart",
    "type_id": "cards",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-051",
@@ -3478,8 +3670,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -3490,7 +3681,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "kart",
    "type_id": "cards",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-052",
@@ -3514,7 +3709,8 @@
    "missing": "biten kampanya sayfaları (M), SEC-013 gibi",
    "profile": "kart",
    "type_id": "campaign",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-053",
@@ -3549,7 +3745,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "kart",
    "type_id": "campaign",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-054",
@@ -3571,8 +3768,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -3583,7 +3779,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "kart",
    "type_id": "campaign",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-055",
@@ -3607,7 +3807,8 @@
    "missing": "kazanım/kullanım/geçerlilik kuralları: kişi",
    "profile": "kart",
    "type_id": "points",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-056",
@@ -3642,7 +3843,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "kart",
    "type_id": "points",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-057",
@@ -3664,8 +3866,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -3676,7 +3877,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "kart",
    "type_id": "points",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-058",
@@ -3698,7 +3903,8 @@
    "missing": "uygunluk, belgeler: kişi",
    "profile": "kart",
    "type_id": "apply",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-059",
@@ -3733,7 +3939,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "kart",
    "type_id": "apply",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-060",
@@ -3755,8 +3962,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -3767,7 +3973,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "kart",
    "type_id": "apply",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-061",
@@ -3789,7 +3999,8 @@
    "missing": "aranabilir çözümler ile sorgular GSC ister",
    "profile": "kart",
    "type_id": "help",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-062",
@@ -3824,7 +4035,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "kart",
    "type_id": "help",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-063",
@@ -3846,8 +4058,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -3858,7 +4069,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "kart",
    "type_id": "help",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-064",
@@ -3885,7 +4100,8 @@
    "missing": "inceleyen/lastReviewed işaretlemesi ya da görünür 'inceleyen' (S); tıbbi doğruluk: hekim",
    "profile": "saglik",
    "type_id": "treatment",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-065",
@@ -3920,7 +4136,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "saglik",
    "type_id": "treatment",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-066",
@@ -3942,8 +4159,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -3954,7 +4170,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "saglik",
    "type_id": "treatment",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-067",
@@ -3981,7 +4201,8 @@
    "missing": "doktor sayfalarında Physician/Person işaretlemesi (S); özgeçmiş doğruluğu: kişi",
    "profile": "saglik",
    "type_id": "doctors",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-068",
@@ -4016,7 +4237,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "saglik",
    "type_id": "doctors",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-069",
@@ -4038,8 +4260,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -4050,7 +4271,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "saglik",
    "type_id": "doctors",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-070",
@@ -4068,8 +4293,7 @@
    "status": "K",
    "rules": [
     "idx8.location_template",
-    "str3.required",
-    "STR-5"
+    "str3.required"
    ],
    "needs": [
     "IDX-8"
@@ -4078,7 +4302,8 @@
    "missing": "sayfalar arasında NAP tutarlılığı (M)",
    "profile": "saglik",
    "type_id": "clinic",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-071",
@@ -4113,7 +4338,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "saglik",
    "type_id": "clinic",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-072",
@@ -4135,8 +4361,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -4147,7 +4372,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "saglik",
    "type_id": "clinic",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-073",
@@ -4174,7 +4403,8 @@
    "missing": "acil/yasal iletişimin görünürlüğü: kişi; ana sayfadan bağlantısı olmayan 1. sıra türü (S)",
    "profile": "saglik",
    "type_id": "home",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-074",
@@ -4209,7 +4439,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "saglik",
    "type_id": "home",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-075",
@@ -4231,8 +4462,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -4243,7 +4473,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "saglik",
    "type_id": "home",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-076",
@@ -4270,7 +4504,8 @@
    "missing": "ham HTML'de tel: bağlantısı ve form (S); mobil akış: kişi",
    "profile": "saglik",
    "type_id": "appointment",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-077",
@@ -4305,7 +4540,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "saglik",
    "type_id": "appointment",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-078",
@@ -4327,8 +4563,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -4339,7 +4574,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "saglik",
    "type_id": "appointment",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-079",
@@ -4361,7 +4600,8 @@
    "missing": "anlaşmalı kurum listesinin güncelliği: kişi",
    "profile": "saglik",
    "type_id": "insurers",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-080",
@@ -4396,7 +4636,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "saglik",
    "type_id": "insurers",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-081",
@@ -4418,8 +4659,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -4430,7 +4670,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "saglik",
    "type_id": "insurers",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-082",
@@ -4458,7 +4702,8 @@
    "missing": "teknik verilerin doğruluğu: kişi",
    "profile": "otomotiv",
    "type_id": "model",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-083",
@@ -4493,7 +4738,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "otomotiv",
    "type_id": "model",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-084",
@@ -4515,8 +4761,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -4527,7 +4772,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "otomotiv",
    "type_id": "model",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-085",
@@ -4553,7 +4802,8 @@
    "missing": "PDF fiyat listeleri: okunur, bağlantılı, dizinlenebilir (M)",
    "profile": "otomotiv",
    "type_id": "pricelist",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-086",
@@ -4588,7 +4838,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "otomotiv",
    "type_id": "pricelist",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-087",
@@ -4610,8 +4861,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -4622,7 +4872,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "otomotiv",
    "type_id": "pricelist",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-088",
@@ -4652,7 +4906,11 @@
    "missing": "",
    "profile": "otomotiv",
    "type_id": "models",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "kartların bağlantısı, sayfalama, boş ve kopya listeler",
+    "page"
+   ]
   },
   {
    "id": "SEC-089",
@@ -4687,7 +4945,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "otomotiv",
    "type_id": "models",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-090",
@@ -4709,8 +4968,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -4721,7 +4979,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "otomotiv",
    "type_id": "models",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-091",
@@ -4739,8 +5001,7 @@
    "status": "K",
    "rules": [
     "idx8.location_template",
-    "str3.required",
-    "STR-5"
+    "str3.required"
    ],
    "needs": [
     "IDX-8"
@@ -4749,7 +5010,8 @@
    "missing": "saat/NAP tutarlılığı (M)",
    "profile": "otomotiv",
    "type_id": "dealers",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-092",
@@ -4784,7 +5046,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "otomotiv",
    "type_id": "dealers",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-093",
@@ -4806,8 +5069,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -4818,7 +5080,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "otomotiv",
    "type_id": "dealers",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-094",
@@ -4846,7 +5112,8 @@
    "missing": "seçilen donanım bağlantıları: kişi",
    "profile": "otomotiv",
    "type_id": "configure",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-095",
@@ -4881,7 +5148,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "otomotiv",
    "type_id": "configure",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-096",
@@ -4903,8 +5171,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -4915,7 +5182,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "otomotiv",
    "type_id": "configure",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-097",
@@ -4937,7 +5208,8 @@
    "missing": "rehberlerin 1. sıra model sayfalarına bağlantısı (S)",
    "profile": "otomotiv",
    "type_id": "guide",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-098",
@@ -4972,7 +5244,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "otomotiv",
    "type_id": "guide",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-099",
@@ -4994,8 +5267,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -5006,7 +5278,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "otomotiv",
    "type_id": "guide",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-100",
@@ -5034,7 +5310,8 @@
    "missing": "aylık/yıllık, limitlerin açıklığı: kişi",
    "profile": "saas",
    "type_id": "pricing",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-101",
@@ -5069,7 +5346,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "saas",
    "type_id": "pricing",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-102",
@@ -5091,8 +5369,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -5103,7 +5380,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "saas",
    "type_id": "pricing",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-103",
@@ -5130,7 +5411,8 @@
    "missing": "sayfa başına hedef sorgu GSC ister",
    "profile": "saas",
    "type_id": "features",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-104",
@@ -5165,7 +5447,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "saas",
    "type_id": "features",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-105",
@@ -5187,8 +5470,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -5199,7 +5481,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "saas",
    "type_id": "features",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-106",
@@ -5227,7 +5513,8 @@
    "missing": "ham HTML'de form (S); teşekkür sayfasının dizinlenebilir olması (S)",
    "profile": "saas",
    "type_id": "sales",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-107",
@@ -5262,7 +5549,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "saas",
    "type_id": "sales",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-108",
@@ -5284,8 +5572,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -5296,7 +5583,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "saas",
    "type_id": "sales",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-109",
@@ -5326,7 +5617,11 @@
    "missing": "dokümanlardan özellik sayfalarına bağlantılar (S)",
    "profile": "saas",
    "type_id": "guide",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "noindex, robots, site içi arama ve hreflang",
+    "page"
+   ]
   },
   {
    "id": "SEC-110",
@@ -5361,7 +5656,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "saas",
    "type_id": "guide",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-111",
@@ -5383,8 +5679,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -5395,7 +5690,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "saas",
    "type_id": "guide",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-112",
@@ -5417,7 +5716,8 @@
    "missing": "referanslarda ölçülebilir sonuç: kişi",
    "profile": "saas",
    "type_id": "references",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-113",
@@ -5452,7 +5752,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "saas",
    "type_id": "references",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-114",
@@ -5474,8 +5775,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -5486,7 +5786,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "saas",
    "type_id": "references",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-115",
@@ -5512,7 +5816,8 @@
    "missing": "kapasite/bakım bilgisi: kişi",
    "profile": "su_aritma",
    "type_id": "products",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-116",
@@ -5547,7 +5852,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "su_aritma",
    "type_id": "products",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-117",
@@ -5569,8 +5875,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -5581,7 +5886,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "su_aritma",
    "type_id": "products",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-118",
@@ -5598,17 +5907,17 @@
    "action": "Servis alanı ve başvuru açıklamalarını tamamla.",
    "status": "K",
    "rules": [
-    "STR-21",
-    "STR-5"
+    "STR-21"
    ],
    "needs": [
     "STR-21"
    ],
-   "covered": "iletişim sayfası, adlar (STR-21, STR-5)",
+   "covered": "iletişim sayfası (STR-21)",
    "missing": "hizmet bölgesi, form akışı: kişi",
    "profile": "su_aritma",
    "type_id": "apply",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-119",
@@ -5643,7 +5952,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "su_aritma",
    "type_id": "apply",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-120",
@@ -5665,8 +5975,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -5677,7 +5986,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "su_aritma",
    "type_id": "apply",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-121",
@@ -5699,7 +6012,8 @@
    "missing": "koşulların güncelliği: kişi",
    "profile": "su_aritma",
    "type_id": "service",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-122",
@@ -5734,7 +6048,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "su_aritma",
    "type_id": "service",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-123",
@@ -5756,8 +6071,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -5768,7 +6082,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "su_aritma",
    "type_id": "service",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-124",
@@ -5795,7 +6113,8 @@
    "missing": "niyet/anahtar kelime örtüşmesi GSC ister",
    "profile": "guvenlik",
    "type_id": "services",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-125",
@@ -5830,7 +6149,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "guvenlik",
    "type_id": "services",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-126",
@@ -5852,8 +6172,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -5864,7 +6183,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "guvenlik",
    "type_id": "services",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-127",
@@ -5889,7 +6212,8 @@
    "missing": "kapsam ve fiyat koşulları: kişi",
    "profile": "guvenlik",
    "type_id": "pricing",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-128",
@@ -5924,7 +6248,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "guvenlik",
    "type_id": "pricing",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-129",
@@ -5946,8 +6271,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -5958,7 +6282,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "guvenlik",
    "type_id": "pricing",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-130",
@@ -5985,7 +6313,8 @@
    "missing": "mobil test: kişi",
    "profile": "guvenlik",
    "type_id": "contact",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-131",
@@ -6020,7 +6349,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "guvenlik",
    "type_id": "contact",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-132",
@@ -6042,8 +6372,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -6054,7 +6383,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "guvenlik",
    "type_id": "contact",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-133",
@@ -6076,7 +6409,8 @@
    "missing": "sözleşme ve iddialar: hukuk",
    "profile": "guvenlik",
    "type_id": "support",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-134",
@@ -6111,7 +6445,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "guvenlik",
    "type_id": "support",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-135",
@@ -6133,8 +6468,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -6145,7 +6479,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "guvenlik",
    "type_id": "support",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-136",
@@ -6172,7 +6510,8 @@
    "missing": "gerçek hizmet kapsamı: kişi",
    "profile": "ev_hizmetleri",
    "type_id": "service_location",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-137",
@@ -6207,7 +6546,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "ev_hizmetleri",
    "type_id": "service_location",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-138",
@@ -6229,8 +6569,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -6241,7 +6580,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "ev_hizmetleri",
    "type_id": "service_location",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-139",
@@ -6258,16 +6601,17 @@
    "action": "İletişim şablonunu ve yerel işletme verisini düzelt.",
    "status": "K",
    "rules": [
-    "STR-5"
+    "STR-21"
    ],
    "needs": [
     "STR-21"
    ],
-   "covered": "iletişim sayfası, adlar (STR-21, STR-5)",
+   "covered": "iletişim sayfası (STR-21)",
    "missing": "HTML'de/işaretlemede tel: bağlantısı ve çalışma saatleri (S); mobil CTA: kişi",
    "profile": "ev_hizmetleri",
    "type_id": "contact",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-140",
@@ -6302,7 +6646,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "ev_hizmetleri",
    "type_id": "contact",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-141",
@@ -6324,8 +6669,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -6336,7 +6680,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "ev_hizmetleri",
    "type_id": "contact",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-142",
@@ -6363,7 +6711,8 @@
    "missing": "ücret/iptal metni: kişi",
    "profile": "ev_hizmetleri",
    "type_id": "booking",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-143",
@@ -6398,7 +6747,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "ev_hizmetleri",
    "type_id": "booking",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-144",
@@ -6420,8 +6770,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -6432,7 +6781,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "ev_hizmetleri",
    "type_id": "booking",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-145",
@@ -6458,7 +6811,8 @@
    "missing": "ana sayfadan bağlantısı olmayan 1. sıra türü (S)",
    "profile": "ev_hizmetleri",
    "type_id": "home",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-146",
@@ -6493,7 +6847,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "ev_hizmetleri",
    "type_id": "home",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-147",
@@ -6515,8 +6870,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -6527,7 +6881,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "ev_hizmetleri",
    "type_id": "home",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-148",
@@ -6549,7 +6907,8 @@
    "missing": "karar soruları ile sorgu niyeti GSC ister",
    "profile": "ev_hizmetleri",
    "type_id": "help",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-149",
@@ -6584,7 +6943,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "ev_hizmetleri",
    "type_id": "help",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-150",
@@ -6606,8 +6966,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -6618,7 +6977,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "ev_hizmetleri",
    "type_id": "help",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-151",
@@ -6644,7 +7007,8 @@
    "missing": "sorgu niyeti ile kategori farkı GSC ister",
    "profile": "gida",
    "type_id": "brand_family",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-152",
@@ -6679,7 +7043,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "gida",
    "type_id": "brand_family",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-153",
@@ -6701,8 +7066,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -6713,7 +7077,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "gida",
    "type_id": "brand_family",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-154",
@@ -6741,7 +7109,8 @@
    "missing": "besin değerleri: kişi",
    "profile": "gida",
    "type_id": "product",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-155",
@@ -6776,7 +7145,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "gida",
    "type_id": "product",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-156",
@@ -6798,8 +7168,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -6810,7 +7179,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "gida",
    "type_id": "product",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-157",
@@ -6832,7 +7205,8 @@
    "missing": "alerjen doğruluğu: gıda mühendisi",
    "profile": "gida",
    "type_id": "ingredients",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-158",
@@ -6867,7 +7241,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "gida",
    "type_id": "ingredients",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-159",
@@ -6889,8 +7264,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -6901,7 +7275,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "gida",
    "type_id": "ingredients",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-160",
@@ -6923,7 +7301,8 @@
    "missing": "sertifika geçerliliği: kişi",
    "profile": "gida",
    "type_id": "quality",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-161",
@@ -6958,7 +7337,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "gida",
    "type_id": "quality",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-162",
@@ -6980,8 +7360,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -6992,7 +7371,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "gida",
    "type_id": "quality",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-163",
@@ -7017,7 +7400,8 @@
    "missing": "şablon başına tarih/kişi/fiyat parametre kombinasyonları (M)",
    "profile": "seyahat",
    "type_id": "listings",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-164",
@@ -7052,7 +7436,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "seyahat",
    "type_id": "listings",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-165",
@@ -7074,8 +7459,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -7086,7 +7470,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "seyahat",
    "type_id": "listings",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-166",
@@ -7113,7 +7501,8 @@
    "missing": "uygunluk tarihleri: kişi",
    "profile": "seyahat",
    "type_id": "detail",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-167",
@@ -7148,7 +7537,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "seyahat",
    "type_id": "detail",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-168",
@@ -7170,8 +7560,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -7182,7 +7571,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "seyahat",
    "type_id": "detail",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-169",
@@ -7208,7 +7601,8 @@
    "missing": "koşulların açıklığı: kişi",
    "profile": "seyahat",
    "type_id": "terms_help",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-170",
@@ -7243,7 +7637,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "seyahat",
    "type_id": "terms_help",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-171",
@@ -7265,8 +7660,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -7277,7 +7671,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "seyahat",
    "type_id": "terms_help",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-172",
@@ -7301,7 +7699,8 @@
    "missing": "biten teklifler (M), SEC-013 gibi",
    "profile": "seyahat",
    "type_id": "campaign",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-173",
@@ -7336,7 +7735,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "seyahat",
    "type_id": "campaign",
-   "draft": false
+   "draft": false,
+   "checked": null
   },
   {
    "id": "SEC-174",
@@ -7358,8 +7758,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -7370,7 +7769,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "seyahat",
    "type_id": "campaign",
-   "draft": false
+   "draft": false,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-T01",
@@ -7398,7 +7801,8 @@
    "missing": "rota bilgisinin doğruluğu: kişi",
    "profile": "havayolu",
    "type_id": "routes",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T02",
@@ -7433,7 +7837,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "havayolu",
    "type_id": "routes",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T03",
@@ -7455,8 +7860,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -7467,7 +7871,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "havayolu",
    "type_id": "routes",
-   "draft": true
+   "draft": true,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-T04",
@@ -7493,7 +7901,8 @@
    "missing": "şablon başına parametre kombinasyonları (M)",
    "profile": "havayolu",
    "type_id": "flight_search",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T05",
@@ -7528,7 +7937,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "havayolu",
    "type_id": "flight_search",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T06",
@@ -7550,8 +7960,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -7562,7 +7971,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "havayolu",
    "type_id": "flight_search",
-   "draft": true
+   "draft": true,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-T07",
@@ -7586,7 +7999,8 @@
    "missing": "biten kampanya sayfaları (M)",
    "profile": "havayolu",
    "type_id": "fares",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T08",
@@ -7621,7 +8035,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "havayolu",
    "type_id": "fares",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T09",
@@ -7643,8 +8058,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -7655,7 +8069,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "havayolu",
    "type_id": "fares",
-   "draft": true
+   "draft": true,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-T10",
@@ -7680,7 +8098,8 @@
    "missing": "kuralların doğruluğu ve açıklığı: kişi",
    "profile": "havayolu",
    "type_id": "baggage",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T11",
@@ -7715,7 +8134,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "havayolu",
    "type_id": "baggage",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T12",
@@ -7737,8 +8157,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -7749,7 +8168,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "havayolu",
    "type_id": "baggage",
-   "draft": true
+   "draft": true,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-T13",
@@ -7777,7 +8200,8 @@
    "missing": "işlem akışı: kişi",
    "profile": "havayolu",
    "type_id": "checkin",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T14",
@@ -7812,7 +8236,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "havayolu",
    "type_id": "checkin",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T15",
@@ -7834,8 +8259,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -7846,7 +8270,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "havayolu",
    "type_id": "checkin",
-   "draft": true
+   "draft": true,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-T16",
@@ -7872,7 +8300,8 @@
    "missing": "koşulların açıklığı: kişi",
    "profile": "havayolu",
    "type_id": "terms_help",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T17",
@@ -7907,7 +8336,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "havayolu",
    "type_id": "terms_help",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T18",
@@ -7929,8 +8359,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -7941,7 +8370,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "havayolu",
    "type_id": "terms_help",
-   "draft": true
+   "draft": true,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-T19",
@@ -7970,7 +8403,8 @@
    "missing": "menünün yalnız görsel/PDF olması kuralı (S)",
    "profile": "restoran",
    "type_id": "menu",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T20",
@@ -8005,7 +8439,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "restoran",
    "type_id": "menu",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T21",
@@ -8027,8 +8462,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -8039,7 +8473,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "restoran",
    "type_id": "menu",
-   "draft": true
+   "draft": true,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-T22",
@@ -8057,8 +8495,7 @@
    "status": "K",
    "rules": [
     "idx8.location_template",
-    "str3.required",
-    "STR-5"
+    "str3.required"
    ],
    "needs": [
     "IDX-8"
@@ -8067,7 +8504,8 @@
    "missing": "şubeler arası NAP tutarlılığı (M)",
    "profile": "restoran",
    "type_id": "branches",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T23",
@@ -8102,7 +8540,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "restoran",
    "type_id": "branches",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T24",
@@ -8124,8 +8563,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -8136,7 +8574,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "restoran",
    "type_id": "branches",
-   "draft": true
+   "draft": true,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-T25",
@@ -8164,7 +8606,8 @@
    "missing": "akışın çalışması: kişi",
    "profile": "restoran",
    "type_id": "order",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T26",
@@ -8199,7 +8642,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "restoran",
    "type_id": "order",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T27",
@@ -8221,8 +8665,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -8233,7 +8676,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "restoran",
    "type_id": "order",
-   "draft": true
+   "draft": true,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-T28",
@@ -8259,7 +8706,8 @@
    "missing": "ana sayfadan bağlantısı olmayan 1. sıra türü (S)",
    "profile": "restoran",
    "type_id": "home",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T29",
@@ -8294,7 +8742,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "restoran",
    "type_id": "home",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T30",
@@ -8316,8 +8765,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -8328,7 +8776,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "restoran",
    "type_id": "home",
-   "draft": true
+   "draft": true,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   },
   {
    "id": "SEC-T31",
@@ -8345,16 +8797,17 @@
    "action": "Telefonu tıklanabilir, saatleri güncel ve görünür yap.",
    "status": "K",
    "rules": [
-    "STR-5"
+    "STR-21"
    ],
    "needs": [
     "STR-21"
    ],
-   "covered": "iletişim sayfası, adlar (STR-21, STR-5)",
+   "covered": "iletişim sayfası (STR-21)",
    "missing": "saatlerin güncelliği: kişi",
    "profile": "restoran",
    "type_id": "contact",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T32",
@@ -8389,7 +8842,8 @@
    "missing": "sorgu niyeti ile sayfanın uyumu GSC sorguları ve SERP örneği ister",
    "profile": "restoran",
    "type_id": "contact",
-   "draft": true
+   "draft": true,
+   "checked": null
   },
   {
    "id": "SEC-T33",
@@ -8411,8 +8865,7 @@
     "acc3.robots_noindex",
     "acc2.blocks",
     "IDX-4",
-    "IDX-7",
-    "idx1.4xx"
+    "IDX-7"
    ],
    "needs": [
     "IDX-1",
@@ -8423,7 +8876,11 @@
    "missing": "GSC'deki en iyi performanslı sayfa örneklemi (isteğe bağlı)",
    "profile": "restoran",
    "type_id": "contact",
-   "draft": true
+   "draft": true,
+   "checked": [
+    "durum kodu, noindex, robots, canonical ve tıklama derinliği",
+    "page"
+   ]
   }
  ]
 }
