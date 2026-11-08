@@ -253,6 +253,8 @@ class Crawler:
             try:
                 from .config import SECRET_FIELDS
                 settings = self.config.snapshot()
+                if not settings.get("sampling"):  # DECISIONS 327: a crawl saved before Akıllı mode still resumes
+                    settings.pop("sampling", None)
                 mutable = {"db_path", "resume", "max_pages", "time_limit_s", "reader_reserve_s", "request_delay_s",
                            "robots_sample_interval_s", *SECRET_FIELDS}
                 binding = {"start_url": normalized,
@@ -471,6 +473,10 @@ class Crawler:
         unsaved: PageFetch | None = None
         discovery = self._discovery = LinkDiscovery(fetcher, cfg, frontier.get_meta("render_discovery") if frontier.resumed else None)
         home_seen = frontier.resumed  # a resumed crawl has been through its homepage
+        # DECISIONS 327 (Akıllı ~150): the plan, made when the first page is read and again after the first wave.
+        sampler = None
+        self._sampler = None
+        retyped = False
 
         def keep(page: PageFetch | None) -> None:
             if page is not None:
@@ -484,7 +490,8 @@ class Crawler:
                                 # and every request sent so far (robots.txt and sitemaps included).
                                 other_fetches=fetches - pages_counted, requests_sent=len(fetcher.log),
                                 # Maya's own gap between requests now, for the progress box (DECISIONS 295).
-                                delay_s=round(float(fetcher.delay_s or 0.0), 2))
+                                delay_s=round(float(fetcher.delay_s or 0.0), 2),
+                                sampling=self._sampling_progress(fetched) if sampler is not None else None)
         fetch_budget = cfg.max_pages * 3  # redirects are not pages but must stay bounded
         fetches = 0
         consecutive_rate_limited = 0
@@ -722,6 +729,14 @@ class Crawler:
                     enqueue([FrontierUrl(e["target"], (depth or 0) + 1, "rendered_link", url, bool(e.get("nav")))
                                        for e in extra])
 
+            if cfg.sampling and not cfg.single_page and not is_redirect:
+                if sampler is None:
+                    # the first page read (normally the homepage): plan from the sitemap and its links
+                    sampler = self._sampler = self._start_sampling(frontier, page, origin, sitemap_urls)
+                elif not retyped and pages_counted >= sampler.wave_one_size():
+                    retyped = True
+                    self._replan(frontier, pages)
+
         if policies[origin].stops_requests or (not pages and skipped and stop_reason == StopReason.EXHAUSTED):
             stop_reason = (StopReason.RATE_LIMIT if policies[origin].status == 429
                            else StopReason.NETWORK if policies[origin].mode == "not_checked" else StopReason.ROBOTS_DISALLOWED)
@@ -774,7 +789,54 @@ class Crawler:
             # DECISIONS 316: known from the start for the page reader that reads right after the crawl; worked out again
             # with the pages' hreflang links when the audit settles (`final.locale_record`).
             locales=({**self._locale_info, "main": frontier.main_locale} if getattr(self, "_locale_info", None) else None),
+            sampling=self._sampler.record() if getattr(self, "_sampler", None) is not None else None,
         )
+
+    def _start_sampling(self, frontier, page, origin: str, sitemap_urls: list[str]):
+        """DECISIONS 327: the Akıllı plan from what is known after the first page: the sitemap and that page's links
+        (with their menu texts). The business type is the person's choice, else the one this homepage suggests."""
+        from . import business_types as bt
+        from .locales import HOME_COPIES
+        from .sampling import Sampler
+        cfg = self.config
+        edges = [e for e in (page.outlinks or []) if same_origin(e.get("target") or "", origin)]
+        anchors: dict[str, list[str]] = {}
+        for e in edges:
+            anchors.setdefault(e["target"], []).extend(e.get("anchors") or ([e["anchor"]] if e.get("anchor") else []))
+        known = [page.url, *sitemap_urls, *anchors, *sorted(self._key_urls)]
+        pid = cfg.business_type if cfg.business_type and cfg.business_type != bt.AUTO and bt.valid(cfg.business_type) else None
+        if pid is None:
+            try:
+                pid = bt.suggest(page.analysis, edges, None, known, frontier.locale_folders)["id"]
+            except Exception:  # noqa: BLE001  "Diğer" plans by Stage 3's page types
+                pid = bt.DEFAULT
+        sampler = Sampler(pid, budget=cfg.max_pages, folders=frontier.locale_folders, main=frontier.main_locale,
+                          lastmods=dict(self._lastmods))
+        sampler.add(known, anchors, {e["target"] for e in edges if e.get("nav")})
+        homes = [u for u, (t, _) in sampler.types.items() if t == "home"]
+        self._sampling_fixed = list(dict.fromkeys([page.url, *homes[:HOME_COPIES], *sorted(self._key_urls)]))
+        frontier.set_plan(sampler.plan(fixed=self._sampling_fixed, read={page.url: "home"}))
+        return sampler
+
+    def _replan(self, frontier, pages) -> None:
+        """DECISIONS 327: after the first wave, the pages read are typed with their content, unread addresses of their URL
+        templates follow them, and the rest of the budget is planned again (with the addresses found meanwhile)."""
+        sampler = self._sampler
+        sampler.add(frontier.urls_with_status(QUEUED))
+        real = sampler.retype({p.url: p.analysis for p in pages if p.analysis})
+        frontier.set_plan(sampler.plan(fixed=self._sampling_fixed, read=real))
+
+    def _sampling_progress(self, fetched: set[str]) -> dict:
+        """Per page type: pages read so far and planned (for the progress box)."""
+        s = self._sampler
+        rec = s.record()
+        read: dict[str, int] = {}
+        for u in fetched:
+            t = s.types.get(u, ("",))[0]
+            read[t] = read.get(t, 0) + 1
+        return {"types": [{"id": t, "label": row["label"], "rank": row["rank"], "read": read.get(t, 0), "planned": row["planned"],
+                           "known": row["known"]} for t, row in rec["types"].items()
+                          if row["label"] and (row["planned"] or row["known"])], "wave": len(s.waves), "profile": s.pid}
 
     def _announce_rate_limit(self, fetcher, url, response, start, origin, started_at, token, policies, pages, skipped,
                              sitemap_docs, sitemap_urls, frontier) -> None:

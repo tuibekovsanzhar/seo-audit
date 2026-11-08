@@ -49,7 +49,9 @@ from .strings import set_language, t
 log = logging.getLogger("maya_audit_web")
 
 # "single": one address is read and checked, nothing is followed (maya_audit.single_page).
-MODES = {"single": 1, "quick": 50, "standard": 500}
+# DECISIONS 327: "smart" is Akıllı ~150, a planned sample covering every page type of the business type.
+MODES = {"single": 1, "quick": 50, "smart": 150, "standard": 500}
+SMART = "smart"
 SINGLE = "single"
 MAX_KEY_PAGES = 20
 MAX_QUEUED = 5
@@ -95,7 +97,9 @@ def crawl_config(engine: Engine, audit: dict[str, Any], db_path: Path, *, resume
     cap = MODES[audit["mode"]]
     argv = ["crawl", audit["url"], "--max-pages", str(cap), "--db-path", str(db_path)]
     if audit["mode"] == SINGLE:
-        argv.append("--single-page")  # the address given and nothing else: important pages are not added
+        argv.append("--single-page")
+    if audit["mode"] == SMART:
+        argv.append("--smart")  # the address given and nothing else: important pages are not added
     for page in ([] if audit["mode"] == SINGLE else audit["key_pages"]):
         argv += ["--key-page", page]
     if resume:
@@ -358,7 +362,9 @@ class Runner:
             progress.update(pages_checked=event.get("pages_fetched", progress["pages_checked"]),
                             other_fetches=event.get("other_fetches", 0), requests_sent=event.get("requests_sent", 0),
                             discovered=event.get("pages_discovered"), url=(event.get("url") or "")[:MAX_URL_CHARS] or None,
-                            maya_gap_s=event.get("delay_s", progress.get("maya_gap_s")), at=now())
+                            maya_gap_s=event.get("delay_s", progress.get("maya_gap_s")), at=now(),
+                            # DECISIONS 327: an Akıllı audit's pages read per page type, for the progress box
+                            sampling=event.get("sampling") or progress.get("sampling"))
             if time.monotonic() - last_write[0] >= PROGRESS_EVERY_S:
                 last_write[0] = time.monotonic()
                 store.update_audit(audit_id, progress=progress)

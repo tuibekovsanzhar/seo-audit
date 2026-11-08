@@ -568,6 +568,51 @@ def _own_pace(client: ContentProvider, options: Options, result: CrawlResult, cf
     return clock.reader_pace
 
 
+def needed_scope(result: CrawlResult, cfg: CrawlConfig) -> dict[str, Any]:
+    """DECISIONS 327 (Akıllı, "needed"): which pages the reader reads. A page Maya could not read (block page, 429,
+    empty); every page of a URL template where a page Maya read shows the raw-HTML JavaScript signals (empty mount node,
+    <noscript> notice, script-heavy markup: the same test as RND-1's estimate); and the first page of every other URL
+    template, as a cross-check (a finding only the rendered copy shows, such as a language mismatch, is still caught).
+    Pages Maya did not ask for are not read. Returns {"wanted": url -> bool, "record": what it decided}."""
+    from ..checks.render import t0_shell_signals
+    from ..page_groups import url_patterns
+    own = {p.url: p for p in result.pages}
+    patterns = url_patterns(list(own))
+    js: set[str] = set()
+    for p in result.pages:
+        a = p.analysis or {}
+        if _usable(p) and a.get("mount_nodes") is not None:
+            try:
+                signals = t0_shell_signals(a)
+            except Exception:  # noqa: BLE001  an incomplete analysis: no signal
+                signals = []
+            if signals and (len(signals) >= 2 or a.get("visible_words", 0) < cfg.raw_min_words):
+                js.add(patterns.get(p.url, "?"))
+    crossed: set[str] = set()
+    counts = {"not_read_by_maya": 0, "javascript": 0, "cross_check": 0, "maya_copy_enough": 0, "not_asked_by_maya": 0}
+
+    def wanted(url: str) -> bool:
+        page = own.get(url)
+        if page is None:
+            counts["not_asked_by_maya"] += 1
+            return False
+        if not _usable(page):
+            counts["not_read_by_maya"] += 1
+            return True
+        tpl = patterns.get(url, "?")
+        if tpl in js:
+            counts["javascript"] += 1
+            return True
+        if tpl not in crossed:
+            crossed.add(tpl)
+            counts["cross_check"] += 1
+            return True
+        counts["maya_copy_enough"] += 1
+        return False
+    return {"wanted": wanted, "record": {"mode": "needed", "javascript_templates": sorted(js), "templates": len(set(patterns.values())),
+                                         "counts": counts}}
+
+
 def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, options: Options, info: dict[str, Any], *,
                 blocked: bool, progress=None, ranking_urls=(), inbox=None) -> ReadState | None:
     """The reading itself: robots.txt, the queue, the requests (up to `options.concurrency` at once, DECISIONS 294, at
@@ -586,6 +631,10 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
     queue.add(home, "start", 0)
     for url in ([] if cfg.single_page else key_page_urls(result, cfg)):
         queue.add(url, "key_page", 1)
+    # DECISIONS 327: an Akıllı audit's plan, in its order, right after the key pages (a blocked site reads the plan)
+    for url in ([] if cfg.single_page else ((getattr(result, "sampling", None) or {}).get("planned_urls") or [])):
+        if _in_scope(url, origin):
+            queue.add(url, "planned", 1)
     for url in ([] if cfg.single_page else ranking_urls):
         if _in_scope(url, origin):
             queue.add(url, "ranking_page", 1)
@@ -607,6 +656,9 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
     # so it never uses up the limit; Maya's pages that were read count also when the crawl as a whole counted as blocked
     # (before, a blocked crawl's few good pages were left out, and the two together could pass the plan).
     own_read = {page.url for page in result.pages if _usable(page)}
+    scope = needed_scope(result, cfg) if options.read_scope == "needed" and not blocked else None
+    if scope is not None:
+        info["scope"] = scope["record"]
     budget_new = max(0, options.max_pages - len(own_read)) if own_read else None
     over_budget: list[str] = []
 
@@ -719,6 +771,8 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
             if not allowed(url):
                 skipped_robots += 1
                 continue
+            if scope is not None and not scope["wanted"](url):
+                continue  # DECISIONS 327: Maya's own copy is enough (Akıllı, "needed")
             if budget_new is not None and url not in own_read and new_count() >= budget_new:
                 seen.discard(url)
                 over_budget.append(url)  # left for the page limit (DECISIONS 316): known and unread

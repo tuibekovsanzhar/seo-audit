@@ -199,6 +199,9 @@ def _parser() -> argparse.ArgumentParser:
                        help="business type for page importance and key pages (DECISIONS 311): auto (suggested) or one of "
                             "eticaret, bankacilik, yatirim, kart, saglik, otomotiv, saas, su_aritma, guvenlik, "
                             "ev_hizmetleri, gida, seyahat, restoran, diger")
+    crawl.add_argument("--smart", action="store_true",
+                       help="Akıllı örneklem (DECISIONS 327): read a planned sample of --max-pages pages that covers every "
+                            "page type of the business type (the team's sampling rule)")
     crawl.add_argument("--single-page", action="store_true",
                        help="audit only the address given: one page, no links followed, no sitemap. Site-level facts the page "
                             "depends on (robots.txt, its redirects, http:// to https://) are still checked")
@@ -542,6 +545,7 @@ def _crawl_config(args) -> CrawlConfig:
         max_crawl_delay_s=args.max_crawl_delay,
         key_pages=tuple(args.key_page),
         business_type=_business_type(getattr(args, "business_type", "auto")),
+        sampling=bool(getattr(args, "smart", False)),
         bot_info_url=args.bot_info_url,
         allowed_live_hosts=frozenset(args.allow_live_host),
         policy=DeclaredPolicy(training_bots=args.training_bots, search_bots=args.search_bots),

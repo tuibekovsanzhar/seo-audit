@@ -625,7 +625,7 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
     from .priority_levels import annotate as p_levels
     p_levels(rows, importance, summary, pages_read(report), lists, confirmations)
     by_finding = {fid: g for g in rows for fid in g["finding_ids"]}
-    coverage_box = coverage(report, limits)
+    coverage_box = coverage(report, limits, importance)
     kp = key_pages(report, rows, importance) or reader_key_pages(report, rows, summary.get("business_type"))
     return {
         "method": {"severity_weight": SEVERITY_WEIGHT, "confidence_weight": CONFIDENCE_WEIGHT,
@@ -1006,7 +1006,7 @@ def block_pages_line(report: dict) -> dict | None:
             "read": reader.get("pages_read") or 0, "plan": limit.get("plan"), "stopped": cov.get("not_requested_because")}
 
 
-def coverage(report: dict, limits: list[dict]) -> dict:
+def coverage(report: dict, limits: list[dict], records: dict[str, dict] | None = None) -> dict:
     """What Maya read and what it could not, for the coverage section: our limits, never a client problem."""
     crawl = report.get("crawl") or {}
     status = (report.get("audit_status") or {}).get("content_coverage") or {}
@@ -1027,6 +1027,10 @@ def coverage(report: dict, limits: list[dict]) -> dict:
         lines.append(block)
     for gap in not_assessed_parts(report):
         lines.append({"kind": "not_assessed", **gap})
+    from .sampling import coverage as sampled  # DECISIONS 327: an Akıllı audit's pages read per page type
+    rows = sampled(report, records) if (report.get("crawl") or {}).get("sampling") else []
+    if rows:
+        lines.append({"kind": "sampling", "rows": rows})
     reader = report.get("firecrawl") or {}
     return {"pages_read": status.get("pages_read", counts.get("pages_checked")),
             "known_not_read": status.get("known_urls_not_read"),

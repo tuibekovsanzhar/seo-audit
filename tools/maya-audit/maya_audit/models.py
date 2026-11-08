@@ -255,6 +255,10 @@ class CrawlResult:
     # words, ttfb_ms, cache, images, blocking_scripts, analytics, schema_types, ...}}, Maya's pages and a page reader's.
     # None in a report saved before it.
     page_measures: dict[str, dict[str, Any]] | None = None
+    # The plan of an Akıllı ~150 audit (maya_audit.sampling, DECISIONS 327, schema 1.30): {mode, version, budget, profile,
+    # folders, main, types: {type: {rank, label, known, planned, examples}}, waves, retyped, known, files_left_out,
+    # planned_urls, method}. None for any other audit and in a report saved before it.
+    sampling: dict[str, Any] | None = None
     _sitemap_named_in: dict[str, str] = field(default_factory=dict, repr=False)
     # In memory only: the sitemap file that listed each sitemap URL, for the sitemap check's sample (DECISIONS 294).
     _sitemap_file_of: dict[str, str] = field(default_factory=dict, repr=False)

@@ -86,6 +86,7 @@ and no file path is returned.
 | `GET /audits/{id}/findings/{finding_id}/pages?q=&limit=&offset=` | Every page a finding affects. |
 | `GET /audits/{id}/evidence/{evidence_id}` | A finding's evidence (`evidence_id` = the finding's id), or one saved page record (`page-<n>`). |
 | `GET /audits/{id}/downloads/{format}?full=&lang=` | `pdf`, `markdown`, `json`, `evidence` (a zip; its `index.json` names the evidence folder, never a path on this computer). The PDF is the concise report unless `full=true`. |
+| `POST /plans` mode `smart` | Akıllı ~150 (DECISIONS 327): a planned sample of 150 pages covering every page type of the business type; with Firecrawl on, it reads only where needed unless `firecrawl_full_read` is true ("Tam okuma (Firecrawl her sayfa)"). |
 | `GET /audits/{id}/downloads/sector` | The team's sector audit workbook filled from the audit (DECISIONS 324): five sheets in the team's format, formulas and dropdowns kept, Turkish. Gated like the appendix (`-draft` in the name when blocked). |
 | `POST /audits/{id}/review/p0` | `{finding_id, action: "set" \| "removed", by, note?}`: a person sets a card to P0 or takes its automatic P0 off (DECISIONS 324); written to the audit's review.json under `p0`. `GET /audits/{id}/review` lists every card's level under `p0`. |
 | `DELETE /audits/{id}/review/p0/{finding_id}` | Undo that mark (kept under `replaced`). |

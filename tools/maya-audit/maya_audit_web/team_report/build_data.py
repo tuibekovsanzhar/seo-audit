@@ -1785,6 +1785,11 @@ class Builder:
                 from maya_audit.client_appendix import block_pages_text  # type: ignore
                 limits.append(block_pages_text(line, lang))
                 self.fact(line.get("blocked"), line.get("allowed"), line.get("read"))
+            elif line["kind"] == "sampling":  # DECISIONS 327: pages read per page type of an Akıllı audit
+                from maya_audit.sampling import coverage_text as sampled_text  # type: ignore
+                limits.append(sampled_text(line.get("rows") or [], lang))
+                for row in line.get("rows") or []:
+                    self.fact(row.get("read"), row.get("known"))
         versions = self.locales_line()  # DECISIONS 316
         if versions:
             limits.append(versions)

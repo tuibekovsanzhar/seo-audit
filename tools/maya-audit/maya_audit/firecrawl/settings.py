@@ -181,6 +181,10 @@ class Options:
     """What one audit may do with Firecrawl. All of it is chosen by the person, per audit, and written to the report."""
     read_blocked: bool = True          # read page content when Maya's own crawler was blocked
     read_always: bool = False          # the main page reader: read every audit's pages, blocked or not
+    # DECISIONS 327: which of the pages Maya read the reader reads again. "all": every page (Standart, Hızlı, and "Tam okuma
+    # (Firecrawl her sayfa)" in Akıllı); "needed" (Akıllı): the pages Maya could not read, the pages of URL templates
+    # that need JavaScript (raw-HTML signals), and one page per URL template as a cross-check.
+    read_scope: str = "all"
     # How the reader chooses and finds pages (maya_audit.firecrawl.reading). Each can be switched off to measure it.
     spread_by_section: bool = True     # the crawler's order: key pages, navigation, the least-read section first
     sitemap_discovery: bool = False    # ask the reader for the sitemap when Maya's own crawler could not read one (on in the app and CLI)
@@ -196,6 +200,8 @@ class Options:
 
     def problem(self) -> str | None:
         """Why these options may not be used, or None."""
+        if self.read_scope not in ("all", "needed"):
+            return "read_scope must be all or needed"
         if self.proxy not in PROXIES:
             return f"proxy must be one of {', '.join(PROXIES)}"
         if self.proxy != DEFAULT_PROXY and not self.owner_approved_bypass:

@@ -317,6 +317,9 @@ class CrawlConfig:
     # The business type ("İşletme türü", DECISIONS 311): "auto" (suggested from the homepage and addresses), or a profile
     # id of maya_audit.business_types. It weights page importance and key pages only; no check reads it.
     business_type: str = "auto"
+    # Akıllı ~150 (DECISIONS 327): the crawl reads a planned sample covering every page type of the business profile
+    # (maya_audit.sampling) instead of the order links are found in. The page cap is the budget.
+    sampling: bool = False
 
     # Additional hosts allowed for redirects or optional cross-origin checks.
     # The requested start host is added automatically for each audit.

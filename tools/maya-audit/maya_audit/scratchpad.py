@@ -75,7 +75,8 @@ CREATE TABLE IF NOT EXISTS frontier (
     section     TEXT,
     page_key    TEXT,
     locale      TEXT,
-    boost       INTEGER NOT NULL DEFAULT 0
+    boost       INTEGER NOT NULL DEFAULT 0,
+    plan_rank   INTEGER
 );
 CREATE INDEX IF NOT EXISTS frontier_next_idx ON frontier (status, priority, seq);
 
@@ -160,7 +161,7 @@ class Scratchpad:
         if self._db.execute("SELECT 1 FROM sqlite_master WHERE name = 'frontier'").fetchone():
             columns = {row["name"] for row in self._db.execute("PRAGMA table_info(frontier)")}
             for name, kind in (("section", "TEXT"), ("page_key", "TEXT"), ("locale", "TEXT"),
-                               ("boost", "INTEGER NOT NULL DEFAULT 0")):
+                               ("boost", "INTEGER NOT NULL DEFAULT 0"), ("plan_rank", "INTEGER")):
                 if name not in columns:  # a frontier from before sections (or before DECISIONS 316)
                     self._db.execute(f"ALTER TABLE frontier ADD COLUMN {name} {kind}")
         self._db.executescript(SCHEMA)
@@ -186,6 +187,20 @@ class Scratchpad:
         self.locale_folders: frozenset[str] = frozenset(saved.get("folders") or [])
         self.main_locale: str | None = saved.get("main")
         self._boost = None
+        self._planned = bool(self.get_meta("sampling_planned"))
+
+    def set_plan(self, order: list[str], via: str = "sitemap") -> int:
+        """DECISIONS 327 (Akıllı ~150): the reading order of a planned sample. Addresses waiting get their place in it
+        (`plan_rank`); one not yet queued is queued; the rest wait behind the plan. Returns how many are planned."""
+        with self._transaction():
+            self._db.execute("UPDATE frontier SET plan_rank = NULL WHERE status = ?", (QUEUED,))
+        self.add_urls([FrontierUrl(u, None, via, None) for u in order])
+        with self._transaction():
+            self._db.executemany("UPDATE frontier SET plan_rank = ? WHERE url = ? AND status = ?",
+                                 [(i, u, QUEUED) for i, u in enumerate(order)])
+        self._planned = True
+        self.set_meta("sampling_planned", True)
+        return len(order)
 
     def set_locales(self, folders, main: str | None, boost=None) -> None:
         """The site's locale folders (`locales.detect`), its main version ("" for the root) and a test for the business
@@ -286,7 +301,10 @@ class Scratchpad:
                 "SELECT f.url, f.depth, f.via, f.parent_url, f.priority FROM frontier f "
                 "LEFT JOIN section_fetches s ON s.section = f.section "
                 "LEFT JOIN page_copies c ON c.page_key = f.page_key WHERE f.status = ? "
-                "ORDER BY f.priority >= ?, "
+                "ORDER BY f.priority >= ?, " + (
+                    # DECISIONS 327: in an Akıllı crawl the plan comes right after the start URL, key pages and redirects
+                    "CASE WHEN f.via IN ('start', 'key_page', 'redirect') THEN 0 ELSE 1 END, "
+                    "CASE WHEN f.plan_rank IS NULL THEN 1 ELSE 0 END, f.plan_rank, " if self._planned else "") +
                 "CASE WHEN f.via IN ('start', 'key_page', 'redirect') THEN 0 "
                 "WHEN COALESCE(c.n, 0) >= (CASE WHEN f.page_key = ? THEN ? ELSE ? END) THEN 1 ELSE 0 END, "
                 "MIN(f.priority, ?), CASE WHEN f.priority < ? OR f.page_key IS ? THEN 0 ELSE MIN(COALESCE(c.n, 0), 1) END, "

@@ -167,8 +167,9 @@ class ManualCheckIn(Strict):
 
 class PlanIn(Strict):
     url: str = Field(min_length=1, max_length=2048, description="The website to audit. A bare domain is read as https.")
-    mode: str = Field(default="quick", pattern="^(single|quick|standard)$",
-                      description="single: only the address given, no links followed. quick: up to 50 pages. standard: up to 500.")
+    mode: str = Field(default="quick", pattern="^(single|quick|smart|standard)$",
+                      description="single: only the address given, no links followed. quick: up to 50 pages. smart: Akıllı ~150, "
+                                  "a planned sample of every page type of the business type (DECISIONS 327). standard: up to 500.")
     backlinks: bool = Field(default=False, description="Ask DataForSEO for backlink figures (paid, off by default).")
     search_data: bool = Field(default=False, description="Ask DataForSEO for the search data panels: domain overview, ranked keywords, quick wins, competitors, AI mentions, Lighthouse (paid, off by default).")
     local_business: bool = Field(default=False, description="With search_data: also look up the Google Business Profile under the plan's brand name.")
@@ -183,6 +184,7 @@ class PlanIn(Strict):
     external_links: bool = Field(default=True, description="Check links to other sites (one light request each, within a cap). On by default; false runs the audit with --no-external-links.")
     firecrawl: bool | None = Field(default=None, description="Read the pages through Firecrawl (paid in credits). Left out: on when a Firecrawl key is set on this computer. false: Maya's own crawler reads the pages.")
     firecrawl_render: bool = Field(default=False, description="Also render through Firecrawl when the local browser cannot start.")
+    firecrawl_full_read: bool = Field(default=False, description="Akıllı ~150: \"Tam okuma (Firecrawl her sayfa)\": Firecrawl reads every page. Left out: only the pages Maya could not read, JavaScript templates and one page per URL template (DECISIONS 327).")
     firecrawl_max_pages: int | None = Field(default=None, ge=1, le=500, description="The most pages Firecrawl may read for this audit. Left out: the plan's own page cap (at most 500).")
     firecrawl_proxy: str = Field(default="basic", pattern="^(basic|enhanced|auto)$", description="basic unless the site owner approved more.")
     firecrawl_owner_approved: bool = Field(default=False, description="The site owner has approved bypassing bot protection.")
@@ -818,6 +820,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             firecrawl_settings.main_reader_on() and engine.firecrawl.key() is not None)
         wanted = None if not (on or body.firecrawl_render) else {
             "read_always": True, "render_fallback": body.firecrawl_render,
+            # DECISIONS 327: Akıllı reads through Firecrawl only where needed, unless "Tam okuma" was chosen
+            "read_scope": "needed" if body.mode == "smart" and not body.firecrawl_full_read else "all",
             "max_pages": body.firecrawl_max_pages or min(MODES[body.mode], firecrawl_settings.MAX_PAGES_LIMIT), "proxy": body.firecrawl_proxy,
             "owner_approved_bypass": body.firecrawl_owner_approved,
             "allow_without_zero_data_retention": not firecrawl_settings.zero_data_retention_wanted()}
@@ -970,6 +974,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             "current_url": progress.get("url") if is_active(audit) else None,
             # DECISIONS 311: the suggestion as soon as the homepage is read, and the type the audit used.
             "business": business_progress(audit),
+            "sampling_line": sampling_line(progress.get("sampling")) if is_active(audit) else None,  # DECISIONS 327
             "address_note": progress.get("address_note"),
             "created_at": audit["created_at"], "started_at": audit["started_at"], "finished_at": audit["finished_at"],
             "elapsed_s": elapsed, "eta": eta(audit), "sessions": audit["sessions"],
@@ -986,6 +991,17 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                           "continuing": bool(audit["firecrawl"].get("continue")) and is_active(audit)},
             "has_report": report_path(audit["id"]).is_file(), "last_event_id": store.last_event_id(audit["id"]),
         }
+
+    def sampling_line(sampling: dict | None) -> str | None:
+        """DECISIONS 327: "Sayfa türüne göre örneklem: Tedavi ve bölüm 24/80 · Doktor ve ekip 3/3" (read / known)."""
+        from maya_audit import business_types as bt
+        if not isinstance(sampling, dict) or not sampling.get("types"):
+            return None
+        lang = "en" if current_language() == "en" else "tr"
+        rows = sorted(sampling["types"], key=lambda r: (r.get("rank") or 50))
+        parts = [f'{bt.type_label(sampling.get("profile"), r["id"], lang) or r.get("label") or r["id"]} '
+                 f'{r.get("read", 0)}/{max(r.get("known") or 0, r.get("read") or 0)}' for r in rows]
+        return t("progress.sampling") + ": " + " · ".join(parts)
 
     def business_progress(audit: dict[str, Any]) -> dict[str, Any] | None:
         from maya_audit import business_types as bt
@@ -1147,7 +1163,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
 
     TYPICAL_RUNS = 5  # DECISIONS 310: the time shown is the median of this many recent finished audits of the mode
     MIN_TYPICAL_RUNS = 3  # DECISIONS 311 (6): fewer such runs than this, and the mode's default is shown
-    DEFAULT_MINUTES = {"single": 1, "quick": 10, "standard": 25}  # the v0.3 time goals (docs/ROADMAP-v0.3.md)
+    DEFAULT_MINUTES = {"single": 1, "quick": 10, "smart": 10, "standard": 25}  # the v0.3 time goals (docs/ROADMAP-v0.3.md)
     COUNTED_STOPS = ("page_cap", "exhausted")  # a run that read what it set out to; not stopped, blocked or rate-limited
 
     def counts_for_time(a: dict[str, Any], mode: str) -> bool:

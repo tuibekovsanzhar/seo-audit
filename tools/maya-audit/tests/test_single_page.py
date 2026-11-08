@@ -124,7 +124,7 @@ def test_the_command_line_flag_caps_the_run_at_one_page():
 def test_the_web_mode_plans_one_page_and_ignores_important_pages(web):
     client = web()
     modes = get_json(client, "/settings")["modes"]
-    assert [mode["id"] for mode in modes] == ["single", "quick", "standard"] and modes[0]["label"] == "Single page" and modes[0]["page_cap"] == 1
+    assert [mode["id"] for mode in modes] == ["single", "quick", "smart", "standard"]  # smart: DECISIONS 327 and modes[0]["label"] == "Single page" and modes[0]["page_cap"] == 1
     made = plan(client, url=f"http://{SHOP}/item/13", mode="single", key_pages=[f"http://{SHOP}/item/2"])
     assert made["page_cap"] == 1 and made["single_page"] is True and made["target"]["url"] == f"http://{SHOP}/item/13"
     assert made["scope_label"] == t("plan.scope.single") and "no links are followed" in made["scope_label"]

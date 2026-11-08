@@ -22,7 +22,7 @@ from .settings import SITEMAP_MIN_PAGE_CAP as SITEMAP_MIN_CAP  # counted in the 
 from .settings import SITEMAP_REQUESTS as SITEMAP_DOCUMENTS
 
 # The crawler's own classes (maya_audit.scratchpad.PRIORITY): lower is sooner.
-_CLASS = {"redirect": 0, "start": 1, "key_page": 1, "alternate": 1, "ranking_page": 1.5, "link": 3, "rendered_link": 3, "sitemap": 4}
+_CLASS = {"redirect": 0, "start": 1, "key_page": 1, "alternate": 1, "planned": 1.2, "ranking_page": 1.5, "link": 3, "rendered_link": 3, "sitemap": 4}
 _NAV, _PAGINATION = 2, 5
 # A sitemap document costs a request like a page does. At most this many are asked for, and only when the audit's
 # page cap is at least SITEMAP_MIN_CAP, so a small audit spends its requests on pages.

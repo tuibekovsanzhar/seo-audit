@@ -29,6 +29,7 @@ from typing import Callable
 from . import client_selection as cs
 from . import xlsx
 from .recommendation_catalog import note
+from .sampling import type_line
 
 NAME = "sector_method.json"
 DURUM = ("Kontrol Edilmedi", "Hatalı", "Kısmen Uygun", "Uygun", "Uygulanamaz")
@@ -43,7 +44,7 @@ REASON = {
     "M": "Maya bunu henüz otomatik denetlemiyor (Stage 7).",
     "type": "Bu sayfa türü okunan sayfalar arasında bulunamadı (sitede olmadığı anlamına gelmez).",
     "sector": "Bu denetimin işletme türü bu sektör değil.",
-    "no_sector": "İşletme türü «Diğer»: sektörel kontroller seçilmedi.",
+    "no_sector": "Sektör seçilmedi: sektörel satırlar için iş türünü seçin.",  # DECISIONS 327
     "not_run": "İlgili kontrol bu denetimde çalışmadı.",
     "na": "Bu sitede uygulanamaz (ilgili kontrol uygulanamaz buldu).",
     "low": "Düşük kapsam: okunan sayfa az, «Uygun» yazılmadı.",
@@ -58,6 +59,8 @@ REASON = {
     "checked_host": "Bulgu yok: {n} alan adında {what} kontrol edildi.",
 }
 EXTRA = ["Maya: Durum nedeni", "Maya kapsamı", "Maya kuralları", "Not"]
+NO_SECTOR_NOTE = ["Sektör seçilmedi (Maya)", "Sektör seçilmedi: sektörel satırlar için iş türünü seçin. Bu denetimde yalnız "
+                  "44 ortak kontrol dolduruldu; iş türü seçilince sektörün satırları da doldurulur."]
 PREFILL_NOTE = ["Ön doldurulan değerler (Maya)",
                 "Yaygınlık ve Efor her satırda önceden dolduruldu (ölçülen yaygınlık, yoksa 1; kuralın varsayılan eforu, yoksa 3) "
                 "ve düzenlenebilir: Durum «Hatalı» ya da «Kısmen Uygun» yapılınca Öncelik Skoru ve Öncelik hemen hesaplanır."]
@@ -106,6 +109,7 @@ class _Audit:
     def __init__(self, report: dict, selection: dict, lists: dict | None, business: str | None,
                  title: Callable | None, words: Callable | None):
         importance, summary = cs.grouping(report, business)
+        self.records = importance
         info = summary.get("business_type") or {}
         self.profile = info.get("id") if isinstance(info, dict) else None
         self.sector = sector_of(self.profile)
@@ -287,7 +291,9 @@ def evaluate(report: dict, selection: dict, lists: dict | None = None, business:
             if a.count.get(row["type_id"], 0):
                 sec.append({**row, **_evaluate(a, row, row["type_id"])})
             else:
-                sec.append({**row, **prefill(row, {"durum": "Kontrol Edilmedi", "reason": REASON["type"], "spread": None,
+                sampled = type_line(report, row["type_id"], a.records)  # DECISIONS 327: the Akıllı plan's coverage
+                reason = REASON["type"] + (f" Akıllı örneklem: {sampled}." if sampled else "")
+                sec.append({**row, **prefill(row, {"durum": "Kontrol Edilmedi", "reason": reason, "spread": None,
                                                     "effort": None, "example": None, "evidence": "", "maya_action": "",
                                                     "owner": ""})})
         else:
@@ -338,7 +344,8 @@ def sheets(result: dict) -> list[dict]:
     H = m["headers"]
     weights = {r[0]: r[1] for r in m["methodology"][21:27]}  # Metodoloji!A22:B27, rank -> weight
     meth = {"name": "Metodoloji", "header": [x if x is not None else "" for x in m["methodology"][0]],
-            "rows": [[x if x is not None else "" for x in r] for r in m["methodology"][1:]] + [[], PREFILL_NOTE], "widths": [28, 120],
+            "rows": [[x if x is not None else "" for x in r] for r in m["methodology"][1:]] + [[], PREFILL_NOTE]
+            + ([NO_SECTOR_NOTE] if result["sector"] is None else []), "widths": [28, 120],
             "frozen": False, "filter": False}
     last_type = len(result["types"]) + 1
     trows = []
@@ -390,7 +397,9 @@ def sheets(result: dict) -> list[dict]:
     base = [r for r in result["sec"] if not r.get("draft")]
     rows = [["Toplam sektör", sum(1 for s in m["sectors"] if not s["draft"]), "Öncelikli sayfa türü",
              sum(1 for t in result["types"] if not t.get("draft"))],
-            ["Ortak SEO kontrolü", len(result["core"]), "Sektörel SEO kontrolü", len(base)], [], H["summary"]]
+            ["Ortak SEO kontrolü", len(result["core"]), "Sektörel SEO kontrolü", len(base)],
+            # row 4 (empty in the team's file): says so when the audit has no business type (DECISIONS 327)
+            [REASON["no_sector"]] if result["sector"] is None else [], H["summary"]]
     for k, s in enumerate(m["sectors"]):
         i = 6 + k
         mine = [r for r in result["sec"] if r["sector"] == s["name"]]

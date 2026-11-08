@@ -375,10 +375,13 @@ function firecrawlBox(plan, request, live, replan) {
   const on = el("input", { type: "checkbox", id: id + "-on", checked: reader.requested, disabled: !live });
   const owner = el("input", { type: "checkbox", id: id + "-owner", checked: reader.requested && options.owner_approved_bypass, disabled: !live });
   const render = el("input", { type: "checkbox", id: id + "-render", checked: reader.requested && options.render_fallback, disabled: !live });
+  // DECISIONS 327: Akıllı ~150 reads through Firecrawl only where needed unless "Tam okuma" is ticked
+  const full = el("input", { type: "checkbox", id: id + "-full", checked: reader.requested && options.read_scope === "all", disabled: !live });
   const cap = el("input", { class: "field-input", type: "number", id: id + "-cap", min: 1, max: reader.max_pages_limit, step: 1, disabled: !live });
   cap.value = options.max_pages || 50;
   const proxy = el("select", { class: "field-input", id: id + "-proxy", disabled: !live }, reader.proxies.map((name) => el("option", { value: name, selected: name === options.proxy }, name)));
   const update = () => replan(Object.assign({}, request, { firecrawl: on.checked, firecrawl_render: on.checked && render.checked,
+    firecrawl_full_read: on.checked && request.mode === "smart" && full.checked,
     firecrawl_max_pages: Math.max(1, Math.min(reader.max_pages_limit, Number(cap.value) || 50)),
     firecrawl_owner_approved: on.checked && owner.checked, firecrawl_proxy: on.checked && owner.checked ? proxy.value : "basic" }));
   on.addEventListener("change", update);
@@ -391,6 +394,7 @@ function firecrawlBox(plan, request, live, replan) {
       options.owner_approved_bypass ? el("div", {}, el("label", { class: "label", for: id + "-proxy", text: T("fc.proxy") }), proxy) : null),
       el("p", {}, owner, " ", el("label", { for: id + "-owner", text: T("fc.owner") })), el("p", { class: "muted small", text: T("fc.owner.help") }),
       reader.render_fallback_offered ? el("p", {}, render, " ", el("label", { for: id + "-render", text: T("fc.render") })) : null,
+      request.mode === "smart" ? el("p", {}, full, " ", el("label", { for: id + "-full", text: T("fc.full_read") }), el("span", { class: "muted small", text: " " + T("fc.full_read.help") })) : null,
       el("div", { class: "row" }, el("button", { class: "button", type: "button", onclick: update }, T("fc.update"))));
   }
   box.append(el("p", { class: "total", text: reader.cost_line }));
@@ -735,6 +739,7 @@ function auditCard(audit, planNode) {
           el("span", { class: "muted small", text: " · " + T("job.pages.plain", { read: num(read), cap: num(c.page_cap) }) })),
         business.suggested_line ? el("p", { class: "small business-early", role: "status", text: business.suggested_line }) : null,
         business.chosen_line ? el("p", { class: "muted small", text: business.chosen_line }) : null,
+        current.sampling_line ? el("p", { class: "small sampling-line", role: "status", text: current.sampling_line }) : null,
         el("div", { class: "meter", role: "progressbar", "aria-valuemin": 0, "aria-valuemax": c.page_cap, "aria-valuenow": read, "aria-label": T("result.pages") }, bar),
         el("ol", { class: "plain-steps" }, steps.map((step, i) => el("li", { class: step.status },
           el("span", { class: "dot", "aria-hidden": "true", text: step.status === "done" ? "✓" : step.status === "active" ? String(i + 1) : "" }),

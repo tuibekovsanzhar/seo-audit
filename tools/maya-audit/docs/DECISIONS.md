@@ -4181,3 +4181,55 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Checked in Numbers (LibreOffice is not installed here) on the moodist workbook: CORE-001 Uygun -> Hatalı gave
      100 / P1; SEC-066 Uygun -> Hatalı gave 33,3 / P2 and the Audit Özeti row "Sağlık / klinikler" went Hatalı 1 -> 2,
      Uygun 2 -> 1. Schema: no bump. Tests: `tests/test_sector_prefill_326.py` (5).
+327. **Akıllı ~150 (v0.3 Stage 5): a planned sample that covers every page type of the business type; Firecrawl only where
+     needed in that mode; "Sektör seçilmedi" in the Sektör audit (Owner, 2026-11-08: the Step 1 proposal approved with
+     answers 1-4; this updates DECISIONS 296 for the Akıllı mode only; the thresholds below the owner did not name are
+     agent defaults).** New `maya_audit/sampling.py` (`Sampler`), CLI `--smart`, web mode `smart` (150 pages).
+     (1) *Typing before reading.* When the first page is read (normally the homepage), every known address (the sitemap,
+     that page's links with their menu texts, the key pages) is typed with the profile's own signals
+     (`business_types.classify` on the address and the menu text): files (`.kml`, `.md`, `.xml`, `.pdf`, images) are
+     left out; a long (5+ words) top-level slug whose only type word is in the slug is a blog post (the profile's citable
+     type). A wider "folder word first" rule was tried and dropped (nihan fell from 496/498 to 24% agreement). The
+     business type is the person's choice, else the one that homepage suggests. A site whose first page is blocked is
+     planned from its sitemap alone.
+     (2) *Budget (owner).* The homepage and its language versions (up to 4, all kept) and the key pages first; a reserve
+     of 10 other pages, 3 policy pages and 2 search/cart pages; a page type with 30 known addresses or fewer is read in
+     full, in rank order; a larger one gets at least 30, the rest by its rank weight (floors in rank order when the budget
+     is short); budget still left fills in rank order. Inside a large type the team's split: a third importance
+     (menu-linked, shallow), a third long tail (deep, not in the menu), a sixth newest by sitemap lastmod, a sixth
+     exceptions (rare URL template, parameters), rotating over the URL templates (`page_groups.url_patterns`). The
+     reading order rotates over the types in rank order, so a time cut still leaves every type read.
+     (3) *Two waves (owner).* After 60% of the budget the pages read are typed with their content, every unread address
+     of a URL template takes the template's type when 3 or more of its pages read agree (80%+), the addresses found
+     meanwhile join the pool, and the rest of the budget is planned again (a type found empty gives its share back).
+     (4) *Main language version (owner).* The folder the homepage redirects to is the main version (DECISIONS 316's
+     `set_main_locale`, now also the plan's): another language's page is planned only when its type has none in the main
+     version, or from budget left over.
+     (5) *Crawl.* The frontier gets a `plan_rank` column (added to older crawl databases): in an Akıllı crawl the plan comes
+     right after the start URL, key pages and redirects; every other crawl keeps its order. The resume binding leaves
+     `sampling` out when it is off, so a crawl saved before this resumes. Progress events carry the pages read per type;
+     the web progress box shows "Sayfa türüne göre örneklem: Tedavi ve bölüm 24/56 · Doktor ve ekip 3/4 …".
+     (6) *Report (schema 1.30).* `crawl.sampling`: per type the addresses known (typed before reading, corrected after the
+     first wave) and the pages planned, the waves, the re-typed count, the planned addresses. Coverage per type
+     (`sampling.coverage`, pages read typed after reading from the page grouping) is a coverage line
+     ("Akıllı örneklem, sayfa türleri: Tedavi ve bölüm: 30/56 okundu (örneklem) · Klinik ve konum: bulunamadı") in the
+     team report's limits, the XLSX coverage sheet and, for a page type with no page read, the Sektör audit's reason.
+     (7) *Firecrawl in Akıllı (owner; updates DECISIONS 296 for this mode).* Options `read_scope`: "needed" by default
+     in Akıllı: the reader reads the pages Maya could not read (block page, 429, empty), every page of a URL template
+     where a page Maya read shows the raw-HTML JavaScript signals (the RND-1 estimate's test; our own Chromium render
+     keeps sampling those templates), and the first page of every other URL template as a cross-check (so a finding
+     only the rendered copy shows, like a language mismatch, is still caught); what it decided is in the firecrawl
+     section (`scope`). "Tam okuma (Firecrawl her sayfa)" on the plan (`firecrawl_full_read`) is `read_scope` "all",
+     as Hızlı and Standart keep. A blocked site's reader reads the plan's addresses first, in its order.
+     (8) *Modes (owner).* "Akıllı ~150 (önerilen)" is added; "Hızlı ön bakış · 50 sayfa" (renamed) stays the default
+     until one live run confirms Akıllı under about 12 minutes; its default estimate is 10 minutes.
+     (9) *Sektör audit (queued from Step 1).* With no business type ("Diğer"), Audit Özeti's empty row 4 and a last line
+     of Metodoloji say "Sektör seçilmedi: sektörel satırlar için iş türünü seçin", and so does every sector row's reason.
+     (10) *Dry runs on saved data* (`tools/sampling_dryrun.py`, no request): moodisthastanesi c581ff0a (Sağlık, main
+     folder `tr`): 549 known pages; planned Tedavi ve bölüm 56/56, Doktor ve ekip 4/4, Klinik ve konum 2/2 (two
+     psychologists' profiles typed by address; reading is expected to re-type them), Ana sayfa 4 of 6 versions, Randevu ve
+     iletişim 3/3, Anlaşmalı kurumlar 1/1, blog 57/147, other 22/328, policy 1; fillable sector rows 9 -> 17 of 18. nihan
+     b3198942 (E-ticaret): 8,059 known pages; Kategori 46/145, Ürün 39/7,844, Ana sayfa 2/2, Mağaza 3/3, Kampanya 2/2,
+     Yardım ve güven 12/12, blog 33/33; 23 unread addresses re-typed after wave 1; fillable 13 -> 16 of 18.
+     Not done: cutting the sitemap check (proposed in IMPLEMENTATION-STATUS, waiting for the owner). Tests:
+     `tests/test_sampling_327.py` (19); schema pins 1.29 -> 1.30.

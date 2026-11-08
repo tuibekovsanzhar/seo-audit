@@ -44,6 +44,7 @@ class FirecrawlServices:
 
 def options_from(requested: dict[str, Any]) -> Options:
     return Options(read_blocked=True, read_always=bool(requested.get("read_always")), render_fallback=bool(requested.get("render_fallback")),
+                   read_scope="needed" if requested.get("read_scope") == "needed" else "all",  # DECISIONS 327
                    sitemap_discovery=bool(requested.get("sitemap_discovery", True)),
                    max_pages=int(requested.get("max_pages") or settings.DEFAULT_MAX_PAGES),
                    proxy=requested.get("proxy") or settings.DEFAULT_PROXY,

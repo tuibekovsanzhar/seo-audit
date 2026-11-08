@@ -1631,3 +1631,47 @@ c581ff0a, nihan b3198942, airastana d12146fb: 0 rows of 44 + 207 without Yaygın
 | full suite, `pytest -q -rfEs -p no:cacheprovider` | `3111 passed, 4 skipped, 1 warning in 924.75s (0:15:24)` |
 | ruff E9/F821/F841, `python3.11 -m compileall` | clean / OK |
 | Push of 14e104f, b15aa40 and this commit; GitHub CI | see the owner's summary of this session (not a status-only commit) |
+
+## Akıllı ~150, v0.3 Stage 5 (2026-11-08, DECISIONS 327)
+
+New `maya_audit/sampling.py` (typing before reading, the team's budget rule and split, two waves with re-typing, the
+plan record and coverage per type), frontier `plan_rank`, crawler hooks (plan at the first page read, re-plan after 60%),
+CLI `--smart`, web mode "Akıllı ~150 (önerilen)" (Quick renamed "Hızlı ön bakış · 50 sayfa", still the default),
+Firecrawl `read_scope` ("needed" in Akıllı; "Tam okuma (Firecrawl her sayfa)" = "all"), progress line per type,
+coverage line in the team report / XLSX / Sektör audit, schema 1.30 `crawl.sampling`, "Sektör seçilmedi" in the
+Sektör audit. Dry-run tool: `tools/sampling_dryrun.py`.
+
+**Dry runs on saved data** (no request; outputs `reviews/smart-sampling/step2-*.json`, not in git):
+
+| | moodisthastanesi c581ff0a (Sağlık) | nihan b3198942 (E-ticaret) |
+|---|---|---|
+| Known pages (one version each) | 549, main folder `tr` | 8,059, main folder root |
+| Planned per type | Tedavi ve bölüm 56/56, Doktor ve ekip 4/4, Klinik ve konum 2/2*, Ana sayfa 4 of 6, Randevu ve iletişim 3/3, Anlaşmalı kurumlar 1/1, blog 57/147, other 22/328, policy 1 | Kategori 46/145, Ürün 39/7,844, Ana sayfa 2/2, Mağaza 3/3, Kampanya 2/2, Yardım ve güven 12/12, blog 33/33, other 11/13, utility 2/4 |
+| Re-typed after wave 1 | 0 (only 17 of the 90 wave-1 pages were read in the saved audit) | 23 |
+| Fillable sector rows (of 18) | 9 -> 17 | 13 -> 16 |
+
+\* two psychologists' profiles typed "Klinik ve konum" by address; reading is expected to re-type them.
+
+**Where Quick 50's 10-25 minutes go today** (step timings of the saved reports, seconds): moodist (10.2 min wall)
+crawl 96, structure 108, render 119, performance 45, access + index 19, sitemap check 200 (101 requests), Firecrawl 131
+beside them; airastana (16.1 min) crawl 114, performance 56, sitemap check 194, Firecrawl 842 (blocked site); nihan
+Standard 500 (85 min) crawl 535, sitemap check 806 (1,004 requests), Firecrawl 3,451. The sitemap check runs last, alone,
+its light requests spaced by the shared site limit (one start per crawl gap, ~1 s) and sharing its slots with the
+reader, so ~2 s each.
+
+**Proposal to cut the sitemap check without changing results (not built; owner to decide):** (a) start it right after
+the crawl, beside access/index/structure/render/performance, instead of after them: the same requests through the same
+shared site limit and the same rows, only earlier (moodist: up to ~200 s saved, the steps it runs beside take ~290 s);
+(b) in Akıllı, Firecrawl reading only where needed takes fewer of the site limit's slots, so the check's requests are
+no longer slowed to ~2 s each. Not proposed: a smaller sample or HEAD instead of the light GET (that would change what
+the check finds: meta robots and canonical are read from the first 64 KB).
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_sampling_327.py` | `19 passed` |
+| CLI `--smart --business-type saglik` on a local static site, provider-free (`--no-firecrawl`, empty keys, temp home and env file) | exit 0; schema 1.30; 4 pages read; `crawl.sampling` with every type; no `firecrawl` section; no home folder or ledger |
+| fast suite (fixture matrix regenerated), first run | `2 failed, 2993 passed`: mode list and the renamed label pinned in two tests; updated, `12 passed` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `3130 passed, 4 skipped, 1 warning in 941.51s (0:15:41)` |
+| ruff E9/F821/F841, `python3.11 -m compileall`, `node --check app.js` | clean / OK / OK |
+| A live Akıllı audit | NOT RUN (owner runs one after restarting the web app) |
+| Push | NOT DONE (owner: don't push) |

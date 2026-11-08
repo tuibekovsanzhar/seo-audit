@@ -113,7 +113,7 @@ def test_time_estimates_come_from_recent_runs_and_fall_back_to_the_modes_default
     modes = {m["id"]: m["typical"] for m in client.get(f"{API}/settings").json()["modes"]}
     mine = modes[audit["mode"]]
     assert mine["known"] and mine["basis"] == "default" and mine["runs"] <= 1 and mine["label"].startswith("about ")
-    assert {mode: m["minutes"] for mode, m in modes.items()} == {"single": 1, "quick": 10, "standard": 25}
+    assert {mode: m["minutes"] for mode, m in modes.items()} == {"single": 1, "quick": 10, "smart": 10, "standard": 25}
     client.cookies.set("maya_language", "tr")
     tr = {m["id"]: m["typical"] for m in client.get(f"{API}/settings").json()["modes"]}
     assert tr[audit["mode"]]["label"].startswith("yaklaşık ") and "varsayılan" in tr[audit["mode"]]["label"]
