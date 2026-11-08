@@ -15,8 +15,9 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 from . import clock as _clock
 
-# In the order an audit goes through them.
-PHASES = ("starting", "sitemap", "crawl", "access", "index", "structure", "render", "performance", "sitemap_check", "citations",
+# In the order an audit goes through them. DECISIONS 328: the sitemap check starts right after the crawl, beside access,
+# index, structure and rendering.
+PHASES = ("starting", "sitemap", "crawl", "sitemap_check", "access", "index", "structure", "render", "performance", "citations",
           "citation_domains", "checks", "done")
 
 

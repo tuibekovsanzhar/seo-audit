@@ -126,9 +126,12 @@ def test_robots_samples_are_sent_when_due_between_other_requests_with_no_idle_ga
     # ... and no request waited for them: every gap is the 1 s between requests, never a 120 s idle wait.
     gaps = [b.started_mono - a.ended_mono for a, b in zip(log, log[1:])]
     assert max(gaps) < 1.01
-    assert log.index(robots[2]) < len(log) - 1  # sent among the other requests, not after them
     steps = [row["step"] for row in result.steps]
-    assert "robots_wait" not in steps
+    # Sent among the other requests. DECISIONS 328: the sitemap check runs beside the other steps, so Maya's own steps
+    # may end just before the last sample is due; it is then the last request after a short wait (DECISIONS 219: what
+    # is not due when the last step ends is waited for), never the 120 s an idle wait would be.
+    wait = next((row for row in result.steps if row["step"] == "robots_wait"), None)
+    assert log.index(robots[2]) < len(log) - 1 or (wait is not None and wait["seconds"] < 5)
     # The step timing table: each of Maya's steps once, in order, with its requests and its waiting.
     assert steps[:2] == ["sitemap", "crawl"] and steps.index("access") < steps.index("index") < steps.index("structure") \
         < steps.index("sitemap_check") < steps.index("llms_links")

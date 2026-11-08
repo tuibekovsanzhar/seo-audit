@@ -177,6 +177,9 @@ class Fetcher:
         # Requests sent outside the other-site pool (a step's "Requests"); the pool has its own row.
         self.own_requests = 0
         self.pool_seqs: list[int] = []
+        # DECISIONS 328: steps running beside the audit's own thread, each with its own counters ({lane: {requests,
+        # waited_s, deadline_hits}}); their threads say so with `set_lane`.
+        self.lanes: dict[str, dict] = {}
         # Requests that must wait until a moment (ACC-1's robots.txt samples, DECISIONS 12 and 219): each is sent
         # before the next request of the audit's own thread once it has come due, never by an idle wait; what is
         # still not due when Maya's last step ends is waited for then (`finish_due`).
@@ -232,6 +235,39 @@ class Fetcher:
     def mark_pool_thread(self) -> None:
         self._local.pool = True
 
+    # -- lanes: a step running beside the audit's own thread (DECISIONS 328) ------------------------------------------
+
+    @property
+    def lane(self) -> str | None:
+        """The lane of the calling thread (a step running beside the audit's own steps, e.g. the sitemap check), or None."""
+        return getattr(self._local, "lane", None)
+
+    def set_lane(self, name: str | None) -> None:
+        """Count the calling thread's requests, waiting and time-limit refusals on lane `name` (its own row of the step
+        timing table), not on the step the audit's own thread is running. Threads a lane starts call it too."""
+        self._local.lane = name
+        if name is not None:
+            with self._hits_lock:
+                self.lanes.setdefault(name, {"requests": 0, "waited_s": 0.0, "deadline_hits": 0})
+
+    def _lane_add(self, key: str, value: float) -> bool:
+        """Add to the calling thread's lane counter; False when the thread runs on no lane."""
+        lane = self.lane
+        if lane is None:
+            return False
+        with self._hits_lock:
+            self.lanes.setdefault(lane, {"requests": 0, "waited_s": 0.0, "deadline_hits": 0})[key] += value
+        return True
+
+    def lane_row(self, name: str, started_at: str, began_mono: float, beside: list[str], ended_mono: float | None = None) -> dict:
+        """The step timing table's row of a lane that has ended: its own seconds, requests and waiting, and the steps
+        it ran beside."""
+        counts = self.lanes.get(name) or {"requests": 0, "waited_s": 0.0}
+        row = {"step": name, "started_at": started_at, "seconds": round(max(0.0, (ended_mono or _clock.monotonic()) - began_mono), 1),
+               "requests": counts["requests"], "waiting_s": round(counts["waited_s"], 1), "beside": list(beside)}
+        self.steps.append(row)
+        return row
+
     @property
     def thread_requests(self) -> int:
         """Requests the calling thread has sent (a pool worker's count of its robots.txt reads)."""
@@ -241,7 +277,10 @@ class Fetcher:
         """Count one request refused for the time limit (locked: the other-site pool counts from its threads)."""
         with self._hits_lock:
             self.deadline_hits += 1
-            if not self.in_pool:
+            lane = self.lane
+            if lane is not None:
+                self.lanes.setdefault(lane, {"requests": 0, "waited_s": 0.0, "deadline_hits": 0})["deadline_hits"] += 1
+            elif not self.in_pool:
                 self.own_deadline_hits += 1
 
     def set_host_gap(self, host: str, seconds: float) -> None:
@@ -421,7 +460,7 @@ class Fetcher:
                 break
         # A pool worker's waiting is not a step's "Of which waiting"; the other-site pool's row is measured from its
         # requests (maya_audit.other_sites).
-        if not self.in_pool:
+        if not self._lane_add("waited_s", max(0.0, _clock.monotonic() - began)) and not self.in_pool:
             self.waited_s += max(0.0, _clock.monotonic() - began)
         if self.deadline_mono is not None and _clock.monotonic() >= self.deadline_mono:
             self.hit_deadline()
@@ -436,7 +475,9 @@ class Fetcher:
                                           started_at=started_at, status=status, error=error, elapsed_ms=0.0,
                                           started_mono=now, ended_mono=now))
             self._last_request = now
-            if not self.in_pool:
+            if self.lane is not None:
+                self.lanes.setdefault(self.lane, {"requests": 0, "waited_s": 0.0, "deadline_hits": 0})["requests"] += 1
+            elif not self.in_pool:
                 self.own_requests += 1
             host = (urlsplit(url).hostname or "").lower()
             if host:
@@ -513,7 +554,7 @@ class Fetcher:
             if slot is None:
                 self.hit_deadline()
                 return RawResponse(url, None, {}, b"", False, 0.0, "audit_deadline_skipped", utc_now(), None)
-            if not self.in_pool:
+            if not self._lane_add("waited_s", slot.waited_s) and not self.in_pool:
                 self.waited_s += slot.waited_s
             try:
                 response = self._request(url, purpose, max_bytes, user_agent, extra_headers, method, cookie, host, slot.index,
@@ -642,7 +683,9 @@ class Fetcher:
             if host:
                 with self._hosts_guard:
                     self._last_by_host[host] = ended
-            if not self.in_pool:
+            if self.lane is not None:
+                self.lanes.setdefault(self.lane, {"requests": 0, "waited_s": 0.0, "deadline_hits": 0})["requests"] += 1
+            elif not self.in_pool:
                 self.own_requests += 1
             else:
                 self.pool_seqs.append(len(self.log) + 1)

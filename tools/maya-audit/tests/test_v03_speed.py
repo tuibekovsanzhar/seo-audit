@@ -191,7 +191,9 @@ def test_the_sitemap_check_asks_four_at_once_through_the_site_limit_and_int4_sta
                         httpx.MockTransport(_site_with_sitemaps(files, slow_s=0.05, watch=watch)))
     check = outcome.result.index.sitemap_check
     assert check.workers == 4 and len(check.rows) == 20 and check.sampled and check.sample_files == 3
-    assert 2 <= watch["most"] <= 4  # light requests overlapped, never more than four
+    # light requests overlapped; within the shared site limit (5): the check's four workers plus, since DECISIONS 328, a
+    # request of the audit's own steps running beside it
+    assert 2 <= watch["most"] <= 5
     asked = [r for r in outcome.result.requests if r.purpose == "sitemap_check"]
     assert {r.slot for r in asked} <= set(range(5)) and len({r.slot for r in asked}) > 1
     int4 = next(g for g in outcome.gates if g.check_id == "INT-4")

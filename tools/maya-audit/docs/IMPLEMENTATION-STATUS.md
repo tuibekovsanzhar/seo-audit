@@ -1675,3 +1675,31 @@ the check finds: meta robots and canonical are read from the first 64 KB).
 | ruff E9/F821/F841, `python3.11 -m compileall`, `node --check app.js` | clean / OK / OK |
 | A live Akıllı audit | NOT RUN (owner runs one after restarting the web app) |
 | Push | NOT DONE (owner: don't push) |
+
+## The sitemap check beside the other steps (2026-11-09, DECISIONS 328)
+
+The sitemap check starts right after the crawl on a thread of its own, beside access, index, structure and rendering,
+and is joined before the performance rounds; llms.txt's links follow on the audit's own thread. Same requests, same
+rows, same findings. Fetcher "lanes" give it its own row of the step timing table (`beside: [access, index, structure,
+render]`) and its own time-limit refusals. Fixed on the way: a robots.txt sample's next due time read the wrong log
+entry once another thread wrote to the log.
+
+| Measurement | Before (committed code, scratch worktree) | After |
+|---|---|---|
+| In-memory site, 0.2 s per answer, 30 sitemap URLs checked | 5.7 s | 3.7 s |
+| Sitemap check rows / findings | 30 / 14 | identical |
+| Requests per step | — | unchanged |
+
+Expected on the saved audits (step timings; the overlap is at most the four steps beside it): moodist about 200 s saved
+(10.2 -> ~6.9 min), airastana about 43 s, nihan Standard 500 about 196 s.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_sitemap_beside_328.py` | `3 passed` |
+| fast suite, first run | `3 failed, 2995 passed`: phase order, a time-limit test (the check now ends before the limit), the robots samples' position; updated |
+| full suite, first run | `2 failed, 3131 passed`: a robots sample due 118.8 s after the one before (a real bug: fixed), in-flight 5 within the site limit of 5 (test bound updated) |
+| fast suite, final | `2998 passed, 4 skipped, 135 deselected, 1 warning in 533.84s (0:08:53)` |
+| full suite, final | `3133 passed, 4 skipped, 1 warning in 947.45s (0:15:47)` |
+| ruff E9/F821/F841, `python3.11 -m compileall` | clean / OK |
+| A live audit | NOT RUN (owner) |
+| Push | NOT DONE (owner: don't push) |

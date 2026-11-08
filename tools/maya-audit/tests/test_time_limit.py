@@ -90,9 +90,10 @@ def test_the_report_says_which_checks_the_time_limit_cut_and_why(monkeypatch):
     outcome = run(monkeypatch, "collect_index_data")
     report = build_report(outcome.result, outcome.gates, outcome.checks)
     cuts = {row["collector"]: row for row in report["time_limit_cuts"]}
-    # The sitemap check (DECISIONS 206) is the last of Maya's own requests: cut before it started too.
-    assert set(cuts) == {"structure", "render", "performance", "sitemap_check"}
-    assert cuts["sitemap_check"]["checks_not_run"] == [] and "IDX-5" in cuts["sitemap_check"]["checks_run_on_fetched_pages_only"]
+    # DECISIONS 328: the sitemap check (DECISIONS 206) starts right after the crawl, beside the other steps, so here it
+    # ended before the time ran out (at the index step) and is not cut; before, it was the last step and was cut too.
+    assert set(cuts) == {"structure", "render", "performance"}
+    assert outcome.result._sitemap_check is not None and "sitemap_check" not in outcome.result.collector_errors
     assert cuts["performance"]["checks_not_run"] == ["PRF-1", "PRF-2"] and cuts["performance"]["checks_run_on_fetched_pages_only"] == []
     # STR-4 and RND-2 are "not assessed" for reasons of their own (no structured data, no declared facts): not blamed on the clock.
     assert cuts["structure"]["checks_not_run"] == [] and cuts["render"]["checks_not_run"] == []

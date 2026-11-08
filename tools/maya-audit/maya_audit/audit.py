@@ -217,6 +217,55 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
             limiter.maya_done()  # Maya's own steps are over: a reader still reading may use every slot
 
     def steps_after_crawl(fetcher, crawl, collect, pool):
+        def out_of_time():
+            return fetcher.deadline_mono is not None and _clock.monotonic() >= fetcher.deadline_mono
+
+        def collect_beside(name, target, function, when_cut=None):
+            """DECISIONS 328: run one data collector on a thread of its own, beside the audit's own steps, with `collect`'s
+            rules (the time limit, what is kept when it is cut) and its own row of the step timing table (a lane). Returns
+            the thread; `join` it before anything reads `target`."""
+            import threading as _threading
+            from .fetcher import utc_now as _utc_now
+            started_at, began = _utc_now(), _clock.monotonic()
+
+            def run():
+                fetcher.set_lane(name)
+                try:
+                    if out_of_time():
+                        crawl.collector_errors[name] = "overall audit deadline reached before this data collection started"
+                        setattr(crawl, target, when_cut() if when_cut else None)
+                        return
+                    try:
+                        value = function()
+                        own_note = str(getattr(value, "reason", None) or getattr(value, "skipped_reason", None) or "")
+                        if (fetcher.lanes.get(name) or {}).get("deadline_hits") or (when_cut and "deadline" in own_note):
+                            crawl.collector_errors[name] = (
+                                "overall audit deadline reached during this data collection; " + (
+                                    "what was collected before it is used, the rest is reported as not checked" if when_cut
+                                    else "results are incomplete"))
+                            setattr(crawl, target, value if when_cut else None)
+                        else:
+                            setattr(crawl, target, value)
+                    except Exception as exc:  # a collector failure should not erase the crawl evidence
+                        crawl.collector_errors[name] = f"{type(exc).__name__}: {str(exc)[:300]}"
+                        setattr(crawl, target, None)
+                finally:
+                    fetcher.set_lane(None)
+                    thread.row = (started_at, began, _clock.monotonic())
+
+            thread = _threading.Thread(target=run, name=f"maya-{name}", daemon=True)
+            thread.row = None
+            hooks.emit(name, pages_fetched=len(crawl.pages))
+            thread.start()
+            return thread
+
+        # DECISIONS 328: every sitemap URL the crawl did not read, one light request each (IDX-5, DECISIONS 206), starts
+        # right after the crawl on a thread of its own, beside access, index, structure and rendering: the same requests
+        # through the same shared site limit (DECISIONS 294) and the same rows, only earlier. It is joined before the
+        # performance rounds, whose timings must not share the site with it. Run past the deadline too: what it could
+        # not ask is reported as not checked. Before, it ran last, alone (moodist: 200 s after 290 s of other steps).
+        beside = collect_beside("sitemap_check", "_sitemap_check", lambda: check_sitemap_urls(fetcher, crawl, config),
+                                when_cut=lambda: check_sitemap_urls(fetcher, crawl, config))
         collect("access", "access", lambda: collect_access_data(fetcher, crawl, config))
         collect("index", "index", lambda: collect_index_data(fetcher, crawl, config, key_page_urls(crawl, config)))
         # Before rendering: the structure checks read the pages already fetched and need only a few link checks
@@ -228,24 +277,31 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
                 when_cut=lambda: collect_structure_data(fetcher, crawl, config))
         collect("render", "render", lambda: collect_render_data(fetcher, crawl, config, key_page_urls(crawl, config)),
                 when_cut=lambda: RenderData("raw_html_only", "overall audit deadline reached before rendering started"))
+        fetcher.begin_step("sitemap_check_wait")  # the time the audit's own thread waits for the sitemap check, if any
+        while beside.is_alive():
+            fetcher.send_due("sitemap_check")  # only the audit's own thread sends what has come due (DECISIONS 219)
+            beside.join(0.05)
+        fetcher.end_step()
+        if fetcher.steps and fetcher.steps[-1]["step"] == "sitemap_check_wait" and fetcher.steps[-1]["seconds"] < 0.1 \
+                and not fetcher.steps[-1]["requests"]:
+            fetcher.steps.pop()  # nothing was waited for: no row
+        if beside.row is not None:
+            fetcher.lane_row("sitemap_check", beside.row[0], beside.row[1], ["access", "index", "structure", "render"],
+                             ended_mono=beside.row[2])
         # Last, so the extra rounds are spaced from the crawl by all the collection above.
         collect("performance", "perf", lambda: collect_perf_data(fetcher, crawl, config),
                 when_cut=lambda: PerfData(enabled=config.prf_enabled, egress_region=config.egress_region,
                                           skipped_reason="overall audit deadline reached before the performance rounds"))
-        # Last of Maya's own requests: every sitemap URL the crawl did not read, one light request each (IDX-5,
-        # DECISIONS 206), and the links of llms.txt that nothing else read (ACC-8, DECISIONS 208). Run past the
-        # deadline too, like the structure data: what it could not ask is reported as not checked.
-        def sitemap_check():
-            try:
-                check = check_sitemap_urls(fetcher, crawl, config)
-            finally:
-                if pool is not None:
-                    pool.join()  # the answers from other sites are written into the data now
+        # The links of llms.txt that nothing else read (ACC-8, DECISIONS 208): they need the access data and the sitemap
+        # check's rows, so they come after both, after the answers from other sites are written into the data.
+        if pool is not None:
+            pool.join()
+        if crawl._sitemap_check is not None:  # as before: no llms.txt links when the sitemap check itself failed
             fetcher.begin_step("llms_links")  # its own row of the step timing table (DECISIONS 219)
-            check_llms_links(fetcher, crawl, config, check)
-            return check
-
-        collect("sitemap_check", "_sitemap_check", sitemap_check, when_cut=sitemap_check)
+            try:
+                check_llms_links(fetcher, crawl, config, crawl._sitemap_check)
+            except Exception as exc:  # noqa: BLE001  never ends the audit (it ran inside the sitemap check's guard before)
+                crawl.collector_errors["llms_links"] = f"{type(exc).__name__}: {str(exc)[:300]}"
         if crawl.structure is not None and crawl._external is not None:  # llms.txt's links to other sites came last
             crawl.structure.external = crawl._external.summary()
         if crawl.index is not None:

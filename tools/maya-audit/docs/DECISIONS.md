@@ -4233,3 +4233,26 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Yardım ve güven 12/12, blog 33/33; 23 unread addresses re-typed after wave 1; fillable 13 -> 16 of 18.
      Not done: cutting the sitemap check (proposed in IMPLEMENTATION-STATUS, waiting for the owner). Tests:
      `tests/test_sampling_327.py` (19); schema pins 1.29 -> 1.30.
+328. **The sitemap check starts right after the crawl, beside the other steps (Owner, 2026-11-08: the proposal of
+     IMPLEMENTATION-STATUS "Akıllı ~150" as asked; where it is joined and the step-table row are agent defaults).**
+     Every audit (all modes). The sitemap check (IDX-5's light requests to the sitemap URLs the crawl did not read,
+     DECISIONS 206/294) runs on a thread of its own from the moment the crawl ends, beside access, index, structure and
+     rendering, through the same shared site limit; the audit's own thread joins it before the performance rounds (their
+     timings must not share the site with it), and llms.txt's links (ACC-8, which need the access data and the check's
+     rows) run after the join on the audit's own thread, as before, now with their own error guard. Same requests, same
+     rows, same findings; only the order of requests in the log and the wall time change. A rate limit met by the
+     check widens the gap for the steps beside it too (it did for the steps after it before).
+     *Step timing table:* new "lanes" in the fetcher (`set_lane`, `lanes`, `lane_row`): a thread on a lane (the check
+     and the workers it starts) counts its requests, waiting and time-limit refusals on the lane, so the steps it runs
+     beside keep their own counts and a refusal of the check never marks access/index/structure/render as cut. Its row
+     ("sitemap_check") says `beside: [access, index, structure, render]`; a "sitemap_check_wait" row appears only when
+     the audit's own thread had to wait for it.
+     *Measured* (an in-memory site answering after 0.2 s, 30 sitemap URLs checked, the committed code in a scratch
+     worktree against the new code): 5.7 s -> 3.7 s; the 30 rows and 14 findings identical; each step's request count
+     unchanged. *Expected on the saved audits* (from their step timings, the overlap is at most the four steps it runs
+     beside): moodist 200 s of 200 (they take 246 s) -> about 10.2 -> 6.9 min; airastana 43 s of 194 (no rendering on a
+     blocked site); nihan Standard 500: 196 s of 806. *Fixed on the way:* a robots.txt sample (decision 12) took its send
+     time from the log entry after it was asked, which the sitemap check's thread can now write; the next sample was then
+     due too early (118.8 s apart in a full-suite run). It now reads its own record. Tests:
+     `tests/test_sitemap_beside_328.py` (3); `test_preview16_measure` (the samples' test), `test_v03_speed` (in flight:
+     within the site limit of 5, not 4), `test_time_limit` and `test_progress_stop_resume` (the phase order) follow.

@@ -354,7 +354,10 @@ def collect_access_data(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig)
             return  # never sent: the time limit came first
         samples.append(sample)
         if attempt < cfg.robots_samples:
-            sent = fetcher.log[before].started_mono if len(fetcher.log) > before else _clock.monotonic()
+            # The sample's own record: since DECISIONS 328 the sitemap check's thread writes to the log beside it, so the
+            # record after `before` may be another step's request (the next sample was then due too early).
+            own = [r for r in fetcher.log[before:] if r.purpose == "robots_sample" and r.started_mono is not None]
+            sent = own[0].started_mono if own else _clock.monotonic()
             fetcher.schedule(sent + cfg.robots_sample_interval_s, lambda: take(attempt + 1))
 
     if cfg.robots_samples >= 2:

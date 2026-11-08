@@ -704,8 +704,11 @@ def _ask_together(requests: "LightRequests", asked: list[str], answered: dict[in
 
     lock = threading.Lock()
     position = iter(range(len(asked)))
+    lane = requests.fetcher.lane  # DECISIONS 328: the workers count on the lane of the thread that started them
 
     def work() -> None:
+        if lane is not None:
+            requests.fetcher.set_lane(lane)
         while not requests.stopped_because:
             with lock:
                 i = next(position, None)
