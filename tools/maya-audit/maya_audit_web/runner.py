@@ -53,6 +53,31 @@ log = logging.getLogger("maya_audit_web")
 MODES = {"single": 1, "quick": 50, "smart": 150, "standard": 500}
 SMART = "smart"
 SINGLE = "single"
+# DECISIONS 331: every mode reads the Akıllı selection, scaled to its size (Hızlı ~50, Akıllı ~150, Derin ~500, the id
+# "standard" kept for saved audits), plus "Özel sayı": a page count the person types, 25 to 2000. "Tam tarama sırası"
+# (`crawl_order`) is the old reading in the crawl's own order, kept as an advanced choice.
+CUSTOM = "custom"
+CUSTOM_MIN, CUSTOM_MAX = 25, 2000
+
+
+def page_cap(audit: dict[str, Any]) -> int:
+    """The page cap of a plan or an audit: the mode's, or for "Özel sayı" the count on the plan (its `page_cap`, the
+    plan document's, else the audit's saved crawl settings)."""
+    if audit.get("mode") in MODES:
+        return MODES[audit["mode"]]
+    for value in (audit.get("page_cap"), (audit.get("document") or {}).get("page_cap"),
+                  ((audit.get("config") if isinstance(audit.get("config"), dict) else None) or {}).get("max_pages")):
+        if isinstance(value, (int, float)) and value > 0:
+            return int(value)
+    return MODES["quick"]
+
+
+def sampled(audit: dict[str, Any]) -> bool:
+    """DECISIONS 331: the Akıllı selection reads every mode but a single page, unless "Tam tarama sırası" was chosen."""
+    crawl_order = audit.get("crawl_order")
+    if crawl_order is None:
+        crawl_order = (audit.get("document") or {}).get("crawl_order")
+    return audit.get("mode") != SINGLE and not crawl_order
 MAX_KEY_PAGES = 20
 MAX_QUEUED = 5
 REPORT_JSON, REPORT_MD, BACKLINKS_JSON, AFFECTED_JSON, CRAWL_DB = (
@@ -61,7 +86,7 @@ REPORT_JSON, REPORT_MD, BACKLINKS_JSON, AFFECTED_JSON, CRAWL_DB = (
 # data collection before and after rendering, so "checks" can be active on both sides of "rendering".
 STEPS = ("access", "sitemap", "crawling", "rendering", "checks", "backlinks", "report")
 PHASE_STEP = {"starting": "access", "sitemap": "sitemap", "crawl": "crawling", "render": "rendering", "access": "checks",
-              "index": "checks", "structure": "checks", "performance": "checks", "sitemap_check": "checks", "citations": "checks",
+              "index": "checks", "structure": "checks", "performance": "checks", "sitemap_check": "checks", "llms_links": "checks", "citations": "checks",
               "citation_domains": "checks", "checks": "checks", "firecrawl": "checks", "backlinks": "backlinks", "report": "report"}
 PROGRESS_EVERY_S = 0.25
 MAX_URL_CHARS = 300
@@ -94,12 +119,12 @@ class Engine:
 
 def crawl_config(engine: Engine, audit: dict[str, Any], db_path: Path, *, resume: bool, pages_already: int = 0) -> CrawlConfig:
     """The settings for one run: exactly what `maya-audit crawl` builds for the same arguments."""
-    cap = MODES[audit["mode"]]
+    cap = page_cap(audit)
     argv = ["crawl", audit["url"], "--max-pages", str(cap), "--db-path", str(db_path)]
     if audit["mode"] == SINGLE:
-        argv.append("--single-page")
-    if audit["mode"] == SMART:
-        argv.append("--smart")  # the address given and nothing else: important pages are not added
+        argv.append("--single-page")  # the address given and nothing else: important pages are not added
+    if sampled(audit):
+        argv.append("--smart")  # DECISIONS 331: the Akıllı selection in every mode, scaled to its page cap
     for page in ([] if audit["mode"] == SINGLE else audit["key_pages"]):
         argv += ["--key-page", page]
     if resume:
@@ -135,11 +160,13 @@ def crawl_config(engine: Engine, audit: dict[str, Any], db_path: Path, *, resume
     return config
 
 
-def plan_shape(engine: Engine, mode: str, key_pages: list[str], switches: dict[str, Any] | None = None) -> dict[str, Any]:
+def plan_shape(engine: Engine, mode: str, key_pages: list[str], switches: dict[str, Any] | None = None,
+               page_count: int | None = None, crawl_order: bool = False) -> dict[str, Any]:
     """What a plan can say before anything runs: the page cap, the hard time limit, a rough upper duration. `switches`
     are the plan's Fast check and other-site links (DECISIONS 219): the estimate takes the caps they give."""
     config = crawl_config(engine, {"url": "https://example.invalid/", "mode": mode, "key_pages": key_pages,
-                                   "switches": switches or {}}, Path("unused.db"), resume=False)
+                                   "switches": switches or {}, "page_cap": page_count, "crawl_order": crawl_order},
+                          Path("unused.db"), resume=False)
     # Requests to other sites (DECISIONS 211): none in demo mode, where they are off.
     cap = external_link_cap(config.external_link_checks_max, config.external_link_checks_base, config.max_pages,
                             config.single_page)
@@ -318,9 +345,12 @@ class Runner:
         planned = (store.plan(audit["plan_id"]) or {}).get("document") or {}
         audit = {**audit, "verification": planned.get("ownership"), "brand_family_domains": planned.get("brand_family_domains") or [],
                  "switches": planned.get("switches") or {},
-                 "business_type": (planned.get("business_type") or {}).get("chosen") or "auto"}
+                 "business_type": (planned.get("business_type") or {}).get("chosen") or "auto",
+                 # DECISIONS 331: an "Özel sayı" plan's page count and the "Tam tarama sırası" choice
+                 "page_cap": planned.get("page_cap") if audit["mode"] == CUSTOM else None,
+                 "crawl_order": bool(planned.get("crawl_order"))}
         config = crawl_config(engine, audit, db_path, resume=resume, pages_already=already)
-        cap = MODES[audit["mode"]]
+        cap = page_cap(audit)
         progress: dict[str, Any] = {"phase": "starting", "step": "access", "steps_seen": ["access"], "page_cap": cap,
                                     "pages_checked": already, "session_pages_start": already, "other_fetches": 0,
                                     "requests_sent": 0, "at": now(), "elapsed_s": 0.0}

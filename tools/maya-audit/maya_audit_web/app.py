@@ -30,8 +30,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import client_reports
 from . import API_VERSION, chat, comparison, demo, fc, followups, paid, pdf, practical, snapshot, summary, wording
-from .runner import (AFFECTED_JSON, MAX_KEY_PAGES, MAX_QUEUED, MODES, REPORT_JSON, REPORT_MD, STEPS, Engine, Runner,
-                     crawl_config, is_active, pages_saved, plan_shape, write_file, CRAWL_DB)
+from .runner import (AFFECTED_JSON, CUSTOM, CUSTOM_MAX, CUSTOM_MIN, MAX_KEY_PAGES, MAX_QUEUED, MODES, REPORT_JSON, REPORT_MD, STEPS, Engine, Runner,
+                     crawl_config, is_active, page_cap, pages_saved, plan_shape, sampled, write_file, CRAWL_DB)
 from .security import Guard, error_body, loopback_hosts
 from maya_audit import archives, crux, final, ownership, release_gate
 from maya_audit import brand as brand_module
@@ -167,9 +167,15 @@ class ManualCheckIn(Strict):
 
 class PlanIn(Strict):
     url: str = Field(min_length=1, max_length=2048, description="The website to audit. A bare domain is read as https.")
-    mode: str = Field(default="quick", pattern="^(single|quick|smart|standard)$",
-                      description="single: only the address given, no links followed. quick: up to 50 pages. smart: Akıllı ~150, "
-                                  "a planned sample of every page type of the business type (DECISIONS 327). standard: up to 500.")
+    mode: str = Field(default="quick", pattern="^(single|quick|smart|standard|custom)$",
+                      description="single: only the address given, no links followed. quick: Hızlı ~50. smart: Akıllı ~150. "
+                                  "standard: Derin ~500. custom: Özel sayı, `page_count` pages. Every mode but single reads the "
+                                  "Akıllı selection (page types of the business type, the team's sampling rule) unless "
+                                  "`crawl_order` (DECISIONS 327, 331).")
+    page_count: int | None = Field(default=None, ge=CUSTOM_MIN, le=CUSTOM_MAX,
+                                   description="With mode custom (Özel sayı): how many pages to read, 25 to 2000 (DECISIONS 331).")
+    crawl_order: bool = Field(default=False, description="Tam tarama sırası (advanced): read pages in the crawl's own order "
+                                                         "(links first found, sections in turn) instead of the Akıllı selection.")
     backlinks: bool = Field(default=False, description="Ask DataForSEO for backlink figures (paid, off by default).")
     search_data: bool = Field(default=False, description="Ask DataForSEO for the search data panels: domain overview, ranked keywords, quick wins, competitors, AI mentions, Lighthouse (paid, off by default).")
     local_business: bool = Field(default=False, description="With search_data: also look up the Google Business Profile under the plan's brand name.")
@@ -557,7 +563,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         extras = extras or {}
         # The plan's two switches (DECISIONS 219): they change the caps, so the estimate and the fingerprint.
         switches = {"fast_check": bool(extras.get("fast_check")), "external_links": extras.get("external_links", True) is not False}
-        shape = plan_shape(engine, mode, key_pages, switches)
+        count = extras.get("page_count") if mode == CUSTOM else None
+        crawl_order = bool(extras.get("crawl_order")) and mode != "single"
+        shape = plan_shape(engine, mode, key_pages, switches, count, crawl_order)
         # Other domains of the same brand: what was typed on the card, else what is saved for this site.
         family = family if family is not None else brand_family(profile_of(project_of(url)).get("brand_family_domains"))
         who = business(project_of(url), brand, country)
@@ -581,7 +589,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         cost = paid.price(url, engine.paid, requested=paid_wanted, options=options if paid_wanted else None)
         cap = shape["page_cap"]
         reader = fc.plan(engine.firecrawl, firecrawl, cap, shape["rendering_enabled"])
-        fingerprint = paid.fingerprint(url, mode, key_pages, paid_wanted, cost["calls"], cost["total_usd"], reader,
+        # DECISIONS 331: the page count and the reading order change the plan, so its fingerprint
+        fingerprint = paid.fingerprint(url, mode_basis(mode, cap, crawl_order), key_pages, paid_wanted,
+                                       cost["calls"], cost["total_usd"], reader,
                                        {"search_data": options["search_data"], "local_business": options["local_business"],
                                         "archives": bool(extras.get("archives")), "verify_ownership": bool(extras.get("verify_ownership")),
                                         "brand_family_domains": sorted(family), **switch_basis(switches)},
@@ -589,14 +599,18 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         duration = ({"known": False, "label": t("plan.duration.demo")} if engine.demo else
                     {"known": True, "up_to_minutes": shape["up_to_minutes"],
                      "label": t("plan.duration", minutes=shape["up_to_minutes"], cap=cap)})
-        duration["typical"] = typical(mode)  # DECISIONS 310: what recent runs of this mode took
+        duration["typical"] = typical(mode, cap)  # DECISIONS 310: what recent runs of this mode took
         balance = store.get_meta("provider_balance")
         document = {
             "id": new_id(), "fingerprint": fingerprint,
             "target": {"url": url, "host": urlsplit(url).hostname, "domain": project_of(url), "http_fallback": plain,
                        "note": t("plan.https_first.typed_http") if typed_http else t("plan.https_first") if plain else None},
             "business": who,
-            "project_id": project_of(url), "mode": mode, "mode_label": t(f"plan.mode.{mode}"), "page_cap": cap,
+            "project_id": project_of(url), "mode": mode, "mode_label": mode_label(mode, cap), "page_cap": cap,
+            # DECISIONS 331: how the pages are chosen, in one line, and what Firecrawl usually reads of the plan's credits
+            "crawl_order": crawl_order,
+            "selection_line": (None if mode == "single" else t("plan.selection.order") if crawl_order else t("plan.selection.sampled")),
+            "credits_expected": expected_credits(reader, cap, mode, crawl_order),
             # A single-page audit: the scope line says the one page and, when Firecrawl reads it, about how many credits.
             "single_page": mode == "single",
             "scope_label": (None if mode != "single" else
@@ -636,6 +650,26 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             "lines": [t("plan.intro")],
         }
         return document, fingerprint, cost["total_usd"]
+
+    def mode_basis(mode: str, cap: int, crawl_order: bool | None) -> str:
+        """DECISIONS 331: what of the reading a plan's fingerprint covers: the mode, its page cap and the reading order."""
+        return f"{mode}:{cap}:{'order' if crawl_order else 'sample'}"
+
+    def mode_label(mode: str, cap: int) -> str:
+        return t("plan.mode.custom", cap=cap) if mode == CUSTOM else t(f"plan.mode.{mode}")
+
+    def expected_credits(reader: dict[str, Any] | None, cap: int, mode: str, crawl_order: bool) -> int | None:
+        """DECISIONS 331: about how many of the plan's Firecrawl credits an audit uses. With the Akıllı selection the reader
+        reads only where needed (DECISIONS 327/329): on the first live runs about a fifth of the pages (moodist 31 of 150,
+        enpara 34 of 150), said here as a quarter, at least 10; read in full otherwise. An estimate, never a cap: the
+        confirmed maximum is `max_credits`."""
+        if not reader or not reader.get("requested") or not reader.get("max_credits"):
+            return None
+        per_page = reader.get("credits_per_page") or 1
+        pages = min(cap, reader.get("max_pages") or cap)
+        if mode != "single" and not crawl_order and (reader.get("options") or {}).get("read_scope") == "needed":
+            pages = min(pages, max(10, round(pages / 4)))
+        return int(min(reader["max_credits"], (pages + 1) * per_page))
 
     def business_plan(project_id: str, chosen: str) -> dict[str, Any]:
         from maya_audit import business_types as bt
@@ -721,7 +755,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         asked = plan["document"].get("firecrawl") or NO_FIRECRAWL
         reader = fc.plan(engine.firecrawl, asked["options"] if asked["requested"] else None, plan["document"]["page_cap"],
                          plan["document"]["rendering"]["policy"] != "off")
-        if paid.fingerprint(plan["url"], plan["mode"], plan["key_pages"], plan["backlinks"], cost["calls"],
+        if paid.fingerprint(plan["url"], mode_basis(plan["mode"], plan["document"]["page_cap"], plan["document"].get("crawl_order")),
+                            plan["key_pages"], plan["backlinks"], cost["calls"],
                             cost["total_usd"], reader, {"search_data": bool((saved_options or {}).get("search_data")),
                                                         "local_business": bool((saved_options or {}).get("local_business")),
                                                         "archives": bool(plan["document"].get("archives")),
@@ -784,7 +819,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         return {"api_version": API_VERSION, "language": current_language(), "languages": sorted(STRINGS), "demo": engine.demo,
                 "demo_sites": [{"address": host, "about": about} for host, about in demo.SITES.items()] if engine.demo else [],
                 "modes": [{"id": mode, "label": t(f"plan.mode.{mode}"), "page_cap": cap, "typical": typical(mode)}
-                          for mode, cap in MODES.items()],
+                          for mode, cap in MODES.items()]
+                + [{"id": CUSTOM, "label": t("plan.mode.custom.any"), "page_cap": None, "min": CUSTOM_MIN, "max": CUSTOM_MAX,
+                    "typical": None}],  # DECISIONS 331: Özel sayı
                 "max_key_pages": MAX_KEY_PAGES, "max_queued": MAX_QUEUED, "one_audit_at_a_time": True,
                 "business_types": business_choices(),
                 "plan_lifetime_minutes": PLAN_LIFETIME_S // 60, "report_schema": "1.x",
@@ -815,14 +852,19 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             key_pages = chat.key_page_urls(url, body.key_pages, MAX_KEY_PAGES)
         except ValueError as exc:
             raise ApiError(422, "invalid_key_pages", str(exc)) from None
+        # DECISIONS 331: "Özel sayı" needs its page count (25-2000); the other modes have their own.
+        if body.mode == CUSTOM and body.page_count is None:
+            raise ApiError(422, "page_count_required", t("error.page_count_required", low=CUSTOM_MIN, high=CUSTOM_MAX))
+        chosen_mode = {"mode": body.mode, "page_cap": body.page_count if body.mode == CUSTOM else None,
+                       "crawl_order": body.crawl_order}
         # Firecrawl reads every audit's pages when this computer has a key; `firecrawl: false` switches it off for one audit.
         on = body.firecrawl if body.firecrawl is not None else (
             firecrawl_settings.main_reader_on() and engine.firecrawl.key() is not None)
         wanted = None if not (on or body.firecrawl_render) else {
             "read_always": True, "render_fallback": body.firecrawl_render,
             # DECISIONS 327: Akıllı reads through Firecrawl only where needed, unless "Tam okuma" was chosen
-            "read_scope": "needed" if body.mode == "smart" and not body.firecrawl_full_read else "all",
-            "max_pages": body.firecrawl_max_pages or min(MODES[body.mode], firecrawl_settings.MAX_PAGES_LIMIT), "proxy": body.firecrawl_proxy,
+            "read_scope": "needed" if sampled(chosen_mode) and not body.firecrawl_full_read else "all",
+            "max_pages": body.firecrawl_max_pages or min(page_cap(chosen_mode), firecrawl_settings.MAX_PAGES_LIMIT), "proxy": body.firecrawl_proxy,
             "owner_approved_bypass": body.firecrawl_owner_approved,
             "allow_without_zero_data_retention": not firecrawl_settings.zero_data_retention_wanted()}
         document, fingerprint, total = plan_document(url, body.mode, key_pages, body.backlinks, plain, typed_http, wanted,
@@ -830,7 +872,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                                                       "archives": body.archives, "verify_ownership": body.verify_ownership,
                                                       "market_default_accepted": body.market_default_accepted,
                                                       "fast_check": body.fast_check, "external_links": body.external_links,
-                                                      "business_type": body.business_type},
+                                                      "business_type": body.business_type,
+                                                      "page_count": chosen_mode["page_cap"], "crawl_order": body.crawl_order},
                                                      brand=body.brand_name, country=body.country,
                                                      family=None if body.brand_family_domains is None else brand_family(body.brand_family_domains))
         plan = store.create_plan(project_id=document["project_id"], url=url, mode=body.mode, key_pages=key_pages,
@@ -894,7 +937,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         # DECISIONS 310: the plain line is what recent runs of this mode took, less the time already spent; the
         # measured line stays beside it. Past the typical time, only the measured one.
         if audit["state"] == "running" and audit.get("started_at"):
-            usual = typical(audit["mode"])
+            usual = typical(audit["mode"], page_cap(audit))
             spent = (datetime.now(timezone.utc) - datetime.fromisoformat(audit["started_at"])).total_seconds()
             if usual["known"] and usual["seconds"] - spent >= 60:
                 minutes = max(1, round((usual["seconds"] - spent) / 60))
@@ -938,7 +981,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
 
     def audit_view(audit: dict[str, Any]) -> dict[str, Any]:
         progress = audit["progress"]
-        cap = MODES[audit["mode"]]
+        cap = page_cap(audit)
         elapsed = None
         if audit["started_at"]:
             end = datetime.fromisoformat(audit["finished_at"]) if audit["finished_at"] else datetime.now(timezone.utc)
@@ -1045,19 +1088,19 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         """What the result card may offer on a finished audit that the site blocked. Requests nothing."""
         if audit.get("analysis") or audit["state"] != "finished":
             return None
-        return fc.offer(engine.firecrawl, report.get("firecrawl"), audit["firecrawl"], MODES[audit["mode"]],
+        return fc.offer(engine.firecrawl, report.get("firecrawl"), audit["firecrawl"], page_cap(audit),
                         crawl_blocked=view.get("blocked") is not None, offline=snapshot.exists(runner.state_folder(audit["id"])))
 
     def result_view(audit: dict[str, Any], report: dict[str, Any] | None = None) -> dict[str, Any]:
         report = report or load_report(audit)
         view = summary.build(report, outcome=audit["outcome"], reason=audit["outcome_reason"],
                              backlinks=backlinks_view(audit, report), resumable=audit["state"] in RESUMABLE,
-                             profile=profile_of(audit["project_id"]), audit={"page_cap": MODES[audit["mode"]]},
+                             profile=profile_of(audit["project_id"]), audit={"page_cap": page_cap(audit)},
                              # A report saved before schema 1.9 holds no problems by page: the engine derives them from
                              # the report and the full page lists saved beside it. The saved files are not rewritten.
                              affected=None if "problem_summary" in report else affected(audit["id"]))
         base = f"/api/v1/audits/{audit['id']}"
-        reader = fc.view(report.get("firecrawl"), {**audit["firecrawl"], "audit_page_cap": MODES[audit["mode"]]}
+        reader = fc.view(report.get("firecrawl"), {**audit["firecrawl"], "audit_page_cap": page_cap(audit)}
                          if audit["state"] == "finished" else {}, crawl=report.get("crawl"))
         full = {"audit": audit_view(audit), "demo": engine.demo, **view, "firecrawl": reader,
                 "ownership": summary.ownership_view(report.get("ownership")), "verification": ownership_of(audit["project_id"]),
@@ -1188,12 +1231,18 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             return False
         if a.get("crawl_stop") not in COUNTED_STOPS:
             return False
-        cap, read = MODES.get(mode, 1), int((a.get("progress") or {}).get("pages_checked") or 0)
+        cap, read = page_cap(a), int((a.get("progress") or {}).get("pages_checked") or 0)
         return not (read < min(10, cap) or read < 0.2 * cap)
 
-    def typical(mode: str) -> dict[str, Any]:
+    def typical(mode: str, cap: int | None = None) -> dict[str, Any]:
         """How long an audit of this mode took lately: the median of the last finished runs that count
-        (`counts_for_time`), or, with fewer than MIN_TYPICAL_RUNS of them, the mode's default. Said with "about"."""
+        (`counts_for_time`), or, with fewer than MIN_TYPICAL_RUNS of them, the mode's default. Said with "about".
+        DECISIONS 331: "Özel sayı" has no runs of its size to go by: a range from the estimate for its page count."""
+        if mode == CUSTOM:
+            high = max(1, int(plan_shape(engine, mode, [], None, cap or CUSTOM_MIN).get("up_to_minutes") or 1))
+            low = max(1, round(high / 4))
+            return {"known": False, "low_minutes": low, "high_minutes": high,
+                    "label": t("time.range", low=low, high=high), "short": t("time.range.short", low=low, high=high)}
         rows, _ = store.audits(status="finished", limit=200)
         seconds = []
         for a in rows:
@@ -1231,7 +1280,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         elif state in ("stopped", "interrupted"):
             code = "stopped"
         else:
-            cap, read = MODES.get(audit["mode"], 1), int(reading.get("pages_read") or 0)
+            cap, read = page_cap(audit), int(reading.get("pages_read") or 0)
             if read < min(10, cap) or read < 0.2 * cap:
                 code = "too_few"
             elif read >= cap or audit.get("crawl_stop") == "page_cap":
@@ -1293,7 +1342,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         path = "both" if maya_n and reader_n else "maya" if maya_n else "firecrawl" if reader_n else None
         out = {"pages_read": total, "read_by_maya": maya_n, "read_by_firecrawl": reader_n, "path": path,
                "path_label": t(f"history.path.{path}") if path else t("history.path.none"),
-               "mode_label": t(f"plan.mode.{audit['mode']}") if audit.get("mode") in MODES else audit.get("mode")}
+               "mode_label": mode_label(audit["mode"], page_cap(audit)) if audit.get("mode") in (*MODES, CUSTOM) else audit.get("mode")}
         if key[:2] != (None, None):  # a running audit's counters move: read again next time
             reading_cache[audit["id"]] = (key, out)
         return out
@@ -1378,7 +1427,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
 
     def resume_plan_view(audit: dict[str, Any]) -> dict[str, Any]:
         resumable = audit["state"] in RESUMABLE
-        cap = MODES[audit["mode"]]
+        cap = page_cap(audit)
         saved = pages_saved(runner.state_folder(audit["id"]) / CRAWL_DB)
         cost: dict[str, Any] = {"pending": False, "needs_confirmation": False, "total_usd": 0.0, "calls": [], "blocked": None,
                                 "note": t("paid.resume.none")}
@@ -1463,7 +1512,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         options = fc.continuation_options(kind, use, body.proxy, body.owner_approved_bypass)
         if options["allow_without_zero_data_retention"] and not body.accept_content_may_be_stored:
             raise ApiError(422, "storage_not_accepted", t("fc.zdr.must_accept"))
-        shown = fc.plan(engine.firecrawl, options, MODES[audit["mode"]], False)
+        shown = fc.plan(engine.firecrawl, options, page_cap(audit), False)
         if shown["blocked"]:
             raise ApiError(409, shown["blocked"]["code"], shown["blocked"]["message"])
         if round(body.approved_max_credits, 6) != round(shown["max_credits"], 6):
@@ -1933,7 +1982,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         if other["id"] == audit["id"] or other["project_id"] != audit["project_id"]:
             raise ApiError(409, "not_comparable", t("compare.other_site"))
         result = comparison.compare(load_report(audit), load_report(other), new_affected=affected(audit["id"]),
-                                    old_affected=affected(other["id"]), caps=(MODES[audit["mode"]], MODES[other["mode"]]))
+                                    old_affected=affected(other["id"]), caps=(page_cap(audit), page_cap(other)))
         return {"audit_id": audit["id"], "compared_with": other["id"], **result}
 
     @api.get("/audits/{audit_id}/comparison", summary="Against the previous audit of the same site, or one you name")

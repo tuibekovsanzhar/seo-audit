@@ -8,7 +8,7 @@
 
 const API = "/api/v1";
 const state = { token: null, strings: {}, settings: null, language: "en", auditId: null, source: null, ticker: null,
-  historyLimit: 30, showHidden: false, draft: { mode: "quick", backlinks: false, search_data: false, local_business: false, archives: false, verify_ownership: false, business_type: "auto" }, lastFocus: null };
+  historyLimit: 30, showHidden: false, draft: { mode: "quick", page_count: 300, crawl_order: false, backlinks: false, search_data: false, local_business: false, archives: false, verify_ownership: false, business_type: "auto" }, lastFocus: null };
 const $ = (id) => document.getElementById(id);
 
 const num = (value) => new Intl.NumberFormat(state.language).format(Number(value) || 0);
@@ -252,7 +252,12 @@ function newAudit() {
   address.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); go(); } });
   const modes = el("div", { class: "modes", role: "radiogroup", "aria-label": T("new.depth") });
   const typicalLine = el("p", { class: "muted small" });
+  // DECISIONS 331: "Özel sayı" asks for its page count; every mode reads the Akıllı selection unless "Tam tarama sırası".
+  const count = el("input", { class: "field-input", type: "number", id: "new-count", min: 25, max: 2000, step: 25, value: state.draft.page_count || 300 });
+  count.addEventListener("input", () => { state.draft.page_count = Math.max(25, Math.min(2000, Number(count.value) || 300)); });
+  const countBox = el("div", { class: "pair" }, el("label", { class: "label", for: "new-count", text: T("new.mode.custom.count") }), count);
   const drawModes = () => {
+    countBox.hidden = state.draft.mode !== "custom";
     fill(modes, state.settings.modes.map((mode) => el("button", { class: "mode-card" + (state.draft.mode === mode.id ? " on" : ""), type: "button", role: "radio",
       "aria-checked": String(state.draft.mode === mode.id), onclick: () => { state.draft.mode = mode.id; drawModes(); } },
       el("strong", { text: T("new.mode." + mode.id) }), el("span", { class: "muted small", text: T("new.mode." + mode.id + ".about") }),
@@ -263,13 +268,15 @@ function newAudit() {
   const extrasBox = el("div", { class: "chips" });
   const drawExtras = () => fill(extrasBox,
     el("button", { class: "chip", type: "button", "aria-pressed": String(state.draft.backlinks), onclick: () => { state.draft.backlinks = !state.draft.backlinks; drawExtras(); } },
-      T(state.draft.backlinks ? "option.backlinks.on" : "option.backlinks.off")), optionChips(state.draft, drawExtras));
+      T(state.draft.backlinks ? "option.backlinks.on" : "option.backlinks.off")), optionChips(state.draft, drawExtras),
+    el("button", { class: "chip", type: "button", "aria-pressed": String(Boolean(state.draft.crawl_order)), title: T("new.crawl_order.help"),
+      onclick: () => { state.draft.crawl_order = !state.draft.crawl_order; drawExtras(); } }, T("new.crawl_order")));
   drawModes(); drawExtras();
   const business = businessSelect("new-business", state.settings.business_types, state.draft.business_type, true,
     (value) => { state.draft.business_type = value; });
   const card = el("section", { class: "card new-audit", id: "new-audit-card", "aria-labelledby": "new-url-label" },
     el("label", { class: "field-label", for: "new-url", id: "new-url-label", text: T("new.address") }), address, problem,
-    el("div", { class: "field-label", text: T("new.depth") }), modes, typicalLine,
+    el("div", { class: "field-label", text: T("new.depth") }), modes, countBox, typicalLine,
     el("label", { class: "field-label", for: "new-business", text: T("new.business") }), business,
     el("p", { class: "muted small", text: T("new.business.help") }),
     el("details", { class: "extras" }, el("summary", { text: T("new.extras") }), extrasBox),
@@ -298,7 +305,8 @@ async function send(text) {
     return;
   }
   say(bubble("user", value));
-  await proposePlan({ url: value, mode: state.draft.mode, backlinks: state.draft.backlinks, search_data: state.draft.search_data, local_business: state.draft.local_business, archives: state.draft.archives, verify_ownership: state.draft.verify_ownership, business_type: state.draft.business_type || "auto", key_pages: [] }, value, true);
+  await proposePlan({ url: value, mode: state.draft.mode, ...(state.draft.mode === "custom" ? { page_count: state.draft.page_count || 300 } : {}),
+    crawl_order: Boolean(state.draft.crawl_order), backlinks: state.draft.backlinks, search_data: state.draft.search_data, local_business: state.draft.local_business, archives: state.draft.archives, verify_ownership: state.draft.verify_ownership, business_type: state.draft.business_type || "auto", key_pages: [] }, value, true);
 }
 
 /* ---------- plan ---------- */
@@ -381,7 +389,7 @@ function firecrawlBox(plan, request, live, replan) {
   cap.value = options.max_pages || 50;
   const proxy = el("select", { class: "field-input", id: id + "-proxy", disabled: !live }, reader.proxies.map((name) => el("option", { value: name, selected: name === options.proxy }, name)));
   const update = () => replan(Object.assign({}, request, { firecrawl: on.checked, firecrawl_render: on.checked && render.checked,
-    firecrawl_full_read: on.checked && request.mode === "smart" && full.checked,
+    firecrawl_full_read: on.checked && request.mode !== "single" && !request.crawl_order && full.checked,
     firecrawl_max_pages: Math.max(1, Math.min(reader.max_pages_limit, Number(cap.value) || 50)),
     firecrawl_owner_approved: on.checked && owner.checked, firecrawl_proxy: on.checked && owner.checked ? proxy.value : "basic" }));
   on.addEventListener("change", update);
@@ -394,7 +402,7 @@ function firecrawlBox(plan, request, live, replan) {
       options.owner_approved_bypass ? el("div", {}, el("label", { class: "label", for: id + "-proxy", text: T("fc.proxy") }), proxy) : null),
       el("p", {}, owner, " ", el("label", { for: id + "-owner", text: T("fc.owner") })), el("p", { class: "muted small", text: T("fc.owner.help") }),
       reader.render_fallback_offered ? el("p", {}, render, " ", el("label", { for: id + "-render", text: T("fc.render") })) : null,
-      request.mode === "smart" ? el("p", {}, full, " ", el("label", { for: id + "-full", text: T("fc.full_read") }), el("span", { class: "muted small", text: " " + T("fc.full_read.help") })) : null,
+      request.mode !== "single" && !request.crawl_order ? el("p", {}, full, " ", el("label", { for: id + "-full", text: T("fc.full_read") }), el("span", { class: "muted small", text: " " + T("fc.full_read.help") })) : null,
       el("div", { class: "row" }, el("button", { class: "button", type: "button", onclick: update }, T("fc.update"))));
   }
   box.append(el("p", { class: "total", text: reader.cost_line }));
@@ -424,6 +432,7 @@ function switchesBox(plan, request, live, replan) {
 function planFacts(plan) {
   return facts([[T("plan.label.site"), plan.target.note ? [plan.target.url, plan.target.note] : plan.target.url], [T("plan.label.scope"), plan.scope_label || T("plan.scope", { mode: plan.mode_label, cap: num(plan.page_cap) })],
     plan.key_pages.length ? [T("plan.key_pages.label"), plan.key_pages] : null,
+    plan.selection_line ? [T("plan.label.selection"), plan.selection_line] : null,
     [T("plan.label.rendering"), plan.rendering.label], [T("plan.label.time"), plan.duration.label],
     [T("plan.label.included"), plan.included], [T("plan.label.optional"), plan.optional],
     [T("plan.label.unavailable"), plan.unavailable], [T("plan.label.limits"), plan.limitations]]);
@@ -453,8 +462,12 @@ function planCard(plan, request, message) {
     fill(card, el("h2", { text: T("plan.title") + ": " + current.target.host }),
       el("ul", { class: "plan-short" }, el("li", { text: T("plan.pages", { cap: num(current.page_cap) }) }), typical ? el("li", { text: T("plan.time", { label: typical.label }) }) : null,
         el("li", { text: [current.paid && current.paid.total_usd ? T("plan.cost.short", { total: money(current.paid.total_usd) }) : null,
-          current.firecrawl && current.firecrawl.requested && current.firecrawl.max_credits ? T("plan.cost.credits", { credits: num(current.firecrawl.max_credits) }) : null]
-          .filter(Boolean).join(" · ") || T("plan.cost.free") })),
+          current.firecrawl && current.firecrawl.requested && current.firecrawl.max_credits ? (current.credits_expected && current.credits_expected < current.firecrawl.max_credits
+            ? T("plan.cost.credits.expected", { credits: num(current.firecrawl.max_credits), expected: num(current.credits_expected) })
+            : T("plan.cost.credits", { credits: num(current.firecrawl.max_credits) })) : null]
+          .filter(Boolean).join(" · ") || T("plan.cost.free") }),
+        // DECISIONS 331: how the pages are chosen, in one line
+        current.selection_line ? el("li", { class: "muted small", text: current.selection_line }) : null),
       businessRow(current, live, (value) => replan(Object.assign({}, request, { business_type: value }), false)),
       more);
     more.append(planFacts(current));
@@ -585,20 +598,24 @@ function planCard(plan, request, message) {
 
 function buildEditor(box, plan, request, onUpdate) {
   const options = plan.paid_options || {};
-  const draft = { mode: plan.mode, backlinks: Boolean(options.backlinks), search_data: Boolean(options.search_data), local_business: Boolean(options.local_business), archives: Boolean(plan.archives), verify_ownership: Boolean(plan.ownership && plan.ownership.requested) };
+  const draft = { mode: plan.mode, page_count: plan.mode === "custom" ? plan.page_cap : 300, crawl_order: Boolean(plan.crawl_order), backlinks: Boolean(options.backlinks), search_data: Boolean(options.search_data), local_business: Boolean(options.local_business), archives: Boolean(plan.archives), verify_ownership: Boolean(plan.ownership && plan.ownership.requested) };
   const id = "e" + plan.id.slice(0, 8);
   const pages = el("textarea", { rows: 3, id: id + "-pages", placeholder: "/pricing" });
   pages.value = plan.key_pages.join("\n");
   const modes = el("div", { class: "chips", role: "radiogroup", "aria-label": T("option.mode") });
   const drawModes = () => fill(modes, state.settings.modes.map((mode) => el("button", { class: "chip", type: "button", role: "radio",
     "aria-checked": String(draft.mode === mode.id), onclick: () => { draft.mode = mode.id; drawModes(); } }, mode.label)),
+    draft.mode === "custom" ? el("input", { class: "field-input", type: "number", min: 25, max: 2000, step: 25, value: draft.page_count, "aria-label": T("new.mode.custom.count"),
+      oninput: (event) => { draft.page_count = Math.max(25, Math.min(2000, Number(event.target.value) || 300)); } }) : null,
     el("button", { class: "chip", type: "button", "aria-pressed": String(draft.backlinks), onclick: () => { draft.backlinks = !draft.backlinks; drawModes(); } },
-      T(draft.backlinks ? "option.backlinks.on" : "option.backlinks.off")), optionChips(draft, () => drawModes()));
+      T(draft.backlinks ? "option.backlinks.on" : "option.backlinks.off")), optionChips(draft, () => drawModes()),
+    el("button", { class: "chip", type: "button", "aria-pressed": String(draft.crawl_order), title: T("new.crawl_order.help"),
+      onclick: () => { draft.crawl_order = !draft.crawl_order; drawModes(); } }, T("new.crawl_order")));
   drawModes();
   const problem = el("p", { class: "error-text", role: "alert" });
   fill(box, modes, el("label", { for: id + "-pages", text: T("plan.key_pages.label") }), el("p", { class: "muted small", text: T("plan.key_pages.help") }), pages,
     el("div", { class: "row" }, el("button", { class: "button primary", type: "button", onclick: async () => {
-      const body = Object.assign({}, request, { mode: draft.mode, backlinks: draft.backlinks, search_data: draft.search_data, local_business: draft.local_business, archives: draft.archives, verify_ownership: draft.verify_ownership, key_pages: pages.value.split("\n").map((line) => line.trim()).filter(Boolean) });
+      const body = Object.assign({}, request, { mode: draft.mode, page_count: draft.mode === "custom" ? draft.page_count : undefined, crawl_order: draft.crawl_order, backlinks: draft.backlinks, search_data: draft.search_data, local_business: draft.local_business, archives: draft.archives, verify_ownership: draft.verify_ownership, key_pages: pages.value.split("\n").map((line) => line.trim()).filter(Boolean) });
       try { onUpdate(await api("POST", "/plans", body), body); } catch (error) { problem.textContent = error.message; }
     } }, T("plan.update"))), problem, profileForm(plan.project_id, id));
 }

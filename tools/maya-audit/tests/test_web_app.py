@@ -791,7 +791,8 @@ def test_complete_incomplete_and_degraded_are_the_engines_outcomes_not_the_jobs(
 @pytest.fixture
 def standard(web):
     client = web(citations=True)
-    made = confirm(client, plan(client, mode="standard", backlinks=True, key_pages=["/tr/", "/tr/urun-7", "/app", "/item/13"]))
+    # DECISIONS 331: read in the crawl's own order ("Tam tarama sırası"), as these 500-page scenarios were written for
+    made = confirm(client, plan(client, mode="standard", crawl_order=True, backlinks=True, key_pages=["/tr/", "/tr/urun-7", "/app", "/item/13"]))
     audit = start(client, made)
     return client, audit, client.get(f"{API}/audits/{audit['id']}/result").json()
 
@@ -1049,7 +1050,8 @@ def test_the_results_adapter_has_no_field_for_what_the_audit_does_not_measure():
 def test_comparison_does_not_call_a_problem_gone_when_its_pages_were_not_read_again(standard):
     client, older, _ = standard
     error(client.get(f"{API}/audits/{older['id']}/comparison"), 404, "no_previous_audit")
-    newer = audit_of(client, SHOP)  # Quick 50 after Standard 500: most of the earlier pages are not read this time
+    # Quick 50 after Standard 500: most of the earlier pages are not read this time (both in crawl order, DECISIONS 331)
+    newer = audit_of(client, SHOP, crawl_order=True)
     result = get(client, newer, "/comparison")
     assert result["compared_with"] == older["id"] and not result["same_conditions"] and result["caution"]
     assert {"pages", "scope", "key_pages", "source"} <= {d["code"] for d in result["differences"]}
@@ -1208,7 +1210,7 @@ def test_demo_mode_is_labelled_accepts_only_its_own_sites_and_keeps_its_own_ledg
         assert settings["demo"] and {s["address"] for s in settings["demo_sites"]} == set(demo.SITES)
         refused = error(client.post(f"{API}/plans", json={"url": "example.com"}), 422, "demo_sites_only")
         assert SHOP in refused["message"]
-        made = plan(client, SHOP, backlinks=True, mode="standard")
+        made = plan(client, SHOP, backlinks=True, mode="standard", crawl_order=True)  # DECISIONS 331
         assert made["paid"]["calls"][0]["target"] == "demo-shop.example" and {k: v for k, v in made["duration"].items() if k != "typical"} == {"known": False, "label": strings.t("plan.duration.demo")}
         audit = start(client, confirm(client, made))
         view = get(client, audit, "/summary")

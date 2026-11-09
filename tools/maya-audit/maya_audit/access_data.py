@@ -211,7 +211,40 @@ def _link_counts(links: list[dict[str, str]], origin: str) -> dict[str, Any]:
             "kinds": {}, "not_checked": {}, "rows": []}
 
 
-def check_llms_links(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig, sitemap_check=None) -> None:
+def ask_llms_links_on_site(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig, sitemap_check=None,
+                           state: dict | None = None) -> dict:
+    """DECISIONS 330: the light requests `check_llms_links` would send for llms.txt's links to this site, asked early on
+    a lane of their own (beside index, structure and rendering), in the same order, with the same cap, robots.txt rules
+    and stopping rules. Their answers and the stop state go in `state`, which `check_llms_links` then reuses: it sends
+    nothing again for these links, and asks only the links to other sites (after the other-site pool, as before)."""
+    from .index_data import LightRequests, _NO_MORE_REQUESTS
+    state = state if state is not None else {}
+    access = result.access
+    if access is None or cfg.single_page:
+        return state
+    policy = result.robots_policy_by_origin.get(result.origin)
+    if result.stop_reason in _NO_MORE_REQUESTS or policy is None or policy.stops_requests:
+        return state
+    asked = state.setdefault("asked", {})
+    requests = state.setdefault("requests", LightRequests(fetcher, cfg, policy, "llms_link_check"))
+    crawl = {p.url for p in result.pages}
+    light = {row["url"] for row in (getattr(sitemap_check, "rows", None) or [])}
+    for entry in access.llms:
+        for link in entry.get("_links") or []:
+            url = link["url"]
+            if not same_origin(url, result.origin) or url in crawl or url in light or url in asked:
+                continue
+            if (not policy.decide(cfg.product_token, url).allowed or len(asked) >= cfg.llms_link_checks_max
+                    or requests.stopped_because):
+                continue
+            fresh = requests.ask(url)
+            if fresh is not None:
+                asked[url] = fresh
+    return state
+
+
+def check_llms_links(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig, sitemap_check=None,
+                     state: dict | None = None) -> None:
     """ACC-8 (DECISIONS 208): where each link of llms.txt to this site leads. Judged from the crawl, then from the
     sitemap check's light requests; any other is asked with the same light request, at most `llms_link_checks_max`
     in all, robots.txt obeyed, stopping on a 429, 3 blocked answers in a row or the time limit. A link to another
@@ -230,8 +263,10 @@ def check_llms_links(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig, si
     light = {row["url"]: row for row in (getattr(sitemap_check, "rows", None) or [])}
     why_none = ("single_page" if cfg.single_page else "crawl_stopped" if result.stop_reason in _NO_MORE_REQUESTS
                 else "robots_unreadable" if policy is None or policy.stops_requests else None)
-    requests = LightRequests(fetcher, cfg, policy, "llms_link_check")
-    asked: dict[str, dict[str, Any]] = {}
+    # DECISIONS 330: what `ask_llms_links_on_site` already asked (and its stop state) is reused, never sent again.
+    state = state if state is not None else {}
+    requests = state.get("requests") or LightRequests(fetcher, cfg, policy, "llms_link_check")
+    asked: dict[str, dict[str, Any]] = state.get("asked") or {}
     for entry in access.llms:
         links = entry.get("_links") or []
         counts = entry.get("links") or _link_counts(links, result.origin)

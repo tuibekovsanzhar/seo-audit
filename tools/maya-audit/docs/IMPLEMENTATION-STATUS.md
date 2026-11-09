@@ -1744,3 +1744,48 @@ plan's own counts (moodist "Klinik ve konum: 0/52") stay as the run recorded the
 | A live audit | NOT RUN (owner) |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+
+## Speed, page selection in every mode, one Google key (2026-11-09, DECISIONS 330-332)
+
+**1 Speed** (`sitelimit`: step back up after 10 answers under 1 s, the audit's own thread first; `audit`: access and
+llms.txt's links to this site on lanes). Estimated per step from the saved request logs (a replay through a model of the
+site limit, which gives the real totals: moodist 726 s modelled / 716 s real, enpara 330 / 331); the minutes before are
+the saved runs', after the model's:
+
+| Step (minutes) | moodist before | moodist after | enpara before | enpara after |
+|---|---|---|---|---|
+| access | 2.3 | beside (lane, 3.3) | 1.1 | beside (2.3) |
+| index | 1.7 | 0.4 | 0.8 | 0.2 |
+| structure | 1.5 | 1.5 | 2.1 | 1.7 |
+| render | 4.3 | 4.3 | 1.4 | 1.4 |
+| sitemap check | beside (3.9) | beside (5.4) | beside (2.7) | beside (3.6) |
+| waiting for the lanes | 0 | 1.4 | 0 | 0.5 |
+| llms.txt links | 2.1 | beside (4.3) | 0.2 | beside (1.4) |
+| post-crawl part | 12.1 | ~7.6 | 5.5 | ~3.7 |
+| whole audit (with DECISIONS 329) | ~20.7 | ~16 | ~11.1 | ~9.3 |
+
+The step-up alone barely helps moodist (HTML answers 1-2 s; fast runs only on static files); the order does.
+Unchanged: crawl (moodist 6.6 min), rendering, performance rounds.
+
+**2 Modes.** Hızlı ~50, Akıllı ~150, Derin ~500, Özel sayı 25-2000: all with the Akıllı selection; "Tam tarama sırası"
+advanced. The plan shows time, Firecrawl's maximum and usual credits, and how pages are chosen. Docs: TEAM-SETUP, README,
+WEB-API, WEB-APP.
+
+**3 PageSpeed / Core Web Vitals.** The web app reads `MAYA_AUDIT_CRUX_API_KEY` (now also `MAYA_AUDIT_GOOGLE_API_KEY`):
+Chrome UX Report field data for the origin (phones, 28 days), one request, a second or two. PageSpeed Insights lab runs
+exist only in the CLI (`--pagespeed`, now reading either name from `.env` too): mobile, 3 runs for each of up to 5 key
+pages, only on ownership-verified sites. Seen in the web app: plan details "Core Web Vitals from real Chrome visitors are
+included", results "Core Web Vitals (real visitors)", team report "Saha verisi" with values instead of "Ölçülmedi".
+
+**4 Search Console.** Proposal only: `docs/proposals/SEARCH-CONSOLE.md` (waiting for the owner's OK).
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_speed_modes_330.py` | `20 passed` |
+| fast suite, first run (fixture matrix regenerated) | `4 failed, 3041 passed, 4 skipped, 135 deselected` in 552.92 s: three pinned the old mode list, labels and the last robots.txt sample's place; one found that "needed" left out the ranking pages of the search data (fixed: still read) |
+| full suite after the fixes, `pytest -q -rfEs -p no:cacheprovider` | `3180 passed, 4 skipped, 1 warning in 931.52s (0:15:31)` |
+| ruff E9/F821/F841, `python3.11 -m compileall`, `node --check app.js` | clean / OK / OK |
+| CLI `--smart --no-firecrawl` on a loopback static site with llms.txt, empty keys, temp home and env file | exit 0; schema 1.30; no `firecrawl` or `crux` section; no home folder or ledger; rows `access`, `llms_links` beside index/structure/render, `llms_links_other_sites` after performance; llms.txt links checked |
+| A live audit | NOT RUN (owner) |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+| Push | NOT DONE (owner: don't push) |

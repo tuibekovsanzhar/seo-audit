@@ -209,8 +209,12 @@ def test_the_smart_mode_in_the_web_app(tmp_path):
     assert config.sampling and config.max_pages == 150
     quick = runner.crawl_config(runner.Engine(), {"url": "https://example.test/", "mode": "quick", "key_pages": []},
                                 tmp_path / "d.db", resume=False)
-    assert not quick.sampling
-    assert t("new.mode.smart", "tr") == "Akıllı ~150 (önerilen)" and t("new.mode.quick", "tr") == "Hızlı ön bakış · 50 sayfa"
+    # DECISIONS 331: every mode reads the Akıllı selection; "Tam tarama sırası" keeps the crawl's own order
+    assert quick.sampling and quick.max_pages == 50
+    order = runner.crawl_config(runner.Engine(), {"url": "https://example.test/", "mode": "quick", "key_pages": [],
+                                                  "crawl_order": True}, tmp_path / "e.db", resume=False)
+    assert not order.sampling
+    assert t("new.mode.smart", "tr") == "Akıllı ~150 (önerilen)" and t("new.mode.quick", "tr") == "Hızlı ~50"
     assert t("fc.full_read", "tr") == "Tam okuma (Firecrawl her sayfa)"
     script = (ROOT / "maya_audit_web" / "static" / "app.js").read_text(encoding="utf-8")
     assert 'draft: { mode: "quick"' in script  # Quick stays the default until a live run confirms Akıllı's time
@@ -220,8 +224,9 @@ def test_a_smart_plan_reads_through_firecrawl_only_where_needed_unless_full_read
     from test_web_app import API, web  # noqa: F401
     import maya_audit_web.app as app_module  # noqa: F401
     src = (ROOT / "maya_audit_web" / "app.py").read_text(encoding="utf-8")
-    assert '"read_scope": "needed" if body.mode == "smart" and not body.firecrawl_full_read else "all"' in src
-    assert 'pattern="^(single|quick|smart|standard)$"' in src
+    # DECISIONS 331: every sampled mode, not only Akıllı (the plan round trip is tested in test_live_fixes_329)
+    assert '"read_scope": "needed" if sampled(chosen_mode) and not body.firecrawl_full_read else "all"' in src
+    assert 'pattern="^(single|quick|smart|standard|custom)$"' in src
 
 
 # ---------------------------------------------------------------- the Sektör audit without a business type

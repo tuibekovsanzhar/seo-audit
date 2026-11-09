@@ -151,7 +151,7 @@ Rendering is off in demo mode (a browser cannot load a site held in memory), so 
 ## Manual checklist (demo mode)
 
 1. **Banner.** An orange bar says this is a demonstration.
-2. **Plan first.** Click "Try the demonstration: demo-shop.localhost", choose **Standard 500**, switch **Backlinks**
+2. **Plan first.** Click "Try the demonstration: demo-shop.localhost", choose **Derin ~500**, switch **Backlinks**
    on, press Enter. A plan appears: scope, time, what is checked, what is not available, things to know, and cost.
 3. **Confirm.** Start is greyed out. Press **Confirm up to $0.0516**; it shows "Confirmed" and Start becomes usable.
 4. **Options.** Press "Change options", add `/item/13` and `/tr/urun-7` as important pages, "Update plan". The new

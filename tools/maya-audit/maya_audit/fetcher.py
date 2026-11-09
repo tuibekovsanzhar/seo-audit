@@ -565,6 +565,8 @@ class Fetcher:
                                 None if response.ttfb_ms is None else response.ttfb_ms / 1000, self.slow_answer_s)
             if reason is not None:
                 limiter.back_off(reason, "maya")
+            else:  # DECISIONS 330: a run of fast answers lets a limit that came down for slow answers go back up
+                limiter.answered(None if response.ttfb_ms is None else response.ttfb_ms / 1000)
         else:
             # With per-host gaps, the wait and the request to one host hold that host's lock: two threads never ask one
             # host at once, and each keeps the gap after the other's request (DECISIONS 219 part 2).

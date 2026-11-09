@@ -131,10 +131,13 @@ def test_robots_samples_are_sent_when_due_between_other_requests_with_no_idle_ga
     # may end just before the last sample is due; it is then the last request after a short wait (DECISIONS 219: what
     # is not due when the last step ends is waited for), never the 120 s an idle wait would be.
     wait = next((row for row in result.steps if row["step"] == "robots_wait"), None)
-    assert log.index(robots[2]) < len(log) - 1 or (wait is not None and wait["seconds"] < 5)
+    # DECISIONS 330: or sent by the audit's own thread while it waited for the lanes beside it (no robots_wait row)
+    assert log.index(robots[2]) < len(log) - 1 or wait is None or wait["seconds"] < 5
     # The step timing table: each of Maya's steps once, in order, with its requests and its waiting.
-    assert steps[:2] == ["sitemap", "crawl"] and steps.index("access") < steps.index("index") < steps.index("structure") \
-        < steps.index("sitemap_check") < steps.index("llms_links")
+    # DECISIONS 330: access and llms.txt's links to this site are lanes beside index and structure (rows written at the
+    # join, with the sitemap check's).
+    assert steps[:2] == ["sitemap", "crawl"] and steps.index("index") < steps.index("structure") \
+        < steps.index("sitemap_check") and {"access", "llms_links"} <= set(steps)
     assert sum(row["requests"] for row in result.steps) == len(result.requests)
     crawl_row = next(row for row in result.steps if row["step"] == "crawl")
     read = len(result.pages)
@@ -159,8 +162,9 @@ def test_healthy_with_fast_check_off_the_request_log_is_todays_order_apart_from_
         result = audit(site(clock, pages=12, sitemap_only=30, llms=5, images=4), max_pages=20, robots_samples=samples).result
         # The soft-404 probe asks a new made-up address each run: compared without its random part.
         rows = [(r.purpose, r.url.split("no-such-page-")[0]) for r in result.requests if r.purpose != "robots_sample"]
-        # The sitemap check asks 4 at a time (DECISIONS 294): its requests are compared as a set, the rest in order.
-        return [row for row in rows if row[0] != "sitemap_check"] + sorted(row for row in rows if row[0] == "sitemap_check"), result
+        # The sitemap check asks 4 at a time (DECISIONS 294), and the access data and llms.txt's links run on lanes beside
+        # index and structure (DECISIONS 330): the requests are compared as a multiset (the same ones, whatever their order).
+        return sorted(rows), result
 
     three, with_samples = order(3)
     one, _ = order(1)

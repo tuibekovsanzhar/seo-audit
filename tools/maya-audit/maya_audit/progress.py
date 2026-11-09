@@ -16,8 +16,8 @@ from typing import Any, Callable
 from . import clock as _clock
 
 # In the order an audit goes through them. DECISIONS 328: the sitemap check starts right after the crawl, beside access,
-# index, structure and rendering.
-PHASES = ("starting", "sitemap", "crawl", "sitemap_check", "access", "index", "structure", "render", "performance", "citations",
+# index, structure and rendering. DECISIONS 330: access and llms.txt's links to this site run beside them too.
+PHASES = ("starting", "sitemap", "crawl", "sitemap_check", "access", "llms_links", "index", "structure", "render", "performance", "citations",
           "citation_domains", "checks", "done")
 
 

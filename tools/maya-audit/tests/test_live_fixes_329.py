@@ -95,7 +95,10 @@ def test_a_smart_web_plan_saves_needed_and_full_read_saves_all(web, tmp_path):  
     client = web(site=Site(respond=cloudflare), firecrawl=services(tmp_path, Firecrawl(PAGES)))
     assert plan(client, mode="smart")["firecrawl"]["options"]["read_scope"] == "needed"
     assert plan(client, mode="smart", firecrawl_full_read=True)["firecrawl"]["options"]["read_scope"] == "all"
-    assert plan(client, mode="quick")["firecrawl"]["options"]["read_scope"] == "all"
+    # DECISIONS 331: every mode reads the Akıllı selection, so Quick reads through Firecrawl only where needed too
+    assert plan(client, mode="quick")["firecrawl"]["options"]["read_scope"] == "needed"
+    assert plan(client, mode="quick", crawl_order=True)["firecrawl"]["options"]["read_scope"] == "all"
+    assert plan(client, mode="single")["firecrawl"]["options"]["read_scope"] == "all"
 
 
 def test_the_cli_smart_mode_reads_through_firecrawl_only_where_needed():

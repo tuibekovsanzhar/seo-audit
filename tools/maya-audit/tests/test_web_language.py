@@ -46,7 +46,7 @@ def test_the_switch_changes_the_interface_the_reports_own_text_stays_english_and
     table = client.get(f"{API}/strings").json()
     assert table["language"] == "tr" and table["strings"]["nav.new"] == "Yeni denetim" and set(table["strings"]) == set(strings.STRINGS["en"])
     assert client.get(f"{API}/strings", params={"language": "en"}).json()["strings"]["nav.new"] == "New audit"
-    assert [mode["label"] for mode in client.get(f"{API}/settings").json()["modes"]] == ["Tek sayfa", "Hızlı ön bakış · 50 sayfa", "Akıllı ~150", "Standart 500"]  # DECISIONS 327
+    assert [mode["label"] for mode in client.get(f"{API}/settings").json()["modes"]] == ["Tek sayfa", "Hızlı ~50", "Akıllı ~150", "Derin ~500", "Özel sayı"]  # DECISIONS 327, 331
 
     view = get(client, english, "/summary")  # an audit made in English, read in Turkish
     assert view["blocked"]["headline"].startswith("Site bu denetimi engelledi") and view["pages_stat"]["label"] == "Okunabilen sayfalar"
@@ -63,7 +63,7 @@ def test_the_switch_changes_the_interface_the_reports_own_text_stays_english_and
     assert "Okunabilen sayfalar" in client.get(f"{API}/audits/{english['id']}/print?full=true&lang=tr").text
     assert "Readable pages" in client.get(f"{API}/audits/{english['id']}/print?full=true").text
     made = plan(client)
-    assert made["mode_label"] == "Hızlı ön bakış · 50 sayfa" and "robots.txt" in " ".join(made["limitations"] + made["included"])
+    assert made["mode_label"] == "Hızlı ~50" and "robots.txt" in " ".join(made["limitations"] + made["included"])
     turkish = start(client, made)
     log = client.get(f"{API}/audits/{turkish['id']}/events", headers={"last-event-id": "0"}).text
     assert "Sayfalar okunuyor" in log and "Reading pages" not in log  # the worker writes in the audit's language

@@ -9,7 +9,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
-from .access_data import check_llms_links, collect_access_data, key_page_urls
+from .access_data import ask_llms_links_on_site, check_llms_links, collect_access_data, key_page_urls
 from .checks.access import run_access_checks
 from .checks.index import run_index_checks
 from .index_data import check_sitemap_urls, collect_index_data
@@ -220,15 +220,19 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
         def out_of_time():
             return fetcher.deadline_mono is not None and _clock.monotonic() >= fetcher.deadline_mono
 
-        def collect_beside(name, target, function, when_cut=None):
+        def collect_beside(name, target, function, when_cut=None, after=()):
             """DECISIONS 328: run one data collector on a thread of its own, beside the audit's own steps, with `collect`'s
             rules (the time limit, what is kept when it is cut) and its own row of the step timing table (a lane). Returns
-            the thread; `join` it before anything reads `target`."""
+            the thread; `join` it before anything reads `target`. DECISIONS 330: `after`, threads it waits for first (its
+            row starts when they have ended)."""
             import threading as _threading
             from .fetcher import utc_now as _utc_now
-            started_at, began = _utc_now(), _clock.monotonic()
+            times = {"at": _utc_now(), "began": _clock.monotonic()}
 
             def run():
+                for other in after:
+                    other.join()
+                times.update(at=_utc_now(), began=_clock.monotonic())
                 fetcher.set_lane(name)
                 try:
                     if out_of_time():
@@ -251,7 +255,7 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
                         setattr(crawl, target, None)
                 finally:
                     fetcher.set_lane(None)
-                    thread.row = (started_at, began, _clock.monotonic())
+                    thread.row = (times["at"], times["began"], _clock.monotonic())
 
             thread = _threading.Thread(target=run, name=f"maya-{name}", daemon=True)
             thread.row = None
@@ -266,7 +270,19 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
         # not ask is reported as not checked. Before, it ran last, alone (moodist: 200 s after 290 s of other steps).
         beside = collect_beside("sitemap_check", "_sitemap_check", lambda: check_sitemap_urls(fetcher, crawl, config),
                                 when_cut=lambda: check_sitemap_urls(fetcher, crawl, config))
-        collect("access", "access", lambda: collect_access_data(fetcher, crawl, config))
+        # DECISIONS 330: the access data (user-agent comparison, soft-404 probe, llms.txt, robots.txt samples) needs only
+        # the crawl, and nothing below reads it before the join: it runs on a lane of its own, beside index, structure and
+        # rendering, through the same shared site limit. Then llms.txt's links to this site are asked on a lane of their
+        # own once both the access data and the sitemap check's rows exist; the links to other sites still follow the
+        # other-site pool on the audit's own thread (`check_llms_links` reuses the answers, sending nothing twice).
+        access = collect_beside("access", "access", lambda: collect_access_data(fetcher, crawl, config))
+        llms_state: dict = {}
+
+        def llms_on_site():
+            if crawl._sitemap_check is None or crawl.access is None:
+                return None
+            return ask_llms_links_on_site(fetcher, crawl, config, crawl._sitemap_check, llms_state)
+        llms = collect_beside("llms_links", "_llms_state", llms_on_site, after=(beside, access))
         collect("index", "index", lambda: collect_index_data(fetcher, crawl, config, key_page_urls(crawl, config)))
         # Before rendering: the structure checks read the pages already fetched and need only a few link checks
         # of their own, while rendering and the performance rounds are slow. On the first real 40-page run the
@@ -277,10 +293,11 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
                 when_cut=lambda: collect_structure_data(fetcher, crawl, config))
         collect("render", "render", lambda: collect_render_data(fetcher, crawl, config, key_page_urls(crawl, config)),
                 when_cut=lambda: RenderData("raw_html_only", "overall audit deadline reached before rendering started"))
-        fetcher.begin_step("sitemap_check_wait")  # the time the audit's own thread waits for the sitemap check, if any
-        while beside.is_alive():
-            fetcher.send_due("sitemap_check")  # only the audit's own thread sends what has come due (DECISIONS 219)
-            beside.join(0.05)
+        fetcher.begin_step("sitemap_check_wait")  # the time the audit's own thread waits for the lanes beside it, if any
+        for thread in (beside, access, llms):
+            while thread.is_alive():
+                fetcher.send_due("sitemap_check")  # only the audit's own thread sends what has come due (DECISIONS 219)
+                thread.join(0.05)
         fetcher.end_step()
         if fetcher.steps and fetcher.steps[-1]["step"] == "sitemap_check_wait" and fetcher.steps[-1]["seconds"] < 0.1 \
                 and not fetcher.steps[-1]["requests"]:
@@ -288,6 +305,11 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
         if beside.row is not None:
             fetcher.lane_row("sitemap_check", beside.row[0], beside.row[1], ["access", "index", "structure", "render"],
                              ended_mono=beside.row[2])
+        crawl.__dict__.pop("_llms_state", None)  # a lock inside: never kept on the result (a saved snapshot pickles it)
+        if access.row is not None:
+            fetcher.lane_row("access", access.row[0], access.row[1], ["index", "structure", "render"], ended_mono=access.row[2])
+        if llms.row is not None and llms_state.get("requests") is not None:
+            fetcher.lane_row("llms_links", llms.row[0], llms.row[1], ["index", "structure", "render"], ended_mono=llms.row[2])
         # Last, so the extra rounds are spaced from the crawl by all the collection above.
         collect("performance", "perf", lambda: collect_perf_data(fetcher, crawl, config),
                 when_cut=lambda: PerfData(enabled=config.prf_enabled, egress_region=config.egress_region,
@@ -297,9 +319,9 @@ def run_audit(start_url: str, config: CrawlConfig, transport: httpx.BaseTranspor
         if pool is not None:
             pool.join()
         if crawl._sitemap_check is not None:  # as before: no llms.txt links when the sitemap check itself failed
-            fetcher.begin_step("llms_links")  # its own row of the step timing table (DECISIONS 219)
+            fetcher.begin_step("llms_links_other_sites")  # what is left: the links to other sites (DECISIONS 330)
             try:
-                check_llms_links(fetcher, crawl, config, crawl._sitemap_check)
+                check_llms_links(fetcher, crawl, config, crawl._sitemap_check, llms_state)
             except Exception as exc:  # noqa: BLE001  never ends the audit (it ran inside the sitemap check's guard before)
                 crawl.collector_errors["llms_links"] = f"{type(exc).__name__}: {str(exc)[:300]}"
         if crawl.structure is not None and crawl._external is not None:  # llms.txt's links to other sites came last

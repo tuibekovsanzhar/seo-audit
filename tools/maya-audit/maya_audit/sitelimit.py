@@ -13,9 +13,17 @@ still pass `READER`:
   thread) is exactly the sequential crawler it was;
 - while Maya's own steps run, the reader never uses slot 0, and a request of Maya's that waits goes before the
   reader's: Maya's own steps are never held up behind a full limit of reader requests.
+- DECISIONS 330: while Maya's own thread waits for its next request, the lanes beside it (the sitemap check, the
+  access data, llms.txt's links) leave slot 0 to it and start nothing that would move its start later. The same
+  requests and gaps, never more at once: only the order changes, so the own thread's steps (on the audit's critical
+  path) go first and the lanes use the time it spends elsewhere (rendering in the local browser, working out data).
 
-On a 429, a 5xx, a failed connection or a slow answer the limit steps down to 2, then to 1, and stays there; each step
-is recorded. Nothing here sends a request: callers ask for a slot, send, and give it back.
+On a 429, a 5xx, a failed connection or a slow answer the limit steps down to 2, then to 1; each step is recorded.
+DECISIONS 330: a limit that came down only for slow answers steps back up, one rung at a time (1 -> 2 -> the configured
+limit), after `STEP_UP_AFTER` answers in a row faster than `FAST_S`; any slow or bad answer starts the count again. A
+limit that came down for a 429, a 5xx or no answer stays down, and a limit set to 1 from the start (a Crawl-delay, a
+rate-limited crawl) never goes above it. Request starts stay the polite gap apart throughout. Nothing here sends a
+request: callers ask for a slot, send, and give it back.
 """
 
 from __future__ import annotations
@@ -30,6 +38,9 @@ MIN_LIMIT, MAX_LIMIT = 1, 10
 # The steps a limit backs off through: from whatever it is to 2, then to 1.
 LADDER = (2, 1)
 MAYA, READER = "maya", "reader"
+# DECISIONS 330 (owner, 2026-11-09): back up after a run of fast answers (agent defaults: 10 answers under 1 s).
+STEP_UP_AFTER = 10
+FAST_S = 1.0
 
 
 def backed_off(current: int) -> int | None:
@@ -71,6 +82,8 @@ class SiteLimiter:
     steps: list[dict] = field(init=False, default_factory=list)
     # Starts by who asked, for the report.
     by_who: dict[str, int] = field(init=False, default_factory=dict)
+    # DECISIONS 330: every step back up, and whether the limit may still go up (only slow answers brought it down).
+    ups: list[dict] = field(init=False, default_factory=list)
 
     def __post_init__(self) -> None:
         self.limit = clamp(self.limit)
@@ -83,6 +96,10 @@ class SiteLimiter:
         # When Maya's own thread waits for slot 0: the moment it may start. A reader may start before it only when that
         # leaves Maya's start where it was (the reader's start plus the gap is not later than it).
         self._main_ready: float | None = None
+        self._fast_run = 0
+        self._hard_down = False
+        # DECISIONS 330: Maya's own thread is waiting for slot 0 (the lanes beside it then wait for it).
+        self._main_waiting = False
 
     # -- asking for a slot ----------------------------------------------------------------------------------------------
 
@@ -94,6 +111,8 @@ class SiteLimiter:
             return [0] if 0 not in self._busy else []
         slots = [i for i in range(self.limit) if i not in self._busy]
         if who == READER and self.maya_active:
+            slots = [i for i in slots if i != 0]
+        if who == MAYA and self._main_waiting:  # DECISIONS 330: the audit's own thread goes first
             slots = [i for i in slots if i != 0]
         return slots
 
@@ -118,6 +137,8 @@ class SiteLimiter:
             competing = who == MAYA and not main
             if competing:
                 self._maya_waiting += 1
+            if main:
+                self._main_waiting = True
             try:
                 while True:
                     if should_stop is not None and should_stop():
@@ -130,6 +151,10 @@ class SiteLimiter:
                     # A reader waits while a request of Maya's is waiting for a shared slot (Maya's own steps go first),
                     # and while starting now would move the start of Maya's own waiting request later.
                     if who == READER and (self._maya_waiting or (self._main_ready is not None and now + gap > self._main_ready + 1e-9)):
+                        slots = []
+                    # DECISIONS 330: a lane beside the audit's own thread (the sitemap check, access, llms.txt's links)
+                    # never moves the own thread's next start later: same requests and gaps, only their order.
+                    if competing and self._main_ready is not None and now + gap > self._main_ready + 1e-9:
                         slots = []
                     if slots:
                         index = min(slots, key=lambda i: (self._ready_at(i, gap), i))
@@ -162,6 +187,7 @@ class SiteLimiter:
                     self._maya_waiting -= 1
                 if main:
                     self._main_ready = None
+                    self._main_waiting = False
                 if competing or main:
                     self._cond.notify_all()
 
@@ -193,8 +219,32 @@ class SiteLimiter:
             self.steps.append({"from": self.limit, "to": lower, "reason": reason, "seen_by": who,
                                "after_starts": self.starts if after is None else after})
             self.limit = lower
+            self._fast_run = 0
+            if reason != "slow":
+                self._hard_down = True
             self._cond.notify_all()
             return lower
+
+    def answered(self, seconds: float | None, bad: bool = False) -> int | None:
+        """DECISIONS 330: one answer through the limit (its time to first byte). After `STEP_UP_AFTER` fast answers in a
+        row the limit goes up one rung (1 -> 2 -> configured), unless a 429, a 5xx or no answer ever brought it down.
+        Returns the new limit when it went up, else None."""
+        with self._cond:
+            if bad:
+                self._fast_run = 0
+                return None
+            if self._hard_down or self.limit >= self.configured:
+                self._fast_run = 0
+                return None
+            self._fast_run = self._fast_run + 1 if seconds is not None and seconds < FAST_S else 0
+            if self._fast_run < STEP_UP_AFTER:
+                return None
+            higher = min(self.configured, 2) if self.limit < 2 else self.configured
+            self.ups.append({"from": self.limit, "to": higher, "reason": f"{STEP_UP_AFTER} answers in a row under {FAST_S:g} s",
+                             "after_starts": self.starts})
+            self.limit, self._fast_run = higher, 0
+            self._cond.notify_all()
+            return higher
 
     def maya_done(self) -> None:
         """Maya's own steps have ended: the reader may use every slot."""
@@ -210,7 +260,7 @@ class SiteLimiter:
     def summary(self) -> dict:
         """What the report keeps: the limit asked for, the limit at the end, every step down, the most in flight at once
         (Maya's and the reader's requests together) and how many requests each started."""
-        return {"configured": self.configured, "final": self.limit, "backed_off": list(self.steps),
+        return {"configured": self.configured, "final": self.limit, "backed_off": list(self.steps), "stepped_up": list(self.ups),
                 "max_in_flight": self.max_in_flight, "starts": dict(self.by_who),
                 "rule": "at most this many of Maya's own requests to the audited site at once after the crawl; request starts at "
                         "least the polite gap apart. The page reader keeps its own pace (firecrawl.concurrency)"}

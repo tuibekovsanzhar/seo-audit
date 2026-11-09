@@ -23,9 +23,10 @@ LABELS = {
     "structure": {"tr": "sayfa yapısı", "en": "page structure"},
     "render": {"tr": "sayfaları tarayıcıda açma", "en": "opening pages in a browser"},
     "sitemap_check": {"tr": "site haritasındaki adresleri kontrol", "en": "checking the sitemap's addresses"},
-    "sitemap_check_wait": {"tr": "site haritası kontrolünü bekleme", "en": "waiting for the sitemap check"},
+    "sitemap_check_wait": {"tr": "yandaki adımları bekleme", "en": "waiting for the steps beside"},  # DECISIONS 330: every lane
     "performance": {"tr": "yanıt süreleri", "en": "response times"},
     "llms_links": {"tr": "llms.txt bağlantıları", "en": "llms.txt links"},
+    "llms_links_other_sites": {"tr": "llms.txt'nin başka sitelere bağlantıları", "en": "llms.txt's links to other sites"},
     "robots_wait": {"tr": "robots.txt örneklerini bekleme", "en": "waiting for the robots.txt samples"},
     "other_sites_wait": {"tr": "başka site bağlantılarını bekleme", "en": "waiting for the links to other sites"},
     "page_reader": {"tr": "Firecrawl ile okuma", "en": "reading through Firecrawl"},

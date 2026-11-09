@@ -4330,3 +4330,73 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Hatalı 2, Kontrol Edilmedi 35). Schema: no bump (`read_scope` is inside `firecrawl.options`, whose keys the frozen
      schema does not pin; the check's evidence is outside it). Tests: `tests/test_live_fixes_329.py` (27);
      `test_client_brief_319` (estimated cards no longer reach the brief).
+330. **Speed with politeness kept: the site limit steps back up after fast answers, the audit's own thread goes first,
+     access and llms.txt's links to this site on lanes (Owner, 2026-11-09: the step-up and the two steps beside as
+     asked; the thresholds (10 answers under 1 s), the rung (1 -> 2 -> configured), the own-thread priority and the
+     two-pass llms.txt check are agent defaults).** Every audit, every mode.
+     (1) *Step back up* (`sitelimit.SiteLimiter.answered`, called by the fetcher for every answer through the limit). A
+     limit that came down only for slow answers (TTFB over 2 s, DECISIONS 294) goes up one rung, 1 -> 2 -> the configured
+     limit, after `STEP_UP_AFTER` (10) answers in a row with a TTFB under `FAST_S` (1 s); a slow or bad answer starts the
+     count again. A limit brought down by a 429, a 5xx or no answer stays down, and one set to 1 from the start (a
+     Crawl-delay, a rate-limited crawl) never goes above 1. Starts stay the polite gap apart. Recorded in
+     `crawl.backoff.site_limit.stepped_up` (inside the backoff record, which the frozen schema does not pin).
+     (2) *The audit's own thread first.* While it waits for its next request, the lanes beside it (the sitemap check,
+     the access data, llms.txt's links) leave slot 0 to it and start nothing that would move its start later. The same
+     requests and gaps, never more at once: only the order changes, so the steps on the audit's critical path go first
+     and the lanes use the time it spends elsewhere (rendering in the local browser, working out data).
+     (3) *Access beside* (`audit.steps_after_crawl`). The access data (user agents, soft-404 probe, llms.txt, HTTP and
+     host checks, the robots.txt samples' schedule) needs only the crawl and nothing reads it before the join: it runs
+     on a lane of its own beside index, structure and rendering (row `access`, `beside: [index, structure, render]`).
+     The robots.txt samples are still sent by the audit's own thread when they come due (DECISIONS 219).
+     (4) *llms.txt's links beside.* `ask_llms_links_on_site` asks the links to this site, in the same order, cap,
+     robots.txt rules and stopping rules, on a lane that starts once the access data and the sitemap check's rows exist
+     (row `llms_links`); `check_llms_links` then reuses those answers and stop state (sending nothing twice) and asks
+     only the links to other sites after the other-site pool, on the audit's own thread, as before (row
+     `llms_links_other_sites`): the other-site check's budget and answers are shared with the pool and are not safe to
+     use beside it. Same requests and rows; only their order changes. New phase `llms_links`.
+     *Estimated from the saved request logs* (a replay through a model of the limit: global 1 s gap, own thread on slot
+     0, the four sitemap-check workers and the lanes on any slot, back-off and step-up on the recorded TTFBs; the
+     model gives the same totals as the real runs: moodist 726 s against 716 s, enpara 330 s against 331 s). Post-crawl
+     part (access through rendering plus llms.txt's links): moodist 12.1 -> ~7.6 min, enpara 5.5 -> ~3.7 min; whole
+     audit with DECISIONS 329: moodist ~20.7 -> ~16 min, enpara ~11.1 -> ~9.3 min. The step-up alone barely helps
+     moodist (its HTML answers take 1-2 s; a run of answers under 1 s comes only with the static files at 06:50) and
+     the lanes alone do not either (at a limit of 1 everything is one at a time); the order does. Not changed: the
+     crawl itself (moodist 6.6 min), rendering (4.3 min of local browser time) and the performance rounds. Tests:
+     `tests/test_speed_modes_330.py`; `test_sitemap_beside_328`, `test_time_limit` (a clock that runs out as index
+     starts cuts the access lane too), `test_preview16_measure` (the step order; requests compared as a multiset).
+331. **Every mode reads the Akıllı selection; "Özel sayı"; "Tam tarama sırası"; time and credits on the plan (Owner,
+     2026-11-09: the modes, the range 25-2000 and the advanced option as asked; the credit estimate's quarter, the
+     labels and the selection line are agent defaults).** Web app.
+     Modes: Tek sayfa; **Hızlı ~50**; **Akıllı ~150 (önerilen)**; **Derin ~500** (the id `standard` kept, so saved audits
+     read as before); **Özel sayı** (`mode: custom`, `page_count` 25-2000, 422 `page_count_required` without it). Every
+     mode but a single page runs with `--smart` (DECISIONS 327: page types of the business profile, the team's sampling
+     rule, the budget split by rank), scaled to its page cap; **"Tam tarama sırası (gelişmiş)"** (`crawl_order`) reads
+     in the crawl's own order as before. The page cap of a plan or an audit is `runner.page_cap` (the mode's, else the
+     plan's count, else the audit's saved settings); the plan's fingerprint covers the mode, the cap and the order
+     (`mode_basis`). Firecrawl reads only where needed in every sampled mode (DECISIONS 327/329; "Tam okuma" offered in
+     each), at most 500 pages; a page the search data names as ranking, which Maya did not ask for, is still read
+     through Firecrawl within the plan's page limit (it was left out by "needed" before). The plan says, before Start: the pages, the time (recent runs of the mode, else its
+     default; for Özel sayı a range from its page count), Firecrawl's credits as "en fazla N kredi, genellikle yaklaşık
+     M" (`credits_expected`: a quarter of the pages and robots.txt in a sampled plan, at least 10, from the two live runs'
+     31 and 34 of 150; the pages and robots.txt otherwise; never above the confirmed maximum), and one line on how the
+     pages are chosen (`selection_line`, also a row of the plan's details). The new-audit card has the Özel sayı count
+     and "Tam tarama sırası" under "Ek seçenekler"; the plan editor has both; the progress line per page type
+     (DECISIONS 327) now shows in every sampled mode. Hızlı stays the default. Docs: TEAM-SETUP, README, WEB-API,
+     WEB-APP. The command line keeps its own order unless `--smart`. Tests: `tests/test_speed_modes_330.py`; web tests
+     whose 500-page scenarios were written for the crawl order run with `crawl_order` (`test_web_app` standard
+     fixture, demo, comparison); `test_sampling_327`, `test_web_ux_310` follow the new modes and labels.
+332. **One Google key for Core Web Vitals and PageSpeed (Owner, 2026-11-09: what the key is and how to see it, fixed
+     where needed; the fallback order is an agent default).** The web app reads Google's speed data from the Chrome UX
+     Report only (field data: the origin, phones, 28 days, p75 of LCP, INP, CLS, plus FCP and TTFB; one free request an
+     audit, beside the report step, a second or two); it never runs PageSpeed Insights lab tests. Its key was read only
+     as `MAYA_AUDIT_CRUX_API_KEY`; the command line's `--pagespeed` (PRF-3: PageSpeed Insights mobile, 3 runs for each
+     of up to 5 key pages, only on ownership-verified sites (DECISIONS 53), plus CrUX per page) read only
+     `MAYA_AUDIT_GOOGLE_API_KEY` and only from the environment, never `.env`. A key written under the other name was
+     silently not used. Now `crux.load_key` reads `MAYA_AUDIT_CRUX_API_KEY`, else `MAYA_AUDIT_GOOGLE_API_KEY`, and
+     `crux.google_key` the other way round, each from the environment, then `.env`; the key stays in a header, never in
+     an address, a log or a report. Where it shows: the plan's details ("Core Web Vitals from real Chrome visitors are
+     included"), "Core Web Vitals (real visitors)" in the results, the team report's field box ("Saha verisi") instead
+     of "Ölçülmedi"; the team report's lab box stays "Ölçülmedi" unless DataForSEO's Lighthouse ran. Docs: TEAM-SETUP.
+     Tests: `tests/test_speed_modes_330.py` (made-up keys, a recorded answer, a refused key).
+     Also written (no code, waiting for the owner): `docs/proposals/SEARCH-CONSOLE.md`, a read-only Search Console
+     integration through a service account.

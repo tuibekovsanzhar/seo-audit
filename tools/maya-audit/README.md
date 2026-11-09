@@ -65,7 +65,7 @@ Only crawl sites you own or are authorized to check. The tool identifies itself,
 
 To audit one address only, add `--single-page`: that address is read and checked, no link or sitemap is followed, and
 the report is titled "Single-page audit: <URL>" and says that other pages were not checked (DECISIONS 191). In the web
-app this is the **Single page** button next to Quick 50 and Standard 500.
+app this is the **Single page** button next to Hızlı ~50, Akıllı ~150, Derin ~500 and Özel sayı (DECISIONS 331).
 
 IDX-5 also asks every sitemap URL the crawl did not read, one light request each (at most 64 KB read, no redirect
 followed): at most 200 by default, 1,000 from `--max-pages 500`, none with `--single-page`. `--sitemap-check-max N`

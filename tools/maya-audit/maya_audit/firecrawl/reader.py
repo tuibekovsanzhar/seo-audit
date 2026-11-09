@@ -803,8 +803,10 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
             if not allowed(url):
                 skipped_robots += 1
                 continue
-            if scope is not None and not scope["wanted"](url):
-                continue  # DECISIONS 327: Maya's own copy is enough (Akıllı, "needed")
+            # DECISIONS 327: Maya's own copy is enough (Akıllı, "needed"). DECISIONS 331: a page the search data names as
+            # ranking, which Maya did not ask for, is still read (within the plan's page limit) in every sampled mode.
+            if scope is not None and via != "ranking_page" and not scope["wanted"](url):
+                continue
             if budget_new is not None and url not in own_read and new_count() >= budget_new:
                 seen.discard(url)
                 over_budget.append(url)  # left for the page limit (DECISIONS 316): known and unread

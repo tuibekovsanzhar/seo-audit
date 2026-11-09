@@ -86,7 +86,7 @@ and no file path is returned.
 | `GET /audits/{id}/findings/{finding_id}/pages?q=&limit=&offset=` | Every page a finding affects. |
 | `GET /audits/{id}/evidence/{evidence_id}` | A finding's evidence (`evidence_id` = the finding's id), or one saved page record (`page-<n>`). |
 | `GET /audits/{id}/downloads/{format}?full=&lang=` | `pdf`, `markdown`, `json`, `evidence` (a zip; its `index.json` names the evidence folder, never a path on this computer). The PDF is the concise report unless `full=true`. |
-| `POST /plans` mode `smart` | Akıllı ~150 (DECISIONS 327): a planned sample of 150 pages covering every page type of the business type; with Firecrawl on, it reads only where needed unless `firecrawl_full_read` is true ("Tam okuma (Firecrawl her sayfa)"). |
+| `POST /plans` mode `quick`, `smart`, `standard`, `custom` | Hızlı ~50, Akıllı ~150, Derin ~500 and Özel sayı (`page_count`, 25-2000; 422 `page_count_required` without it): every one reads the Akıllı selection (DECISIONS 327, 331), a planned sample covering every page type of the business type; `crawl_order: true` ("Tam tarama sırası") reads in the crawl's own order instead. With Firecrawl on, a sampled plan reads only where needed unless `firecrawl_full_read` is true ("Tam okuma (Firecrawl her sayfa)"). The plan carries `selection_line` (how pages are chosen) and `credits_expected` (about how many of `firecrawl.max_credits` an audit usually uses). |
 | `GET /audits/{id}/downloads/sector` | The team's sector audit workbook filled from the audit (DECISIONS 324): five sheets in the team's format, formulas and dropdowns kept, Turkish. Gated like the appendix (`-draft` in the name when blocked). |
 | `POST /audits/{id}/review/p0` | `{finding_id, action: "set" \| "removed", by, note?}`: a person sets a card to P0 or takes its automatic P0 off (DECISIONS 324); written to the audit's review.json under `p0`. `GET /audits/{id}/review` lists every card's level under `p0`. |
 | `DELETE /audits/{id}/review/p0/{finding_id}` | Undo that mark (kept under `replaced`). |
@@ -149,7 +149,7 @@ The flow, and what is enforced:
 `POST /plans` takes `firecrawl` (true, false, or left out), `firecrawl_max_pages`, `firecrawl_proxy`,
 `firecrawl_owner_approved` and `firecrawl_render`. Left out, Firecrawl is on when a key is set on the computer
 (and `MAYA_AUDIT_FIRECRAWL` is not `off`): it is the page reader of every audit. `false` switches it off for that
-plan. `firecrawl_max_pages` left out is the plan's own page cap (Quick 50, Standard 500).
+plan. `firecrawl_max_pages` left out is the plan's own page cap (Hızlı 50, Akıllı 150, Derin 500, Özel sayı its count; at most 500).
 
 The plan's `firecrawl` object holds `requested`, `main_reader`, `available`, `options` (with `read_always`),
 `max_pages`, `max_credits`, `credits_per_page`, `max_usd`, `cost_line`, `lines`, `blocked` and `needs_confirmation`.

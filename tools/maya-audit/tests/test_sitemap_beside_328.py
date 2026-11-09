@@ -49,7 +49,9 @@ def test_the_sitemap_check_runs_beside_the_other_steps_with_its_own_row():
     own = sum(s["requests"] for s in out.result.steps if s["step"] not in ("sitemap_check",))
     assert own + 25 >= len([r for r in log if r.purpose not in ("render_subresource",)]) - 1
     order = [s["step"] for s in out.result.steps]
-    assert order.index("sitemap_check") < order.index("performance") < order.index("llms_links")  # joined before performance
+    # joined before performance; DECISIONS 330: llms.txt's links to this site on a lane before it, other sites after it
+    assert order.index("sitemap_check") < order.index("performance") < order.index("llms_links_other_sites")
+    assert order.index("llms_links") < order.index("performance")
 
 
 def test_the_check_starts_before_the_audits_own_steps_end():

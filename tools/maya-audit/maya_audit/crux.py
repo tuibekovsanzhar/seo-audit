@@ -22,6 +22,9 @@ from .dataforseo.credentials import REDACTED, read_env_file
 from .fetcher import utc_now
 
 KEY_VAR = "MAYA_AUDIT_CRUX_API_KEY"
+# DECISIONS 332: one Google API key serves the Chrome UX Report and PageSpeed Insights (the CLI's --pagespeed, PRF-3).
+# A key set under the PageSpeed name is used for Core Web Vitals too, so one line in .env is enough.
+GOOGLE_KEY_VAR = "MAYA_AUDIT_GOOGLE_API_KEY"
 ENDPOINT = "https://chromeuxreport.googleapis.com/v1/records:queryRecord"
 NO_KEY = "Core Web Vitals not available (no API key)"
 SOURCE = "Chrome UX Report (Google): real Chrome visitors on phones, the last 28 days, 75th percentile"
@@ -35,8 +38,29 @@ TRANSPORT: httpx.BaseTransport | None = None
 
 
 def load_key(environ: Mapping[str, str] | None = None) -> str | None:
+    """The Chrome UX Report key: MAYA_AUDIT_CRUX_API_KEY, else MAYA_AUDIT_GOOGLE_API_KEY (DECISIONS 332), each from the
+    environment first, then the .env file (MAYA_AUDIT_ENV_FILE). The value is never printed."""
     environ = os.environ if environ is None else environ
-    return environ.get(KEY_VAR) or read_env_file(Path(environ.get("MAYA_AUDIT_ENV_FILE") or ".env")).get(KEY_VAR) or None
+    saved = None
+    for name in (KEY_VAR, GOOGLE_KEY_VAR):
+        if environ.get(name):
+            return environ[name]
+        if saved is None:
+            saved = read_env_file(Path(environ.get("MAYA_AUDIT_ENV_FILE") or ".env"))
+        if saved.get(name):
+            return saved[name]
+    return None
+
+
+def google_key(environ: Mapping[str, str] | None = None) -> str | None:
+    """DECISIONS 332: the key for PageSpeed Insights (the CLI's --pagespeed): MAYA_AUDIT_GOOGLE_API_KEY, else
+    MAYA_AUDIT_CRUX_API_KEY, from the environment or the .env file."""
+    environ = os.environ if environ is None else environ
+    saved = read_env_file(Path(environ.get("MAYA_AUDIT_ENV_FILE") or ".env"))
+    for name in (GOOGLE_KEY_VAR, KEY_VAR):
+        if environ.get(name) or saved.get(name):
+            return environ.get(name) or saved.get(name)
+    return None
 
 
 def _rating(metric: str, value: float) -> str | None:

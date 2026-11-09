@@ -98,7 +98,13 @@ Stop the demonstration first (see "Stopping" below), then:
 
 Open http://127.0.0.1:8770, paste a website address, read the plan, and press **Start audit**.
 
-- **Quick 50** reads up to 50 pages and usually takes 5 to 10 minutes. **Standard 500** can take 30 to 50 minutes.
+- **How many pages** (DECISIONS 331): **Hızlı ~50**, **Akıllı ~150 (önerilen)**, **Derin ~500**, or **Özel sayı**
+  (type 25 to 2000). Every one chooses its pages the same way: by your business type's page types, the homepage and
+  key pages first, each page type a share by its rank, large types by the team's sampling rule (important, long tail,
+  newest, exceptions). The plan says this in one line, with the time and Firecrawl's credits (the most it may use,
+  and about how many it usually uses) before you start. **Tam tarama sırası** under "Ek seçenekler" reads pages in
+  the order their links are found instead (the old way). Hızlı usually takes about 10 minutes, Akıllı 10-20, Derin
+  30-50.
   **Single page** reads only the address you enter (no links are followed) and takes about a minute; its report is
   titled "Single-page audit" and says that other pages were not checked. What it reports about the whole site
   (robots.txt, redirects, HTTP to HTTPS) is labelled "Site-level".
@@ -172,7 +178,7 @@ as before: Maya's own crawler reads the pages, and you do not need to do anythin
   on its reading and say "Source: Firecrawl". Maya's own crawler still asks the site directly for robots.txt, the
   sitemap, redirects, headers and timing, and still tests whether an automated visitor is let in.
 - **No confirmation for a normal run.** The plan card shows the most credits the audit can use (1 per page, 2 with
-  zero data retention; Quick is 50 pages, Standard 500). Every request is recorded in
+  zero data retention; Hızlı is 50 pages, Akıllı 150, Derin 500, Özel sayı its own count; Firecrawl reads at most 500). Every request is recorded in
   `~/.maya-audit/firecrawl-ledger.jsonl`. To run one audit without Firecrawl, untick **Read the pages through
   Firecrawl** on the plan card. `MAYA_AUDIT_FIRECRAWL=off` in `.env` switches it off for this Mac.
 - **A site that challenges Maya's crawler** (many banks and large retailers, through Cloudflare for example) is
@@ -257,7 +263,11 @@ MAYA_AUDIT_CRUX_API_KEY=your-google-key
 ```
 
 Without it the result says "Core Web Vitals not available (no API key)". Small sites often have no figures at all:
-Google publishes them only for sites with enough visits.
+Google publishes them only for sites with enough visits. The same key may be written as
+`MAYA_AUDIT_GOOGLE_API_KEY` (the name the command line's `--pagespeed` uses): either name works for both (DECISIONS
+332). The web app does not run PageSpeed Insights lab tests; to see that the key is picked up, the plan's details say
+"Core Web Vitals from real Chrome visitors are included", Google's figures appear under "Core Web Vitals (real
+visitors)" in the results, and the team report's "Saha verisi" box shows them instead of "Ölçülmedi".
 
 **Which searches are about the business.** The keyword tables are sorted into *branded* (the name itself, or the
 name with company words such as "login" or "reviews"), *relevant* (about what the site offers) and *unrelated*

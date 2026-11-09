@@ -191,6 +191,11 @@ def _firecrawl_prepare(args, automatic: bool = False):
     return None, client, options
 
 
+def _google_key() -> str | None:
+    from .crux import google_key
+    return google_key()
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="maya-audit", description="Maya technical audit (INT gates, ACC, IDX, RND, STR, PRF checks and the ANS panel)")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -280,7 +285,7 @@ def _parser() -> argparse.ArgumentParser:
     crawl.add_argument("--egress-region", help="where Maya's requests leave from, shown with PRF-1 timings")
     crawl.add_argument("--pagespeed", action="store_true",
                        help="PRF-3: PageSpeed Insights lab runs (ownership-verified sites only) and CrUX field data; "
-                            "API key from $MAYA_AUDIT_GOOGLE_API_KEY")
+                            "API key MAYA_AUDIT_GOOGLE_API_KEY (else MAYA_AUDIT_CRUX_API_KEY), from the environment or .env")
     crawl.add_argument("--citations", help="JSON file of answer-engine citation records (T4, produced upstream) for "
                                           "the ANS panel; see maya_audit/ans_data.py for the shape")
     crawl.add_argument("--citation-domains", dest="citation_domains",
@@ -595,7 +600,8 @@ def _crawl_config(args) -> CrawlConfig:
         citation_domains_file=args.citation_domains,
         db_path=args.db_path,
         resume=args.resume,
-        google_api_key=os.environ.get("MAYA_AUDIT_GOOGLE_API_KEY") if args.pagespeed else None,
+        # DECISIONS 332: the environment or .env, MAYA_AUDIT_GOOGLE_API_KEY else MAYA_AUDIT_CRUX_API_KEY (one Google key)
+        google_api_key=_google_key() if args.pagespeed else None,
     )
 
 
