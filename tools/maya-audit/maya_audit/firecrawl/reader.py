@@ -280,6 +280,16 @@ def _usable(page: PageFetch | None) -> bool:
             and page.readable_document())
 
 
+def _maya_could_not_read(page: PageFetch) -> bool:
+    """DECISIONS 329: a page Maya asked for and got no document of its own: a block page or challenge, a 429, a failed
+    request, a server error, or an empty page. A redirect or a 4xx is the site's answer and is not read again."""
+    if page.fetch_class != FetchClass.OK or page.error is not None:
+        return True
+    if page.status is None or page.status == 429 or page.status >= 500:
+        return True
+    return 200 <= page.status < 300 and not page.readable_document()
+
+
 def page_limit_record(result, plan: int, maya_pages_read: int) -> dict[str, Any]:
     """How the plan's one page limit was shared (DECISIONS 316, 317): Maya's pages read count, its block answers do not.
 
@@ -573,11 +583,29 @@ def needed_scope(result: CrawlResult, cfg: CrawlConfig) -> dict[str, Any]:
     empty); every page of a URL template where a page Maya read shows the raw-HTML JavaScript signals (empty mount node,
     <noscript> notice, script-heavy markup: the same test as RND-1's estimate); and the first page of every other URL
     template, as a cross-check (a finding only the rendered copy shows, such as a language mismatch, is still caught).
-    Pages Maya did not ask for are not read. Returns {"wanted": url -> bool, "record": what it decided}."""
+    Pages Maya did not ask for are not read. Returns {"wanted": url -> bool, "record": what it decided}.
+
+    DECISIONS 329 (after the first live Akıllı runs read 149 of 150 and 127 of 174 pages): a redirect or a 4xx answer
+    is the site's own answer, not a page Maya could not read (only a block page, a 429, a failed request, a 5xx or an
+    empty page is); and a URL template is the page grouping's (`page_groups.template_keys`: the pattern worked out from
+    every address known, with the layout), not one built from the pages read alone, which left every top-level slug a
+    template of its own (moodist: 80 templates for 149 pages, the page grouping 30)."""
     from ..checks.render import t0_shell_signals
-    from ..page_groups import url_patterns
+    from ..page_groups import layout_fingerprint, template_keys, url_patterns
+    from ..urls import same_origin
     own = {p.url: p for p in result.pages}
-    patterns = url_patterns(list(own))
+    origin = getattr(result, "origin", None) or ""
+    known = [u for u in list(own) + list(result.discovered_urls or []) + list(result.sitemap_urls or [])
+             if isinstance(u, str) and (not origin or same_origin(u, origin))]
+    url_pattern = url_patterns(known)
+    read = [p for p in result.pages if _usable(p) and p.analysis]
+    layouts = {}
+    for p in read:
+        try:
+            layouts[p.url] = layout_fingerprint(p.analysis)
+        except Exception:  # noqa: BLE001  an incomplete analysis: the URL pattern alone
+            layouts[p.url] = ""
+    patterns = {**url_pattern, **template_keys(read, url_pattern, layouts)}
     js: set[str] = set()
     for p in result.pages:
         a = p.analysis or {}
@@ -589,16 +617,20 @@ def needed_scope(result: CrawlResult, cfg: CrawlConfig) -> dict[str, Any]:
             if signals and (len(signals) >= 2 or a.get("visible_words", 0) < cfg.raw_min_words):
                 js.add(patterns.get(p.url, "?"))
     crossed: set[str] = set()
-    counts = {"not_read_by_maya": 0, "javascript": 0, "cross_check": 0, "maya_copy_enough": 0, "not_asked_by_maya": 0}
+    counts = {"not_read_by_maya": 0, "javascript": 0, "cross_check": 0, "maya_copy_enough": 0, "not_asked_by_maya": 0,
+              "site_answer": 0}
 
     def wanted(url: str) -> bool:
         page = own.get(url)
         if page is None:
             counts["not_asked_by_maya"] += 1
             return False
-        if not _usable(page):
+        if _maya_could_not_read(page):
             counts["not_read_by_maya"] += 1
             return True
+        if not _usable(page):  # a redirect or a 4xx: the site's own answer (DECISIONS 329)
+            counts["site_answer"] += 1
+            return False
         tpl = patterns.get(url, "?")
         if tpl in js:
             counts["javascript"] += 1
@@ -609,7 +641,7 @@ def needed_scope(result: CrawlResult, cfg: CrawlConfig) -> dict[str, Any]:
             return True
         counts["maya_copy_enough"] += 1
         return False
-    return {"wanted": wanted, "record": {"mode": "needed", "javascript_templates": sorted(js), "templates": len(set(patterns.values())),
+    return {"wanted": wanted, "record": {"mode": "needed", "javascript_templates": sorted(js), "templates": len({patterns.get(u, "?") for u in own}),
                                          "counts": counts}}
 
 

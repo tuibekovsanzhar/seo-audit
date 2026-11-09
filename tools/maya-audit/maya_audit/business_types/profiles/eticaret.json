@@ -163,7 +163,8 @@
     "content": [
      "map"
     ]
-   }
+   },
+   "location": true
   },
   {
    "id": "campaign",

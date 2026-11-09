@@ -1737,6 +1737,74 @@ def _location_templates(candidates: list, own_words: dict[str, list[str]], cfg: 
     return out
 
 
+LOCATION_RULE = "idx8.location_template"
+
+
+def location_template_kept(urls: list[str], types: dict[str, str | None], location_ids: frozenset[str],
+                           min_pages: int) -> bool:
+    """DECISIONS 329: a "pages differ mostly by the place name" group stands only on real location pages: the business
+    type has location page types (clinic, branch, store, dealer, service area) and at least `min_pages` of the group's
+    pages, and at least half of them, are typed as one. enpara's FAQ (/sss/) and payment (/odemeler/) pages are not."""
+    if not location_ids or not urls:
+        return False
+    places = [u for u in urls if types.get(u) in location_ids]
+    return len(places) >= min_pages and 2 * len(places) >= len(urls)
+
+
+def _field(obj, name, default=None):
+    return obj.get(name, default) if isinstance(obj, dict) else getattr(obj, name, default)
+
+
+def gate_location_templates(checks, types: dict[str, str | None], profile_id: str | None, min_pages: int | None = None,
+                            ) -> list[dict]:
+    """Remove the IDX-8 place-name groups that are not on location pages (`location_template_kept`), from engine checks
+    (`CheckResult`) or a saved report's checks (dicts). Returns what was left out; the check's evidence keeps it, its
+    summary count follows, and a check left with no finding passes (or is partial, as its coverage says)."""
+    from ..business_types import location_types
+    location_ids = location_types(profile_id)
+    least = int(min_pages if min_pages is not None else CrawlConfig.location_template_min_pages)
+    left_out: list[dict] = []
+    for check in checks or []:
+        if _field(check, "check_id") != "IDX-8":
+            continue
+        findings = list(_field(check, "findings") or [])
+        keep, dropped = [], []
+        for f in findings:
+            if _field(f, "rule_id") == LOCATION_RULE:
+                urls = list((_field(f, "scope") or {}).get("urls") or [])
+                if not location_template_kept(urls, types, location_ids, least):
+                    section = (_field(f, "evidence") or {}).get("section")
+                    dropped.append({"finding_id": _field(f, "id"), "section": section, "pages": len(urls),
+                                    "page_types": sorted({str(types.get(u) or "not typed") for u in urls}),
+                                    "reason": ("the business type has no location page type" if not location_ids else
+                                               "its pages are not location pages of the business type"),
+                                    "decision": "DECISIONS 329"})
+                    continue
+            keep.append(f)
+        if not dropped:
+            continue
+        left_out += dropped
+        summary = _field(check, "summary") or ""
+        m = re.search(r"(\d+) duplicate group\(s\) among", summary)
+        if m:
+            n = max(0, int(m.group(1)) - len(dropped))
+            summary = summary[:m.start()] + (f"{n} duplicate group(s) among" if n else "No duplicate groups among") + summary[m.end():]
+        summary += (f" {len(dropped)} place-name group(s) left out: their pages are not location pages of the business "
+                    "type (DECISIONS 329).")
+        evidence = _field(check, "evidence")
+        if isinstance(evidence, dict):
+            evidence["location_templates_left_out"] = dropped
+        status = _field(check, "status")
+        if not keep and status == "findings":
+            coverage = _field(check, "coverage") or {}
+            status = "partial" if coverage.get("not_assessed") else "pass"
+        if isinstance(check, dict):
+            check.update(findings=keep, summary=summary, status=status)
+        else:
+            check.findings, check.summary, check.status = keep, summary, status
+    return left_out
+
+
 def idx8_duplicates(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     title = "Duplicate and near-duplicate pages"
     key_urls = set(key_page_urls(result, cfg))

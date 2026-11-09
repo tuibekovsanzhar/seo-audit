@@ -114,7 +114,8 @@
     "content": [
      "map"
     ]
-   }
+   },
+   "location": true
   },
   {
    "id": "order",

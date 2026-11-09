@@ -78,7 +78,8 @@
     "content": [
      "map"
     ]
-   }
+   },
+   "location": true
   },
   {
    "id": "contact",

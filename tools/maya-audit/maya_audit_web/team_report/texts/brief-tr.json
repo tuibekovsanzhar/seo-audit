@@ -120,7 +120,7 @@
   "none": "Ölçülmüş ya da teyit edilmiş bir sorun yok."
  },
  "good": {
-  "ACC-9": "Sitenizin koruma ayarları Google'ı ve kendini tanıtan otomatik ziyaretçileri engellemiyor: incelediğimiz sayfaların hepsi açıldı.",
+  "ACC-9": "Sitenizin güvenlik koruması sayfa isteklerimizi geri çevirmedi: incelediğimiz sayfaların hepsi açıldı.",
   "ACC-2": "Yapay zekâ asistanlarının site okuyan programlarını engelleyen bir kural yok; sitenizi okuyup yanıtlarında kullanabilirler.",
   "IDX-2": "Siteniz güvenli bağlantıyla (https) açılıyor ve güvenlik sertifikası geçerli: ziyaretçiler uyarı görmüyor.",
   "IDX-6": "Sitenin kendi sayfaları arasında kırık bağlantı bulmadık.",

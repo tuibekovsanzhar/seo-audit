@@ -38,7 +38,9 @@ PROBLEMS_PER_PAGE = 3
 KEY_PAGES_SHOWN = 8
 GOOD_SHOWN = 3
 SEVERITIES = ("S1", "S2", "S3", "S4")
-ALLOWED_CONFIDENCE = ("measured", "estimated")  # "confirmed or measured": an estimate is measured, its extent estimated
+# DECISIONS 329 (owner): measured or confirmed by hand only (a hand-confirmed finding is "measured"); an estimated
+# finding ("the brand is named different ways", "the extent is estimated") is never among the brief's problems.
+ALLOWED_CONFIDENCE = ("measured",)
 # Any of these in a brief means an ID, a rule or a check name was left in it.
 ID_PATTERNS = (
     re.compile(r"\b[A-Z]{2,5}-\d{1,3}-[0-9a-f]{6,}\b"),  # finding IDs: STR-12-c792bc34
@@ -205,11 +207,13 @@ def coverage_line(report: dict, read: int, lang: str) -> str | None:
 
 def _good(report: dict, lang: str, data: dict | None = None) -> list[str]:
     """What already works: a check that passed with no finding at all, and no finding of a check that would contradict
-    it (ACC-2 'AI assistants may read the site' is not said when bot protection blocks crawlers)."""
+    it (ACC-2 'AI assistants may read the site' is not said when bot protection blocks crawlers). DECISIONS 329: each
+    line says exactly what was fine (ACC-9: the site's protection let our page requests through, not "bots are not
+    blocked"), and a line about AI assistants or crawlers is not said beside a robots.txt rule that blocks them."""
     conflicts = {"ACC-9": ("ACC-9", "ACC-4"), "ACC-2": ("ACC-2", "ACC-3", "ACC-4", "ACC-6", "ACC-9"),
                  "IDX-2": ("IDX-2",), "IDX-6": ("IDX-6", "IDX-1"), "IDX-4": ("IDX-4", "IDX-3", "IDX-9"),
                  "PRF-2": ("PRF-2", "ACC-9"), "IDX-5": ("IDX-5", "ACC-3"), "IDX-7": ("IDX-7",),
-                 "ACC-7": ("ACC-7", "ACC-9"), "STR-9": ("STR-9", "STR-12"), "ACC-1": ("ACC-1", "ACC-2", "ACC-7")}
+                 "ACC-7": ("ACC-7", "ACC-9", "ACC-2", "ACC-6"), "STR-9": ("STR-9", "STR-12"), "ACC-1": ("ACC-1", "ACC-2", "ACC-7")}
     checks = {c.get("check_id"): c for c in report.get("checks") or []}
     with_findings = {c.get("check_id") for c in report.get("checks") or [] if c.get("findings")}
     lib = library(lang)["good"]

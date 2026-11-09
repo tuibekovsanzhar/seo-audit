@@ -113,7 +113,10 @@
      "doctors",
      "doctor",
      "physicians",
-     "our-team"
+     "our-team",
+     "team/*",
+     "ekip/*",
+     "uzmanlarimiz"
     ],
     "schema": [
      "Physician"
@@ -128,7 +131,9 @@
      "ekibimiz",
      "doctor"
     ],
-    "content": []
+    "content": [
+     "person"
+    ]
    }
   },
   {
@@ -172,7 +177,8 @@
     "content": [
      "map"
     ]
-   }
+   },
+   "location": true
   },
   {
    "id": "home",

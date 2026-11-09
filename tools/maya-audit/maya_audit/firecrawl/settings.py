@@ -230,4 +230,5 @@ class Options:
                 "sitemap_discovery": self.sitemap_discovery, "stop_after_unreadable": self.stop_after_unreadable, "render_fallback": self.render_fallback, "max_pages": self.max_pages,
                 "proxy": self.proxy, "owner_approved_bypass": self.owner_approved_bypass,
                 "allow_without_zero_data_retention": self.allow_without_zero_data_retention, "concurrency": self.concurrency,
-                "gap_s": self.gap_s}
+                # DECISIONS 329: kept, so the plan's "needed" reaches the audit (the web app rebuilds the options from it)
+                "gap_s": self.gap_s, "read_scope": self.read_scope}

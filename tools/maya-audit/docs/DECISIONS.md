@@ -4256,3 +4256,77 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      due too early (118.8 s apart in a full-suite run). It now reads its own record. Tests:
      `tests/test_sitemap_beside_328.py` (3); `test_preview16_measure` (the samples' test), `test_v03_speed` (in flight:
      within the site limit of 5, not 4), `test_time_limit` and `test_progress_stop_resume` (the phase order) follow.
+329. **Fixes from the first live Akıllı runs: step times, Firecrawl only where needed (for real), profiles typed by their
+     content, IDX-8's place-name groups on location pages only, High at least P2, a brief with measured problems only,
+     sitemap entries for developer and content (Owner, 2026-11-09: items 1-7 as asked, worked from the saved reports
+     moodisthastanesi 2d72fea0 and enpara 87f0425a with no new crawl; the person-profile test, the title words, the
+     majority rule, the Blocker floor, the "already good" wording and the step labels are agent defaults).** Global for
+     every audit; the two brands were the test cases.
+     (1) *Time.* New `maya_audit/step_times.py`: the total (Maya's own wall time `crawl.elapsed_s` plus the time from the
+     end of Maya's steps to the report, `generation.processed_at - native_finished_at`) and each step's seconds from the
+     report's step timing table, the steps that run beside the audit's own thread (the sitemap check, links to other
+     sites, the page reader) marked "yanında" and not added. Nothing is measured again; a report without the table shows
+     nothing. Web: the results view carries `timing`; "How the audit ran" / "Denetim nasıl çalıştı" shows "Süre",
+     "Toplam: 21 dk 4 sn" and one line per step. Team report: one line in "Bu denetimin sınırları" ("Denetim süresi 21 dk
+     4 sn: site haritasını okuma 16 sn · sayfaları okuma 6 dk 34 sn · …; yanında: … Firecrawl ile okuma 7 dk 28 sn.").
+     moodist 21 min 4 s, enpara 11 min 37 s (the web app's own start and end agree).
+     (2) *Firecrawl in Akıllı.* Why moodist's reader read 150 of 150 pages and enpara's 151 requests with "Tam okuma"
+     off: the plan saved Firecrawl's options with `Options.as_dict()`, which left `read_scope` out, and the web app
+     rebuilds the audit's options from that copy (`fc.options_from`), so "needed" became the default "all"; the CLI's
+     `--smart` never set it either. Neither site had a JavaScript template. Fixed: `as_dict` keeps `read_scope`; the CLI
+     sets "needed" with `--smart` (new `--firecrawl-full-read` for "Tam okuma"). Two over-reads inside "needed" fixed
+     too: a redirect or a 4xx answer counted as "Maya could not read" (enpara: 45 pages, 22 redirects and 21 404s), now
+     only a block page or challenge, a 429, a failed request, a 5xx or an empty page does (`_maya_could_not_read`); and
+     the cross-check took one page per URL pattern of the pages read alone, which left every top-level slug a template
+     of its own (moodist: 80 templates for 149 pages), now the page grouping's template key (the pattern from every
+     known address, with the layout: 33). On the saved pages: moodist 31 pages (1 failed request + 30 cross-checks)
+     instead of 150; enpara 34 instead of 151 requests. Estimated from the saved timings (the reader runs beside
+     Maya's steps; its copies are applied at the end, about 0.2 s and 0.33 s a page): moodist reader 7.5 -> ~1.5 min
+     beside, results and report 54 -> ~30 s, total 21.1 -> ~20.7 min; enpara reader 3.3 -> ~0.9 min, 82 -> ~51 s,
+     11.6 -> ~11.1 min. Firecrawl was not what made moodist slow: Maya's own steps took 20.2 min. Maya's site limit fell
+     from 5 to 1 after two answers slower than 2 s (`pacing_reset_ttfb_ms`) and every later request waited ~2 s (access
+     137 s for 10 requests, index 103 s, structure 89 s, llms.txt links 128 s for 50); rendering took 4.3 min (21
+     pages); the crawl 6.6 min (250 requests). Not changed here (politeness and coverage choices for the owner; see
+     IMPLEMENTATION-STATUS).
+     (3) *Page typing by content* (`business_types`). A person's own profile page: not an article, its H1 (else its
+     title before " - ") reads as a name (2-5 capitalised words after the titles, no digits, none a subject word such
+     as tedavi, merkez, ekip, team), and Person or Physician markup, or a professional title (prof, doç, dr, uzm, op,
+     psikolog, klinik psikolog, psikiyatrist, terapist, diyetisyen …, doctor, psychologist …) right before the name's last
+     two words in the H1, the title, a description or the address, or two or more CV headings (Eğitim, Uzmanlık
+     Alanları, Özgeçmiş, Education, Expertise …). It is the content signal "person", scored 5 (more than an address
+     word, 4), on the profile types that list it (Sağlık "Doktor ve ekip", which also gets the folder words `team/*`,
+     `ekip/*`, `uzmanlarimiz`). And on an article page (Article, BlogPosting, NewsArticle …) the publisher's and author's
+     markup (Hospital, MedicalOrganization, Organization, Place, Person, LocalBusiness …) no longer types the page. Of
+     moodist's 32 "Klinik ve konum" pages only 2 were profiles (`/tr/team/klinik-psikolog-…`, by the address word
+     "klinik"); 30 were blog posts typed by the hospital's Hospital markup, and the live run's second wave copied that
+     type to unread blog addresses of the same template (39 of the plan's 150 places went to "clinic"). Now 33 pages
+     change type: 30 "Klinik ve konum" -> "Rehber / SSS / blog", 2 "Klinik ve konum" -> "Doktor ve ekip", 1 "Diğer" ->
+     "Doktor ve ekip" (`/tr/team/anil-usta/`); "Klinik ve konum" 32 -> 0. enpara: 0 pages change. The sampler's
+     re-typing uses the same facts.
+     (4) *IDX-8 place-name groups* (`idx8.location_template`). Profiles mark their location page types
+     (`"location": true`: Sağlık clinic, E-ticaret stores, Ev hizmetleri service_location, Otomotiv dealers, Restoran
+     branches; `business_types.location_types`). The group stands only when the business type has one and at least
+     `location_template_min_pages` of its pages, and at least half, are typed as one (`location_template_kept`). The
+     engine gates it after the business type is attached (`final.settle`, so after a page reader too; a blocked site's
+     reader pages count); a saved report through `reassess_rules._decisions_329`, also in `saved_data` (a current-schema
+     report gets a derived copy). The check's evidence keeps what was left out (`location_templates_left_out`), its
+     summary count follows, and a check left with no finding passes (partial when its coverage says so). enpara: the
+     /sss/ (FAQ, "Destek") and /odemeler/ (payments) groups are gone (Bankacılık has no location type).
+     (5) *P levels.* A High or Blocker card is at least P2 (`priority_levels.HIGH_FLOOR`), with the reason "yüksek önem:
+     en az P2"; the score, the severity and the card order are unchanged. enpara card 2 (High, broken links whose
+     targets were not read): P3 -> P2.
+     (6) *Client brief.* Only measured problems (a finding confirmed by hand counts as measured): an estimated card
+     ("brand named different ways", "Ölçüldü; kapsamı tahmini") is never among them (`ALLOWED_CONFIDENCE`). "Zaten iyi
+     olanlar" says exactly what was fine: ACC-9 is now "Sitenizin güvenlik koruması sayfa isteklerimizi geri çevirmedi:
+     incelediğimiz sayfaların hepsi açıldı." (was "… Google'ı ve kendini tanıtan otomatik ziyaretçileri engellemiyor"),
+     and ACC-7's line about AI assistants is not said beside an ACC-2 or ACC-6 finding (a robots.txt rule that blocks
+     them). enpara: the brand-name problem gives way to the measured hreflang one; ACC-7's line gives way to the key
+     pages line.
+     (7) *Owner.* A broken-link card with sitemap entries (`final.broken_link_cards` kind "sitemap") is "Geliştirici +
+     İçerik" / "Developer + Content" (`card_owner`); enpara card 2 (21 sitemap entries): İçerik -> Geliştirici + İçerik.
+     Results offline (scratch copies, provider-free): both team reports 9 pages, both briefs 5 pages and not blocked;
+     Sektör audit rows (of 62 / 59): moodist Uygun 10 -> 9, Kısmen Uygun 8 -> 7, Hatalı 3, Kontrol Edilmedi 41 -> 43
+     (SEC-071 Kısmen -> KE, SEC-072 Uygun -> KE: no clinic page was read); enpara unchanged (Uygun 10, Kısmen 12,
+     Hatalı 2, Kontrol Edilmedi 35). Schema: no bump (`read_scope` is inside `firecrawl.options`, whose keys the frozen
+     schema does not pin; the check's evidence is outside it). Tests: `tests/test_live_fixes_329.py` (27);
+     `test_client_brief_319` (estimated cards no longer reach the brief).

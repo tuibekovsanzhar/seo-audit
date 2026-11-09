@@ -565,6 +565,25 @@ def _decisions_321(report: dict, changes: list[str]) -> None:
             check["status"] = "findings"
 
 
+def _decisions_329(report: dict, changes: list[str]) -> None:
+    """DECISIONS 329: IDX-8's "pages differ mostly by the place name" groups stand only on the business type's location
+    pages; the page types are the current engine's (`client_selection.grouping`, as the team report reads them)."""
+    from .checks.index import LOCATION_RULE, gate_location_templates
+    from .client_selection import grouping
+    if not any(f.get("rule_id") == LOCATION_RULE for c in report.get("checks") or [] if c.get("check_id") == "IDX-8"
+               for f in c.get("findings") or []):
+        return
+    records, summary = grouping(report)
+    info = (summary or {}).get("business_type") or {}
+    if info.get("error"):
+        return  # the business type could not be worked out: the saved finding stays as it was
+    types = {u: (g or {}).get("business_page_type") for u, g in records.items()}
+    least = ((report.get("crawl") or {}).get("config") or {}).get("location_template_min_pages")
+    for row in gate_location_templates(report.get("checks") or [], types, info.get("id"), least):
+        changes.append(f"{row['finding_id']}: pages under {row['section']} differ by place name, but {row['reason']} "
+                       f"({', '.join(row['page_types'])}): left out (DECISIONS 329)")
+
+
 def _order(report: dict) -> list[str]:
     from .findings import Severity, priority_key
     from .models import Confidence
@@ -606,6 +625,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_317(r, changes)
     _decisions_318(r, changes)
     _decisions_321(r, changes)
+    _decisions_329(r, changes)
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -621,7 +641,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318 and 321, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321 and 329, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
@@ -635,8 +655,9 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
 
 
 def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str] | None = None) -> tuple[dict, list[str]]:
-    """(copy, changes): only what DECISIONS 309 reads from the saved data (the platform, the RND-6 label), for a report
-    the current engine wrote, which needs no other rule; `changes` is empty when nothing applies."""
+    """(copy, changes): only what DECISIONS 309 reads from the saved data (the platform, the RND-6 label), the certificate
+    bands (321) and the place-name groups on location pages only (329), for a report of the current schema; `changes`
+    is empty when nothing applies."""
     r = deepcopy(report)
     changes: list[str] = []
     _decisions_309(r, changes, saved_texts or [])
@@ -644,6 +665,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
     # written before it gets it too; the order and the problem summary follow.
     cert: list[str] = []
     _decisions_321(r, cert)
+    _decisions_329(r, cert)  # DECISIONS 329: place-name groups only on location pages, also for a current-schema report
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

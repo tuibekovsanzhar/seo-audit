@@ -120,7 +120,7 @@
   "none": "There is no measured or confirmed problem."
  },
  "good": {
-  "ACC-9": "Your site's protection does not block Google or automated visitors that say who they are: every page we checked opened.",
+  "ACC-9": "Your site's security protection did not turn our page requests away: every page we checked opened.",
   "ACC-2": "No rule blocks the programs AI assistants use to read sites; they can read your site and use it in their answers.",
   "IDX-2": "Your site opens over a secure connection (https) and its security certificate is valid: visitors see no warning.",
   "IDX-6": "We found no broken links between your site's own pages.",

@@ -173,7 +173,8 @@
     "content": [
      "map"
     ]
-   }
+   },
+   "location": true
   },
   {
    "id": "configure",

@@ -692,7 +692,7 @@ function auditCard(audit, planNode) {
   const logBox = el("details", { hidden: true }, el("summary", { text: T("job.log") }), log);
   card.append(head, body, logBox, result);
   let current = audit, shown = null;
-  const elapsed = el("span");
+  const elapsed = el("span"), timingSlot = el("div", { class: "timing" });
   const tick = () => { if (current.active && current.started_at) elapsed.textContent = T("job.elapsed", { time: duration((Date.now() - new Date(current.started_at).getTime()) / 1000) }); };
 
   const draw = () => {
@@ -748,7 +748,7 @@ function auditCard(audit, planNode) {
     } else if (current.can_resume || current.state === "failed") {
       fill(body, parts, actions);
     } else {
-      fill(body, el("details", { class: "quiet-details" }, el("summary", { text: T("job.details.done") }), el("div", {}, planNode || null, parts)), actions);
+      fill(body, el("details", { class: "quiet-details" }, el("summary", { text: T("job.details.done") }), el("div", {}, planNode || null, timingSlot, parts)), actions);
     }
     card.classList.toggle("card", Boolean(current.active || current.can_resume || current.state === "failed"));
     card.classList.toggle("job-done", !(current.active || current.can_resume || current.state === "failed"));
@@ -766,7 +766,9 @@ function auditCard(audit, planNode) {
     logBox.hidden = false;
   };
   // `shown` is cleared so the card is drawn again when the reading ends, even if that is within the same second.
-  const context = { onContinue: (next) => { current = next; shown = null; draw(); watch(); loadHistory(); } };
+  // DECISIONS 329: the audit's total time and each step's, in "How the audit ran", once the results are loaded.
+  const context = { onContinue: (next) => { current = next; shown = null; draw(); watch(); loadHistory(); },
+    onTiming: (timing) => fill(timingSlot, timingBlock(timing)) };
   const refresh = async () => { try { current = await api("GET", "/audits/" + current.id); draw(); } catch (error) { /* the stream's next event tries again */ } };
   const watch = () => {
     closeStream();
@@ -813,6 +815,14 @@ function auditCard(audit, planNode) {
 async function loadSummary(auditId, box, context) {
   const view = await guarded(() => api("GET", "/audits/" + auditId + "/summary"));
   if (view) fill(box, resultView(view, context || {}));
+  if (view && context && context.onTiming) context.onTiming(view.timing);
+}
+
+/* DECISIONS 329: total time and each step's time, from the report's step timing table. */
+function timingBlock(timing) {
+  if (!timing || !timing.rows || !timing.rows.length) return null;
+  return el("div", {}, el("h4", { text: T("job.timing") }), el("p", {}, el("strong", { text: T("job.timing.total", { time: timing.total }) })),
+    el("ul", { class: "list small" }, timing.rows.map((row) => el("li", { text: row.label + ": " + row.time + (row.beside ? " (" + T("job.timing.beside") + ")" : "") }))));
 }
 
 // A finding's title and fix as the server worded them for this reader (the report's own English stays in row.title, row.fix).

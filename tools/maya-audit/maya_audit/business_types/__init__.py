@@ -43,7 +43,10 @@ UTILITY_WEIGHT = 0       # as Stage 3
 FORMULA = {"page_type": 0.5, "internal_link_score": 0.35, "click_depth": 0.15}  # owner, 2026-11-05
 # Points per kind of signal; each kind counts once per page type. A type needs MIN_SCORE (agent defaults). The
 # address weighs most: it names the page; FAQ markup or a section heading only says what a part of it holds.
-SCORES = {"url": 4, "schema": 3, "heading": 2, "menu": 2, "content": 1}
+SCORES = {"url": 4, "schema": 3, "heading": 2, "menu": 2, "content": 1,
+          # DECISIONS 329: a person's own profile page names what the page is more surely than a word inside its address
+          # ("/team/klinik-psikolog-…" is a psychologist, not a clinic), so it outweighs an address word.
+          "person": 5}
 MIN_SCORE = 3
 NOT_FOUND_TOP = 3        # "not found" notes for the profile's first three page types (owner)
 GROUPS = {"finans": {"tr": "Finans", "en": "Finance"},
@@ -52,7 +55,8 @@ KIND_LABELS = {"url": {"tr": "adres sözcüğü", "en": "address word"},
                "schema": {"tr": "yapısal veri türü", "en": "structured-data type"},
                "heading": {"tr": "başlık sözcüğü", "en": "heading word"},
                "menu": {"tr": "menü veya bağlantı metni", "en": "menu or link text"},
-               "content": {"tr": "içerik işareti", "en": "content signal"}}
+               "content": {"tr": "içerik işareti", "en": "content signal"},
+               "person": {"tr": "kişi profili", "en": "a person's profile"}}
 CONTENT_SIGNALS = {
     "form": "a form that is not search, sign-in, cart or newsletter",
     "price": "price markup (Offer, PriceSpecification) or a price word in a heading",
@@ -61,7 +65,33 @@ CONTENT_SIGNALS = {
     "faq": "FAQPage markup or three or more question headings",
     "table": "a data table",
     "list": "the general page type is a listing (category)",
+    "person": "a person's own profile page (DECISIONS 329): not an article; its main heading is a name, with Person or "
+              "Physician markup, a professional title right before the name (title, description, address), or CV "
+              "headings (education, areas of expertise)",
 }
+# DECISIONS 329 (owner, after moodist 2d72fea0: psychologists' profiles typed "Klinik ve konum"). Professional titles,
+# folded; a profile names its person with one of them right before the name somewhere on the page.
+PERSON_TITLES = ("prof", "doc", "dr", "uzm", "op", "dt", "psk", "uzman", "doktor", "hekim", "dis hekimi", "psikolog",
+                 "psikiyatrist", "psikoterapist", "terapist", "pedagog", "diyetisyen", "fizyoterapist", "hemsire", "ebe",
+                 "odyolog", "ergoterapist", "psikolojik danisman", "avukat", "doctor", "md", "psychologist",
+                 "psychiatrist", "psychotherapist", "therapist", "physician", "dietitian", "nurse", "dentist", "surgeon",
+                 "attorney", "lawyer")
+CV_HEADINGS = ("egitim", "egitim bilgileri", "uzmanlik alanlari", "uzmanlik alanlarim", "ozgecmis", "ayrintili ozgecmis",
+               "deneyim", "is deneyimi", "yayinlar", "sertifikalar", "education", "areas of expertise", "expertise",
+               "specialties", "biography", "experience", "publications", "certifications")
+# Words that make a heading a page's subject, not a person's name ("Ketamin İnfüzyon Tedavisi", "Our Team").
+_NOT_A_NAME = re.compile(r"^(tedavi|merkez|birim|bolum|klinig|klinik$|hastane|hizmet|ekib|ekip|kadro|hakkimiz|iletisim|"
+                         r"bize|team|our|about|contact|blog|haber|sss|bozuklu|bagimli|terapi|test|servis|poliklinik|"
+                         r"departman|center|centre|unit|service|treatment|clinic|hospital|doctors|staff|news|sayfa|nedir|"
+                         r"nasil|icin|ve$|ile$|the$|of$|and$|for$|with$)")
+ARTICLE_TYPES = frozenset({"Article", "BlogPosting", "NewsArticle", "ScholarlyArticle", "TechArticle", "Report",
+                           "LiveBlogPosting"})
+# On an article page these are its publisher, its author or the place that publishes it, not what the page is about
+# (moodist: every blog post carries the hospital's Hospital markup, which typed 28 posts "Klinik ve konum").
+PUBLISHER_TYPES = frozenset({"Organization", "Corporation", "LocalBusiness", "Hospital", "MedicalClinic",
+                             "MedicalOrganization", "MedicalBusiness", "Dentist", "Physician", "Person", "Place",
+                             "Store", "Restaurant", "AutoDealer", "AutoRepair", "AutomotiveBusiness", "LodgingBusiness",
+                             "Hotel", "Resort", "FinancialService", "BankOrCreditUnion"})
 SPECIAL = {"home": {"tr": "Ana sayfa", "en": "Homepage"}, "policy": {"tr": "Politika / yasal", "en": "Policy / legal"},
            "utility": {"tr": "Arama, sepet, hesap", "en": "Search, cart, account"},
            "other": {"tr": "Diğer sayfa", "en": "Other page"}}
@@ -220,15 +250,80 @@ def sitewide_schema(analyses: Iterable[dict | None]) -> set[str]:
     return {t for t, n in counts.items() if n / len(rows) >= SITEWIDE_SCHEMA_SHARE}
 
 
+_TITLE_TOKENS = frozenset(w for t in PERSON_TITLES for w in t.split()) | {"klinik"}
+
+
+def _texts(a: dict, key: str) -> list[str]:
+    value = (a or {}).get(key) or {}
+    return [x for v in value.values() for x in (v if isinstance(v, list) else [v]) if isinstance(x, str)] \
+        if isinstance(value, dict) else []
+
+
+def name_in(heading: str) -> list[str] | None:
+    """The folded name a main heading holds ("Uzm. Dr. Merve Gümüşay" -> ["merve", "gumusay"]), or None when the heading
+    does not read as a person's name: 2 to 5 words after the titles, each starting with a capital letter, no digits, no
+    question, none of them a word that names a subject (treatment, centre, team ...)."""
+    text = (heading or "").strip()
+    if not text or len(text) > 60 or any(ch.isdigit() for ch in text) or any(ch in text for ch in "?:!|"):
+        return None
+    words = [w for w in re.split(r"[\s,]+", text) if w]
+    while words and _norm(words[0]) in _TITLE_TOKENS | {""}:
+        words.pop(0)
+    if not 2 <= len(words) <= 5:
+        return None
+    out = []
+    for w in words:
+        n = _norm(w)
+        letters = re.sub(r"[.'’-]", "", w)
+        if not n or " " in n or not letters.isalpha() or not w[0].isupper() or _NOT_A_NAME.match(n):
+            return None
+        out.append(n)
+    return out
+
+
+def person_profile(url: str, analysis: dict | None, types: set[str], generic: str | None = None) -> bool:
+    """DECISIONS 329: a page about one person (a doctor's, a psychologist's profile). Not an article (a post names its
+    author); its H1 (else its title before " - ") reads as a name; and one of: Person or Physician markup, a professional
+    title right before that name in the title, the descriptions, the image text or the address ("Klinik Psikolog Merve
+    Ceren Safak"), or two or more CV headings (education, areas of expertise, biography)."""
+    a = analysis or {}
+    if types & ARTICLE_TYPES or generic in ("blog_article", "home", "utility", "policy", "category"):
+        return False
+    h1 = next((h.get("text") or "" for h in a.get("h1_elements") or [] if isinstance(h, dict) and h.get("text")), "")
+    name = name_in(h1) or name_in(re.split(r"\s+[-–|·]\s+", a.get("title") or "")[0])
+    if not name:
+        return False
+    if types & {"Person", "Physician"}:
+        return True
+    tail = " ".join(name[-2:])
+    titles = "|".join(re.escape(t) for t in sorted(PERSON_TITLES, key=len, reverse=True))
+    near = re.compile(rf"(?<![a-z0-9])(?:{titles})\s+(?:[a-z0-9]+\s+){{0,2}}{re.escape(tail)}(?![a-z0-9])")
+    texts = [h1, a.get("title") or "", *_texts(a, "meta"), *_texts(a, "og"), " ".join(_segments(url))]
+    if any(near.search(_norm(t)) for t in texts if t):
+        return True
+    heads = {_norm(h.get("text") or "").rstrip(" :") for h in a.get("headings") or [] if isinstance(h, dict)}
+    return sum(1 for h in heads if h in CV_HEADINGS) >= 2
+
+
+def location_types(pid: str | None) -> frozenset[str]:
+    """DECISIONS 329: the profile's page types that are places of the business (clinic, branch, store, dealer, service
+    area: `"location": true`); empty for a profile with none (banking, SaaS ...)."""
+    return frozenset(t["id"] for t in profile(pid)["page_types"] if t.get("location"))
+
+
 def page_facts(url: str, analysis: dict | None, menu: Iterable[str] = (), generic: str | None = None,
                sitewide: set[str] = frozenset(), folders: Iterable[str] = ()) -> dict:
     a = analysis or {}
     # The page's own name: its title and H1. Lower headings name sections (an FAQ block on a product page).
     heads = [a.get("title") or ""] + [h.get("text") or "" for h in a.get("h1_elements") or [] if isinstance(h, dict)]
-    return {"url": url, "segments": _segments(url, folders), "generic": generic,
-            "schema": set((a.get("structured_data") or {}).get("types") or []) - set(sitewide),
-            "heading": _norm(" | ".join(heads)), "menu": _norm(" | ".join(menu)),
-            "content": content_signals(a, generic) if a else ({"list"} if generic == "category" else set())}
+    schema = set((a.get("structured_data") or {}).get("types") or []) - set(sitewide)
+    if schema & ARTICLE_TYPES:  # DECISIONS 329: an article's publisher and author are not what the page is about
+        schema -= PUBLISHER_TYPES
+    content = content_signals(a, generic) if a else ({"list"} if generic == "category" else set())
+    if a and person_profile(url, a, set((a.get("structured_data") or {}).get("types") or []) - set(sitewide), generic):
+        content = content | {"person"}
+    return {"url": url, "segments": _segments(url, folders), "generic": generic, "schema": schema,
+            "heading": _norm(" | ".join(heads)), "menu": _norm(" | ".join(menu)), "content": content}
 
 
 def link_texts(pages: Iterable[tuple[str, list]]) -> dict[str, list[str]]:
@@ -261,7 +356,10 @@ def match(t: dict, facts: dict) -> tuple[int, list[dict]]:
     menu = _has(s.get("words") or [], facts["menu"])
     if menu:
         hits.append({"kind": "menu", "value": menu[0]})
-    content = sorted(set(s.get("content") or []) & facts["content"])
+    wanted = set(s.get("content") or [])
+    if "person" in wanted and "person" in facts["content"]:  # DECISIONS 329
+        hits.append({"kind": "person", "value": "person"})
+    content = sorted((wanted - {"person"}) & facts["content"])
     if content:
         hits.append({"kind": "content", "value": content[0]})
     return sum(SCORES[h["kind"]] for h in hits), hits

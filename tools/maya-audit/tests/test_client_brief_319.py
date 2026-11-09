@@ -128,9 +128,10 @@ def test_only_measured_or_confirmed_issue_cards_reach_the_brief_at_most_five():
     cards[11]["finding_ids"] = ["IDX-6-0000000c"]
     data = _data(cards, confirm=["IDX-6-0000000c"])
     got = brief.problems(data, REPORT, "tr")
-    assert [p["card"] for p in got] == [1, 5, 7, 8, 9]  # no warning, opportunity, inferred, Info; at most 5
+    # no warning, opportunity, inferred, estimated (DECISIONS 329), Info; at most 5
+    assert [p["card"] for p in got] == [1, 7, 8, 9, 10]
     assert [p["n"] for p in got] == [1, 2, 3, 4, 5]
-    assert got[1]["evidence"] == brief.library("tr")["labels"]["evidence"]["estimated"]
+    assert all(p["evidence"] == brief.library("tr")["labels"]["evidence"]["measured"] for p in got)
     assert got[0]["example"] == "shop.example/p1" and got[0]["scope"] == "Toplam: 12 sayfa"
     assert got[0]["who"] == "Geliştirici" and got[0]["effort"] == "Küçük"
     # A card waiting in "Teyit edin" never reaches a brief, whatever its place.

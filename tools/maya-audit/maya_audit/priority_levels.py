@@ -29,14 +29,17 @@ NOT_READ_WEIGHT = 0.25
 P0_RULES = ("acc2.blocks", "acc3.noindex", "acc3.robots_noindex", "idx1.5xx", "idx1.empty", "idx4.other_site",
             "idx4.broken", "idx4.different", "idx4.redirect_loop", "rnd1.missing")
 SITEWIDE_P0 = ("acc2.blocks.sitewide",)
+# DECISIONS 329 (owner, after enpara 87f0425a's High broken-link card came out P3): the lowest level of a High or
+# Blocker card. The score and the card order are unchanged.
+HIGH_FLOOR = {"S1": "P2", "S2": "P2"}
 WORDS = {"tr": {"P0": "Acil", "P1": "Öncelikli", "P2": "Planlı", "P3": "Sırası gelince"},
          "en": {"P0": "Urgent", "P1": "Priority", "P2": "Planned", "P3": "When convenient"}}
 REASONS = {"tr": {"auto": "otomatik: indeksleme engeli ({where})", "set": "elle P0 yapıldı ({by}, {date})",
                   "removed": "otomatik P0 elle kaldırıldı ({by}, {date})", "home": "ana sayfa", "site": "site geneli",
-                  "type": "{type}: {n}/{total} sayfa"},
+                  "type": "{type}: {n}/{total} sayfa", "floor": "yüksek önem: en az P2"},
            "en": {"auto": "automatic: indexing blocker ({where})", "set": "set to P0 by hand ({by}, {date})",
                   "removed": "automatic P0 taken off by hand ({by}, {date})", "home": "homepage", "site": "whole site",
-                  "type": "{type}: {n}/{total} pages"}}
+                  "type": "{type}: {n}/{total} pages", "floor": "high severity: at least P2"}}
 
 
 def spread(n: int, total: int) -> int:
@@ -141,6 +144,10 @@ def label(group: dict, ctx: Context, lists: dict | None, confirmations: dict | N
     computed = level(score)
     if computed is None and any(severity(m) in PROBLEM for m in group.get("members") or []):
         computed = "P3"  # DECISIONS 325: every problem card has a level; pages that weigh 0 (search, cart) make it P3
+    floor = None
+    if group.get("severity") in HIGH_FLOOR and computed in (None, "P3"):
+        # DECISIONS 329 (owner): a High (or Blocker) card is never P3; at least P2. The card order does not change.
+        computed, floor = HIGH_FLOOR[group["severity"]], words["floor"]
     if group.get("placement") == "confirm":
         auto = None  # not established yet: no automatic P0 for a finding waiting in "Teyit edin"
     mark = None
@@ -152,7 +159,8 @@ def label(group: dict, ctx: Context, lists: dict | None, confirmations: dict | N
     elif mark and mark.get("action") == "removed":
         final = "P1" if (computed == "P0" or auto) else computed
         reason = words["removed"].format(by=mark.get("by", ""), date=mark.get("date", ""))
-    return {"level": final, "score": score, "auto_p0": auto, "manual": mark, "reason": reason, "basis": best}
+    return {"level": final, "score": score, "auto_p0": auto, "manual": mark, "reason": reason or (floor if final == computed else None),
+            "basis": best, "floor": floor}
 
 
 def annotate(rows: list[dict], importance: dict[str, dict], summary: dict, read: set[str], lists: dict | None,

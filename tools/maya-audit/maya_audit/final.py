@@ -66,6 +66,18 @@ def settle(checks, result) -> None:
     # The business type (DECISIONS 311): page importance weighted by the profile; never a severity.
     from .business_types import attach as attach_business
     attach_business(result)
+    # DECISIONS 329: IDX-8's place-name groups only on the business type's location pages (clinic, branch, store ...).
+    from .checks.index import gate_location_templates
+    config = getattr(result, "config", None)
+    least = config.get("location_template_min_pages") if isinstance(config, dict) else getattr(config, "location_template_min_pages", None)
+    types = {p.url: (p.grouping or {}).get("business_page_type") for p in result.pages
+             if isinstance(getattr(p, "grouping", None), dict)}
+    reader = getattr(result, "reader_page_grouping", None)  # a blocked site: the page reader's pages (DECISIONS 304)
+    for url, g in ((reader or {}).get("pages") or {}).items() if isinstance(reader, dict) else ():
+        if isinstance(g, dict) and not types.get(url):
+            types[url] = g.get("business_page_type")
+    gate_location_templates([c for c in checks if not _get(c, "check_id").startswith("ANS")], types,
+                            (getattr(result, "business_type", None) or {}).get("id"), least)
     # Every redirect hop of the crawl, per requested address (Stage 8a, DECISIONS 315).
     from .checks.stage8_rules import redirect_records
     result.redirects = redirect_records(result.pages)

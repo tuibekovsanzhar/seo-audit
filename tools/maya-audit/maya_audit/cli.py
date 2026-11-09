@@ -150,7 +150,10 @@ def _firecrawl_prepare(args, automatic: bool = False):
                          allow_without_zero_data_retention=args.firecrawl_allow_without_zdr or not settings.zero_data_retention_wanted(),
                          concurrency=(args.firecrawl_concurrency if getattr(args, "firecrawl_concurrency", None) is not None
                                       else settings.concurrency()),
-                         gap_s=getattr(args, "firecrawl_gap", None))
+                         gap_s=getattr(args, "firecrawl_gap", None),
+                         # DECISIONS 327/329: Akıllı reads through Firecrawl only where needed, unless a full read is asked
+                         read_scope="needed" if getattr(args, "smart", False) and not getattr(args, "firecrawl_full_read", False)
+                         else "all")
     key = fc.load_key()
     ledger, cache = fc.open_stores()
     shown = panel.plan(options, args.max_pages, ledger, key is not None, args.firecrawl_daily_credits)
@@ -202,6 +205,9 @@ def _parser() -> argparse.ArgumentParser:
     crawl.add_argument("--smart", action="store_true",
                        help="Akıllı örneklem (DECISIONS 327): read a planned sample of --max-pages pages that covers every "
                             "page type of the business type (the team's sampling rule)")
+    crawl.add_argument("--firecrawl-full-read", action="store_true",
+                       help="with --smart: Firecrawl reads every page (\"Tam okuma\"); without it Akıllı reads through Firecrawl "
+                            "only the pages Maya could not read, JavaScript templates and one page per template (DECISIONS 329)")
     crawl.add_argument("--single-page", action="store_true",
                        help="audit only the address given: one page, no links followed, no sitemap. Site-level facts the page "
                             "depends on (robots.txt, its redirects, http:// to https://) are still checked")

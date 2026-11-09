@@ -1703,3 +1703,44 @@ Expected on the saved audits (step timings; the overlap is at most the four step
 | ruff E9/F821/F841, `python3.11 -m compileall` | clean / OK |
 | A live audit | NOT RUN (owner) |
 | Push | NOT DONE (owner: don't push) |
+
+## Fixes from the first live Akıllı runs (2026-11-09, DECISIONS 329)
+
+Worked from the saved reports moodisthastanesi 2d72fea0 and enpara 87f0425a (scratch copies; no new crawl, no provider
+call). New `maya_audit/step_times.py`; Firecrawl's `read_scope` kept through the plan (`Options.as_dict`) and set by the
+CLI's `--smart` (`--firecrawl-full-read`); "needed" without redirects and 4xx answers, templates as the page grouping's;
+the "person" signal and article publisher markup in `business_types`; `"location": true` on five profile types and the
+IDX-8 gate (`checks.index.gate_location_templates`, `final.settle`, `reassess_rules._decisions_329`); `HIGH_FLOOR`; the
+brief's measured-only problems and precise ACC-9 line; `card_owner` with sitemap entries.
+
+| Item | Before | After |
+|---|---|---|
+| 1 Time | not shown | web "Süre": moodist 21 dk 4 sn, enpara 11 dk 37 sn, one line per step; same line in the team report's "Bu denetimin sınırları" |
+| 2 Firecrawl pages (Akıllı) | moodist 150/150, enpara 151 requests ("needed" lost in the plan) | moodist 31 (1 failed request + 30 cross-checks), enpara 34; no JavaScript template on either |
+| 2 Minutes (estimated from saved timings) | moodist: reader 7.5 beside, end 54 s, total 21.1 | reader ~1.5, end ~30 s, total ~20.7 |
+|  | enpara: reader 3.3 beside, end 82 s, total 11.6 | reader ~0.9, end ~51 s, total ~11.1 |
+| 3 Page types | moodist "Klinik ve konum" 32 (30 blog posts by the publisher's Hospital markup, 2 profiles) | 33 pages change: 30 -> blog, 2 -> Doktor ve ekip, `/tr/team/anil-usta/` Diğer -> Doktor ve ekip; enpara 0 |
+| 4 IDX-8 place-name | enpara card 3 (/sss/ 10 pages, /odemeler/ 6) | removed (Bankacılık has no location type) |
+| 5 P level | enpara card 2 High P3 | P2 ("yüksek önem: en az P2"); order unchanged |
+| 6 Brief | enpara problem 5 "brand named different ways" (Ölçüldü; kapsamı tahmini); good: "… engellemiyor" beside a robots.txt card blocking AI assistants, ACC-7 line about AI assistants | problem 5 the measured hreflang one; good: "Sitenizin güvenlik koruması sayfa isteklerimizi geri çevirmedi …", ACC-7 line dropped (key pages line instead); moodist: only the ACC-9 wording changes |
+| 7 Owner | enpara card 2 (21 sitemap entries) İçerik | Geliştirici + İçerik |
+| Sektör audit | moodist Uygun 10 · Kısmen 8 · Hatalı 3 · KE 41 (of 62); enpara 10 · 12 · 2 · 35 (of 59) | moodist 9 · 7 · 3 · 43 (SEC-071, SEC-072 -> KE: no clinic page read); enpara unchanged |
+
+Team reports 9 pages each, briefs 5 pages each, not blocked (TR). Where moodist's 20 minutes of Maya's own steps go
+(not changed; for the owner): the site limit fell 5 -> 1 after two answers over 2 s and every later request waited
+~2 s (access 137 s / 10 requests, index 103 s, structure 89 s, llms.txt links 128 s / 50); rendering 4.3 min (21
+pages); crawl 6.6 min (250 requests). Possible cuts: let the limit step back up after clean answers (up to ~4 min of
+waiting on moodist), cap llms.txt link checks in Akıllı (~1.5 min), fewer render slots in Akıllı. The saved Akıllı
+plan's own counts (moodist "Klinik ve konum: 0/52") stay as the run recorded them; a new run plans with the new typing.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_live_fixes_329.py` | `27 passed` |
+| related suites (311-328, team report, brief, Firecrawl, IDX) | `2 failed, 450 passed` first (estimated cards in the brief; a fake builder without cards); after updates passed |
+| fast suite (fixture matrix regenerated), `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3025 passed, 4 skipped, 135 deselected, 1 warning in 535.21s (0:08:55)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `3160 passed, 4 skipped, 1 warning in 971.43s (0:16:11)` |
+| ruff E9/F821/F841, `python3.11 -m compileall`, `node --check app.js` | clean / OK / OK |
+| CLI `--smart --business-type saglik --no-firecrawl` on a loopback static site, empty keys, temp home and env file | exit 0; schema 1.30; no `firecrawl` section; no home folder or ledger; the psychologist profile typed `doctors`, the post `guide` |
+| A live audit | NOT RUN (owner) |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+| Push | NOT DONE (owner: don't push) |

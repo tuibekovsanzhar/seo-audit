@@ -992,6 +992,16 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             "has_report": report_path(audit["id"]).is_file(), "last_event_id": store.last_event_id(audit["id"]),
         }
 
+    def timing_view(report: dict[str, Any]) -> dict[str, Any] | None:
+        """DECISIONS 329: {"total", "total_s", "rows"} from the report's step timing table, or None without one."""
+        from maya_audit import step_times
+        info = step_times.summary(report)
+        if not info:
+            return None
+        lang = "en" if current_language() == "en" else "tr"
+        return {"total": step_times.duration(info["total_s"], lang), "total_s": info["total_s"],
+                "rows": step_times.rows(info, lang)}
+
     def sampling_line(sampling: dict | None) -> str | None:
         """DECISIONS 327: "Sayfa türüne göre örneklem: Tedavi ve bölüm 24/80 · Doktor ve ekip 3/3" (read / known)."""
         from maya_audit import business_types as bt
@@ -1070,6 +1080,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                                 "default_lang": "tr", "brief": f"{base}/client-brief",
                                 "sector": f"{base}/downloads/sector", "sector_name": sector_name(audit)},  # DECISIONS 324
                 "overview_url": f"{base}/overview",
+                # DECISIONS 329: the total time and each step's, for "How the audit ran"
+                "timing": timing_view(report),
                 "print_url": f"{base}/print", "review_url": f"{base}/review", "has_previous": not audit.get("analysis") and store.previous_audit(audit) is not None}
         # The practical report in brief: the executive summary, the scorecard and the timeline's counts. The whole of it,
         # with every issue and the page table, is GET /audits/{id}/practical: a results card stays small.

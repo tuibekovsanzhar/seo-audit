@@ -1214,6 +1214,11 @@ class Builder:
             k = self.owner_effort(m)[0]
             if k not in keys:
                 keys.append(k)
+        # DECISIONS 329 (owner): broken links that include sitemap entries are the developer's (the sitemap) and the
+        # content team's (the links and what the page becomes): "Geliştirici + İçerik".
+        if any(c.get("kind") == "sitemap" for m in members or [] for c in (getattr(self, "cards", None) or {}).get(m.get("id")) or []):
+            keys = ["developer", "content"] + [k for k in keys if k not in ("developer", "content")]
+            return " + ".join(self.L["owners"][k] for k in keys[:2] if k in self.L["owners"])
         keys.sort(key=lambda k: self.OWNER_RANK.index(k) if k in self.OWNER_RANK else len(self.OWNER_RANK))
         return " + ".join(self.L["owners"][k] for k in keys[:2] if k in self.L["owners"])
 
@@ -1793,6 +1798,14 @@ class Builder:
         versions = self.locales_line()  # DECISIONS 316
         if versions:
             limits.append(versions)
+        try:  # DECISIONS 329: the audit's total time and each step's, from the report's own step timing table
+            from maya_audit import step_times  # type: ignore
+            timing = step_times.text(step_times.summary(self.r), lang)
+        except ImportError:
+            timing = None
+        if timing:
+            limits.append(timing)
+            self.fact(timing)
         gaps = self.gaps()
         if gaps:
             limits.append(fmt(L["own_gaps"], n=fmt_int(gaps, lang)))
