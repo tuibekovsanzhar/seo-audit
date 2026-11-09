@@ -261,7 +261,9 @@ def test_a_plan_touches_no_network_and_says_what_it_does_not_know(web):
     assert client.site.requests == [] and client.provider.requests == []
     assert made["target"] == {"url": f"https://{SHOP}/", "host": SHOP, "domain": SHOP, "http_fallback": None, "note": None}
     assert (made["mode"], made["page_cap"]) == ("standard", 500) and made["key_pages"] == [f"https://{SHOP}/about", f"https://{SHOP}/tr/urun-3"]
-    assert made["duration"]["known"] and "Rough estimate" in made["duration"]["label"] and made["time_limit_minutes"] > 0
+    # DECISIONS 333: the details say the same time as the short line, and the audit's time limit
+    assert made["duration"]["known"] and made["duration"]["label"].startswith(made["duration"]["typical"]["label"]) \
+        and f"time limit of {made['time_limit_minutes']} minutes" in made["duration"]["label"] and made["time_limit_minutes"] > 0
     assert any("do not know how many pages" in line for line in made["limitations"])
     assert any("block" in line for line in made["limitations"]) and any("not proof" in line for line in made["limitations"])
     assert len(made["included"]) == 6 and len(made["unavailable"]) == 4 and made["rendering"]["policy"] == "off"

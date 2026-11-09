@@ -547,6 +547,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "practical.by_page.site_level": "Site-level (affects this page)",
         "status.note.coverage.single": "1 page was read: the one this single-page audit was asked for. Other pages of the site were not checked.",
         "plan.duration": "Rough estimate: up to about {minutes} minutes if the site has {cap} pages or more. Smaller sites finish sooner.",
+        "plan.duration.usual": "{label}. Smaller sites finish sooner; the audit stops at its time limit of {limit} minutes.",
+        "plan.label.cwv": "Core Web Vitals",
         "plan.duration.demo": "Demonstration sites are read from memory, so this takes seconds.",
         "plan.polite": "The site is asked for one page at a time, about once a second, and its robots.txt rules are obeyed.",
         "plan.rendering.on": "Up to {pages} pages are also opened in a browser, to see what appears only after JavaScript runs. "

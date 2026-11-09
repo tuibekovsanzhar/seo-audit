@@ -209,3 +209,39 @@ def test_a_recorded_answer_fills_core_web_vitals_and_never_shows_the_key():
                            transport=httpx.MockTransport(lambda r: httpx.Response(403, json={"error": {"message": "key made-up-google not enabled"}})))
     assert refused["status"] == "not_available" and "made-up-google" not in json.dumps(refused)
     assert "Chrome UX Report API is enabled" in refused["summary"]
+
+
+# ---------------------------------------------------------------- DECISIONS 333: what the plan says
+
+def test_the_plan_shows_core_web_vitals_when_the_key_is_set(web, monkeypatch):  # noqa: F811
+    from maya_audit_web.strings import t
+    client = web()
+    assert plan(client)["search_data"]["core_web_vitals"] == t("crux.plan.off")
+    monkeypatch.setenv("MAYA_AUDIT_CRUX_API_KEY", "made-up-crux")
+    made = plan(client)
+    assert made["search_data"]["core_web_vitals"] == t("crux.plan.on")
+    assert t("plan.unavailable.pagespeed") not in made["unavailable"]
+    from pathlib import Path
+    script = (Path(__file__).resolve().parents[1] / "maya_audit_web" / "static" / "app.js").read_text(encoding="utf-8")
+    assert '[T("plan.label.cwv"), plan.search_data.core_web_vitals]' in script  # a row of the plan's details
+
+
+def test_paid_data_that_was_not_chosen_is_not_a_cost_on_the_plan(web):  # noqa: F811
+    client = web()
+    made = plan(client)  # backlinks and search data off
+    assert made["paid"]["requested"] is False and made["paid"]["total_usd"] > 0  # the backlink price, for the details
+    from pathlib import Path
+    script = (Path(__file__).resolve().parents[1] / "maya_audit_web" / "static" / "app.js").read_text(encoding="utf-8")
+    assert "current.paid && current.paid.requested && current.paid.total_usd ? T(\"plan.cost.short\"" in script
+
+
+@pytest.mark.parametrize("mode", ["quick", "smart", "standard"])
+def test_the_plans_two_time_lines_say_the_same_time(web, mode):  # noqa: F811
+    client = web(provider=None)
+    made = plan(client, mode=mode)
+    usual = made["duration"]["typical"]
+    assert made["duration"]["label"].startswith(usual["label"])  # the details start with the short line's time
+    assert f"{made['time_limit_minutes']}" in made["duration"]["label"]
+    import re
+    up_to = made["duration"]["up_to_minutes"]
+    assert up_to == made["time_limit_minutes"] or not re.search(rf"(?<!\d){up_to} minutes", made["duration"]["label"])

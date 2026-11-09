@@ -596,10 +596,14 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                                         "archives": bool(extras.get("archives")), "verify_ownership": bool(extras.get("verify_ownership")),
                                         "brand_family_domains": sorted(family), **switch_basis(switches)},
                                        market_basis(options) if paid_wanted else None)
+        # DECISIONS 333: one time on the plan. The short line and the details both say what recent runs of this mode took
+        # (else its default; Özel sayı a range from its count), and the details add the audit's hard time limit; the
+        # uncalibrated upper estimate is kept as data (`up_to_minutes`), no longer shown as a second, different time.
+        usual = typical(mode, cap)
         duration = ({"known": False, "label": t("plan.duration.demo")} if engine.demo else
                     {"known": True, "up_to_minutes": shape["up_to_minutes"],
-                     "label": t("plan.duration", minutes=shape["up_to_minutes"], cap=cap)})
-        duration["typical"] = typical(mode, cap)  # DECISIONS 310: what recent runs of this mode took
+                     "label": t("plan.duration.usual", label=usual["label"], limit=shape["time_limit_minutes"])})
+        duration["typical"] = usual  # DECISIONS 310: what recent runs of this mode took
         balance = store.get_meta("provider_balance")
         document = {
             "id": new_id(), "fingerprint": fingerprint,

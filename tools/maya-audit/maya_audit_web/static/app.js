@@ -433,6 +433,8 @@ function planFacts(plan) {
   return facts([[T("plan.label.site"), plan.target.note ? [plan.target.url, plan.target.note] : plan.target.url], [T("plan.label.scope"), plan.scope_label || T("plan.scope", { mode: plan.mode_label, cap: num(plan.page_cap) })],
     plan.key_pages.length ? [T("plan.key_pages.label"), plan.key_pages] : null,
     plan.selection_line ? [T("plan.label.selection"), plan.selection_line] : null,
+    // DECISIONS 333: whether Google's Core Web Vitals (Chrome UX Report) are included: the key on this computer
+    plan.search_data && plan.search_data.core_web_vitals ? [T("plan.label.cwv"), plan.search_data.core_web_vitals] : null,
     [T("plan.label.rendering"), plan.rendering.label], [T("plan.label.time"), plan.duration.label],
     [T("plan.label.included"), plan.included], [T("plan.label.optional"), plan.optional],
     [T("plan.label.unavailable"), plan.unavailable], [T("plan.label.limits"), plan.limitations]]);
@@ -461,7 +463,9 @@ function planCard(plan, request, message) {
       el("summary", { text: T("plan.more") }));
     fill(card, el("h2", { text: T("plan.title") + ": " + current.target.host }),
       el("ul", { class: "plan-short" }, el("li", { text: T("plan.pages", { cap: num(current.page_cap) }) }), typical ? el("li", { text: T("plan.time", { label: typical.label }) }) : null,
-        el("li", { text: [current.paid && current.paid.total_usd ? T("plan.cost.short", { total: money(current.paid.total_usd) }) : null,
+        // DECISIONS 333: the paid line only for paid data that was chosen (the backlink price is priced for the details
+        // even when it is off, so it is known before it is chosen; it is not a cost of this plan).
+        el("li", { text: [current.paid && current.paid.requested && current.paid.total_usd ? T("plan.cost.short", { total: money(current.paid.total_usd) }) : null,
           current.firecrawl && current.firecrawl.requested && current.firecrawl.max_credits ? (current.credits_expected && current.credits_expected < current.firecrawl.max_credits
             ? T("plan.cost.credits.expected", { credits: num(current.firecrawl.max_credits), expected: num(current.credits_expected) })
             : T("plan.cost.credits", { credits: num(current.firecrawl.max_credits) })) : null]

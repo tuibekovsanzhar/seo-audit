@@ -114,6 +114,8 @@
  "practical.by_page.site_level": "Site düzeyinde (bu sayfayı etkiler)",
  "status.note.coverage.single": "1 sayfa okundu: bu tek sayfa denetiminde istenen sayfa. Sitenin diğer sayfaları kontrol edilmedi.",
  "plan.duration": "Kaba tahmin: sitede {cap} veya daha fazla sayfa varsa en fazla yaklaşık {minutes} dakika. Daha küçük siteler daha erken biter.",
+ "plan.duration.usual": "{label}. Küçük siteler daha erken biter; denetim {limit} dakikalık süre sınırında durur.",
+ "plan.label.cwv": "Core Web Vitals (Google saha verisi)",
  "plan.duration.demo": "Tanıtım siteleri bellekten okunur, bu yüzden saniyeler sürer.",
  "plan.polite": "Siteden saniyede yaklaşık bir kez olmak üzere her seferinde tek sayfa istenir ve robots.txt kurallarına uyulur.",
  "plan.rendering.on": "JavaScript çalıştıktan sonra nelerin göründüğünü görmek için en fazla {pages} sayfa ayrıca bir tarayıcıda açılır. Bu bilgisayarda tarayıcı bileşeni eksikse rapor bunu belirtir.",

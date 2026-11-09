@@ -1789,3 +1789,21 @@ included", results "Core Web Vitals (real visitors)", team report "Saha verisi" 
 | A live audit | NOT RUN (owner) |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+
+## The plan's Core Web Vitals line, paid line and time (2026-11-09, DECISIONS 333)
+
+The owner's app on port 8770 (pid 52575, started 16:11 from `tools/maya-audit`, after `c705e46`) loads
+`tools/maya-audit/.env`; its own loader sees a non-empty Core Web Vitals key: yes (checked through `crux.load_key` in the
+same folder with the same empty environment; `.env` not opened, no value printed). The plan did not say so because the
+page never showed `search_data.core_web_vitals`: now a "Core Web Vitals" row of the plan's details. "Paid data: at most
+$0.0516" was the backlink price shown for the details although backlinks and search data were off: the short line now
+shows a paid total only for chosen paid data. The plan's two times now agree (both the short line's "about N min"; the
+details add the time limit).
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_speed_modes_330.py` and the plan/language tests | `29 passed` (after two old expectations were updated: the "Rough estimate" wording, the list of sentences equal in TR and EN) |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3050 passed, 4 skipped, 135 deselected, 1 warning in 530.38s (0:08:50)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `3185 passed, 4 skipped, 1 warning in 929.63s (0:15:29)` |
+| Owner's web app on port 8770 | NOT RUN here (restart needed) |
+| Push | NOT DONE (owner: don't push) |

@@ -4400,3 +4400,21 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Tests: `tests/test_speed_modes_330.py` (made-up keys, a recorded answer, a refused key).
      Also written (no code, waiting for the owner): `docs/proposals/SEARCH-CONSOLE.md`, a read-only Search Console
      integration through a service account.
+333. **What the plan says: Core Web Vitals shown, a paid line only for chosen paid data, one time (Owner, 2026-11-09:
+     the three fixes as asked; the wording is an agent default).** Web app, every plan.
+     (1) *Core Web Vitals.* The plan carried "Core Web Vitals from real Chrome visitors are included" / "... not available
+     (no API key)" (`search_data.core_web_vitals`) but the page never showed it, so a key set in `.env` showed only as
+     one line fewer under "Not available" (DECISIONS 332 said the details show it: they did not). The plan's details now
+     have a "Core Web Vitals" row with it. The key itself was read: the owner's app (started from `tools/maya-audit`,
+     no `MAYA_AUDIT_ENV_FILE`) loads `tools/maya-audit/.env` and its loader sees a non-empty key (checked with the app's
+     own loader, yes/no only; the file was not opened).
+     (2) *Paid line.* `paid.price` always prices the backlink calls, so the details can show what they would cost before
+     they are chosen; the short plan line printed any such total as "Paid data: at most $0.0516" with backlinks and
+     search data off (nothing was ever sent or charged). It now shows a paid total only for paid data the plan asks for
+     (`paid.requested`), else "No paid data"; the price stays in the details.
+     (3) *One time.* The short line said what recent runs of the mode took, else its default ("about 10 min"); the
+     details said the uncalibrated upper estimate of `estimated_duration_s` ("up to about 20 minutes"). The details now
+     say the same time and add the audit's hard time limit ("about 10 min (...). Smaller sites finish sooner; the audit
+     stops at its time limit of 25 minutes."); the upper estimate stays as data (`duration.up_to_minutes`) and still
+     sets the time limit and Özel sayı's range. Tests: `tests/test_speed_modes_330.py`; `test_web_app` (the plan's
+     time).
