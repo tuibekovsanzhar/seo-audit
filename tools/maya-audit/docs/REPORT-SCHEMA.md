@@ -1,6 +1,6 @@
 # The JSON report format
 
-Current version: `1.30`
+Current version: `1.31`
 
 Every JSON report the tool writes (`--json`, and one per brand from `batch`) starts with `schema_version`.
 Anything that reads a report, including the web interface, reads that number first.
@@ -394,6 +394,16 @@ page failures. Coverage stop reasons additionally distinguish `provider_timeout`
 credit/request limits. Existing 1.x reports remain readable; absent historical reasons are never invented.
 Keyword intent dimensions live inside open DataForSEO check evidence; originals and provider totals are preserved.
 
+
+## 1.31 — where Core Web Vitals were asked (2026-11-09)
+
+Added for DECISIONS 334; nothing was removed or renamed, so 1.x readers keep working.
+
+- `crux.reason_code` (`no_key`, `no_data`, `error`, `time_limit`, null when assessed), `crux.attempts` (every request:
+  `origin` or `url`, `http_status`), `crux.origins_asked` (the origin the site landed on first, then the typed one),
+  `crux.homepage` (the homepage's own record: `url`, `http_status`, `status`, and when assessed its `metrics`,
+  `data_until`, `passes_core_web_vitals`, `summary`) and `crux.fetched_for_saved_audit` (true in `artifacts/crux.json`,
+  the section fetched again for a saved audit; report.json is never written).
 
 ## 1.30 — the Akıllı ~150 plan (2026-11-08)
 

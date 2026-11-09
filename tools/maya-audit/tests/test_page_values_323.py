@@ -135,7 +135,7 @@ def test_a_new_audit_stores_a_record_for_every_page_maya_read(no_lookups):
     transport, _ = _site(blocked=lambda url: False)
     outcome = run_audit(S + "/", CrawlConfig(**{**QUIET, "max_pages": 8}), httpx.MockTransport(transport))
     rep = json.loads(json.dumps(to_jsonable(build_report(outcome.result, outcome.gates, outcome.checks))))
-    assert rep["schema_version"] == SCHEMA_VERSION == "1.30"
+    assert rep["schema_version"] == SCHEMA_VERSION == "1.31"
     stored = rep["crawl"]["page_measures"]
     assert set(stored) == cs.pages_read(rep) and len(stored) >= 5
     assert all(isinstance(r.get("html_bytes"), int) and r.get("title") for r in stored.values())

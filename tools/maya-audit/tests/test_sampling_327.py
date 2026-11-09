@@ -151,7 +151,7 @@ def test_a_smart_crawl_reads_every_page_type_on_a_tight_budget():
     assert record["mode"] == "smart" and record["profile"] == "saglik" and record["main"] == "tr"
     assert [w["wave"] for w in record["waves"]] == [1, 2] and record["planned_urls"][0] == H + "/tr/"
     report = json.loads(json.dumps(to_jsonable(build_report(outcome.result, outcome.gates, outcome.checks))))
-    assert report["schema_version"] == "1.30" and report["crawl"]["sampling"]["types"]["insurers"]["known"] == 1
+    assert report["schema_version"] == "1.31" and report["crawl"]["sampling"]["types"]["insurers"]["known"] == 1
     assert _crawl(False).result.sampling is None
 
 

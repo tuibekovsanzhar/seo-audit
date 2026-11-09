@@ -801,7 +801,7 @@ def standard(web):
 
 def test_a_500_page_audit_of_english_and_turkish_pages_is_shown_from_its_report(standard):
     client, audit, report = standard
-    assert audit["state"] == "finished" and report["page_counts"]["pages_checked"] == 500 and report["schema_version"] == "1.30"
+    assert audit["state"] == "finished" and report["page_counts"]["pages_checked"] == 500 and report["schema_version"] == "1.31"
     view = get(client, audit, "/summary")
     counts = view["counts"]
     # Severity counts are the report's own findings, counted; nothing is added or re-judged.

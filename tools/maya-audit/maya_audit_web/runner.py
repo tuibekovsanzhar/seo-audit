@@ -569,7 +569,9 @@ class Runner:
                                                    for p in result.pages) if b])
             markdown += allowlist.markdown(config.product_token, result.user_agent, named[0]["name"] if named else None)
         if not result.stopped and self.engine.crux_key():  # free; one request to Google about the site's origin
-            report["crux"] = crux.collect(audit["url"], self.engine.crux_key(), transport=self.engine.crux_transport, clock=clock)
+            # DECISIONS 334: the origin the site lands on first (enpara.com -> www.enpara.com), and the homepage's own record
+            report["crux"] = crux.collect(audit["url"], self.engine.crux_key(), transport=self.engine.crux_transport, clock=clock,
+                                          final_url=result.origin, homepage=homepage_url(result))
             markdown += crux.markdown(report["crux"])
         if dfs_panel is not None:
             insights.refresh_relevance(dfs_panel)

@@ -28,7 +28,7 @@ from .index_data import HTTP_REDIRECT_LINES
 from .models import (Confidence, CrawlResult, FetchClass, GateResult, PageFetch, RequestRecord, SitemapDoc, SkippedUrl,
                      StopReason)
 
-SCHEMA_VERSION = "1.30"
+SCHEMA_VERSION = "1.31"
 
 # Always present.
 REPORT_KEYS = ("generation", "schema_version", "report_version", "status_meanings", "scope", "gates", "checks", "answer_engine_panel",
@@ -111,7 +111,9 @@ FIRECRAWL_KEYS = ("source", "enabled", "used", "purpose", "reason", "notice", "o
 # Archived copies (maya_audit.archives): a free fallback when nothing could read the live site.
 ARCHIVES_KEYS = ("enabled", "cost_usd", "page_cap", "sources", "notice", "requests_sent", "downloaded_bytes", "fetched_at")
 # Core Web Vitals from the Chrome UX Report (maya_audit.crux). Not every key is in every report.
-CRUX_KEYS = ("source", "status", "summary", "metrics", "origin", "form_factor", "data_until", "fetched_at", "passes_core_web_vitals")
+# 1.31 (DECISIONS 334): why there are no figures, every request made, the homepage's own record, a saved audit's re-fetch.
+CRUX_KEYS = ("source", "status", "summary", "metrics", "origin", "form_factor", "data_until", "fetched_at", "passes_core_web_vitals",
+             "reason_code", "attempts", "origins_asked", "homepage", "fetched_for_saved_audit")
 # Site ownership verification (maya_audit.ownership).
 OWNERSHIP_KEYS = ("verified", "method", "token", "checked_at", "summary", "instructions")
 # Left out of the written report by models.to_jsonable.

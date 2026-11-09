@@ -1501,7 +1501,13 @@ def known_unread(result: CrawlResult, firecrawl: dict | None) -> int:
     reader's count, which already leaves out what the reader read of the addresses Maya's own crawl did not fetch."""
     section = firecrawl or {}
     if section.get("used") and any(row.get("outcome") == "read" for row in section.get("pages") or []):
-        return (section.get("coverage") or {}).get("known_urls_not_requested", 0)
+        counted = (section.get("coverage") or {}).get("known_urls_not_requested", 0)
+        if (section.get("options") or {}).get("read_scope") == "needed":
+            # DECISIONS 335: a reader that read only where needed (DECISIONS 327/329) never asks the addresses Maya did
+            # not fetch, so its own count is no answer: Maya's unread addresses, less any the reader read.
+            read = {row.get("url") for row in section.get("pages") or [] if row.get("outcome") == "read"}
+            return max(counted, sum(1 for u in result.not_fetched_urls if u not in read))
+        return counted
     return len(result.not_fetched_urls)
 
 

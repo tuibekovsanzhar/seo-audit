@@ -250,6 +250,8 @@ LINE_PATTERNS: tuple[tuple[str, str], ...] = (
     ('fc.cost.note', "No dollar price per credit is configured, so only credits are shown."),
     ('crux.deadline', "Core Web Vitals not available: {why~:.+} before Google was asked."),
     ('crux.unreachable', "Core Web Vitals not available: Google's Chrome UX Report could not be reached ({error})."),
+    # DECISIONS 334: no record for any origin asked (the site's own and the typed one)
+    ('crux.no_data', "Core Web Vitals not available: Google has too few real Chrome visits for this site to publish figures (asked for {asked}). That is common for small sites and says nothing about speed."),
     ('crux.http', "Core Web Vitals not available: Google's Chrome UX Report answered HTTP {status#}. Check the API key and that the Chrome UX Report API is enabled for it."),
     ('crux.http.detail', "Core Web Vitals not available: Google's Chrome UX Report answered HTTP {status#} ({detail}). Check the API key and that the Chrome UX Report API is enabled for it."),
     ('crux.worst', "Real visitors on phones: {worst~:.+}."),

@@ -292,7 +292,8 @@ def unread_figures(report: dict[str, Any]) -> tuple[int, int] | None:
     """(pages read, addresses known and not read) when a page reader read pages: the two figures every "not read"
     sentence of this report uses. None otherwise (the checks' own figures are then the report's)."""
     reader = report.get("firecrawl") or {}
-    known = ((report.get("audit_status") or {}).get("content_coverage") or {}).get("known_urls_not_read")
+    from maya_audit.sampling import known_not_read as sampled_unread
+    known = sampled_unread(report)  # DECISIONS 335: a sampled audit's known-and-unread addresses
     if not (reader.get("used") and reader.get("pages_read") and isinstance(known, int)):
         return None
     return pages_read(report), known
@@ -471,7 +472,8 @@ def _first_capital(text: str | None) -> str | None:
 def known_not_read(report: dict[str, Any]) -> int:
     """Addresses known and not read: the report's own figure (schema 1.6 on; with a reader it leaves out what the
     reader read of the pages Maya did not fetch), or, for an older report, what its crawl did not fetch."""
-    known = ((report.get("audit_status") or {}).get("content_coverage") or {}).get("known_urls_not_read")
+    from maya_audit.sampling import known_not_read as sampled_unread
+    known = sampled_unread(report)  # DECISIONS 335
     return known if isinstance(known, int) else len((report.get("crawl") or {}).get("not_fetched_urls") or [])
 
 
@@ -608,13 +610,20 @@ def status_view(report: dict[str, Any]) -> dict[str, Any] | None:
     # The reasons follow the note as a sentence of their own, so the first begins with a capital.
     reasons = "; ".join(coverage["reasons"])
     coverage_note = said(coverage["note"] + (" " + reasons[:1].upper() + reasons[1:] + "." if reasons else "")) if english else notes["coverage"]
+    # DECISIONS 335: a sampled audit says its sample (pages read, known addresses not read, why fewer than the limit),
+    # the same line as the team report and the client brief; never "every page found was read".
+    from maya_audit.sampling import sample_shown
+    sample = sample_shown(report, "en" if english else "tr")
+    level_shown = "sample" if sample else coverage["level"]
+    if sample:
+        coverage_note = sample
     return {"title": t("status.title"),
             "rows": [{"id": "direct_access", "label": t("status.direct"), "state": direct["state"],
                       "state_label": t("status.direct.blocked_429" if direct["state"] == "rate_limited" and blocked_on_pages(report)
                                        else f"status.direct.{direct['state']}"),
                       "note": said(direct["note"]) if english else notes["direct"]},
-                     {"id": "content_coverage", "label": t("status.coverage"), "state": coverage["level"],
-                      "state_label": t(f"status.coverage.{coverage['level']}"), "note": coverage_note},
+                     {"id": "content_coverage", "label": t("status.coverage"), "state": level_shown,
+                      "state_label": t(f"status.coverage.{level_shown}"), "note": coverage_note},
                      {"id": "vendor_crawler_evidence", "label": t("status.vendor"), "state": vendor["state"],
                       "state_label": t(f"status.vendor.{vendor['state']}"), "note": said(vendor["note"]) if english else notes["vendor"]}],
             "summary": status["summary"], "coverage": coverage,

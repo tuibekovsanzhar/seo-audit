@@ -1068,6 +1068,25 @@ function blockCard(view, context) {
    the team report's cards; (3) check these first; (4) downloads; the questions; (5) technical details, folded: every
    section the page had before. (1) and (2) are the team report's own data, from the copy re-evaluated with the
    current engine, so the page and the PDF say the same thing. */
+/* DECISIONS 334: Core Web Vitals (Google's Chrome UX Report): the site's figures and the origin they are for, the
+   homepage's own figures, and "Google'dan yeniden al" for a saved audit (free; the site is not requested). */
+function cruxBlock(section, refresh) {
+  const box = el("div", { class: "crux" });
+  const draw = (crux, note) => fill(box, el("p", { text: crux.summary_shown || crux.summary }),
+    crux.metrics.length ? el("ul", { class: "list" }, crux.metrics.map((row) => el("li", { text: row.label + ": " + row.shown + (row.rating ? " (" + (row.rating_shown || row.rating) + ")" : "") }))) : null,
+    crux.status === "assessed" && crux.origin ? el("p", { class: "muted small", text: T("crux.origin", { origin: crux.origin }) }) : null,
+    crux.homepage && crux.homepage.status === "assessed" ? el("p", { class: "muted small", text: T("crux.homepage", { url: crux.homepage.url,
+      values: (crux.homepage.metrics || []).filter((row) => row.rating).map((row) => row.label + " " + row.shown).join(" · ") }) }) : null,
+    crux.status === "assessed" ? el("p", { class: "muted small", text: T("result.data.source", { source: crux.source_shown || crux.source, date: crux.data_until || "", cache: "" }) }) : null,
+    refresh && refresh.available ? el("div", { class: "row" }, el("button", { class: "button", type: "button", onclick: async (event) => {
+      event.currentTarget.disabled = true;
+      try { const answer = await api("POST", refresh.url); draw(answer.crux, T("crux.refreshed")); }
+      catch (error) { draw(crux, error.message); }
+    } }, T("crux.refresh")), el("span", { class: "muted small", text: note || T("crux.refresh.help") })) : null);
+  draw(section, null);
+  return box;
+}
+
 function resultView(view, context) {
   const out = el("div", { class: "results" });
   const analysis = view.audit?.analysis;
@@ -1536,9 +1555,7 @@ function technicalView(view, context) {
   }
   if (view.ownership) add(out, el("h3", { text: T("verify.title") }), el("p", { text: view.ownership.summary_shown || view.ownership.summary }),
     view.ownership.verified ? null : el("ul", { class: "list small" }, (view.ownership.instructions_shown || view.ownership.instructions).map((line) => el("li", { text: line }))));
-  if (view.crux) add(out, el("h3", { text: T("result.crux.title") }), el("p", { text: view.crux.summary_shown || view.crux.summary }),
-    view.crux.metrics.length ? el("ul", { class: "list" }, view.crux.metrics.map((row) => el("li", { text: row.label + ": " + row.shown + (row.rating ? " (" + (row.rating_shown || row.rating) + ")" : "") }))) : null,
-    view.crux.status === "assessed" ? el("p", { class: "muted small", text: T("result.data.source", { source: view.crux.source_shown || view.crux.source, date: view.crux.data_until || "", cache: "" }) }) : null);
+  if (view.crux) add(out, el("h3", { text: T("result.crux.title") }), cruxBlock(view.crux, view.crux_refresh));
   if (view.archives) add(out, el("h3", { text: T("result.archives.title") }), el("p", { class: "muted small", text: view.archives.notice_shown || view.archives.notice }),
     view.archives.sources.map((source) => el("div", { class: "data-panel" }, el("p", {}, el("strong", { text: source.name }), ": " + T("result.archives.pages", { count: Number(source.pages_read) || 0 })),
       source.pages.length ? el("ul", { class: "list" }, source.pages.map((page) => el("li", { text: (page.title || page.url) + " — " + (page.label_shown || page.label) }))) : null,

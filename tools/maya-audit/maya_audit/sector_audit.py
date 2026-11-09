@@ -57,7 +57,56 @@ REASON = {
     "checked_pages": "Bulgu yok: {n} sayfada {what} kontrol edildi.",
     "checked_type": "Bulgu yok: «{type}» türünden {n} sayfada {what} kontrol edildi.",
     "checked_host": "Bulgu yok: {n} alan adında {what} kontrol edildi.",
+    # DECISIONS 334: Core Web Vitals from the Chrome UX Report (the report's `crux` section)
+    "cwv": "Chrome UX Report (Google): {origin} için telefonlardaki gerçek ziyaretçiler, son 28 gün{until}.",
+    "cwv_good": "Üç Core Web Vitals metriği de iyi ({origin}); sayfa türü başına örneklem yok.",
+    "cwv_no_data": "Google'da yeterli ziyaretçi verisi yok (sorulan: {asked}).",
+    "cwv_no_key": "Core Web Vitals için Google anahtarı yoktu; bu denetimde ölçülmedi.",
+    "cwv_error": "Google'ın Chrome UX Report hizmeti yanıt vermedi; bu denetimde ölçülmedi.",
 }
+CWV_RATING = {"good": "iyi", "needs improvement": "iyileştirilmeli", "poor": "kötü"}
+CWV_SHORT = {"largest_contentful_paint": "LCP", "interaction_to_next_paint": "INP", "cumulative_layout_shift": "CLS"}
+
+
+def crux_state(section: dict | None) -> str:
+    """DECISIONS 334: "assessed", "no_data", "no_key" or "error" for a report's Core Web Vitals section (a section saved
+    before reason codes: from its sentence)."""
+    if not isinstance(section, dict):
+        return "no_key"
+    if section.get("status") == "assessed" and section.get("metrics"):
+        return "assessed"
+    code = section.get("reason_code")
+    if code in ("no_data", "no_key", "error"):
+        return code
+    summary = section.get("summary") or ""
+    if "too few real Chrome visits" in summary or "none of the three core metrics" in summary:
+        return "no_data"
+    return "no_key" if "no API key" in summary else "error"
+
+
+def _cwv_row(a: "_Audit", row: dict, out: dict) -> dict:
+    """CORE-013 (Core Web Vitals field data): Durum from Google's Chrome UX Report when the report has it."""
+    section = a.crux or {}
+    state = crux_state(a.crux)
+    if state != "assessed":
+        asked = ", ".join(section.get("origins_asked") or [section.get("origin") or "—"])
+        out["reason"] = REASON["cwv_" + state].format(asked=asked)
+        return out
+    core = [m for m in section.get("metrics") or [] if m.get("rating")]
+    values = " · ".join(f'{CWV_SHORT.get(m["metric"], m.get("label"))} {m.get("shown")} ({CWV_RATING.get(m["rating"], m["rating"])})'
+                        for m in core)
+    until = f", {section['data_until']} tarihine kadar" if section.get("data_until") else ""
+    origin = section.get("origin") or "—"
+    out["evidence"] = REASON["cwv"].format(origin=origin, until=until) + "\n" + values
+    out["example"], out["spread"], out["owner"] = origin, 5, OWNERS["developer"]
+    ratings = {m["rating"] for m in core}
+    if "poor" in ratings or "needs improvement" in ratings:
+        out["durum"] = "Hatalı" if "poor" in ratings else "Kısmen Uygun"
+        out["reason"] = REASON["cwv"].format(origin=origin, until=until)
+        out["maya_action"] = row.get("action") or ""
+        return out
+    out["reason"] = REASON["cwv_good"].format(origin=origin)  # a partly-automatic row is never "Uygun" (DECISIONS 325)
+    return out
 EXTRA = ["Maya: Durum nedeni", "Maya kapsamı", "Maya kuralları", "Not"]
 NO_SECTOR_NOTE = ["Sektör seçilmedi (Maya)", "Sektör seçilmedi: sektörel satırlar için iş türünü seçin. Bu denetimde yalnız "
                   "44 ortak kontrol dolduruldu; iş türü seçilince sektörün satırları da doldurulur."]
@@ -122,6 +171,7 @@ class _Audit:
         for kind in self.ptype.values():
             self.count[kind] = self.count.get(kind, 0) + 1
         self.checks = {c.get("check_id"): c.get("status") for c in report.get("checks") or []}
+        self.crux = report.get("crux")  # DECISIONS 334
         self.low = bool(cs.low_coverage(report))
         self.measures = {u.rstrip("/"): r for u, r in (selection.get("_page_measures") or {}).items()}
         self.lists, self.title, self.words = lists, title, words
@@ -254,6 +304,8 @@ def _judge(a: _Audit, row: dict, kind: str | None) -> dict:
         out["reason"] = REASON[st[0]]
         return out
     states = [a.checks.get(c) for c in row["needs"]]
+    if "PRF-3" in row["needs"] and a.checks.get("PRF-3") in (None, "not_assessed"):
+        return _cwv_row(a, row, out)  # DECISIONS 334: the web app's Core Web Vitals are the report's `crux` section
     if row["needs"] and all(s == "not_applicable" for s in states):
         out["durum"], out["reason"] = "Uygulanamaz", REASON["na"]
         return out

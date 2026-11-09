@@ -268,6 +268,12 @@ Google publishes them only for sites with enough visits. The same key may be wri
 332). The web app does not run PageSpeed Insights lab tests; to see that the key is picked up, the plan's details say
 "Core Web Vitals from real Chrome visitors are included", Google's figures appear under "Core Web Vitals (real
 visitors)" in the results, and the team report's "Saha verisi" box shows them instead of "Ölçülmedi".
+Google keeps figures per site address: Maya asks the address the site lands on (`www.example.com` when `example.com`
+redirects there), then the typed one, and the homepage on its own (DECISIONS 334). When Google has no figures for
+either, the reports say "Google'da yeterli ziyaretçi verisi yok". For an audit that is already finished, **Google'dan
+yeniden al** under "Core Web Vitals" in the results asks Google again (free, no crawl; the figures are live for the
+last 28 days), or from a terminal: `.venv/bin/python tools/crux_saved.py ~/.maya-audit/web/audits/<id>`. The team
+report, the client brief and the Sektör audit then read the new figures.
 
 **Which searches are about the business.** The keyword tables are sorted into *branded* (the name itself, or the
 name with company words such as "login" or "reviews"), *relevant* (about what the site offers) and *unrelated*

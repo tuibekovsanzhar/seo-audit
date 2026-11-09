@@ -4418,3 +4418,54 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      stops at its time limit of 25 minutes."); the upper estimate stays as data (`duration.up_to_minutes`) and still
      sets the time limit and Özel sayı's range. Tests: `tests/test_speed_modes_330.py`; `test_web_app` (the plan's
      time).
+334. **Core Web Vitals asked where the site really is; "Google'da yeterli ziyaretçi verisi yok"; fetched again for a saved
+     audit (Owner, 2026-11-09, after the live enpara Akıllı run 2e5829fb: the three asks as asked; the order of the
+     origins, the homepage record, CORE-013's Durum rules, page 1's box and the side file are agent defaults).** Every
+     audit.
+     *Why enpara had no field data:* the request was made, for `https://enpara.com`, the typed address, which only
+     redirects; Google answered 404 (no record). Asked live on 2026-11-09 (the owner asked to try both; the key loaded
+     by the app, never printed): `https://enpara.com` 404 (phone and all devices), `https://www.enpara.com` 200 (phone
+     and all), the homepage `https://www.enpara.com/` 200, `https://enpara.com/` 404. Phones, 28 days to 7 November
+     2026: LCP 1.4 s good, INP 322 ms needs improvement, CLS 0.02 good; the homepage alone LCP 1.6 s, INP 205 ms, CLS 0.06.
+     (1) `crux.collect` asks the origin the site lands on (the crawl's origin) first, then the typed one, and the
+     homepage's own record (URL level, kept as `homepage`); every request is in `attempts` (origin or address, HTTP
+     status) and `origins_asked`; a `reason_code` says `no_key`, `no_data`, `error` or `time_limit`. A refused key stops
+     at the first origin (the same for every origin). The runner and the CLI pass the crawl's origin and homepage.
+     (2) *Where it shows.* Web results: the figures, "Google's figures for <origin>", the homepage's own figures. Team
+     report page 1: with no lab score, the fourth box is "Gerçek kullanıcı (CrUX): 2/3 iyi · INP 322 ms
+     (iyileştirilmeli)", or "Google'da yeterli ziyaretçi verisi yok"; page 3's field box says the same when there are no
+     figures, and its limits line says the figures came from Google and only the lab test was not run. Sektör audit
+     CORE-013 (which needs PRF-3, a CLI-only check): from the report's `crux` section: a poor metric Hatalı, a
+     needs-improvement one Kısmen Uygun (evidence: the three values, the origin, the date), all good stays "Kontrol
+     Edilmedi" with the values (a partly-automatic row is never Uygun, DECISIONS 325; no sample per page type), no data
+     "Google'da yeterli ziyaretçi verisi yok (sorulan: …)", no key or a failure said as such, never "İlgili kontrol bu
+     denetimde çalışmadı". The Turkish of the no-data sentences starts "Google'da yeterli ziyaretçi verisi yok".
+     (3) *A saved audit.* `crux.refresh_saved` asks Google again and writes `artifacts/crux.json` beside report.json
+     (never written); the web results (`load_report`), the current-engine copy (its key includes the file's stamp;
+     the change is recorded) and so the team report, brief, appendix and Sektör audit read it. Web: "Google'dan yeniden
+     al" in the Core Web Vitals section (`POST /audits/{id}/crux`, 409 `crux_no_key` without a key); command line:
+     `tools/crux_saved.py <audit folder>`. Free; the site itself is not requested.
+     Also fixed on the way: the team report's tabs ran into each other when a sixth tab (Arama ve performans) appears.
+     *Schema 1.31:* `crux.reason_code`, `attempts`, `origins_asked`, `homepage`, `fetched_for_saved_audit` (the frozen
+     schema pins the section's keys; `docs/report-schema-1.31.json`). Tests: `tests/test_crux_coverage_334.py`
+     (recorded answers, a made-up key); the version pins follow.
+335. **The coverage line of a sampled audit: "Örneklem: N sayfa okundu, M bilinen adres okunmadı" and why fewer pages
+     than the limit (Owner, 2026-11-09: items 2-3 as asked; the reasons' wording is an agent default).** Every sampled
+     audit (DECISIONS 331). enpara 2e5829fb said "Örneklem tamam", "Keşfedilen bütün sayfalar okundu" and 0 unread:
+     Firecrawl read only where needed, and the unread count was the reader's own (0: it never asks the addresses Maya
+     did not fetch), while Maya's crawl stopped at its page limit with 499 known addresses unread.
+     (1) *Engine.* `report.known_unread`: with a reader that read only where needed, Maya's unread addresses less those
+     the reader read (a new audit then says "partial" with "N more discovered URL(s) remain unchecked").
+     (2) *One line* (`sampling.sample_line`, also for saved reports): "Örneklem: 128 sayfa okundu, 499 bilinen adres
+     okunmadı." and, when fewer pages than the limit were read, why, from the saved page requests: "150 sayfalık
+     sınırdan 128 sayfa okundu: 21 adres hata döndü (404 ×21); 1 adres dosyaydı, sayfa değil; sayfa sınırı her sayfa
+     isteğini sayar." (also blocked, unanswered and empty pages, and "örneklem planı bitti: sayfa türleri doldu, N
+     sayfalık bütçe kaldı" when the plan ran out first). For enpara it was not page types filling up: 21 sitemap
+     addresses answered 404 and 1 was a spreadsheet, each a page request of the 150. The same line on page 1 (the
+     pages box: "Örneklem · 499 bilinen adres okunmadı", the header chip "Örneklem"), in "Bu denetimin sınırları" (in
+     place of the page-cap line), in the client brief's coverage line and in the web results' coverage row ("Örneklem"),
+     when known addresses were left unread and nothing else cut the reading (`sampling.sample_shown`): with everything
+     known read, "every page found was read (a sample)" is true and stays; with blocked pages or the time limit,
+     "partial" and its reasons stay (the fast suite's demo of a partly read site showed why).
+     Every "not read" figure of a sampled audit is the same number (`sampling.known_not_read`: the web's sentences, the
+     selection's coverage, the appendix). Tests: `tests/test_crux_coverage_334.py`.

@@ -783,7 +783,9 @@ def _main(args, parser: argparse.ArgumentParser) -> int:
     from . import crux
 
     if crux.load_key():
-        crux_info = crux.collect(args.url, clock=clock)
+        from .access_data import homepage_url
+        crux_info = crux.collect(args.url, clock=clock, final_url=outcome.result.origin,  # DECISIONS 334
+                                 homepage=homepage_url(outcome.result))
         print("\n".join(["=" * 78, *crux.lines(crux_info), ""]))
     evidence_index = None
     if wants_evidence:

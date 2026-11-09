@@ -430,7 +430,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         if not path.is_file():
             raise ApiError(409, "report_not_ready", t("chat.no_report"))
         try:
-            report = json.loads(path.read_text(encoding="utf-8"))
+            # DECISIONS 334: Core Web Vitals fetched again for this saved audit, when they were (artifacts/crux.json)
+            report = crux.with_saved(json.loads(path.read_text(encoding="utf-8")), path.parent)
             summary.check_readable(report)
         except summary.UnreadableReport as exc:
             raise ApiError(409, "report_version_unsupported", t("error.report_version", reason=str(exc))) from None
@@ -1109,6 +1110,10 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         full = {"audit": audit_view(audit), "demo": engine.demo, **view, "firecrawl": reader,
                 "ownership": summary.ownership_view(report.get("ownership")), "verification": ownership_of(audit["project_id"]),
                 "crux": summary.speed_view(report.get("crux") or crux.unavailable()),
+                # DECISIONS 334: ask Google again for this saved audit's Core Web Vitals (free; site-level data is live)
+                "crux_refresh": {"url": f"/api/v1/audits/{audit['id']}/crux", "available": bool(engine.crux_key()),
+                                 "fetched_again": bool((report.get("crux") or {}).get("fetched_for_saved_audit"))}
+                if audit["state"] == "finished" else None,
                 "archives": summary.archives_view(archives.view(report["archives"])) if report.get("archives") else None,
                 "firecrawl_offer": firecrawl_offer(audit, report, view),
                 # A report the release gate blocked downloads only as a marked draft, and the buttons say so (DECISIONS 280).
@@ -1557,6 +1562,19 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         audit = need_audit(audit_id)
         load_report(audit)  # refuses an unreadable or unsupported file before it is served
         return FileResponse(report_path(audit["id"]), media_type="application/json")
+
+    @api.post("/audits/{audit_id}/crux", summary="Ask Google again for a finished audit's Core Web Vitals (Chrome UX Report, free). The site is not requested")
+    def refresh_crux(audit_id: str) -> dict[str, Any]:
+        """DECISIONS 334: the section is written beside the report (`artifacts/crux.json`); report.json is not changed.
+        The results, the team report, the client brief and the Sektör audit read it."""
+        audit = need_audit(audit_id)
+        if audit["state"] != "finished" or not report_path(audit["id"]).is_file():
+            raise ApiError(409, "report_not_ready", t("chat.no_report"))
+        key = engine.crux_key()
+        if not key:
+            raise ApiError(409, "crux_no_key", t("crux.plan.off"))
+        section = crux.refresh_saved(report_path(audit["id"]).parent, key, transport=engine.crux_transport)
+        return {"crux": summary.speed_view(section)}
 
     @api.get("/audits/{audit_id}/summary", summary="The results card, built from the saved report")
     def result_summary(audit_id: str) -> dict[str, Any]:

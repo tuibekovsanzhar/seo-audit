@@ -1807,3 +1807,28 @@ details add the time limit).
 | full suite, `pytest -q -rfEs -p no:cacheprovider` | `3185 passed, 4 skipped, 1 warning in 929.63s (0:15:29)` |
 | Owner's web app on port 8770 | NOT RUN here (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+
+## Live enpara Akıllı run 2e5829fb: Core Web Vitals and the sample's coverage line (2026-11-09, DECISIONS 334-335)
+
+Worked from a scratch copy of the saved audit (no crawl). The CrUX request had been made for `https://enpara.com` (404);
+asked live today with the app's key (never printed): `https://www.enpara.com` and its homepage answer 200, the typed
+origin 404. Fetched for the scratch copy with `tools/crux_saved.py` (3 requests to Google, free).
+
+| Item | Before | After (scratch copy, TR) |
+|---|---|---|
+| Field data | none ("Ölçülmedi"; origin enpara.com, 404) | LCP 1.4 s good, INP 322 ms needs improvement, CLS 0.02 good (www.enpara.com, to 2026-11-07); homepage alone 1.6 s / 205 ms / 0.06 |
+| Team report page 1 | "Mobil laboratuvar performansı: Ölçülmedi" | "Gerçek kullanıcı (CrUX): 2/3 iyi · INP 322 ms (iyileştirilmeli)"; page 3 "Arama ve performans" appears (10 pages, was 9) |
+| CORE-013 | Kontrol Edilmedi, "İlgili kontrol bu denetimde çalışmadı." | Kısmen Uygun, the three values and the origin |
+| Sektör audit rows (of 59) | Uygun 10 · Kısmen 11 · Hatalı 2 · KE 36 | Uygun 10 · Kısmen 12 · Hatalı 2 · KE 35 |
+| Coverage, page 1 | "Örneklem tamam", pages box "Keşfedilen bütün sayfalar okundu" | chip "Örneklem", "Örneklem · 499 bilinen adres okunmadı" |
+| Limits | "Sayfa sınırı: en çok 150 sayfa okundu; bilinen 499 adres okunmadı." | "Örneklem: 128 sayfa okundu, 499 bilinen adres okunmadı. 150 sayfalık sınırdan 128 sayfa okundu: 21 adres hata döndü (404 ×21); 1 adres dosyaydı, sayfa değil; sayfa sınırı her sayfa isteğini sayar." |
+| Client brief | "Bazı adresler okunamadı; bu yüzden bu özet planlanan 150 sayfa yerine 128 sayfaya dayanıyor." | the same sample line (brief 5 pages, not blocked) |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_crux_coverage_334.py` | `17 passed` |
+| fast suite (fixture matrix regenerated) | `2 failed, 3065 passed, 4 skipped, 135 deselected` in 520.26 s after the first fixes (the README still named schema 1.30; a run before that had 3 failures: two coverage-label pins, which led to `sample_shown`, and the frozen CrUX keys, which led to schema 1.31) |
+| full suite after the README fix, `pytest -q -rfEs -p no:cacheprovider` | `3202 passed, 4 skipped, 1 warning in 939.34s (0:15:39)` |
+| A live audit | NOT RUN (owner) |
+| Owner's web app on port 8770 | NOT RUN (restart needed) |
+| Push | NOT DONE (owner: don't push) |

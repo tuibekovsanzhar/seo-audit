@@ -153,6 +153,29 @@ def unread_part_names():
     return UNREAD_RESTATEMENTS
 
 
+CWV_SHORT = {"largest_contentful_paint": "LCP", "interaction_to_next_paint": "INP", "cumulative_layout_shift": "CLS"}
+
+
+def sample_text(report, lang):
+    """DECISIONS 335: "Örneklem: 128 sayfa okundu, 499 bilinen adres okunmadı. ..." for a sampled audit, else None."""
+    try:
+        from maya_audit.sampling import sample_shown  # type: ignore
+    except ImportError:
+        return None
+    return sample_shown(report, lang)
+
+
+def field_none(section, L):
+    """DECISIONS 334: the field-data box's words when there are no figures: "Google'da yeterli ziyaretçi verisi yok" when
+    Google had no record for the site, its service's failure, else None (the box then says "Ölçülmedi")."""
+    try:
+        from maya_audit.sector_audit import crux_state  # type: ignore
+    except ImportError:
+        return None
+    state = crux_state(section)
+    return L.get("field_no_data") if state == "no_data" else L.get("field_error") if state == "error" else None
+
+
 def link_rows(cards):
     """A broken link's "what to edit" rows (maya_audit.final.broken_link_cards): page to edit, link text, the address
     it links to, where it ends and that address's status. The new address is never known, so never guessed."""
@@ -1317,13 +1340,20 @@ class Builder:
         self.fact(problems_total, *[sev.get(k, 0) for k in SEVERITIES], notes_total)
         sev_line = " · ".join(f"{sev.get(k, 0)} {L['sev_lower'][k]}" for k in SEVERITIES if sev.get(k))
         pages_read, unread = cov.get("pages_read") or 0, cov.get("known_urls_not_read") or 0
+        # DECISIONS 335: a sampled audit says its sample, never "every discovered page was read" (`sample_line`)
+        sample = sample_text(self.r, lang)
+        if sample:
+            from maya_audit.sampling import unread_count  # type: ignore
+            unread = unread_count(self.r)
+            self.fact(sample)
         self.fact(pages_read, unread)
 
         kpis = [
             {"label": L["kpi_problems"], "value": fmt_int(problems_total, lang), "of": None, "sub": sev_line or "—", "state": "ok"},
             {"label": L["kpi_pages"], "value": fmt_int(pages_read, lang), "of": None,
              # Nothing read and nothing left unread is not "every page was read" (nihan.com.tr: 429 on the first request).
-             "sub": fmt(L["kpi_pages_sub"], n=fmt_int(unread, lang)) if unread else
+             "sub": fmt(L["kpi_pages_sub_sample"], n=fmt_int(unread, lang)) if sample else
+             fmt(L["kpi_pages_sub"], n=fmt_int(unread, lang)) if unread else
              L["kpi_pages_sub_all"] if pages_read else L["kpi_pages_sub_none"], "state": "ok" if pages_read else "missing"},
         ]
         # DECISIONS 316: the same four tiles for every audit (issues, pages read, pages with Medium+ issues, mobile lab);
@@ -1349,6 +1379,16 @@ class Builder:
         if lab and lab.get("score") is not None:
             self.fact(lab["score"])
             kpis.append({"label": L["kpi_lab"], "value": str(lab["score"]), "of": "100", "sub": L["kpi_lab_sub"], "state": "ok"})
+        elif crux:  # DECISIONS 334: no lab score, but Google's real-visitor figures: they take the box
+            core = [m for m in crux.get("metrics") or [] if m.get("rating")]
+            good = sum(1 for m in core if m["rating"] == "good")
+            weak = [f'{CWV_SHORT.get(m["metric"], m.get("label"))} {m.get("shown")} ({L["cwv_rating"].get(m["rating"], m["rating"])})'
+                    for m in core if m["rating"] != "good"]
+            self.fact(good, len(core), *[m.get("shown") or "" for m in core])
+            kpis.append({"label": L["kpi_field"], "value": fmt(L["kpi_field_value"], good=good, n=len(core)), "of": None,
+                         "sub": " · ".join(weak) or L["kpi_field_all_good"], "state": "ok"})
+        elif field_none(self.r.get("crux"), L):
+            kpis.append({"label": L["kpi_field"], "value": "—", "of": None, "sub": field_none(self.r.get("crux"), L), "state": "missing"})
         else:
             kpis.append({"label": L["kpi_lab"], "value": L["not_measured"], "of": None, "sub": L["not_measured_sub"], "state": "missing"})
 
@@ -1457,6 +1497,11 @@ class Builder:
                 self.fact(str(m.get("shown") or ""))
         limits = {"text": FIXED["limits"][lang] if lab else L["lab_none"],
                   "action": FIXED["limits_action"][lang] if lab else
+                  # DECISIONS 334: Google's real-visitor figures are there; only the lab test was not run
+                  ("Real-visitor figures come from Google (above); no lab test was run. Run a comparable lab test "
+                   "(Lighthouse) if the cause of a slow metric is needed." if lang == "en" else
+                   "Gerçek ziyaretçi rakamları Google'dan alındı (yukarıda); laboratuvar testi yapılmadı. Yavaş bir metriğin "
+                   "nedeni gerekiyorsa karşılaştırılabilir bir laboratuvar testi (Lighthouse) çalıştırılmalı.") if crux else
                   ("Performance remains unassessed; obtain comparable lab and field evidence if needed."
                    if lang == "en" else "Performans değerlendirilmedi; gerekirse karşılaştırılabilir laboratuvar ve saha kanıtı alınmalıdır.")}
 
@@ -1731,8 +1776,8 @@ class Builder:
             "contract": 1, "lang": lang,
             "meta": {"brand": brand, "domain": domain, "date": date_short(started, L), "date_long": date_long(started, L),
                      "revision": self.rev, "audit_id": audit_id, "engine_version": version, "market": market,
-                     "coverage_level": cov.get("level") or "partial",
-                     "coverage_label": L["coverage_level"].get(cov.get("level") or "partial", cov.get("level"))},
+                     "coverage_level": "sample" if sample else cov.get("level") or "partial",
+                     "coverage_label": L["coverage_level"].get("sample" if sample else cov.get("level") or "partial", cov.get("level"))},
             "kpis": kpis,
             "locales_line": locales_line,
             "low_coverage": self.low_coverage_banner(),
@@ -1749,6 +1794,8 @@ class Builder:
             "search": search,
             "lab": lab_box,
             "field": field,
+            # DECISIONS 334: why there are no figures: Google has too little data, or its service did not answer
+            "field_none": field_none(self.r.get("crux"), L) if not field else None,
             "commercial": FIXED["commercial"][lang],
             "limits": limits,
             "actions": actions,
@@ -1774,7 +1821,13 @@ class Builder:
         c = sel["counts"]
         cov = sel["coverage"]
         limits = []
+        sample = sample_text(self.r, lang)  # DECISIONS 335: the sample line in place of the page cap line
+        if sample:
+            limits.append(sample)
+            self.fact(sample)
         for line in cov["lines"]:
+            if line["kind"] == "page_cap" and sample:
+                continue
             if line["kind"] == "page_cap":
                 limits.append(fmt(L["own_page_cap"], pages=fmt_int(line.get("pages") or 0, lang),
                                                        not_read=fmt_int(line.get("not_read") or 0, lang)))

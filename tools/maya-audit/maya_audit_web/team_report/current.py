@@ -154,7 +154,10 @@ def current(source: Path, affected_path: Path | None = None, *, folder: Path | N
         affected_path = source.parent / "affected-urls.json"
     eng = engine()
     folder = Path(folder).resolve() if folder else folder_for(source)
-    key = {"source": str(source), "report": _stamp(source), "affected": _stamp(affected_path), "fingerprint": eng["fingerprint"]}
+    from maya_audit import crux as _crux
+    key = {"source": str(source), "report": _stamp(source), "affected": _stamp(affected_path), "fingerprint": eng["fingerprint"],
+           # DECISIONS 334: Core Web Vitals fetched again for this saved audit (`artifacts/crux.json`)
+           "crux": _stamp(source.parent / _crux.SAVED_FILE)}
     with _lock(folder):
         meta_path = folder / META
         try:
@@ -169,6 +172,12 @@ def current(source: Path, affected_path: Path | None = None, *, folder: Path | N
                            list(meta.get("changes") or []))
         report = json.loads(source.read_text(encoding="utf-8"))
         affected = json.loads(affected_path.read_text(encoding="utf-8")) if affected_path and affected_path.is_file() else None
+        again = _crux.saved_beside(source.parent)  # DECISIONS 334
+        crux_change = []
+        if again and again != report.get("crux"):
+            report = {**report, "crux": again}
+            crux_change = [f"Core Web Vitals fetched again from Google on {again.get('fetched_at', '')[:10]} "
+                           f"({again.get('status')}, {again.get('origin') or '—'}) (DECISIONS 334)"]
         texts = _saved_texts(source.parent)
         from maya_audit.reassess_rules import apply, saved_data
         audit_id = source.parent.parent.name if source.parent.name == "artifacts" else None
@@ -176,11 +185,12 @@ def current(source: Path, affected_path: Path | None = None, *, folder: Path | N
             # Written by an engine of the current schema: only what DECISIONS 309 reads from the saved data (the
             # platform a page reader's copies hide, the RND-6 label) can still change; without it, used as is.
             new, changes = saved_data(report, affected, texts)
+            changes = crux_change + changes
             if not changes:
                 folder.mkdir(parents=True, exist_ok=True)
                 _write(meta_path, {"key": key, "reassessed": False, "engine": eng, "read": read_of(new)})
                 return Current(source, affected_path, source, False, eng)
-            record = {"kind": "saved-data additions", "rules": "DECISIONS 309, 321 and 329", "source_audit_id": audit_id,
+            record = {"kind": "saved-data additions", "rules": "DECISIONS 309, 321, 329 and 334", "source_audit_id": audit_id,
                       "processed_at": datetime.now(timezone.utc).isoformat(), "requests": 0, "changes": changes,
                       "unchanged": "every other finding, observation, time and count is the source report's"}
             aff = affected
@@ -192,6 +202,7 @@ def current(source: Path, affected_path: Path | None = None, *, folder: Path | N
             try:
                 new, aff, record = apply(report, affected, source_audit_id=audit_id, jsonld_by_url=_saved_jsonld(source.parent),
                                          saved_texts=texts)
+                record["changes"] = crux_change + list(record.get("changes") or [])
             finally:
                 socket.socket.connect, socket.create_connection, socket.getaddrinfo = saved
         eng = {**eng, "processed_at": record["processed_at"]}

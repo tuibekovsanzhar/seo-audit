@@ -189,6 +189,10 @@ def coverage_line(report: dict, read: int, lang: str) -> str | None:
     """DECISIONS 321 (3): one plain line when fewer pages were read than the audit planned, with why: the site's
     protection service (a block or rate-limit finding of ACC-9), the time limit, a site smaller than the plan, or some
     addresses that could not be read. None when the plan was read."""
+    from maya_audit.sampling import sample_shown
+    sampled = sample_shown(report, lang)  # DECISIONS 335: a sampled audit says its sample, as page 1 and the limits do
+    if sampled:
+        return sampled
     crawl = report.get("crawl") or {}
     planned = (crawl.get("config") or {}).get("max_pages")
     if not isinstance(planned, int) or planned <= 0 or read >= planned:

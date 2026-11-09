@@ -353,3 +353,117 @@ def type_line(report: dict, type_id: str, records: dict[str, dict] | None = None
     """The coverage of one page type ("Klinik ve konum: bulunamadı") for an Akıllı audit, else None."""
     row = next((r for r in coverage(report, records, lang) if r["type"] == type_id), None)
     return coverage_text([row], lang).split(": ", 1)[1] if row else None
+
+
+# ---------------------------------------------------------------- the coverage line of a sampled audit (DECISIONS 335)
+
+SAMPLE = {"tr": {"line": "Örneklem: {read} sayfa okundu, {unread} bilinen adres okunmadı.",
+                 "fewer": " {cap} sayfalık sınırdan {read} sayfa okundu: {why}.",
+                 "error_status": "{n} adres hata döndü ({codes})", "files": "{n} adres dosyaydı, sayfa değil",
+                 "blocked": "{n} adres engellendi ya da sınırlandı", "failed": "{n} isteğe yanıt alınamadı",
+                 "empty": "{n} sayfa boş döndü", "plan_done": "örneklem planı bitti: sayfa türleri doldu, {left} sayfalık bütçe kaldı",
+                 "counts": "sayfa sınırı her sayfa isteğini sayar", "and": "; "},
+          "en": {"line": "Sample: {read} {read_pages} read, {unread} known {unread_addresses} not read.",
+                 "fewer": " {read} of the {cap}-page limit read: {why}.",
+                 "error_status": "{n} {addresses} answered an error ({codes})", "files": "{n} {addresses} {were} a file, not a page",
+                 "blocked": "{n} {addresses} were blocked or rate-limited", "failed": "{n} {requests} got no answer",
+                 "empty": "{n} {pages} came back empty", "plan_done": "the sample plan ran out: every page type filled, "
+                 "{left} pages of the budget left", "counts": "the page limit counts every page request", "and": "; "}}
+
+
+def _plural(n: int, one: str, many: str) -> str:
+    return one if n == 1 else many
+
+
+def sampled(report: dict) -> bool:
+    """An audit that read the Akıllı selection (any web mode but a single page or "Tam tarama sırası", DECISIONS 331)."""
+    s = (report.get("crawl") or {}).get("sampling")
+    return isinstance(s, dict) and s.get("mode") == "smart"
+
+
+def unread_count(report: dict) -> int:
+    """Known addresses not read: the addresses Maya's crawl knew and did not fetch, less those a page reader read. (A
+    reader that read only where needed, DECISIONS 327/329, counts no unread address of its own.)"""
+    crawl = report.get("crawl") or {}
+    reader = report.get("firecrawl") or {}
+    read_by_reader = {row.get("url") for row in reader.get("pages") or [] if isinstance(row, dict) and row.get("outcome") == "read"}
+    return sum(1 for u in crawl.get("not_fetched_urls") or [] if u not in read_by_reader)
+
+
+def fewer_reasons(report: dict) -> list[tuple[str, dict]]:
+    """Why fewer pages than the limit were read, from the saved page requests (redirect hops are not page requests)."""
+    crawl = report.get("crawl") or {}
+    cap = int((crawl.get("config") or {}).get("max_pages") or 0)
+    pages = [p for p in crawl.get("pages") or [] if isinstance(p, dict)
+             and not (isinstance(p.get("status"), int) and 300 <= p["status"] < 400)]
+    out: list[tuple[str, dict]] = []
+    errors = Counter(p["status"] for p in pages if p.get("fetch_class") == "ok" and isinstance(p.get("status"), int) and p["status"] >= 400)
+    if errors:
+        out.append(("error_status", {"n": sum(errors.values()), "codes": ", ".join(f"{c} ×{n}" if n > 1 else str(c) for c, n in sorted(errors.items()))}))
+    files = sum(1 for p in pages if p.get("fetch_class") == "ok" and isinstance(p.get("status"), int) and 200 <= p["status"] < 300
+                and "html" not in str(p.get("content_type") or "").lower())
+    if files:
+        out.append(("files", {"n": files}))
+    blocked = sum(1 for p in pages if p.get("fetch_class") in ("blocked", "rate_limited"))
+    if blocked:
+        out.append(("blocked", {"n": blocked}))
+    failed = sum(1 for p in pages if p.get("fetch_class") == "error")
+    if failed:
+        out.append(("failed", {"n": failed}))
+    empty = sum(1 for p in pages if ((p.get("analysis") or {}).get("empty_response")))
+    if empty:
+        out.append(("empty", {"n": empty}))
+    if crawl.get("stop_reason") == "exhausted" and cap and len(pages) < cap:
+        out.append(("plan_done", {"left": cap - len(pages)}))
+    elif out and crawl.get("stop_reason") == "page_cap":
+        out.append(("counts", {}))
+    return out
+
+
+def sample_line(report: dict, lang: str = "tr") -> str | None:
+    """DECISIONS 335: one line for a sampled audit, said the same on page 1, in the limits and in the client brief:
+    "Örneklem: 128 sayfa okundu, 499 bilinen adres okunmadı. 150 sayfalık sınırdan 128 sayfa okundu: 21 adres hata
+    döndü (404 ×21), 1 adres sayfa değil, dosya, sayfa sınırı her sayfa isteğini sayar." None for any other audit."""
+    if not sampled(report):
+        return None
+    W = SAMPLE.get(lang, SAMPLE["tr"])
+    cov = ((report.get("audit_status") or {}).get("content_coverage")) or {}
+    read = int(cov.get("pages_read") or 0)
+    unread = unread_count(report)
+    cap = int(((report.get("crawl") or {}).get("config") or {}).get("max_pages") or 0)
+    text = W["line"].format(read=read, unread=unread, read_pages=_plural(read, "page", "pages"),
+                            unread_addresses=_plural(unread, "address", "addresses"))
+    if cap and read < cap:
+        parts = []
+        for kind, values in fewer_reasons(report):
+            n = values.get("n", 0)
+            parts.append(W[kind].format(**values, addresses=_plural(n, "address", "addresses"), were=_plural(n, "was", "were each"),
+                                        requests=_plural(n, "request", "requests"), pages=_plural(n, "page", "pages")))
+        if parts:
+            text += W["fewer"].format(read=read, cap=cap, why=W["and"].join(parts))
+    return text
+
+
+def known_not_read(report: dict) -> int | None:
+    """DECISIONS 335: the known-and-unread figure every sentence uses: the sample's for a sampled audit (`unread_count`),
+    else the report's own `known_urls_not_read` (None when it has none)."""
+    if sampled(report):
+        return unread_count(report)
+    known = ((report.get("audit_status") or {}).get("content_coverage") or {}).get("known_urls_not_read")
+    return known if isinstance(known, int) else None
+
+
+_UNREAD_REASON = re.compile(r"^\d+ more discovered URL\(s\) remain unchecked$|^Maya's crawl stopped: page_cap\b")
+
+
+def sample_shown(report: dict, lang: str = "tr") -> str | None:
+    """DECISIONS 335: the sample line where a sampled audit's coverage is shown (page 1, the limits, the brief, the web
+    results): only when known addresses were left unread and nothing else cut the reading. Everything read: "every
+    page found was read" is true and stays; another problem (blocked pages, the time limit): "partial" with its
+    reasons stays. The unread figure is the same everywhere either way (`known_not_read`)."""
+    if not sampled(report) or not unread_count(report):
+        return None
+    reasons = ((report.get("audit_status") or {}).get("content_coverage") or {}).get("reasons") or []
+    if any(not _UNREAD_REASON.search(str(r)) for r in reasons):
+        return None
+    return sample_line(report, lang)

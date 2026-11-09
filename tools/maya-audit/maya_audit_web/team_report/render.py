@@ -76,6 +76,7 @@ body { font-family: 'MayaInter', 'Segoe UI', system-ui, sans-serif; color: var(-
 .tabs { display: flex; height: 45pt; align-items: center; border-bottom: .6pt solid var(--line); position: absolute; left: 48pt; right: 48pt; bottom: 0; }
 .tab { font-size: 10.5pt; color: var(--muted); height: 45pt; display: flex; align-items: center; position: relative; }
 .tab:nth-child(1) { width: 150pt; } .tab:nth-child(2) { width: 185pt; } .tab:nth-child(3) { width: 205pt; } .tab:nth-child(4) { width: 165pt; }
+.tab:nth-child(n+5) { padding-right: 24pt; }  /* DECISIONS 334: a sixth tab (Arama ve performans) never runs into the next */
 .tab.on { color: var(--ink); font-weight: 600; }
 .tab.on::after { content: ''; position: absolute; left: 0; right: 22pt; bottom: -1pt; height: 2.5pt; background: var(--accent); }
 .body { padding: 22pt 48pt 0; height: 562pt; }
@@ -429,7 +430,7 @@ def page3(d, L):
     field = d.get("field")
     fhtml = ""
     if not field:
-        fhtml = f'<div class="field"><b>{e(L["field_title"])}</b>: {e(L["not_measured"])}</div>'
+        fhtml = f'<div class="field"><b>{e(L["field_title"])}</b>: {e(d.get("field_none") or L["not_measured"])}</div>'
     if field:
         vals = " · ".join(f'{e(r["label"])} {e(r["value"])}' for r in field["rows"])
         fhtml = f'<div class="field"><b>{e(L["field_pass"] if field["pass"] else L["field_fail"])}</b> · {vals}</div>'

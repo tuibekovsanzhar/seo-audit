@@ -1013,9 +1013,11 @@ def coverage(report: dict, limits: list[dict], records: dict[str, dict] | None =
     counts = report.get("page_counts") or {}
     cfg = crawl.get("config") or {}
     lines: list[dict] = []
+    from .sampling import known_not_read as unread_shown  # DECISIONS 335
+    unread = unread_shown(report)
     if crawl.get("stop_reason") == "page_cap":
         lines.append({"kind": "page_cap", "pages": cfg.get("max_pages"),
-                      "not_read": status.get("known_urls_not_read") or len(crawl.get("not_fetched_urls") or [])})
+                      "not_read": unread or len(crawl.get("not_fetched_urls") or [])})
     if crawl.get("deadline_hit") or report.get("time_limit_cuts"):
         cuts = report.get("time_limit_cuts")
         lines.append({"kind": "time_budget", "seconds": cfg.get("time_limit_s"),
@@ -1033,7 +1035,7 @@ def coverage(report: dict, limits: list[dict], records: dict[str, dict] | None =
         lines.append({"kind": "sampling", "rows": rows})
     reader = report.get("firecrawl") or {}
     return {"pages_read": status.get("pages_read", counts.get("pages_checked")),
-            "known_not_read": status.get("known_urls_not_read"),
+            "known_not_read": unread,
             "discovered": len(crawl.get("discovered_urls") or []) or None,
             "read_by": status.get("read_by"), "level": status.get("level"),
             "reader": reader.get("purpose") if reader.get("used") or reader.get("pages_read") else None,
