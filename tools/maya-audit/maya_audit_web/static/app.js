@@ -107,7 +107,9 @@ async function api(method, path, body) {
   if (method !== "GET") { options.headers["X-Maya-Token"] = state.token; options.headers["Content-Type"] = "application/json"; options.body = JSON.stringify(body === undefined ? {} : body); }
   if (method === "DELETE") { delete options.headers["Content-Type"]; delete options.body; }
   let response;
-  try { response = await fetch(API + path, options); } catch (error) { throw new Error(T("error.offline")); }
+  // DECISIONS 336: a path the server hands over whole ("/api/v1/...") is used as it is, never prefixed twice.
+  const url = path.startsWith(API + "/") ? path : API + path;
+  try { response = await fetch(url, options); } catch (error) { throw new Error(T("error.offline")); }
   let data = null;
   try { data = await response.json(); } catch (error) { data = null; }
   if (!response.ok) {
@@ -1075,6 +1077,7 @@ function cruxBlock(section, refresh) {
   const draw = (crux, note) => fill(box, el("p", { text: crux.summary_shown || crux.summary }),
     crux.metrics.length ? el("ul", { class: "list" }, crux.metrics.map((row) => el("li", { text: row.label + ": " + row.shown + (row.rating ? " (" + (row.rating_shown || row.rating) + ")" : "") }))) : null,
     crux.status === "assessed" && crux.origin ? el("p", { class: "muted small", text: T("crux.origin", { origin: crux.origin }) }) : null,
+    crux.asked_shown ? el("p", { class: "muted small crux-asked", text: crux.asked_shown }) : null,
     crux.homepage && crux.homepage.status === "assessed" ? el("p", { class: "muted small", text: T("crux.homepage", { url: crux.homepage.url,
       values: (crux.homepage.metrics || []).filter((row) => row.rating).map((row) => row.label + " " + row.shown).join(" · ") }) }) : null,
     crux.status === "assessed" ? el("p", { class: "muted small", text: T("result.data.source", { source: crux.source_shown || crux.source, date: crux.data_until || "", cache: "" }) }) : null,

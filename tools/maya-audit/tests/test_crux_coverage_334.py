@@ -262,3 +262,80 @@ def test_the_web_results_say_sample_not_every_page_found():
         finally:
             strings.set_language("en")
         assert row["state"] == "sample" and row["state_label"] == label and row["note"] == sampling.sample_line(report, lang)
+
+
+# ---------------------------------------------------------------- DECISIONS 336: the button's address, what was asked
+
+def test_the_results_say_which_address_google_was_asked_about():
+    from maya_audit_web import summary
+    from maya_audit_web.strings import set_language
+    old = {"status": "not_available", "summary": crux.NO_DATA, "metrics": [], "origin": TYPED}  # saved before schema 1.31
+    view = summary.speed_view(old, landed=FINAL)
+    assert view["asked"] == [TYPED]
+    assert view["asked_shown"] == (f"Google was asked about: {TYPED}. The site lands on {FINAL}, which was not asked; "
+                                   "“Ask Google again” asks there first.")
+    new = crux.collect(TYPED + "/", KEY, transport=google({}, []), final_url=FINAL, homepage=FINAL + "/")
+    view = summary.speed_view(new, landed=FINAL)
+    assert view["asked"] == [FINAL, TYPED, FINAL + "/"] and "lands on" not in view["asked_shown"]
+    assert summary.speed_view(crux.unavailable())["asked_shown"] == ""  # no key: nothing was asked
+    set_language("tr")
+    try:
+        assert summary.speed_view(old, landed=FINAL)["asked_shown"].startswith(f"Google'a sorulan adres: {TYPED}. Site {FINAL} adresine")
+    finally:
+        set_language("en")
+
+
+def test_ask_google_again_pressed_in_the_browser_reaches_the_app_s_own_route(web):  # noqa: F811
+    """The real app.js in headless Chromium; every request it makes under /api/v1 goes to the app's real routes."""
+    from pathlib import Path
+    from maya_audit_web import strings
+    from test_web_ux_310 import STATIC, _browser
+    sync_playwright = _browser()
+    client = web()
+    audit = start(client, plan(client))
+    engine = client.app.state.runner.engine
+    engine.crux_key = lambda: KEY
+    engine.crux_transport = google({"http://demo-shop.localhost": 200, "http://demo-shop.localhost/": 200}, [])
+    # The saved report says what enpara 2e5829fb said: no figures, asked for one origin (saved before schema 1.31).
+    path = Path(client.app.state.runner.artifacts(audit["id"])) / "report.json"
+    report = json.loads(path.read_text(encoding="utf-8"))
+    report["crux"] = {"source": crux.SOURCE, "status": "not_available", "summary": crux.NO_DATA, "metrics": [],
+                      "origin": "http://demo-shop.localhost"}
+    path.write_text(json.dumps(report), encoding="utf-8")
+    view = get(client, audit, "/summary")
+    assert view["crux"]["asked_shown"] == "Google was asked about: http://demo-shop.localhost."
+    served = []
+
+    def forward(route):
+        request = route.request
+        if request.url == "http://maya.test/":
+            return route.fulfill(status=200, content_type="text/html", body="<!doctype html><div id='notice' hidden></div><main id='result'></main>")
+        if not request.url.startswith("http://maya.test/api/"):
+            return route.abort()
+        target = request.url.removeprefix("http://maya.test")
+        answer = client.request(request.method, target, content=request.post_data_buffer,
+                                headers={k: v for k, v in request.headers.items() if k.lower() in ("content-type", "x-maya-token")})
+        served.append((request.method, target, answer.status_code))
+        route.fulfill(status=answer.status_code, content_type="application/json", body=answer.content)
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch()
+        page = browser.new_page()
+        errors = []
+        page.on("pageerror", lambda exc: errors.append(str(exc)))
+        page.route("**/*", forward)
+        page.goto("http://maya.test/")
+        page.add_script_tag(content=(STATIC / "app.js").read_text(encoding="utf-8").removesuffix("boot();\n"))
+        page.evaluate("values => { state.strings = values; state.language = 'en'; }", strings.table("en"))
+        page.evaluate("async () => { state.token = (await api('GET', '/session')).token; }")  # as boot() does
+        page.evaluate("view => document.querySelector('#result').append(cruxBlock(view.crux, view.crux_refresh))", view)
+        box = page.locator("#result .crux")
+        assert "Google was asked about: http://demo-shop.localhost." in box.inner_text()
+        page.get_by_role("button", name="Ask Google again").click()
+        page.wait_for_function("document.querySelector('#result .crux').innerText.includes('Fetched again from Google just now.')")
+        text = box.inner_text()
+        assert "Google's figures for http://demo-shop.localhost." in text and "asked about" not in text
+        assert "There is nothing at that address" not in text
+        browser.close()
+    assert served == [("GET", f"{API}/session", 200), ("POST", f"{API}/audits/{audit['id']}/crux", 200)] and errors == []
+    assert get(client, audit, "/summary")["crux"]["status"] == "assessed"

@@ -674,16 +674,42 @@ def status_notes(report: dict[str, Any]) -> dict[str, Any]:
             "untranslated": sum(1 for _, ok in reasons if not ok)}
 
 
-def speed_view(section: dict[str, Any]) -> dict[str, Any]:
+def crux_asked(section: dict[str, Any]) -> list[str]:
+    """The addresses Google was asked about for this section (DECISIONS 336): every request in `attempts`, else
+    `origins_asked`; a section saved before schema 1.31 asked only its `origin`. Empty when nothing was asked (no key)."""
+    asked = [a.get("origin") or a.get("url") for a in section.get("attempts") or [] if isinstance(a, dict)]
+    asked = [a for a in asked if a] or list(section.get("origins_asked") or [])
+    if not asked and section.get("origin") and section.get("reason_code") not in ("no_key", "time_limit"):
+        asked = [section["origin"]]
+    return list(dict.fromkeys(asked))
+
+
+def speed_view(section: dict[str, Any], landed: str | None = None) -> dict[str, Any]:
     """The report's Core Web Vitals section as a person reads it. English: the engine's sentence. Another language: an
     assessed section is worded from its own figures (`metrics`: the metric's name and value stay, the rating is
-    translated); a section that is not available says why through `wording`."""
+    translated); a section that is not available says why through `wording`.
+
+    DECISIONS 336: a section with no figures also says which address Google was asked about (`asked_shown`), and,
+    when the site lands on another origin (`landed`, the crawl's origin) that was not asked, says so."""
     rows = [{**row, "rating_shown": t(f"crux.rating.{row['rating']}") if row.get("rating") else ""} for row in section.get("metrics") or []]
     said, ok = wording.line(section.get("summary"))
     if current_language() != "en" and section.get("status") == "assessed" and not ok:
         worst = [f"{row['label']} {row['shown']} ({row['rating_shown']})" for row in rows if row.get("rating") and row["rating"] != "good"]
         said, ok = (t("practical.opp.cwv.worst", worst="; ".join(worst)) if worst else t("practical.opp.cwv.partial")), True
-    return {**section, "metrics": rows, "summary_shown": said, "source_shown": wording.label(section.get("source"))[0], "untranslated": not ok}
+    asked = crux_asked(section)
+    asked_shown = ""
+    if section.get("status") != "assessed" and asked:
+        asked_shown = t("crux.asked", asked=", ".join(asked))
+        landed = _origin_of(landed)
+        if landed and landed not in asked:
+            asked_shown += " " + t("crux.asked.landed", origin=landed)
+    return {**section, "metrics": rows, "summary_shown": said, "source_shown": wording.label(section.get("source"))[0],
+            "untranslated": not ok, "asked": asked, "asked_shown": asked_shown}
+
+
+def _origin_of(url: str | None) -> str | None:
+    parts = urlsplit(url or "")
+    return f"{parts.scheme}://{parts.netloc}" if parts.scheme and parts.netloc else None
 
 
 def archives_view(view: dict[str, Any] | None) -> dict[str, Any] | None:

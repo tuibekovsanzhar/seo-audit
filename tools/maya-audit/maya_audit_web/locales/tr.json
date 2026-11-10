@@ -647,6 +647,8 @@
  "option.archives.on": "Okunamazsa arşiv kopyaları (ücretsiz)",
  "crux.origin": "Google'ın rakamları: {origin}.",
  "crux.homepage": "Yalnız ana sayfa ({url}): {values}.",
+ "crux.asked": "Google'a sorulan adres: {asked}.",
+ "crux.asked.landed": "Site {origin} adresine yönleniyor; orası sorulmadı. “Google'dan yeniden al” önce orayı sorar.",
  "crux.refresh": "Google'dan yeniden al",
  "crux.refresh.help": "Ücretsiz; her adres için Google'a tek istek, sitenin kendisine istek gönderilmez.",
  "crux.refreshed": "Google'dan az önce yeniden alındı.",

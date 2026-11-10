@@ -1832,3 +1832,22 @@ origin 404. Fetched for the scratch copy with `tools/crux_saved.py` (3 requests 
 | A live audit | NOT RUN (owner) |
 | Owner's web app on port 8770 | NOT RUN (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+
+## "Google'dan yeniden al" gave "There is nothing at that address" (2026-11-10, DECISIONS 336)
+
+On the saved enpara audit 2e5829fb (app at `6a339b3`) the button posted to `/api/v1/api/v1/audits/<id>/crux`: the
+server hands over the whole address and the page's `api()` added `/api/v1` again. Fixed in `api()`; the results now say
+which address Google was asked about (for 2e5829fb's saved section: `https://enpara.com`, and that the site lands on
+`https://www.enpara.com`). The saved audit's folder already holds `artifacts/crux.json` from the terminal run
+(www.enpara.com, assessed, 2026-11-10 07:29 UTC), which the results read: after a restart and reload they show the
+figures; the button now works too. Saved audit read, not written.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_crux_coverage_334.py tests/test_turkish_report.py` | `51 passed` |
+| the new browser test with the old `api()` (fix reverted for the check, then restored) | `1 failed` (the button's request got the 404), as expected |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3069 passed, 4 skipped, 135 deselected, 1 warning in 600.37s (0:10:00)` |
+| full suite, `pytest -q -rfEs -p no:cacheprovider` | `3204 passed, 4 skipped, 1 warning in 1076.21s (0:17:56)` |
+| `python3.11 -m compileall` (changed Python files), `node --check app.js` | OK |
+| Owner's web app on port 8770 | NOT RUN here (restart needed) |
+| Push | NOT DONE (owner: don't push) |

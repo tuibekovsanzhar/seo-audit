@@ -464,6 +464,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "crux.plan.on": "Core Web Vitals from real Chrome visitors are included (free, from Google).",
         "crux.origin": "Google's figures for {origin}.",
         "crux.homepage": "The homepage on its own ({url}): {values}.",
+        "crux.asked": "Google was asked about: {asked}.",
+        "crux.asked.landed": "The site lands on {origin}, which was not asked; \u201cAsk Google again\u201d asks there first.",
         "crux.refresh": "Ask Google again",
         "crux.refresh.help": "Free, one request to Google per address; the website itself is not requested.",
         "crux.refreshed": "Fetched again from Google just now.",

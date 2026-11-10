@@ -1109,7 +1109,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                          if audit["state"] == "finished" else {}, crawl=report.get("crawl"))
         full = {"audit": audit_view(audit), "demo": engine.demo, **view, "firecrawl": reader,
                 "ownership": summary.ownership_view(report.get("ownership")), "verification": ownership_of(audit["project_id"]),
-                "crux": summary.speed_view(report.get("crux") or crux.unavailable()),
+                "crux": summary.speed_view(report.get("crux") or crux.unavailable(), landed=(report.get("crawl") or {}).get("origin")),
                 # DECISIONS 334: ask Google again for this saved audit's Core Web Vitals (free; site-level data is live)
                 "crux_refresh": {"url": f"/api/v1/audits/{audit['id']}/crux", "available": bool(engine.crux_key()),
                                  "fetched_again": bool((report.get("crux") or {}).get("fetched_for_saved_audit"))}
@@ -2084,7 +2084,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             report = workspace.report
             work = workspace.create(previous=previous_report, affected=affected(audit_id),
                 performance={"backlinks": report.get("dataforseo"),
-                             "crux": summary.speed_view(report.get("crux") or crux.unavailable())})
+                             "crux": summary.speed_view(report.get("crux") or crux.unavailable(), landed=(report.get("crawl") or {}).get("origin"))})
             return client_reports.public(work)
         return client_call(create)
 

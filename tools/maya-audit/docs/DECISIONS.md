@@ -4469,3 +4469,20 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      "partial" and its reasons stay (the fast suite's demo of a partly read site showed why).
      Every "not read" figure of a sampled audit is the same number (`sampling.known_not_read`: the web's sentences, the
      selection's coverage, the appendix). Tests: `tests/test_crux_coverage_334.py`.
+336. **"Google'dan yeniden al" reaches its route; the results say which address Google was asked about (Owner,
+     2026-11-10, after pressing the button on the saved enpara audit 2e5829fb gave "There is nothing at that address";
+     the wording of the asked line and the "site lands on" sentence are agent defaults).** Every audit.
+     *Cause:* the results hand the button the whole address (`crux_refresh.url` = `/api/v1/audits/<id>/crux`, like
+     every other address the server hands over), and the page's `api()` put `/api/v1` in front of every path, so the
+     button posted to `/api/v1/api/v1/audits/<id>/crux`: no route, the generic 404. Path only: the method (POST) and
+     the audit id (the full 32-character id) were right; `tools/crux_saved.py` worked because it calls
+     `crux.refresh_saved` directly. The 334 test posted to a hand-written path, not the one the page receives.
+     (1) `api()` uses a path that already starts with `/api/v1/` as it is; any other path is prefixed as before.
+     (2) A Core Web Vitals section with no figures says, under its sentence, "Google was asked about: <addresses>."
+     ("Google'a sorulan adres: …"), from `attempts`, else `origins_asked`, else (a section saved before schema 1.31)
+     its `origin`; nothing when nothing was asked (no key, time limit). When the site lands on another origin (the
+     crawl's origin) that was not asked: "The site lands on <origin>, which was not asked; “Ask Google again” asks
+     there first." Web view only (`summary.speed_view`: `asked`, `asked_shown`); report.json and the schema unchanged.
+     Tests: `tests/test_crux_coverage_334.py`, the last two: the real `app.js` in headless Chromium with every
+     `/api/v1` request forwarded to the app's real routes; pressing the button posts to `/api/v1/audits/<id>/crux`
+     (200) and shows Google's figures. With the old `api()` the test fails (the button's request gets the 404).
