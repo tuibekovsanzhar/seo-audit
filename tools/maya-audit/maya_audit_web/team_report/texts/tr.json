@@ -2125,28 +2125,28 @@
    "summary": "Hata bildiren dış bağlantılar"
   },
   "judgment.heading.home": {
-   "title": "Ana sayfanın boş ana başlığını doldurun",
-   "finding": "Ana sayfanın ana başlığı boş",
-   "explanation": "Ana sayfanın ana başlığına sitenin ne sunduğunu söyleyen anlamlı bir metin yazın.",
-   "why": "Boş bir ana başlık sayfanın konusunu söylemez; arama motorları ve yapay zekâ tarayıcıları konuyu başka işaretlerden çıkarmak zorunda kalır.",
+   "title": "Ana sayfanın boş H1 etiketini doldurun",
+   "finding": "Ana sayfanın H1 etiketi boş",
+   "explanation": "Ana sayfanın H1 etiketine sitenin ne sunduğunu söyleyen anlamlı bir metin yazın.",
+   "why": "Boş bir H1 etiketi sayfanın konusunu söylemez; arama motorları ve yapay zekâ tarayıcıları konuyu başka işaretlerden çıkarmak zorunda kalır.",
    "steps": [
-    "Boş ana başlığa sitenin ne sunduğunu söyleyen metni yazın",
-    "Şablon ana başlığı boş bırakıyorsa alanı şablonda doldurun"
+    "Boş H1 etiketine sitenin ne sunduğunu söyleyen metni yazın",
+    "Şablon H1 etiketini boş bırakıyorsa alanı şablonda doldurun"
    ],
-   "verify": "Ana sayfanın kaynağında ana başlık etiketinin anlamlı bir metin taşıdığı görülmeli.",
-   "summary": "Ana sayfa ana başlığı"
+   "verify": "Ana sayfanın kaynağında H1 etiketinin anlamlı bir metin taşıdığı görülmeli.",
+   "summary": "Ana sayfa H1 etiketi"
   },
   "judgment.heading.pages": {
-   "title": "Boş ana başlıklara anlamlı metin yazın",
-   "finding": "Bazı sayfaların ana başlığı boş",
-   "explanation": "Her sayfanın ana başlığına, o sayfanın konusunu söyleyen anlamlı bir metin yazın.",
-   "why": "Boş bir ana başlık sayfanın konusunu söylemez; arama motorları ve yapay zekâ tarayıcıları konuyu başka işaretlerden çıkarmak zorunda kalır.",
+   "title": "Boş H1 etiketlerine anlamlı metin yazın",
+   "finding": "Bazı sayfaların H1 etiketi boş",
+   "explanation": "Her sayfanın H1 etiketine, o sayfanın konusunu söyleyen anlamlı bir metin yazın.",
+   "why": "Boş bir H1 etiketi sayfanın konusunu söylemez; arama motorları ve yapay zekâ tarayıcıları konuyu başka işaretlerden çıkarmak zorunda kalır.",
    "steps": [
-    "Boş ana başlığı sayfanın konusunu söyleyen metinle doldurun",
-    "Başlığı boş bırakan şablonu düzeltin"
+    "Boş H1 etiketini sayfanın konusunu söyleyen metinle doldurun",
+    "H1 etiketini boş bırakan şablonu düzeltin"
    ],
-   "verify": "Sayfaların kaynağında ana başlık etiketinin anlamlı bir metin taşıdığı görülmeli.",
-   "summary": "Boş ana başlıklar"
+   "verify": "Sayfaların kaynağında H1 etiketinin anlamlı bir metin taşıdığı görülmeli.",
+   "summary": "Boş H1 etiketleri"
   },
   "judgment.sitemap": {
    "title": "Site haritasındaki çalışmayan adresleri gözden geçirin",
@@ -3125,53 +3125,53 @@
    "summary": "İzlenemeyen bağlantılar"
   },
   "str2.empty_h1": {
-   "title": "Boş ana başlıklara sayfanın konusunu yazın",
-   "finding": "Ana başlık boş",
-   "explanation": "Boş ana başlığa sayfanın konusunu yazın, şablon alanı boş bırakıyorsa onu şablonda doldurun.",
-   "why": "Boş bir ana başlık, motorlara anlamlı bir sayfa konusu vermez.",
+   "title": "Boş H1 etiketlerine sayfanın konusunu yazın",
+   "finding": "H1 etiketi boş",
+   "explanation": "Boş H1 etiketine sayfanın konusunu yazın, şablon alanı boş bırakıyorsa onu şablonda doldurun.",
+   "why": "Boş bir H1 etiketi, motorlara anlamlı bir sayfa konusu vermez.",
    "steps": [
-    "Boş ana başlığı sayfanın konusunu söyleyen metinle doldurun",
-    "Şablon ana başlığı boş bırakıyorsa alanı şablonda doldurun"
+    "Boş H1 etiketini sayfanın konusunu söyleyen metinle doldurun",
+    "Şablon H1 etiketini boş bırakıyorsa alanı şablonda doldurun"
    ],
-   "verify": "Sayfa kaynağında ana başlık etiketi, sayfanın konusunu söyleyen bir metin içermeli.",
-   "summary": "Boş ana başlık"
+   "verify": "Sayfa kaynağında H1 etiketi, sayfanın konusunu söyleyen bir metin içermeli.",
+   "summary": "Boş H1 etiketi"
   },
   "str2.hidden_h1": {
-   "title": "Gizli ana başlıkları görünür yapın",
-   "finding": "Ana başlık gizli",
-   "explanation": "Gizli ana başlığı görünür yapın ya da yerine sayfanın konusunu söyleyen görünür bir ana başlık koyun.",
+   "title": "Gizli H1 etiketlerini görünür yapın",
+   "finding": "H1 etiketi gizli",
+   "explanation": "Gizli H1 etiketini görünür yapın ya da yerine sayfanın konusunu söyleyen görünür bir H1 etiketi koyun.",
    "why": "Okurdan gizlenmiş bir başlık gizli metin sayılabilir; sayfanın konusu o zaman daha zayıf ipuçlarına kalır.",
    "steps": [
-    "Ana başlıktaki display:none, hidden ya da aria-hidden'ı kaldırın",
-    "Ya da sayfanın konusunu söyleyen görünür bir ana başlık koyun"
+    "H1 etiketindeki display:none, hidden ya da aria-hidden'ı kaldırın",
+    "Ya da sayfanın konusunu söyleyen görünür bir H1 etiketi koyun"
    ],
-   "verify": "Sayfayı tarayıcıda açın; ana başlık ekranda görünmeli ve sayfanın konusunu söylemeli.",
-   "summary": "Gizli ana başlık"
+   "verify": "Sayfayı tarayıcıda açın; H1 etiketinin metni ekranda görünmeli ve sayfanın konusunu söylemeli.",
+   "summary": "Gizli H1 etiketi"
   },
   "str2.home_hidden_h1": {
-   "title": "Ana sayfanın ana başlığını görünür yapın",
-   "finding": "Ana sayfanın ana başlığı gizli",
-   "explanation": "Ana sayfanın gizli ana başlığını görünür yapın ya da sitenin ne sunduğunu söyleyen görünür bir ana başlık koyun.",
+   "title": "Ana sayfanın H1 etiketini görünür yapın",
+   "finding": "Ana sayfanın H1 etiketi gizli",
+   "explanation": "Ana sayfanın gizli H1 etiketini görünür yapın ya da sitenin ne sunduğunu söyleyen görünür bir H1 etiketi koyun.",
    "why": "Okurdan gizlenmiş bir başlık gizli metin sayılabilir; sitenin konusu o zaman daha zayıf ipuçlarına kalır.",
    "steps": [
-    "Gizli ana başlıktaki display:none ya da hidden'ı kaldırın",
-    "Ya da sitenin ne sunduğunu söyleyen görünür bir ana başlık koyun",
-    "Sayfada tek bir ana başlık kalsın"
+    "Gizli H1 etiketindeki display:none ya da hidden'ı kaldırın",
+    "Ya da sitenin ne sunduğunu söyleyen görünür bir H1 etiketi koyun",
+    "Sayfada tek bir H1 etiketi kalsın"
    ],
-   "verify": "Ana sayfayı tarayıcıda açın; sitenin ne sunduğunu söyleyen tek bir ana başlık ekranda görünmeli.",
-   "summary": "Ana sayfada gizli ana başlık"
+   "verify": "Ana sayfayı tarayıcıda açın; sitenin ne sunduğunu söyleyen tek bir H1 etiketi ekranda görünmeli.",
+   "summary": "Ana sayfada gizli H1 etiketi"
   },
   "str2.home_no_h1": {
-   "title": "Ana sayfaya tek bir ana başlık ekleyin",
-   "finding": "Ana sayfada ana başlık yok",
-   "explanation": "Ana sayfa şablonuna, sitenin ne sunduğunu söyleyen tek bir ana başlık ekleyin.",
-   "why": "Ana sayfanın ana başlığı, ziyaretçinin ve motorun sitenin ne olduğunu okuduğu yerdir. Olmadığında bunu başlık etiketinden ve menüden çıkarırlar.",
+   "title": "Ana sayfaya tek bir H1 etiketi ekleyin",
+   "finding": "Ana sayfada H1 etiketi yok",
+   "explanation": "Ana sayfa şablonuna, sitenin ne sunduğunu söyleyen tek bir H1 etiketi ekleyin.",
+   "why": "Ana sayfanın H1 etiketi, ziyaretçinin ve motorun sitenin ne olduğunu okuduğu yerdir. Olmadığında bunu title etiketinden ve menüden çıkarırlar.",
    "steps": [
-    "Sitenin ne sunduğunu söyleyen tek bir ana başlık ekleyin",
-    "Başlığı ana sayfa şablonunda tanımlayın"
+    "Sitenin ne sunduğunu söyleyen tek bir H1 etiketi ekleyin",
+    "H1 etiketini ana sayfa şablonunda tanımlayın"
    ],
-   "verify": "Ana sayfanın kaynağında sitenin ne sunduğunu söyleyen tek bir ana başlık etiketi görünmeli.",
-   "summary": "Ana sayfa ana başlığı"
+   "verify": "Ana sayfanın kaynağında sitenin ne sunduğunu söyleyen tek bir H1 etiketi görünmeli.",
+   "summary": "Ana sayfa H1 etiketi"
   },
   "str2.home_outline": {
    "title": "Ana sayfaya bölüm başlıkları ekleyin",
@@ -3187,32 +3187,32 @@
    "summary": "Ana sayfa bölüm başlıkları"
   },
   "str2.many_h1": {
-   "title": "Her sayfada tek bir ana başlık bırakın",
-   "finding": "Sayfada birden fazla ana başlık var",
-   "explanation": "Sayfanın konusunu söyleyen ana başlığı bırakın, diğer ana başlık etiketlerini alt başlığa çevirin.",
-   "why": "Birden fazla ana başlık, hangisinin sayfanın konusunu adlandırdığını belirsiz kılar. Bu küçük bir konudur.",
+   "title": "Her sayfada tek bir H1 etiketi bırakın",
+   "finding": "Sayfada birden fazla H1 etiketi var",
+   "explanation": "Sayfanın konusunu söyleyen H1 etiketini bırakın, diğer H1 etiketlerini H2'ye çevirin.",
+   "why": "Birden fazla H1 etiketi, hangisinin sayfanın konusunu adlandırdığını belirsiz kılar. Bu küçük bir konudur.",
    "steps": [
-    "Sayfanın konusunu söyleyen ana başlığı bırakın",
-    "Diğer ana başlık etiketlerini alt başlık yapın"
+    "Sayfanın konusunu söyleyen H1 etiketini bırakın",
+    "Diğer H1 etiketlerini H2 yapın"
    ],
-   "verify": "Sayfa kaynağında yalnızca tek bir ana başlık etiketi görünmeli.",
-   "summary": "Birden fazla ana başlık"
+   "verify": "Sayfa kaynağında yalnızca tek bir H1 etiketi görünmeli.",
+   "summary": "Birden fazla H1 etiketi"
   },
   "str2.no_h1": {
-   "title": "Ana başlığı olmayan sayfalara tek bir ana başlık ekleyin",
-   "finding": "Sayfada ana başlık yok",
-   "explanation": "Her sayfaya konusunu söyleyen tek bir ana başlık ekleyin, bunu şablonda bir kez tanımlayın.",
-   "why": "Ana başlık motorlara sayfanın ne hakkında olduğunu söyler. Olmadığında daha zayıf ipuçlarına dayanırlar.",
+   "title": "H1 etiketi olmayan sayfalara tek bir H1 etiketi ekleyin",
+   "finding": "Sayfada H1 etiketi yok",
+   "explanation": "Her sayfaya konusunu söyleyen tek bir H1 etiketi ekleyin, bunu şablonda bir kez tanımlayın.",
+   "why": "H1 etiketi motorlara sayfanın ne hakkında olduğunu söyler. Olmadığında daha zayıf ipuçlarına dayanırlar.",
    "steps": [
-    "Sayfanın konusunu söyleyen tek bir ana başlık ekleyin",
-    "Şablonda ana başlığı bir kez tanımlayın"
+    "Sayfanın konusunu söyleyen tek bir H1 etiketi ekleyin",
+    "Şablonda H1 etiketini bir kez tanımlayın"
    ],
-   "verify": "Sayfa kaynağında sayfanın konusunu belirten tek bir ana başlık etiketi görünmeli.",
-   "summary": "Eksik ana başlık"
+   "verify": "Sayfa kaynağında sayfanın konusunu belirten tek bir H1 etiketi görünmeli.",
+   "summary": "Eksik H1 etiketi"
   },
   "str2.no_subheadings": {
-   "title": "Uzun sayfalara bölüm başlıkları ekleyin",
-   "finding": "Uzun sayfada alt başlık yok",
+   "title": "Uzun sayfalara H2/H3 bölüm başlıkları ekleyin",
+   "finding": "Uzun sayfada H2/H3 başlık etiketi yok",
    "explanation": "Uzun sayfaların bölümlerine anlamlı alt başlıklar ekleyin; tablo ve listeler metni zaten bölüyorsa gerek yoktur.",
    "why": "Alt başlıklar uzun bir sayfayı, bir motorun tek tek alıntılayabileceği bölümlere ayırır.",
    "steps": [
@@ -3221,6 +3221,18 @@
    ],
    "verify": "Sayfa kaynağında uzun metin, anlamlı alt başlık etiketleriyle bölümlere ayrılmış görünmeli.",
    "summary": "Eksik alt başlıklar"
+  },
+  "str2.styled_subheadings": {
+   "title": "Uzun sayfalardaki bölüm başlıklarını H2/H3 olarak işaretleyin",
+   "finding": "Bölüm başlıkları var ama H2/H3 etiketi değil",
+   "explanation": "Sayfa bölüm başlıklarını gösteriyor ama bunlar başlık etiketi değil; <h2>/<h3> yapın, görünümü CSS ile koruyun.",
+   "why": "Motorlar ve ekran okuyucular sayfanın bölümlerini başlık etiketlerinden okur; biçimlenmiş metin onlar için başlık değildir.",
+   "steps": [
+    "Sayfanın gösterdiği bölüm başlıklarını <h2> ya da <h3> yapın",
+    "Görünümlerini CSS ile koruyun"
+   ],
+   "verify": "Sayfa kaynağında bölüm başlıkları <h2>/<h3> etiketleri içinde görünmeli.",
+   "summary": "Etiketsiz bölüm başlıkları"
   },
   "str20.media": {
    "title": "Videodaki mesajı sayfaya metin olarak yazın",
@@ -3242,7 +3254,7 @@
    "steps": [
     "Raporda eksik görünen sayfa türünü belirleyin",
     "Sayfa yoksa oluşturun, menüden ve alt bilgiden bağlantı verin",
-    "Sayfa varsa adresinde, başlığında ya da ana başlığında ne olduğunu söyleyin"
+    "Sayfa varsa adresinde, başlığında ya da H1 etiketinde ne olduğunu söyleyin"
    ],
    "verify": "Sitenin menüsünde veya alt bilgisinde eksik sayfaya giden bir bağlantı görünmeli ve sayfa açılmalı.",
    "summary": "Temel sayfalar"

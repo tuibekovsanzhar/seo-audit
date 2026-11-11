@@ -316,7 +316,8 @@ def test_every_fix_and_expected_sentence_in_the_engines_source_has_a_turkish_ent
                  ("IDX-3", "The redirect and its target are Verified"), ("IDX-3", "further request(s) made after it"), ("IDX-6", "requested once and returned"), ("IDX-5", "listed URL(s) were not fetched"), ("IDX-5", "notes"), ("ACC-8", "First line"), ("IDX-7", "incomplete_note"),
                  ("PRF-1", "generalizes from"), ("PRF-1", "threshold is policy"), ("PRF-1", "A URL that times out on every attempt"), ("STR-1", "note"),
                  ("STR-1", "The titles are different in full"), ("STR-6", "Thresholds ("), ("STR-12", "each passage of main content"),
-                 ("STR-12", "a heading is assigned a language"), ("STR-13", "notes"), ("TSEO-1", "note")}
+                 ("STR-12", "a heading is assigned a language"), ("STR-13", "notes"), ("TSEO-1", "note"),
+                 ("IDX-2", "HSTS_NOTE")}  # DECISIONS 338: the "idx2.hsts" note pattern
     unknown = {(check_id, source) for check_id, source in loose - NOTES_WITHOUT_A_PATTERN - set(NOTES_FROM_ELSEWHERE)
                if not any(check_id == check and piece in source for check, piece in patterned)}
     assert set(NOTES_FROM_ELSEWHERE) <= loose

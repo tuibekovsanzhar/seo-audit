@@ -23,7 +23,7 @@ def test_every_catalogue_entry_names_a_real_rule_and_has_both_languages():
 def test_catalogue_text_holds_no_number_a_report_would_have_to_prove():
     # Tag names (<h1>) are not numbers; anything else a report states comes from report.json.
     def numbers(text):
-        return re.findall(r"\d+", re.sub(r"</?h\d>|<h\d>/<h\d>", "", text))
+        return re.findall(r"\d+", re.sub(r"</?h\d>|<h\d>/<h\d>|\bH[1-6]\b", "", text))  # "H1 etiketi" (DECISIONS 338)
     for key, entry in ACTIONS.items():
         for text in [entry["tr"], entry["en"], *sum((entry.get("steps") or {}).values(), [])]:
             assert numbers(text) == [], (key, text)

@@ -61,6 +61,10 @@ def settle(checks, result) -> None:
     # Templates, page types, link scores, click depth, importance (DECISIONS 297): stored, never a severity.
     from .page_groups import annotate as annotate_groups
     annotate_groups(result)
+    # DECISIONS 338: a listing page is not a long page lacking subheadings
+    from .checks.structure import drop_listing_pages
+    drop_listing_pages([c for c in checks if not _get(c, "check_id").startswith("ANS")],
+                       {p.url: (p.grouping or {}).get("page_type") for p in result.pages if isinstance(getattr(p, "grouping", None), dict)})
     # Country/language versions of the same pages (DECISIONS 316): the site's locale folders and its main version.
     result.locales = locale_record(result)
     # The business type (DECISIONS 311): page importance weighted by the profile; never a severity.

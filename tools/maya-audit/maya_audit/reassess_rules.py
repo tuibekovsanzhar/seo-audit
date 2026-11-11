@@ -623,6 +623,160 @@ def _decisions_337(report: dict, affected: dict, changes: list[str]) -> None:
                    "(DECISIONS 337)")
 
 
+def _refresh_id(f: dict, affected: dict, old: str | None, urls: list | None = None) -> None:
+    """A saved finding's id and rule after its title or scope changed, and its affected list moved with it."""
+    import hashlib
+    from .rules import rule_id
+    f["rule_id"] = rule_id(f["check_id"], f["title"])
+    basis = f"{f['check_id']}|{f['title']}|{sorted((f.get('scope') or {}).get('urls', []))}"
+    f["id"] = f"{f['check_id']}-{hashlib.sha1(basis.encode()).hexdigest()[:8]}"
+    if old and old != f["id"]:
+        affected.pop(old, None)
+    affected[f["id"]] = list(urls if urls is not None else (f.get("scope") or {}).get("urls") or [])
+
+
+def _decisions_338(report: dict, affected: dict, changes: list[str]) -> None:
+    """DECISIONS 338, from the SEO team's review of enpara 2e5829fb, applied to a saved report's findings:
+    (1) TSEO-1: a page whose head breaks before only meta or Open Graph tags (a robots tag whose value was not recorded
+    included) moves from High to Medium; (2) ACC-2: a block on parameter, old-script or form paths that reaches no page
+    the site puts forward is Info; (3) STR-5: the domain form and a section's sub-brand are not other names, and the
+    pages to fix are those with another name; (4) STR-2: listing pages are not long pages lacking subheadings;
+    (5) IDX-2: a temporary http:// -> https:// code under HSTS of a year or more is Info."""
+    from .checks.access import DELIBERATE_NOTES, deliberate_rule
+    from .checks.index import HSTS_LONG_S, HSTS_NOTE
+    from .checks.page_markup import HEAD_KEPT_NOTE, kept_in_head, place_head_row
+    from .checks.structure import BRANCH_EXTRA_WORDS, brand_key, drop_listing_pages
+    from .findings import scope_for
+    crawl = report.get("crawl") or {}
+    pages = {p.get("url"): p for p in crawl.get("pages") or [] if isinstance(p, dict)}
+    checks = report.get("checks") or []
+    by_check = {c.get("check_id"): c for c in checks}
+
+    # (1) TSEO-1
+    head = by_check.get("TSEO-1")
+    lost_f = next((f for f in (head or {}).get("findings") or [] if f.get("rule_id") == "tseo1.head_closed_lost"), None)
+    if lost_f:
+        later_f = next((f for f in head["findings"] if f.get("rule_id") == "tseo1.head_closed_later"), None)
+        rows = {r["url"]: r for f in (lost_f, later_f) if f for r in (f.get("evidence") or {}).get("pages") or []}
+        urls = list(dict.fromkeys([*((lost_f.get("scope") or {}).get("urls") or []),
+                                   *(((later_f or {}).get("scope") or {}).get("urls") or [])]))
+        lost, later = [], []
+        for u in urls:
+            a = (pages.get(u) or {}).get("analysis") or {}
+            out = a.get("outside_head") or {}
+            row = dict(rows.get(u) or {"url": u, "closed_by": out.get("closed_early_by"), "canonical_after": out.get("canonical", 0),
+                                       "robots_after": sorted({"robots", "googlebot", "bingbot"} & set(out.get("meta") or [])),
+                                       "hreflang_after": out.get("hreflang", 0), "meta_after": [], "properties_after": [],
+                                       "title_after": out.get("title", 0)})
+            row.setdefault("robots_content", out.get("robots_content"))
+            row["kept_in_head"] = kept_in_head(a)
+            place_head_row(row, lost, later)
+        moved = len(urls) - len(lost) - (len(((later_f or {}).get("scope") or {}).get("urls") or []))
+        if moved > 0 or not lost:
+            old_lost, old_later = lost_f.get("id"), (later_f or {}).get("id")
+            if later and not later_f:
+                later_f = deepcopy(lost_f)
+                head["findings"].append(later_f)
+            if later_f is not None and later:
+                later_f.update(title=f"{len(later)} page(s) end <head> early: meta or Open Graph tags after it are read as body",
+                               severity="S3", scope=scope_for([r["url"] for r in later]),
+                               expected="every meta and Open Graph tag before any body element",
+                               evidence={**(later_f.get("evidence") or {}), "pages": later[:40]})
+                later_f["notes"] = [n for n in later_f.get("notes") or [] if not n.startswith("Verified from the HTML: the element")] + \
+                    ([HEAD_KEPT_NOTE] if HEAD_KEPT_NOTE not in (later_f.get("notes") or []) else [])
+                _refresh_id(later_f, affected, old_later, [r["url"] for r in later])
+            if lost:
+                lost_f.update(title=f"{len(lost)} page(s) end <head> early: canonical, robots or hreflang tags after it are read as body",
+                              scope=scope_for([r["url"] for r in lost]), evidence={**lost_f["evidence"], "pages": lost[:40]})
+                _refresh_id(lost_f, affected, old_lost, [r["url"] for r in lost])
+            else:
+                head["findings"].remove(lost_f)
+                affected.pop(old_lost, None)
+            changes.append(f"TSEO-1: {moved} page(s) whose head breaks before only meta or Open Graph tags moved from High to "
+                           "Medium (DECISIONS 338)")
+
+    # (2) ACC-2
+    n = 0
+    for f in (by_check.get("ACC-2") or {}).get("findings") or []:
+        ev = f.get("evidence") or {}
+        kind = deliberate_rule((ev.get("rule") or {}).get("pattern") or "")
+        if kind and (ev.get("path_kind") or {}).get("kind") == "not_put_forward" and f.get("severity") != "Info":
+            pattern = ev["rule"]["pattern"]
+            f["intent"] = {"kind": "deliberate_rule", "rule_kind": kind, "severity_otherwise": f["severity"]}
+            f["severity"] = "Info"
+            f["notes"] = [*(f.get("notes") or []), DELIBERATE_NOTES[kind].format(pattern=pattern)]
+            ev["path_kind"] = {"kind": "deliberate_rule", "rule_kind": kind}
+            n += 1
+    if n:
+        changes.append(f"ACC-2: {n} block(s) on parameter, old-script or form paths only are Info (DECISIONS 338)")
+
+    # (3) STR-5
+    for f in list((by_check.get("STR-5") or {}).get("findings") or []):
+        if not str(f.get("title") or "").startswith("The brand is named"):
+            continue
+        ev = f.get("evidence") or {}
+        merged: dict[str, dict] = {}
+        for v in ev.get("variants") or []:
+            key = brand_key(v.get("name") or v.get("normalized") or "")
+            m = merged.setdefault(key, {"name": v.get("name"), "pages": 0, "seen_as": [], "sources": set()})
+            m["pages"] += v.get("pages") or 0
+            m["seen_as"] += v.get("seen_as") or []
+            m["sources"] |= set((v.get("by_source") or {}).keys())
+        if not merged:
+            continue
+        main = max(merged, key=lambda k: (merged[k]["pages"], k))
+        home = (crawl.get("start_url") or "").rstrip("/") + "/"
+        subs = [k for k, m in merged.items() if k != main and k.startswith(main + " ")
+                and BRANCH_EXTRA_WORDS[0] <= len(k.split()) - len(main.split()) <= BRANCH_EXTRA_WORDS[1]
+                and m["sources"] <= {"title suffix/prefix", "og:site_name"} and all(s.get("url") != home for s in m["seen_as"])]
+        counted = [k for k in merged if k not in subs]
+        old = f.get("id")
+        if len(counted) <= 2:
+            report_findings = by_check["STR-5"]["findings"]
+            report_findings.remove(f)
+            affected.pop(old, None)
+            changes.append(f"STR-5: the brand names seen are one name written as a domain or a sub-brand: no finding (DECISIONS 338)")
+            continue
+        urls = sorted({s["url"] for k in counted if k != main for s in merged[k]["seen_as"] if s.get("url")})
+        f.update(title=f"The brand is named {len(counted)} different ways", scope=scope_for(urls))
+        # a saved variant keeps 10 example pages: the count is what the engine counted, the list what it kept
+        f["scope"]["count"] = max(len(urls), sum(merged[k]["pages"] for k in counted if k != main))
+        ev.update(main_name=merged[main]["name"], sub_brands_not_counted=[merged[k]["name"] for k in subs],
+                  variants=[v for v in ev.get("variants") or [] if brand_key(v.get("name") or "") in counted],
+                  observed_values=sorted({s.get("value") for k in counted for s in merged[k]["seen_as"] if s.get("value")}))
+        _refresh_id(f, affected, old, urls)
+        changes.append(f"STR-5: {len(counted)} brand names counted (the domain form and sub-brands left out); "
+                       f"{len(urls)} page(s) to fix (DECISIONS 338)")
+
+    # (4) STR-2
+    types = {u: (p.get("grouping") or {}).get("page_type") for u, p in pages.items() if isinstance(p.get("grouping"), dict)}
+    before = {f.get("id") for c in checks for f in c.get("findings") or []}
+    for fid in drop_listing_pages(checks, types):
+        affected.pop(fid, None)
+        changes.append(f"STR-2: listing pages left out of the long pages without subheadings (DECISIONS 338)")
+    for c in checks:
+        for f in c.get("findings") or []:
+            if f.get("id") not in before:
+                affected[f["id"]] = list((f.get("scope") or {}).get("urls") or [])
+
+    # (5) IDX-2
+    homes = [p for p in pages.values() if p.get("depth") == 0 and str(p.get("url", "")).startswith("https://")]
+    hsts = None
+    for p in homes:
+        value = {str(k).lower(): v for k, v in (p.get("headers") or {}).items()}.get("strict-transport-security") or ""
+        m = re.search(r"max-age\s*=\s*\"?(\d+)", value, re.I)
+        if m:
+            hsts = int(m.group(1))
+            break
+    for f in (by_check.get("IDX-2") or {}).get("findings") or []:
+        if "with a temporary redirect" in (f.get("title") or "") and hsts and hsts >= HSTS_LONG_S and f.get("severity") != "Info":
+            f["severity"] = "Info"
+            f["notes"] = [*(f.get("notes") or []), HSTS_NOTE.format(days=round(hsts / 86400))]
+            f.setdefault("evidence", {})["hsts_max_age_s"] = hsts
+            changes.append(f"IDX-2: temporary http:// -> https:// redirect under HSTS of {round(hsts / 86400)} days is Info "
+                           "(DECISIONS 338)")
+
+
 def _order(report: dict) -> list[str]:
     from .findings import Severity, priority_key
     from .models import Confidence
@@ -666,6 +820,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_321(r, changes)
     _decisions_329(r, changes)
     _decisions_337(r, aff, changes)
+    _decisions_338(r, aff, changes)
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -681,7 +836,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329 and 337, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337 and 338, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
@@ -708,6 +863,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
     _decisions_329(r, cert)  # DECISIONS 329: place-name groups only on location pages, also for a current-schema report
     if affected is not None:
         _decisions_337(r, affected, cert)  # DECISIONS 337: broken links split by what is to be fixed
+        _decisions_338(r, affected, cert)  # DECISIONS 338: the SEO team's review of enpara
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

@@ -1,0 +1,178 @@
+{
+ "_about": "Expert review of Maya Audit cards: one SEO expert's verdict per card, kept as accuracy data (DECISIONS 338). verdict: the expert's (correct, wrong, wording, incomplete); assessment: what the saved evidence showed when checked (agree, right, mostly_right, partly_right, not_supported). follow_up: rules whose verdict was wrong.",
+ "audit": "enpara 2e5829fb (Akıllı ~150, 2026-11-09)",
+ "reviewer": "SEO expert (team)",
+ "reviewed_on": "2026-11-11",
+ "source_file": "maya-audit-enpara.com-2026-11-09-İLGİNAY KONTROL.xlsx, Özet, column \"İlginay's not\"",
+ "cards": [
+  {
+   "card": 1,
+   "title": "Head'i erken kapatan öğeyi taşıyın",
+   "rule_ids": [
+    "tseo1.head_closed_lost",
+    "tseo1.head_closed_later"
+   ],
+   "expert_note": "Düzenlenme Önerisi hatalı, hatalı bulgu var öneriye göre heas kısmı zaten kapsıyor",
+   "verdict": "wrong",
+   "assessment": "partly_right",
+   "finding": "The break is real and in the site's own HTML (div#blueLightOverlay inside <head>, 121 of 128 pages); canonical, hreflang and title stay before it. High came from a robots tag after the break whose value was never recorded.",
+   "fix": "High only when a canonical, hreflang or title (with no copy before the break) or a restricting robots value is lost; the robots value is recorded; the card says what stays in the head and what comes after."
+  },
+  {
+   "card": 2,
+   "title": "Hata veren sayfalara giden bağlantıları düzeltin ya da kaldırın",
+   "rule_ids": [
+    "idx1.4xx.referenced"
+   ],
+   "expert_note": "açılmayan sayfalar hangi sayfalarda linkleniyor?",
+   "verdict": "incomplete",
+   "assessment": "right",
+   "finding": "No page read links to the 21 addresses: all are sitemap entries (302 → 404).",
+   "fix": "DECISIONS 337: own sitemap card, file per address, Bağlantı yerleri."
+  },
+  {
+   "card": 3,
+   "title": "Tarayıcıları engelleyen robots.txt kuralını gözden geçirin",
+   "rule_ids": [
+    "acc2.blocks.sample"
+   ],
+   "expert_note": "Robots'ta parametre eklendiyse bilerek yapılmıştır öneri vermeye gerek yok",
+   "verdict": "wrong",
+   "assessment": "right",
+   "finding": "The rules block ?ref= parameters, legacy *.aspx and a form path; no page the site puts forward is blocked.",
+   "fix": "Parameter, old-script and form-path rules that reach no homepage, key page or sitemap address are Info, \"bilinçli görünüyor, teyit edin\"."
+  },
+  {
+   "card": 4,
+   "title": "Metni olmayan bağlantılara ad verin",
+   "rule_ids": [
+    "str14.no_text"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 5,
+   "title": "Marka için sitede tek bir ad kullanın",
+   "rule_ids": [
+    "str5.names"
+   ],
+   "expert_note": "Hata bulunan sayfalarda hata yok, önerideki mevcut",
+   "verdict": "wrong",
+   "assessment": "mostly_right",
+   "finding": "Of five names, \"Enpara.com\" (domain form) and \"Enpara Şirketim\" (sub-brand) are normal; \"Bankanın güzeli | Enpara\" and \"Homepage\" as Organization names are real, on 2 pages; the card listed all 111 pages naming the brand.",
+   "fix": "Domain form folded into the brand, section sub-brands not counted, only pages with another name listed."
+  },
+  {
+   "card": 6,
+   "title": "Ana başlığı olmayan sayfalara tek bir ana başlık ekleyin",
+   "rule_ids": [
+    "str2.no_h1"
+   ],
+   "expert_note": "Hata tanımı yanlış, H1 Etiketi eklenmeli olmalı, ana başlık değil",
+   "verdict": "wording",
+   "assessment": "right",
+   "finding": "Wording: the team report said \"ana başlık\" for <h1>.",
+   "fix": "Every H1 rule's Turkish team-report text says \"H1 etiketi\"."
+  },
+  {
+   "card": 7,
+   "title": "Aynı açıklamayı paylaşan sayfalara ayrı açıklama yazın",
+   "rule_ids": [
+    "str16.shared"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 8,
+   "title": "Bağlantıları doğrudan son adrese verin",
+   "rule_ids": [
+    "idx6.links_to_redirect"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 9,
+   "title": "Uzun sayfalara bölüm başlıkları ekleyin",
+   "rule_ids": [
+    "str2.no_subheadings"
+   ],
+   "expert_note": "Hatalı bir çıkarım, sayfalar içinde başlıklar var",
+   "verdict": "wrong",
+   "assessment": "partly_right",
+   "finding": "Neither copy of the 4 pages has <h2>/<h3>; /bilgi-bankasi is a listing page; visible titles are styled text (raw HTML not saved to confirm).",
+   "fix": "Listing pages left out; styled section titles counted (new audits) and said as \"mark them H2/H3\"; card wording names H2/H3."
+  },
+  {
+   "card": 10,
+   "title": "Ayrıştırılamayan JSON-LD'yi düzeltin",
+   "rule_ids": [
+    "str3.unparsed"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 11,
+   "title": "http'den https'e yönlendirmeyi kalıcı yapın",
+   "rule_ids": [
+    "idx2.temporary"
+   ],
+   "expert_note": "Hatalı bulgu",
+   "verdict": "wrong",
+   "assessment": "partly_right",
+   "finding": "The 302 is real (4 requests, one hop) but the https pages send HSTS for 1825 days.",
+   "fix": "Info under HSTS of a year or more."
+  },
+  {
+   "card": 12,
+   "title": "Küçük bağlantı ve etiket tutarsızlıklarını temizleyin",
+   "rule_ids": [
+    "acc8.redirecting"
+   ],
+   "expert_note": "Hangi sayfalar yönlendiridiği yazmıyor, eksik öneri",
+   "verdict": "incomplete",
+   "assessment": "right",
+   "finding": "The redirect items carried no addresses; the internal-link item repeated card 8.",
+   "fix": "Every item lists its addresses and what redirects where; the repeat dropped; the Ek has a row per address."
+  },
+  {
+   "card": 13,
+   "title": "Soru başlıklarını düzeltin",
+   "rule_ids": [],
+   "expert_note": "Hangi sayfa için önerildi",
+   "verdict": "incomplete",
+   "assessment": "right",
+   "finding": "The card showed 5 of 24 pages and had no rows in the Ek (its id named a check, not a finding).",
+   "fix": "Every page kept (new audits) with its questions; rows in the Ek; unlisted pages counted."
+  }
+ ],
+ "follow_up": [
+  "acc2.blocks.sample",
+  "idx2.temporary",
+  "str2.no_subheadings",
+  "str5.names",
+  "tseo1.head_closed_later",
+  "tseo1.head_closed_lost"
+ ],
+ "summary": {
+  "correct": 4,
+  "wrong": 5,
+  "wording": 1,
+  "incomplete": 3
+ }
+}

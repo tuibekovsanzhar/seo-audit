@@ -525,6 +525,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("str2.no_h1", "{n#} page(s) have no <h1>", "{n:page has|pages have} no <h1>"),
         ("str2.empty_h1", "{n#} page(s) have an empty <h1>", "{n:page has|pages have} an empty <h1>"),
         ("str2.no_subheadings", "{n#} long page(s) (>{words#} words) have no subheadings", "{n:long page|long pages} (>{words} words) [n:has|have] no subheadings"),
+        # DECISIONS 338: titles the page shows that are not heading tags
+        ("str2.styled_subheadings", "{n#} long page(s) (>{words#} words) show section titles that are not <h2>/<h3> tags",
+         "{n:long page|long pages} (>{words} words) [n:shows|show] section titles that are not <h2>/<h3> tags"),
         ("str2.many_h1", "{n#} page(s) have more than one <h1>", "{n:page has|pages have} more than one <h1>"),
     ),
     "STR-3": (
@@ -869,6 +872,18 @@ NOTE_PATTERNS = _frames((
     ("source.firecrawl.blocked.dot", "Source: Firecrawl (Maya's crawler was blocked)."),
     ("source.firecrawl.render", "Source: Firecrawl rendered these pages (the local browser could not start)"),
     ("source.firecrawl.render.dot", "Source: Firecrawl rendered these pages (the local browser could not start)."),
+    ("acc2.deliberate.parameter", "Reported as Info: the rule ({pattern}) blocks only addresses with a query parameter, which sites usually "
+                                  "block on purpose, and none of the blocked URLs is the homepage, a key page or listed in the sitemap. "
+                                  "Confirm it is intended."),
+    ("acc2.deliberate.legacy", "Reported as Info: the rule ({pattern}) blocks only old server-script addresses, which sites usually block on "
+                               "purpose, and none of the blocked URLs is the homepage, a key page or listed in the sitemap. Confirm it is "
+                               "intended."),
+    ("acc2.deliberate.form", "Reported as Info: the rule ({pattern}) blocks only form or application pages, which sites usually block on "
+                             "purpose, and none of the blocked URLs is the homepage, a key page or listed in the sitemap. Confirm it is "
+                             "intended."),
+    ("idx2.hsts", "Info, not a problem: the https:// pages send HSTS for {days#} days, so browsers do not ask http:// at all, and "
+                  "the redirect goes to the https:// address. A permanent code (301 or 308) is still the clean choice."),
+    ("str2.listing", "{n#} listing page(s) (a category or index of links) left out: their items are their structure."),
     ("idx1.from_headings", "Inference: {n#} of these addresses spell a heading or FAQ question on a page Maya read (evidence."
                            "likely_cause): the sitemap generator seems to make addresses from headings. Check it."),
     ("acc1.exclusions", "{n#} key page(s) match an intent-marking pattern but are not covered: pattern markings never cover key pages (spec §2.5)."),

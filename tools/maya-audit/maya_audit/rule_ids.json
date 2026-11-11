@@ -993,6 +993,10 @@
     "(?P<n>\\d+(?:\\.\\d+)?)\\ long\\ page\\(s\\)\\ \\(>(?P<words>\\d+(?:\\.\\d+)?)\\ words\\)\\ have\\ no\\ subheadings"
    ],
    [
+    "str2.styled_subheadings",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ long\\ page\\(s\\)\\ \\(>(?P<words>\\d+(?:\\.\\d+)?)\\ words\\)\\ show\\ section\\ titles\\ that\\ are\\ not\\ <h2>/<h3>\\ tags"
+   ],
+   [
     "str2.many_h1",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ have\\ more\\ than\\ one\\ <h1>"
    ],

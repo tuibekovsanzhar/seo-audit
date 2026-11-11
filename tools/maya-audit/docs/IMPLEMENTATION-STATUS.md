@@ -1883,3 +1883,36 @@ Quick Look line. Saved audits get it through the current-engine copy (`reassess_
 | `ruff check` | NOT RUN (not installed in `.venv`) |
 | Owner's web app on port 8770 | NOT RUN here (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+
+## Uzman kontrolü: enpara 2e5829fb reviewed card by card by the SEO team (2026-11-11, DECISIONS 338)
+
+The team's SEO expert marked each card of the 2026-11-09 Ek (`docs/expert-reviews/enpara-2e5829fb.json`, the first human
+labels for Stage 12). Each note was checked against the saved evidence before any change; raw HTML was not saved, so
+Maya's own and Firecrawl's page analyses were compared instead.
+
+| Card | Rule(s) | Her verdict | Evidence says | Fixed (every audit) | enpara after |
+|---|---|---|---|---|---|
+| 1 Head erken kapanıyor | tseo1.head_closed_lost/later | wrong | partly right: break real, canonical/hreflang/title before it | High only when they or a restricting robots value are lost; card names what stays | Medium, 46 pages; "Head içinde … / <div#blueLightOverlay> sonrasında …" |
+| 2 Hata veren sayfalar | idx1.4xx.referenced | incomplete | right | DECISIONS 337 | sitemap card with files |
+| 3 robots.txt | acc2.blocks.sample | wrong | right | parameter / old-script / form rules Info | no card (18 Info) |
+| 4, 7, 8, 10 | str14.no_text, str16.shared, idx6.links_to_redirect, str3.unparsed | correct | — | — | unchanged |
+| 5 Marka adı | str5.names | wrong | mostly right: 2 real names on 2 pages | domain form = brand, sub-brands not counted, only pages to fix | 3 names, 2 pages, "Teyit edin" |
+| 6 H1 | str2.no_h1 | wording | right | "H1 etiketi" in every H1 rule | "H1 etiketi olmayan sayfalara tek bir H1 etiketi ekleyin" |
+| 9 Bölüm başlıkları | str2.no_subheadings | wrong | partly right: no <h2>/<h3>; one listing page | listing pages left out; styled titles counted (new audits) | 3 pages, "Uzun sayfalara H2/H3 bölüm başlıkları ekleyin" |
+| 11 http → https | idx2.temporary | wrong | partly right: 302 real, HSTS 1,825 days | Info under HSTS ≥ a year | no card |
+| 12 Küçük tutarsızlıklar | acc8.redirecting (+ notes) | incomplete | right | each address with what redirects where; repeat of card 8 dropped | /llms.txt: /sikca-sorulan-sorular → /404…, … |
+| 13 Soru başlıkları | (notes) | incomplete | right | every page listed with its questions; Ek rows | /odemeler: 4 soru düz metin, … (5 of 24 kept in this saved audit) |
+
+Verdicts: 4 correct, 5 wrong, 1 wording, 3 incomplete. Rules for follow-up (marked wrong): acc2.blocks.sample,
+idx2.temporary, str2.no_subheadings, str5.names, tseo1.head_closed_lost/later. enpara: 13 cards → 10; moodist 2d72fea0:
+same 14 cards (brand card lists 14 of its pages to fix; the note card drops the repeat of its links-to-redirect card);
+nihan b3198942: same 13 cards, H1 card worded "H1 etiketi", question card lists its pages.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_expert_review_338.py` | `26 passed` |
+| fast suite, first run | `8 failed, 3106 passed`: pins of the parser's `outside_head` (new `robots_content`), the head line on evidence given as plain addresses (fixed), the RG-9 test's brand pages (the name count now lists only pages with another name; the test now uses such a name) |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3114 passed, 4 skipped, 135 deselected, 1 warning in 521.32s (0:08:41)` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `1 failed, 3248 passed, 4 skipped, 1 warning in 930.88s (0:15:30)`: the fixture matrix (regenerated; `tests/test_fixture_matrix.py` `3 passed`) |
+| Owner's web app on port 8770 | NOT RUN here (restart needed) |
+| Push | NOT DONE (owner: don't push) |

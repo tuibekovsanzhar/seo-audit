@@ -514,13 +514,19 @@ def idx2_tls(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     temporary = [row for row in probed if row["outcome"] == "redirects_to_https" and row.get("status") in TEMPORARY_REDIRECTS]
     if temporary:
         urls = [row.get("http_url") or f"http://{row['host']}/" for row in temporary]
+        hsts = hsts_max_age(result)
+        # DECISIONS 338: with HSTS of a year or more, browsers go to https:// without asking http:// at all, and Google
+        # keeps the https:// address it is sent to in one hop: a temporary code there is hygiene, said as Info.
+        long_hsts = hsts is not None and hsts >= HSTS_LONG_S
         findings.append(Finding(
             "IDX-2", f"http:// redirects to https:// with a temporary redirect on {', '.join(row['host'] for row in temporary)}",
-            Severity.S4, Confidence.VERIFIED, "Documented (Google: a permanent redirect for a permanent move)", ALL_ENGINES,
-            scope_for(urls, sitewide=True),
+            Severity.INFO if long_hsts else Severity.S4, Confidence.VERIFIED,
+            "Documented (Google: a permanent redirect for a permanent move)", ALL_ENGINES, scope_for(urls, sitewide=True),
             {"hosts": [{"host": row["host"], "http_url": row.get("http_url"), "status": row.get("status"),
-                        "location": row.get("location")} for row in temporary], "reproduce": f"curl -I {shlex.quote(urls[0])}"},
-            "http:// requests redirect (301/308) to the https:// URL", TEMPORARY_FIX))
+                        "location": row.get("location")} for row in temporary], "reproduce": f"curl -I {shlex.quote(urls[0])}",
+             "hsts_max_age_s": hsts},
+            "http:// requests redirect (301/308) to the https:// URL", TEMPORARY_FIX,
+            notes=[HSTS_NOTE.format(days=round(hsts / 86400))] if long_hsts else []))
 
     not_assessed = []
     for entry in hosts:
@@ -2089,6 +2095,27 @@ def run_index_checks(result: CrawlResult, cfg: CrawlConfig) -> list[CheckResult]
 
 BROKEN_LINK_NOTE = ("The affected addresses are the pages whose links lead to an error, and the sitemap entries that "
                     "end at one; the failing addresses themselves are listed apart (evidence.target_urls).")
+
+
+# DECISIONS 338: HSTS of at least a year on the https:// homepage makes a temporary http:// -> https:// code hygiene.
+HSTS_LONG_S = 31_536_000
+HSTS_NOTE = ("Info, not a problem: the https:// pages send HSTS for {days} days, so browsers do not ask http:// at all, and "
+             "the redirect goes to the https:// address. A permanent code (301 or 308) is still the clean choice.")
+
+
+def hsts_max_age(result) -> int | None:
+    """The HSTS max-age (seconds) the https:// homepage sent, or None."""
+    try:
+        home = homepage_url(result)
+    except Exception:  # a saved crawl without what the homepage needs
+        home = None
+    for p in getattr(result, "pages", None) or []:
+        if p.url == home or (p.depth == 0 and str(p.url).startswith("https://")):
+            value = {str(k).lower(): v for k, v in (p.headers or {}).items()}.get("strict-transport-security") or ""
+            m = re.search(r"max-age\s*=\s*\"?(\d+)", value, re.I)
+            if m:
+                return int(m.group(1))
+    return None
 
 
 # DECISIONS 337: the 4xx addresses only a sitemap lists, and real links whose written address is mistyped, are cards of

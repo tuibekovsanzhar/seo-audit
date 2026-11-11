@@ -122,7 +122,7 @@
   "str1.generic": "{n} sayfanın başlığı genel geçer bir ifade",
   "str2.no_h1": "{n} sayfada <h1> yok",
   "str2.empty_h1": "{n} sayfada <h1> boş",
-  "str2.no_subheadings": "{n} uzun sayfada ({words} kelimeden fazla) alt başlık yok",
+  "str2.no_subheadings": "{n} uzun sayfada ({words} kelimeden fazla) <h2>/<h3> başlık etiketi yok",
   "str2.many_h1": "{n} sayfada birden fazla <h1> var",
   "str3.unparsed": "{n} sayfada ayrıştırılamayan JSON-LD var",
   "str3.no_organization": "Ana sayfada Organization yapılandırılmış verisi yok",
@@ -309,7 +309,8 @@
   "str7.over_100kb": "Örneklenen {n} görsel dosyası 100 ile 500 KB arasında",
   "str9.wrong_language": "{n} sayfadaki hreflang bağlantılarının hedef sayfası başka bir dil belirtiyor",
   "idx1.4xx.sitemap_only": "{n} site haritası adresi istemci hatasıyla (4xx) bitiyor; okunan hiçbir sayfa bu adreslere bağlantı vermiyor",
-  "idx1.href_mistyped": "{pages} sayfadaki {links} bağlantının adresi (href) yanlış yazılmış ve istemci hatasıyla (4xx) bitiyor"
+  "idx1.href_mistyped": "{pages} sayfadaki {links} bağlantının adresi (href) yanlış yazılmış ve istemci hatasıyla (4xx) bitiyor",
+  "str2.styled_subheadings": "{n} uzun sayfada ({words} kelimeden fazla) bölüm başlıkları görünüyor ama <h2>/<h3> etiketi değil"
  },
  "fixes": {
   "Check Google Search Console (Settings → Crawl stats, by response) for 403 or 429 answers to the real Googlebot. Maya's request came from Maya's own address, which a firewall may refuse on purpose as a fake Googlebot; change nothing unless the real Googlebot is refused too.": "Google Search Console'da (Ayarlar → Tarama istatistikleri, yanıta göre) gerçek Googlebot'a 403 veya 429 yanıtı verilip verilmediğine bakın. Maya'nın isteği Maya'nın kendi adresinden geldi; güvenlik duvarı bunu bilerek sahte Googlebot sayıp reddetmiş olabilir. Gerçek Googlebot da reddedilmiyorsa hiçbir şeyi değiştirmeyin.",
@@ -585,7 +586,8 @@
   "Correct the hreflang code, or point the link at the page in that language; check the target page's <html lang> too.": "hreflang kodunu düzeltin ya da bağlantıyı o dildeki sayfaya verin; hedef sayfanın <html lang> değerini de kontrol edin.",
   "Resize each image to the largest size it is shown at and compress it, or serve WebP/AVIF; replace the file at the same address.": "Her görseli gösterildiği en büyük boyuta küçültüp sıkıştırın ya da WebP/AVIF olarak sunun; dosyayı aynı adreste değiştirin.",
   "Take these entries out of the sitemap, or redirect each one that once held content to its closest page. When they come from page headings or FAQ questions, fix the sitemap generator so it lists pages only.": "Bu kayıtları site haritasından çıkarın ya da eskiden içerik taşıyan her birini en yakın sayfaya yönlendirin. Sayfa başlıklarından veya SSS sorularından geliyorlarsa site haritası oluşturucuyu yalnızca sayfaları listeleyecek şekilde düzeltin.",
-  "Correct the href in the page or template that holds it (evidence gives the value as written): add the missing / or #, or put the address in place of the text.": "href değerini onu taşıyan sayfada ya da şablonda düzeltin (yazıldığı hâli kanıtta): eksik / veya # işaretini ekleyin ya da metnin yerine adresi yazın."
+  "Correct the href in the page or template that holds it (evidence gives the value as written): add the missing / or #, or put the address in place of the text.": "href değerini onu taşıyan sayfada ya da şablonda düzeltin (yazıldığı hâli kanıtta): eksik / veya # işaretini ekleyin ya da metnin yerine adresi yazın.",
+  "Mark the section titles the page already shows (accordion toggles, styled titles) as <h2>/<h3>, keeping their look with CSS.": "Sayfanın zaten gösterdiği bölüm başlıklarını (akordeon düğmeleri, biçimlenmiş başlıklar) <h2>/<h3> olarak işaretleyin; görünümlerini CSS ile koruyun."
  },
  "fix_patterns": {
   "acc2.search": "{engines} bu sayfaları bulup atıf yapabilsin istiyorsanız, {line}. satırdaki kuralı bu kullanıcı aracıları için kaldırın veya daraltın. Engelleme bilinçli bir tercihse “kasıtlı” olarak işaretleyin.",
@@ -815,7 +817,8 @@
   "each hreflang link names a page in the language its code says": "her hreflang bağlantısı, kodunun belirttiği dildeki sayfayı gösterir",
   "content images under 100 KB each where they can be": "içerik görselleri mümkün olduğunca 100 KB'ın altındadır",
   "the sitemap lists only addresses that answer 200": "site haritası yalnızca 200 döndüren adresleri listeler",
-  "every link's href is the address it means: a path starting with /, a full address or #section": "her bağlantının href değeri kastettiği adrestir: / ile başlayan bir yol, tam bir adres ya da #bölüm"
+  "every link's href is the address it means: a path starting with /, a full address or #section": "her bağlantının href değeri kastettiği adrestir: / ile başlayan bir yol, tam bir adres ya da #bölüm",
+  "section titles marked as <h2>/<h3>": "bölüm başlıkları <h2>/<h3> olarak işaretli"
  },
  "expected_patterns": {
   "acc2.declared": "robots.txt, beyan edildiği gibi {role} botlarını engeller",
@@ -1081,7 +1084,10 @@
   "Estimated: an author counts when the page has a byline element (a class or id such as author or byline), rel=author, itemprop=author, a meta author tag or an author in its structured data.": "Tahmini: sayfada bir yazar satırı öğesi (author ya da byline gibi bir class veya id), rel=author, itemprop=author, bir meta author etiketi ya da yapılandırılmış verisinde bir yazar varsa yazar sayılır.",
   "Read from a saved report, which keeps the meta tags, the structured data and the page's saved JSON-LD but no byline element: confirm on the page.": "Kayıtlı bir rapordan okundu; rapor meta etiketlerini, yapılandırılmış veriyi ve sayfanın kayıtlı JSON-LD'sini tutar ama yazar satırı öğesini tutmaz: sayfada doğrulayın.",
   "Sizes are the Content-Length the server sent for a sample of image files; files over 500 KB are in their own finding.": "Boyutlar, sunucunun örneklenen görsel dosyaları için gönderdiği Content-Length değerleridir; 500 KB'tan büyük dosyalar ayrı bir bulguda.",
-  "No page Maya read links to these addresses: they are in the sitemap only. Maya reads a sample, so a page it did not read may still link to one.": "Maya'nın okuduğu hiçbir sayfa bu adreslere bağlantı vermiyor: yalnızca site haritasındalar. Maya bir örneklem okur; okunmayan bir sayfa yine de bağlantı veriyor olabilir."
+  "No page Maya read links to these addresses: they are in the sitemap only. Maya reads a sample, so a page it did not read may still link to one.": "Maya'nın okuduğu hiçbir sayfa bu adreslere bağlantı vermiyor: yalnızca site haritasındalar. Maya bir örneklem okur; okunmayan bir sayfa yine de bağlantı veriyor olabilir.",
+  "Medium, not High: no canonical, hreflang, title or restricting robots tag (noindex, nofollow ...) comes after the break; evidence.kept_in_head lists what the head still holds before it. Without the description Google writes the snippet from the page text.": "Yüksek değil Orta: kırılmadan sonra canonical, hreflang, title ya da kısıtlayan bir robots etiketi (noindex, nofollow ...) yok; evidence.kept_in_head head'in kırılmadan önce neleri taşıdığını sayar. Açıklama olmadan Google özet metnini sayfa metninden yazar.",
+  "No <h2>-<h6> tag, and no element marked or styled as a section title, in the page's HTML; a listing page (a category or index of links) is left out (DECISIONS 338).": "Sayfanın HTML'inde <h2>-<h6> etiketi ve bölüm başlığı olarak işaretlenmiş ya da biçimlenmiş bir öğe yok; liste sayfaları (kategori ya da bağlantı dizini) dışarıda bırakılır (DECISIONS 338).",
+  "Counted: role=\"heading\", <summary>, <dt>, accordion toggles and elements whose class names a title, outside the header, menu and footer.": "Sayılanlar: role=\"heading\", <summary>, <dt>, akordeon düğmeleri ve sınıfı başlık diyen öğeler; üst bilgi, menü ve alt bilgi dışında."
  },
  "note_patterns": {
   "source.firecrawl": "Kaynak: Firecrawl",
@@ -1119,7 +1125,12 @@
   "idx5.not_checked": "Listelenen {n} adres kontrol edilemedi ({why}); bu nedenle oran, kontrol edilen adreslerden yapılmış bir tahmindir.",
   "idx5.guess": "“{fragment}” muhtemelen “{word}”; site haritası büyük olasılıkla UTF-8 ile yazılmamış.",
   "acc8.first_line": "İlk satır: “{line}”.",
-  "idx1.from_headings": "Çıkarım: bu adreslerin {n} tanesi Maya'nın okuduğu bir sayfadaki bir başlığı veya SSS sorusunu heceliyor (evidence.likely_cause): site haritası oluşturucu adresleri başlıklardan üretiyor görünüyor. Kontrol edin."
+  "idx1.from_headings": "Çıkarım: bu adreslerin {n} tanesi Maya'nın okuduğu bir sayfadaki bir başlığı veya SSS sorusunu heceliyor (evidence.likely_cause): site haritası oluşturucu adresleri başlıklardan üretiyor görünüyor. Kontrol edin.",
+  "acc2.deliberate.parameter": "Bilgi olarak raporlandı: kural ({pattern}) yalnızca parametreli adresleri engelliyor; siteler bunu genellikle bilerek yapar ve engellenen adreslerin hiçbiri ana sayfa, kilit sayfa ya da site haritasında değil. Bilinçli olduğunu teyit edin.",
+  "acc2.deliberate.legacy": "Bilgi olarak raporlandı: kural ({pattern}) yalnızca eski sunucu betiği adreslerini engelliyor; siteler bunu genellikle bilerek yapar ve engellenen adreslerin hiçbiri ana sayfa, kilit sayfa ya da site haritasında değil. Bilinçli olduğunu teyit edin.",
+  "acc2.deliberate.form": "Bilgi olarak raporlandı: kural ({pattern}) yalnızca form ya da başvuru sayfalarını engelliyor; siteler bunu genellikle bilerek yapar ve engellenen adreslerin hiçbiri ana sayfa, kilit sayfa ya da site haritasında değil. Bilinçli olduğunu teyit edin.",
+  "idx2.hsts": "Bilgi, sorun değil: https:// sayfaları {days} günlük HSTS gönderiyor; tarayıcılar http:// adresini hiç sormuyor ve yönlendirme https:// adresine gidiyor. Kalıcı kod (301 ya da 308) yine de temiz seçimdir.",
+  "str2.listing": "{n} liste sayfası (kategori ya da bağlantı dizini) dışarıda bırakıldı: öğeleri zaten yapısıdır."
  },
  "outcomes": {
   "outcome.complete": "Denetim tamamlandı: keşfedilen her sayfa tarandı ve her kontrol çalıştı.",

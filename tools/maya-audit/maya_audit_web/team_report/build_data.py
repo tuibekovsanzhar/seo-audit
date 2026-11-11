@@ -431,6 +431,7 @@ class Builder:
         self.affected = affected or {}
         # broken-link rows from the final result (maya_audit.final.broken_link_cards), by finding id
         self.cards = cards or {}
+        self.url_notes: dict[str, str] = {}  # DECISIONS 338: what a note card saw on each address
         self.findings = {}
         for chk in report.get("checks") or []:
             for f in chk.get("findings") or []:
@@ -561,6 +562,33 @@ class Builder:
         if line:
             self.fact(line)
         return line
+
+    def head_lines(self, f):
+        """DECISIONS 338: a head-closed-early card says what stays in the head before the break and what comes after
+        it, from the evidence, so nobody reads it as "the canonical is missing" when it is not."""
+        if f.get("rule_id") not in ("tseo1.head_closed_lost", "tseo1.head_closed_later"):
+            return []
+        rows = [r for r in (f.get("evidence") or {}).get("pages") or [] if isinstance(r, dict)]
+        if not rows:
+            return []
+        L = self.L
+        culprit = Counter(json.dumps(r.get("closed_by") or {}, sort_keys=True) for r in rows).most_common(1)[0][0]
+        c = json.loads(culprit)
+        element = f"<{c.get('tag') or '?'}" + (f"#{c['id']}" if c.get("id") else "") + ">"
+        kept = Counter(k for r in rows for k in r.get("kept_in_head") or [])
+        kept_words = [k for k, _ in kept.most_common()]
+        after = []
+        for tag, key in (("canonical", "canonical_after"), ("hreflang", "hreflang_after")):
+            hit = [r for r in rows if r.get(key)]
+            if hit:  # with the first copy in the head, the one after the break is a second copy
+                after.append(fmt(L["head_second_copy"], tag=tag) if all(tag in (r.get("kept_in_head") or []) for r in hit) else tag)
+        if any(r.get("robots_after") for r in rows):
+            known = [v for r in rows for v in r.get("robots_content") or []]
+            after.append(f"robots ({', '.join(sorted(set(known))[:2])})" if known else L["head_robots_unknown"])
+        after += sorted({m for r in rows for m in r.get("meta_after") or []})[:3]
+        if any(r.get("properties_after") for r in rows):
+            after.append("Open Graph")
+        return [fmt(L["head_kept_line"], kept=", ".join(kept_words) or "—", element=element, after=", ".join(after) or "—")]
 
     def entries_lines(self, f):
         """DECISIONS 337: a sitemap-only 4xx card says which sitemap file lists its addresses and, when some spell a
@@ -735,18 +763,30 @@ class Builder:
                 if cid == "ACC-8" and f.get("severity") == "Info" and "redirects" in (f.get("title") or ""):
                     moved = (f.get("evidence") or {}).get("redirecting") or []
                     ex = [path_of(m.get("url") if isinstance(m, dict) else m) for m in moved[:3]]
-                    rows.append(("llms.txt links that redirect", len(moved), ex, [], [f["id"]]))
+                    # DECISIONS 338: the file that holds the links, and what each link redirects to
+                    files = list((f.get("scope") or {}).get("urls") or [])
+                    for u in files:
+                        self.url_notes[u] = "; ".join(f"{path_of(m.get('url')) or m.get('url')} → {path_of(m.get('location')) or m.get('location')}"
+                                                      for m in moved if isinstance(m, dict))
+                    rows.append(("llms.txt links that redirect", len(moved), ex, files, [f["id"]]))
             for o in chk.get("observations") or []:
                 label = self.HYGIENE_OBS.get((cid, o.get("metric")))
                 if not label:
                     continue
                 n = o.get("value") or o.get("pages") or o.get("links") or 0
                 if label.startswith("internal links"):
+                    # DECISIONS 338: the same links have their own card (IDX-6 "links to redirects", with where each
+                    # link is): not said again here
+                    if any(x.get("rule_id") == "idx6.links_to_redirect" for x in self.findings.values()):
+                        continue
                     ex = list(dict.fromkeys(path_of(s.get("target", "")) for s in (o.get("sample") or [])))[:3]
-                    urls = []
+                    urls = list(dict.fromkeys(s.get("source") for s in o.get("sample") or [] if s.get("source")))
+                    for s in o.get("sample") or []:
+                        if s.get("source"):
+                            self.url_notes[s["source"]] = f"«{s.get('anchor') or ''}» → {path_of(s.get('target')) or s.get('target')}"
                 elif label.startswith("parameters"):
                     ex = [f"{urlsplit(e['url']).netloc} ({', '.join(e['parameters'][:2])})" for e in (o.get("examples") or [])[:3]]
-                    urls = []
+                    urls = [e["url"] for e in o.get("examples") or [] if e.get("url")]  # DECISIONS 338
                 elif label.startswith("empty"):
                     ex = [f"{k}: {v}" for k, v in (o.get("names") or {}).items()][:3]
                     urls = list(o.get("examples") or [])
@@ -783,6 +823,9 @@ class Builder:
             "links": [{"href": u, "text": (path_of(u) if path_of(u) not in ("", "/") else urlsplit(u).netloc) or u} for u in shown],
             "more": max(0, len(urls) - len(shown)), "sitewide": not shown,
             "all_urls": urls, "known_paths": known_paths(src, urls),
+            "url_notes": {u: self.url_notes[u] for u in urls if u in self.url_notes},  # DECISIONS 338
+            # DECISIONS 338: what was seen where, on the card itself (the rest in the appendix)
+            "sub": [f"{path_of(u) or u}: {self.url_notes[u]}" for u in urls if u in self.url_notes][:3] or None,
         }
 
     CONTENT_OBS = {
@@ -819,6 +862,11 @@ class Builder:
                     continue
                 if label.startswith("questions"):
                     ex = [path_of(e["url"]) or "/" for e in kept[:3]]
+                    for e in kept:  # DECISIONS 338: what was seen on each page
+                        if e.get("url"):
+                            first = (e.get("first_questions") or [""])[0]
+                            self.url_notes[e["url"]] = (f"{e.get('questions')} soru düz metin" if self.lang == "tr" else
+                                                        f"{e.get('questions')} questions as plain text") + (f": «{first[:80]}»" if first else "")
                 rows.append((label, (o.get("pages") or 0) - (len(examples) - len(kept)), ex,
                              [e["url"] for e in kept if e.get("url")], [cid]))
         return rows
@@ -853,6 +901,11 @@ class Builder:
             "links": [{"href": u, "text": (path_of(u) if path_of(u) not in ("", "/") else urlsplit(u).netloc) or u} for u in shown],
             "more": max(0, len(urls) - len(shown)), "sitewide": not shown,
             "all_urls": urls, "known_paths": known_paths(src, urls),
+            "url_notes": {u: self.url_notes[u] for u in urls if u in self.url_notes},  # DECISIONS 338
+            # DECISIONS 338: what was seen where, on the card itself (the rest in the appendix)
+            "sub": [f"{path_of(u) or u}: {self.url_notes[u]}" for u in urls if u in self.url_notes][:3] or None,
+            # a report saved before kept 5 example pages: the others are counted, not listed
+            "unlisted": max(0, sum(n for _, n, *_ in rows) - len(urls)),
         }
 
     # Bilgi düzeyindeki bulgulardan PDF'e ayrı kartla girenler (DECISIONS 258): (kontrol, başlık kalıbı, konu adı).
@@ -1692,7 +1745,7 @@ class Builder:
                 chain_line = self.chain_text((group or {}).get("chain"))
                 template_line = None if chain_line else self.template_text((group or {}).get("template_line"))
                 sitemap_line = self.sitemap_line(f)
-                for line in (template_line, sitemap_line, *reversed(self.entries_lines(f))):
+                for line in (template_line, sitemap_line, *reversed(self.entries_lines(f)), *self.head_lines(f)):
                     if line:
                         sub = [line] + list(sub or [])
                         self.fact(line)

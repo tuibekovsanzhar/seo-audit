@@ -213,5 +213,6 @@
  "Images over 100 KB slow the page down, most of all on mobile; a lighter file looks the same.": "100 KB'tan büyük görseller sayfayı yavaşlatır, özellikle mobilde; daha hafif bir dosya aynı görünür.",
  "A code that names the wrong language leads engines to show readers the version in another language.": "Yanlış dili belirten bir kod, arama motorlarının okuyucuya başka dildeki sürümü göstermesine yol açar.",
  "A link whose address is text or misses its / or # sends the visitor to an error page.": "Adresi metin olan ya da başında / veya # eksik olan bir bağlantı, ziyaretçiyi hata sayfasına gönderir.",
- "Google visits every sitemap address; entries that fail waste its crawl and show as errors in Search Console.": "Google site haritasındaki her adresi ziyaret eder; hata veren kayıtlar taramasını boşa harcar ve Search Console'da hata olarak görünür."
+ "Google visits every sitemap address; entries that fail waste its crawl and show as errors in Search Console.": "Google site haritasındaki her adresi ziyaret eder; hata veren kayıtlar taramasını boşa harcar ve Search Console'da hata olarak görünür.",
+ "Engines and screen readers read a page's sections from its heading tags; styled text is not a heading to them.": "Motorlar ve ekran okuyucular sayfanın bölümlerini başlık etiketlerinden okur; biçimlenmiş metin onlar için başlık değildir."
 }

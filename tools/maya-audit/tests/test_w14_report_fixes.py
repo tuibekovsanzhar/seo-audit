@@ -37,9 +37,10 @@ def test_brand_name_count_and_og_site_name_title_share_one_key():
 
 
 def test_the_gate_reports_the_two_on_the_same_pages_as_one_cause_said_twice():
-    """The seven static pages give the name "Ornek" in their titles and hold their title in og:site_name: both
-    findings list them, so RG-9 reports the double count."""
-    check = brand_pages("Ornek")
+    """The seven static pages give another name ("Shop Ornek") in their titles and hold their title in og:site_name:
+    both findings list them, so RG-9 reports the double count. (Since DECISIONS 338 the name count lists only pages
+    that carry a name other than the main one: pages titled with the main name "Ornek" are not on it.)"""
+    check = brand_pages("Shop Ornek")
     names, pasted = to_jsonable(check.findings)
     assert set(pasted["scope"]["urls"]) <= set(names["scope"]["urls"])
     report = {"checks": [to_jsonable(check)]}

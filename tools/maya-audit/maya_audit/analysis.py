@@ -126,6 +126,12 @@ def _hidden(attr: dict[str, str]) -> bool:
             or bool(_HIDDEN_STYLE.search(attr.get("style", ""))) or tiny)
 
 
+
+# DECISIONS 338: an element styled as a section title (its class or id says so), not a heading tag.
+STYLED_TITLE = re.compile(r"(?:^|[\s_-])(?:title|heading|baslik|başlık|subtitle|section-title|accordion-(?:header|title|button)|"
+                          r"question|soru)(?:$|[\s_-])", re.I)
+STYLED_TITLE_TAGS = ("div", "span", "p", "strong", "b", "a", "label", "button")
+
 class _Analyzer(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -144,6 +150,10 @@ class _Analyzer(HTMLParser):
         self.in_other_title = False  # a second <title>, or one in the body: not the page's, and not text a visitor sees
         self.outside_title = 0
         self.outside_meta: list[str] = []
+        self.outside_robots: list[str] = []
+        # DECISIONS 338: section titles that are not <h2>-<h6> tags (role="heading", <summary>, <dt>, an accordion
+        # toggle, an element whose class or id names a title), outside the header, menu and footer.
+        self.styled_headings = 0
         self.outside_canonical = 0
         # An element that cannot stand in a head, met while <head> is still open, ends the head there (a widget's <div>,
         # an <img>): what follows is read as body by browsers and by Google (DECISIONS 260).
@@ -235,6 +245,11 @@ class _Analyzer(HTMLParser):
         self._pending_collectors: list[dict] = []
         in_main = self.depth["main"] > 0
         in_chrome = self.depth["chrome"] > 0
+        if not in_chrome and self.body_started and (
+                (attr.get("role") or "").strip().lower() == "heading" or tag in ("summary", "dt")
+                or (tag == "button" and ("aria-expanded" in attr or "aria-controls" in attr))
+                or (tag in STYLED_TITLE_TAGS and STYLED_TITLE.search(f'{attr.get("class", "")} {attr.get("id", "")}'))):
+            self.styled_headings += 1
         if tag == "html" and not self.saw_html:
             self.saw_html = True
             self.html_lang = attrs_get(attrs, "lang")
@@ -289,6 +304,9 @@ class _Analyzer(HTMLParser):
                 self.meta.append({"name": attr["name"].strip().lower(), "content": attr.get("content", "").strip()})
             elif len(self.outside_meta) < MAX_ITEMS:
                 self.outside_meta.append(attr["name"].strip().lower())
+                # DECISIONS 338: what a robots tag after the break says decides whether losing it matters
+                if attr["name"].strip().lower() in ("robots", "googlebot", "bingbot") and len(self.outside_robots) < 5:
+                    self.outside_robots.append(attr.get("content", "").strip()[:200])
         if tag == "title" and not self.depth["non_content"]:
             if own and not self.title_seen:  # the first one only
                 self.title_seen = self.in_title = True
@@ -1267,6 +1285,7 @@ def analyze_html(html: str, page_url: str | None = None) -> dict:
         "inline_script_chars": sum(len("".join(s["parts"])) for s in parser.scripts if not s["src"] and "json" not in s["type"]),
         "external_scripts": sum(1 for s in parser.scripts if s["src"]),
         "tabpanels": [{"id": t["id"], "chars": t["chars"]} for t in parser.tabpanels],
+        "styled_headings": parser.styled_headings,  # DECISIONS 338
         "buttons": [{"text": _WS.sub(" ", " ".join(b["parts"])).strip()[:80], "in_form": b["in_form"], "type": b["type"],
                      "in_chrome": b["in_chrome"]} for b in parser.buttons][:MAX_ITEMS],
         # Outside the header, menu, footer and sidebar only.
@@ -1299,6 +1318,7 @@ def analyze_html(html: str, page_url: str | None = None) -> dict:
         # A <title>, <meta name> or canonical link after the body started: not read as the page's.
         "outside_head": {"title": parser.outside_title, "meta": parser.outside_meta, "canonical": parser.outside_canonical,
                          "closed_early_by": parser.head_closed_by, "hreflang": parser.outside_hreflang,
+                         "robots_content": parser.outside_robots,
                          "properties": parser.outside_properties},
         "canvases": [{"in_main": c["in_main"], "aria_label": c["aria_label"], "fallback_chars": c["chars"],
                       "hidden": c["hidden"], "role": c["role"], "hint": c["hint"]} for c in parser.canvases],

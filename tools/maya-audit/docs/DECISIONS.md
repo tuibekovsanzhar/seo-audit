@@ -4538,3 +4538,52 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      real 404 link and sitemap entries, one spelling a heading; a synthetic saved report shaped like enpara's; the web
      card's list); `tests/test_m1_broken_links.py` follows (the card rows carry the new fields; a link to a working
      redirect is now said where it is under IDX-6).
+338. **The SEO team's card-by-card review of enpara 2e5829fb, each rule checked against the saved evidence and fixed for
+     every audit (Owner, 2026-11-11, review by the team's SEO expert in `maya-audit-enpara.com-2026-11-09-İLGİNAY
+     KONTROL.xlsx`: items 1-8 as asked; the thresholds (HSTS a year, 3 styled titles), the deliberate-path lists, the
+     wording and the review file's shape are agent defaults).** Every audit; saved audits through
+     `reassess_rules._decisions_338`. Her verdicts: 4 correct, 5 wrong, 1 wording, 3 incomplete
+     (`docs/expert-reviews/enpara-2e5829fb.json`, the first human labels for Stage 12's accuracy measurement).
+     (1) *TSEO-1, head closed early* (she: wrong; checked: partly right). `div#blueLightOverlay` sits inside <head> in the
+     site's own HTML (Maya's direct copy too, 121 of 128 pages), so the head does end there; but canonical, hreflang and
+     title come before it. High had come from any robots tag after the break, whose value was never recorded. Now the
+     parser keeps that value (`outside_head.robots_content`); High only when a canonical, hreflang or title with no copy
+     before the break, or a robots value that restricts something (noindex, nofollow, none, nosnippet, max-*,
+     unavailable_after ...), comes after it; otherwise Medium, and each row says what stays in the head
+     (`kept_in_head`). The card says it: "Head içinde, kırılmadan önce: canonical, title, hreflang. <div#blueLightOverlay>
+     sonrasında: ikinci bir canonical kopyası, robots (değeri kaydedilmedi), description, …". enpara: High 47 → 0 pages,
+     the card Medium.
+     (2) *ACC-2, robots.txt* (she: wrong; right). A Disallow on query parameters ("?" or "="), old server-script files
+     (.aspx, .asp, .php, .jsp, .cfm, .cgi, .ashx, .axd, .do) or form/application paths (basvuru, form, apply, signup,
+     register, kayit, teklif, odeme, checkout) that reaches no homepage, key page, sitemap address or menu link is Info
+     with "Reported as Info: … usually block on purpose … Confirm it is intended" (`deliberate_rule`). enpara: 18 → Info,
+     no card.
+     (3) *STR-5, brand names* (she: wrong; mostly right). Counted were "Enpara", "Enpara.com", "Enpara Şirketim",
+     "Bankanın güzeli | Enpara" and "Homepage" on 111 pages. The domain form is the brand ("Enpara.com" = "enpara",
+     `brand_key`); a section's own name (the main name and 1-4 words, only in titles and og:site_name, never on the
+     homepage) is a sub-brand, listed, not counted; the pages to fix are those carrying another name, not all that name
+     the brand. enpara: 3 names (the two Organization names are real), 2 pages, under "Teyit edin".
+     (4) *Wording* (she: wording). The team report's Turkish says "H1 etiketi" for <h1> in every H1 rule, not "ana
+     başlık"; the text checks allow the tag names H1-H6.
+     (5) *STR-2, long pages without subheadings* (she: wrong; partly right). Neither copy of the 4 pages has <h2>/<h3>;
+     the raw HTML was not saved, so styled titles cannot be confirmed for this audit. A listing page (page type
+     "category") is left out (`drop_listing_pages`, after page types are known); new audits count section titles that
+     are not heading tags (role="heading", <summary>, <dt>, accordion toggles, a class or id naming a title, outside the
+     header, menu and footer: `styled_headings`), and 3 or more make it "N long page(s) … show section titles that are not
+     <h2>/<h3> tags" (`str2.styled_subheadings`, "Uzun sayfalardaki bölüm başlıklarını H2/H3 olarak işaretleyin"). The
+     no-subheadings card says "H2/H3 bölüm başlıkları". enpara: 4 → 3 pages.
+     (6) *IDX-2, http → https* (she: wrong; partly right). The 302 is real: 4 requests (robots.txt and / on both hosts),
+     one hop each to https://www.enpara.com/. The https pages send HSTS for 1,825 days: with HSTS of a year or more the
+     temporary code is Info with the reason. enpara: no card.
+     (7) *Note cards* (she: incomplete). A card the team report puts together from notes lists every address with what
+     was seen there (`url_notes`): llms.txt with each link → where it redirects, the page and link → target for internal
+     links to redirects (left out when IDX-6's "links to redirects" card says the same links), each question page with
+     its count and first question; the card prints three of them; the Ek gives each address a row of the card
+     (`page_rows.finding_rows`), so the web list has them too; the engine keeps every question page (was 5), and a saved
+     audit's card counts the pages it did not keep.
+     (8) *Accuracy data*: one record per card (rule ids, the expert's note, her verdict, the evidence check, the fix);
+     `follow_up` lists the rules she marked wrong: acc2.blocks.sample, idx2.temporary, str2.no_subheadings, str5.names,
+     tseo1.head_closed_lost/later. IMPLEMENTATION-STATUS "Uzman kontrolü" summarises it.
+     Tests: `tests/test_expert_review_338.py` (markup with the break before plain and restricting robots tags and a
+     second canonical; deliberate patterns; a synthetic saved report shaped like enpara's; a fake site with accordion
+     titles and a flat long page; a listing page; a note card's rows; the review file).

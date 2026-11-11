@@ -577,7 +577,8 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
             sections_cut_off.append(p.url)
         elif words > cfg.long_page_words and not any(level >= 2 for level in levels):
             long_flat.append({"url": p.url, "content_words": words, "tables_present": len(a.get("tables") or []),
-                              "context": "tables may structure this page" if a.get("tables") else "prose/list structure requires review"})
+                              "context": "tables may structure this page" if a.get("tables") else "prose/list structure requires review",
+                              "styled_headings": a.get("styled_headings")})
         for h in a["headings"]:
             if h["level"] in (2, 3):
                 subheadings += 1
@@ -653,13 +654,26 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
                                  HYPOTHESIS, PASSAGE_ENGINES, no_h1, {"pages": no_h1[:40]},
                                  "one <h1> naming the page topic", "Add one <h1> that names the page's topic.",
                                  key_urls, [CAPPED]))
-    if long_flat:
-        urls = [r["url"] for r in long_flat]
+    # DECISIONS 338: a long page whose sections have titles that are not heading tags (accordion toggles, styled
+    # titles) has structure; what it lacks is the tags. Said as that, apart from a page with no titles at all.
+    styled = [r for r in long_flat if (r.get("styled_headings") or 0) >= STYLED_HEADINGS_MIN]
+    flat = [r for r in long_flat if r not in styled]
+    if flat:
+        urls = [r["url"] for r in flat]
         findings.append(_finding(
             "STR-2", f"{len(urls)} long page(s) (>{cfg.long_page_words} words) have no subheadings", Severity.S4,
-            Confidence.VERIFIED, HYPOTHESIS, PASSAGE_ENGINES, urls, {"pages": long_flat[:40]},
+            Confidence.VERIFIED, HYPOTHESIS, PASSAGE_ENGINES, urls, {"pages": flat[:40]},
             "sections with <h2>/<h3> headings", "Split the page into sections with descriptive <h2>/<h3> headings.",
-            key_urls, [CAPPED, "Word count is of the <main>/<article> text when present, else all visible text."]))
+            key_urls, [CAPPED, "Word count is of the <main>/<article> text when present, else all visible text.",
+                       NO_SUBHEADINGS_NOTE]))
+    if styled:
+        urls = [r["url"] for r in styled]
+        findings.append(_finding(
+            "STR-2", STYLED_SUBHEADINGS_TITLE.format(n=len(urls), words=cfg.long_page_words), Severity.S4,
+            Confidence.VERIFIED, HYPOTHESIS, PASSAGE_ENGINES, urls, {"pages": styled[:40]},
+            "section titles marked as <h2>/<h3>", STYLED_SUBHEADINGS_FIX, key_urls,
+            [CAPPED, "Counted: role=\"heading\", <summary>, <dt>, accordion toggles and elements whose class names a title, "
+                     "outside the header, menu and footer."]))
     if multi:
         urls = [r["url"] for r in multi]
         findings.append(_finding("STR-2", f"{len(urls)} page(s) have more than one <h1>", Severity.INFO,
@@ -699,7 +713,7 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
     unmarked = [{"url": p.url, "questions": len(qs), "first_questions": qs[:3]}
                 for p in checked for qs in [questions_not_headings(p.analysis)] if qs and not narrative_questions(p.analysis)]
     if unmarked:
-        observations.append({"metric": QUESTIONS_NOT_HEADINGS, "pages": len(unmarked), "examples": unmarked[:5],
+        observations.append({"metric": QUESTIONS_NOT_HEADINGS, "pages": len(unmarked), "examples": unmarked[:200],  # every page (338)
                              "note": "Mark each question as a heading (<h3>) or an accordion's <summary>, so a reader "
                                      "moving by headings and a machine reading the outline find it."})
     # A page cut off before any <h1> is not counted as checked here; coverage lists it (DECISIONS 282).
@@ -875,6 +889,14 @@ def _parse_place(block: dict) -> str | None:
 # QA_MAX_ANSWER_CHARS of text from one question to the next. An article whose question subheadings open long sections
 # is not one. (Measured live on a shop's FAQ: answers of 84 to 1,200 characters, steps lists included.)
 QUESTION_MARKS = ("?", "؟", "？")
+# DECISIONS 338: section titles that are not heading tags.
+STYLED_HEADINGS_MIN = 3
+STYLED_SUBHEADINGS_TITLE = "{n} long page(s) (>{words} words) show section titles that are not <h2>/<h3> tags"
+STYLED_SUBHEADINGS_FIX = ("Mark the section titles the page already shows (accordion toggles, styled titles) as <h2>/<h3>, "
+                          "keeping their look with CSS.")
+NO_SUBHEADINGS_NOTE = ("No <h2>-<h6> tag, and no element marked or styled as a section title, in the page's HTML; a "
+                       "listing page (a category or index of links) is left out (DECISIONS 338).")
+LISTING_PAGE_TYPES = ("category",)
 QUESTIONS_NOT_HEADINGS = "pages whose question-and-answer block writes its questions as plain text"
 QA_MIN_PAIRS = 3
 QA_QUESTION_MAX_CHARS = 200
@@ -1931,8 +1953,17 @@ def copyright_name(match: re.Match) -> str:
     return COPYRIGHT_YEARS.sub("", match.group("name").strip(" ,")).strip(" ,")
 
 
+# DECISIONS 338: "Enpara.com" is the brand written as its domain, not another name.
+DOMAIN_FORM = re.compile(r"^(?:www\.)?(?P<name>[^\s.]+(?:[ -][^\s.]+)*)\.(?:com|net|org|co|io|ai|app|info|biz|shop|store|"
+                         r"online|site|tr|de|uk|fr|es|it|nl|eu)(?:\.(?:tr|uk|de|br|au))?$", re.I)
+
+
 def brand_key(name: str) -> str:
-    """Normalized brand name for counting variants: case, punctuation, a trailing 'logo', and legal suffixes removed."""
+    """Normalized brand name for counting variants: case, punctuation, a trailing 'logo', legal suffixes and a domain
+    ending ("Enpara.com" is "enpara", DECISIONS 338) removed."""
+    domain = DOMAIN_FORM.match((name or "").strip())
+    if domain:
+        name = domain.group("name")
     tokens = _norm(name).split()
     if tokens and tokens[-1] == "logo":
         tokens = tokens[:-1]
@@ -2151,7 +2182,14 @@ def str5_entity(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
     # on a collection page). The page's subject after the brand, not another name of the brand: listed, not counted.
     categories = {k for k, given in counted.items()
                   if main and k != main and k.startswith(main + " ") and all(x["source"] == "title suffix/prefix" for x in given)}
-    counted = {k: v for k, v in counted.items() if k not in categories}
+    # A section's own name (DECISIONS 338): the main name and 1 to 4 more words given only by titles and og:site_name of
+    # pages other than the homepage ("Enpara Şirketim" on /sirketim/): a sub-brand, listed, not counted.
+    sub_brands = {k for k, given in counted.items()
+                  if main and k != main and k not in categories and k.startswith(main + " ")
+                  and BRANCH_EXTRA_WORDS[0] <= len(k.split()) - len(main.split()) <= BRANCH_EXTRA_WORDS[1]
+                  and all(x["source"] in ("title suffix/prefix", "og:site_name") for x in given)
+                  and home not in seen_on[k] and all(x["url"] != home for x in given)}
+    counted = {k: v for k, v in counted.items() if k not in categories and k not in sub_brands}
     findings = []
     if id_clashes:
         urls = sorted({u for c in id_clashes for us in c["names"].values() for u in us})
@@ -2165,7 +2203,9 @@ def str5_entity(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
     if len(counted) > 2:
         # Every page a counted name was seen on (a title suffix is seen on many pages, not only its first), so a finding
         # about the same pages' names can be told apart from this one or matched to it (DECISIONS 283 (3)).
-        urls = sorted({u for k in counted for u in seen_on[k]})
+        # DECISIONS 338: the pages to fix are those that carry a name other than the main one, not every page that names
+        # the brand (the main name's pages have nothing to change).
+        urls = sorted({u for k in counted if k != main for u in seen_on[k]})
         findings.append(_finding(
             "STR-5", f"The brand is named {len(counted)} different ways", Severity.S4, Confidence.ESTIMATED, HYPOTHESIS,
             ["all answer engines that resolve brand entities"], urls,
@@ -2178,7 +2218,9 @@ def str5_entity(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
                             "estimated": "whether they name the same real-world entity (normalization and "
                                          "judgement, not evidence)"},
              "declared_in_schema_not_counted": declared,
-             "branches_not_counted": [spellings[k].most_common(1)[0][0] for k in sorted(branches)]},
+             "branches_not_counted": [spellings[k].most_common(1)[0][0] for k in sorted(branches)],
+             "sub_brands_not_counted": [spellings[k].most_common(1)[0][0] for k in sorted(sub_brands)],
+             "main_name": spellings[main].most_common(1)[0][0] if main else None},
             "one brand name (plus names declared in alternateName/legalName)",
             "Use one brand name in titles, og:site_name, Organization name, footer, and logo alt; declare legitimate "
             "other names in Organization alternateName or legalName.", key_urls, sitewide=True,
@@ -3591,3 +3633,55 @@ def annotate_page_types(checks, result: CrawlResult) -> None:
         for finding in getattr(check, "findings", None) or []:
             urls = finding.scope.get("_all_urls") or finding.scope.get("urls") or []
             finding.page_types = {u: kind_of(u) for u in urls if isinstance(u, str)} or None
+
+
+# -- DECISIONS 338: listing pages left out of "long page(s) ... have no subheadings" --------------------------------
+
+SUBHEADING_TITLES = re.compile(r"long page\(s\) \(>\d+ words\) (have no subheadings|show section titles that are not)")
+
+
+def drop_listing_pages(checks, page_types: dict) -> list[str]:
+    """A category or index page (`page_groups`: "category") is a list of links to other pages: its items are its
+    structure, so it is taken out of STR-2's long-page findings (new audits in `final.settle`, saved ones through
+    `reassess_rules`). Works on engine findings and on a saved report's dicts. Returns the finding ids changed."""
+    from ..findings import scope_for as _scope
+    from ..rules import rule_id as _rule_id
+    import hashlib
+    changed = []
+    for check in checks:
+        if (check.get("check_id") if isinstance(check, dict) else check.check_id) != "STR-2":
+            continue
+        findings = check["findings"] if isinstance(check, dict) else check.findings
+        for f in list(findings):
+            get = (lambda k, f=f: f.get(k)) if isinstance(f, dict) else (lambda k, f=f: getattr(f, k))
+            title = get("title") or ""
+            if not SUBHEADING_TITLES.search(title):
+                continue
+            ev = get("evidence") or {}
+            rows = ev.get("pages") or []
+            out = [r["url"] for r in rows if page_types.get(r.get("url")) in LISTING_PAGE_TYPES]
+            if not out:
+                continue
+            kept_rows = [r for r in rows if r["url"] not in out]
+            urls = [u for u in ((get("scope") or {}).get("_all_urls") or (get("scope") or {}).get("urls") or []) if u not in out]
+            changed.append(get("id"))
+            if not urls:
+                findings.remove(f)
+                continue
+            new_title = re.sub(r"^\d+", str(len(urls)), title)
+            new_ev = {**ev, "pages": kept_rows, "listing_pages_left_out": out}
+            if isinstance(f, dict):
+                f.update(title=new_title, evidence=new_ev, scope=_scope(urls))
+                f["notes"] = list(f.get("notes") or []) + [LISTING_NOTE.format(n=len(out))]
+                basis = f"{f['check_id']}|{new_title}|{sorted(f['scope'].get('urls', []))}"
+                f["id"] = f"{f['check_id']}-{hashlib.sha1(basis.encode()).hexdigest()[:8]}"
+                f["rule_id"] = _rule_id(f["check_id"], new_title)
+            else:
+                f.title, f.evidence, f.scope = new_title, new_ev, _scope(urls)
+                f.notes = list(f.notes) + [LISTING_NOTE.format(n=len(out))]
+                f.id, f.rule_id = "", None
+                f.__post_init__()
+    return changed
+
+
+LISTING_NOTE = "{n} listing page(s) (a category or index of links) left out: their items are their structure."

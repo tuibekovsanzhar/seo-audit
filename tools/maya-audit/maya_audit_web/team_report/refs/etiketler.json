@@ -308,6 +308,9 @@
    "head": "<head>"
   },
   "entries_files": "Site haritası dosyaları: {files}.",
+  "head_kept_line": "Head içinde, kırılmadan önce: {kept}. {element} sonrasında: {after}.",
+  "head_robots_unknown": "robots (değeri kaydedilmedi)",
+  "head_second_copy": "ikinci bir {tag} kopyası",
   "entries_cause": "Olası neden (çıkarım): {n} adres okunan sayfalardaki başlıklarla aynı (örnek: {page} sayfasındaki «{heading}»). Site haritası oluşturucuyu kontrol edin.",
   "entries_removed": "Kalan {n} kayıt kaldırılmış sayfalara benziyor: kaldırın veya yönlendirin.",
   "link_note": "Maya yalnızca bir yönlendirmenin vardığı çalışan sayfayı önerir; doğru yeni adresi uydurmaz: bağlantının gitmesi gereken sayfayı seçin ya da kaldırın.",
@@ -762,6 +765,9 @@
    "head": "<head>"
   },
   "entries_files": "Sitemap files: {files}.",
+  "head_kept_line": "In the head, before the break: {kept}. After {element}: {after}.",
+  "head_robots_unknown": "robots (value not recorded)",
+  "head_second_copy": "a second {tag} copy",
   "entries_cause": "Likely cause (inference): {n:address matches|addresses match} headings on pages read (example: “{heading}” on {page}). Check the sitemap generator.",
   "entries_removed": "The other {n:entry looks|entries look} like removed pages: remove or redirect.",
   "link_note": "Maya only offers the working page a redirect itself ends at; it never makes up a new address: choose where the link should point, or remove it.",

@@ -9,6 +9,7 @@ names TSEO-1 where it is made, as the catalogue tests read the titles from the s
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from urllib.parse import urlsplit
 
@@ -158,12 +159,54 @@ def page_markup_findings(pages: list, key_urls: set[str], observations: list | N
 HEAD_DOCUMENTED = ("Documented (Google Search Central: an element that is invalid in <head> ends the head there; Google "
                    "stops reading metadata after it)")
 ROBOTS_META = {"robots", "googlebot", "bingbot"}
+# DECISIONS 338: a robots tag lost after the break matters only when it says something (noindex, nofollow, a snippet
+# limit ...). "index, follow" or "all" is what a crawler does anyway; an unrecorded value (a report saved before) is
+# not counted as lost and is said as unknown.
+RESTRICTIVE_ROBOTS = re.compile(r"\b(noindex|nofollow|none|noarchive|nocache|nosnippet|noimageindex|notranslate|"
+                                r"max-snippet|max-image-preview|max-video-preview|unavailable_after|indexifembedded)\b", re.I)
+
+
+def robots_lost(row: dict) -> bool:
+    """Whether the robots tags after the break restrict anything (their recorded values)."""
+    return any(RESTRICTIVE_ROBOTS.search(v or "") for v in row.get("robots_content") or [])
+
+
+def place_head_row(row: dict, lost: list, later: list) -> None:
+    """High (lost) when a canonical, the title, hreflang (none of them also in the head before the break) or a
+    restricting robots tag is after the break; else Medium (later) when any meta or Open Graph tag is (DECISIONS 338)."""
+    kept = set(row.get("kept_in_head") or [])
+    # A second copy after the break, with the first in the head, is a duplicate: the head's copy is the one read.
+    if ((row["canonical_after"] and "canonical" not in kept) or (row["hreflang_after"] and "hreflang" not in kept)
+            or (row["title_after"] and "title" not in kept) or (row["robots_after"] and robots_lost(row))):
+        lost.append(row)
+    elif row["meta_after"] or row["properties_after"] or row["robots_after"]:
+        later.append(row)
+
+
+def kept_in_head(analysis: dict) -> list[str]:
+    """The tags that stay in the head, before the break: what the head still carries (DECISIONS 338)."""
+    out = []
+    if analysis.get("canonicals"):
+        out.append("canonical")
+    if analysis.get("hreflang"):
+        out.append("hreflang")
+    if (analysis.get("title") or "") and not (analysis.get("outside_head") or {}).get("title"):
+        out.append("title")
+    if any((m.get("name") or "") in ROBOTS_META for m in analysis.get("meta") or [] if isinstance(m, dict)):
+        out.append("robots")
+    return out
+
+
+HEAD_KEPT_NOTE = ("Medium, not High: no canonical, hreflang, title or restricting robots tag (noindex, nofollow ...) comes "
+                  "after the break; evidence.kept_in_head lists what the head still holds before it. Without the "
+                  "description Google writes the snippet from the page text.")
 
 
 def head_closed_early_findings(pages: list, key_urls: set[str]) -> list[Finding]:
     """A <div>, <img> or other body element printed inside <head> (often by a widget) ends the head there (DECISIONS
-    260). The canonical, robots and hreflang tags after it are lost to Google: High. Only later meta or Open Graph tags:
-    Medium. The element that ended the head is named so the developer can find the widget."""
+    260). A canonical, a title, hreflang or a robots tag that restricts something after it is lost to Google: High.
+    Only meta (a plain robots tag included) or Open Graph tags after it: Medium (DECISIONS 338). The element that ended
+    the head is named so the developer can find the widget, and each row says what stays in the head before it."""
     lost, later = [], []
     for p in pages:
         out = p.analysis.get("outside_head") or {}
@@ -172,13 +215,12 @@ def head_closed_early_findings(pages: list, key_urls: set[str]) -> list[Finding]
             continue
         robots = sorted(ROBOTS_META & set(out.get("meta") or []))
         row = {"url": p.url, "closed_by": culprit, "canonical_after": out.get("canonical", 0),
-               "robots_after": robots, "hreflang_after": out.get("hreflang", 0),
+               "robots_after": robots, "robots_content": out.get("robots_content"),  # None: not recorded (saved before)
+               "hreflang_after": out.get("hreflang", 0),
                "meta_after": sorted(set(out.get("meta") or []) - ROBOTS_META)[:10],
-               "properties_after": sorted(set(out.get("properties") or []))[:10], "title_after": out.get("title", 0)}
-        if row["canonical_after"] or robots or row["hreflang_after"]:
-            lost.append(row)
-        elif row["meta_after"] or row["properties_after"] or row["title_after"]:
-            later.append(row)
+               "properties_after": sorted(set(out.get("properties") or []))[:10], "title_after": out.get("title", 0),
+               "kept_in_head": kept_in_head(p.analysis)}
+        place_head_row(row, lost, later)
     findings = []
     fix = ("Move the element named in the evidence out of <head> (into <body>), or load the widget that prints it after "
            "the head's metadata; every <link>, <meta> and <title> must come before the first element that cannot stand "
@@ -197,7 +239,8 @@ def head_closed_early_findings(pages: list, key_urls: set[str]) -> list[Finding]
             "TSEO-1", f"{len(urls)} page(s) end <head> early: meta or Open Graph tags after it are read as body",
             Severity.S3, Confidence.VERIFIED, HEAD_DOCUMENTED, ["Google", "social and AI previews"],
             urls, {"pages": later[:EVIDENCE_LIMIT]}, "every meta and Open Graph tag before any body element",
-            fix, key_urls, ["Verified from the HTML. Which tags a given consumer still reads from the body varies."]))
+            fix, key_urls, ["Verified from the HTML. Which tags a given consumer still reads from the body varies.",
+                            HEAD_KEPT_NOTE]))
     return findings
 
 

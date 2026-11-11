@@ -59,8 +59,9 @@ def test_every_rule_and_merge_group_has_every_text_field(lang):
             limit = texts.LIMITS.get(field, texts.STEP_CHARS)
             if len(value) > limit:
                 problems.append(f"{name}.{field}: {len(value)} > {limit}")
-            # The catalogue's approved steps may name a heading tag (<h1>); no other digit, in either source.
-            if re.search(r"\d", re.sub(r"</?h[1-6]>", "", value)) or "{" in value \
+            # The catalogue's approved steps may name a heading tag (<h1>, or "H1 etiketi" as the SEO team writes it,
+            # DECISIONS 338); no other digit, in either source.
+            if re.search(r"\d", re.sub(r"</?h[1-6]>|\bH[1-6]\b", "", value)) or "{" in value \
                     or re.search(r"\bLG-\d|\b(?:ACC|IDX|STR|RND|PRF|TSEO|ANS)-\d", value):
                 problems.append(f"{name}.{field}: digit, placeholder or internal code: {value!r}")
             if lang == "tr" and EN_WORDS.search(value):

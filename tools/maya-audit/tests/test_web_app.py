@@ -1540,6 +1540,7 @@ BUILT_TITLES = {
               (('"a fact"',), "1 answer(s) state a fact that the cited page contradicts"),
               (("answer claim(s) state something the cited page does not show",), "3 answer claim(s) state something the cited page does not show")),
     "ANS-4": ((("cited {engines_seen[engine]} domain-mentions on this topic and none from this site",), "perplexity cited 41 domain-mentions on this topic and none from this site"),),
+    "STR-2": ((("show section titles that are not <h2>/<h3> tags",), "3 long page(s) (>800 words) show section titles that are not <h2>/<h3> tags"),),  # DECISIONS 338
     "IDX-1": ((("return a client error (4xx), {label}", "linked internally or listed in the sitemap"), "3 URL(s) return a client error (4xx), linked internally or listed in the sitemap"),
               (("not referenced by any crawled page or the sitemap",), "1 URL(s) return a client error (4xx), not referenced by any crawled page or the sitemap"),
               # DECISIONS 337: the sitemap entries no page read links to, and mistyped hrefs
@@ -1708,7 +1709,7 @@ def test_every_kind_of_finding_has_its_own_matching_explanation():
     titles = [(check, title) for check, title in titles if not (check in LABELLED and title in ("3 page(s) 3", "3 link(s) on 3 page(s) 3"))]
     # DECISIONS 337: two IDX-1 titles are put together from constants (BUILT_TITLES checks their pieces in the source)
     titles += [(check, title) for check, rows in BUILT_TITLES.items() for _, title in rows
-               if "sitemap address(es) end at" in title or "mistyped address (href)" in title]
+               if "sitemap address(es) end at" in title or "mistyped address (href)" in title or "not <h2>/<h3> tags" in title]
     used = set()
     for check_id, title in titles:
         assert catalog.has_own_note(check_id, title), f"{check_id} has no explanation of its own for: {title}"

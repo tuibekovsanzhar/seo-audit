@@ -468,6 +468,23 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
                     "read": read,
                     "_group": gi,
                 })
+    # DECISIONS 338: a card the team report puts together from Info notes ("Küçük ... tutarsızlıkları", "Soru
+    # başlıklarını düzeltin") names checks, not findings: each of its addresses is a row of its own, with what was
+    # seen there, so no card is without its pages.
+    real = {r["finding_id"] for r in rows}
+    for t in todos or []:
+        if any(fid in real for fid in t.get("finding_ids") or []):
+            continue
+        notes = t.get("url_notes") or {}
+        for url in t.get("all_urls") or []:
+            rec = importance.get(url) or {}
+            read = url.rstrip("/") in read_urls
+            rows.append({"finding_id": " · ".join(t.get("finding_ids") or []), "check_id": None, "rule_id": None,
+                         "title": t.get("title") or "", "short": t.get("title") or "", "fix": (t.get("steps") or "").split("\n")[0],
+                         "severity": t.get("severity") or "Info", "issue_type": "issue", "placement": "note", "card": t.get("n"),
+                         "url": url, "address": display_address(url, None), "host_level": False, "page": True,
+                         "page_type": rec.get("page_type"), "importance": rec.get("importance"), "value": notes.get(url, ""),
+                         "read": read, "_group": 10_000 + (t.get("n") or 0)})
     order = {s: i for i, s in enumerate(SEVERITIES)}
     # DECISIONS 323: within each card (and among the rows of no card), the pages read first, the addresses never read
     # after them, grouped; then severity, the finding, the more important page.

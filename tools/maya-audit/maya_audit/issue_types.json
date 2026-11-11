@@ -236,6 +236,7 @@
   "str2.no_h1": "issue",
   "str2.empty_h1": "issue",
   "str2.no_subheadings": "opportunity",
+  "str2.styled_subheadings": "opportunity",
   "str2.many_h1": "issue",
   "judgment.heading.home": "warning",
   "judgment.heading.pages": "warning",

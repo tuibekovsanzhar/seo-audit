@@ -9,6 +9,7 @@ move a finding to Info, and the severity it would otherwise have is kept.
 
 from __future__ import annotations
 
+import re
 import shlex
 from collections import defaultdict
 from urllib.parse import urlsplit
@@ -113,6 +114,40 @@ def private_path_segment(url: str, pattern: str = "") -> str | None:
             if name in PRIVATE_PATH_SEGMENTS:
                 return name
     return None
+
+
+# DECISIONS 338: robots.txt rules a site writes on purpose: query parameters ("/*?ref="), old server-script files
+# ("/*.aspx$") and form or application paths ("/basvuru-amaciniz"). Blocking them is usually deliberate.
+LEGACY_EXTENSIONS = ("aspx", "asp", "ashx", "axd", "php", "jsp", "cfm", "cgi", "do")
+FORM_PATH_PREFIXES = ("basvuru", "form", "apply", "application", "signup", "sign-up", "register", "kayit", "teklif", "odeme",
+                      "checkout")
+
+
+def deliberate_rule(pattern: str) -> str | None:
+    """Why a Disallow pattern looks deliberate ("parameter", "legacy", "form"), or None."""
+    value = (pattern or "").strip().lower()
+    if not value or value == "/":
+        return None
+    if "?" in value or "=" in value:
+        return "parameter"
+    if re.search(r"\.(%s)\$?$" % "|".join(LEGACY_EXTENSIONS), value):
+        return "legacy"
+    for segment in value.replace("*", "").replace("$", "").split("/"):
+        if segment and segment.startswith(FORM_PATH_PREFIXES):
+            return "form"
+    return None
+
+
+DELIBERATE_NOTES = {
+    "parameter": "Reported as Info: the rule ({pattern}) blocks only addresses with a query parameter, which sites usually "
+                 "block on purpose, and none of the blocked URLs is the homepage, a key page or listed in the sitemap. "
+                 "Confirm it is intended.",
+    "legacy": "Reported as Info: the rule ({pattern}) blocks only old server-script addresses, which sites usually block on "
+              "purpose, and none of the blocked URLs is the homepage, a key page or listed in the sitemap. Confirm it is "
+              "intended.",
+    "form": "Reported as Info: the rule ({pattern}) blocks only form or application pages, which sites usually block on "
+            "purpose, and none of the blocked URLs is the homepage, a key page or listed in the sitemap. Confirm it is "
+            "intended."}
 
 
 def utility_path_segment(url: str) -> str | None:
@@ -395,16 +430,23 @@ def acc2_robots_rules(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
             # A cart or login link sits in most sites' navigation; that alone does not make it a page to be found.
             put_forward = [(u, t) for u, t in all_items if sitewide_rule or (u in indexed and not (
                 indexed[u] == "linked from the navigation" and private_path_segment(u, pattern)))]
-            private = [(u, t) for u, t in all_items if (u, t) not in put_forward and private_path_segment(u, pattern)]
+            deliberate = deliberate_rule(pattern)
+            private = [(u, t) for u, t in all_items if (u, t) not in put_forward and (private_path_segment(u, pattern) or deliberate)]
             other = [(u, t) for u, t in all_items if (u, t) not in put_forward and (u, t) not in private]
             if private:
                 finding = build(private, Severity.INFO, {"kind": "private_or_technical_path",
                                                          "severity_otherwise": base_severity[role].value})
-                matched = sorted({private_path_segment(u, pattern) for u, _ in private})
-                finding.notes.append(
-                    f"Reported as Info: the blocked path is a private or technical one ({', '.join(matched)}), which sites "
-                    "normally keep bots out of, and none of the blocked URLs is the homepage, a key page or listed in the sitemap.")
-                finding.evidence["path_kind"] = {"kind": "private_or_technical", "matched_segments": matched}
+                matched = sorted({s for s in (private_path_segment(u, pattern) for u, _ in private) if s})
+                if matched:
+                    finding.notes.append(
+                        f"Reported as Info: the blocked path is a private or technical one ({', '.join(matched)}), which sites "
+                        "normally keep bots out of, and none of the blocked URLs is the homepage, a key page or listed in the sitemap.")
+                    finding.evidence["path_kind"] = {"kind": "private_or_technical", "matched_segments": matched}
+                else:  # DECISIONS 338
+                    finding.notes.append(DELIBERATE_NOTES[deliberate].format(pattern=pattern))
+                    finding.evidence["path_kind"] = {"kind": "deliberate_rule", "rule_kind": deliberate}
+                    finding.intent = {"kind": "deliberate_rule", "rule_kind": deliberate,
+                                      "severity_otherwise": base_severity[role].value}
                 findings.append(finding)
             for items, search_severity, kind in ((put_forward, Severity.S1, "put_forward"), (other, Severity.S3, "other")):
                 if not items:

@@ -3222,6 +3222,18 @@
    "verify": "In the page source, the long text should be split into sections by meaningful subheading tags.",
    "summary": "Missing subheadings"
   },
+  "str2.styled_subheadings": {
+   "title": "Mark the section titles of long pages as H2/H3",
+   "finding": "Section titles shown, but not as H2/H3 tags",
+   "explanation": "The page shows section titles that are not heading tags; make them <h2>/<h3> and keep their look with CSS.",
+   "why": "Engines and screen readers read a page's sections from its heading tags; styled text is not a heading to them.",
+   "steps": [
+    "Make the section titles the page shows <h2> or <h3>",
+    "Keep their look with CSS"
+   ],
+   "verify": "In the page source, the section titles should sit inside <h2>/<h3> tags.",
+   "summary": "Section titles without tags"
+  },
   "str20.media": {
    "title": "Write the video's message on the page as text",
    "finding": "Message is only in video or animation",

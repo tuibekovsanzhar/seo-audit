@@ -68,7 +68,7 @@ def test_an_inlined_iframe_documents_noindex_is_not_the_pages():
     # The same page without the widget reads the same.
     plain = analyze_html(with_widget(PAGE, ""), HOME)
     assert all(plain[key] == analysis[key] for key in ("title", "meta", "canonicals", "headings", "visible_words", "text_sha256", "images"))
-    assert plain["embedded_documents"] == [] and plain["outside_head"] == {"title": 0, "meta": [], "canonical": 0, "closed_early_by": None, "hreflang": 0, "properties": []}
+    assert plain["embedded_documents"] == [] and plain["outside_head"] == {"title": 0, "meta": [], "canonical": 0, "closed_early_by": None, "hreflang": 0, "robots_content": [], "properties": []}
 
 
 def test_a_second_html_document_with_no_wrapper_is_cut_the_same_way():
@@ -122,7 +122,7 @@ def test_a_title_in_the_body_is_not_the_pages_title():
     assert analysis["title"] == "Oak Tables | Shop"  # it used to read "Oak Tables | Shop chat.example"
     assert [m["content"] for m in analysis["meta"] if m["name"] == "description"] == ["Handmade oak tables."]
     assert analysis["canonicals"] == ["https://shop.test/"]
-    assert analysis["outside_head"] == {"title": 1, "meta": ["description"], "canonical": 1, "closed_early_by": None, "hreflang": 0, "properties": []}
+    assert analysis["outside_head"] == {"title": 1, "meta": ["description"], "canonical": 1, "closed_early_by": None, "hreflang": 0, "robots_content": [], "properties": []}
     assert "chat.example" not in analysis["_visible_text"]  # a <title> is not text a visitor sees, wherever it is
     # Only the first <title> of the head is the title.
     twice = analyze_html("<html><head><title>First</title><title>Second</title></head><body><p>x</p></body></html>")
@@ -133,7 +133,7 @@ def test_a_document_with_no_head_tag_keeps_its_title_and_an_svg_title_is_still_i
     bare = analyze_html('<title>Bare page</title><meta name="description" content="No head tag."><link rel="canonical" href="/bare">'
                         '<meta property="og:title" content="Bare"><p>Words of the page.</p><svg><title>Icon</title></svg>')
     assert bare["title"] == "Bare page" and bare["canonicals"] == ["/bare"] and bare["og"] == {"og:title": ["Bare"]}
-    assert bare["meta"] == [{"name": "description", "content": "No head tag."}] and bare["outside_head"] == {"title": 0, "meta": [], "canonical": 0, "closed_early_by": None, "hreflang": 0, "properties": []}
+    assert bare["meta"] == [{"name": "description", "content": "No head tag."}] and bare["outside_head"] == {"title": 0, "meta": [], "canonical": 0, "closed_early_by": None, "hreflang": 0, "robots_content": [], "properties": []}
     # A tracking pixel in a head's <noscript> does not end the head: the tags after it are still the page's.
     pixel = analyze_html('<html><head><noscript><img src="https://pixel.example/p.gif" height="1" width="1"></noscript><title>After the pixel</title>'
                          '<meta name="robots" content="noindex"></head><body><p>x</p></body></html>')
