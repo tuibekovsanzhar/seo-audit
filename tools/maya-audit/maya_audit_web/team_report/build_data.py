@@ -971,6 +971,11 @@ class Builder:
                 examples = o.get("examples") or []
                 if label.startswith("menu"):
                     ex = list(dict.fromkeys(l for e in examples for l in e.get("labels") or []))[:4]
+                    for e in examples:  # DECISIONS 341: what was seen on each page, for its row in the appendix
+                        if e.get("url") and e.get("labels"):
+                            self.url_notes.setdefault(e["url"], fmt(self.L["menu_seen"], page=e.get("page_language") or "?",
+                                                                    other=", ".join(e.get("label_languages") or []) or "?",
+                                                                    labels=", ".join(e["labels"][:4])))
                 elif label.startswith("questions"):
                     ex = [path_of(e["url"]) or "/" for e in examples[:3]]
                 else:

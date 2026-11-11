@@ -700,12 +700,39 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         # DECISIONS 323: which addresses were read, and what was measured on each page read (stored, else worked out).
         "_pages_read": read_set(report),
         "_page_measures": _measures(report),
+        # DECISIONS 341: each page's early-closed head as the check reads it (every page, not only the 40 the
+        # evidence keeps), for its row in the appendix
+        "_head_rows": head_rows(report),
     }
 
 
 # ---------------------------------------------------------------- issue type and templates (Stage 8a, DECISIONS 315)
 
 ISSUE_TYPES = ("issue", "warning", "opportunity")
+
+
+def head_rows(report: dict) -> dict[str, dict]:
+    """{url: the TSEO-1 row of a page whose <head> a body element ended early} from the crawl's page records, the
+    finding's own evidence row first (it holds what a saved report's pages may lack)."""
+    from .checks.page_markup import ROBOTS_META, kept_in_head
+    out: dict[str, dict] = {}
+    for p in (report.get("crawl") or {}).get("pages") or []:
+        a = (p.get("analysis") or {}) if isinstance(p, dict) else {}
+        o = a.get("outside_head") or {}
+        if not o.get("closed_early_by"):
+            continue
+        out[p["url"]] = {"url": p["url"], "closed_by": o["closed_early_by"], "canonical_after": o.get("canonical", 0),
+                         "robots_after": sorted(ROBOTS_META & set(o.get("meta") or [])), "robots_content": o.get("robots_content"),
+                         "hreflang_after": o.get("hreflang", 0), "meta_after": sorted(set(o.get("meta") or []) - ROBOTS_META)[:10],
+                         "properties_after": sorted(set(o.get("properties") or []))[:10], "title_after": o.get("title", 0),
+                         "kept_in_head": kept_in_head(a)}
+    for c in report.get("checks") or []:
+        for f in c.get("findings") or []:
+            if (f.get("rule_id") or "").startswith("tseo1.head_closed"):
+                for r in (f.get("evidence") or {}).get("pages") or []:
+                    if isinstance(r, dict) and r.get("url"):
+                        out[r["url"]] = {**out.get(r["url"], {}), **r}
+    return out
 
 
 def _issue_catalogue() -> dict:

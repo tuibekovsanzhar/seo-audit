@@ -434,6 +434,59 @@ def card_of(selection: dict, todos: list[dict] | None = None, lang: str = "tr",
     return by_id, cards
 
 
+HEAD_RULES = ("tseo1.head_closed_lost", "tseo1.head_closed_later")
+HEAD_WORDS = {
+    "tr": {"title_lost": "<head> erken kapanıyor: {tags} bu öğeden sonra kalıyor",
+           "title_later": "<head> erken kapanıyor: yalnız meta ve Open Graph etiketleri sonra geliyor",
+           "value_lost": "{tags}, {element} sonrasında; head'de bu etiketin bir kopyası yok. {element} öncesinde, head'de: {kept}",
+           "value_later": "{element} sonrasında: {after}; {kept} ondan önce, head'de",
+           "fix_lost": "{element} öğesini gövdeye taşıyın; {tags} head'de, bu öğeden önce kalmalı.",
+           "fix_later": "{element} öğesini gövdeye taşıyın ya da onu basan eklentiyi head etiketlerinden sonra yükleyin.",
+           "second": "ikinci bir {tag} kopyası", "none": "canonical, title ya da hreflang yok"},
+    "en": {"title_lost": "<head> ends early: {tags} comes after that element",
+           "title_later": "<head> ends early: only meta and Open Graph tags come after it",
+           "value_lost": "{tags} after {element}, with no copy in the head. Before {element}, in the head: {kept}",
+           "value_later": "after {element}: {after}; {kept} before it, in the head",
+           "fix_lost": "Move {element} into the body; {tags} must stay in the head, before it.",
+           "fix_later": "Move {element} into the body, or load the widget that prints it after the head tags.",
+           "second": "a second {tag} copy", "none": "no canonical, title or hreflang"},
+}
+
+
+def head_row_words(row: dict, lang: str = "tr") -> dict[str, str]:
+    """DECISIONS 341: a page's row for an early-closed <head>, from that page's own record: the element that ends the
+    head; on a page that loses something (High), which tag comes after it with no copy before; otherwise what comes after
+    it (description, Open Graph, generator ...) and that canonical, title and hreflang are before it, in the head."""
+    from .checks.page_markup import RESTRICTIVE_ROBOTS
+    H = HEAD_WORDS[lang]
+    c = row.get("closed_by") or {}
+    element = f"<{c.get('tag') or '?'}" + (f"#{c['id']}" if c.get("id") else "") + ">"
+    kept_set = set(row.get("kept_in_head") or [])
+    kept = ", ".join(t for t in ("canonical", "title", "hreflang", "robots") if t in kept_set) or H["none"]
+    lost = [t for t, key in (("canonical", "canonical_after"), ("hreflang", "hreflang_after"), ("title", "title_after"))
+            if row.get(key) and t not in kept_set]
+    values = [v for v in row.get("robots_content") or [] if row.get("robots_after") and RESTRICTIVE_ROBOTS.search(v or "")]
+    if values:
+        lost.append(f"robots ({', '.join(values[:2])})")
+    if lost:
+        tags = ", ".join(lost)
+        return {"title": H["title_lost"].format(tags=tags), "value": H["value_lost"].format(tags=tags, element=element, kept=kept),
+                "fix": H["fix_lost"].format(element=element, tags=tags)}
+    after = []
+    for tag, key in (("canonical", "canonical_after"), ("hreflang", "hreflang_after")):
+        if row.get(key):
+            after.append(H["second"].format(tag=tag))
+    after += [m for m in ("description",) if m in (row.get("meta_after") or [])]
+    if row.get("properties_after"):
+        after.append("Open Graph")
+    after += [m for m in row.get("meta_after") or [] if m != "description"]
+    plain = [v for v in row.get("robots_content") or [] if v]
+    if row.get("robots_after"):
+        after.append(f"robots ({', '.join(plain[:2])})" if plain else "robots")
+    return {"title": H["title_later"], "value": H["value_later"].format(element=element, after=", ".join(after) or "—", kept=kept),
+            "fix": H["fix_later"].format(element=element)}
+
+
 def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *, todos: list[dict] | None = None,
                  words: Callable[[dict], dict | None] | None = None, title: Callable[[str, str], str] | None = None,
                  fix: Callable[[str], str] | None = None) -> list[dict]:
@@ -446,6 +499,7 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
     read_urls = {u.rstrip("/") for u in selection.get("_pages_read") or ()}
     measures = {u.rstrip("/"): r for u, r in (selection.get("_page_measures") or {}).items()}
     by_id, _ = card_of(selection, todos, lang, title)
+    heads = selection.get("_head_rows") or {}
     rows = []
     for gi, g in enumerate(selection.get("groups") or []):
         if g.get("placement") in LEFT_OUT:
@@ -463,14 +517,18 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
                 rec = importance.get(url) or {} if url else {}
                 # DECISIONS 323: read or not; a host's file or the whole site is not a page (None)
                 read = None if hosts or not url else url.rstrip("/") in read_urls
+                # DECISIONS 341: an early-closed head is said per page, from that page's record
+                head = (head_row_words(heads[url], lang) if m.get("rule_id") in HEAD_RULES and url in heads else None)
                 rows.append({
                     "finding_id": m.get("id"), "check_id": m.get("check_id"), "rule_id": m.get("rule_id"),
-                    "title": name, "short": short, "fix": todo, "severity": sev, "issue_type": g.get("issue_type") or "issue",
+                    "title": head["title"] if head else name, "short": short, "fix": head["fix"] if head else todo,
+                    "severity": sev, "issue_type": g.get("issue_type") or "issue",
                     "placement": g.get("placement"), "card": by_id.get(m.get("id")),
                     "url": url, "address": display_address(url, hosts) if url else W["site"],
                     "host_level": bool(hosts), "page": bool(url) and not hosts,
                     "page_type": rec.get("page_type"), "importance": rec.get("importance"),
-                    "value": measured(m, url, lang, measures.get(url.rstrip("/")) if read else None, read) if url else "",
+                    "value": head["value"] if head else
+                    measured(m, url, lang, measures.get(url.rstrip("/")) if read else None, read) if url else "",
                     "read": read,
                     "_group": gi,
                 })

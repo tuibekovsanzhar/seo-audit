@@ -4681,3 +4681,18 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      did: /404?aspxerrorpath=...); the address and "bu adresin yanıtı ölçülmedi" otherwise (no request is sent for it).
      Tests: `tests/test_expert_review_340.py` (a fake site with a multi-line sitemap, a self-ending redirect, llms.txt,
      plain/FAQ/accordion questions and a page-title Organization name; saved-report cases; the review file and summary).
+
+341. **Each row of an early-closed <head> says its own page (Owner, 2026-11-11, enpara fee70191).** The Ek's "Bulgu
+     bazında" still gave all 90 rows of card 1 the rule's fixed words ("<head> erken kapanıyor, kritik etiketler
+     okunmuyor"; "… canonical, robots ve hreflang etiketlerinin head'de kalmasını sağlayın") and "Ölçülen değer" "—":
+     339 had changed the card, not its rows, and the rule's evidence keeps only 40 pages. Now every row of
+     tseo1.head_closed_lost/later is built from that page's own record (`page_rows.head_row_words`, from the crawl's
+     page records for every page, the finding's evidence row first: `client_selection.head_rows`, `_head_rows`):
+     a page that loses something (High) says which tag comes after the element with no copy before it and what the
+     head keeps ("robots (noindex), <div#blueLightOverlay> sonrasında; head'de bu etiketin bir kopyası yok.
+     <div#blueLightOverlay> öncesinde, head'de: canonical, title"); any other page lists what comes after (a second
+     canonical, description, Open Graph, other meta, a plain robots value) and that canonical, title and hreflang are
+     before it; the title and the fix follow. Every merged card of the saved audits (enpara fee70191, 2e5829fb, 87f0425a,
+     moodist 2d72fea0, nihan b3198942) was checked for rows without their own value: one left, nihan's menu-language row
+     of its note card, which now says the page's language and the labels in the other (`menu_seen`).
+     Tests: `tests/test_head_rows_341.py`.

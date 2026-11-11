@@ -1994,4 +1994,24 @@ heading).
 | full suite, `pytest -q -rfE -p no:cacheprovider` (fixture matrix and accuracy summary regenerated first) | `3283 passed, 4 skipped, 1 warning in 940.42s (0:15:40)` |
 | `node --check app.js` | OK |
 | Owner's web app on port 8770 | NOT RUN here (restart needed) |
+| Push | `ec46b7b` pushed (1db0ddf..ec46b7b); CI run 43091447492 success on attempt 1, job "fast" 19:54:01 → 20:07:53 UTC |
+
+## Rows of an early-closed <head> from each page's record (2026-11-11, DECISIONS 341)
+
+enpara fee70191, Ek "Bulgu bazında", card 1 (90 rows):
+
+| | Before | After |
+|---|---|---|
+| High rows (2) | "<head> erken kapanıyor, kritik etiketler okunmuyor"; value "—"; "… canonical, robots ve hreflang etiketlerinin head'de kalmasını sağlayın." | "<head> erken kapanıyor: robots (noindex) bu öğeden sonra kalıyor"; "robots (noindex), <div#blueLightOverlay> sonrasında; head'de bu etiketin bir kopyası yok. <div#blueLightOverlay> öncesinde, head'de: canonical, title[, hreflang]"; "<div#blueLightOverlay> öğesini gövdeye taşıyın; robots (noindex) head'de, bu öğeden önce kalmalı." |
+| Medium rows (88) | "<head> erken kapanıyor"; value "—" | "… yalnız meta ve Open Graph etiketleri sonra geliyor"; "<div#blueLightOverlay> sonrasında: description, Open Graph[, robots (index, follow) / keywords / ikinci bir canonical kopyası]; canonical, title, hreflang ondan önce, head'de" (40 / 36 / 5 / 4 pages …) |
+
+Merged cards of the saved audits checked for rows without their own value: fee70191 (cards 1, 13), 2e5829fb (9),
+87f0425a (4, 9), moodist 2d72fea0 (1, 7), nihan b3198942 (1, 4, 11): 0 left after nihan card 11's menu-language row.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_head_rows_341.py` | `5 passed` |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3153 passed, 4 skipped, 135 deselected, 1 warning in 540.54s (0:09:00)` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3288 passed, 4 skipped, 1 warning in 951.14s (0:15:51)` |
+| Owner's web app on port 8770 | NOT RUN here (restart needed) |
 | Push | NOT DONE (owner: don't push) |
