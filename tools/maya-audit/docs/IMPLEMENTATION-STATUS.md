@@ -1949,3 +1949,17 @@ large homepage "1 sayfa (+494 Düşük)", enpara 87f0425a head card "20 sayfa (+
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `1 failed, 3254 passed, 4 skipped, 1 warning in 936.44s (0:15:36)`: the fixture matrix (regenerated; `tests/test_fixture_matrix.py` `3 passed`) |
 | Owner's web app on port 8770 | NOT RUN here (restart needed) |
 | Push | NOT DONE (owner: don't push). 338 (`fb4f070`) was pushed; CI run 43013066846 success (11:34:29 → 11:47:54 UTC) |
+
+Same audit, follow-up (DECISIONS 339 (7)-(9)):
+
+| | Before | After |
+|---|---|---|
+| Brand card "Marka için sitede tek bir ad kullanın" (2 pages) | card 12, Düşük, P2 | "Teyit edin": "Doğrulama bekliyor: diğer adlar yalnız yapısal veride; işaretlemede kontrol edin" ("Enpara" in every title; "Bankanın güzeli \| Enpara" and "Homepage" only as an Organization name) |
+| "Soru başlıklarını düzeltin" | found (25 pages, all kept) but never made: the PDF's 2 note slots went to the structured-data and small-fixes cards; its pages were in no output | still not printed (2-note limit); made for the Ek and the web page list: 25 rows, e.g. "/odemeler: 4 soru düz metin: «Ödeme İste nedir?»" |
+| "Küçük bağlantı ve etiket tutarsızlıklarını temizleyin" | PDF card listed /llms.txt with both redirects and the 3 pages; the Ek: one llms.txt row "ayrıntı kaydedilmedi", no row for the 3 pages | Ek: /llms.txt "/sikca-sorulan-sorular → /404?aspxerrorpath=/sikca-sorulan-sorular; /enparacom-nedir → /hakkimizda"; 3 rows "Open Graph etiketleri var, twitter:card yok" |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_head_card_339.py tests/test_v03_report_fixes.py tests/test_expert_review_338.py tests/test_team_report_309.py` | `70 passed` |
+| full suite on its own, `pytest -q -rfE -p no:cacheprovider` (fixture matrix regenerated first) | `3259 passed, 4 skipped, 1 warning in 955.96s (0:15:55)` |
+| Push | owner asked: `fffddad` and this commit |

@@ -312,6 +312,7 @@
   "head_robots_unknown": "robots (değeri kaydedilmedi)",
   "head_second_copy": "ikinci bir {tag} kopyası",
   "scope_split": "+{scope}: {severity}",
+  "hygiene_seen": {"no twitter:card": "Open Graph etiketleri var, twitter:card yok", "og:url differs from canonical": "og:url, canonical'dan başka bir adresi gösteriyor", "empty <meta> tags": "boş <meta name> etiketi", "parameters on links to other sites": "başka siteye giden bağlantıda izleme parametresi"},
   "head_why_lost": "{n} sayfada {tags} head kırıldıktan sonra geliyor; Google bunları okumayabilir.",
   "head_why_robots": "{n} sayfada robots ({values}) head kırıldıktan sonra geliyor; Google bu kuralı uygulamayabilir.",
   "head_why_later": "{n} sayfada {kept} head'de; yalnız {after} sonra geliyor.",
@@ -351,7 +352,8 @@
    "intent": "Doğrulama bekliyor: bilinçli bir tercih olabilir",
    "firecrawl_only": "Doğrulama bekliyor: farklı okuma yolunda görüldü",
    "rendered_html": "Doğrulama bekliyor: işlenmiş HTML, karşılaştırılamaz",
-   "spoofed_googlebot": "Doğrulama bekliyor: arama motoru kimliğiyle yapılan istek reddedildi; Search Console'da kontrol edin"
+   "spoofed_googlebot": "Doğrulama bekliyor: arama motoru kimliğiyle yapılan istek reddedildi; Search Console'da kontrol edin",
+   "names_in_markup": "Doğrulama bekliyor: diğer adlar yalnız yapısal veride; işaretlemede kontrol edin"
   },
   "kp_title": "Kilit sayfalar karnesi",
   "kp_cols": [
@@ -781,6 +783,7 @@
   "head_robots_unknown": "robots (value not recorded)",
   "head_second_copy": "a second {tag} copy",
   "scope_split": "+{scope}: {severity}",
+  "hygiene_seen": {"no twitter:card": "Open Graph tags, no twitter:card", "og:url differs from canonical": "og:url names another address than the canonical", "empty <meta> tags": "an empty <meta name> tag", "parameters on links to other sites": "a tracking parameter on a link to another site"},
   "head_why_lost": "On {n:page|pages}, after the head breaks: {tags}; Google may not read them.",
   "head_why_robots": "On {n:page|pages}, robots ({values}) comes after the head breaks; Google may not apply that rule.",
   "head_why_later": "On {n:page|pages}, the head keeps {kept}; only {after} after the break.",
@@ -820,7 +823,8 @@
    "intent": "Awaiting confirmation: may be a deliberate choice",
    "firecrawl_only": "Awaiting confirmation: seen through a different reading path",
    "rendered_html": "Awaiting confirmation: rendered HTML, not comparable",
-   "spoofed_googlebot": "Awaiting confirmation: a request with a search engine's identity was refused; check Search Console"
+   "spoofed_googlebot": "Awaiting confirmation: a request with a search engine's identity was refused; check Search Console",
+   "names_in_markup": "Awaiting confirmation: the other names are only in structured data; check the markup"
   },
   "kp_title": "Key pages scorecard",
   "kp_cols": [

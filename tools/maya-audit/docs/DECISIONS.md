@@ -4624,3 +4624,20 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      P0-P3 page weight; "Diğer" says no profile and Stage 3's weights (`client_appendix.method_rows`).
      Tests: `tests/test_head_card_339.py` (a fake site with one noindex page and three description/og pages after a
      body element in the head, through the engine, the selection, the team report and the Ek).
+     (7) *Brand names only in structured data: "Teyit edin" (Owner, same day).* In 2e5829fb the brand card went to
+     "Teyit edin" only because it was seen in Firecrawl's copy alone (`reading.seen_in`), not by a rule; fee70191 read it
+     with Maya's own crawler too, so it came out a card (Düşük, P2). Rule: a brand-names finding whose visible name
+     (titles, og:site_name, footer) is one name everywhere, the others being only Organization/WebSite names, waits for
+     a person (`client_selection.names_in_markup`, reason "names_in_markup": "Doğrulama bekliyor: diğer adlar yalnız
+     yapısal veride; işaretlemede kontrol edin"): whether "Homepage" or a slogan as an Organization name is a mistake
+     is seen in the markup. A second name people see (moodist's English title name, 87f0425a's "Enpara.com" in titles)
+     keeps the card.
+     (8) *Note cards past the PDF's room (Owner, same day).* The PDF prints at most 2 note cards (DECISIONS 309), tried
+     in a fixed order (structured data, small fixes, content, ...). fee70191's question observation (25 pages) was found
+     but its card was never made, so its pages were nowhere, not even in the Ek. Every note card past that room is now
+     made for the Ek and the web page list only (`notes_more`, `appendix_only`, no number; the PDF and its text fields
+     unchanged; `build_data.cards_for_appendix`).
+     (9) *A note card's rows in the Ek, per address.* A note card that also holds a finding (llms.txt's redirecting
+     links) gave the Ek only the finding's row, "ayrıntı kaydedilmedi", and none for its other addresses (pages without
+     twitter:card). Now the finding's row says what the card saw there (each link → where it goes) and every other
+     address has its own row with what was seen (`hygiene_seen` labels).

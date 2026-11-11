@@ -408,6 +408,8 @@ def card_of(selection: dict, todos: list[dict] | None = None, lang: str = "tr",
     cards: list[dict] = []
     if todos:
         for t in todos:
+            if t.get("appendix_only"):  # DECISIONS 339: not a card of the PDF; its rows say its title
+                continue
             cards.append({"n": t.get("n"), "title": t.get("title"), "addresses": len(t.get("all_urls") or []), "severity": t.get("severity"),
                           "severity_label": t.get("severity_label"), "issue_type": t.get("issue_type"),
                           "issue_type_label": t.get("issue_type_label"), "owner": t.get("owner"), "effort": t.get("effort"),
@@ -470,13 +472,26 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
                 })
     # DECISIONS 338: a card the team report puts together from Info notes ("Küçük ... tutarsızlıkları", "Soru
     # başlıklarını düzeltin") names checks, not findings: each of its addresses is a row of its own, with what was
-    # seen there, so no card is without its pages.
-    real = {r["finding_id"] for r in rows}
+    # seen there, so no card is without its pages. DECISIONS 339: per address, not per card: a note card that also
+    # holds a finding (llms.txt's redirecting links) gives that finding's row what it saw there (each link → where it
+    # goes), and its other addresses (pages without twitter:card) rows of their own; a note card past the PDF's room
+    # (`appendix_only`, no number) gives its rows too.
     for t in todos or []:
-        if any(fid in real for fid in t.get("finding_ids") or []):
-            continue
         notes = t.get("url_notes") or {}
+        fids = set(t.get("finding_ids") or [])
+        if not notes and not t.get("all_urls"):
+            continue
+        covered = set()
+        for r in rows:
+            if r["finding_id"] in fids and r["url"]:
+                covered.add(r["url"])
+                if notes.get(r["url"]):
+                    r["value"] = notes[r["url"]]
+        if t.get("severity") in PROBLEM and any(r["finding_id"] in fids for r in rows):
+            continue  # a problem card's addresses are its findings' rows
         for url in t.get("all_urls") or []:
+            if url in covered:
+                continue
             rec = importance.get(url) or {}
             read = url.rstrip("/") in read_urls
             rows.append({"finding_id": " · ".join(t.get("finding_ids") or []), "check_id": None, "rule_id": None,
@@ -484,7 +499,7 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
                          "severity": t.get("severity") or "Info", "issue_type": "issue", "placement": "note", "card": t.get("n"),
                          "url": url, "address": display_address(url, None), "host_level": False, "page": True,
                          "page_type": rec.get("page_type"), "importance": rec.get("importance"), "value": notes.get(url, ""),
-                         "read": read, "_group": 10_000 + (t.get("n") or 0)})
+                         "read": read, "_group": 10_000 + (t.get("n") or 99)})
     order = {s: i for i, s in enumerate(SEVERITIES)}
     # DECISIONS 323: within each card (and among the rows of no card), the pages read first, the addresses never read
     # after them, grouped; then severity, the finding, the more important page.

@@ -837,7 +837,7 @@ def write_appendix(d, out):
     report = json.loads(Path(d["_report_path"]).read_text(encoding="utf-8"))
     affected = json.loads(Path(d["_affected_path"]).read_text(encoding="utf-8")) if d.get("_affected_path") else None
     content, sealed = appendix_bytes(report, affected, d.get("_confirmations") or {}, d["lang"], d.get("_business"),
-                                     todos=d.get("todos"))
+                                     todos=(d.get("todos") or []) + (d.get("notes_more") or []) or None)
     path = out.with_name(out.stem + ("-appendix.xlsx" if d["lang"] == "en" else "-ek.xlsx"))
     path.write_bytes(content)
     problems = [f"HATA: {v['rule']}: {v['message']}" for v in

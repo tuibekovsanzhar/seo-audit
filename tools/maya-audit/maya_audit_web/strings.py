@@ -1559,6 +1559,7 @@ STRINGS["en"].update({
     "result.low_coverage": "Low coverage: {read} of the {planned} planned pages read. The findings do not represent the whole site, and no client brief is made from this audit.",
     "result.low_coverage.unplanned": "Low coverage: pages read: {read}. The findings do not represent the whole site, and no client brief is made from this audit.",
     "c6.reason.spoofed_googlebot": "Awaiting confirmation: a request with a search engine's identity was refused; check Search Console",
+    "c6.reason.names_in_markup": "Awaiting confirmation: the other names are only in structured data; check the markup",
     "c6.confirm_more": "{count:more group|more groups} to confirm: in the appendix",
     "c6.key_pages": "Key pages scorecard",
     "c6.key_pages_note": "The most important pages read (page importance 0-100: links in, click depth, page type), and the cards that concern each.",

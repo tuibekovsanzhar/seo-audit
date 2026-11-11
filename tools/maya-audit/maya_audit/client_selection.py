@@ -107,7 +107,10 @@ CHAIN_GROUP = {"id": "redirect_chain",
 MERGE_BY_ID = {**{g["id"]: g for g in MERGE_GROUPS}, CHAIN_GROUP["id"]: CHAIN_GROUP}
 # Kept for older callers: the empty-page rules were the first family (DECISIONS 284).
 RULE_FAMILY = {rule: "idx1.empty" for rule in MERGE_BY_RULE if MERGE_BY_RULE[rule]["id"] == "empty_pages"}
-CONFIRM_REASONS = ("unverified_check", "low_confidence", "intent", "firecrawl_only", "spoofed_googlebot", "rendered_html")
+CONFIRM_REASONS = ("unverified_check", "low_confidence", "intent", "firecrawl_only", "spoofed_googlebot", "rendered_html",
+                   "names_in_markup")
+# DECISIONS 339: where a brand name is only a structured-data value (no reader sees it on the page)
+MARKUP_NAME_SOURCES = frozenset({"Organization name", "WebSite name"})
 LG = re.compile(r"^LG-\d+$")
 
 
@@ -169,12 +172,28 @@ def confirm_reason(f: dict, confirmations: dict | None = None) -> str | None:
         return "rendered_html"
     if f.get("intent"):
         return "intent"
+    if names_in_markup(f):
+        return "names_in_markup"
     cls = confidence_class(f, confirmations)
     if cls == "unverified":
         return "unverified_check"
     if CONFIDENCE_WEIGHT[cls] <= CONFIRM_AT_OR_BELOW:
         return "low_confidence"
     return None
+
+
+def names_in_markup(f: dict) -> bool:
+    """DECISIONS 339: a brand-names finding (STR-5) whose visible name (titles, og:site_name, footer) is one name
+    everywhere, the other names being only structured-data names (Organization, WebSite). Whether such a value is a
+    mistake (a CMS's "Homepage") or meant (a slogan) is for a person to see in the markup before anyone renames:
+    "Teyit edin", not a card (enpara fee70191: "Enpara" in every title; "Bankanın güzeli | Enpara" and "Homepage" only
+    as an Organization name on one page each)."""
+    if f.get("rule_id") != "str5.names":
+        return False
+    variants = [v for v in (f.get("evidence") or {}).get("variants") or [] if isinstance(v, dict)]
+    shown = [v for v in variants if set(v.get("by_source") or {}) - MARKUP_NAME_SOURCES]
+    rest = [v for v in variants if v not in shown]
+    return len(shown) == 1 and bool(rest) and all(v.get("by_source") for v in rest)
 
 
 def own_limit(f: dict) -> bool:

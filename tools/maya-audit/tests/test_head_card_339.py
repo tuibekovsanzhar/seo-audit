@@ -139,3 +139,50 @@ def test_yontem_shows_the_business_type_and_page_type_weights_used(built):
                                                                                 business="diger"), "en")))
     assert other["Business type"].startswith("Other: no business-type profile")
     assert list(other).index("Business relevance") < list(other).index("Priority score")
+
+
+# ------------------------------------------------------------------ brand names only in structured data: "Teyit edin"
+
+def _names(*variants):
+    return {"id": "STR-5-x", "check_id": "STR-5", "rule_id": "str5.names", "severity": "S4", "confidence": "estimated",
+            "title": "The brand is named 3 different ways", "scope": {"count": 2, "urls": ["https://b.test/"]},
+            "evidence": {"variants": [{"name": n, "pages": 1, "by_source": s} for n, s in variants]}}
+
+
+def test_brand_names_seen_only_in_structured_data_wait_for_a_person():
+    # enpara fee70191: one name in every title; the other two only as an Organization name on one page each
+    f = _names(("Enpara", {"title suffix/prefix": 91, "Organization name": 47}),
+               ("Bankanın güzeli | Enpara", {"Organization name": 1, "WebSite name": 1}), ("Homepage", {"Organization name": 1}))
+    assert client_selection.names_in_markup(f) and client_selection.confirm_reason(f) == "names_in_markup"
+
+
+@pytest.mark.parametrize("second", [{"title suffix/prefix": 97}, {"og:site_name": 2, "Organization name": 1}])
+def test_a_second_name_people_see_keeps_the_brand_card(second):
+    # moodist: an English name in 97 titles; enpara 87f0425a: "Enpara.com" in titles too
+    f = _names(("Moodist", {"Organization name": 144, "og:site_name": 141}), ("Moodist Hospital", second),
+               ("Moodist Ekibi", {"Organization name": 63}))
+    assert not client_selection.names_in_markup(f) and client_selection.confirm_reason(f) is None
+
+
+# ------------------------------------------------------------------ note cards in the Ek
+
+def test_a_note_card_gives_its_finding_rows_what_was_seen_and_its_other_addresses_rows():
+    from maya_audit import page_rows
+    llms = {"id": "ACC-8-1", "check_id": "ACC-8", "rule_id": "acc8.redirecting", "severity": "Info", "confidence": "verified",
+            "title": "2 link(s) in llms.txt point to an address that redirects",
+            "scope": {"kind": "sitewide", "count": 1, "urls": ["https://b.test/llms.txt"]}, "evidence": {}}
+    sel = {"groups": [{"placement": "note", "members": [llms], "issue_type": "issue", "finding_ids": ["ACC-8-1"]}]}
+    seen = "/sss → /404; /nedir → /hakkimizda"
+    hygiene = {"n": 14, "title": "Küçük bağlantı ve etiket tutarsızlıklarını temizleyin", "severity": "Info",
+               "finding_ids": ["ACC-8-1", "STR-10"], "all_urls": ["https://b.test/llms.txt", "https://b.test/form"],
+               "url_notes": {"https://b.test/llms.txt": seen, "https://b.test/form": "Open Graph etiketleri var, twitter:card yok"}}
+    questions = {"n": None, "appendix_only": True, "title": "Soru başlıklarını düzeltin", "severity": "Info",
+                 "finding_ids": ["STR-2"], "all_urls": ["https://b.test/sss"], "url_notes": {"https://b.test/sss": "4 soru düz metin"}}
+    rows = page_rows.finding_rows(sel, None, "tr", todos=[hygiene, questions])
+    by = {(r["title"][:10], r["url"]): r for r in rows}
+    assert by[("2 link(s) ", "https://b.test/llms.txt")]["value"] == seen
+    assert by[("Küçük bağl", "https://b.test/form")]["value"] == "Open Graph etiketleri var, twitter:card yok"
+    assert ("Küçük bağl", "https://b.test/llms.txt") not in by  # said once, on the finding's row
+    assert by[("Soru başlı", "https://b.test/sss")]["value"] == "4 soru düz metin" and by[("Soru başlı", "https://b.test/sss")]["card"] is None
+    _, cards = page_rows.card_of(sel, [hygiene, questions], "tr")
+    assert [c["n"] for c in cards] == [14]  # the Ek-only note is not a card of the PDF

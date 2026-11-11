@@ -879,6 +879,9 @@ class Builder:
                     urls = [e["url"] for e in o.get("examples") or []]
                 else:
                     ex, urls = [], list(o.get("examples") or [])
+                for u in urls:  # DECISIONS 339: what was seen on each address, for its row in the appendix
+                    if isinstance(u, str) and self.L["hygiene_seen"].get(label):
+                        self.url_notes.setdefault(u, self.L["hygiene_seen"][label])
                 rows.append((label, n, ex, urls, [cid]))
         return rows
 
@@ -1921,9 +1924,18 @@ class Builder:
         # DECISIONS 309: the problem cards first; a Note card only fills a slot they left free, and at most NOTES_SHOWN
         # of them are printed. Every note is in the appendix in any case.
         notes_shown = 0
+        notes_more = []
         for make in (self.schema_card, self.hygiene_card, self.content_card, self.perf_card, self.share_card):
             if self.sel is not None and (len(todos) >= MAX_CARDS or notes_shown >= NOTES_SHOWN):
-                break
+                # DECISIONS 339: a note card past the PDF's room is still made for the appendix and the web page list
+                # (its addresses and what was seen there), never printed and never numbered; the PDF's text fields
+                # are not touched (its slots are put back).
+                slots, facts = list(self.slots), set(self.facts)
+                card = make(len(todos) + len(notes_more))
+                self.slots, self.facts = slots, facts
+                if card:
+                    notes_more.append({**card, "n": None, "appendix_only": True})
+                continue
             card = make(len(todos))
             if card:
                 todos.append(card)
@@ -1979,6 +1991,7 @@ class Builder:
             "followup": followup,
             "later": later_rows,
             "todos": todos,
+            "notes_more": notes_more,  # DECISIONS 339: note cards in the appendix only
             **extra,
             "provenance": {"lines": prov, "note": L["prov_note_saved"] if self.reanalysis else
                            (fmt(L["prov_note_cache"], saved=saved, read=read_fc) if saved else L["prov_note_live"])},
@@ -2276,6 +2289,11 @@ def first_upper(text, lang):
 def _strip_count(text):
     t = re.sub(r"^\s*\d[\d,.]*\s*", "", text or "").strip()
     return t[:1].upper() + t[1:] if t else t
+
+
+def cards_for_appendix(data):
+    """The PDF's cards and, after them, the note cards that are in the appendix only (DECISIONS 339)."""
+    return list(data.get("todos") or []) + list(data.get("notes_more") or [])
 
 
 def main():

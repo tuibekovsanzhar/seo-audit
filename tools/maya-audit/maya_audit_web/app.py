@@ -1760,7 +1760,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         report, aff = now if now is not None else current_report(audit)[:2]
         lang = current_language()
         try:
-            todos = team_data(audit, lang)["todos"]
+            todos = build_data.cards_for_appendix(team_data(audit, lang))  # DECISIONS 339: with the Ek-only notes
         except build_data.BuildError:
             todos = None  # the selection's cards; the file is still the whole appendix
         return service.appendix(report, aff or None, manual_review.confirmations(manual_review.load(review_path(audit))),
@@ -2167,7 +2167,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         except build_data.BuildError as exc:
             words = team_texts.library(lang)["blocked"]
             return {"available": False, "reason": words.get("build") or words["gate"], "detail": str(exc)[:300]}
-        rows = card_rows(audit, lang, data["todos"])
+        rows = card_rows(audit, lang, build_data.cards_for_appendix(data))
         problems = [todo for todo in data["todos"] if todo["severity"] in ("S1", "S2", "S3", "S4")]
         notes = [todo for todo in data["todos"] if todo["severity"] not in ("S1", "S2", "S3", "S4")]
         waiting = len(data.get("confirm") or []) + int(data.get("confirm_more") or 0)
@@ -2270,7 +2270,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         if todo is None:
             raise ApiError(404, "card_not_found", strings_module.t("cards.not_found", chosen))
         W = client_appendix.WORDS[chosen]
-        rows = page_rows.card_pages(card_rows(audit, chosen, data["todos"]), n)
+        rows = page_rows.card_pages(card_rows(audit, chosen, build_data.cards_for_appendix(data)), n)
         say = lambda key: strings_module.t(key, chosen)  # noqa: E731
         # DECISIONS 337: where each of the card's addresses is pointed at, as the appendix's "Bağlantı yerleri" says it
         from maya_audit.final import broken_link_cards
