@@ -402,7 +402,9 @@ class _Analyzer(HTMLParser):
             counters.append("heading")
         if tag in ("a", "button", "label", "option"):
             counters.append("label")
-        if tag in ("summary", "dt"):  # P4: the toggle of an accordion, or a term: a question there is marked up
+        # P4: the toggle of an accordion, or a term: a question there is marked up. DECISIONS 340: also a button, link
+        # or heading that opens and closes a panel (aria-expanded, data-toggle="collapse", an accordion class).
+        if tag in ("summary", "dt") or (tag in ("button", "a", "h2", "h3", "h4", "h5", "div", "span") and _collapses(attr)):
             counters.append("toggle")
         if _mentions_logo(attr):
             counters.append("logo")

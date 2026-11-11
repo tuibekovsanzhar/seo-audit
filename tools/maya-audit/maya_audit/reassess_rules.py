@@ -791,6 +791,82 @@ def _order(report: dict) -> list[str]:
     return [f["id"] for f in sorted(findings, key=key)]
 
 
+def _decisions_340(report: dict, affected: dict, changes: list[str]) -> None:
+    """DECISIONS 340 (the SEO team's 2nd review, enpara fee70191): FAQPage is suggested only for a real question-and-
+    answer block. A saved report kept no record of the blocks around a page's questions, so a page stays only when one
+    of its headings names an FAQ ("Sıkça Sorulan Sorular", "SSS", "FAQ" ...); a page the engine already judged
+    (`qa_container`) keeps its judgment. A finding with no page left goes."""
+    from .checks.structure import FAQ_SECTION, QA_CONTAINER_NOTE
+    from .findings import scope_for
+    pages = {p.get("url"): p for p in (report.get("crawl") or {}).get("pages") or [] if isinstance(p, dict)}
+    for check in report.get("checks") or []:
+        for f in list(check.get("findings") or []):
+            if f.get("rule_id") != "str3.qa_no_faqpage":
+                continue
+            rows = [r for r in (f.get("evidence") or {}).get("pages") or [] if isinstance(r, dict)]
+            if rows and all("qa_container" in r for r in rows):
+                continue
+            kept = []
+            for r in rows:
+                if r.get("qa_container"):
+                    kept.append(r)
+                    continue
+                heads = ((pages.get(r.get("url")) or {}).get("analysis") or {}).get("headings") or []
+                if any(FAQ_SECTION.search(str(h.get("text") or "")) for h in heads if isinstance(h, dict)):
+                    kept.append({**r, "qa_container": "faq_heading_on_page"})
+            dropped = len(rows) - len(kept)
+            if not dropped:
+                continue
+            old = f.get("id")
+            if not kept:
+                check["findings"].remove(f)
+                affected.pop(old, None)
+            else:
+                urls = [r["url"] for r in kept]
+                f.update(title=f"{len(urls)} page(s) show questions and answers but have no FAQPage structured data",
+                         scope=scope_for(urls), evidence={**f["evidence"], "pages": kept})
+                f["notes"] = [*(f.get("notes") or []), QA_CONTAINER_NOTE]
+                _refresh_id(f, affected, old, urls)
+            changes.append(f"STR-3: FAQPage no longer suggested on {dropped} page(s) whose questions are headings or "
+                           "paragraphs in an ordinary section, not an FAQ block (DECISIONS 340)")
+
+    # STR-5: an Organization or WebSite name that is the page's own <title> is not another name of the brand
+    from .checks.structure import brand_key
+    titles = {u: ((p.get("analysis") or {}).get("title") or "") for u, p in pages.items()}
+    for check in report.get("checks") or []:
+        for f in list(check.get("findings") or []):
+            if f.get("rule_id") != "str5.names":
+                continue
+            ev = f.get("evidence") or {}
+            variants = [v for v in ev.get("variants") or [] if isinstance(v, dict)]
+            gone, kept = [], []
+            for v in variants:
+                seen = [x for x in v.get("seen_as") or [] if isinstance(x, dict)]
+                title_like = [x for x in seen if x.get("source") in ("Organization name", "WebSite name")
+                              and brand_key(x.get("value") or "") == brand_key(titles.get(x.get("url")) or "x\x00")]
+                others = set(v.get("by_source") or {}) - {"Organization name", "WebSite name"}
+                if seen and len(title_like) == len(seen) and not others:
+                    gone += title_like
+                else:
+                    kept.append(v)
+            if not gone:
+                continue
+            old = f.get("id")
+            note = [{"value": x.get("value"), "source": x.get("source"), "url": x.get("url")} for x in gone][:20]
+            if len(kept) <= 2:
+                check["findings"].remove(f)
+                affected.pop(old, None)
+            else:
+                main = ev.get("main_name")
+                urls = sorted({x.get("url") for v in kept if v.get("name") != main for x in v.get("seen_as") or []
+                               if isinstance(x, dict) and x.get("url")})
+                f.update(title=f"The brand is named {len(kept)} different ways", scope={**scope_for(urls), "kind": "template"},
+                         evidence={**ev, "variants": kept, "page_titles_not_counted": note})
+                _refresh_id(f, affected, old, urls)
+            changes.append(f"STR-5: {len(gone)} Organization/WebSite name(s) that are the page's own title not counted as "
+                           f"names of the brand ({', '.join(sorted({str(x.get('value')) for x in gone}))}) (DECISIONS 340)")
+
+
 def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | None = None,
           jsonld_by_url: dict[str, list[str]] | None = None, saved_texts: list[str] | None = None) -> tuple[dict, dict, dict]:
     """(report, affected, record) for a copy of `report` with the changed rules applied. `record` lists every change
@@ -821,6 +897,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_329(r, changes)
     _decisions_337(r, aff, changes)
     _decisions_338(r, aff, changes)
+    _decisions_340(r, aff, changes)
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -836,7 +913,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337 and 338, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338 and 340, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
@@ -864,6 +941,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
     if affected is not None:
         _decisions_337(r, affected, cert)  # DECISIONS 337: broken links split by what is to be fixed
         _decisions_338(r, affected, cert)  # DECISIONS 338: the SEO team's review of enpara
+        _decisions_340(r, affected, cert)  # DECISIONS 340: FAQPage only for a real Q&A block
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

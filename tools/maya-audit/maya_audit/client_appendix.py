@@ -29,7 +29,15 @@ READ = {
            "go": "Satırlara git →", "where": "Bağlantı yerleri",
            # DECISIONS 337: where each address with a problem is pointed at
            "where_cols": ["Kart", "Bozuk adres", "HTTP durumu", "Bağlantının bulunduğu sayfa", "Bağlantı metni", "Yazılan değer (href)",
-                          "Konum", "Site haritasında mı?", "Site haritası dosyası", "Önerilen hedef", "Olası neden", "Bulgu kimliği", "Kural"],
+                          "Konum", "Site haritasında mı?", "Site haritası dosyası", "Site haritasındaki <loc> metni", "<loc> satırı",
+                          "Site haritası okuma zamanı", "Önerilen hedef", "Olası neden", "Bulgu kimliği", "Kural"],
+           # DECISIONS 340: a link to an address that redirects to a working page is not a broken address
+           "redirect": "Yönlendiren bağlantılar",
+           "redirect_cols": ["Kart", "Bağlantının bulunduğu sayfa", "Bağlantı metni", "Konum", "Bağlantı verilen (eski) adres",
+                             "Yönlendirme", "Doğrudan verilmesi gereken son adres", "Not", "Bulgu kimliği", "Kural"],
+           "redirect_words": {"self": "yönlendirme bu sayfanın kendisinde bitiyor: bağlantının gerçekte nereye gitmesi gerektiğini kontrol edin",
+                              "loc_old": "kaydedilmedi (eski denetim): adres, Maya'nın kaydettiği biçimde",
+                              "read_approx": "yaklaşık: site haritası okuma adımının başı", "local": "TSİ"},
            "where_words": {"sitemap_only": "yalnızca site haritasında", "not_linked": "bağlantı bulunamadı", "yes": "Evet", "no": "Hayır",
                            "redirects": "yönlendiriyor", "not_recorded": "kaydedilmedi (eski denetim)",
                            "positions": {"menu": "menü", "footer": "altbilgi", "body": "gövde", "head": "<head>"},
@@ -58,7 +66,14 @@ READ = {
            "summary_cols": ["Card", "Title", "Severity", "Issue type", "Priority (P0-P3)", "Owner", "Effort", "Affected addresses", "Go to rows"],
            "go": "Go to rows →", "where": "Link locations",
            "where_cols": ["Card", "Broken address", "HTTP status", "Page with the link", "Link text", "Written value (href)",
-                          "Place", "In the sitemap?", "Sitemap file", "Point to instead", "Likely cause", "Finding ID", "Rule"],
+                          "Place", "In the sitemap?", "Sitemap file", "<loc> text in the sitemap", "<loc> line",
+                          "Sitemap read at", "Point to instead", "Likely cause", "Finding ID", "Rule"],
+           "redirect": "Redirecting links",
+           "redirect_cols": ["Card", "Page with the link", "Link text", "Place", "Linked (old) address", "Redirect",
+                             "Final address to link to directly", "Note", "Finding ID", "Rule"],
+           "redirect_words": {"self": "the redirect ends on this page itself: check where the link should really go",
+                              "loc_old": "not recorded (older audit): the address as Maya kept it",
+                              "read_approx": "approximate: start of the sitemap step", "local": None},
            "where_words": {"sitemap_only": "sitemap only", "not_linked": "no link found", "yes": "Yes", "no": "No",
                            "redirects": "redirects", "not_recorded": "not recorded (older audit)",
                            "positions": {"menu": "menu", "footer": "footer", "body": "body", "head": "<head>"},
@@ -291,17 +306,44 @@ def _link(url: str | None, text: str) -> dict | str:
     return {"text": text, "link": url} if url and url.startswith(("http://", "https://")) else text
 
 
+def redirects_to_working(r: dict) -> bool:
+    """A link (or canonical, hreflang) to an address that redirects and ends on a working page (DECISIONS 340)."""
+    final = r.get("final_status")
+    return (r.get("kind") != "sitemap" and bool(r.get("ends_at")) and r.get("ends_at") != r.get("links_to")
+            and not r.get("loop") and isinstance(final, int) and 200 <= final < 400)
+
+
+def read_time(value: str | None, approx: bool, lang: str) -> str:
+    """"2026-11-11 12:07:49 UTC (15:07:49 TSİ)" (Turkish time is UTC+3 all year); the approximation said."""
+    from datetime import datetime, timedelta
+    if not value:
+        return ""
+    R = READ[lang]["redirect_words"]
+    try:
+        at = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return str(value)
+    text = at.strftime("%Y-%m-%d %H:%M:%S UTC")
+    if R["local"]:
+        text += f" ({(at + timedelta(hours=3)).strftime('%H:%M:%S')} {R['local']})"
+    return text + (f" — {R['read_approx']}" if approx else "")
+
+
 def where_rows(places: dict | None, todos: list[dict] | None, lang: str) -> list[list]:
     """DECISIONS 337: the "Bağlantı yerleri" rows: one per address with a problem and the page or entry that names it
-    (`final.broken_link_cards`), numbered by the PDF's cards."""
+    (`final.broken_link_cards`), numbered by the PDF's cards. DECISIONS 340: a sitemap entry's <loc> as the file
+    writes it, its line and when the file was read; links to addresses that redirect to a working page are in
+    `redirect_rows`, not here."""
     from urllib.parse import unquote
     R = READ[lang]
-    Wd = R["where_words"]
+    Wd, Rw = R["where_words"], R["redirect_words"]
     shown = lambda u: _link(u, unquote(u or ""))  # noqa: E731  readable letters, the real address behind the link
     card = {fid: t["n"] for t in todos or [] for fid in t.get("finding_ids") or []}
     out = []
     for fid, rows in (places or {}).items():
         for r in rows:
+            if redirects_to_working(r):
+                continue
             kind = r.get("kind")
             first, final_status = r.get("status"), r.get("final_status")
             if r.get("ends_at") and r.get("ends_at") != r.get("links_to"):
@@ -322,9 +364,41 @@ def where_rows(places: dict | None, todos: list[dict] | None, lang: str) -> list
             heading = r.get("heading") or {}
             cause = (Wd["cause"].format(page=unquote(heading.get("page") or ""), heading=heading.get("heading") or "") if heading else
                      Wd["mistyped"] if r.get("mistyped") else "")
+            if kind == "sitemap":  # the text to search for in the file: never decoded
+                loc = r.get("sitemap_loc") or r.get("links_to") or ""
+                line = r.get("sitemap_line") if r.get("sitemap_loc") else Rw["loc_old"]
+                read = read_time(r.get("sitemap_read_at"), bool(r.get("sitemap_read_approx")), lang)
+            else:
+                loc, line, read = "", "", ""
             out.append([card.get(fid, ""), shown(r.get("links_to")), status, page, text, href,
                         Wd["positions"].get(r.get("position") or "", ""), Wd["yes"] if r.get("in_sitemap") or kind == "sitemap" else Wd["no"],
-                        unquote(r.get("sitemap_file") or ""), suggest, cause, fid, r.get("rule_id") or ""])
+                        unquote(r.get("sitemap_file") or ""), loc, line if line is not None else "", read,
+                        suggest, cause, fid, r.get("rule_id") or ""])
+    return sorted(out, key=lambda row: (row[0] == "", row[0] if row[0] != "" else 0))
+
+
+def redirect_rows(places: dict | None, todos: list[dict] | None, lang: str) -> list[list]:
+    """DECISIONS 340: "Yönlendiren bağlantılar": one row per link to an address that redirects to a working page:
+    the page with the link, the (old) address it links to, the redirect, and the final address to link to directly.
+    When the redirect ends on the linking page itself, the note says so (a link to itself is no fix)."""
+    from urllib.parse import unquote
+    R = READ[lang]
+    Wd, Rw = R["where_words"], R["redirect_words"]
+    shown = lambda u: _link(u, unquote(u or ""))  # noqa: E731
+    card = {fid: t["n"] for t in todos or [] for fid in t.get("finding_ids") or []}
+    out = []
+    for fid, rows in (places or {}).items():
+        for r in rows:
+            if not redirects_to_working(r):
+                continue
+            kind = r.get("kind")
+            text = (Wd["kinds"].get(kind, "") + (f" ({r['link_text']})" if kind == "hreflang" and r.get("link_text") else "")
+                    if kind in ("canonical", "hreflang") else (r.get("link_text") or ""))
+            hop = f"{r.get('status') or Wd['redirects']} → {r.get('final_status')}"
+            same = bool(r.get("source")) and r.get("source") == r.get("ends_at")
+            out.append([card.get(fid, ""), shown(r.get("source")) if r.get("source") else Wd["not_linked"], text,
+                        Wd["positions"].get(r.get("position") or "", ""), shown(r.get("links_to")), hop,
+                        shown(r.get("ends_at")), Rw["self"] if same else "", fid, r.get("rule_id") or ""])
     return sorted(out, key=lambda row: (row[0] == "", row[0] if row[0] != "" else 0))
 
 
@@ -373,7 +447,11 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
     where = where_rows(places, todos, lang)
     if where:  # DECISIONS 337: only when the audit has an address pointed at from somewhere
         out.append({"name": R["where"], "header": R["where_cols"], "rows": where,
-                    "widths": [7, 60, 14, 60, 30, 40, 11, 14, 40, 50, 50, 18, 24]})
+                    "widths": [7, 60, 14, 60, 30, 40, 11, 14, 40, 60, 12, 34, 50, 50, 18, 24]})
+    moved = redirect_rows(places, todos, lang)  # DECISIONS 340
+    if moved:
+        out.append({"name": R["redirect"], "header": R["redirect_cols"], "rows": moved,
+                    "widths": [7, 60, 30, 11, 60, 14, 60, 50, 18, 24]})
     return out
 
 

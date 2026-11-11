@@ -2273,6 +2273,8 @@ def broken_link_sources(checks, result: CrawlResult) -> None:
         if sitemap_only:
             files = file_map(getattr(result, "sitemap_docs", None), result.sitemap_urls, getattr(result, "_sitemap_file_of", None))
             matches = heading_matches(sitemap_only, result.pages)
+            locs = getattr(result, "_sitemap_loc_of", None) or {}
+            read_at = getattr(result, "_sitemap_read_at", None) or {}
             ends = {}
             for url in sitemap_only:
                 hop = url
@@ -2284,6 +2286,9 @@ def broken_link_sources(checks, result: CrawlResult) -> None:
                 ends[url] = hop
             entries = [{"url": u, "ends_at": ends[u], "status": statuses.get(ends[u]), "first_status": statuses.get(u),
                         "sitemap_file": files.get(u), "heading_match": matches.get(u),
+                        # DECISIONS 340: the <loc> as the file writes it, its line, and when the file was read
+                        **({"sitemap_loc": locs[u]["loc"], "sitemap_line": locs[u]["line"]} if u in locs else {}),
+                        **({"sitemap_read_at": read_at[files[u]]} if files.get(u) in read_at else {}),
                         "suggested": "fix_generator" if u in matches else "remove_or_redirect"} for u in sitemap_only]
             ts = list(dict.fromkeys(e["ends_at"] for e in entries))
             notes = [SITEMAP_ONLY_NOTE] + ([FROM_HEADINGS_NOTE.format(n=len(matches))] if matches else [])

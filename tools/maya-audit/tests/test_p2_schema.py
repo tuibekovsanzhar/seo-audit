@@ -87,7 +87,8 @@ def test_a_broken_organization_with_logo_and_sameas_lacks_nothing():
 
 # -- questions and answers --------------------------------------------------------------------------------------------
 def test_questions_and_answers_on_the_homepage_without_faqpage_are_noted():
-    titles = audit(page(qa(5), ld(ORG, SITE)))
+    # DECISIONS 340: a run of questions is an FAQ under a heading that names one (or in an accordion)
+    titles = audit(page("<h2>Sıkça Sorulan Sorular</h2>" + qa(5), ld(ORG, SITE)))
     [finding] = [f for t, f in titles.items() if "questions and answers" in t]
     assert finding.severity == Severity.INFO and finding.evidence["pages"][0]["questions"] == 5
 

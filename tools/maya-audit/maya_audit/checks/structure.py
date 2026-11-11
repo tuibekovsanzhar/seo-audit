@@ -929,6 +929,33 @@ def _qa_run(analysis: dict) -> list[int]:
     return best if len(best) >= QA_MIN_PAIRS else []
 
 
+# DECISIONS 340 (the SEO team, enpara fee70191): questions written as headings or paragraphs in an ordinary section are
+# not an FAQ. FAQPage is suggested only for a real question-and-answer block: questions that open and close their
+# answers (an accordion: <summary>, <dt>, aria-expanded, a collapse class) or a run under a heading that names an FAQ.
+FAQ_SECTION = re.compile(r"s[ıi]k(?:[çc]a)?\s+sorulan|\bs\.?\s?s\.?\s?s\b\.?|\bfaq|frequently\s+asked|merak\s+edil|"
+                         r"soru(?:lar)?\s*(?:ve|&|-|/)\s*cevap|questions?\s*(?:and|&)\s*answers?|\bq\s*&\s*a\b|preguntas\s+frecuentes|"
+                         r"h[äa]ufig\s+gestellte|questions\s+fr[ée]quentes", re.I)
+QA_CONTAINER_NOTE = ("Suggested only for a real question-and-answer block: questions that open and close their answers (an "
+                     "accordion) or a run under a heading that names an FAQ; question-shaped headings or paragraphs in an "
+                     "ordinary section are not one (DECISIONS 340).")
+
+
+def qa_container(analysis: dict) -> str | None:
+    """"accordion" when most questions of the page's Q&A run open and close their answers, "faq_section" when the nearest
+    heading before the run names an FAQ (or the page's heading list holds one and no other heading comes between), else
+    None: then the run is not suggested as FAQPage."""
+    run = _qa_run(analysis)
+    if not run:
+        return None
+    toggles = analysis.get("_content_block_toggles") or []
+    if sum(1 for i in run if i < len(toggles) and toggles[i]) * 2 > len(run):
+        return "accordion"
+    blocks = analysis.get("_content_blocks") or []
+    kinds = analysis.get("_content_block_kinds") or []
+    heading = next((blocks[j] for j in range(run[0] - 1, -1, -1) if j < len(kinds) and kinds[j] == "heading"), "")
+    return "faq_section" if FAQ_SECTION.search(heading or "") else None
+
+
 def qa_block(analysis: dict) -> list[str]:
     """The questions of the page's question-and-answer block (`_qa_run`), or []."""
     blocks = analysis.get("_content_blocks") or []
@@ -1077,9 +1104,10 @@ def str3_structured_data(result: CrawlResult, cfg: CrawlConfig, pages: list, key
         # P2: what the page shows, not its address: a run of questions and answers, a breadcrumb trail.
         recovered = {t for b in sd["jsonld_blocks"] for t in b.get("recovered_types") or []}
         questions = qa_block(a) if kind != "faq" and not narrative_questions(a) else []
-        if questions and not ({"FAQPage", "QAPage"} & (_types(a) | recovered)):
+        container = qa_container(a) if questions else None  # DECISIONS 340
+        if questions and container and not ({"FAQPage", "QAPage"} & (_types(a) | recovered)):
             qa_pages.append({"url": p.url, "questions": len(questions), "first_questions": questions[:3],
-                             "types_found": sd["types"]})
+                             "qa_container": container, "types_found": sd["types"]})
         trail = (a.get("breadcrumbs") or [None])[0]
         if trail and "BreadcrumbList" not in _types(a) | recovered:
             crumb_pages.append({"url": p.url, "trail": trail["text"], "links": trail["links"], "types_found": sd["types"]})
@@ -1212,7 +1240,7 @@ def str3_structured_data(result: CrawlResult, cfg: CrawlConfig, pages: list, key
             "FAQPage structured data that matches the questions and answers shown",
             "Check that the block is the page's own questions and answers; if so, describe them with FAQPage "
             "structured data whose text matches what the page shows.", key_urls,
-            [QA_NOTE, FAQ_RICH_RESULTS_NOTE]))
+            [QA_NOTE, QA_CONTAINER_NOTE, FAQ_RICH_RESULTS_NOTE]))
     if crumb_pages:
         urls = [r["url"] for r in crumb_pages]
         findings.append(_finding(
@@ -2143,6 +2171,16 @@ def str5_entity(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
         if key == dominant or any(words <= other or other <= words for other in other_keys):
             sources.append({"source": "title suffix/prefix", "value": raw_segment[key], "url": urls[0], "pages": len(urls)})
 
+    # DECISIONS 340 (the SEO team, enpara fee70191): an Organization or WebSite name that is the page's own <title>
+    # ("Homepage" on /en/homepage, the homepage's "Bankanın güzeli | Enpara") is the page's title copied into the
+    # markup, not another name of the brand: listed, not counted.
+    title_of = {p.url: p.analysis.get("title") or "" for p in pages}
+    candidates = [s_ for s_ in sources if s_["source"] in ("Organization name", "WebSite name")
+                  and brand_key(s_["value"]) and brand_key(s_["value"]) == brand_key(title_of.get(s_["url"]) or "")]
+    # ... unless another source gives the same name (a homepage titled just "Acme" keeps "Acme")
+    elsewhere = {brand_key(s_["value"]) for s_ in sources if s_ not in candidates}
+    page_titles = [s_ for s_ in candidates if brand_key(s_["value"]) not in elsewhere]
+    sources = [s_ for s_ in sources if s_ not in page_titles]
     variants: dict[str, list[dict]] = defaultdict(list)
     # Every page each name was seen on and how many pages each source gave it, counted before any list is cut.
     seen_on: dict[str, set[str]] = defaultdict(set)
@@ -2220,6 +2258,7 @@ def str5_entity(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
              "declared_in_schema_not_counted": declared,
              "branches_not_counted": [spellings[k].most_common(1)[0][0] for k in sorted(branches)],
              "sub_brands_not_counted": [spellings[k].most_common(1)[0][0] for k in sorted(sub_brands)],
+             "page_titles_not_counted": [{"value": x["value"], "source": x["source"], "url": x["url"]} for x in page_titles][:20],
              "main_name": spellings[main].most_common(1)[0][0] if main else None},
             "one brand name (plus names declared in alternateName/legalName)",
             "Use one brand name in titles, og:site_name, Organization name, footer, and logo alt; declare legitimate "

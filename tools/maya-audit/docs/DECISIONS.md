@@ -4641,3 +4641,43 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      links) gave the Ek only the finding's row, "ayrıntı kaydedilmedi", and none for its other addresses (pages without
      twitter:card). Now the finding's row says what the card saw there (each link → where it goes) and every other
      address has its own row with what was seen (`hygiene_seen` labels).
+
+340. **The SEO team's 2nd review of enpara fee70191: a sitemap entry as written and when it was read; links to
+     redirects in their own columns; FAQPage only for a real Q&A block; what to do with each redirecting item; a page
+     title is not a brand name (Owner, 2026-11-11).** Her file (an Ek made before `fffddad` and `1db0ddf`): 9 of 15 cards
+     correct. Accuracy data: `docs/expert-reviews/enpara-fee70191.json`; per rule: `docs/expert-reviews/ACCURACY.md`
+     (`scripts/expert_accuracy.py`, checked by a test).
+     (1) *Cards 1 and 12 (notes on the older file).* Card 1 is "2 sayfa (+88 sayfa: Orta)" since 339. Card 12: both
+     other names are page titles copied into structured data ("Homepage" is /en/homepage's <title>, "Bankanın güzeli |
+     Enpara" the homepage's). An Organization or WebSite name equal to the <title> of the page it is on, and given by no
+     other source, is not counted as a brand name (`page_titles_not_counted`; saved reports by `_decisions_340`).
+     enpara: one name left, no brand finding.
+     (2) *Card 2, sitemap entries (she: not in the sitemap).* Checked offline: all 21 are in `crawl.sitemap_urls`, each
+     page record says `discovered_via: sitemap`, 12 from /sitemap.xml and 9 from /sirketim/sitemap.xml, both read at
+     12:07:49-12:07:52 UTC (the sitemap step); all https://www., no trailing slash; none came from elsewhere. 10 hold
+     Turkish letters the file wrote percent-encoded (Maya keeps a letter as written, so a stored %C3 was in the file), and
+     the Ek showed them decoded: Cmd+F in the file could not find them. The raw <loc> text was not saved, and today's file
+     cannot be fetched offline. New audits keep each listed address's <loc> exactly as written and its line
+     (`sitemap.loc_lines`, `CrawlResult._sitemap_loc_of`) and when each file was read (`_sitemap_read_at`), in memory and
+     in the finding's `sitemap_entries` (no schema change); "Bağlantı yerleri" gains "Site haritasındaki <loc> metni",
+     "<loc> satırı" and "Site haritası okuma zamanı" (UTC and TSİ); a saved audit shows the address as Maya kept it
+     (percent-encoded, "kaydedilmedi (eski denetim)") and the sitemap step's start, marked "yaklaşık".
+     (3) *Card 8, links to redirects (she: confusing).* A link to an address that redirects to a working page is not a
+     broken address: such rows (links, canonicals, hreflang) leave "Bağlantı yerleri" for "Yönlendiren bağlantılar":
+     Bağlantının bulunduğu sayfa, Bağlantı metni, Konum, Bağlantı verilen (eski) adres, Yönlendirme, Doğrudan verilmesi
+     gereken son adres, Not; when the redirect ends on the linking page itself, the note says so (enpara: "Hesap aç" on
+     /kredi-musteri/ihtiyac-kredisi-hesaplama goes to /kredi-musteri/kredi-basvuru, which 302s back to that page). The
+     per-page value says which link goes where and what to link instead. The web card list shows both tables.
+     (4) *Card 14, FAQPage (she: wrong, these are headings).* All 16 pages re-checked from Maya's records: no accordion,
+     no FAQ heading; paragraphs under "Ödeme İste" / "ATM'ye Transfer", question-shaped article headings, 51 article
+     links on /bilgi-bankasi. FAQPage is now suggested only when the questions open and close their answers (<summary>,
+     <dt>, and since 340 any element with aria-expanded, data-toggle="collapse" or an accordion class) or the run sits
+     under a heading naming an FAQ (`FAQ_SECTION`: Sıkça/Sık sorulan sorular, SSS, FAQ, Merak edilenler, Soru ve cevap
+     ...); evidence `qa_container`. A saved report kept no block record: a page stays only when one of its headings names
+     an FAQ. enpara: 16 → 0, no card.
+     (5) *Card 15, redirecting items (she: give the target).* Each item says what to do (`Builder.redirect_advice`):
+     "bağlantıyı şu adrese verin: …" when the end answered 2xx; "hata sayfasına gidiyor (404): bağlantıyı kaldırın ya da
+     doğru sayfanın adresini yazın" when it is an error page (it answered 4xx/5xx, or its path is that of an address that
+     did: /404?aspxerrorpath=...); the address and "bu adresin yanıtı ölçülmedi" otherwise (no request is sent for it).
+     Tests: `tests/test_expert_review_340.py` (a fake site with a multi-line sitemap, a self-ending redirect, llms.txt,
+     plain/FAQ/accordion questions and a page-title Organization name; saved-report cases; the review file and summary).

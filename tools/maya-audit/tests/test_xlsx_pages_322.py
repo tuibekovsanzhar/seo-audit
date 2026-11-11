@@ -180,7 +180,7 @@ def test_maya_limits_and_rejected_findings_stay_out_of_the_reader_sheets():
     ("idx6.tracking", {"links": [{"source": SITE + "/a", "target": SITE + "/b?utm_source=x", "parameters": ["utm_source"]}]},
      SITE + "/a", "tracking parameter in a link: utm_source"),
     ("idx6.links_to_redirect", {"targets": [{"url": SITE + "/old", "final": SITE + "/new", "linked_from": [SITE + "/a"]}]},
-     SITE + "/a", f"link to a redirecting address: {SITE}/old → {SITE}/new"),
+     SITE + "/a", f"the link on this page goes to {SITE}/old, which redirects to {SITE}/new: link straight to {SITE}/new"),
     ("rnd7.no_region", {"pages": [SITE + "/a"]}, SITE + "/a", "seen on this page (see Problem)"),
     ("tseo1.url_decomposed", {"addresses": []}, SITE + "/collections/i%CC%87pek",
      f"decomposed letter: U+0307; correct spelling: {SITE}/collections/ipek"),

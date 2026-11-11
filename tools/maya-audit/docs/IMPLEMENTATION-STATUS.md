@@ -1963,3 +1963,35 @@ Same audit, follow-up (DECISIONS 339 (7)-(9)):
 | `pytest tests/test_head_card_339.py tests/test_v03_report_fixes.py tests/test_expert_review_338.py tests/test_team_report_309.py` | `70 passed` |
 | full suite on its own, `pytest -q -rfE -p no:cacheprovider` (fixture matrix regenerated first) | `3259 passed, 4 skipped, 1 warning in 955.96s (0:15:55)` |
 | Push | owner asked: `fffddad` and this commit |
+| CI for `1db0ddf` (run 43044201930) | attempts 1 and 2 failed before any test ran (the runner could not resolve archive.ubuntu.com in "Chromium system libraries"); attempt 3 success, job "fast" 18:34:52 → 18:45:04 UTC |
+
+## Uzman kontrolü 2: enpara fee70191, the SEO team's 2nd review (2026-11-11, DECISIONS 340)
+
+Her file is an Ek made before `fffddad`/`1db0ddf` (15 cards). Verdicts: 9 correct, 4 wrong, 1 wording, 1 incomplete
+(`docs/expert-reviews/enpara-fee70191.json`); per rule over both reviews: `docs/expert-reviews/ACCURACY.md` (28 cards, 13
+correct).
+
+| Card | Rule(s) | Her verdict | Evidence says | Fixed (every audit) | enpara after |
+|---|---|---|---|---|---|
+| 1 Head | tseo1.head_closed_lost/later | wrong | right (old file) | DECISIONS 339 | 2 sayfa (+88 sayfa: Orta) |
+| 2 Site haritası | idx1.4xx.sitemap_only | wrong | not supported: all 21 from the two sitemap files (12:07 UTC); 10 percent-encoded there but shown decoded in the Ek | <loc> as written, its line and the read time kept and shown | same 21; Ek: <loc> text (Maya's form, "kaydedilmedi (eski denetim)"), "12:07:49 UTC (15:07:49 TSİ) — yaklaşık" |
+| 3-7, 9-11, 13 | str14.no_text, str9.no_return, str7.over_100kb, str2.no_h1, str16.shared, str3.unparsed, str9.status, str2.styled_subheadings, str8.headers | correct | — | — | unchanged |
+| 8 Yönlendiren bağlantılar | idx6.links_to_redirect | wording | right; one link's redirect ends on its own page | own sheet: page, (old) address, redirect, final address, note | "Yönlendiren bağlantılar": 3 rows, /kredi-musteri/ihtiyac-kredisi-hesaplama noted |
+| 12 Marka | str5.names | wrong | right: both other names are page titles in Organization/WebSite name | a name equal to its page's <title> not counted | no brand finding |
+| 14 FAQPage | str3.qa_no_faqpage | wrong | right: 16/16 no accordion, no FAQ heading | FAQPage only for an accordion or under an FAQ heading | no card (16 → 0); the freed note slot shows "Soru başlıklarını düzeltin" (25 pages) |
+| 15 Küçük tutarsızlıklar | acc8.redirecting | incomplete | right | each item says what to do | /sikca-sorulan-sorular: "hata sayfasına gidiyor (404) …"; /enparacom-nedir: "bağlantıyı şu adrese verin: /hakkimizda (… ölçülmedi …)" |
+
+Other saved audits (offline re-evaluation of scratch copies): FAQPage suggestions dropped on moodist 2d72fea0 (31 of 36),
+enpara 87f0425a (21), 2e5829fb (15), nihan b3198942 (6); 2e5829fb's brand finding also loses its two page-title names. The
+full rule on the saved crawl records keeps 3 moodist pages, 1 enpara 87f0425a page and no nihan page (each under an FAQ
+heading).
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_expert_review_340.py` | `24 passed` |
+| fast suite, first run | `4 failed, 3144 passed, 4 skipped, 135 deselected` in 9:06: the new note's Turkish (added); two tests whose "real FAQ" was plain question paragraphs or headings (given an FAQ heading); the per-page redirect sentence pinned (new wording) |
+| after the fixes: the six affected test files | `122 passed` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` (fixture matrix and accuracy summary regenerated first) | `3283 passed, 4 skipped, 1 warning in 940.42s (0:15:40)` |
+| `node --check app.js` | OK |
+| Owner's web app on port 8770 | NOT RUN here (restart needed) |
+| Push | NOT DONE (owner: don't push) |

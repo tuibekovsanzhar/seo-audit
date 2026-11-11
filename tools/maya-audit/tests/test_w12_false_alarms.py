@@ -53,6 +53,6 @@ def test_dialogue_in_a_blog_story_is_not_a_question_and_answer_block():
         ("Kartla ödeme yapabilir miyim?", "Evet, kuryemize kapıda kredi kartı ya da banka kartıyla ödeme yapabilirsiniz.")])
     article = ld({"@type": "BlogPosting", "headline": "Hamalın küfesi"})
     result, pages = site({"/": html("<h1>Ana</h1>"), "/blog/oyku/": html("<h1>Hamalın küfesi</h1>" + story, head=article),
-                          "/paket-servis/": html("<h1>Paket servis</h1>" + faq)})
+                          "/paket-servis/": html("<h1>Paket servis</h1><h2>Sık sorulan sorular</h2>" + faq)})  # DECISIONS 340
     [suggest] = [f for f in str3_structured_data(result, CFG, pages, set()).findings if "FAQPage" in f.title]
     assert [r["url"].rsplit("/", 2)[-2] for r in suggest.evidence["pages"]] == ["paket-servis"]

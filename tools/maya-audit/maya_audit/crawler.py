@@ -329,6 +329,8 @@ class Crawler:
         # Where each sitemap file was named (robots.txt, a sitemap index, or not named: the /sitemap.xml guess).
         self._sitemap_named_in: dict[str, str] = {}
         self._sitemap_file_of: dict[str, str] = {}
+        self._sitemap_loc_of: dict[str, dict] = {}  # DECISIONS 340: <loc> as written, and its line
+        self._sitemap_read_at: dict[str, str] = {}
         self._key_urls = {u for u in (normalize_url(k, start) for k in cfg.key_pages) if u}
         fetcher = Fetcher(cfg.user_agent, cfg.request_timeout_s, cfg.request_delay_s, self._transport, cfg.ca_bundle,
                           block_loopback=cfg.block_loopback)
@@ -781,6 +783,7 @@ class Crawler:
             sitemap_notes=list(self._sitemap_notes),
             _sitemap_named_in=dict(self._sitemap_named_in),
             _sitemap_file_of=dict(self._sitemap_file_of),
+            _sitemap_loc_of=dict(self._sitemap_loc_of), _sitemap_read_at=dict(self._sitemap_read_at),
             sessions=session_rows,
             render_discovery=discovery.summary(),
             backoff={"configured_delay_s": cfg.request_delay_s, "final_delay_s": fetcher.delay_s,
@@ -852,7 +855,8 @@ class Crawler:
             discovered_urls=sorted(set(frontier.all_urls()) | set(sitemap_urls)), not_fetched_urls=[],
             stop_reason=None, stop_detail="", requests=[], robots_policy_by_origin=dict(policies),
             sitemap_lastmods=dict(self._lastmods), sitemap_notes=list(self._sitemap_notes),
-            _sitemap_named_in=dict(self._sitemap_named_in), _sitemap_file_of=dict(self._sitemap_file_of))
+            _sitemap_named_in=dict(self._sitemap_named_in), _sitemap_file_of=dict(self._sitemap_file_of),
+            _sitemap_loc_of=dict(self._sitemap_loc_of), _sitemap_read_at=dict(self._sitemap_read_at))
         try:
             started = self.on_rate_limited(fetcher, known)
         except Exception as exc:  # a reader that cannot start leaves the crawl as it was
@@ -891,6 +895,7 @@ class Crawler:
             # Enough addresses for the page cap and the sitemap check's sample, spread over the index's files
             # (DECISIONS 299): the rest of a large index is not read.
             enough=cfg.max_pages + max(0, cfg.sitemap_check_max),
+            loc_of=self._sitemap_loc_of, read_at=self._sitemap_read_at,
         )
         self._sitemap_notes.extend(notes)
         return docs, urls

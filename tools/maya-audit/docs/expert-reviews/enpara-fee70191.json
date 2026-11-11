@@ -1,0 +1,204 @@
+{
+ "_about": "Expert review of Maya Audit cards: one SEO expert's verdict per card, kept as accuracy data (DECISIONS 338, 340). verdict: the expert's (correct, wrong, wording, incomplete); assessment: what the saved evidence showed when checked (agree, right, mostly_right, partly_right, not_supported). follow_up: rules whose verdict was wrong.",
+ "audit": "enpara fee70191 (Akıllı ~150, 2026-11-11, run on fb4f070)",
+ "reviewer": "SEO expert (team)",
+ "reviewed_on": "2026-11-11",
+ "review": 2,
+ "source_file": "maya-audit-www.enpara.com-2026-11-11-ek-tr İlginay 2. Kontrol.xlsx, Özet, column \"İlginay's Not\" (an Ek made before fffddad and 1db0ddf)",
+ "cards": [
+  {
+   "card": 1,
+   "title": "Head'i erken kapatan öğeyi taşıyın",
+   "rule_ids": [
+    "tseo1.head_closed_lost",
+    "tseo1.head_closed_later"
+   ],
+   "expert_note": "Hatalı",
+   "verdict": "wrong",
+   "assessment": "right",
+   "finding": "Her file predates fffddad: one High card for 90 pages. The evidence: 2 pages carry robots noindex only after div#blueLightOverlay (High); on 88 canonical, hreflang and title stay in the head (Medium).",
+   "fix": "Already fixed by DECISIONS 339 (fffddad): \"2 sayfa (+88 sayfa: Orta)\", why and steps from the evidence."
+  },
+  {
+   "card": 2,
+   "title": "Site haritasındaki hata veren adresleri düzeltin ya da çıkarın",
+   "rule_ids": [
+    "idx1.4xx.sitemap_only"
+   ],
+   "expert_note": "Bulgu hatalı, site haritasında var denilen linkler bulunmuyor",
+   "verdict": "wrong",
+   "assessment": "not_supported",
+   "finding": "All 21 are in crawl.sitemap_urls and each page record says discovered_via sitemap: 12 from /sitemap.xml, 9 from /sirketim/sitemap.xml, read at 12:07:49-12:07:52 UTC on 11 Nov. All https://www., none with a trailing slash. 10 hold Turkish letters the file wrote percent-encoded (Maya keeps letters as written), but the Ek showed them decoded, so Cmd+F in the file finds nothing. The raw <loc> text was not saved; today's sitemap cannot be re-checked offline.",
+   "fix": "New audits keep each <loc> as written, its line and when the file was read; the Ek shows them (\"Site haritasındaki <loc> metni\", \"<loc> satırı\", \"Site haritası okuma zamanı\"); a saved audit shows the address as Maya kept it (percent-encoded) and the sitemap step's start, marked approximate."
+  },
+  {
+   "card": 3,
+   "title": "Metni olmayan bağlantılara ad verin",
+   "rule_ids": [
+    "str14.no_text"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 4,
+   "title": "hreflang bağlantılarını karşılıklı yapın",
+   "rule_ids": [
+    "str9.no_return"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 5,
+   "title": "Büyük görselleri hafifletin",
+   "rule_ids": [
+    "str7.over_100kb"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 6,
+   "title": "H1 etiketi olmayan sayfalara tek bir H1 etiketi ekleyin",
+   "rule_ids": [
+    "str2.no_h1"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 7,
+   "title": "Aynı açıklamayı paylaşan sayfalara ayrı açıklama yazın",
+   "rule_ids": [
+    "str16.shared"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 8,
+   "title": "Bağlantıları doğrudan son adrese verin",
+   "rule_ids": [
+    "idx6.links_to_redirect"
+   ],
+   "expert_note": "Sayfa ve ölçülen değer ne veriyor burda bir karışıklık var",
+   "verdict": "wording",
+   "assessment": "right",
+   "finding": "The finding is right: \"Hesap aç\" in the menu of 3 pages links /kredi-musteri/kredi-basvuru, which 302s to /kredi-musteri/ihtiyac-kredisi-hesaplama (200). The Ek put the old address under \"Bozuk adres\" and the measured value said only \"A → B\"; on /kredi-musteri/ihtiyac-kredisi-hesaplama itself the redirect ends on the linking page.",
+   "fix": "Links to an address that redirects to a working page have their own sheet \"Yönlendiren bağlantılar\": Bağlantının bulunduğu sayfa, Bağlantı verilen (eski) adres, Yönlendirme, Doğrudan verilmesi gereken son adres, and a note when it ends on the linking page; the per-page value says which link goes where."
+  },
+  {
+   "card": 9,
+   "title": "Ayrıştırılamayan JSON-LD'yi düzeltin",
+   "rule_ids": [
+    "str3.unparsed"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 10,
+   "title": "hreflang'deki çalışmayan adresleri düzeltin",
+   "rule_ids": [
+    "str9.status"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 11,
+   "title": "Uzun sayfalardaki bölüm başlıklarını H2/H3 olarak işaretleyin",
+   "rule_ids": [
+    "str2.styled_subheadings"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 12,
+   "title": "Marka için sitede tek bir ad kullanın",
+   "rule_ids": [
+    "str5.names"
+   ],
+   "expert_note": "Burda ingilizce sayfasında marka adı değil o sayfa başlığı bu nedenle bu öneri hatalı",
+   "verdict": "wrong",
+   "assessment": "right",
+   "finding": "Her file predates 1db0ddf. The two other names are page titles copied into structured data: \"Homepage\" is /en/homepage's <title> (Organization name), \"Bankanın güzeli | Enpara\" the homepage's <title> (Organization and WebSite name).",
+   "fix": "1db0ddf moved it under \"Teyit edin\"; DECISIONS 340: an Organization/WebSite name equal to its page's own <title> (and given by no other source) is not a brand name. enpara: one name left, no brand finding."
+  },
+  {
+   "card": 13,
+   "title": "Veri tablolarının başlık hücrelerini işaretleyin",
+   "rule_ids": [
+    "str8.headers"
+   ],
+   "expert_note": "Doğru",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "",
+   "fix": ""
+  },
+  {
+   "card": 14,
+   "title": "Sayfaların gösterdiği bilgiyi yapısal veriyle işaretleyin",
+   "rule_ids": [
+    "str3.qa_no_faqpage"
+   ],
+   "expert_note": "Yanlış öneri, burdakiler FAQ değil başlık olarak kullanılmış, schema eklenmez",
+   "verdict": "wrong",
+   "assessment": "right",
+   "finding": "Re-checked the 16 pages from Maya's own records: no question opens and closes its answer (no accordion) and none sits under a heading naming an FAQ; they are paragraphs under ordinary section titles (\"Ödeme İste\", \"ATM'ye Transfer\"), question-shaped article headings, and on /bilgi-bankasi 51 article links. The rule needed punctuation alone.",
+   "fix": "FAQPage only for an accordion (<summary>, <dt>, aria-expanded, a collapse class) or a run under an FAQ heading (\"Sıkça Sorulan Sorular\", \"SSS\", \"FAQ\" ...); a saved audit keeps only pages with an FAQ heading. enpara: 16 → 0, no card."
+  },
+  {
+   "card": 15,
+   "title": "Küçük bağlantı ve etiket tutarsızlıklarını temizleyin",
+   "rule_ids": [
+    "acc8.redirecting"
+   ],
+   "expert_note": "Burda öneri olarak yönlenene sayfaları da versek iyi olur",
+   "verdict": "incomplete",
+   "assessment": "right",
+   "finding": "The card named each llms.txt link and where it redirects but not what to do; /sikca-sorulan-sorular ends on /404?aspxerrorpath=... (an error page: the same path answered 404 in the crawl), /enparacom-nedir on /hakkimizda (not measured).",
+   "fix": "Each redirecting item says what to do: \"bağlantıyı şu adrese verin: …\" when the end answered, \"hata sayfasına gidiyor (404): bağlantıyı kaldırın ya da doğru sayfanın adresini yazın\" for an error page, and that the answer was not measured when it was not."
+  }
+ ],
+ "summary": {
+  "wrong": 4,
+  "correct": 9,
+  "wording": 1,
+  "incomplete": 1
+ },
+ "follow_up": [
+  "idx1.4xx.sitemap_only",
+  "str3.qa_no_faqpage",
+  "str5.names",
+  "tseo1.head_closed_later",
+  "tseo1.head_closed_lost"
+ ]
+}

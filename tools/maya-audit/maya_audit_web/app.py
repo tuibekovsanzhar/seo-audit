@@ -2278,10 +2278,15 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         places = {fid: r for fid, r in broken_link_cards(current_report(audit)[0]).items() if fid in mine}
         cells = lambda v: {"text": v["text"], "link": v["link"]} if isinstance(v, dict) else {"text": "" if v is None else str(v), "link": None}  # noqa: E731
         where = client_appendix.where_rows(places, [todo], chosen)
+        moved = client_appendix.redirect_rows(places, [todo], chosen)  # DECISIONS 340: links to redirects, apart
+        R = client_appendix.READ[chosen]
+        block = (({"columns": R["where_cols"][1:-2], "rows": [[cells(v) for v in r[1:-2]] for r in where], "title": R["where"]}
+                  if where else None),
+                 ({"columns": R["redirect_cols"][1:-2], "rows": [[cells(v) for v in r[1:-2]] for r in moved], "title": R["redirect"]}
+                  if moved else None))
         return {"n": n, "title": todo.get("title"), "severity": todo.get("severity"), "severity_label": todo.get("severity_label"),
                 "count": len(rows), "lang": chosen,
-                "where": {"columns": client_appendix.READ[chosen]["where_cols"][1:11], "rows": [[cells(v) for v in r[1:11]] for r in where],
-                          "title": client_appendix.READ[chosen]["where"]} if where else None,
+                "where": block[0] or block[1], "where_more": block[1] if block[0] else None,
                 "columns": {k: say(f"cards.col.{k}") for k in ("address", "read", "page_type", "importance", "value", "finding")},
                 "rows": [{"url": r["url"], "address": r["address"], "read": r["read"],  # DECISIONS 323
                           "read_label": page_rows.read_word(r["read"], chosen),

@@ -14,6 +14,10 @@ from .models import SitemapDoc, SkippedUrl
 from .robots import RobotsPolicy
 from .urls import normalize_url, same_origin
 from . import clock as _clock
+import re
+from html import unescape
+
+from .fetcher import utc_now
 
 # Where a sitemap address came from when nobody named it: Maya asked for /sitemap.xml on its own.
 GUESSED = "guess"
@@ -98,6 +102,20 @@ def _entries(root, container: str) -> list[tuple[str, str | None]]:
     return out
 
 
+_LOC = re.compile(rb"<(?:[\w-]+:)?loc\b[^>]*>\s*(.*?)\s*</(?:[\w-]+:)?loc\s*>", re.S | re.I)
+
+
+def loc_lines(body: bytes) -> list[tuple[str, int]]:
+    """Every <loc> text of a sitemap file as written (entities and percent-escapes left as they are) and its line,
+    in one pass (DECISIONS 340)."""
+    out, line, at = [], 1, 0
+    for m in _LOC.finditer(body):
+        line += body.count(b"\n", at, m.start(1))
+        at = m.start(1)
+        out.append((m.group(1).decode("utf-8", "replace"), line))
+    return out
+
+
 def discover_sitemap_urls(
     fetcher: Fetcher,
     policy: RobotsPolicy,
@@ -112,6 +130,8 @@ def discover_sitemap_urls(
     named_in: dict[str, str] | None = None,
     file_of: dict[str, str] | None = None,
     enough: int | None = None,
+    loc_of: dict[str, dict] | None = None,
+    read_at: dict[str, str] | None = None,
 ) -> tuple[list[SitemapDoc], list[str], list[str]]:
     """Fetch sitemaps named in robots.txt plus /sitemap.xml; same-origin only.
 
@@ -123,7 +143,11 @@ def discover_sitemap_urls(
     beside https, www beside the bare name). None of these is read, and none is dropped without a word.
 
     `enough` (DECISIONS 299): once this many addresses are known and every family of files in each sitemap index has
-    had one file read (`spread`), the index's other files are not read; a note starting with `PARTIAL` says how many."""
+    had one file read (`spread`), the index's other files are not read; a note starting with `PARTIAL` says how many.
+
+    `loc_of` and `read_at` (DECISIONS 340), when given, are filled with each listed address's <loc> text exactly as the
+    file writes it and its line ({address: {"loc", "line"}}, the first file that listed it), and with when each file was
+    read ({file: UTC time}), so a person can find the entry with Cmd+F."""
     named_in = named_in if named_in is not None else {}
     sources: list[str] = []
     other_host_files: list[str] = []
@@ -173,6 +197,8 @@ def discover_sitemap_urls(
             skipped.append(SkippedUrl(url, "sitemap_document", decision.to_dict()))
             continue
 
+        if read_at is not None:
+            read_at.setdefault(url, utc_now())
         response = fetcher.get(url, "sitemap", max_bytes + 1)
         final_url = url
         redirects = 0
@@ -244,6 +270,11 @@ def discover_sitemap_urls(
                         file_of.setdefault(loc, url)
                     if lastmods is not None:
                         lastmods.setdefault(loc, lastmod)
+            if loc_of is not None:
+                for raw, line in loc_lines(body):
+                    norm = normalize_url(unescape(raw), final_url)
+                    if norm and norm in page_urls and norm not in loc_of:
+                        loc_of[norm] = {"loc": raw[:2000], "line": line}
             stamps = Counter(lastmod for loc, lastmod in entries if loc and same_origin(loc, origin) and lastmod)
             top, top_count = stamps.most_common(1)[0] if stamps else (None, 0)
             media = Counter(_local(child.tag) for element in root if _local(element.tag) == "url" for child in element

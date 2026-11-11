@@ -38,7 +38,8 @@ WORDS = {
            "copy_group": "{n} sayfalık kopya grubunda", "cert": "sertifika {date} tarihinde bitiyor; denetimde {n} gün kalmıştı",
            "cert_invalid": "sertifika geçersiz: {v}", "noindex": "noindex yok", "chars_list": "birleşik olmayan harf: {v}",
            "seen": "bu sayfada görüldü (bkz. Sorun)", "params": "bağlantıda izleme parametresi: {v}",
-           "redirect_link": "yönlendiren adrese bağlantı: {a} → {b}", "hreflang": "hreflang {a} → {b} (HTTP {n})",
+           "redirect_self": "bu sayfadaki bağlantı {a} adresine gidiyor; o adres bu sayfanın kendisine yönlendiriyor: bağlantının gerçekte nereye gitmesi gerektiğini kontrol edin",
+           "redirect_link": "bu sayfadaki bağlantı {a} adresine gidiyor; o adres {b} adresine yönlendiriyor: bağlantıyı doğrudan {b} adresine verin", "hreflang": "hreflang {a} → {b} (HTTP {n})",
            "alt": "alt metni: \"{v}\"", "scripts": "{n} engelleyen betik", "images": "{n} boyutsuz görsel",
            "ids": "ölçüm kimlikleri: {v}", "types": "beklenen tür: {a}; bulunan: {b}", "clash": "aynı öğe için türler: {v}",
            "title_m": "başlık \"{v}\" ({n} karakter)", "desc_m": "açıklama {n} karakter: \"{v}\"", "no_desc": "açıklama yok",
@@ -65,7 +66,8 @@ WORDS = {
            "copy_group": "in a group of {n} copies", "cert": "certificate expires on {date}; {n} days were left at the audit",
            "cert_invalid": "certificate not valid: {v}", "noindex": "no noindex", "chars_list": "decomposed letter: {v}",
            "seen": "seen on this page (see Problem)", "params": "tracking parameter in a link: {v}",
-           "redirect_link": "link to a redirecting address: {a} → {b}", "hreflang": "hreflang {a} → {b} (HTTP {n})",
+           "redirect_self": "the link on this page goes to {a}, which redirects back to this page itself: check where the link should really go",
+           "redirect_link": "the link on this page goes to {a}, which redirects to {b}: link straight to {b}", "hreflang": "hreflang {a} → {b} (HTTP {n})",
            "alt": "alt text: \"{v}\"", "scripts": "{n} blocking script(s)", "images": "{n} image(s) without size",
            "ids": "measurement IDs: {v}", "types": "expected type: {a}; found: {b}", "clash": "types for one item: {v}",
            "title_m": "title \"{v}\" ({n} characters)", "desc_m": "description {n} characters: \"{v}\"", "no_desc": "no description",
@@ -370,7 +372,9 @@ def measured(finding: dict, url: str, lang: str = "tr", page: dict | None = None
             if any(_same(rec.get(k), url) for k in URL_KEYS):
                 found += [w for w in _record_words(rec, ev, lang, finding.get("check_id")) if w not in found]
             elif isinstance(rec.get("linked_from"), list) and any(_same(u, url) for u in rec["linked_from"]) and rec.get("url"):
-                found.append(W["redirect_link"].format(a=rec["url"], b=rec.get("final") or "?"))
+                # DECISIONS 340: which page holds the link, which (old) address it names, where that redirects
+                key = "redirect_self" if _same(rec.get("final"), url) else "redirect_link"
+                found.append(W[key].format(a=rec["url"], b=rec.get("final") or "?"))
             elif isinstance(rec.get("on_pages"), list) and any(_same(u, url) for u in rec["on_pages"]) and rec.get("types"):
                 found.append(W["clash"].format(v=", ".join(map(str, rec["types"][:4]))))
             elif isinstance(rec.get("urls"), list) and any(_same(u, url) for u in rec["urls"]):

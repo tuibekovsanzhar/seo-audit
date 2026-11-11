@@ -835,6 +835,36 @@ class Builder:
         ("IDX-6", "links to other sites that carry tracking or logged-in view parameters"): "parameters on links to other sites",
     }
 
+    def redirect_end(self, url):
+        """Where a recorded redirect from `url` ends (the crawl's own hops), or None."""
+        hops = {p.get("url"): p.get("redirect_location") for p in (self.r.get("crawl") or {}).get("pages") or []
+                if isinstance(p, dict) and p.get("redirect_location")}
+        at, seen = url, set()
+        while at in hops and at not in seen:
+            seen.add(at)
+            at = hops[at]
+        return at if at != url else None
+
+    def redirect_advice(self, url, end, status=None):
+        """DECISIONS 340: one redirecting item with what to do: "/a → /b: bağlantıyı şu adrese verin: /b" when /b
+        answered (2xx); when /b is an error page (it answered 4xx/5xx, or its path is that of an address that did, as
+        /404?aspxerrorpath=... is), remove it or write the right page; when /b was not measured, the address and that."""
+        L = self.L
+        a, b = path_of(url) or url or "", path_of(end) or end or ""
+        if not end:
+            return f"{a}: {L['redirect_unknown_end']}"
+        pages = [p for p in (self.r.get("crawl") or {}).get("pages") or [] if isinstance(p, dict)]
+        status = status if isinstance(status, int) else next((p.get("status") for p in pages if p.get("url") == end), None)
+        bare = urlsplit(end).path
+        if status is None:
+            status = next((p.get("status") for p in pages if isinstance(p.get("status"), int) and p["status"] >= 400
+                           and urlsplit(p.get("url") or "").path == bare and bare not in ("", "/")), None)
+        if isinstance(status, int) and status >= 400:
+            return f"{a} → {b}: " + fmt(L["redirect_to_error"], status=status)
+        if isinstance(status, int) and 200 <= status < 300:
+            return f"{a} → {b}: " + fmt(L["redirect_link_to"], url=b)
+        return f"{a} → {b}: " + fmt(L["redirect_link_to_unmeasured"], url=b)
+
     def hygiene_items(self):
         """Küçük düzeltmeler (Maya Audit P3): motorda gözlem ya da Info oldukları için yapılacaklara girmezler; burada
         tek kartta toplanır. Her satır: (konu, sayı, örnekler, adresler, kimlikler)."""
@@ -849,8 +879,9 @@ class Builder:
                     ex = [path_of(m.get("url") if isinstance(m, dict) else m) for m in moved[:3]]
                     # DECISIONS 338: the file that holds the links, and what each link redirects to
                     files = list((f.get("scope") or {}).get("urls") or [])
-                    for u in files:
-                        self.url_notes[u] = "; ".join(f"{path_of(m.get('url')) or m.get('url')} → {path_of(m.get('location')) or m.get('location')}"
+                    for u in files:  # DECISIONS 340: each item with what to do: the address to link to, or why not
+                        self.url_notes[u] = "; ".join(self.redirect_advice(m.get("url"), m.get("final_url") or m.get("location"),
+                                                                           ((m.get("redirect_evidence") or [{}])[-1] or {}).get("status"))
                                                       for m in moved if isinstance(m, dict))
                     rows.append(("llms.txt links that redirect", len(moved), ex, files, [f["id"]]))
             for o in chk.get("observations") or []:
@@ -867,7 +898,8 @@ class Builder:
                     urls = list(dict.fromkeys(s.get("source") for s in o.get("sample") or [] if s.get("source")))
                     for s in o.get("sample") or []:
                         if s.get("source"):
-                            self.url_notes[s["source"]] = f"«{s.get('anchor') or ''}» → {path_of(s.get('target')) or s.get('target')}"
+                            end = s.get("final") or s.get("ends_at") or self.redirect_end(s.get("target"))
+                            self.url_notes[s["source"]] = f"«{s.get('anchor') or ''}» " + self.redirect_advice(s.get("target"), end)
                 elif label.startswith("parameters"):
                     ex = [f"{urlsplit(e['url']).netloc} ({', '.join(e['parameters'][:2])})" for e in (o.get("examples") or [])[:3]]
                     urls = [e["url"] for e in o.get("examples") or [] if e.get("url")]  # DECISIONS 338

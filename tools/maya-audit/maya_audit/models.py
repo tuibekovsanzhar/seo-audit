@@ -265,6 +265,9 @@ class CrawlResult:
     _sitemap_named_in: dict[str, str] = field(default_factory=dict, repr=False)
     # In memory only: the sitemap file that listed each sitemap URL, for the sitemap check's sample (DECISIONS 294).
     _sitemap_file_of: dict[str, str] = field(default_factory=dict, repr=False)
+    # In memory only (DECISIONS 340): each sitemap URL's <loc> text as written and its line; when each file was read.
+    _sitemap_loc_of: dict[str, dict] = field(default_factory=dict, repr=False)
+    _sitemap_read_at: dict[str, str] = field(default_factory=dict, repr=False)
     # The sitemap check's data while the audit runs (maya_audit.index_data.check_sitemap_urls); written under
     # `crawl.index.sitemap_check`.
     _sitemap_check: Any = field(default=None, repr=False)

@@ -125,14 +125,16 @@ def test_the_appendix_has_link_locations_and_the_quick_look_line(site):
     how = [r[0] for r in book["Nasıl okunur"][1:]]
     assert "Bağlantılar Mac'in hızlı önizlemesinde çalışmaz; dosyayı Numbers, Excel veya Google Sheets ile açın." in how
     sheet = book["Bağlantı yerleri"]
-    assert sheet[0][:10] == ["Kart", "Bozuk adres", "HTTP durumu", "Bağlantının bulunduğu sayfa", "Bağlantı metni",
-                             "Yazılan değer (href)", "Konum", "Site haritasında mı?", "Site haritası dosyası", "Önerilen hedef"]
+    assert sheet[0][:13] == ["Kart", "Bozuk adres", "HTTP durumu", "Bağlantının bulunduğu sayfa", "Bağlantı metni",
+                             "Yazılan değer (href)", "Konum", "Site haritasında mı?", "Site haritası dosyası",
+                             "Site haritasındaki <loc> metni", "<loc> satırı", "Site haritası okuma zamanı", "Önerilen hedef"]
     rows = {(r[1], r[3]): r for r in sheet[1:]}
     eski = rows[(site.base + "/eski", site.base + "/hakkimizda")]
-    assert eski[2:10] == ["404", site.base + "/hakkimizda", "Eski kampanya", "/eski", "gövde", "Hayır", "", "kaldırın"]
+    assert eski[2:13] == ["404", site.base + "/hakkimizda", "Eski kampanya", "/eski", "gövde", "Hayır", "", "", "", "", "kaldırın"]
     sitemap = rows[(site.base + "/kredi-karti-aidati-yok!", "yalnızca site haritasında")]
-    assert sitemap[7:10] == ["Evet", site.base + "/sitemap.xml", "site haritası oluşturucuyu düzeltin"]
-    assert sitemap[10].startswith("çıkarım:") and "Kredi kartı aidatı yok!" in sitemap[10]
+    assert sitemap[7:11] == ["Evet", site.base + "/sitemap.xml", site.base + "/kredi-karti-aidati-yok!", "1"]  # DECISIONS 340
+    assert sitemap[11].endswith(" TSİ)") and sitemap[12] == "site haritası oluşturucuyu düzeltin"
+    assert sitemap[13].startswith("çıkarım:") and "Kredi kartı aidatı yok!" in sitemap[13]
 
 
 def test_the_pdf_card_shows_three_rows_and_says_the_rest_is_in_the_appendix():

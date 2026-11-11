@@ -41,6 +41,9 @@ class _Crawl:
                          if p.get("redirect_location") and isinstance(p.get("status"), int) and 300 <= p["status"] < 400}
         self.listed = set(crawl.get("sitemap_urls") or [])
         self.files = file_map(crawl.get("sitemap_docs"), crawl.get("sitemap_urls"))
+        # DECISIONS 340: when the sitemaps were read, for a report that kept no time per file: the crawl's sitemap step
+        step = next((x for x in crawl.get("steps") or [] if isinstance(x, dict) and x.get("step") == "sitemap"), None)
+        self.sitemap_step = (step or {}).get("started_at")
         self.inbound: dict[str, list[dict]] = defaultdict(list)
         self.edge: dict[tuple[str, str], dict] = {}
         for p in pages:
@@ -129,8 +132,13 @@ def _rows_for(f: dict, c: _Crawl) -> list[dict]:
         entries = {e.get("url"): e for e in _dicts(ev.get("sitemap_entries"))}
         for u in ev.get("sitemap_only") or []:
             e = entries.get(u) or {}
-            rows.append(c.row(f, "sitemap", u, suggested=e.get("suggested") or "remove_or_redirect",
-                              heading=e.get("heading_match")))
+            row = c.row(f, "sitemap", u, suggested=e.get("suggested") or "remove_or_redirect", heading=e.get("heading_match"))
+            # DECISIONS 340: the <loc> as the file writes it and its line (recorded since 340; before, the address as
+            # Maya kept it), and when the file was read (else when the sitemap step began, `sitemap_read_approx`)
+            row.update({"sitemap_loc": e.get("sitemap_loc"), "sitemap_line": e.get("sitemap_line"),
+                        "sitemap_read_at": e.get("sitemap_read_at") or c.sitemap_step,
+                        "sitemap_read_approx": not e.get("sitemap_read_at") and bool(c.sitemap_step)})
+            rows.append(row)
         return rows
     if rule in SERVER:
         urls = [p.get("url") if isinstance(p, dict) else p for p in ev.get("pages") or []]
