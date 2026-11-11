@@ -120,7 +120,6 @@ WORDS = {
                       ("Erişim", "1 + ln(1 + etkilenen ve okunan sayfaların önem puanı toplamı / 100), en çok 10; okunmayan adres katılmaz (ayrı sütunda sayılır); adressiz bulgu: ana sayfa"),
                       ("Sıra", "önce önem bandı, sonra bant içinde öncelik puanı"),
                       ("Kök neden grupları", "aynı nedeni ve tek düzeltmeyi paylaşan kurallar tek kart (sütun: Kök neden grubu)"),
-                      ("İş önemi", "1,0 (iş türü profilleri gelene kadar)"),
                       ("Öncelik puanı", "önem x güven x erişim x iş önemi; efor gösterilir, puana girmez"),
                       ("Kartlar", "en çok 15: bütün Engelleyici/Yüksek gruplar, sonra bant ve puan sırasıyla"),
                       ("Öncelik (P0-P3)", "ekibin sektör yöntemi: 20 x etki (Engelleyici 5, Yüksek 4, Orta 3, Düşük 2) x sayfa ağırlığı x yaygınlık (1-5) x durum (1 ya da 0,5) / 3; P0 160 ve üstü, P1 80, P2 30, P3 0'dan büyük; ana sayfada ya da ilk iki sayfa türünün geniş bölümünde indeksleme engeli P0; elle P0 yapılabilir ya da kaldırılabilir; sırayı değiştirmez")]},
@@ -168,7 +167,6 @@ WORDS = {
                       ("Reach", "1 + ln(1 + summed importance of the affected pages that were read / 100), at most 10; addresses not read add nothing (counted in their own column); no address: the homepage"),
                       ("Order", "severity band first, then priority score within the band"),
                       ("Root-cause groups", "rules sharing one cause and one fix are one card (column: Root-cause group)"),
-                      ("Business relevance", "1.0 (until business-type profiles exist)"),
                       ("Priority score", "severity x confidence x reach x business; effort is shown, not scored"),
                       ("Cards", "at most 15: every Blocker/High group, then by band and score"),
                       ("Priority (P0-P3)", "the team's sector method: 20 x impact (Blocker 5, High 4, Medium 3, Low 2) x page weight x spread (1-5) x status (1 or 0.5) / 3; P0 at 160 or more, P1 80, P2 30, P3 above 0; an indexing blocker on the homepage or a large part of the first two page types is P0; P0 can be set or taken off by hand; it changes no order")]},
@@ -225,6 +223,54 @@ def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = No
         reason = (sentence(line.get("reason")) if sentence and line.get("reason") else None) or line.get("reason") or ""
         return f"{part}: {reason}".strip(": ")
     return line.get("text") or W["kind"].get(kind, kind)
+
+
+BUSINESS_WORDS = {
+    "tr": {"type": "İş türü", "weights": "Sayfa türü ağırlığı", "relevance": "İş önemi",
+           "chosen": {"user": "seçildi", "suggestion": "önerildi; değiştirilebilir"},
+           "rest": {"other": "eşleşmeyen sayfa", "policy": "politika / yasal", "utility": "yardımcı sayfa"},
+           "links": "Diğer: iş türü profili kullanılmadı; sayfa önemi genel sayfa türünden (ana sayfa 100, kategori 80, ürün 70, "
+                    "blog yazısı 60, diğer 50, politika 15, yardımcı 0) ve bağlantılardan: %50 bağlantı puanı, %25 tıklama "
+                    "derinliği, %25 genel sayfa türü",
+           "relevance_text": "puanda 1,0 (çarpan değil); iş türü puana sayfa önemiyle girer: %50 sayfa türü ağırlığı + %35 "
+                             "iç bağlantı puanı + %15 tıklama derinliği puanı. Bu önem «Erişim»i ve P0-P3'teki sayfa "
+                             "ağırlığını (ağırlık / 100) belirler",
+           "relevance_links": "puanda 1,0 (çarpan değil); sayfa önemi «Erişim»i ve P0-P3'teki sayfa ağırlığını belirler"},
+    "en": {"type": "Business type", "weights": "Page type weight", "relevance": "Business relevance",
+           "chosen": {"user": "chosen", "suggestion": "suggested; can be changed"},
+           "rest": {"other": "unmatched page", "policy": "policy / legal", "utility": "utility page"},
+           "links": "Other: no business-type profile; page importance from the general page type (homepage 100, "
+                    "category 80, product 70, blog article 60, other 50, policy 15, utility 0) and links: 50% link score, "
+                    "25% click depth, 25% general page type",
+           "relevance_text": "1.0 in the score (not a multiplier); the business type enters through page importance: 50% "
+                             "page type weight + 35% internal link score + 15% click-depth score. That importance sets "
+                             "\"Reach\" and the page weight of P0-P3 (weight / 100)",
+           "relevance_links": "1.0 in the score (not a multiplier); page importance sets \"Reach\" and the page weight of P0-P3"},
+}
+
+
+def method_rows(selection: dict, lang: str) -> list[list[str]]:
+    """The "Yöntem" sheet: the fixed method, with the business type this audit's importance actually used and its
+    page type weights in place of the old "1.0 until business-type profiles exist" (DECISIONS 339)."""
+    W, B = WORDS[lang], BUSINESS_WORDS[lang]
+    rows = [list(m) for m in W["method"]]
+    at = next((i for i, m in enumerate(rows) if m[0] in ("Öncelik puanı", "Priority score")), len(rows))
+    info = selection.get("business_type") or {}
+    from . import business_types as bt
+    pid = info.get("id")
+    if pid and pid != bt.DEFAULT and pid in bt.profiles():
+        prof = bt.profile(pid)
+        how = B["chosen"].get(info.get("chosen_by") or "suggestion", B["chosen"]["suggestion"])
+        types = [f"{(t.get('label') or {}).get(lang) or t['id']} {t['weight']}" for t in prof["page_types"]]
+        if not any(t["id"] == "home" for t in prof["page_types"]):
+            types.append(f"{bt.SPECIAL['home'][lang]} {bt.weight(prof, 'home')}")
+        types += [f"{B['rest']['other']} {bt.UNMATCHED_WEIGHT}", f"{B['rest']['policy']} {bt.POLICY_WEIGHT}",
+                  f"{B['rest']['utility']} {bt.UTILITY_WEIGHT}"]
+        add = [[B["type"], f"{bt.label(pid, lang)} ({how})"], [B["weights"], " · ".join(types)],
+               [B["relevance"], B["relevance_text"]]]
+    else:
+        add = [[B["type"], B["links"]], [B["relevance"], B["relevance_links"]]]
+    return rows[:at] + add + rows[at:]
 
 
 def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
@@ -371,7 +417,7 @@ def technical_sheets(selection: dict, lang: str = "tr", lists: dict | None = Non
                                        (W["key_pages"], W["page_cols"], pages, [6, 70, 12, 10, 14, 12, 10]),
                                        (W["templates"], W["tpl_cols"], tpls, [40, 16, 12, 12, 12, 16, 14, 60]),
                                        (W["coverage"], W["cov_cols"], cov, [18, 110, 40]),
-                                       (W["method_sheet"], W["method_cols"], [list(m) for m in W["method"]], [22, 100])):
+                                       (W["method_sheet"], W["method_cols"], method_rows(selection, lang), [22, 100])):
         if name == W["key_pages"] and not selection["key_pages"]:
             out.append({"name": name, "header": [W["note"]], "rows": body, "widths": [140]})
             continue

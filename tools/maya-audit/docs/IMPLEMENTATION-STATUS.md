@@ -1916,3 +1916,36 @@ nihan b3198942: same 13 cards, H1 card worded "H1 etiketi", question card lists 
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `1 failed, 3248 passed, 4 skipped, 1 warning in 930.88s (0:15:30)`: the fixture matrix (regenerated; `tests/test_fixture_matrix.py` `3 passed`) |
 | Owner's web app on port 8770 | NOT RUN here (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+
+## enpara fee70191: one card, two severities; head card from its evidence; Ek "Kapsam" and "Yöntem" (2026-11-11, DECISIONS 339)
+
+fee70191 (Akıllı ~150, run on `fb4f070`) printed card 1 "Head'i erken kapatan öğeyi taşıyın" as High, P1, 90 pages.
+The evidence (report and Maya's own crawl records): 2 pages carry `robots noindex` only after `<div#blueLightOverlay>`
+(High is right for them); on 88 canonical, hreflang and title stay in the head (Medium). The 338 rule had applied; the
+two findings share one cause, so the selection's one card took High for all 90 and the lost rule's fixed words.
+
+| Card 1 | Before | After |
+|---|---|---|
+| Severity, P | Yüksek, P1 (85) | Yüksek, P1 (85: from the 88 Medium pages, team method) |
+| Scope | 90 sayfa | 2 sayfa (+88 sayfa: Orta) |
+| Why | "… ondan sonra gelen canonical, robots ya da hreflang etiketi yok sayılır." | "2 sayfada robots (noindex) head kırıldıktan sonra geliyor; Google bu kuralı uygulamayabilir. 88 sayfada canonical, title, hreflang head'de; yalnız description, Open Graph, generator sonra geliyor." |
+| Priority text | "… canonical, robots ve hreflang etiketlerinin head'de kalmasını sağlayın." | "<div#blueLightOverlay> öğesini gövdeye taşıyın; robots (noindex) head'de, bu öğeden önce kalmalı." |
+| Step 3 | Search Console'da canonical'ı teyit edin | Search Console Adres Denetimi'nde robots (noindex) kuralını teyit edin |
+| Examples | /kartlar/encard-genc (a Medium page), /acentelik-bilgileri | /sirketim/basvuru, /acentelik-bilgileri |
+
+| Ek | Before | After |
+|---|---|---|
+| Kapsam, PRF-3 | Core Web Vitals ve Lighthouse metrikleri (isteğe bağlı): İsteğe bağlı panel çalıştırılmadı (--pagespeed). | Lighthouse laboratuvar metrikleri (isteğe bağlı): Laboratuvar testi yapılmadı (--pagespeed); Core Web Vitals, Google'ın gerçek ziyaretçi verisinden (Chrome UX Report) değerlendirildi. |
+| Yöntem | İş önemi: 1,0 (iş türü profilleri gelene kadar) | İş türü: Bankacılık (önerildi; değiştirilebilir) · Sayfa türü ağırlığı: Ana sayfa 100 · Destek 85 · Finansal ürün ve ürün listesi 70 · Ücret ve başvuru 55 · Hesaplama aracı 40 · Rehber / SSS / blog 30 · eşleşmeyen sayfa 25 · politika / yasal 15 · yardımcı sayfa 0 · İş önemi: puanda 1,0 (çarpan değil); iş türü puana sayfa önemiyle girer … |
+
+Other saved audits with a mixed card (same card order): moodist redirect loop "1 sayfa (+1 Orta, +151 Düşük)", nihan
+large homepage "1 sayfa (+494 Düşük)", enpara 87f0425a head card "20 sayfa (+1 Orta)".
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_head_card_339.py` | `6 passed` |
+| fast suite, first run | `2 failed, 3118 passed, 4 skipped, 135 deselected` in 8:50: the English head labels said "On 1 pages" (now plural-aware), and the pinned "31 sayfa" of a Medium+Low merged card (now "1 sayfa (+30 sayfa: Düşük)") |
+| after the fix: `pytest tests/test_v03_report_fixes.py tests/test_team_report_309.py tests/test_head_card_339.py tests/test_expert_review_338.py` | `66 passed` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `1 failed, 3254 passed, 4 skipped, 1 warning in 936.44s (0:15:36)`: the fixture matrix (regenerated; `tests/test_fixture_matrix.py` `3 passed`) |
+| Owner's web app on port 8770 | NOT RUN here (restart needed) |
+| Push | NOT DONE (owner: don't push). 338 (`fb4f070`) was pushed; CI run 43013066846 success (11:34:29 → 11:47:54 UTC) |

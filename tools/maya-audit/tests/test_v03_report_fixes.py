@@ -119,11 +119,11 @@ def test_a_merged_card_is_named_and_counted_as_the_card_in_the_summary_the_table
     title = cs.MERGE_BY_RULE["rnd6.home_large"]["title"]["tr"]
     row = next(f for f in d["findings"] if f["id"] == "RND-6-home")
     # The table names what is wrong (DECISIONS 306), the card's whole scope; the action plan says what to do.
-    assert row["title"] == cs.MERGE_BY_RULE["rnd6.home_large"]["finding"]["tr"] and row["scope"] == "31 sayfa"
+    assert row["title"] == cs.MERGE_BY_RULE["rnd6.home_large"]["finding"]["tr"] and row["scope"] == "1 sayfa (+30 sayfa: Düşük)"  # DECISIONS 339: each severity's pages
     action = next(a for a in d["actions"] if a["ref"] == "RND-6-home")
     assert action["title"] == title
     first = d["priorities"][0]
-    assert first["value"] == "31 sayfa" and first["finding_ids"] == ["RND-6-home", "RND-6-late"]
+    assert first["value"] == "1 sayfa (+30 sayfa: Düşük)" and first["finding_ids"] == ["RND-6-home", "RND-6-late"]
 
 
 def test_the_evidence_sample_shows_the_measured_value_and_drops_columns_empty_in_every_row():

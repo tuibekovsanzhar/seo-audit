@@ -16,6 +16,7 @@ needs confirming first, a different re-test state (a card shows one, RG-4).
     confidence  measured 1.0, estimated 0.6, inferred 0.5, unverified 0.4
     reach       1 + ln(1 + the summed importance (page grouping, 0-100) of the pages it affects / 100), at most 10
                 (DECISIONS 301: diminishing returns, no ties); a finding with no page address reaches the homepage
+                (a card joining several severities: the pages of its worst one, DECISIONS 339)
     business    1.0 until business-type profiles exist (stage 4)
 
 "Measured" is the engine's `verified`; "unverified" is a finding from a rule not yet validated on real sites (the
@@ -542,7 +543,16 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
         classes = [confidence_class(m, confirmations) for m in members]
         conf = min(classes, key=lambda c: CONFIDENCE_WEIGHT[c])
         urls = list(dict.fromkeys(u for m in members for u in affected(m, lists)))
-        reach, total, counted, not_read, unscored = _reach(urls, importance, home_importance, read_urls)
+        # DECISIONS 339: a card that joins findings of different severities (one cause, one fix) is scored on the
+        # pages of its worst severity only: two High pages beside 88 Medium ones are not "90 pages at High". The other
+        # pages are counted by severity (`severity_pages`) and the card says so; its examples come from the worst ones.
+        band = [m for m in members if severity(m) == sev]
+        band_urls = (urls if len(band) == len(members) else
+                     list(dict.fromkeys(u for m in band for u in affected(m, lists))) or urls)
+        severity_pages = ({} if len(band) == len(members) else
+                          {s: len({u for m in members if severity(m) == s for u in affected(m, lists)})
+                           for s in sorted({severity(m) for m in members}, key=_weight, reverse=True)})
+        reach, total, counted, not_read, unscored = _reach(band_urls, importance, home_importance, read_urls)
         lead = members[0]
         reasons = [r for r in (confirm_reason(m, confirmations) for m in members) if r]
         languages = sorted({language_of(u, default_lang) or "" for u in urls} - {""})
@@ -552,7 +562,7 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
             "severity": sev, "severity_name": SEVERITY_NAME.get(sev, sev),
             "confidence": conf, "confidence_weight": CONFIDENCE_WEIGHT[conf],
             "reach": reach, "importance_sum": total, "pages_counted": counted, "addresses_not_read": not_read,
-            "pages_read_unscored": unscored, "urls": urls,
+            "pages_read_unscored": unscored, "urls": urls, "severity_pages": severity_pages,
             "priority": _score(sev, conf, reach),
             "parts": {"severity": _weight(sev), "confidence": CONFIDENCE_WEIGHT[conf], "reach": reach,
                       "business": BUSINESS_RELEVANCE},
@@ -562,7 +572,7 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
             "templates": sorted({(importance.get(u) or {}).get("template_key") for u in urls} - {None}),
             "examples": (worst_examples(members, merge_group(lead)["worst_by"])
                          if merge_group(lead) and merge_group(lead).get("worst_by") and worst_examples(members, merge_group(lead)["worst_by"])
-                         else _examples(urls, members, lists, importance, default_lang)),
+                         else _examples(band_urls, band, lists, importance, default_lang)),
             "merge_group": (merge_group(lead) or {}).get("id"),
             "chain": chain_summary(members),
             "manual": next((manual(m, confirmations) for m in members if manual(m, confirmations)), None),
@@ -971,6 +981,11 @@ def key_pages_reason(report: dict) -> str:
     return "reader_only" if not own and read_by_reader else "no_pages"
 
 
+LAB_PART = "Lighthouse lab metrics (optional)"
+LAB_REASON = ("No lab test was run (--pagespeed); Core Web Vitals were assessed from Google's real-visitor data "
+              "(Chrome UX Report).")
+
+
 def not_assessed_parts(report: dict) -> list[dict]:
     """The parts of the audit not assessed, one per distinct (part, reason), with the checks each applies to: the one
     count every client output prints ("Değerlendirilmeyen kapsam", DECISIONS 305). A check not assessed as a whole is
@@ -983,6 +998,9 @@ def not_assessed_parts(report: dict) -> list[dict]:
         parts = (check.get("coverage") or {}).get("not_assessed") or []
         if check.get("status") == "not_assessed" and not parts:
             parts = [{"part": check.get("title"), "reason": check.get("summary")}]
+            if check.get("check_id") == "PRF-3" and (report.get("crux") or {}).get("status") == "assessed":
+                # DECISIONS 339: Google's real-visitor data (CrUX) assessed Core Web Vitals; only the lab test is not
+                parts = [{"part": LAB_PART, "reason": LAB_REASON}]
         for part in parts:
             if part.get("part") in UNREAD_RESTATEMENTS:
                 continue

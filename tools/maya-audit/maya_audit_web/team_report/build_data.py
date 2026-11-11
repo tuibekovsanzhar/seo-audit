@@ -477,7 +477,12 @@ class Builder:
         if f is None:
             return T.library(self.lang)["generic"]
         rule = f.get("rule_id") or self._w("rule")(f.get("check_id"), f.get("title"))
-        return T.for_finding({**f, "rule_id": rule}, self.lang, merged=merged)
+        entry = T.for_finding({**f, "rule_id": rule}, self.lang, merged=merged)
+        head = self.head_words(self.members_of(f)) if rule in ("tseo1.head_closed_lost", "tseo1.head_closed_later") else None
+        if head:  # DECISIONS 339: said from the evidence, not the rule's fixed words
+            entry = {**entry, "why": head["why"], "explanation": head["explanation"], "verify": head["verify"],
+                     "steps": head["steps"].split("\n")}
+        return entry
 
     def finish(self, data):
         """Every slot still marked gets the library's generic words for its kind of field: no empty text field."""
@@ -572,11 +577,90 @@ class Builder:
         if not rows:
             return []
         L = self.L
+        element = self._head_element(rows)
+        kept_words = self._head_kept(rows)
+        return [fmt(L["head_kept_line"], kept=", ".join(kept_words) or "—", element=element,
+                    after=", ".join(self._head_after(rows)) or "—")]
+
+    @staticmethod
+    def _head_element(rows):
         culprit = Counter(json.dumps(r.get("closed_by") or {}, sort_keys=True) for r in rows).most_common(1)[0][0]
         c = json.loads(culprit)
-        element = f"<{c.get('tag') or '?'}" + (f"#{c['id']}" if c.get("id") else "") + ">"
-        kept = Counter(k for r in rows for k in r.get("kept_in_head") or [])
-        kept_words = [k for k, _ in kept.most_common()]
+        return f"<{c.get('tag') or '?'}" + (f"#{c['id']}" if c.get("id") else "") + ">"
+
+    @staticmethod
+    def _head_kept(rows):
+        return [k for k, _ in Counter(k for r in rows for k in r.get("kept_in_head") or []).most_common()]
+
+    @staticmethod
+    def _head_lost(row):
+        """The tags Google loses on one page: a canonical, hreflang or title with no copy in the head before the
+        break, and a robots tag that restricts something (its values). The engine's own rule (DECISIONS 338)."""
+        from maya_audit.checks.page_markup import RESTRICTIVE_ROBOTS  # type: ignore
+        kept = set(row.get("kept_in_head") or [])
+        tags = [tag for tag, key in (("canonical", "canonical_after"), ("hreflang", "hreflang_after"), ("title", "title_after"))
+                if row.get(key) and tag not in kept]
+        values = [v for v in row.get("robots_content") or [] if row.get("robots_after") and RESTRICTIVE_ROBOTS.search(v or "")]
+        return tags, values
+
+    def head_words(self, members):
+        """DECISIONS 339: a head-closed-early card's why, what to do, steps and check, from its evidence: which tags
+        are lost on how many pages (High) and, on the others, what stays in the head and what comes after (Medium).
+        Never "canonical, robots and hreflang are ignored" when the head still holds them. None for other cards."""
+        parts = {}
+        for m in members:
+            if m.get("rule_id") in ("tseo1.head_closed_lost", "tseo1.head_closed_later"):
+                rows = [r for r in (m.get("evidence") or {}).get("pages") or [] if isinstance(r, dict)]
+                if rows:
+                    n = (m.get("scope") or {}).get("count") or len(rows)
+                    parts[m["rule_id"].rsplit("_", 1)[1]] = (n, rows)
+        if not parts:
+            return None
+        L, lang = self.L, self.lang
+        element = self._head_element([r for _, rows in parts.values() for r in rows])
+        why, tags_said = [], []
+        if "lost" in parts:
+            n, rows = parts["lost"]
+            tags, values = Counter(), []
+            for r in rows:
+                t, v = self._head_lost(r)
+                tags.update(t)
+                values += [x for x in v if x not in values]
+            names = [t for t in ("canonical", "hreflang", "title") if tags[t]]
+            robots = f"robots ({', '.join(values[:2])})" if values else None
+            tags_said = names + ([robots] if robots else [])
+            self.fact(n)
+            if robots and not names:
+                why.append(fmt(L["head_why_robots"], n=fmt_int(n, lang), values=", ".join(values[:2])))
+            else:
+                why.append(fmt(L["head_why_lost"], n=fmt_int(n, lang), tags=", ".join(tags_said or ["canonical"])))
+        if "later" in parts:
+            n, rows = parts["later"]
+            kept = self._head_kept(rows)
+            # what a reader misses first: the description and Open Graph; a plain robots value changes nothing
+            after = sorted(self._head_after(rows), key=lambda a: (a.startswith(("robots", "ikinci", "a second")),
+                                                                   a not in ("description", "Open Graph")))[:3]
+            self.fact(n)
+            line = fmt(L["head_why_later" if why else "head_why_later_alone"], n=fmt_int(n, lang),
+                       kept=", ".join(kept) or "—", after=", ".join(after) or "—")
+            if not why or len(why[0]) + 1 + len(line) <= T.LIMITS["why"] + 60:
+                why.append(line)
+        steps = [fmt(L["head_step_move"], element=element), L["head_step_widget"]]
+        if any(t.startswith("canonical") for t in tags_said):
+            steps.append(L["head_step_canonical"])
+        elif any(t.startswith("robots") for t in tags_said):
+            steps.append(fmt(L["head_step_robots"], values=tags_said[-1][len("robots ("):-1]))
+        said = tags_said or self._head_after(parts["later"][1])[:3]
+        return {"why": " ".join(why),
+                "explanation": fmt(L["head_fix_lost" if tags_said else "head_fix"], element=element,
+                                   tags=", ".join(tags_said)),
+                "steps": "\n".join(steps),
+                "verify": fmt(L["head_verify"], tags=", ".join(said) or "meta", element=element)}
+
+    def _head_after(self, rows):
+        """What comes after the break on these pages: a second canonical/hreflang named as such, robots with its
+        values, the meta names, Open Graph."""
+        L = self.L
         after = []
         for tag, key in (("canonical", "canonical_after"), ("hreflang", "hreflang_after")):
             hit = [r for r in rows if r.get(key)]
@@ -588,7 +672,7 @@ class Builder:
         after += sorted({m for r in rows for m in r.get("meta_after") or []})[:3]
         if any(r.get("properties_after") for r in rows):
             after.append("Open Graph")
-        return [fmt(L["head_kept_line"], kept=", ".join(kept_words) or "—", element=element, after=", ".join(after) or "—")]
+        return after
 
     def entries_lines(self, f):
         """DECISIONS 337: a sitemap-only 4xx card says which sitemap file lists its addresses and, when some spell a
@@ -1189,8 +1273,18 @@ class Builder:
         n = (len({u for urls in lists for u in urls if isinstance(u, str)}) if complete
              else sum((m.get("scope") or {}).get("count") or 0 for m in members))
         unit = self.L["scope_units"][self.unit_for(f, members)]
+        word = lambda k: f"{fmt_int(k, self.lang)} {unit[0] if k == 1 else unit[1]}"  # noqa: E731
+        # DECISIONS 339: findings of different severities on one card: the worst severity's pages first, the others
+        # named with their severity ("2 sayfa (+88 sayfa: Orta)"), never all of them at the card's severity.
+        split = next((g.get("severity_pages") for g in (self.sel or {}).get("groups") or []
+                      if f.get("id") in g.get("finding_ids", []) and len(g.get("severity_pages") or {}) > 1), None)
+        if split:
+            (_, first), *rest = split.items()
+            self.fact(first, *(k for _, k in rest))
+            return word(first) + " (" + ", ".join(fmt(self.L["scope_split"], scope=word(k), severity=self.L["severity"].get(s, s))
+                                                  for s, k in rest) + ")"
         self.fact(n)
-        return f"{fmt_int(n, self.lang)} {unit[0] if n == 1 else unit[1]}"
+        return word(n)
 
     @staticmethod
     def hosts_of(f):
@@ -1716,6 +1810,9 @@ class Builder:
                     pre_steps = "\n".join(lines)
                     conditional = conditional + [c for c in more_rules if c.get("text") in lines]
                 pre_verify = first_upper(ex, self.lang).rstrip(".") + "." if ex and (ex_ok or self.lang == "en") else None
+                head = self.head_words(members)
+                if head:  # DECISIONS 339: the head card's steps and check name the element and what is lost
+                    pre_steps, conditional, pre_verify = head["steps"], [], head["verify"]
                 # Maya Audit P2: bozuk bloğun düzelince de eksik kalacak önerilen alanları (ör. logo, sameAs)
                 lacking = (f.get("evidence") or {}).get("recommended_still_lacking") or []
                 if lacking:

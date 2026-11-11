@@ -4587,3 +4587,40 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Tests: `tests/test_expert_review_338.py` (markup with the break before plain and restricting robots tags and a
      second canonical; deliberate patterns; a synthetic saved report shaped like enpara's; a fake site with accordion
      titles and a flat long page; a listing page; a note card's rows; the review file).
+
+339. **One card with pages of two severities says each; the head-closed card is said from its evidence; the Ek's
+     Core Web Vitals and business-type lines (Owner, 2026-11-11, after enpara fee70191).** The live audit fee70191
+     (Akıllı ~150, run on `fb4f070`) showed card 1 "Head'i erken kapatan öğeyi taşıyın" as High, P1, 90 pages, with the
+     rule's fixed words.
+     (1) *The evidence.* Maya's own crawl records (state/crawl.db) and the report agree: on 2 pages (/acentelik-bilgileri,
+     /sirketim/basvuru) `<meta name="robots" content="noindex">` comes after `<div#blueLightOverlay>` and the head holds
+     no robots tag; canonical and title (and hreflang on one) are before the break. On the other 88 pages canonical,
+     hreflang and title stay in the head; after it come the description, Open Graph, generator and on 6 pages a plain
+     "index, follow". High is right for the 2 pages (the site's noindex may not be applied), not for 90.
+     (2) *Why the fix of 338 did not show.* It did apply: the engine made `tseo1.head_closed_lost` (S2, 2 pages) and
+     `tseo1.head_closed_later` (S3, 88 pages). Both carry one `dedup_key` (the element, DECISIONS 278), so the client
+     selection made one card of them, took the worst severity, scored it on all 90 pages' reach and printed "90 sayfa";
+     the card's why, priority text, steps and check were the lost rule's fixed words ("canonical, robots ya da hreflang
+     … yok sayılır", "Search Console'da canonical'ı teyit edin"), and the first example was a Medium page. Not the
+     web-app vs reassess path, not an old process, no missing field.
+     (3) *Fix, every card.* A card that joins findings of different severities (one cause, one fix, still one card) is
+     scored on the pages of its worst severity only (`client_selection.groups`: reach from those pages,
+     `severity_pages` {severity: pages}, examples from those pages); its scope says the others with their severity:
+     "2 sayfa (+88 sayfa: Orta)". The severity, the band order and the P0-P3 label are unchanged (P0-P3 keeps the team
+     method's "a card takes its highest-scoring finding": fee70191's P1 comes from the 88 Medium pages, 85 points).
+     (4) *Fix, the head card.* Its why, priority text, steps and check come from the evidence (`Builder.head_words`):
+     which tags are lost on how many pages (a canonical/hreflang/title with no copy in the head, a restricting robots
+     value), and on the others what stays in the head and what comes after; the third step names Search Console's
+     canonical only when a canonical is lost, the robots rule when a robots value is. Labels `head_why_*`, `head_fix*`,
+     `head_step_*`, `head_verify`, `scope_split` (tr/en).
+     (5) *Ek, "Kapsam".* PRF-3 is not assessed when the lab test (--pagespeed) was not run, and the line said "Core Web
+     Vitals ve Lighthouse metrikleri: İsteğe bağlı panel çalıştırılmadı" though CrUX had assessed Core Web Vitals. With
+     `crux.status` "assessed" the line is "Lighthouse laboratuvar metrikleri (isteğe bağlı): Laboratuvar testi
+     yapılmadı (--pagespeed); Core Web Vitals, Google'ın gerçek ziyaretçi verisinden (Chrome UX Report) değerlendirildi."
+     (`client_selection.not_assessed_parts`; the same count everywhere).
+     (6) *Ek, "Yöntem".* "İş önemi: 1,0 (iş türü profilleri gelene kadar)" was stale since DECISIONS 311. The sheet says the
+     business type used (and whether chosen or suggested), its page type weights, and how it enters: 1.0 in the score,
+     through page importance (50% page type weight + 35% internal links + 15% click depth), which sets reach and the
+     P0-P3 page weight; "Diğer" says no profile and Stage 3's weights (`client_appendix.method_rows`).
+     Tests: `tests/test_head_card_339.py` (a fake site with one noindex page and three description/og pages after a
+     body element in the head, through the engine, the selection, the team report and the Ek).
