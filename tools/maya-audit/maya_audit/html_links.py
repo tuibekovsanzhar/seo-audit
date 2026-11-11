@@ -159,7 +159,8 @@ def extract_link_edges(html: str, page_url: str, max_anchors: int = 20) -> list[
         if not url:
             continue
         name = resolved.get(link_index) or parser.aria_names[link_index] or _clean(anchor) or next((text for text in (_clean([part]) for part in fallback) if text), "")
-        edge = edges.setdefault(url, {"target": url, "anchor": "", "anchors": [], "links": 0, "empty": 0})
+        # DECISIONS 337: the address exactly as the page wrote it (the first link to this target), for "Yazılan değer".
+        edge = edges.setdefault(url, {"target": url, "anchor": "", "anchors": [], "links": 0, "empty": 0, "href": href[:300]})
         edge["links"] += 1
         if name != _clean(anchor) and (resolved.get(link_index) or parser.aria_names[link_index]):
             edge.setdefault("programmatic_names", []).append({"visible": _clean(anchor), "accessible_name": name, "source": "aria-labelledby" if resolved.get(link_index) else "aria-label"})
@@ -183,6 +184,25 @@ def extract_link_edges(html: str, page_url: str, max_anchors: int = 20) -> list[
         if in_footer:
             edge["footer"] = True
     return list(edges.values())
+
+
+# DECISIONS 337: a real <a href> whose value cannot be the address its author meant: words with spaces, or a value with
+# no leading slash that the browser reads as a path beside the page ("tab-1" for "#tab-1", "kartlar/x" for "/kartlar/x").
+_SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+
+
+def mistyped_href(href: str | None) -> str | None:
+    """Why a link's written address looks mistyped ("spaces", "no_slash"), or None. Only said of a link that also failed
+    (4xx): a bare relative address that works ("contact.html", "page2") is a real address."""
+    value = (href or "").strip()
+    if not value or value.startswith(("/", "#", "?", ".")) or _SCHEME.match(value):
+        return None
+    if re.search(r"\s", value):
+        return "spaces"
+    # "tab-1", "kartlar/basvuru": no leading slash and no file name in the first part, so the browser resolves it
+    # beside the page; "page.html" and "../x" are ordinary relative addresses.
+    first = value.split("/", 1)[0].split("?", 1)[0]
+    return "no_slash" if "." not in first else None
 
 
 def extract_links(html: str, page_url: str) -> list[str]:

@@ -1851,3 +1851,35 @@ figures; the button now works too. Saved audit read, not written.
 | `python3.11 -m compileall` (changed Python files), `node --check app.js` | OK |
 | Owner's web app on port 8770 | NOT RUN here (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+
+## enpara 2e5829fb card 2: broken links split, "Bağlantı yerleri", sitemap file per address (2026-11-11, DECISIONS 337)
+
+Investigated offline first (shown to the owner before any change): none of card 2's 21 addresses is a link on a page
+read; all 21 are sitemap entries (302 → 404), 15 spelling a heading or FAQ question on a page read. Built: IDX-1 split
+into links / sitemap-only entries / mistyped hrefs; one "where" row per problem address and the page or entry naming it
+(IDX-1 4xx and 5xx, IDX-6 links to redirects, IDX-3 chains and loops, IDX-4 canonicals, STR-9 hreflang), shown in the
+Ek's new "Bağlantı yerleri" sheet, the PDF card's "NEREDE DÜZELTİLECEK" box (3 rows), the address list and the web card's
+"Etkilenen sayfalar" dialog; the sitemap file per address (schema 1.32 `sitemap_doc.new_urls`); "Nasıl okunur" + the
+Quick Look line. Saved audits get it through the current-engine copy (`reassess_rules._decisions_337`); report.json and
+`~/.maya-audit/web` were only read (scratch copies for the before/after).
+
+| Audit (current engine, scratch copy) | Before | After |
+|---|---|---|
+| enpara 2e5829fb, card 2 | "Hata veren sayfalara giden bağlantıları düzeltin ya da kaldırın", Geliştirici + İçerik, Küçük; 21 rows "sitemap.xml kaydı", file and status unknown | "Site haritasındaki hata veren adresleri düzeltin ya da çıkarın", Geliştirici, Orta; lines: files (/sirketim/sitemap.xml 9, /sitemap.xml 12), likely cause (inference, 15 match headings), 6 removed pages "kaldırın veya yönlendirin"; 21 rows "302 → 404", each with its file |
+| enpara, card 8 (links to redirects) | no rows | 3 "where" rows (page, link text, menü, the redirect's end to use) |
+| enpara Ek | no "where" sheet | "Bağlantı yerleri": 26 rows (21 sitemap entries, 3 links to redirects, 2 hreflang) |
+| moodist 2d72fea0 | 14 cards | same 14 cards; card 1 (canonical/chain/links to redirect) gains 158 "where" rows |
+| nihan b3198942 | 13 cards | no change |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_link_places_337.py` | `19 passed` |
+| fast suite, first run | `20 failed, 3068 passed`: pins for the new link field, how-to lines, schema 1.32, rule registries; a name clash (`_words`) in `checks/index.py` that broke the variants test (renamed); a sitemap-only re-test that asked the entry without following its redirect (fixed in `verification._broken_link`) |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `1 failed, 3087 passed, 4 skipped, 135 deselected` (one more exact link-record pin, fixed) |
+| full suite, first run | `2 failed, 3221 passed, 4 skipped`: `test_idx_scenarios::test_status_codes` (two S2 findings now) and the fixture matrix (regenerated: IDX-1 38 → 42 findings) |
+| full suite after those, `pytest -q -rfEs -p no:cacheprovider` | `3223 passed, 4 skipped, 1 warning in 916.67s (0:15:16)` |
+| `python3.11 -m compileall`, `node --check app.js` | OK |
+| CLI, provider-free (loopback fake site, `--no-firecrawl`, empty keys, isolated home) | exit 3 (stopped at `--max-pages 5`, as expected), schema 1.32, IDX-1: linked + sitemap_only + href_mistyped, `new_urls` recorded, no `firecrawl` section, no provider ledger |
+| `ruff check` | NOT RUN (not installed in `.venv`) |
+| Owner's web app on port 8770 | NOT RUN here (restart needed) |
+| Push | NOT DONE (owner: don't push) |

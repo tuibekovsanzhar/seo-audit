@@ -97,6 +97,13 @@ def _referenced(ev):
                  element=((p.get("referenced_by") or [{}])[0]).get("source")) for p in ev.get("pages") or []]
 
 
+def _sitemap_entries(ev):
+    # DECISIONS 337: the sitemap entry to fix (url), the file that lists it (element), where it ends and its status.
+    return [_row(url=e.get("url"), element=e.get("sitemap_file"),
+                 observed=f"{e.get('ends_at')} · {e.get('status')}" if e.get("status") else e.get("ends_at"))
+            for e in ev.get("sitemap_entries") or []]
+
+
 def _empty(ev):
     return [_row(url=p.get("url"), observed=f"{p.get('status')} · {p.get('body_bytes')} B")
             for p in ev.get("pages") or [] if p.get("body_bytes") is not None]
@@ -127,7 +134,7 @@ EXTRACTORS: dict[str, Callable[[dict], list[dict]]] = {
     "rnd6.home_large": _bytes, "rnd6.large": _bytes, "str7.heavy": _images, "str7.video": _videos,
     "idx5.drafts": _pages, "str1.no_title": _pages, "str13.markers": _markers, "idx8.two_addresses": _pairs,
     "str5.og_site_name": _og_site_name, "str1.shared": _shared_titles, "idx1.4xx.referenced": _referenced,
-    "idx1.4xx.referenced.linked": _referenced, "judgment.empty.repeated": _empty, "judgment.empty.single": _empty,
+    "idx1.4xx.referenced.linked": _referenced, "idx1.href_mistyped": _referenced, "idx1.4xx.sitemap_only": _sitemap_entries, "judgment.empty.repeated": _empty, "judgment.empty.single": _empty,
     "str2.home_outline": _outline, "tseo1.head_closed_lost": _head_closed, "tseo1.head_closed_later": _head_closed,
     "str3.invalid_values": _invalid, "idx4.redirect_loop": _canonical_redirect, "idx4.redirecting": _canonical_redirect,
 }

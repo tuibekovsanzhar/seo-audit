@@ -899,6 +899,36 @@
     }
    ]
   },
+  "idx1.4xx.sitemap_only": {
+   "en": "Fix or remove the sitemap entries that end at an error",
+   "tr": "Site haritasındaki hata veren adresleri düzeltin ya da çıkarın",
+   "steps": {
+    "tr": [
+     "Her adresi, onu listeleyen site haritası dosyasında bulun",
+     "Başlıklardan adres üreten site haritası oluşturucuyu düzeltin",
+     "Kaldırılmış sayfaları çıkarın ya da en yakın sayfaya yönlendirin"
+    ],
+    "en": [
+     "Find each address in the sitemap file that lists it",
+     "Fix the sitemap generator that makes addresses from headings",
+     "Take removed pages out, or redirect them to the closest page"
+    ]
+   }
+  },
+  "idx1.href_mistyped": {
+   "en": "Correct the mistyped link addresses",
+   "tr": "Bağlantı adresi yanlış yazılmış bağlantıları düzeltin",
+   "steps": {
+    "tr": [
+     "Her bağlantının href değerini sayfada ya da şablonda bulun",
+     "Eksik / veya # ekleyin ya da metnin yerine adresi yazın"
+    ],
+    "en": [
+     "Find each link's href on the listed page or its template",
+     "Add the missing / or #, or put the address in place of the text"
+    ]
+   }
+  },
   "str16.shared": {
    "en": "Give pages that share a description their own one",
    "tr": "Aynı açıklamayı paylaşan sayfalara ayrı açıklama yazın",

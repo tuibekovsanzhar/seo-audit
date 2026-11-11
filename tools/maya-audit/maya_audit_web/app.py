@@ -2272,8 +2272,16 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         W = client_appendix.WORDS[chosen]
         rows = page_rows.card_pages(card_rows(audit, chosen, data["todos"]), n)
         say = lambda key: strings_module.t(key, chosen)  # noqa: E731
+        # DECISIONS 337: where each of the card's addresses is pointed at, as the appendix's "Bağlantı yerleri" says it
+        from maya_audit.final import broken_link_cards
+        mine = set(todo.get("finding_ids") or [])
+        places = {fid: r for fid, r in broken_link_cards(current_report(audit)[0]).items() if fid in mine}
+        cells = lambda v: {"text": v["text"], "link": v["link"]} if isinstance(v, dict) else {"text": "" if v is None else str(v), "link": None}  # noqa: E731
+        where = client_appendix.where_rows(places, [todo], chosen)
         return {"n": n, "title": todo.get("title"), "severity": todo.get("severity"), "severity_label": todo.get("severity_label"),
                 "count": len(rows), "lang": chosen,
+                "where": {"columns": client_appendix.READ[chosen]["where_cols"][1:11], "rows": [[cells(v) for v in r[1:11]] for r in where],
+                          "title": client_appendix.READ[chosen]["where"]} if where else None,
                 "columns": {k: say(f"cards.col.{k}") for k in ("address", "read", "page_type", "importance", "value", "finding")},
                 "rows": [{"url": r["url"], "address": r["address"], "read": r["read"],  # DECISIONS 323
                           "read_label": page_rows.read_word(r["read"], chosen),

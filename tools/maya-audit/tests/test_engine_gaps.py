@@ -161,9 +161,10 @@ def test_every_anchor_text_for_a_target_is_kept_and_a_link_without_any_name_is_c
             '<a href="/d" aria-label="Kapat"><svg></svg></a><a href="/e" title="İletişim"><i class="icon"></i></a>')
     edges = {edge["target"].removeprefix("http://s"): edge for edge in extract_link_edges(html, "http://s/")}
     assert edges["/a"] == {"target": "http://s/a", "anchor": "Ana", "anchors": ["Ana", "Hizmetler"], "links": 3, "empty": 1, "nav": True,
+                           "href": "/a",  # DECISIONS 337: the first link's address as written
                            "hrefs": ["/a"], "where": None, "anchor_counts":{'Ana':1,'Hizmetler':1,'':1}}  # distinct texts and DOM occurrences remain separate
     assert edges["/b"]["anchors"] == ["Logo"] and edges["/b"]["empty"] == 0          # named by the image's alt
-    assert edges["/c"] == {"target": "http://s/c", "anchor": "", "anchors": [], "links": 2, "empty": 2, "hrefs": ["/c"], "where": None, "anchor_counts":{'':2}}
+    assert edges["/c"] == {"target": "http://s/c", "anchor": "", "anchors": [], "links": 2, "empty": 2, "href": "/c", "hrefs": ["/c"], "where": None, "anchor_counts":{'':2}}
     assert edges["/d"]["anchors"] == ["Kapat"] and edges["/e"]["anchors"] == ["İletişim"]
     many = "".join(f'<a href="/x">metin {n}</a>' for n in range(30))
     [edge] = extract_link_edges(many, "http://s/", max_anchors=4)

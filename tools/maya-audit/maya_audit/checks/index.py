@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 import shlex
-from collections import defaultdict
+from collections import Counter as Counter_, defaultdict
 from types import SimpleNamespace
 from datetime import datetime, timedelta, timezone
 
@@ -2091,47 +2091,195 @@ BROKEN_LINK_NOTE = ("The affected addresses are the pages whose links lead to an
                     "end at one; the failing addresses themselves are listed apart (evidence.target_urls).")
 
 
-def broken_link_sources(checks, result: CrawlResult) -> None:
-    """IDX-1's "4xx, linked internally or listed in the sitemap" finding names the pages to edit (DECISIONS 278).
+# DECISIONS 337: the 4xx addresses only a sitemap lists, and real links whose written address is mistyped, are cards of
+# their own: their fix is the sitemap (or its generator) and the href, not "the links to an error page".
+SITEMAP_ONLY_4XX_TITLE = "{n} sitemap address(es) end at a client error (4xx); no page read links to them"
+SITEMAP_ONLY_EXPECTED = "the sitemap lists only addresses that answer 200"
+SITEMAP_ONLY_FIX = ("Take these entries out of the sitemap, or redirect each one that once held content to its closest page. "
+                    "When they come from page headings or FAQ questions, fix the sitemap generator so it lists pages only.")
+SITEMAP_ONLY_NOTE = ("No page Maya read links to these addresses: they are in the sitemap only. Maya reads a sample, so a "
+                     "page it did not read may still link to one.")
+FROM_HEADINGS_NOTE = ("Inference: {n} of these addresses spell a heading or FAQ question on a page Maya read (evidence."
+                      "likely_cause): the sitemap generator seems to make addresses from headings. Check it.")
+MISTYPED_TITLE = "{links} link(s) on {pages} page(s) have a mistyped address (href) that ends at a client error (4xx)"
+MISTYPED_EXPECTED = "every link's href is the address it means: a path starting with /, a full address or #section"
+MISTYPED_FIX = ("Correct the href in the page or template that holds it (evidence gives the value as written): add the "
+                "missing / or #, or put the address in place of the text.")
 
-    The 4xx address is often the site's own error page, reached through a redirect from a link that is itself broken
-    (a template placeholder in the href). Listing that error page as the affected address sent the client to the wrong
-    place. Each 4xx target is traced back through the crawl's redirects to the HTML pages whose links lead to it:
-    `scope` becomes those source pages (and the targets only the sitemap lists, whose fix is the sitemap entry),
-    `evidence.target_urls` keeps the 4xx addresses, and `evidence.link_sources` one row per link (source, anchor, the
-    address it links to, the 4xx target). Runs after severities are set: the severity stays the engine's.
+
+def _key_urls(result) -> set[str]:
+    cfg = getattr(result, "config", None)
+    pages = cfg.get("key_pages") if isinstance(cfg, dict) else getattr(cfg, "key_pages", None)
+    origin = getattr(result, "origin", "") or ""
+    keys = {normalize_url(k, origin) for k in pages or []}
+    try:
+        keys.add(homepage_url(result))
+    except Exception:  # a saved crawl without what the homepage needs
+        pass
+    return {k for k in keys if k}
+
+
+def link_inbound(result) -> dict[str, list[dict]]:
+    """{address: every link or redirect that reaches it}: the page, its link text, the href as written, whether the link
+    sits in the menu or the footer; a redirect is {"anchor": "(redirect)"} (DECISIONS 278, 337)."""
+    inbound: dict[str, list[dict]] = defaultdict(list)
+    for page in result.pages:
+        for edge in page.outlinks or []:
+            inbound[edge["target"]].append({"source": page.url, "anchor": edge.get("anchor") or "", "href": edge.get("href"),
+                                            "nav": bool(edge.get("nav")), "footer": bool(edge.get("footer"))})
+        if page.redirect_location:
+            inbound[page.redirect_location].append({"source": page.url, "anchor": "(redirect)"})
+    return inbound
+
+
+def trace_to_links(targets, inbound, listed) -> tuple[list[dict], list[str]]:
+    """(one row per link that ends at a target, the listed addresses that end there with no link): each target is traced
+    back through the crawl's redirects to the links and sitemap entries that reach it."""
+    rows, in_sitemap = [], []
+    for target in targets:
+        frontier, seen = [target], {target}
+        while frontier:
+            url = frontier.pop()
+            if url in listed:
+                in_sitemap.append(url)
+            for ref in inbound.get(url, []):
+                if ref["anchor"] == "(redirect)":
+                    if ref["source"] not in seen:
+                        seen.add(ref["source"])
+                        frontier.append(ref["source"])
+                else:
+                    rows.append({"source": ref["source"], "anchor": ref["anchor"], "links_to": url, "target": target,
+                                 "href": ref.get("href"),
+                                 "position": "menu" if ref.get("nav") else "footer" if ref.get("footer") else "body"})
+    sources = {row["source"] for row in rows}
+    linked_to = {row["links_to"] for row in rows}
+    return rows, [u for u in dict.fromkeys(in_sitemap) if u not in sources and u not in linked_to]
+
+
+_FOLD = str.maketrans("çğıöşüâîû", "cgiosuaiu")
+
+
+def _heading_words(text: str) -> str:
+    """A heading or an address part as plain words: lower case, Turkish letters folded ("kartı" and "karti" agree)."""
+    from urllib.parse import unquote
+    text = unquote(text or "").replace("İ", "i").replace("I", "ı").lower().translate(_FOLD)
+    return " ".join(re.findall(r"[0-9a-z]+", text))
+
+
+def heading_matches(addresses, pages) -> dict[str, dict]:
+    """{address: {page, heading, level}} for a sitemap address whose last part spells a heading on a page read (a
+    trailing copy number such as "...acabilirim2" left out). Evidence for an inference, never a finding by itself."""
+    headings: dict[str, dict] = {}
+    for page in pages:
+        for h in ((getattr(page, "analysis", None) or {}).get("headings") or []):
+            text = h.get("text") if isinstance(h, dict) else None
+            key = _heading_words(text or "")
+            if key and len(key) >= 8 and key not in headings:
+                headings[key] = {"page": page.url, "heading": text, "level": h.get("level")}
+    out = {}
+    for url in addresses:
+        last = urlsplit(url).path.rstrip("/").rsplit("/", 1)[-1]
+        for key in (_heading_words(last), re.sub(r"\d+$", "", _heading_words(last)).strip()):
+            if key in headings:
+                out[url] = headings[key]
+                break
+    return out
+
+
+def broken_link_sources(checks, result: CrawlResult) -> None:
+    """IDX-1's "4xx, linked internally or listed in the sitemap" finding names the pages to edit (DECISIONS 278), split
+    by what is to be fixed (DECISIONS 337).
+
+    The 4xx address is often the site's own error page, reached through a redirect. Each 4xx target is traced back
+    through the crawl's redirects to the HTML pages whose links lead to it and to the sitemap entries that end there:
+    - links whose written address looks mistyped (`html_links.mistyped_href`: spaces, no leading slash) become
+      "N link(s) ... have a mistyped address (href)", Low, Medium when a key page or the homepage holds one;
+    - the other links stay "... linked internally or listed in the sitemap; linked from N page(s)";
+    - addresses only a sitemap lists become "N sitemap address(es) end at a client error (4xx)", with the file that
+      lists each one and, when its words spell a heading on a page read, that heading (an inference).
+    The linked and sitemap findings keep the engine's severity. `evidence.target_urls` keeps the 4xx addresses,
+    `evidence.link_sources` one row per link. Runs after severities are set; a finding already split is left alone.
     """
+    from dataclasses import replace
+    from ..html_links import mistyped_href
+    from ..sitemap import file_map
     check = next((c for c in checks if c.check_id == "IDX-1"), None)
     if check is None:
         return
-    inbound = _inlinks(result)
+    inbound = link_inbound(result)
     listed = set(result.sitemap_urls or [])
+    statuses = {p.url: p.status for p in result.pages}
+    added: list[Finding] = []
     for finding in check.findings:
-        if not REFERENCED_4XX_TITLE.search(finding.title) or "target_urls" in finding.evidence:
+        if not REFERENCED_4XX_TITLE.search(finding.title) or finding.evidence.get("split") == 337:
             continue
-        targets = list(finding.scope.get("_all_urls") or finding.scope.get("urls") or [])
-        rows: list[dict] = []
-        in_sitemap: list[str] = []  # the listed address whose redirects end at the error: the sitemap entry to fix
-        for target in targets:
-            frontier, seen = [target], {target}
-            while frontier:
-                url = frontier.pop()
-                if url in listed:
-                    in_sitemap.append(url)
-                for ref in inbound.get(url, []):
-                    if ref["anchor"] == "(redirect)":
-                        if ref["source"] not in seen:
-                            seen.add(ref["source"])
-                            frontier.append(ref["source"])
-                    else:
-                        rows.append({"source": ref["source"], "anchor": ref["anchor"], "links_to": url, "target": target})
-        sources = list(dict.fromkeys(row["source"] for row in rows))
-        sitemap_only = [u for u in dict.fromkeys(in_sitemap) if u not in set(sources)]
-        finding.evidence = {**finding.evidence, "target_urls": targets[:40], "target_count": len(targets),
-                            "link_sources": rows[:40], "link_sources_count": len(rows), "sitemap_only": sitemap_only[:40]}
-        finding.scope = scope_for(sources + sitemap_only)
-        base = re.sub(r"; linked from \d+ page\(s\)$", "", finding.title)
-        finding.title = base + (IDX6_SUFFIX.format(pages=len(sources)) if sources else "")
-        finding.notes = [*finding.notes, BROKEN_LINK_NOTE]
-        finding.id = ""
+        targets = list(finding.evidence.get("target_urls") or finding.scope.get("_all_urls") or finding.scope.get("urls") or [])
+        if not targets:
+            continue
+        rows, sitemap_only = trace_to_links(targets, inbound, listed)
+        mistyped = [r for r in rows if mistyped_href(r.get("href"))]
+        for r in mistyped:
+            r["mistyped"] = mistyped_href(r.get("href"))
+        linked = [r for r in rows if not r.get("mistyped")]
+        pages = finding.evidence.get("pages") or []
+        base_ev = {k: v for k, v in finding.evidence.items() if k not in ("target_urls", "target_count", "link_sources",
+                                                                           "link_sources_count", "sitemap_only", "pages")}
+
+        def pages_for(ts, pages=pages):
+            return [p for p in pages if p.get("url") in ts] or pages[:0]
+
+        def make(title, scope_urls, ts, link_rows, only, extra=None, **change):
+            new = replace(finding, title=title, scope=scope_for(scope_urls), id="", rule_id=None, notes=list(change.pop("notes", finding.notes)),
+                          evidence={**base_ev, "pages": pages_for(set(ts)), "target_urls": ts[:40], "target_count": len(ts),
+                                    "link_sources": link_rows[:40], "link_sources_count": len(link_rows),
+                                    "sitemap_only": only[:40], "split": 337, **(extra or {})}, **change)
+            new.__post_init__()
+            return new
+
+        out: list[Finding] = []
+        if linked:
+            sources = list(dict.fromkeys(r["source"] for r in linked))
+            ts = list(dict.fromkeys(r["target"] for r in linked))
+            title = re.sub(r"^\d+", str(len(ts)), re.sub(r"; linked from \d+ page\(s\)$", "", finding.title))
+            out.append(make(title + IDX6_SUFFIX.format(pages=len(sources)), sources, ts, linked, [],
+                            notes=[*finding.notes, BROKEN_LINK_NOTE]))
+        if sitemap_only:
+            files = file_map(getattr(result, "sitemap_docs", None), result.sitemap_urls, getattr(result, "_sitemap_file_of", None))
+            matches = heading_matches(sitemap_only, result.pages)
+            ends = {}
+            for url in sitemap_only:
+                hop = url
+                for _ in range(10):
+                    nxt = next((p.redirect_location for p in result.pages if p.url == hop and p.redirect_location), None)
+                    if not nxt:
+                        break
+                    hop = nxt
+                ends[url] = hop
+            entries = [{"url": u, "ends_at": ends[u], "status": statuses.get(ends[u]), "first_status": statuses.get(u),
+                        "sitemap_file": files.get(u), "heading_match": matches.get(u),
+                        "suggested": "fix_generator" if u in matches else "remove_or_redirect"} for u in sitemap_only]
+            ts = list(dict.fromkeys(e["ends_at"] for e in entries))
+            notes = [SITEMAP_ONLY_NOTE] + ([FROM_HEADINGS_NOTE.format(n=len(matches))] if matches else [])
+            out.append(make(SITEMAP_ONLY_4XX_TITLE.format(n=len(sitemap_only)), sitemap_only, ts, [], sitemap_only,
+                            {"sitemap_entries": entries[:60],
+                             "sitemap_files": dict(sorted(Counter_(files.get(u) or "" for u in sitemap_only).items())),
+                             "likely_cause": ({"kind": "from_headings", "inference": True, "count": len(matches)} if matches else None)},
+                            notes=notes, expected=SITEMAP_ONLY_EXPECTED, how_to_fix=SITEMAP_ONLY_FIX))
+        if mistyped:
+            sources = list(dict.fromkeys(r["source"] for r in mistyped))
+            ts = list(dict.fromkeys(r["target"] for r in mistyped))
+            on_key = bool(set(sources) & _key_urls(result))
+            out.append(make(MISTYPED_TITLE.format(links=len(mistyped), pages=len(sources)), sources, ts, mistyped, [],
+                            notes=[BROKEN_LINK_NOTE], severity=Severity.S3 if on_key else Severity.S4,
+                            expected=MISTYPED_EXPECTED, how_to_fix=MISTYPED_FIX, importance_tier=0 if on_key else 2))
+        if not out:  # nothing traced (no link, no sitemap entry): the finding stays as it was, marked
+            finding.evidence = {**finding.evidence, "target_urls": targets[:40], "target_count": len(targets),
+                                "link_sources": [], "link_sources_count": 0, "sitemap_only": [], "split": 337}
+            continue
+        first, rest = out[0], out[1:]
+        finding.title, finding.scope, finding.evidence, finding.notes = first.title, first.scope, first.evidence, first.notes
+        finding.severity, finding.expected, finding.how_to_fix = first.severity, first.expected, first.how_to_fix
+        finding.importance_tier, finding.id, finding.rule_id = first.importance_tier, "", None
         finding.__post_init__()
+        added += rest
+    check.findings.extend(added)

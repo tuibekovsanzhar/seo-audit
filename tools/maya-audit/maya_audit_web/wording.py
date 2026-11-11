@@ -254,6 +254,11 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         # A server error seen once, not asked again (review B17); IDX-6's dead targets said under IDX-1 (review H10).
         ("idx1.5xx.once", "{n#} URL(s) returned a server error (5xx) on the one request made",
          "{n:URL|URLs} returned a server error (5xx) on the one request made"),
+        # DECISIONS 337: the sitemap entries no page read links to, and real links whose href is mistyped
+        ("idx1.4xx.sitemap_only", "{n#} sitemap address(es) end at a client error (4xx); no page read links to them",
+         "{n:sitemap address ends|sitemap addresses end} at a client error (4xx); no page read links to them"),
+        ("idx1.href_mistyped", "{links#} link(s) on {pages#} page(s) have a mistyped address (href) that ends at a client error (4xx)",
+         "{links:link|links} on {pages:page|pages} {pages:has|have} a mistyped address (href) that ends at a client error (4xx)"),
         ("idx1.4xx.referenced.linked", "{n#} URL(s) return a client error (4xx), linked internally or listed in the sitemap; "
                                        "linked from {pages#} page(s)",
          "{n:URL returns|URLs return} a client error (4xx), linked internally or listed in the sitemap; linked from {pages:page|pages}"),
@@ -864,6 +869,8 @@ NOTE_PATTERNS = _frames((
     ("source.firecrawl.blocked.dot", "Source: Firecrawl (Maya's crawler was blocked)."),
     ("source.firecrawl.render", "Source: Firecrawl rendered these pages (the local browser could not start)"),
     ("source.firecrawl.render.dot", "Source: Firecrawl rendered these pages (the local browser could not start)."),
+    ("idx1.from_headings", "Inference: {n#} of these addresses spell a heading or FAQ question on a page Maya read (evidence."
+                           "likely_cause): the sitemap generator seems to make addresses from headings. Check it."),
     ("acc1.exclusions", "{n#} key page(s) match an intent-marking pattern but are not covered: pattern markings never cover key pages (spec §2.5)."),
     ("acc2.private", "Reported as Info: the blocked path is a private or technical one ({matched}), which sites normally keep bots out of, and none "
                      "of the blocked URLs is the homepage, a key page or listed in the sitemap."),

@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 REPLACEMENT_UNKNOWN = "unknown"
-LINK_RULES = ("idx1.4xx.referenced", "idx1.4xx.referenced.linked")
+LINK_RULES = ("idx1.4xx.referenced", "idx1.4xx.referenced.linked", "idx1.4xx.sitemap_only", "idx1.href_mistyped")
 FINAL_KEYS = ("checks", "answer_engine_panel", "findings_in_priority_order", "release_gate")
 
 
@@ -175,28 +175,26 @@ def _items(report: dict):
 
 
 def broken_link_cards(report: dict) -> dict[str, list[dict]]:
-    """For each broken-internal-link finding: one card per link (the page and link to edit) and one per sitemap entry
-    that ends at the error. Only what the evidence records; the right new address is never guessed."""
-    statuses = {p.get("url"): p.get("status") for p in (report.get("crawl") or {}).get("pages") or [] if isinstance(p, dict)}
+    """For each finding that names an address pointed at from somewhere (broken links, sitemap entries, server errors,
+    links to redirects, redirect chains, failing canonicals and hreflang targets; `link_places.WHERE_RULES`, DECISIONS
+    337): one row per address and the page or entry that names it. Only what the report records; a new address is
+    offered only where a redirect itself ends at a working page, never guessed."""
+    from .link_places import places
+    by_id = {f.get("id"): f for c in report.get("checks") or [] for f in c.get("findings") or [] if isinstance(f, dict)}
     out: dict[str, list[dict]] = {}
-    for check in report.get("checks") or []:
-        for f in check.get("findings") or []:
-            if f.get("rule_id") not in LINK_RULES:
-                continue
-            evidence = f.get("evidence") or {}
-            base = {"finding_id": f.get("id"), "rule_id": f.get("rule_id"), "severity": f.get("severity")}
-            state = (f.get("verification") or {}).get("state")
-            cards = [{**base, "kind": "link", "source_url": row.get("source"), "link_text": row.get("anchor"),
-                      "links_to": row.get("links_to"), "target_url": row.get("target"),
-                      "target_status": statuses.get(row.get("target")),
-                      "replacement_url": None, "replacement": REPLACEMENT_UNKNOWN, "verification": state}
-                     for row in evidence.get("link_sources") or [] if isinstance(row, dict)]
-            cards += [{**base, "kind": "sitemap", "source_url": url, "link_text": None, "links_to": url,
-                       "target_url": None, "target_status": None,
-                       "replacement_url": None, "replacement": REPLACEMENT_UNKNOWN, "verification": state}
-                      for url in evidence.get("sitemap_only") or []]
-            if cards:
-                out[f.get("id")] = cards
+    for fid, rows in places(report).items():
+        f = by_id[fid]
+        base = {"finding_id": fid, "rule_id": f.get("rule_id"), "severity": f.get("severity"),
+                "verification": (f.get("verification") or {}).get("state")}
+        cards = []
+        for r in rows:
+            suggested = r.get("suggested")
+            url = suggested if isinstance(suggested, str) and suggested.startswith(("http://", "https://")) else None
+            cards.append({**base, **r, "source_url": r["source"] if r["kind"] != "sitemap" else r["links_to"],
+                          "target_url": r["ends_at"] if r["ends_at"] != r["links_to"] or r["kind"] == "link" else None,
+                          "target_status": r["final_status"], "replacement_url": url,
+                          "replacement": url or REPLACEMENT_UNKNOWN})
+        out[fid] = cards
     return out
 
 

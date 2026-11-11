@@ -476,24 +476,49 @@ def target_line(urls, shown=2):
     return " · ".join(paths[:shown]) + (f" · +{len(paths) - shown}" if len(paths) > shown else "")
 
 
-LINK_ROWS = 2  # rows of the "links to edit" table a card has room for; the rest are in the address list
+LINK_ROWS = 3  # rows of the "where to fix" table a card shows; the rest are in the appendix (DECISIONS 337)
+
+
+def _readable(text):
+    from urllib.parse import unquote
+    return unquote(text) if isinstance(text, str) else text
+
+
+def where_cells(r, L):
+    """DECISIONS 337: one "where" row as the card and the address list print it: where the link is (page and its place,
+    or the sitemap file), its text or written value, the address with the problem, its HTTP status through its
+    redirects, and what to point at instead."""
+    kind = r.get("kind")
+    if kind == "sitemap":
+        where = f'{L["link_sitemap"]}: {path_or_host(r.get("sitemap_file")) if r.get("sitemap_file") else "—"}'
+    elif kind == "not_linked":
+        where = L["where_kinds"]["not_linked"]
+    else:
+        where = path_or_host(r.get("source") or r.get("source_url"))
+        place = (L.get("positions") or {}).get(r.get("position") or "")
+        if place:
+            where += f" ({place})"
+    if kind in ("canonical", "hreflang"):
+        text = L["where_kinds"][kind] + (f" ({r['link_text']})" if kind == "hreflang" and r.get("link_text") else "")
+    else:
+        text = r.get("link_text") or (f'href="{r["href"]}"' if r.get("href") else "—")
+        if r.get("href") and r.get("link_text") and r.get("mistyped"):
+            text += f' · href="{r["href"]}"'
+    first, final = r.get("status"), r.get("final_status", r.get("target_status"))
+    if r.get("ends_at") and r.get("ends_at") != r.get("links_to"):
+        status = f"{first or L['where_redirect']} → {final}" if final else str(first or L["where_redirect"])
+    else:
+        status = str(first or final or "—")
+    url = r.get("replacement_url")
+    suggest = path_or_host(url) if url else L["where_suggest"].get(r.get("suggested") or "remove", L["link_unknown"])
+    return tuple(_readable(c) for c in (where, text, path_or_host(r.get("links_to")), status, suggest))
 
 
 def link_table(rows, L):
-    """DECISIONS 283: a broken link's card shows where to edit it, one row per link (page to edit, link text, the
-    address it links to, where it ends, replacement), as the web PDF does. The replacement is always unknown."""
+    """DECISIONS 283, 337: where each address with a problem is, one row per address and the page or entry that names
+    it, the first LINK_ROWS on the card; the full list is in the appendix ("Bağlantı yerleri")."""
     head = "".join(f"<th>{e(c)}</th>" for c in L["link_cols"])
-    body = []
-    for r in rows[:LINK_ROWS]:
-        source = path_or_host(r["source_url"])
-        if r.get("kind") == "sitemap":
-            source = f'{L["link_sitemap"]}: {source}'
-        ends = path_or_host(r["target_url"]) if r.get("target_url") else "—"
-        if r.get("target_url") and r.get("target_status"):
-            ends += f' ({r["target_status"]})'
-        cells = (source, r.get("link_text") or "—", path_or_host(r.get("links_to")), ends,
-                 path_or_host(r["replacement_url"]) if r.get("replacement_url") else L["link_unknown"])
-        body.append("<tr>" + "".join(f"<td>{e(c)}</td>" for c in cells) + "</tr>")
+    body = ["<tr>" + "".join(f"<td>{e(c)}</td>" for c in where_cells(r, L)) + "</tr>" for r in rows[:LINK_ROWS]]
     more = len(rows) - LINK_ROWS
     return (f'<table class="lk"><thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table>'
             + (f'<div class="more">{e(fmt(L["link_more"], n=more))}</div>' if more > 0 else "")
@@ -832,7 +857,7 @@ def appendix_bytes(report, affected, confirmations, lang, business=None, todos=N
     content = client_appendix.build(selection, lang, sealed.affected,
                                     title=lambda cid, text: w.title(cid, text, lang)[0], fix=lambda text: w.fix(text, lang)[0],
                                     label=lambda text: w.label(text, lang)[0], line=lambda text: w.line(text, lang)[0],
-                                    todos=todos, words=plain_words(lang))
+                                    todos=todos, words=plain_words(lang), places=sealed.cards)  # DECISIONS 337
     return content, sealed
 
 
@@ -873,15 +898,12 @@ def write_address_list(d, out):
     L = LABELS[d["lang"]]
     header = (["Card", "Finding", "Severity", "Address"] if en else ["Kart", "Bulgu", "Önem", "Adres"])
     if any(t.get("link_rows") for t in todos):
-        header += L["link_cols"][1:]
+        header += L["link_cols"][1:]  # "Adres" holds where the link is
     rows = []
     for t in todos:
         if t.get("link_rows"):
             for r in t["link_rows"]:
-                source = r["source_url"] if r.get("kind") != "sitemap" else f'{L["link_sitemap"]}: {r["source_url"]}'
-                ends = (f'{r["target_url"]} ({r["target_status"]})' if r.get("target_status") else r.get("target_url")) or ""
-                rows.append([t["n"], t["id"], t["severity_label"], source, r.get("link_text") or "", r.get("links_to") or "",
-                             ends, r.get("replacement_url") or L["link_unknown"]])
+                rows.append([t["n"], t["id"], t["severity_label"], *where_cells(r, L)])
             continue
         for u in t.get("all_urls") or [l["href"] for l in t.get("links") or []]:
             rows.append([t["n"], (t.get("url_finding") or {}).get(u, t["id"]), t["severity_label"], u])

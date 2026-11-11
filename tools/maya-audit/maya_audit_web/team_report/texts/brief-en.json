@@ -617,6 +617,16 @@
    "what": "Some links on your site lead to addresses that return an error.",
    "why": "A customer who meets an error page leaves the site; Google spends its time on pages that do not exist."
   },
+  "idx1.4xx.sitemap_only": {
+   "title": "Remove the failing addresses from your page list for Google",
+   "what": "Your sitemap (the file that gives Google the list of your pages) lists addresses that no longer exist or never were pages.",
+   "why": "Google visits them and gets an error, instead of spending its time on your real pages."
+  },
+  "idx1.href_mistyped": {
+   "title": "Correct the mistyped link addresses",
+   "what": "Some links have a mistyped address; a visitor who clicks one lands on an error page.",
+   "why": "A customer who meets an error page leaves the site."
+  },
   "judgment.heading.home": {
    "title": "Fill in the homepage's main heading",
    "what": "Your homepage's main heading (the largest heading that states what the page is about) is empty.",

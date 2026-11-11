@@ -66,13 +66,17 @@ def test_broken_link_via_redirect_gives_one_card_at_its_source(broken):
     [finding] = link_findings(sealed.report)
     assert finding["scope"]["urls"] == [base + "/urunler"]  # the page to edit, never the error page
     [card] = sealed.cards[finding["id"]]
-    assert card == {
+    shown = ("finding_id", "rule_id", "severity", "kind", "source_url", "link_text", "links_to", "target_url",
+             "target_status", "replacement_url", "replacement", "verification")
+    assert {k: card[k] for k in shown} == {
         "finding_id": finding["id"], "rule_id": finding["rule_id"], "severity": finding["severity"], "kind": "link",
         "source_url": base + "/urunler", "link_text": LINK_TEXT, "links_to": base + "/eski-urun",
         "target_url": base + "/bulunamadi", "target_status": 404,
         "replacement_url": None, "replacement": "unknown",
         "verification": finding["verification"]["state"],
     }
+    # DECISIONS 337: where it is: the href as written, the link's place, the redirect's first answer, the sitemap
+    assert (card["href"], card["position"], card["status"], card["in_sitemap"]) == ("/eski-urun", "body", 301, False)
     assert card["verification"] == "confirmed"  # the second look found the link still there and still failing
 
 
@@ -86,7 +90,11 @@ def test_working_counterpart_has_no_broken_link_finding():
     outcome, base = audit(routes(old_product_goes_to="/kampanya"))
     sealed = final.seal(outcome)
     assert link_findings(sealed.report) == []
-    assert sealed.cards == {}
+    # DECISIONS 337: no broken-link card; the link to a redirect is said where it is, with the redirect's end to use
+    rows = [c for rows in sealed.cards.values() for c in rows]
+    assert {c["rule_id"] for c in rows} == {"idx6.links_to_redirect"}
+    assert [(c["source_url"], c["links_to"], c["replacement_url"]) for c in rows] == [
+        (base + "/urunler", base + "/eski-urun", base + "/kampanya")]
 
 
 def test_partial_crawl_makes_no_card_and_no_pass():

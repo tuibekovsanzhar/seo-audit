@@ -1211,7 +1211,15 @@ async function cardPages(auditId, n, lang) {
     const a = el("a", { href: url, download: "maya-" + String(auditId).slice(0, 8) + "-" + (lang === "tr" ? "kart" : "card") + "-" + data.n + ".csv" });
     document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
+  /* DECISIONS 337: where each address is pointed at: the page holding the link, its text, the href as written, its
+     place, the sitemap and what to point to instead; "yalnızca site haritasında" when no page links to it. */
+  const whereCell = (c) => el("td", { class: "wrap" }, c.link ? link(c.link) : el("span", { text: c.text || "—" }));
+  const whereRows = data.where ? data.where.rows.slice(0, PAGE_ROWS_SHOWN).map((r) => el("tr", {}, r.map(whereCell))) : [];
+  const whereHead = data.where ? el("thead", {}, el("tr", {}, data.where.columns.map((c) => el("th", { text: c })))) : null;
+  const where = data.where ? el("div", { class: "where-block" }, el("h3", { text: data.where.title }),
+    el("div", { class: "table-scroll" }, el("table", { class: "data where-table" }, whereHead, el("tbody", {}, whereRows)))) : null;
   fill(body, el("div", { class: "row pages-tools" }, search, el("button", { class: "button", type: "button", onclick: csv }, T("cards.csv"))), shown,
+    where,
     el("div", { class: "table-scroll" }, el("table", { class: "data pages-table" },
       el("thead", {}, el("tr", {}, [cols.address, cols.read, cols.page_type, cols.importance, cols.value, cols.finding].map((c) => el("th", { text: c })))), tbody)));
   draw();

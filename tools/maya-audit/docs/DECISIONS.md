@@ -4486,3 +4486,55 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Tests: `tests/test_crux_coverage_334.py`, the last two: the real `app.js` in headless Chromium with every
      `/api/v1` request forwarded to the app's real routes; pressing the button posts to `/api/v1/audits/<id>/crux`
      (200) and shows Google's figures. With the old `api()` the test fails (the button's request gets the 404).
+337. **Broken links split by what is to be fixed; where every problem address is pointed at; which sitemap file lists
+     it (Owner, 2026-11-10/11, asked by İlginay on enpara 2e5829fb's card 2: Part 2's items 1-5 and the sitemap-only
+     card, the sitemap file per address, the likely-cause line marked as inference, "kaldırın veya yönlendirin" for
+     removed pages, and the same "where" columns for 5xx, redirect chains/loops and canonical/hreflang targets as asked;
+     the severities of the new findings, the heading test, the column wording and the 3-row PDF box are agent
+     defaults).** Every audit.
+     *What enpara's card 2 was* (investigated offline first, shown to the owner): none of its 21 addresses is a link on
+     a page Maya read. All 21 came from the sitemaps only (`via = sitemap`, no parent page, empty `link_sources`); each
+     answers 302 to the site's error page (404). 15 of them spell a heading or FAQ question on a page read ("Kredi kartı
+     aidatı yok!", "Çocuğunuz da Enparalı oluyor :)"); the other 6 look like removed pages. The Ek XLSX had no linking
+     page because there is none, and because no XLSX sheet ever carried link rows (only the PDF did, DECISIONS 283).
+     Maya's link extraction already followed only `<a href>` and skipped `javascript:`, `mailto:`, `tel:`, `data:` and
+     `#…`; `data-href`, `onclick` and tab/accordion ids were never requested (now locked by tests).
+     (1) *Split* (`checks.index.broken_link_sources`, new audits; `reassess_rules._decisions_337`, saved ones, traced
+     again from the saved pages' links and redirects): IDX-1's "4xx, linked internally or listed in the sitemap" becomes
+     up to three findings: the real links ("…; linked from N page(s)", the engine's severity); "N sitemap address(es)
+     end at a client error (4xx); no page read links to them" (`idx1.4xx.sitemap_only`, the engine's severity,
+     Developer, M; card "Site haritasındaki hata veren adresleri düzeltin ya da çıkarın"); and "N link(s) on M page(s)
+     have a mistyped address (href) …" (`idx1.href_mistyped`, Low, Medium when the homepage or a key page holds one,
+     Developer, S; card "Bağlantı adresi yanlış yazılmış bağlantıları düzeltin"). A mistyped href
+     (`html_links.mistyped_href`) is a real `<a href>` that failed with a 4xx and holds spaces, or has no leading /, #,
+     ?, . or scheme and no file name in its first part ("sekme-2", "kartlar/x"); "contact.html" and "../x" are not.
+     DECISIONS 329's "Geliştirici + İçerik" now applies only to the old mixed finding.
+     (2) *Likely cause* (inference, said as such): a sitemap entry whose last part spells a heading on a page read
+     (Turkish letters folded, a trailing copy number left out) is listed with that page and heading
+     (`evidence.sitemap_entries[].heading_match`, `likely_cause`); the card says "Olası neden (çıkarım): N adres okunan
+     sayfalardaki başlıklarla aynı (örnek: …). Site haritası oluşturucuyu kontrol edin." and "Kalan N kayıt kaldırılmış
+     sayfalara benziyor: kaldırın veya yönlendirin."
+     (3) *Which sitemap file*: schema 1.32 adds `sitemap_doc.new_urls` (a file's addresses no earlier file listed;
+     `crawl.sitemap_urls` holds them file by file), so `sitemap.file_map` gives each address's file. A report written
+     before gets it only when the files' counts add up exactly to the addresses known (enpara: 278 + 137 = 415), never
+     guessed otherwise. The card says "Site haritası dosyaları: /sirketim/sitemap.xml (9), /sitemap.xml (12)."
+     (4) *Where* (`maya_audit.link_places`, read by `final.broken_link_cards`): one row per problem address and the page
+     or entry that names it, for IDX-1 4xx (links, sitemap entries, mistyped), IDX-1 5xx, IDX-6 links to redirects,
+     IDX-3 chains and loops, IDX-4 canonicals that fail or redirect, STR-9 hreflang targets that do not answer 200:
+     the address, its status through its redirects ("302 → 404"), the page with the link (or "yalnızca site
+     haritasında", "bağlantı bulunamadı", the page with the canonical/hreflang tag), its text, the href as written
+     (`outlinks[].href`, new audits; "kaydedilmedi (eski denetim)" otherwise), its place (menü / altbilgi / gövde /
+     <head>), in the sitemap and which file, and what to point to (a redirect's own working end, else "kaldırın",
+     "kaldırın veya yönlendirin", "site haritası oluşturucuyu düzeltin", "döngüyü düzeltin"; never a guessed address).
+     Shown as: the Ek's new reader sheet "Bağlantı yerleri" (13 columns; addresses readable, links behind them), the
+     PDF card's box "NEREDE DÜZELTİLECEK" (first 3 rows, "+N satır daha (tam liste ekte: «Bağlantı yerleri»)"), the
+     address-list file, and the web card's "Etkilenen sayfalar" dialog (a "Bağlantı yerleri" table above the pages).
+     (5) "Nasıl okunur" adds the "Bağlantı yerleri" line and "Bağlantılar Mac'in hızlı önizlemesinde çalışmaz; dosyayı
+     Numbers, Excel veya Google Sheets ile açın."
+     *Other audits* (current engine on scratch copies, before vs after): moodist 2d72fea0, same 14 cards, card 1
+     (canonical/chain/links-to-redirect) gains 158 "where" rows; nihan b3198942, no card changes; enpara, card 2 as
+     above and card 8 (links to redirects) gains 3 rows.
+     Tests: `tests/test_link_places_337.py` (a fake site with tab/accordion markup, data-href, onclick, a text href, a
+     real 404 link and sitemap entries, one spelling a heading; a synthetic saved report shaped like enpara's; the web
+     card's list); `tests/test_m1_broken_links.py` follows (the card rows carry the new fields; a link to a working
+     redirect is now said where it is under IDX-6).

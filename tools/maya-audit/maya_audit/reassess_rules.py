@@ -584,6 +584,45 @@ def _decisions_329(report: dict, changes: list[str]) -> None:
                        f"({', '.join(row['page_types'])}): left out (DECISIONS 329)")
 
 
+def _decisions_337(report: dict, affected: dict, changes: list[str]) -> None:
+    """DECISIONS 337: IDX-1's "4xx, linked internally or listed in the sitemap" split by what is to be fixed (the links,
+    the sitemap entries, mistyped hrefs), traced again from the saved pages' links and redirects; the sitemap file of
+    each entry from the saved sitemap files (`sitemap.file_map`). The new findings' pages go into `affected`."""
+    from dataclasses import fields
+    from .checks.index import REFERENCED_4XX_TITLE, broken_link_sources
+    from .findings import Finding, Severity
+    from .models import Confidence, page_from_record, to_jsonable
+    check = next((c for c in report.get("checks") or [] if c.get("check_id") == "IDX-1"), None)
+    if check is None:
+        return
+    todo = [f for f in check.get("findings") or [] if REFERENCED_4XX_TITLE.search(f.get("title") or "")
+            and (f.get("evidence") or {}).get("split") != 337]
+    if not todo:
+        return
+    crawl = report.get("crawl") or {}
+    result = SimpleNamespace(pages=[page_from_record(p) for p in crawl.get("pages") or [] if isinstance(p, dict)],
+                             sitemap_urls=crawl.get("sitemap_urls") or [], sitemap_docs=crawl.get("sitemap_docs") or [],
+                             config=crawl.get("config") or {}, origin=crawl.get("origin"), start_url=crawl.get("start_url"))
+    names = {f.name for f in fields(Finding)}
+    objects = []
+    for f in todo:
+        values = {k: v for k, v in f.items() if k in names}
+        values["severity"], values["confidence"] = Severity(f["severity"]), Confidence(f["confidence"])
+        objects.append(Finding(**values))
+    native = SimpleNamespace(check_id="IDX-1", findings=objects)
+    broken_link_sources([native], result)
+    kept = [f for f in check["findings"] if f not in todo]
+    made = [to_jsonable(f) for f in native.findings]
+    check["findings"] = kept + made
+    old_ids = {f["id"] for f in todo}
+    for f in made:
+        affected[f["id"]] = list((f.get("scope") or {}).get("urls") or [])
+    for i in old_ids - {f["id"] for f in made}:
+        affected.pop(i, None)
+    changes.append(f"IDX-1 broken links split by what is to be fixed: {', '.join(f['rule_id'] or f['title'][:40] for f in made)} "
+                   "(DECISIONS 337)")
+
+
 def _order(report: dict) -> list[str]:
     from .findings import Severity, priority_key
     from .models import Confidence
@@ -626,6 +665,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_318(r, changes)
     _decisions_321(r, changes)
     _decisions_329(r, changes)
+    _decisions_337(r, aff, changes)
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -641,7 +681,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321 and 329, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329 and 337, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
@@ -666,6 +706,8 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
     cert: list[str] = []
     _decisions_321(r, cert)
     _decisions_329(r, cert)  # DECISIONS 329: place-name groups only on location pages, also for a current-schema report
+    if affected is not None:
+        _decisions_337(r, affected, cert)  # DECISIONS 337: broken links split by what is to be fixed
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

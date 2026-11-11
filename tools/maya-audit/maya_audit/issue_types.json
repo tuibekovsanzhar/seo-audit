@@ -78,6 +78,8 @@
   "idx1.error_text": "issue",
   "idx1.5xx.once": "warning",
   "idx1.4xx.referenced.linked": "issue",
+  "idx1.4xx.sitemap_only": "issue",
+  "idx1.href_mistyped": "issue",
   "judgment.empty.repeated": "warning",
   "judgment.empty.single": "warning",
   "idx10.bing_error": "issue",

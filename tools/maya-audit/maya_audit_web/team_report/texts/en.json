@@ -1012,6 +1012,31 @@
    "verify": "Recrawl the site or run a link checker; no internal link or sitemap entry should lead to an error.",
    "summary": "Broken internal links"
   },
+  "idx1.4xx.sitemap_only": {
+   "title": "Fix or remove the sitemap entries that end at an error",
+   "finding": "The sitemap lists addresses that return an error",
+   "explanation": "No page read links to these addresses; the sitemap is the problem. Take removed pages out and fix the generator.",
+   "why": "Google visits every address in the sitemap; entries that fail waste crawl budget and show as errors in Search Console.",
+   "steps": [
+    "Find each address in the sitemap file that lists it",
+    "Fix the sitemap generator that makes addresses from headings",
+    "Take removed pages out, or redirect them to the closest page"
+   ],
+   "verify": "Read the sitemap files again; every listed address should open a working page.",
+   "summary": "Sitemap addresses that fail"
+  },
+  "idx1.href_mistyped": {
+   "title": "Correct the mistyped link addresses",
+   "finding": "Link addresses are mistyped",
+   "explanation": "The href is not an address: text, or missing its leading / or #. The browser turns it into a wrong address that fails.",
+   "why": "A visitor who clicks the link gets an error page; search engines crawl addresses that do not exist.",
+   "steps": [
+    "Find each link's href on the listed page or its template",
+    "Add the missing / or #, or put the address in place of the text"
+   ],
+   "verify": "Open the page and click the link; the right page or section should open.",
+   "summary": "Mistyped link addresses"
+  },
   "idx1.4xx.unreferenced": {
    "title": "Check the error addresses no page links to",
    "finding": "Unlinked addresses return an error",

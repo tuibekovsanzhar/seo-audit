@@ -37,9 +37,12 @@ def test_status_codes(idx):
     # A URL that times out on every attempt is IDX-1's only; PRF-1's intermittent-timeout finding must not repeat it.
     assert not any(u.endswith("/hang") for f in run.findings("PRF-1") for u in f.scope["urls"])
     # DECISIONS 278: the failing addresses are kept apart from the pages to edit (the scope).
-    linked = found[("S2", "verified")]
-    assert sorted(u.rsplit("/", 1)[-1] for u in linked.evidence["target_urls"]) == ["deleted", "gone", "sitemap-only-404"]
-    assert "sitemap-only-404" in names(linked) and not {"deleted", "gone"} & set(names(linked))
+    # DECISIONS 337: the links and the sitemap-only entry are two findings, each with its failing addresses
+    by_rule = {f.rule_id: f for f in run.findings("IDX-1", "S2")}
+    linked, entry = by_rule["idx1.4xx.referenced.linked"], by_rule["idx1.4xx.sitemap_only"]
+    assert sorted(u.rsplit("/", 1)[-1] for u in linked.evidence["target_urls"]) == ["deleted", "gone"]
+    assert not {"deleted", "gone"} & set(names(linked))
+    assert names(entry) == ["sitemap-only-404"] and [u.rsplit("/", 1)[-1] for u in entry.evidence["target_urls"]] == ["sitemap-only-404"]
 
     transient = [o for o in run.checks["IDX-1"].observations if "intermittent failure" in o["metric"]]
     assert [o["url"].rsplit("/", 1)[-1] for o in transient] == ["flaky-500"]

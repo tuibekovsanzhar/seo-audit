@@ -330,9 +330,9 @@ def test_a_saved_1_9_report_without_items_gets_them_derived_and_its_file_is_not_
 
 
 def test_schema_1_16_is_frozen_and_adds_without_breaking_older_1_x_reports():
-    assert schema.SCHEMA_VERSION == "1.31"
+    assert schema.SCHEMA_VERSION == "1.32"
     frozen = json.loads(schema.frozen_path().read_text(encoding="utf-8"))
-    assert schema.frozen_path().name == "report-schema-1.31.json" and schema.differences(frozen, schema.shape()) == []
+    assert schema.frozen_path().name == "report-schema-1.32.json" and schema.differences(frozen, schema.shape()) == []
     # 1.13 is kept, 1.14 only adds to it (the start address that failed; the audit's brand and where it came from), and a
     # 1.13 report is still read.
     thirteenth = json.loads(schema.frozen_path("1.13").read_text(encoding="utf-8"))
@@ -350,7 +350,7 @@ def test_schema_1_16_is_frozen_and_adds_without_breaking_older_1_x_reports():
         "request: added ['slot']", "review_item: added ['rule_id']",
         # 1.24 (DECISIONS 304): the page reader's page grouping; the sitemap's image and video counts. 1.25 (DECISIONS
         # 311): the business type (crawl).
-        "sitemap_doc: added ['image_entries', 'video_entries']",  # 1.18, DECISIONS 269; 1.19 adds `verification` (DECISIONS 272); 1.20 the contract fields and `release_gate` (278)
+        "sitemap_doc: added ['image_entries', 'video_entries', 'new_urls']",  # 1.32 (DECISIONS 337): new_urls  # 1.18, DECISIONS 269; 1.19 adds `verification` (DECISIONS 272); 1.20 the contract fields and `release_gate` (278)
         "vocabulary.brand_found_in: added", "vocabulary.brand_source: added", "vocabulary.check_status: added ['not_applicable']", "vocabulary.not_requested_because: added ['provider_timeout', 'provider_error']"]
     assert frozen["brand"] == ["name", "source", "confirmed", "found_in", "pages"]
     assert frozen["problem_start_address"] == ["entered", "status", "audited_from"] and schema.unsupported_reason({"schema_version": "1.13"}) is None

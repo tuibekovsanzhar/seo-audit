@@ -69,7 +69,7 @@ def test_within_a_card_the_read_rows_come_first_so_its_link_still_lands_on_its_f
 def test_how_to_read_explains_the_column_in_one_line():
     for lang, word in (("tr", "Okundu mu?"), ("en", "Read?")):
         lines = client_appendix.READ[lang]["lines"]
-        assert len(lines) == 8 and sum(word in line for line in lines) == 1  # 8: P0-P3 (DECISIONS 324)
+        assert len(lines) == 10 and sum(word in line for line in lines) == 1  # 8: P0-P3 (DECISIONS 324); 10: 337
 
 
 def test_hosts_and_the_whole_site_are_not_pages():
@@ -135,7 +135,7 @@ def test_a_new_audit_stores_a_record_for_every_page_maya_read(no_lookups):
     transport, _ = _site(blocked=lambda url: False)
     outcome = run_audit(S + "/", CrawlConfig(**{**QUIET, "max_pages": 8}), httpx.MockTransport(transport))
     rep = json.loads(json.dumps(to_jsonable(build_report(outcome.result, outcome.gates, outcome.checks))))
-    assert rep["schema_version"] == SCHEMA_VERSION == "1.31"
+    assert rep["schema_version"] == SCHEMA_VERSION == "1.32"
     stored = rep["crawl"]["page_measures"]
     assert set(stored) == cs.pages_read(rep) and len(stored) >= 5
     assert all(isinstance(r.get("html_bytes"), int) and r.get("title") for r in stored.values())

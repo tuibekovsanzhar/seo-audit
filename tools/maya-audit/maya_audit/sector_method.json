@@ -1495,7 +1495,8 @@
    "status": "A",
    "rules": [
     "idx6.broken",
-    "idx1.4xx.referenced"
+    "idx1.4xx.referenced",
+    "idx1.href_mistyped"
    ],
    "needs": [
     "IDX-6"

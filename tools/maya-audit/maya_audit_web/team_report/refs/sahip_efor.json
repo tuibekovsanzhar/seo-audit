@@ -146,6 +146,16 @@
     "effort": "M"
    },
    {
+    "pattern": "mistyped address \\(href\\)",
+    "owner": "developer",
+    "effort": "S"
+   },
+   {
+    "pattern": "sitemap address\\(es\\) end at a client error",
+    "owner": "developer",
+    "effort": "M"
+   },
+   {
     "pattern": "client error \\(4xx\\)",
     "owner": "content",
     "effort": "S"

@@ -617,6 +617,16 @@
    "what": "Sitenizdeki bazı bağlantılar hata veren adreslere gidiyor.",
    "why": "Müşteri hata sayfasıyla karşılaşınca siteden çıkar; Google da zamanını var olmayan sayfalara harcar."
   },
+  "idx1.4xx.sitemap_only": {
+   "title": "Site haritasındaki hatalı adresleri temizleyin",
+   "what": "Site haritanız (Google'a sayfalarınızın listesini veren dosya) artık var olmayan ya da hiç sayfa olmamış adresleri listeliyor.",
+   "why": "Google bu adresleri ziyaret edip hata alır; zamanını gerçek sayfalarınıza harcamaz."
+  },
+  "idx1.href_mistyped": {
+   "title": "Yanlış yazılmış bağlantı adreslerini düzeltin",
+   "what": "Bazı bağlantıların adresi yanlış yazılmış; tıklayan ziyaretçi hata sayfasına gidiyor.",
+   "why": "Müşteri hata sayfasıyla karşılaşınca siteden çıkar."
+  },
   "judgment.heading.home": {
    "title": "Ana sayfanın ana başlığını doldurun",
    "what": "Ana sayfanızın ana başlığı (sayfanın konusunu söyleyen en büyük başlık) boş.",

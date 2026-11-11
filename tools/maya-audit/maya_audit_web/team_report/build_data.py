@@ -179,7 +179,10 @@ def field_none(section, L):
 def link_rows(cards):
     """A broken link's "what to edit" rows (maya_audit.final.broken_link_cards): page to edit, link text, the address
     it links to, where it ends and that address's status. The new address is never known, so never guessed."""
-    keys = ("kind", "source_url", "link_text", "links_to", "target_url", "target_status", "replacement_url")
+    keys = ("kind", "source_url", "link_text", "links_to", "target_url", "target_status", "replacement_url",
+            # DECISIONS 337: where it is and what to do
+            "href", "position", "status", "ends_at", "final_status", "in_sitemap", "sitemap_file", "suggested", "source", "rule_id",
+            "finding_id", "mistyped")
     return [{k: c.get(k) for k in keys} for c in cards or []]
 
 
@@ -558,6 +561,26 @@ class Builder:
         if line:
             self.fact(line)
         return line
+
+    def entries_lines(self, f):
+        """DECISIONS 337: a sitemap-only 4xx card says which sitemap file lists its addresses and, when some spell a
+        heading on a page read, the likely cause as an inference with one example; removed pages: remove or redirect."""
+        if f.get("rule_id") != "idx1.4xx.sitemap_only":
+            return []
+        ev, L = f.get("evidence") or {}, self.L
+        out = []
+        files = {k: v for k, v in (ev.get("sitemap_files") or {}).items() if k}
+        if files:
+            out.append(fmt(L["entries_files"], files=", ".join(f"{path_of(k) or k} ({v})" for k, v in files.items())))
+        entries = ev.get("sitemap_entries") or []
+        matched = [e for e in entries if e.get("heading_match")]
+        if matched:
+            m = matched[0]["heading_match"]
+            out.append(fmt(L["entries_cause"], n=len(matched), page=path_of(m.get("page")) or "/", heading=m.get("heading") or ""))
+        rest = len(entries) - len(matched)
+        if rest > 0:
+            out.append(fmt(L["entries_removed"], n=rest))
+        return out
 
     def sitemap_line(self, f):
         """DECISIONS 316: a striking sitemap result (half or more of 10+ checked addresses unsuitable) said in plain words
@@ -1239,7 +1262,10 @@ class Builder:
                 keys.append(k)
         # DECISIONS 329 (owner): broken links that include sitemap entries are the developer's (the sitemap) and the
         # content team's (the links and what the page becomes): "Geliştirici + İçerik".
-        if any(c.get("kind") == "sitemap" for m in members or [] for c in (getattr(self, "cards", None) or {}).get(m.get("id")) or []):
+        # DECISIONS 337: only the old mixed broken-link finding; a sitemap-only card is the developer's, and other cards'
+        # sitemap rows (a redirect chain's start) do not change their owner.
+        if any(c.get("kind") == "sitemap" for m in members or [] if m.get("rule_id") in ("idx1.4xx.referenced", "idx1.4xx.referenced.linked")
+               for c in (getattr(self, "cards", None) or {}).get(m.get("id")) or []):
             keys = ["developer", "content"] + [k for k in keys if k not in ("developer", "content")]
             return " + ".join(self.L["owners"][k] for k in keys[:2] if k in self.L["owners"])
         keys.sort(key=lambda k: self.OWNER_RANK.index(k) if k in self.OWNER_RANK else len(self.OWNER_RANK))
@@ -1666,7 +1692,7 @@ class Builder:
                 chain_line = self.chain_text((group or {}).get("chain"))
                 template_line = None if chain_line else self.template_text((group or {}).get("template_line"))
                 sitemap_line = self.sitemap_line(f)
-                for line in (template_line, sitemap_line):
+                for line in (template_line, sitemap_line, *reversed(self.entries_lines(f))):
                     if line:
                         sub = [line] + list(sub or [])
                         self.fact(line)

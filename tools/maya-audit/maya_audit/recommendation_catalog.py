@@ -63,7 +63,10 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"server error \(5xx\)", "developer", "M", "A page that answers with a server error cannot be read, indexed or quoted, and repeated errors make crawlers visit less often."),
         (r"fail at the connection level", "developer", "M", "A page that cannot be connected to does not exist as far as a crawler is concerned."),
         (r"time out on every attempt", "developer", "M", "A page that never answers in time is given up on by crawlers, as it would be by a visitor."),
-        (r"client error \(4xx\)", "content", "S", "A link or sitemap entry that leads to a missing page wastes a crawler's visit and sends visitors to an error."),
+        # DECISIONS 337: a mistyped href is fixed in the page or template; sitemap-only entries in the sitemap (generator)
+        (r"mistyped address \(href\)", "developer", "S", "A link whose address is text or misses its / or # sends the visitor to an error page."),
+        (r"sitemap address\(es\) end at a client error", "developer", "M", "Google visits every sitemap address; entries that fail waste its crawl and show as errors in Search Console."),
+        (r"(?<!end at a )(?<!ends at a )client error \(4xx\)", "content", "S", "A link or sitemap entry that leads to a missing page wastes a crawler's visit and sends visitors to an error."),
         (r"soft 404", "developer", "M", "When a missing address answers as if it were a real page, engines cannot tell real pages from mistakes and may index empty ones."),
         (r"answer with an empty page", "developer", "M", "Recorded empty responses supplied this client no readable page content at those times; intended purpose, other clients and business impact require corroboration."),
         (r"server error message with the server's file paths", "developer", "S", "An error message on a live page shows visitors and crawlers how the server is built, and engines may read the error text as the page's content."),

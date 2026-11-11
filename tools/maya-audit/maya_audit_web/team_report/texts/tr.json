@@ -1012,6 +1012,31 @@
    "verify": "Siteyi yeniden tarayın veya bir bağlantı denetleyicisi çalıştırın; hiçbir iç bağlantı ya da site haritası kaydı hataya gitmemeli.",
    "summary": "Bozuk iç bağlantılar"
   },
+  "idx1.4xx.sitemap_only": {
+   "title": "Site haritasındaki hata veren adresleri düzeltin ya da çıkarın",
+   "finding": "Site haritası hata veren adresleri listeliyor",
+   "explanation": "Okunan hiçbir sayfa bu adreslere bağlantı vermiyor; sorun site haritasında. Kaldırılmış sayfaları çıkarın, oluşturucuyu düzeltin.",
+   "why": "Google site haritasındaki her adresi ziyaret eder; hata veren kayıtlar tarama bütçesini boşa harcar ve Search Console'da hata olarak görünür.",
+   "steps": [
+    "Her adresi, onu listeleyen site haritası dosyasında bulun",
+    "Başlıklardan adres üreten site haritası oluşturucuyu düzeltin",
+    "Kaldırılmış sayfaları çıkarın ya da en yakın sayfaya yönlendirin"
+   ],
+   "verify": "Site haritası dosyalarını yeniden okuyun; listelenen her adres çalışan bir sayfa açmalı.",
+   "summary": "Site haritasında hata veren adresler"
+  },
+  "idx1.href_mistyped": {
+   "title": "Bağlantı adresi yanlış yazılmış bağlantıları düzeltin",
+   "finding": "Bağlantı adresi yanlış yazılmış",
+   "explanation": "href değeri bir adres değil: metin ya da başında / veya # eksik. Tarayıcı onu yanlış bir adrese çevirip hata sayfasına gidiyor.",
+   "why": "Ziyaretçi bağlantıya tıklayınca hata sayfasına düşer; arama motorları da var olmayan adresleri tarar.",
+   "steps": [
+    "Her bağlantının href değerini sayfada ya da şablonda bulun",
+    "Eksik / veya # ekleyin ya da metnin yerine adresi yazın"
+   ],
+   "verify": "Sayfayı açıp bağlantıya tıklayın; doğru sayfa ya da sayfadaki bölüm açılmalı.",
+   "summary": "Yanlış yazılmış bağlantı adresleri"
+  },
   "idx1.4xx.unreferenced": {
    "title": "Hiçbir sayfanın bağlantı vermediği hatalı adresleri kontrol edin",
    "finding": "Bağlantı verilmeyen adresler hata veriyor",

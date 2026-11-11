@@ -1,6 +1,6 @@
 # The JSON report format
 
-Current version: `1.31`
+Current version: `1.32`
 
 Every JSON report the tool writes (`--json`, and one per brand from `batch`) starts with `schema_version`.
 Anything that reads a report, including the web interface, reads that number first.
@@ -394,6 +394,19 @@ page failures. Coverage stop reasons additionally distinguish `provider_timeout`
 credit/request limits. Existing 1.x reports remain readable; absent historical reasons are never invented.
 Keyword intent dimensions live inside open DataForSEO check evidence; originals and provider totals are preserved.
 
+
+## 1.32 — which sitemap file lists each address (2026-11-11)
+
+Added for DECISIONS 337; nothing was removed or renamed, so 1.x readers keep working.
+
+- `crawl.sitemap_docs[]` gains `new_urls`: how many of a urlset file's addresses no earlier file listed. `crawl.sitemap_urls`
+  holds these new addresses file by file in reading order, so the file that lists each address follows from the two
+  (`maya_audit.sitemap.file_map`). For a report written before, the file is recovered only when the files' address
+  counts add up exactly to the addresses known; otherwise it is not said.
+- Not in the frozen shape (evidence and page analysis are open): each link record in `crawl.pages[].outlinks` carries
+  `href`, the address as the page wrote it; IDX-1's broken-link findings carry `split: 337`, and the sitemap-only one
+  `sitemap_entries` (address, where it ends, its status, its sitemap file, a matching heading, what to do),
+  `sitemap_files` and `likely_cause`.
 
 ## 1.31 — where Core Web Vitals were asked (2026-11-09)
 

@@ -236,6 +236,7 @@ def discover_sitemap_urls(
             other = [loc for loc, _ in entries if loc and not same_origin(loc, origin)]
             off_origin_count += len(other)
             off_origin.extend(other[: max(0, 5 - len(off_origin))])
+            before = len(page_urls)
             for loc, lastmod in entries:
                 if loc and same_origin(loc, origin):
                     page_urls.setdefault(loc, None)
@@ -248,7 +249,7 @@ def discover_sitemap_urls(
             media = Counter(_local(child.tag) for element in root if _local(element.tag) == "url" for child in element
                             if _local(child.tag) in ("image", "video"))
             docs.append(SitemapDoc(url, response.status, None, kind, len(locs), sum(stamps.values()), len(stamps),
-                                   top, top_count, media["image"], media["video"]))
+                                   top, top_count, media["image"], media["video"], len(page_urls) - before))
         else:
             docs.append(SitemapDoc(url, response.status, f"unexpected root element <{kind}>", None, 0))
 
@@ -268,3 +269,29 @@ def discover_sitemap_urls(
         notes.append(f"the sitemaps list {off_origin_count} address(es) on another origin (http beside https, or www beside "
                      f"the bare name), which were not taken as this site's pages: {', '.join(off_origin[:3])}.")
     return docs, list(page_urls), notes
+
+
+def file_map(docs, urls, file_of: dict | None = None) -> dict[str, str]:
+    """{address: the sitemap file that listed it first} (DECISIONS 337). From the crawl's own record when it has one;
+    else from the files' `new_urls` in reading order (schema 1.32); else, for a report written before, only when the
+    files' address counts add up exactly to the addresses known (no address listed twice), so the order says it. An
+    empty map when none of these holds: the file is then not said, never guessed."""
+    if file_of:
+        return dict(file_of)
+    urls = list(urls or [])
+    rows = [d if isinstance(d, dict) else d.__dict__ for d in docs or []]
+    sets = [r for r in rows if r.get("kind") == "urlset"]
+    if sets and all(r.get("new_urls") is not None for r in sets):
+        counts = [(r["url"], r["new_urls"]) for r in sets]
+    elif sets and sum(int(r.get("urls_found") or 0) for r in sets) == len(urls):
+        counts = [(r["url"], int(r.get("urls_found") or 0)) for r in sets]
+    else:
+        return {}
+    if sum(n for _, n in counts) != len(urls):
+        return {}
+    out, at = {}, 0
+    for file, n in counts:
+        for url in urls[at:at + n]:
+            out[url] = file
+        at += n
+    return out

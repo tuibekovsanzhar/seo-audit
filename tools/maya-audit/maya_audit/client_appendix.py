@@ -22,9 +22,22 @@ READ = {
                      "Süzmek için başlık satırındaki ok düğmelerini kullanın (ör. Kart = 3 ya da Önem = Yüksek). Bir adrese tıklayınca sayfa tarayıcıda açılır.",
                      "Önem sırası: Engelleyici, Yüksek, Orta, Düşük, Bilgi. «Bilgi» satırları sorun değil nottur. «Bulgular» ve sonraki sayfalar ekibin teknik ayrıntılarıdır.",
                      "«Okundu mu?»: «Evet» içeriği okunup ölçülen sayfa, «Hayır, okunmadı» bilinen ama okunmayan adrestir; okunan sayfalar önce, okunmayan adresler ayrı bir grup olarak sonra gelir.",
-                     "«Öncelik (P0-P3)»: ekibin sektör yöntemine göre ne kadar acil olduğu: P0 hemen, P1 yakında, P2 planlanmalı, P3 sırası gelince. Kartların sırasını değiştirmez; hesap «Yöntem» sayfasında."],
+                     "«Öncelik (P0-P3)»: ekibin sektör yöntemine göre ne kadar acil olduğu: P0 hemen, P1 yakında, P2 planlanmalı, P3 sırası gelince. Kartların sırasını değiştirmez; hesap «Yöntem» sayfasında.",
+                     "«Bağlantı yerleri»: hata veren, yönlenen ya da yanlış yazılmış her adres ve onu gösteren her sayfa bir satır: sayfa, bağlantı metni, href, konum, site haritası, önerilen hedef. Bağlantı veren sayfa yoksa «yalnızca site haritasında» yazar.",
+                     "Bağlantılar Mac'in hızlı önizlemesinde çalışmaz; dosyayı Numbers, Excel veya Google Sheets ile açın."],
            "summary_cols": ["Kart", "Başlık", "Önem", "Sorun türü", "Öncelik (P0-P3)", "Sorumlu", "Efor", "Etkilenen adres", "Satırlara git"],
-           "go": "Satırlara git →",
+           "go": "Satırlara git →", "where": "Bağlantı yerleri",
+           # DECISIONS 337: where each address with a problem is pointed at
+           "where_cols": ["Kart", "Bozuk adres", "HTTP durumu", "Bağlantının bulunduğu sayfa", "Bağlantı metni", "Yazılan değer (href)",
+                          "Konum", "Site haritasında mı?", "Site haritası dosyası", "Önerilen hedef", "Olası neden", "Bulgu kimliği", "Kural"],
+           "where_words": {"sitemap_only": "yalnızca site haritasında", "not_linked": "bağlantı bulunamadı", "yes": "Evet", "no": "Hayır",
+                           "redirects": "yönlendiriyor", "not_recorded": "kaydedilmedi (eski denetim)",
+                           "positions": {"menu": "menü", "footer": "altbilgi", "body": "gövde", "head": "<head>"},
+                           "kinds": {"canonical": "kanonik etiketi", "hreflang": "hreflang etiketi"},
+                           "suggest": {"remove": "kaldırın", "remove_or_redirect": "kaldırın veya yönlendirin",
+                                       "fix_generator": "site haritası oluşturucuyu düzeltin", "fix_loop": "döngüyü düzeltin"},
+                           "cause": "çıkarım: {page} sayfasındaki «{heading}» başlığından üretilmiş görünüyor",
+                           "mistyped": "yanlış yazılmış adres"},
            "page_cols": ["Sayfa", "Okundu mu?", "Sayfa türü", "Önem puanı (0-100)", "Sorun sayısı", "En yüksek önem", "Sorunlar", "Kartlar"],
            "finding_cols": ["Sorun", "Önem", "Sorun türü", "Sayfa", "Okundu mu?", "Ölçülen değer", "Ne yapılmalı", "Kart", "Durum",
                             "Sayfa türü", "Sayfa önemi (0-100)", "Bulgu kimliği", "Kural", "Kontrol"],
@@ -39,9 +52,21 @@ READ = {
                      "To filter, use the arrow buttons in the header row (e.g. Card = 3 or Severity = High). Clicking an address opens the page in your browser.",
                      "Severity order: Blocker, High, Medium, Low, Info. \"Info\" rows are notes, not problems. \"Findings\" and the sheets after it are the team's technical detail.",
                      "\"Read?\": \"Yes\" is a page whose content was read and measured, \"No, not read\" an address known but not read; pages read come first, addresses not read follow as their own group.",
-                     "\"Priority (P0-P3)\": how urgent a card is by the team's sector method: P0 now, P1 soon, P2 to plan, P3 when convenient. It does not change the card order; the formula is on the \"Method\" sheet."],
+                     "\"Priority (P0-P3)\": how urgent a card is by the team's sector method: P0 now, P1 soon, P2 to plan, P3 when convenient. It does not change the card order; the formula is on the \"Method\" sheet.",
+                     "\"Link locations\": one row per failing, redirecting or mistyped address and each page pointing to it: page, link text, href, place, sitemap, what to point to. With no linking page it says \"sitemap only\".",
+                     "Links do not work in the Mac's Quick Look preview; open the file in Numbers, Excel or Google Sheets."],
            "summary_cols": ["Card", "Title", "Severity", "Issue type", "Priority (P0-P3)", "Owner", "Effort", "Affected addresses", "Go to rows"],
-           "go": "Go to rows →",
+           "go": "Go to rows →", "where": "Link locations",
+           "where_cols": ["Card", "Broken address", "HTTP status", "Page with the link", "Link text", "Written value (href)",
+                          "Place", "In the sitemap?", "Sitemap file", "Point to instead", "Likely cause", "Finding ID", "Rule"],
+           "where_words": {"sitemap_only": "sitemap only", "not_linked": "no link found", "yes": "Yes", "no": "No",
+                           "redirects": "redirects", "not_recorded": "not recorded (older audit)",
+                           "positions": {"menu": "menu", "footer": "footer", "body": "body", "head": "<head>"},
+                           "kinds": {"canonical": "canonical tag", "hreflang": "hreflang tag"},
+                           "suggest": {"remove": "remove", "remove_or_redirect": "remove or redirect",
+                                       "fix_generator": "fix the sitemap generator", "fix_loop": "fix the loop"},
+                           "cause": "inference: seems made from the heading “{heading}” on {page}",
+                           "mistyped": "mistyped address"},
            "page_cols": ["Page", "Read?", "Page type", "Importance (0-100)", "Problems", "Highest severity", "Problems found", "Cards"],
            "finding_cols": ["Problem", "Severity", "Issue type", "Page", "Read?", "Measured value", "What to do", "Card", "Placement",
                             "Page type", "Page importance (0-100)", "Finding ID", "Rule", "Check"],
@@ -205,11 +230,12 @@ def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = No
 def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
            title: Callable[[str, str], str] | None = None, fix: Callable[[str], str] | None = None,
            label: Callable[[str], str] | None = None, line: Callable[[str], str] | None = None,
-           todos: list[dict] | None = None, words: Callable[[dict], dict | None] | None = None) -> list[dict]:
+           todos: list[dict] | None = None, words: Callable[[dict], dict | None] | None = None,
+           places: dict | None = None) -> list[dict]:
     """The appendix's sheets: the four for readers who are not technical (DECISIONS 322), then the technical ones.
     `todos`: the team report's cards, so "Özet" has the PDF's cards and the rows their numbers; `words(finding)`: the
     text library's plain problem name and fix."""
-    return reader_sheets(selection, lang, lists, title=title, fix=fix, todos=todos, words=words) + \
+    return reader_sheets(selection, lang, lists, title=title, fix=fix, todos=todos, words=words, places=places) + \
         technical_sheets(selection, lang, lists, title, fix, label, line)
 
 
@@ -217,8 +243,45 @@ def _link(url: str | None, text: str) -> dict | str:
     return {"text": text, "link": url} if url and url.startswith(("http://", "https://")) else text
 
 
+def where_rows(places: dict | None, todos: list[dict] | None, lang: str) -> list[list]:
+    """DECISIONS 337: the "Bağlantı yerleri" rows: one per address with a problem and the page or entry that names it
+    (`final.broken_link_cards`), numbered by the PDF's cards."""
+    from urllib.parse import unquote
+    R = READ[lang]
+    Wd = R["where_words"]
+    shown = lambda u: _link(u, unquote(u or ""))  # noqa: E731  readable letters, the real address behind the link
+    card = {fid: t["n"] for t in todos or [] for fid in t.get("finding_ids") or []}
+    out = []
+    for fid, rows in (places or {}).items():
+        for r in rows:
+            kind = r.get("kind")
+            first, final_status = r.get("status"), r.get("final_status")
+            if r.get("ends_at") and r.get("ends_at") != r.get("links_to"):
+                status = f"{first or Wd['redirects']} → {final_status}" if final_status else str(first or Wd["redirects"])
+            else:
+                status = str(first or final_status or "")
+            if kind == "sitemap":
+                page = Wd["sitemap_only"]
+            elif kind == "not_linked":
+                page = Wd["not_linked"]
+            else:
+                page = shown(r.get("source"))
+            text = Wd["kinds"].get(kind, "") + (f" ({r['link_text']})" if kind == "hreflang" and r.get("link_text") else "") \
+                if kind in ("canonical", "hreflang") else (r.get("link_text") or "")
+            href = r.get("href") or (Wd["not_recorded"] if kind == "link" else "")
+            url = r.get("replacement_url")
+            suggest = shown(url) if url else Wd["suggest"].get(r.get("suggested") or "remove", r.get("suggested") or "")
+            heading = r.get("heading") or {}
+            cause = (Wd["cause"].format(page=unquote(heading.get("page") or ""), heading=heading.get("heading") or "") if heading else
+                     Wd["mistyped"] if r.get("mistyped") else "")
+            out.append([card.get(fid, ""), shown(r.get("links_to")), status, page, text, href,
+                        Wd["positions"].get(r.get("position") or "", ""), Wd["yes"] if r.get("in_sitemap") or kind == "sitemap" else Wd["no"],
+                        unquote(r.get("sitemap_file") or ""), suggest, cause, fid, r.get("rule_id") or ""])
+    return sorted(out, key=lambda row: (row[0] == "", row[0] if row[0] != "" else 0))
+
+
 def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, *, title=None, fix=None,
-                  todos: list[dict] | None = None, words=None) -> list[dict]:
+                  todos: list[dict] | None = None, words=None, places: dict | None = None) -> list[dict]:
     """DECISIONS 322: "Nasıl okunur", "Özet" (the PDF's cards, each linked to its first row), "Sayfa bazında" (one row
     per page with a problem) and "Bulgu bazında" (one row per finding and page, with the value measured there)."""
     from . import page_rows
@@ -259,6 +322,10 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
             out.append({"name": R[key], "header": header, "rows": body, "widths": widths})
         else:  # one line saying why, never an empty sheet (DECISIONS 321 (5))
             out.append({"name": R[key], "header": [W["note"]], "rows": [[R["empty"][key]]], "widths": [140]})
+    where = where_rows(places, todos, lang)
+    if where:  # DECISIONS 337: only when the audit has an address pointed at from somewhere
+        out.append({"name": R["where"], "header": R["where_cols"], "rows": where,
+                    "widths": [7, 60, 14, 60, 30, 40, 11, 14, 40, 50, 50, 18, 24]})
     return out
 
 

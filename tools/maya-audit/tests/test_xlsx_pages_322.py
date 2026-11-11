@@ -55,9 +55,9 @@ def test_the_reader_sheets_come_first_in_the_file_language():
 
 
 @pytest.mark.parametrize("lang", ["tr", "en"])
-def test_how_to_read_is_eight_lines_without_a_filter(lang):  # six, "Okundu mu?" (323), P0-P3 (324)
+def test_how_to_read_is_ten_lines_without_a_filter(lang):  # six, "Okundu mu?" (323), P0-P3 (324), links + Quick Look (337)
     how = _sheets(lang)[client_appendix.READ[lang]["how"]]
-    assert len(how["rows"]) == 8 and how["frozen"] is False and how["filter"] is False
+    assert len(how["rows"]) == 10 and how["frozen"] is False and how["filter"] is False
     assert all(len(row) == 1 and 40 < len(row[0]) < 260 for row in how["rows"])
 
 

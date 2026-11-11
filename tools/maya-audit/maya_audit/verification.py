@@ -126,9 +126,9 @@ def _broken_link(finding, urls, ask, cfg):
     by_source: dict[str, list[dict]] = {}
     for link in evidence.get("link_sources") or []:
         by_source.setdefault(link.get("source"), []).append(link)
-    if not by_source:
+    if not by_source and not evidence.get("sitemap_only"):
         return _client_error(finding, urls, ask, cfg)
-    rows = []
+    rows = []  # DECISIONS 337: a finding of sitemap entries alone follows each entry's redirects as below
     for url in urls:
         if url not in by_source:
             # A sitemap entry: the claim is that the listed address ends in a 4xx, through its redirects.
@@ -212,6 +212,8 @@ RETESTS: dict[str, tuple[Callable, bool]] = {
     # rule id: (re-test, whether a browser's answer is worth recording beside it)
     "idx1.4xx.referenced": (_broken_link, True),
     "idx1.4xx.referenced.linked": (_broken_link, True),
+    "idx1.4xx.sitemap_only": (_broken_link, True),  # DECISIONS 337
+    "idx1.href_mistyped": (_broken_link, True),
     # The engine's own name while the audit runs; the evidence judgments rename it when the report is written
     # (`judgment.empty.*`), which is too late for this stage but kept for a report re-tested from its saved form.
     # No browser request here: the index step already asked a browser (`empty_browser_check`, in the evidence).

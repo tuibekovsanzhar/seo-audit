@@ -85,7 +85,8 @@ def test_rows_and_printed_html_carry_the_broken_link_card():
     from test_m1_broken_links import LINK_TEXT, audit, routes
     outcome, base = audit(routes())
     report = final.seal(outcome).report
-    [row] = [r for r in summary.search(report, limit=100_000)["items"] if r.get("link_cards")]
+    # DECISIONS 337: the link to the redirect (IDX-6) has its "where" rows too; this is the broken link's
+    [row] = [r for r in summary.search(report, limit=100_000)["items"] if r.get("link_cards") and r.get("check_id") == "IDX-1"]
     [card] = row["link_cards"]
     assert card["source_url"] == base + "/urunler" and card["replacement"] == "unknown"
     html = pdf.link_cards_html(row["link_cards"])

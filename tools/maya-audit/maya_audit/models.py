@@ -155,6 +155,9 @@ class SitemapDoc:
     # For a urlset: how many <image:image> and <video:video> entries it holds (SEO-036, DECISIONS 304, schema 1.24).
     image_entries: int = 0
     video_entries: int = 0
+    # How many of this file's addresses no earlier file listed (DECISIONS 337, schema 1.32): the crawl's sitemap_urls are
+    # these files' new addresses in reading order, so each address's file is known without a list per address.
+    new_urls: int | None = None
 
 
 @dataclass

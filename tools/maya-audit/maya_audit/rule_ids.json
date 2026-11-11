@@ -283,6 +283,14 @@
     "(?P<n>\\d+(?:\\.\\d+)?)\\ URL\\(s\\)\\ returned\\ a\\ server\\ error\\ \\(5xx\\)\\ on\\ the\\ one\\ request\\ made"
    ],
    [
+    "idx1.4xx.sitemap_only",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ sitemap\\ address\\(es\\)\\ end\\ at\\ a\\ client\\ error\\ \\(4xx\\);\\ no\\ page\\ read\\ links\\ to\\ them"
+   ],
+   [
+    "idx1.href_mistyped",
+    "(?P<links>\\d+(?:\\.\\d+)?)\\ link\\(s\\)\\ on\\ (?P<pages>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ have\\ a\\ mistyped\\ address\\ \\(href\\)\\ that\\ ends\\ at\\ a\\ client\\ error\\ \\(4xx\\)"
+   ],
+   [
     "idx1.4xx.referenced.linked",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ URL\\(s\\)\\ return\\ a\\ client\\ error\\ \\(4xx\\),\\ linked\\ internally\\ or\\ listed\\ in\\ the\\ sitemap;\\ linked\\ from\\ (?P<pages>\\d+(?:\\.\\d+)?)\\ page\\(s\\)"
    ],

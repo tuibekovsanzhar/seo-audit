@@ -801,7 +801,7 @@ def standard(web):
 
 def test_a_500_page_audit_of_english_and_turkish_pages_is_shown_from_its_report(standard):
     client, audit, report = standard
-    assert audit["state"] == "finished" and report["page_counts"]["pages_checked"] == 500 and report["schema_version"] == "1.31"
+    assert audit["state"] == "finished" and report["page_counts"]["pages_checked"] == 500 and report["schema_version"] == "1.32"
     view = get(client, audit, "/summary")
     counts = view["counts"]
     # Severity counts are the report's own findings, counted; nothing is added or re-judged.
@@ -1542,6 +1542,9 @@ BUILT_TITLES = {
     "ANS-4": ((("cited {engines_seen[engine]} domain-mentions on this topic and none from this site",), "perplexity cited 41 domain-mentions on this topic and none from this site"),),
     "IDX-1": ((("return a client error (4xx), {label}", "linked internally or listed in the sitemap"), "3 URL(s) return a client error (4xx), linked internally or listed in the sitemap"),
               (("not referenced by any crawled page or the sitemap",), "1 URL(s) return a client error (4xx), not referenced by any crawled page or the sitemap"),
+              # DECISIONS 337: the sitemap entries no page read links to, and mistyped hrefs
+              (("{n} sitemap address(es) end at a client error (4xx); no page read links to them",), "21 sitemap address(es) end at a client error (4xx); no page read links to them"),
+              (("{links} link(s) on {pages} page(s) have a mistyped address (href) that ends at a client error (4xx)",), "2 link(s) on 1 page(s) have a mistyped address (href) that ends at a client error (4xx)"),
               # IDX-6's findings for the same dead URLs said under IDX-1 (maya_audit.root_cause, review H10).
               (('IDX6_SUFFIX = "; linked from {pages} page(s)"',),
                "3 URL(s) return a client error (4xx), linked internally or listed in the sitemap; linked from 4 page(s)"),
@@ -1703,6 +1706,9 @@ def test_every_kind_of_finding_has_its_own_matching_explanation():
             assert label in sources, label
             titles.append((check_id, f"3 page(s) {label}"))
     titles = [(check, title) for check, title in titles if not (check in LABELLED and title in ("3 page(s) 3", "3 link(s) on 3 page(s) 3"))]
+    # DECISIONS 337: two IDX-1 titles are put together from constants (BUILT_TITLES checks their pieces in the source)
+    titles += [(check, title) for check, rows in BUILT_TITLES.items() for _, title in rows
+               if "sitemap address(es) end at" in title or "mistyped address (href)" in title]
     used = set()
     for check_id, title in titles:
         assert catalog.has_own_note(check_id, title), f"{check_id} has no explanation of its own for: {title}"

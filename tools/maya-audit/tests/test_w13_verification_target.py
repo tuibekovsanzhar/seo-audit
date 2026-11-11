@@ -33,8 +33,8 @@ def audit(**cfg):
     return outcome, build_report(outcome.result, outcome.gates, outcome.checks), fake.base_url
 
 
-def broken(outcome):
-    [f] = [f for c in outcome.checks for f in c.findings if (f.rule_id or "").startswith("idx1.4xx.referenced")]
+def broken(outcome, rule="idx1.4xx.referenced"):
+    [f] = [f for c in outcome.checks for f in c.findings if (f.rule_id or "").startswith(rule)]
     return f
 
 
@@ -42,16 +42,20 @@ def test_error_page_target_is_not_confirmed_but_the_source_is_retested():
     outcome, report, base = audit()
     f = broken(outcome)
     assert f.severity.value == "S2"  # the severity stays the engine's
-    # The pages to edit: the page whose link fails, and the sitemap entry that ends at the error; never the error page.
-    assert f.scope["urls"] == [base + "/en", base + "/eski-kampanya"]
-    assert f.evidence["sitemap_only"] == [base + "/eski-kampanya"]
-    assert any(t.startswith(base + "/404") for t in f.evidence["target_urls"])
+    # The page to edit is the page whose link fails, never the error page. The sitemap entry that ends at the error is
+    # its own finding since DECISIONS 337, with the same severity.
+    assert f.scope["urls"] == [base + "/en"]
+    assert f.evidence["target_urls"] == [f.evidence["link_sources"][0]["target"]]
     [row] = f.evidence["link_sources"]
     assert row["source"] == base + "/en" and row["links_to"] == base + PLACEHOLDER
     v = f.verification
-    assert v["state"] == "confirmed" and v["subjects"] == [base + "/en", base + "/eski-kampanya"]
+    assert v["state"] == "confirmed" and v["subjects"] == [base + "/en"]
     assert v["checked"][0]["url"] == base + "/en" and v["checked"][0]["link_present"] is True
     assert 400 <= v["checked"][0]["target_status"] < 500
+    entry = broken(outcome, "idx1.4xx.sitemap_only")
+    assert entry.severity.value == "S2" and entry.scope["urls"] == entry.evidence["sitemap_only"] == [base + "/eski-kampanya"]
+    assert entry.evidence["target_urls"] == [base + "/404"]  # where the entry ends: the error page, apart from the entry
+    assert entry.verification["state"] == "confirmed" and entry.verification["subjects"] == [base + "/eski-kampanya"]
     assert [x for x in release_gate.check_report(report) if x["rule"] == "RG-4"] == []
 
 
@@ -80,6 +84,6 @@ def test_switched_off_still_says_not_retested():
     highs = [f for c in report["checks"] for f in c["findings"] if f["severity"] in ("S1", "S2")]
     assert highs and {f["verification"]["state"] for f in highs} == {"not_retested"}
     # The re-testable one says the stage was off; the others that their rule has no re-test. Both are true.
-    [link] = [f for f in highs if f["rule_id"].startswith("idx1.4xx")]
-    assert link["verification"]["reason"].startswith("switched off")
-    assert all(f["verification"]["reason"] == "no re-test for this rule" for f in highs if f is not link)
+    links = [f for f in highs if f["rule_id"].startswith("idx1.4xx")]  # the link and the sitemap entry (DECISIONS 337)
+    assert len(links) == 2 and all(f["verification"]["reason"].startswith("switched off") for f in links)
+    assert all(f["verification"]["reason"] == "no re-test for this rule" for f in highs if f not in links)

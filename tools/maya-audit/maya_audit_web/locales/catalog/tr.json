@@ -211,5 +211,7 @@
  "Engines may not follow a canonical of a canonical, so the page the site prefers stays unclear.": "Arama motorları kanonik adresin kanonik adresini izlemeyebilir; sitenin tercih ettiği sayfa belirsiz kalır.",
  "Each link to a redirect costs crawlers and visitors one more request; linking to the final address removes it.": "Yönlendirmeye giden her bağlantı tarayıcılara ve ziyaretçilere bir istek daha harcatır; son adrese bağlantı vermek bunu kaldırır.",
  "Images over 100 KB slow the page down, most of all on mobile; a lighter file looks the same.": "100 KB'tan büyük görseller sayfayı yavaşlatır, özellikle mobilde; daha hafif bir dosya aynı görünür.",
- "A code that names the wrong language leads engines to show readers the version in another language.": "Yanlış dili belirten bir kod, arama motorlarının okuyucuya başka dildeki sürümü göstermesine yol açar."
+ "A code that names the wrong language leads engines to show readers the version in another language.": "Yanlış dili belirten bir kod, arama motorlarının okuyucuya başka dildeki sürümü göstermesine yol açar.",
+ "A link whose address is text or misses its / or # sends the visitor to an error page.": "Adresi metin olan ya da başında / veya # eksik olan bir bağlantı, ziyaretçiyi hata sayfasına gönderir.",
+ "Google visits every sitemap address; entries that fail waste its crawl and show as errors in Search Console.": "Google site haritasındaki her adresi ziyaret eder; hata veren kayıtlar taramasını boşa harcar ve Search Console'da hata olarak görünür."
 }

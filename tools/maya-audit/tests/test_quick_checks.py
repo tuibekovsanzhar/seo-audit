@@ -203,7 +203,7 @@ def test_product_markup_without_gtin_or_mpn_is_found_from_the_fields_kept_in_rep
     assert f.check_id == "STR-3" and _paths(f) == ["/products/mavi-elbise"] and f.launch_gated == []
     assert f.evidence["pages"][0]["brand"] is None and f.evidence["product_pages_with_markup"] == 4
     report = build_report(outcome.result, outcome.gates, outcome.checks)
-    assert report["schema_version"] == "1.31"
+    assert report["schema_version"] == "1.32"
     pages = {p["url"]: p for p in report["crawl"]["pages"]}
     [kept] = pages[SHOP + "/products/kirmizi-elbise"]["analysis"]["structured_data"]["products"]
     assert kept == {"type": "Product", "gtin": {}, "mpn": None, "sku": "KE-1", "brand": "Quick",

@@ -278,18 +278,39 @@
     "başka bir durum"
    ]
   },
-  "link_title": "DÜZENLENECEK BAĞLANTILAR",
+  "link_title": "NEREDE DÜZELTİLECEK",
   "link_cols": [
-   "Düzenlenecek sayfa",
-   "Bağlantı metni",
-   "Bağlantının adresi",
-   "Vardığı yer",
-   "Yeni adres"
+   "Bağlantının bulunduğu yer",
+   "Bağlantı metni / yazılan değer",
+   "Sorunlu adres",
+   "HTTP durumu",
+   "Önerilen hedef"
   ],
-  "link_unknown": "bilinmiyor",
-  "link_sitemap": "sitemap.xml kaydı",
-  "link_more": "+{n} bağlantı daha (tam liste ekteki adres listesi dosyasında)",
-  "link_note": "Doğru yeni adresi Maya bilmez: bağlantının gitmesi gereken sayfayı seçin ya da bağlantıyı kaldırın.",
+  "link_unknown": "kaldırın",
+  "link_sitemap": "Site haritası",
+  "link_more": "+{n} satır daha (tam liste ekte: «Bağlantı yerleri»)",
+  "where_kinds": {
+   "canonical": "kanonik etiketi",
+   "hreflang": "hreflang etiketi",
+   "not_linked": "bağlantı bulunamadı"
+  },
+  "where_suggest": {
+   "remove": "kaldırın",
+   "remove_or_redirect": "kaldırın veya yönlendirin",
+   "fix_generator": "site haritası oluşturucuyu düzeltin",
+   "fix_loop": "döngüyü düzeltin"
+  },
+  "where_redirect": "yönlendiriyor",
+  "positions": {
+   "menu": "menü",
+   "footer": "altbilgi",
+   "body": "gövde",
+   "head": "<head>"
+  },
+  "entries_files": "Site haritası dosyaları: {files}.",
+  "entries_cause": "Olası neden (çıkarım): {n} adres okunan sayfalardaki başlıklarla aynı (örnek: {page} sayfasındaki «{heading}»). Site haritası oluşturucuyu kontrol edin.",
+  "entries_removed": "Kalan {n} kayıt kaldırılmış sayfalara benziyor: kaldırın veya yönlendirin.",
+  "link_note": "Maya yalnızca bir yönlendirmenin vardığı çalışan sayfayı önerir; doğru yeni adresi uydurmaz: bağlantının gitmesi gereken sayfayı seçin ya da kaldırın.",
   "verification": {
    "confirmed": "Yeniden sınandı: doğrulandı",
    "changed": "Yeniden sınandı: değişti",
@@ -711,18 +732,39 @@
     "another state"
    ]
   },
-  "link_title": "LINKS TO EDIT",
+  "link_title": "WHERE TO FIX",
   "link_cols": [
-   "Page to edit",
-   "Link text",
-   "Links to",
-   "Ends at",
-   "Replacement"
+   "Where it is",
+   "Link text / written value",
+   "Address with the problem",
+   "HTTP status",
+   "Point to instead"
   ],
-  "link_unknown": "unknown",
-  "link_sitemap": "sitemap.xml entry",
-  "link_more": "+{n:more link|more links} (full list in the attached address list)",
-  "link_note": "Maya does not know the right new address: choose the page the link should point to, or remove the link.",
+  "link_unknown": "remove",
+  "link_sitemap": "Sitemap",
+  "link_more": "+{n:more row|more rows} (full list in the appendix: “Link locations”)",
+  "where_kinds": {
+   "canonical": "canonical tag",
+   "hreflang": "hreflang tag",
+   "not_linked": "no link found"
+  },
+  "where_suggest": {
+   "remove": "remove",
+   "remove_or_redirect": "remove or redirect",
+   "fix_generator": "fix the sitemap generator",
+   "fix_loop": "fix the loop"
+  },
+  "where_redirect": "redirects",
+  "positions": {
+   "menu": "menu",
+   "footer": "footer",
+   "body": "body",
+   "head": "<head>"
+  },
+  "entries_files": "Sitemap files: {files}.",
+  "entries_cause": "Likely cause (inference): {n:address matches|addresses match} headings on pages read (example: “{heading}” on {page}). Check the sitemap generator.",
+  "entries_removed": "The other {n:entry looks|entries look} like removed pages: remove or redirect.",
+  "link_note": "Maya only offers the working page a redirect itself ends at; it never makes up a new address: choose where the link should point, or remove it.",
   "verification": {
    "confirmed": "Checked again: confirmed",
    "changed": "Checked again: changed",
