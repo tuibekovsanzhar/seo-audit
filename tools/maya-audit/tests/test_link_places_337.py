@@ -133,7 +133,8 @@ def test_the_appendix_has_link_locations_and_the_quick_look_line(site):
     assert eski[2:13] == ["404", site.base + "/hakkimizda", "Eski kampanya", "/eski", "gövde", "Hayır", "", "", "", "", "kaldırın"]
     sitemap = rows[(site.base + "/kredi-karti-aidati-yok!", "yalnızca site haritasında")]
     assert sitemap[7:11] == ["Evet", site.base + "/sitemap.xml", site.base + "/kredi-karti-aidati-yok!", "1"]  # DECISIONS 340
-    assert sitemap[11].endswith(" TSİ)") and sitemap[12] == "site haritası oluşturucuyu düzeltin"
+    # DECISIONS 346: the card's 301 target (here no related page: 410), and the generator for an address made from a heading
+    assert sitemap[11].endswith(" TSİ)") and sitemap[12] == "410 (ilgili sayfa yok); site haritası oluşturucuyu düzeltin"
     assert sitemap[13].startswith("çıkarım:") and "Kredi kartı aidatı yok!" in sitemap[13]
 
 

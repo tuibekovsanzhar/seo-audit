@@ -491,6 +491,19 @@ TARGET_BASIS = {"tr": {"read": "", "answered": "; site haritası kontrolünde 20
                 "en": {"read": "", "answered": "; 200 in the sitemap check", "sitemap": "; in the sitemap, not read in this audit"}}
 
 
+def target_words(row: dict, lang: str) -> str:
+    """The short line of a 301 target for a sheet cell (DECISIONS 346): "301 → /x (üst klasör sayfası)",
+    "301 → /x (kontrol edin; en yakın var olan üst sayfa)", "410 (ilgili sayfa yok)"."""
+    target = row.get("target")
+    if not target:
+        return "410 (ilgili sayfa yok)" if lang == "tr" else "410 (no related page)"
+    W, B = TARGET_WHY.get(lang, TARGET_WHY["en"]), TARGET_BASIS.get(lang, TARGET_BASIS["en"])
+    why = W.get(row.get("target_basis") or "", "") + B.get(row.get("target_known_as") or "", "")
+    if row.get("target_firm", True) is False:
+        why = ("kontrol edin; " if lang == "tr" else "check it; ") + why
+    return f"301 → {_short(target)} ({why})" if why else f"301 → {_short(target)}"
+
+
 def _g(f, name):
     return f.get(name) if isinstance(f, dict) else getattr(f, name, None)
 

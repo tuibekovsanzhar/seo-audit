@@ -364,6 +364,10 @@ def where_rows(places: dict | None, todos: list[dict] | None, lang: str) -> list
             href = r.get("href") or (Wd["not_recorded"] if kind == "link" else "")
             url = r.get("replacement_url")
             suggest = shown(url) if url else Wd["suggest"].get(r.get("suggested") or "remove", r.get("suggested") or "")
+            if "target_basis" in r:  # DECISIONS 346: the 301 target the card gives this sitemap address, worded alike
+                from .checks.team_rules import target_words
+                # an address made from a heading also needs the generator fixed (DECISIONS 337)
+                suggest = target_words(r, lang) + (f"; {Wd['suggest']['fix_generator']}" if r.get("suggested") == "fix_generator" else "")
             heading = r.get("heading") or {}
             cause = (Wd["cause"].format(page=unquote(heading.get("page") or ""), heading=heading.get("heading") or "") if heading else
                      Wd["mistyped"] if r.get("mistyped") else "")

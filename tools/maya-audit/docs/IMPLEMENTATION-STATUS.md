@@ -2168,5 +2168,22 @@ change). After: 15 firm 301 targets, 6 "kontrol edin", no 410; the five the owne
 | fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3208 passed, 4 skipped, 135 deselected, 1 warning in 536.51s (0:08:56)` |
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3343 passed, 4 skipped, 1 warning in 961.17s (0:16:01)` |
 | CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
+| Push | `5a91953..aedfdd1` pushed 2026-11-12 (owner: "push"); CI run 43294813481 green on the first attempt, 19:53:50-20:04:58Z (~11 min). |
+
+## "Bağlantı yerleri": the card's 301 target per sitemap address (2026-11-12, DECISIONS 346)
+
+enpara fee70191 (copy of `artifacts/` in a scratch folder): "Önerilen hedef" for the 21 sitemap rows was "site haritası
+oluşturucuyu düzeltin" or "kaldırın veya yönlendirin"; now the same target and reason as "Bulgu bazında", e.g.
+"301 → /kartlar/enparacom-kredi-karti (üst klasör sayfası)", "301 → /sirketim (kontrol edin; en yakın var olan üst
+sayfa)", "301 → /odemeler/islem-kisitlari (üst klasör sayfası; site haritasında, bu denetimde okunmadı)",
+"301 → /kampanyalar (kontrol edin; aynı bölümde, zayıf adres benzerliği)". 21 of 21 with a target (15 firm, 6 kontrol
+edin); 13 made from a heading also end "; site haritası oluşturucuyu düzeltin".
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_where_targets_346.py tests/test_link_places_337.py` | `2 passed` + `test_link_places_337` passed |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3210 passed, 4 skipped, 135 deselected, 1 warning in 535.85s (0:08:55)` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3345 passed, 4 skipped, 1 warning in 929.83s (0:15:29)` |
+| CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
 

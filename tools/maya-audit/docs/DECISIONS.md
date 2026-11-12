@@ -4864,3 +4864,14 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      failed once on that order.
      *Also fixed:* an audit with no redirect at all (an empty `redirects` list) no longer rebuilds the records from pages.
      Tests: `tests/test_redirect_targets_345.py` (7); `test_expert_review_344` follows the direct-parent rule.
+346. **"Bağlantı yerleri" gives each missing sitemap address the card's 301 target (Owner, 2026-11-12: the same target
+     and reason as "Bulgu bazında", "(kontrol edin)" kept where weak; the cell's wording and keeping the generator advice
+     after the target are agent defaults).** The sheet's "Önerilen hedef" for a sitemap row now reads the sitemap-errors
+     card's suggestion for that address (`link_places` passes `target`, `target_basis`, `target_firm`,
+     `target_known_as` from `evidence.suggestions`; `team_rules.target_words` words it): "301 → /x (üst klasör
+     sayfası)", "301 → /x (kontrol edin; en yakın var olan üst sayfa)", "410 (ilgili sayfa yok)", with "; site
+     haritasında, bu denetimde okunmadı" where the sitemap alone lists the target, as in "Bulgu bazında". An address the sitemap generator made from a
+     heading (DECISIONS 337) keeps "; site haritası oluşturucuyu düzeltin" after its target; the heading stays in "Olası
+     neden". A row with no suggestion (an older card) keeps the old words. enpara fee70191: 21 of 21 rows with a target
+     (15 firm, 6 kontrol edin; 13 also "oluşturucuyu düzeltin").
+     Tests: `tests/test_where_targets_346.py` (2); `test_link_places_337` follows the new cell.

@@ -138,6 +138,11 @@ def _rows_for(f: dict, c: _Crawl) -> list[dict]:
             row.update({"sitemap_loc": e.get("sitemap_loc"), "sitemap_line": e.get("sitemap_line"),
                         "sitemap_read_at": e.get("sitemap_read_at") or c.sitemap_step,
                         "sitemap_read_approx": not e.get("sitemap_read_at") and bool(c.sitemap_step)})
+            # DECISIONS 346: the card's 301 target for this address (DECISIONS 344, 345), for "Önerilen hedef"
+            s = next((x for x in _dicts(ev.get("suggestions")) if x.get("url") == u), None)
+            if s is not None:
+                row.update({"target": s.get("target"), "target_basis": s.get("target_basis"),
+                            "target_firm": s.get("target_firm", True), "target_known_as": s.get("target_known_as")})
             rows.append(row)
         return rows
     if rule in SERVER:
