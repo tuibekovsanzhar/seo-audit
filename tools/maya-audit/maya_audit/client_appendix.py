@@ -298,8 +298,11 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
     """The appendix's sheets: the four for readers who are not technical (DECISIONS 322), then the technical ones.
     `todos`: the team report's cards, so "Özet" has the PDF's cards and the rows their numbers; `words(finding)`: the
     text library's plain problem name and fix."""
+    from . import checklist
+    # DECISIONS 342: the SEO team's 165-item checklist, after the reader sheets
+    listed = checklist.sheets(selection, lang, todos, title) if selection.get("_checklist_facts") else []
     return reader_sheets(selection, lang, lists, title=title, fix=fix, todos=todos, words=words, places=places) + \
-        technical_sheets(selection, lang, lists, title, fix, label, line)
+        listed + technical_sheets(selection, lang, lists, title, fix, label, line)
 
 
 def _link(url: str | None, text: str) -> dict | str:

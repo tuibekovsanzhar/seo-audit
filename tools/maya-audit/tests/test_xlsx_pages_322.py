@@ -16,9 +16,9 @@ from maya_audit import client_appendix, client_selection as cs, page_rows, xlsx
 from test_v03_client_report import SITE, finding, page, report
 
 ROOT = Path(__file__).resolve().parents[1]
-TR_SHEETS = ["Nasıl okunur", "Özet", "Sayfa bazında", "Bulgu bazında",
+TR_SHEETS = ["Nasıl okunur", "Özet", "Sayfa bazında", "Bulgu bazında", "Kontrol listesi", "Kontrol listesi özeti",  # 342
              "Bulgular", "Etkilenen adresler", "Kilit sayfalar", "Şablonlar", "Kapsam", "Yöntem"]
-EN_SHEETS = ["How to read", "Summary", "By page", "By finding",
+EN_SHEETS = ["How to read", "Summary", "By page", "By finding", "Checklist", "Checklist totals",  # 342
              "Findings", "Affected URLs", "Key pages", "Templates", "Coverage", "Method"]
 
 

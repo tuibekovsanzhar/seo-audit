@@ -229,6 +229,22 @@ th { text-align: left; font-size: 9pt; font-weight: 600; color: var(--faint); pa
 .plevel.p0 { background: var(--high-bg, #fdecea); border-color: var(--high, #b42318); color: var(--high, #b42318); }
 .plevel.p1 { border-color: var(--high, #b42318); color: var(--high, #b42318); }
 .plevel.p2 { border-color: var(--med); color: var(--med); }
+/* DECISIONS 342: the checklist page */
+.clp { display: grid; grid-template-columns: 38fr 62fr; gap: 18pt; height: 540pt; }
+.clp .card { padding: 14pt 18pt; overflow: hidden; }
+.clres { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6pt; margin: 8pt 0 12pt; }
+.clr { border: .6pt solid var(--line); border-radius: 4pt; padding: 6pt 4pt; text-align: center; }
+.clr b { display: block; font-size: 17pt; color: var(--ink); } .clr span { font-size: 7.4pt; color: var(--muted); }
+.clr.issue b { color: var(--high, #b42318); } .clr.pass b { color: #2f7d4f; }
+.clsrc { font-size: 8.6pt; margin: 4pt 0 10pt; color: var(--ink); }
+.clp ul { margin: 5pt 0 0 0; padding-left: 13pt; font-size: 8.4pt; line-height: 1.28; }
+.clp li { margin-top: 2pt; } .clp .why { color: var(--faint); } .clp .mono { color: var(--faint); font-size: 7.6pt; }
+.cltab table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8.2pt; }
+.cltab th { text-align: right; color: var(--faint); font-weight: 600; padding: 0 0 4pt 4pt; font-size: 7.6pt; }
+.cltab th:first-child, .cltab td:first-child { text-align: left; width: 40%; padding-left: 0; }
+.cltab td { text-align: right; padding: 4pt 0 3pt 4pt; border-top: .5pt solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cltab td.z { color: var(--faint); }
+.cltab .note { font-size: 8pt; color: var(--faint); margin-top: 8pt; line-height: 1.3; }
 .card.tpl { padding: 16pt 20pt; }
 .tpl .note { font-size: 8.4pt; color: var(--faint); margin-top: 10pt; line-height: 1.3; }
 .tpl table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9pt; margin-top: 8pt; }
@@ -619,6 +635,26 @@ def page_templates(d, L):
             f'<div class="note">{e(L["tpl_note"])}</div></div></div>')
 
 
+def page_checklist(d, L):
+    """DECISIONS 342: the SEO team's checklist on one page (totals per result and group, missing data, issues)."""
+    c = d["checklist"]
+    results = "".join(f'<div class="clr {e(r["key"])}"><b>{e(r["n"])}</b><span>{e(r["label"])}</span></div>' for r in c["results"])
+    sources = " · ".join(f'{e(s["label"])} {e(s["n"])}' for s in c["sources"]) or "—"
+    issues = "".join(f'<li><span class="mono">{e(i["id"])}</span> {e(i["item"])} <span class="why">· {e(i["ref"])}</span></li>'
+                     for i in c["issues"]) or f'<li>{e(L["cl_none"])}</li>'
+    if c.get("issues_more"):
+        issues += f'<li class="why">{e(fmt(L["cl_issues_more"], n=c["issues_more"]))}</li>'
+    head = "".join(f"<th>{e(x)}</th>" for x in L["cl_cols"])
+    body = "".join("<tr>" + f'<td>{e(g["group"])}</td><td>{e(g["n"])}</td>'
+                   + "".join(f'<td class="{"z" if not v else ""}">{e(v)}</td>' for v in g["counts"]) + "</tr>" for g in c["groups"])
+    left = (f'<div class="card"><div class="cardhead"><h3>{e(L["cl_results"])}</h3><span>{e(c["n"])}</span></div>'
+            f'<div class="clres">{results}</div><div class="eyebrow">{e(L["cl_sources"])}</div><p class="clsrc">{sources}</p>'
+            f'<div class="eyebrow">{e(L["cl_issues"])}</div><ul>{issues}</ul></div>')
+    right = (f'<div class="card cltab"><table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
+             f'<div class="note">{e(L["cl_note"])}</div></div>')
+    return f'<div class="body"><div class="clp">{left}{right}</div></div>'
+
+
 def page6(d, L):
     """DECISIONS 300: Maya's own limits (never as the client's problems), "Teyit edin", key pages, the appendix."""
     own = "".join(f"<li>{e(x)}</li>" for x in d.get("own_limits") or []) or "<li>—</li>"
@@ -669,6 +705,8 @@ def build_html(d):
         pages.append((5, L["tpl_title"], L["tpl_sub"], page_templates(d, L)))
     if has_client_page(d):
         pages.append((5, L["p6_title"], L["p6_sub"], page6(d, L)))
+    if d.get("checklist"):  # DECISIONS 342
+        pages.append((5, L["cl_title"], L["cl_sub"], page_checklist(d, L)))
     total = len(pages)
     body = "".join(f'<section class="page">{header(d, L, tab, t, s)}{content}{footer(d, L, i + 1, total)}</section>'
                    for i, (tab, t, s, content) in enumerate(pages))
@@ -808,16 +846,17 @@ def check_pdf(pdf_path, d):
     else:
         doc = fitz.open(str(pdf_path))
         texts = [pg.get_text() for pg in doc]
+    extra = 1 if d.get("checklist") else 0  # DECISIONS 342: the checklist page, outside RG-15's ten
     expected = (len(summary_pages(d)) + -(-len(d.get("todos") or []) // 4) + (1 if has_client_page(d) else 0)
-                + (1 if d.get("templates") else 0))
+                + (1 if d.get("templates") else 0) + extra)
     if len(doc) != expected:
         problems.append(f"HATA: PDF {len(doc)} sayfa; {expected} olmalı (bir bölüm taştı)")
     # DECISIONS 300: the client PDF has at most 10 pages and 15 cards (release gate RG-15, RG-16).
     gate = load_gate(d)
     if gate is not None:
-        for v in gate.check_client_output({}, pages=len(doc), cards=len(d.get("todos") or [])):
+        for v in gate.check_client_output({}, pages=len(doc) - extra, cards=len(d.get("todos") or [])):
             problems.append(f"HATA: {v['rule']}: {v['message']}")
-    elif len(doc) > 10 or len(d.get("todos") or []) > 15:
+    elif len(doc) - extra > 10 or len(d.get("todos") or []) > 15:
         problems.append("HATA: client PDF over 10 pages or 15 cards")
     text = "".join(texts)
     if d["lang"] == "tr" and not any(ch in text for ch in "ğüşıöçİĞÜŞÖÇ"):

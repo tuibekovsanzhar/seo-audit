@@ -4696,3 +4696,44 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      moodist 2d72fea0, nihan b3198942) was checked for rows without their own value: one left, nihan's menu-language row
      of its note card, which now says the page's language and the labels in the other (`menu_seen`).
      Tests: `tests/test_head_rows_341.py`.
+342. **The SEO team's 165-item checklist, visibly checked in every audit: an Ek sheet with every item and one page of
+     the team report (Owner, 2026-11-12, at İlginay's request: the checklist `SEO_Audit_Checklist.xlsx`, its mapping
+     `reviews/checklist/mapping.xlsx`, the five results, the evidence line with a rule ID or card number, the missing
+     data source for "Veri eksik", totals per result and per group; how each item is decided, the conditions, the
+     sheet layout and the page are agent defaults).** Global rules for every audit; enpara fee70191 was only the test
+     case.
+     (1) *The items* (`maya_audit/checklist_items.json`, made by `scripts/checklist_items.py` from the mapping, which is
+     not in git): id, group, item, priority, the checklist's "Uygulanabilirlik", Maya's method (full, partial, review =
+     AI+expert, manual, data = needs a connection, missing = not automated yet), the checks and rule-id prefixes the item
+     reads, the data sources the whole item needs, what a partial item still needs once Maya's part is clean ("review"
+     or data sources), and the site condition. INT-1..4 are the crawl's own records, not report checks: INT-3 reads as
+     RND-1/RND-2, the scope and completeness items read the crawl. Every prefix matches a known rule and every check a
+     known check (tested).
+     (2) *How an item is decided* (`maya_audit/checklist.py`, first match wins): its site condition does not hold ->
+     Uygulanmaz with the reason (shop items on a site with no product page and a non-shop business type, one language,
+     no local-business signal, no category/article/PDF/video/FAQ/internal search/news page, under 10,000 addresses,
+     no IndexNow key, no raw-vs-rendered gap for SPA items); a few items from the audit's own records (business type and
+     page types; Core Web Vitals p75 from CrUX: "good" Geçti, else Sorun, with the value; field data kept apart; the
+     crawl's start, cap and completeness; the re-asking of serious findings); a problem (S1-S4) of its rules on a card
+     or in the appendix -> Sorun, the PDF's card number and title, else the finding's title, and the rule; a problem
+     waiting under "Teyit edin" -> İnceleme gerekli; a manual item -> Veri eksik, "Manuel"; a source the item needs is
+     not connected -> Veri eksik, that source (Search Console, GA4, PageSpeed, Merchant Center, Manuel, Bing Webmaster
+     Tools, Google Business Profile, server logs, DataForSEO, CRM, IndexNow key, JS render); an expert-judgement or
+     not-yet-automated item -> İnceleme gerekli; every check it reads did not run -> Veri eksik with that check's source;
+     no page read is what its checks are about -> Uygulanmaz; then a full item -> Geçti, a partial one -> Geçti when
+     Maya's part is the item, Veri eksik when the rest needs a source not connected, else İnceleme gerekli. Rejected
+     findings and Maya's own limits count for nothing; Info notes are not issues.
+     (3) *Where it is read from:* `client_selection.select` keeps `_checklist_facts` (each check's status, the
+     connections as yes/no and never a key, CrUX, the site's shape), so the Ek and the team report decide from the same
+     selection as the cards; nothing is stored in report.json and every saved audit gets it with no reassessment.
+     (4) *Ek:* "Kontrol listesi" after the reader sheets (ID, Grup, Kontrol maddesi, Öncelik, Sonuç, Kanıt, Maya kuralı /
+     kart, Eksik veri kaynağı; 165 rows) and "Kontrol listesi özeti" (Toplam, then the 20 groups: Madde and the five
+     results). English: "Checklist", "Checklist totals", with English item and group names written for it (the
+     checklist exists only in Turkish; `GROUP_EN`, `ITEM_EN` in the script), so the English report holds no Turkish.
+     The language-mix test leaves out the checklist's own Turkish names ("Önemli URL HTTP status" is the team's
+     wording, not an English template).
+     (5) *Team report:* one page "SEO kontrol listesi" after "Kapsam ve ek": the five totals, the missing data sources
+     with their counts, the items with an issue (14 shown, the rest "+N madde daha (ekte)") and the 20 groups' table.
+     RG-15 (at most 10 pages) does not count it: the page was asked for on top of a report that may already have ten.
+     Tests: `tests/test_checklist_342.py` (14); the sheet lists in `test_xlsx_pages_322`, `test_v03_client_report`;
+     `checklist_items.json` in the package data.

@@ -474,7 +474,16 @@
   ],
   "tpl_note": "Bir şablondaki düzeltme o şablonun tüm sayfalarını düzeltir. Tam liste ekte (Şablonlar sayfası).",
   "tpl_empty": "Bu denetimde şablon bilgisi yok (sayfa gruplaması yapılamadı).",
-  "chain_canon": "Kanonik: {pairs}."
+  "chain_canon": "Kanonik: {pairs}.",
+  "cl_title": "SEO kontrol listesi",
+  "cl_sub": "Ekibin 165 maddelik listesinin bu denetimdeki sonucu; her maddenin kanıtı ekte (Kontrol listesi sayfası).",
+  "cl_results": "Sonuçlar",
+  "cl_sources": "Eksik veri kaynakları",
+  "cl_issues": "Sorun çıkan maddeler",
+  "cl_issues_more": "+{n} madde daha (ekte)",
+  "cl_none": "Sorun çıkan madde yok.",
+  "cl_cols": ["Grup", "Madde", "Geçti", "Sorun", "Veri eksik", "İnceleme", "Uygulanmaz"],
+  "cl_note": "Veri eksik: bağlantı ya da elle bilgi gerekiyor. İnceleme gerekli: uzman kararı ya da Maya'nın henüz otomatik bakmadığı kısım. Uygulanmaz: siteye uymuyor (gerekçesi ekte)."
  },
  "en": {
   "doc_kind": "WEBSITE AUDIT",
@@ -949,6 +958,15 @@
   ],
   "tpl_note": "A fix in a template fixes every page of it. The full list is in the appendix (Templates sheet).",
   "tpl_empty": "No template information in this audit (the page grouping could not be made).",
-  "chain_canon": "Canonical: {pairs}."
+  "chain_canon": "Canonical: {pairs}.",
+  "cl_title": "SEO checklist",
+  "cl_sub": "The team's 165-item checklist on this audit; each item's evidence is in the appendix (Checklist sheet).",
+  "cl_results": "Results",
+  "cl_sources": "Missing data sources",
+  "cl_issues": "Items with an issue",
+  "cl_issues_more": "{n:more item|more items} in the appendix",
+  "cl_none": "No item has an issue.",
+  "cl_cols": ["Group", "Items", "Pass", "Issue", "Data missing", "Review", "N/A"],
+  "cl_note": "Data missing: a connection or manual input is needed. Needs review: an expert's call, or a part Maya does not check automatically yet. Not applicable: does not fit the site (reason in the appendix)."
  }
 }

@@ -1,0 +1,3317 @@
+{
+ "source": "reviews/checklist/mapping.xlsx (SEO_Audit_Checklist.xlsx, 2026-11-03)",
+ "decisions": 342,
+ "items": [
+  {
+   "id": "SEO-001",
+   "group": "01 · Audit hazırlığı ve veri güvenilirliği",
+   "item": "Mülkiyet ve yetki envanteri",
+   "priority": "P1",
+   "group_en": "01 · Audit preparation and data reliability",
+   "item_en": "Ownership and access inventory",
+   "applies_to": "Tüm siteler",
+   "method": "manual",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "manual"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Access inventory is outside what a crawl can see."
+  },
+  {
+   "id": "SEO-002",
+   "group": "01 · Audit hazırlığı ve veri güvenilirliği",
+   "item": "Hedef ve dönüşüm tanımı",
+   "priority": "P1",
+   "group_en": "01 · Audit preparation and data reliability",
+   "item_en": "Goals and conversions",
+   "applies_to": "Tüm siteler",
+   "method": "manual",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "manual"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Goals and conversions are a business decision (the web plan only records brand and key pages)."
+  },
+  {
+   "id": "SEO-003",
+   "group": "01 · Audit hazırlığı ve veri güvenilirliği",
+   "item": "İşletme ve site tipi sınıflaması",
+   "priority": "P1",
+   "group_en": "01 · Audit preparation and data reliability",
+   "item_en": "Business and site type",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "STR-9"
+   ],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Platform, CDN, languages and page types are detected; a business-type label (e-commerce, local, finance, SaaS) is not (Stage 4)."
+  },
+  {
+   "id": "SEO-004",
+   "group": "01 · Audit hazırlığı ve veri güvenilirliği",
+   "item": "Veri aralığı ve mevsimsellik",
+   "priority": "P1",
+   "group_en": "01 · Audit preparation and data reliability",
+   "item_en": "Date range and seasonality",
+   "applies_to": "Tüm siteler",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "gsc",
+    "ga4"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Needs GSC and GA4 date ranges."
+  },
+  {
+   "id": "SEO-005",
+   "group": "01 · Audit hazırlığı ve veri güvenilirliği",
+   "item": "URL envanteri birleştirme",
+   "priority": "P1",
+   "group_en": "01 · Audit preparation and data reliability",
+   "item_en": "Merged URL inventory",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": [
+    "gsc",
+    "ga4"
+   ],
+   "when": null,
+   "maya_note": "Crawl links + sitemap + key pages are merged into one inventory; GSC and GA4 URLs are not."
+  },
+  {
+   "id": "SEO-006",
+   "group": "01 · Audit hazırlığı ve veri güvenilirliği",
+   "item": "URL tipleri örneklemi",
+   "priority": "P1",
+   "group_en": "01 · Audit preparation and data reliability",
+   "item_en": "URL type sample",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Template keys and page types for every page read (DECISIONS 297/298)."
+  },
+  {
+   "id": "SEO-007",
+   "group": "01 · Audit hazırlığı ve veri güvenilirliği",
+   "item": "GSC mülk kapsamı",
+   "priority": "P1",
+   "group_en": "01 · Audit preparation and data reliability",
+   "item_en": "GSC property scope",
+   "applies_to": "Tüm siteler",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "gsc"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Needs GSC property list (domain vs URL-prefix)."
+  },
+  {
+   "id": "SEO-008",
+   "group": "01 · Audit hazırlığı ve veri güvenilirliği",
+   "item": "Başlangıç ölçümleri",
+   "priority": "P1",
+   "group_en": "01 · Audit preparation and data reliability",
+   "item_en": "Baseline measurements",
+   "applies_to": "Tüm siteler",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "gsc",
+    "ga4"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Needs GSC/GA4 baselines; DataForSEO domain overview/ranked keywords give a paid partial baseline."
+  },
+  {
+   "id": "SEO-009",
+   "group": "02 · Host, güvenlik ve HTTP davranışı",
+   "item": "Tek tercih edilen host",
+   "priority": "P1",
+   "group_en": "02 · Host, security and HTTP behaviour",
+   "item_en": "One preferred host",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-2"
+   ],
+   "rules": [
+    "idx2.no_redirect",
+    "idx2.temporary"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "http/https and www variants must end on one host."
+  },
+  {
+   "id": "SEO-010",
+   "group": "02 · Host, güvenlik ve HTTP davranışı",
+   "item": "HTTPS ve sertifika",
+   "priority": "P1",
+   "group_en": "02 · Host, security and HTTP behaviour",
+   "item_en": "HTTPS and certificate",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-2",
+    "TSEO-1"
+   ],
+   "rules": [
+    "idx2.expires",
+    "idx2.invalid",
+    "tseo1.mixed"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "TLS validity, expiry, HTTPS redirect, mixed content."
+  },
+  {
+   "id": "SEO-011",
+   "group": "02 · Host, güvenlik ve HTTP davranışı",
+   "item": "Önemli URL HTTP status",
+   "priority": "P1",
+   "group_en": "02 · Host, security and HTTP behaviour",
+   "item_en": "Key URL HTTP status",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-1"
+   ],
+   "rules": [
+    "idx1."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Status of every page read; key and sitemap pages raised."
+  },
+  {
+   "id": "SEO-012",
+   "group": "02 · Host, güvenlik ve HTTP davranışı",
+   "item": "5xx ve altyapı hataları",
+   "priority": "P1",
+   "group_en": "02 · Host, security and HTTP behaviour",
+   "item_en": "5xx and infrastructure errors",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-1",
+    "PRF-2"
+   ],
+   "rules": [
+    "idx1.5xx",
+    "prf2."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "5xx, connection errors, timeouts, intermittent failures (logs not read)."
+  },
+  {
+   "id": "SEO-013",
+   "group": "02 · Host, güvenlik ve HTTP davranışı",
+   "item": "Soft 404 ve boş şablon",
+   "priority": "P1",
+   "group_en": "02 · Host, security and HTTP behaviour",
+   "item_en": "Soft 404 and empty templates",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "IDX-1"
+   ],
+   "rules": [
+    "idx1.soft404",
+    "idx1.empty",
+    "idx1.error_text"
+   ],
+   "needs": [],
+   "rest": [
+    "gsc"
+   ],
+   "when": null,
+   "maya_note": "Rule-based soft 404 and empty templates; GSC soft-404 report and expert review of borderline pages missing."
+  },
+  {
+   "id": "SEO-014",
+   "group": "02 · Host, güvenlik ve HTTP davranışı",
+   "item": "Yönlendirme zincirleri",
+   "priority": "P1",
+   "group_en": "02 · Host, security and HTTP behaviour",
+   "item_en": "Redirect chains",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-3"
+   ],
+   "rules": [
+    "idx3.chain",
+    "idx3.loop",
+    "idx3.to_http",
+    "idx3.cookie",
+    "idx3.intermittent"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Chains, loops, temporary redirects."
+  },
+  {
+   "id": "SEO-015",
+   "group": "02 · Host, güvenlik ve HTTP davranışı",
+   "item": "Yönlendirme hedef alaka düzeyi",
+   "priority": "P1",
+   "group_en": "02 · Host, security and HTTP behaviour",
+   "item_en": "Redirect target relevance",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "IDX-1",
+    "IDX-3"
+   ],
+   "rules": [
+    "idx1.soft404.redirect",
+    "idx3.other_host"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Redirects to the homepage or another host are flagged; topical relevance of the target needs AI/expert."
+  },
+  {
+   "id": "SEO-016",
+   "group": "02 · Host, güvenlik ve HTTP davranışı",
+   "item": "CDN / WAF bot engeli",
+   "priority": "P1",
+   "group_en": "02 · Host, security and HTTP behaviour",
+   "item_en": "CDN / WAF bot blocking",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "ACC-4",
+    "ACC-9"
+   ],
+   "rules": [
+    "acc4.",
+    "acc9."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Browser vs crawler user agents compared; challenges and 429s classified (CDN logs not read)."
+  },
+  {
+   "id": "SEO-017",
+   "group": "02 · Host, güvenlik ve HTTP davranışı",
+   "item": "Dev ve staging erişimi",
+   "priority": "P1",
+   "group_en": "02 · Host, security and HTTP behaviour",
+   "item_en": "Dev and staging access",
+   "applies_to": "Tüm siteler",
+   "method": "manual",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "manual"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Staging hosts are not known to the crawl (could be guessed, not without the owner)."
+  },
+  {
+   "id": "SEO-018",
+   "group": "02 · Host, güvenlik ve HTTP davranışı",
+   "item": "Sunucu yanıt hızı",
+   "priority": "P1",
+   "group_en": "02 · Host, security and HTTP behaviour",
+   "item_en": "Server response time",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "PRF-1"
+   ],
+   "rules": [
+    "prf1.slow",
+    "prf1.home_ttfb"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "TTFB of every HTML page, homepage separately."
+  },
+  {
+   "id": "SEO-019",
+   "group": "03 · Crawl ve indekslenebilirlik",
+   "item": "Organik sayfalarda indexability",
+   "priority": "P1",
+   "group_en": "03 · Crawling and indexability",
+   "item_en": "Indexability of organic pages",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "ACC-3",
+    "IDX-4",
+    "IDX-9"
+   ],
+   "rules": [
+    "acc3.",
+    "idx4.",
+    "idx9."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "noindex, canonical elsewhere, robots; Google's own state with a GSC token."
+  },
+  {
+   "id": "SEO-020",
+   "group": "03 · Crawl ve indekslenebilirlik",
+   "item": "Yanlış noindex direktifleri",
+   "priority": "P1",
+   "group_en": "03 · Crawling and indexability",
+   "item_en": "Wrong noindex directives",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "ACC-3"
+   ],
+   "rules": [
+    "acc3.noindex",
+    "acc3.sitemap_noindex"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "noindex on key or sitemap pages raised."
+  },
+  {
+   "id": "SEO-021",
+   "group": "03 · Crawl ve indekslenebilirlik",
+   "item": "X-Robots-Tag header",
+   "priority": "P1",
+   "group_en": "03 · Crawling and indexability",
+   "item_en": "X-Robots-Tag header",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "ACC-3"
+   ],
+   "rules": [
+    "acc3."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "X-Robots-Tag read on every response."
+  },
+  {
+   "id": "SEO-022",
+   "group": "03 · Crawl ve indekslenebilirlik",
+   "item": "GSC indeks kapsamı",
+   "priority": "P1",
+   "group_en": "03 · Crawling and indexability",
+   "item_en": "GSC index coverage",
+   "applies_to": "Tüm siteler",
+   "method": "data",
+   "checks": [
+    "IDX-9"
+   ],
+   "rules": [],
+   "needs": [
+    "gsc"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Needs the GSC coverage report; Maya only inspects up to 20 key pages."
+  },
+  {
+   "id": "SEO-023",
+   "group": "03 · Crawl ve indekslenebilirlik",
+   "item": "GSC seçilmiş canonical",
+   "priority": "P1",
+   "group_en": "03 · Crawling and indexability",
+   "item_en": "GSC chosen canonical",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "IDX-9"
+   ],
+   "rules": [
+    "idx9.canonical"
+   ],
+   "needs": [
+    "gsc"
+   ],
+   "rest": [
+    "gsc"
+   ],
+   "when": null,
+   "maya_note": "Google-selected vs user canonical for up to 20 key pages with a GSC token."
+  },
+  {
+   "id": "SEO-024",
+   "group": "03 · Crawl ve indekslenebilirlik",
+   "item": "Crawl bütçesi sapmaları",
+   "priority": "P1",
+   "group_en": "03 · Crawling and indexability",
+   "item_en": "Crawl budget anomalies",
+   "applies_to": "Büyük / yoğun parametreli siteler",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "gsc",
+    "logs"
+   ],
+   "rest": null,
+   "when": "large",
+   "maya_note": "Needs GSC Crawl Stats or server logs."
+  },
+  {
+   "id": "SEO-025",
+   "group": "03 · Crawl ve indekslenebilirlik",
+   "item": "Orphan page tespiti",
+   "priority": "P1",
+   "group_en": "03 · Crawling and indexability",
+   "item_en": "Orphan pages",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "IDX-7"
+   ],
+   "rules": [
+    "idx7.orphan"
+   ],
+   "needs": [],
+   "rest": [
+    "gsc",
+    "ga4"
+   ],
+   "when": null,
+   "maya_note": "Sitemap-only pages with no inlink, on complete crawls only; GSC/GA4 orphans missing."
+  },
+  {
+   "id": "SEO-026",
+   "group": "03 · Crawl ve indekslenebilirlik",
+   "item": "Crawl derinliği",
+   "priority": "P1",
+   "group_en": "03 · Crawling and indexability",
+   "item_en": "Crawl depth",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-7"
+   ],
+   "rules": [
+    "idx7.deep"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Click depth from the homepage per page."
+  },
+  {
+   "id": "SEO-027",
+   "group": "03 · Crawl ve indekslenebilirlik",
+   "item": "Site içi arama indekslenmesi",
+   "priority": "P1",
+   "group_en": "03 · Crawling and indexability",
+   "item_en": "Internal search indexing",
+   "applies_to": "Dahili araması olan siteler",
+   "method": "missing",
+   "checks": [
+    "ACC-3"
+   ],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": "site_search",
+   "maya_note": "Rule missing: an indexable internal search page (200, no noindex, self-canonical, robots allows)."
+  },
+  {
+   "id": "SEO-028",
+   "group": "03 · Crawl ve indekslenebilirlik",
+   "item": "İndeksli sayfa örneklemi",
+   "priority": "P1",
+   "group_en": "03 · Crawling and indexability",
+   "item_en": "Indexed page sample",
+   "applies_to": "Tüm siteler",
+   "method": "data",
+   "checks": [
+    "IDX-9"
+   ],
+   "rules": [],
+   "needs": [
+    "gsc"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Needs GSC/Google results for a sample of indexed pages."
+  },
+  {
+   "id": "SEO-029",
+   "group": "04 · Robots, XML sitemap ve URL keşfi",
+   "item": "robots.txt erişimi",
+   "priority": "P1",
+   "group_en": "04 · Robots, XML sitemaps and URL discovery",
+   "item_en": "robots.txt access",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "ACC-1"
+   ],
+   "rules": [
+    "acc1."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "robots.txt status, size, HTML-as-robots, server errors."
+  },
+  {
+   "id": "SEO-030",
+   "group": "04 · Robots, XML sitemap ve URL keşfi",
+   "item": "Kritik sayfa robots engeli",
+   "priority": "P1",
+   "group_en": "04 · Robots, XML sitemaps and URL discovery",
+   "item_en": "Robots blocks on key pages",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "ACC-2",
+    "ACC-3"
+   ],
+   "rules": [
+    "acc2.",
+    "acc3."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Rules per AI/search bot; key pages disallowed raised."
+  },
+  {
+   "id": "SEO-031",
+   "group": "04 · Robots, XML sitemap ve URL keşfi",
+   "item": "Robots ile noindex ayrımı",
+   "priority": "P1",
+   "group_en": "04 · Robots, XML sitemaps and URL discovery",
+   "item_en": "Robots versus noindex",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "ACC-3"
+   ],
+   "rules": [
+    "acc3.robots_noindex"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Pages Maya read with noindex that robots.txt disallows for Googlebot or Bingbot (DECISIONS 304). Not seen: a noindex on a page blocked for every crawler (nobody reads it); saved reports keep no robots.txt text."
+  },
+  {
+   "id": "SEO-032",
+   "group": "04 · Robots, XML sitemap ve URL keşfi",
+   "item": "XML sitemap bulunabilirliği",
+   "priority": "P1",
+   "group_en": "04 · Robots, XML sitemaps and URL discovery",
+   "item_en": "XML sitemap discoverability",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-5"
+   ],
+   "rules": [
+    "idx5.none",
+    "idx5.failed"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Sitemap from robots.txt and /sitemap.xml."
+  },
+  {
+   "id": "SEO-033",
+   "group": "04 · Robots, XML sitemap ve URL keşfi",
+   "item": "Sitemap indexable URL hijyeni",
+   "priority": "P1",
+   "group_en": "04 · Robots, XML sitemaps and URL discovery",
+   "item_en": "Sitemap indexable URL hygiene",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "ACC-3",
+    "IDX-5"
+   ],
+   "rules": [
+    "idx5.not_live",
+    "idx5.drafts",
+    "acc3.sitemap_noindex",
+    "idx1.4xx.sitemap",
+    "judgment.sitemap"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Sitemap URLs that redirect, 404, noindex or are drafts (sampled check)."
+  },
+  {
+   "id": "SEO-034",
+   "group": "04 · Robots, XML sitemap ve URL keşfi",
+   "item": "Sitemap kapsama farkı",
+   "priority": "P1",
+   "group_en": "04 · Robots, XML sitemaps and URL discovery",
+   "item_en": "Sitemap coverage gap",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "IDX-5",
+    "IDX-7"
+   ],
+   "rules": [
+    "idx5.",
+    "idx7."
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Sitemap URLs not reached by links are sampled; indexable pages missing from the sitemap are not raised."
+  },
+  {
+   "id": "SEO-035",
+   "group": "04 · Robots, XML sitemap ve URL keşfi",
+   "item": "Sitemap lastmod doğruluğu",
+   "priority": "P2",
+   "group_en": "04 · Robots, XML sitemaps and URL discovery",
+   "item_en": "Sitemap lastmod accuracy",
+   "applies_to": "Sitemap kullanan siteler",
+   "method": "full",
+   "checks": [
+    "IDX-5",
+    "STR-6"
+   ],
+   "rules": [
+    "idx5.identical",
+    "idx5.stamped",
+    "idx5.future",
+    "str6."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "sitemap",
+   "maya_note": "Same or generated lastmod, future dates."
+  },
+  {
+   "id": "SEO-036",
+   "group": "04 · Robots, XML sitemap ve URL keşfi",
+   "item": "Image/video/news sitemap koşulu",
+   "priority": "P2",
+   "group_en": "04 · Robots, XML sitemaps and URL discovery",
+   "item_en": "Image/video/news sitemaps",
+   "applies_to": "Medya / haber siteleri",
+   "method": "partial",
+   "checks": [
+    "IDX-5"
+   ],
+   "rules": [
+    "idx5.no_image_sitemap",
+    "idx5.no_video_sitemap"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": "news",
+   "maya_note": "No <image:image>/<video:video> in any sitemap on a site with 200+ images or 10+ video pages (DECISIONS 304, schema 1.24). Not done: news sitemaps."
+  },
+  {
+   "id": "SEO-037",
+   "group": "04 · Robots, XML sitemap ve URL keşfi",
+   "item": "Bing Webmaster doğrulaması",
+   "priority": "P2",
+   "group_en": "04 · Robots, XML sitemaps and URL discovery",
+   "item_en": "Bing Webmaster verification",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "IDX-10"
+   ],
+   "rules": [],
+   "needs": [
+    "bing"
+   ],
+   "rest": [
+    "bing"
+   ],
+   "when": null,
+   "maya_note": "Bing index status of key pages with a Bing API key; verification itself is implied."
+  },
+  {
+   "id": "SEO-038",
+   "group": "04 · Robots, XML sitemap ve URL keşfi",
+   "item": "IndexNow çalışma testi",
+   "priority": "P2",
+   "group_en": "04 · Robots, XML sitemaps and URL discovery",
+   "item_en": "IndexNow test",
+   "applies_to": "Destekli altyapılar / opsiyonel",
+   "method": "full",
+   "checks": [
+    "IDX-10"
+   ],
+   "rules": [
+    "idx10.indexnow"
+   ],
+   "needs": [
+    "indexnow"
+   ],
+   "rest": null,
+   "when": "indexnow",
+   "maya_note": "IndexNow key file checked when a key is given."
+  },
+  {
+   "id": "SEO-039",
+   "group": "05 · Canonical, duplicate ve URL parametreleri",
+   "item": "Canonical varlığı ve biçimi",
+   "priority": "P1",
+   "group_en": "05 · Canonicals, duplicates and URL parameters",
+   "item_en": "Canonical presence and format",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-4"
+   ],
+   "rules": [
+    "idx4."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Presence, absolute URL, one per page, HTML and header."
+  },
+  {
+   "id": "SEO-040",
+   "group": "05 · Canonical, duplicate ve URL parametreleri",
+   "item": "Canonical hedef status",
+   "priority": "P1",
+   "group_en": "05 · Canonicals, duplicates and URL parameters",
+   "item_en": "Canonical target status",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-4"
+   ],
+   "rules": [
+    "idx4.broken",
+    "idx4.redirect"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Canonical target status."
+  },
+  {
+   "id": "SEO-041",
+   "group": "05 · Canonical, duplicate ve URL parametreleri",
+   "item": "Self canonical tutarlılığı",
+   "priority": "P1",
+   "group_en": "05 · Canonicals, duplicates and URL parameters",
+   "item_en": "Self-canonical consistency",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-4"
+   ],
+   "rules": [
+    "idx4.different",
+    "idx4.same",
+    "idx4.variant"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Self vs elsewhere, same-content canonicals."
+  },
+  {
+   "id": "SEO-042",
+   "group": "05 · Canonical, duplicate ve URL parametreleri",
+   "item": "Canonical çakışmaları",
+   "priority": "P1",
+   "group_en": "05 · Canonicals, duplicates and URL parameters",
+   "item_en": "Canonical conflicts",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-4"
+   ],
+   "rules": [
+    "idx4.conflict",
+    "idx4.mixed"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "HTML vs header vs rendered canonical conflicts."
+  },
+  {
+   "id": "SEO-043",
+   "group": "05 · Canonical, duplicate ve URL parametreleri",
+   "item": "Çoğaltılmış title/body",
+   "priority": "P1",
+   "group_en": "05 · Canonicals, duplicates and URL parameters",
+   "item_en": "Duplicate titles and bodies",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-8",
+    "STR-1",
+    "STR-16"
+   ],
+   "rules": [
+    "str1.shared",
+    "idx8.",
+    "str16."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Shared titles, duplicate and near-duplicate bodies."
+  },
+  {
+   "id": "SEO-044",
+   "group": "05 · Canonical, duplicate ve URL parametreleri",
+   "item": "Filtre URL indeks stratejisi",
+   "priority": "P1",
+   "group_en": "05 · Canonicals, duplicates and URL parameters",
+   "item_en": "Filter URL index strategy",
+   "applies_to": "Filtreli listeler",
+   "method": "review",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Which filter URLs deserve the index is a keyword/business decision."
+  },
+  {
+   "id": "SEO-045",
+   "group": "05 · Canonical, duplicate ve URL parametreleri",
+   "item": "Filtre kombinasyon patlaması",
+   "priority": "P1",
+   "group_en": "05 · Canonicals, duplicates and URL parameters",
+   "item_en": "Filter combination growth",
+   "applies_to": "Filtreli listeler",
+   "method": "missing",
+   "checks": [
+    "IDX-6"
+   ],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Rule missing: parameter combinations growing per template (counts per pattern/parameter)."
+  },
+  {
+   "id": "SEO-046",
+   "group": "05 · Canonical, duplicate ve URL parametreleri",
+   "item": "Sayfalama bağlantıları",
+   "priority": "P1",
+   "group_en": "05 · Canonicals, duplicates and URL parameters",
+   "item_en": "Pagination links",
+   "applies_to": "Liste sayfaları",
+   "method": "partial",
+   "checks": [
+    "IDX-7"
+   ],
+   "rules": [
+    "idx7.pagination_unlinked"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": "lists",
+   "maya_note": "List pages whose <link rel=next>, or a page-2 address found elsewhere, is not an <a href> on the page (DECISIONS 304). Not seen: infinite scroll with neither signal."
+  },
+  {
+   "id": "SEO-047",
+   "group": "05 · Canonical, duplicate ve URL parametreleri",
+   "item": "Sonsuz kaydırma keşfi",
+   "priority": "P1",
+   "group_en": "05 · Canonicals, duplicates and URL parameters",
+   "item_en": "Infinite scroll discovery",
+   "applies_to": "Liste sayfaları",
+   "method": "partial",
+   "checks": [
+    "RND-3"
+   ],
+   "rules": [
+    "rnd3."
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": "lists",
+   "maya_note": "Content revealed by click or scroll in the render sample; no check that a crawlable paginated fallback exists."
+  },
+  {
+   "id": "SEO-048",
+   "group": "05 · Canonical, duplicate ve URL parametreleri",
+   "item": "İzleme parametreleri",
+   "priority": "P2",
+   "group_en": "05 · Canonicals, duplicates and URL parameters",
+   "item_en": "Tracking parameters",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-6"
+   ],
+   "rules": [
+    "idx6.tracking"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Internal links with tracking parameters."
+  },
+  {
+   "id": "SEO-049",
+   "group": "05 · Canonical, duplicate ve URL parametreleri",
+   "item": "Trailing slash / case / encoding",
+   "priority": "P2",
+   "group_en": "05 · Canonicals, duplicates and URL parameters",
+   "item_en": "Trailing slash / case / encoding",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "IDX-5",
+    "IDX-8"
+   ],
+   "rules": [
+    "idx8.two_addresses",
+    "idx5.not_encoded",
+    "tseo1.url_decomposed"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Two addresses for one page and bad encoding are seen; slash/case variants are not probed."
+  },
+  {
+   "id": "SEO-050",
+   "group": "05 · Canonical, duplicate ve URL parametreleri",
+   "item": "Ürün varyant canonical kararı",
+   "priority": "P1",
+   "group_en": "05 · Canonicals, duplicates and URL parameters",
+   "item_en": "Product variant canonical",
+   "applies_to": "E-ticaret",
+   "method": "manual",
+   "checks": [
+    "IDX-4"
+   ],
+   "rules": [],
+   "needs": [
+    "manual"
+   ],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Variant canonical policy is a business decision; Maya shows the current canonicals."
+  },
+  {
+   "id": "SEO-051",
+   "group": "06 · Bilgi mimarisi ve iç link",
+   "item": "Menü ana hedef kapsamı",
+   "priority": "P1",
+   "group_en": "06 · Information architecture and internal links",
+   "item_en": "Main menu targets",
+   "applies_to": "Tüm siteler",
+   "method": "review",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Which targets belong in the menu is a judgement; menu links and their reach are measured."
+  },
+  {
+   "id": "SEO-052",
+   "group": "06 · Bilgi mimarisi ve iç link",
+   "item": "Breadcrumb doğruluğu",
+   "priority": "P1",
+   "group_en": "06 · Information architecture and internal links",
+   "item_en": "Breadcrumb accuracy",
+   "applies_to": "Çok katmanlı siteler",
+   "method": "partial",
+   "checks": [
+    "STR-3"
+   ],
+   "rules": [
+    "str3.crumb"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": "layers",
+   "maya_note": "Breadcrumb trails are read; whether they match the hierarchy is not checked."
+  },
+  {
+   "id": "SEO-053",
+   "group": "06 · Bilgi mimarisi ve iç link",
+   "item": "Breadcrumb yapılandırılmış veri uyumu",
+   "priority": "P2",
+   "group_en": "06 · Information architecture and internal links",
+   "item_en": "Breadcrumb structured data match",
+   "applies_to": "Çok katmanlı siteler",
+   "method": "partial",
+   "checks": [
+    "STR-3"
+   ],
+   "rules": [
+    "str3.crumb",
+    "str3.required"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": "layers",
+   "maya_note": "Visible trail without BreadcrumbList is raised; item-by-item match is not."
+  },
+  {
+   "id": "SEO-054",
+   "group": "06 · Bilgi mimarisi ve iç link",
+   "item": "Yetim sayfa aksiyonlaştırma",
+   "priority": "P1",
+   "group_en": "06 · Information architecture and internal links",
+   "item_en": "Acting on orphan pages",
+   "applies_to": "Tüm siteler",
+   "method": "data",
+   "checks": [
+    "IDX-7"
+   ],
+   "rules": [
+    "idx7.orphan"
+   ],
+   "needs": [
+    "gsc",
+    "ga4"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Needs GSC/GA4 to decide what to do with orphans."
+  },
+  {
+   "id": "SEO-055",
+   "group": "06 · Bilgi mimarisi ve iç link",
+   "item": "Broken internal links",
+   "priority": "P1",
+   "group_en": "06 · Information architecture and internal links",
+   "item_en": "Broken internal links",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-6"
+   ],
+   "rules": [
+    "idx6.broken"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Broken internal links with their sources."
+  },
+  {
+   "id": "SEO-056",
+   "group": "06 · Bilgi mimarisi ve iç link",
+   "item": "Anchor text çeşitliliği ve niyeti",
+   "priority": "P2",
+   "group_en": "06 · Information architecture and internal links",
+   "item_en": "Anchor text variety and intent",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "STR-14"
+   ],
+   "rules": [
+    "str14.",
+    "shared.link_no_text",
+    "judgment.generic"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Empty and generic anchors; diversity and intent need AI."
+  },
+  {
+   "id": "SEO-057",
+   "group": "06 · Bilgi mimarisi ve iç link",
+   "item": "Ticari sayfalara link akışı",
+   "priority": "P1",
+   "group_en": "06 · Information architecture and internal links",
+   "item_en": "Link flow to commercial pages",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": [
+    "gsc",
+    "ga4"
+   ],
+   "when": null,
+   "maya_note": "Link flow to commercial pages is measured; traffic weighting (GSC/GA4) is missing."
+  },
+  {
+   "id": "SEO-058",
+   "group": "06 · Bilgi mimarisi ve iç link",
+   "item": "Topic cluster ve hub",
+   "priority": "P2",
+   "group_en": "06 · Information architecture and internal links",
+   "item_en": "Topic clusters and hubs",
+   "applies_to": "İçerik barındıran siteler",
+   "method": "review",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": "articles",
+   "maya_note": "Topic clusters and hubs need keyword/content judgement."
+  },
+  {
+   "id": "SEO-059",
+   "group": "06 · Bilgi mimarisi ve iç link",
+   "item": "Görsel/kart tıklanabilir link",
+   "priority": "P1",
+   "group_en": "06 · Information architecture and internal links",
+   "item_en": "Clickable image/card links",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "STR-19"
+   ],
+   "rules": [
+    "str19."
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Clickable elements without an href are raised; card targets are not rendered and tested."
+  },
+  {
+   "id": "SEO-060",
+   "group": "06 · Bilgi mimarisi ve iç link",
+   "item": "Link sayısı ve faydalı navigasyon",
+   "priority": "P2",
+   "group_en": "06 · Information architecture and internal links",
+   "item_en": "Link count and useful navigation",
+   "applies_to": "Tüm siteler",
+   "method": "review",
+   "checks": [
+    "STR-22"
+   ],
+   "rules": [
+    "str22."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Useful navigation is a judgement; link counts are measured."
+  },
+  {
+   "id": "SEO-061",
+   "group": "06 · Bilgi mimarisi ve iç link",
+   "item": "Kanonik olmayan URL'ye iç link",
+   "priority": "P1",
+   "group_en": "06 · Information architecture and internal links",
+   "item_en": "Internal links to non-canonical URLs",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "IDX-3",
+    "IDX-6"
+   ],
+   "rules": [
+    "idx6.alias_links",
+    "idx6.links_to_redirect"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Internal links to an address whose canonical names another page are raised (DECISIONS 304); a canonical differing only in percent-encoding case is the page itself."
+  },
+  {
+   "id": "SEO-062",
+   "group": "07 · On-page ve SERP görünümü",
+   "item": "Title benzersizliği",
+   "priority": "P1",
+   "group_en": "07 · On-page and SERP appearance",
+   "item_en": "Unique titles",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "STR-1"
+   ],
+   "rules": [
+    "str1."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-063",
+   "group": "07 · On-page ve SERP görünümü",
+   "item": "Title uzunluk ve kesilme",
+   "priority": "P2",
+   "group_en": "07 · On-page and SERP appearance",
+   "item_en": "Title length and truncation",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "TSEO-1"
+   ],
+   "rules": [
+    "tseo1.title_"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Character bands (not pixel width)."
+  },
+  {
+   "id": "SEO-064",
+   "group": "07 · On-page ve SERP görünümü",
+   "item": "Meta description eksik/duplike",
+   "priority": "P2",
+   "group_en": "07 · On-page and SERP appearance",
+   "item_en": "Missing or duplicate meta descriptions",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "STR-16",
+    "TSEO-1"
+   ],
+   "rules": [
+    "str16.",
+    "tseo1.description"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Shared and too short/long descriptions; a missing description is not raised."
+  },
+  {
+   "id": "SEO-065",
+   "group": "07 · On-page ve SERP görünümü",
+   "item": "H1 görünürlüğü ve eşleşmesi",
+   "priority": "P1",
+   "group_en": "07 · On-page and SERP appearance",
+   "item_en": "H1 visibility and match",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "STR-2"
+   ],
+   "rules": [
+    "str2.no_h1",
+    "str2.empty_h1",
+    "str2.hidden_h1",
+    "str2.home_hidden_h1",
+    "str2.home_no_h1",
+    "str2.many_h1"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Missing, empty, hidden, several H1; raw vs rendered."
+  },
+  {
+   "id": "SEO-066",
+   "group": "07 · On-page ve SERP görünümü",
+   "item": "H2-H3 içerik yapısı",
+   "priority": "P2",
+   "group_en": "07 · On-page and SERP appearance",
+   "item_en": "H2-H3 content structure",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "STR-2",
+    "TSEO-1"
+   ],
+   "rules": [
+    "str2.no_subheadings",
+    "str2.styled",
+    "tseo1.heading"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Structure is measured; whether headings fit the content needs AI."
+  },
+  {
+   "id": "SEO-067",
+   "group": "07 · On-page ve SERP görünümü",
+   "item": "URL slug açıklığı",
+   "priority": "P2",
+   "group_en": "07 · On-page and SERP appearance",
+   "item_en": "Clear URL slugs",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "TSEO-1"
+   ],
+   "rules": [
+    "tseo1.url_slug_unclear",
+    "tseo1.url_decomposed"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Slugs that are only an id, over 100 characters, or hold spaces/symbols; addresses with a decomposed character such as i + U+0307 (DECISIONS 304). Not done: mixed-language slugs."
+  },
+  {
+   "id": "SEO-068",
+   "group": "07 · On-page ve SERP görünümü",
+   "item": "Keyword-page eşleştirme",
+   "priority": "P1",
+   "group_en": "07 · On-page and SERP appearance",
+   "item_en": "Keyword-page mapping",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "dataforseo"
+   ],
+   "rest": [
+    "dataforseo"
+   ],
+   "when": null,
+   "maya_note": "Ranked keywords per URL from DataForSEO; mapping and gaps not built."
+  },
+  {
+   "id": "SEO-069",
+   "group": "07 · On-page ve SERP görünümü",
+   "item": "Cannibalization kanıt testi",
+   "priority": "P1",
+   "group_en": "07 · On-page and SERP appearance",
+   "item_en": "Cannibalization evidence",
+   "applies_to": "Tüm siteler",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "gsc"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Needs GSC query+page."
+  },
+  {
+   "id": "SEO-070",
+   "group": "07 · On-page ve SERP görünümü",
+   "item": "SERP özellikleri fırsatı",
+   "priority": "P2",
+   "group_en": "07 · On-page and SERP appearance",
+   "item_en": "SERP feature opportunities",
+   "applies_to": "Tüm siteler",
+   "method": "review",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "SERP features (Maya sends no SERP API call)."
+  },
+  {
+   "id": "SEO-071",
+   "group": "07 · On-page ve SERP görünümü",
+   "item": "CTR fırsat analizi",
+   "priority": "P1",
+   "group_en": "07 · On-page and SERP appearance",
+   "item_en": "CTR opportunities",
+   "applies_to": "Tüm siteler",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "gsc"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Needs GSC impressions/CTR."
+  },
+  {
+   "id": "SEO-072",
+   "group": "07 · On-page ve SERP görünümü",
+   "item": "Open Graph ve sosyal görünüm",
+   "priority": "P3",
+   "group_en": "07 · On-page and SERP appearance",
+   "item_en": "Open Graph and social preview",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "STR-10"
+   ],
+   "rules": [
+    "str10."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "og:title/description/image, twitter tags, og:image loads."
+  },
+  {
+   "id": "SEO-073",
+   "group": "08 · İçerik kalitesi ve konu stratejisi",
+   "item": "Search intent uyumu",
+   "priority": "P1",
+   "group_en": "08 · Content quality and topic strategy",
+   "item_en": "Search intent match",
+   "applies_to": "Tüm siteler",
+   "method": "review",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Search intent needs SERP and judgement."
+  },
+  {
+   "id": "SEO-074",
+   "group": "08 · İçerik kalitesi ve konu stratejisi",
+   "item": "İçerik envanteri ve performans",
+   "priority": "P1",
+   "group_en": "08 · Content quality and topic strategy",
+   "item_en": "Content inventory and performance",
+   "applies_to": "İçerik barındıran siteler",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "gsc",
+    "ga4"
+   ],
+   "rest": null,
+   "when": "articles",
+   "maya_note": "Needs GSC/GA4 performance per URL."
+  },
+  {
+   "id": "SEO-075",
+   "group": "08 · İçerik kalitesi ve konu stratejisi",
+   "item": "İnce/zayıf içerik tanımı",
+   "priority": "P1",
+   "group_en": "08 · Content quality and topic strategy",
+   "item_en": "Thin content",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "RND-7",
+    "STR-15"
+   ],
+   "rules": [
+    "str15.",
+    "rnd7."
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Word counts and boilerplate share; quality needs AI."
+  },
+  {
+   "id": "SEO-076",
+   "group": "08 · İçerik kalitesi ve konu stratejisi",
+   "item": "Yinelenen içerik ve AI kalıpları",
+   "priority": "P1",
+   "group_en": "08 · Content quality and topic strategy",
+   "item_en": "Repeated content and AI patterns",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "IDX-8"
+   ],
+   "rules": [
+    "idx8."
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Exact and near duplicates; AI-pattern text not detected."
+  },
+  {
+   "id": "SEO-077",
+   "group": "08 · İçerik kalitesi ve konu stratejisi",
+   "item": "Factual accuracy ve iddia kanıtı",
+   "priority": "P1",
+   "group_en": "08 · Content quality and topic strategy",
+   "item_en": "Factual accuracy and claims",
+   "applies_to": "Tüm siteler",
+   "method": "review",
+   "checks": [
+    "ANS-2",
+    "STR-4"
+   ],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Factual accuracy needs a source of truth."
+  },
+  {
+   "id": "SEO-078",
+   "group": "08 · İçerik kalitesi ve konu stratejisi",
+   "item": "Yazar ve uzmanlık bilgisi",
+   "priority": "P1",
+   "group_en": "08 · Content quality and topic strategy",
+   "item_en": "Author and expertise",
+   "applies_to": "Uzmanlık içerikleri",
+   "method": "full",
+   "checks": [
+    "STR-3"
+   ],
+   "rules": [
+    "str3.article_no_author"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "articles",
+   "maya_note": "Article pages with no byline element, rel/itemprop author, meta author, JSON-LD author or Person markup (DECISIONS 304); Estimated, LG-102."
+  },
+  {
+   "id": "SEO-079",
+   "group": "08 · İçerik kalitesi ve konu stratejisi",
+   "item": "Özgün fayda ve karşılaştırma",
+   "priority": "P1",
+   "group_en": "08 · Content quality and topic strategy",
+   "item_en": "Original value and comparison",
+   "applies_to": "Tüm siteler",
+   "method": "review",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-080",
+   "group": "08 · İçerik kalitesi ve konu stratejisi",
+   "item": "Güncellik ve tarih bütünlüğü",
+   "priority": "P1",
+   "group_en": "08 · Content quality and topic strategy",
+   "item_en": "Freshness and dates",
+   "applies_to": "Haber / blog / rehber",
+   "method": "full",
+   "checks": [
+    "STR-6"
+   ],
+   "rules": [
+    "str6."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "articles",
+   "maya_note": "Visible and structured dates on articles; conflicts and generated dates."
+  },
+  {
+   "id": "SEO-081",
+   "group": "08 · İçerik kalitesi ve konu stratejisi",
+   "item": "SSS faydası ve özgünlüğü",
+   "priority": "P2",
+   "group_en": "08 · Content quality and topic strategy",
+   "item_en": "FAQ usefulness and originality",
+   "applies_to": "Tüm siteler",
+   "method": "review",
+   "checks": [
+    "STR-3"
+   ],
+   "rules": [
+    "str3.qa"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Q&A blocks detected; usefulness needs judgement."
+  },
+  {
+   "id": "SEO-082",
+   "group": "08 · İçerik kalitesi ve konu stratejisi",
+   "item": "Konu kapsamı / topical gap",
+   "priority": "P1",
+   "group_en": "08 · Content quality and topic strategy",
+   "item_en": "Topic coverage / topical gap",
+   "applies_to": "Tüm siteler",
+   "method": "review",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-083",
+   "group": "08 · İçerik kalitesi ve konu stratejisi",
+   "item": "Eski içerik dönüşüm ve link değeri",
+   "priority": "P1",
+   "group_en": "08 · Content quality and topic strategy",
+   "item_en": "Old content, conversions and link value",
+   "applies_to": "Tüm siteler",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "gsc",
+    "ga4"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Needs GSC/GA4 history and backlinks."
+  },
+  {
+   "id": "SEO-084",
+   "group": "08 · İçerik kalitesi ve konu stratejisi",
+   "item": "Yerelleştirilmiş dil ve terminoloji",
+   "priority": "P2",
+   "group_en": "08 · Content quality and topic strategy",
+   "item_en": "Localized language and terms",
+   "applies_to": "Çok dilli siteler",
+   "method": "partial",
+   "checks": [
+    "STR-9",
+    "STR-12"
+   ],
+   "rules": [
+    "str12.",
+    "str9.lang"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": "languages",
+   "maya_note": "Wrong-language pages and declared vs actual language; terminology needs AI."
+  },
+  {
+   "id": "SEO-085",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Kategori-kelime eşleşmesi",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Category-keyword match",
+   "applies_to": "E-ticaret",
+   "method": "review",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-086",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Koleksiyon içeriği ve bağlam",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Collection content and context",
+   "applies_to": "E-ticaret",
+   "method": "review",
+   "checks": [
+    "STR-15"
+   ],
+   "rules": [
+    "str15."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-087",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Ürün başlığı doğruluğu",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Product title accuracy",
+   "applies_to": "E-ticaret",
+   "method": "review",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-088",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Ürün açıklaması özgünlüğü",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Product description originality",
+   "applies_to": "E-ticaret",
+   "method": "review",
+   "checks": [
+    "IDX-8"
+   ],
+   "rules": [
+    "idx8."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Near-duplicate product copy is detected; originality needs judgement."
+  },
+  {
+   "id": "SEO-089",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Product image ALT erişimi",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Product image ALT",
+   "applies_to": "E-ticaret",
+   "method": "full",
+   "checks": [
+    "STR-7"
+   ],
+   "rules": [
+    "str7.no_alt"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Image alt on every page read, products included."
+  },
+  {
+   "id": "SEO-090",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Ürün varyant indeks kararı",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Product variant indexing",
+   "applies_to": "E-ticaret",
+   "method": "manual",
+   "checks": [
+    "IDX-4"
+   ],
+   "rules": [],
+   "needs": [
+    "manual"
+   ],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Business decision; Maya shows variant canonicals."
+  },
+  {
+   "id": "SEO-091",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Stok dışı ürün politikası",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Out-of-stock product policy",
+   "applies_to": "E-ticaret",
+   "method": "manual",
+   "checks": [
+    "STR-4"
+   ],
+   "rules": [],
+   "needs": [
+    "manual"
+   ],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Out-of-stock policy is a business decision."
+  },
+  {
+   "id": "SEO-092",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Ürün filtre kullanılabilirliği",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Product filter usability",
+   "applies_to": "E-ticaret",
+   "method": "missing",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Rule missing: filters usable (render, click, URL changes, results load)."
+  },
+  {
+   "id": "SEO-093",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Ürün-kategori dahili link",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Product-category internal links",
+   "applies_to": "E-ticaret",
+   "method": "partial",
+   "checks": [
+    "IDX-7",
+    "STR-15"
+   ],
+   "rules": [
+    "idx7.product_no_category",
+    "str15.empty_collections"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": "ecommerce",
+   "maya_note": "Product pages with no breadcrumb or content link to a category (DECISIONS 304); categories listing few products via SEO-099. Not done: products with too few links from categories."
+  },
+  {
+   "id": "SEO-094",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Ürün fiyat-stok tutarlılığı",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Product price and stock consistency",
+   "applies_to": "E-ticaret",
+   "method": "partial",
+   "checks": [
+    "STR-4"
+   ],
+   "rules": [
+    "str4."
+   ],
+   "needs": [],
+   "rest": [
+    "merchant"
+   ],
+   "when": "ecommerce",
+   "maya_note": "Structured price/availability vs page; Merchant feed not compared."
+  },
+  {
+   "id": "SEO-095",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Merchant Center veri kaynağı",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Merchant Center data source",
+   "applies_to": "E-ticaret",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "merchant"
+   ],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Needs Merchant Center."
+  },
+  {
+   "id": "SEO-096",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Merchant tanılama ve reddedilenler",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Merchant diagnostics and rejections",
+   "applies_to": "E-ticaret",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "merchant"
+   ],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Needs Merchant Center."
+  },
+  {
+   "id": "SEO-097",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Ürün tanımlayıcıları",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Product identifiers",
+   "applies_to": "E-ticaret",
+   "method": "full",
+   "checks": [
+    "STR-3"
+   ],
+   "rules": [
+    "str3.product_no_identifier"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Product markup without a GTIN or MPN (product, offers or variants); brand kept in evidence. Product fields kept in report.json (schema 1.24); saved reports read from the evidence copies (DECISIONS 304)."
+  },
+  {
+   "id": "SEO-098",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "Kargo/iade ve güven unsurları",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Shipping/returns and trust",
+   "applies_to": "E-ticaret",
+   "method": "partial",
+   "checks": [
+    "STR-3",
+    "STR-21"
+   ],
+   "rules": [
+    "str21."
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": "ecommerce",
+   "maya_note": "Basic pages and shipping/return markup present; content quality needs review."
+  },
+  {
+   "id": "SEO-099",
+   "group": "09 · E-ticaret, kategori ve ürün",
+   "item": "İndeksli boş/tükenen koleksiyon",
+   "priority": "P1",
+   "group_en": "09 · E-commerce, categories and products",
+   "item_en": "Indexed empty collections",
+   "applies_to": "E-ticaret",
+   "method": "full",
+   "checks": [
+    "STR-15"
+   ],
+   "rules": [
+    "str15.empty_collections"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Indexable collection/category pages listing 2 products or fewer (hubs and the /collections index left out); Estimated, LG-102 (DECISIONS 304)."
+  },
+  {
+   "id": "SEO-100",
+   "group": "10 · Schema ve makinece okunabilir veri",
+   "item": "Schema envanteri",
+   "priority": "P1",
+   "group_en": "10 · Schema and machine-readable data",
+   "item_en": "Schema inventory",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "STR-3"
+   ],
+   "rules": [
+    "str3."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Types present, parse errors, expected types."
+  },
+  {
+   "id": "SEO-101",
+   "group": "10 · Schema ve makinece okunabilir veri",
+   "item": "Schema hata ve warning ayrımı",
+   "priority": "P1",
+   "group_en": "10 · Schema and machine-readable data",
+   "item_en": "Schema errors and warnings",
+   "applies_to": "Schema kullanan siteler",
+   "method": "partial",
+   "checks": [
+    "STR-3"
+   ],
+   "rules": [
+    "str3.required",
+    "str3.invalid",
+    "str3.unparsed"
+   ],
+   "needs": [],
+   "rest": [
+    "gsc"
+   ],
+   "when": "schema",
+   "maya_note": "Required properties and invalid values; recommended ('warnings') and GSC enhancement reports missing."
+  },
+  {
+   "id": "SEO-102",
+   "group": "10 · Schema ve makinece okunabilir veri",
+   "item": "Organization/LocalBusiness gerçekliği",
+   "priority": "P1",
+   "group_en": "10 · Schema and machine-readable data",
+   "item_en": "Organization/LocalBusiness truth",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "STR-3",
+    "STR-5"
+   ],
+   "rules": [
+    "str3.organization",
+    "str5."
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Organization completeness and consistency; truth vs real company needs review."
+  },
+  {
+   "id": "SEO-103",
+   "group": "10 · Schema ve makinece okunabilir veri",
+   "item": "BreadcrumbList",
+   "priority": "P2",
+   "group_en": "10 · Schema and machine-readable data",
+   "item_en": "BreadcrumbList",
+   "applies_to": "Çok katmanlı siteler",
+   "method": "full",
+   "checks": [
+    "STR-3"
+   ],
+   "rules": [
+    "str3.crumb",
+    "str3.required"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "layers",
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-104",
+   "group": "10 · Schema ve makinece okunabilir veri",
+   "item": "Product ve Offer",
+   "priority": "P1",
+   "group_en": "10 · Schema and machine-readable data",
+   "item_en": "Product and Offer",
+   "applies_to": "E-ticaret",
+   "method": "full",
+   "checks": [
+    "STR-3",
+    "STR-4"
+   ],
+   "rules": [
+    "str3.product",
+    "str3.required",
+    "str4."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-105",
+   "group": "10 · Schema ve makinece okunabilir veri",
+   "item": "Product variant işaretleme",
+   "priority": "P2",
+   "group_en": "10 · Schema and machine-readable data",
+   "item_en": "Product variant markup",
+   "applies_to": "E-ticaret",
+   "method": "missing",
+   "checks": [
+    "STR-3"
+   ],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": "ecommerce",
+   "maya_note": "Rule missing: variant products without ProductGroup/hasVariant."
+  },
+  {
+   "id": "SEO-106",
+   "group": "10 · Schema ve makinece okunabilir veri",
+   "item": "Article / BlogPosting",
+   "priority": "P1",
+   "group_en": "10 · Schema and machine-readable data",
+   "item_en": "Article / BlogPosting",
+   "applies_to": "Blog / yayın",
+   "method": "full",
+   "checks": [
+    "STR-3",
+    "STR-6"
+   ],
+   "rules": [
+    "str3.article",
+    "str6."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "articles",
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-107",
+   "group": "10 · Schema ve makinece okunabilir veri",
+   "item": "Service, Course, Event vs uygun tür",
+   "priority": "P2",
+   "group_en": "10 · Schema and machine-readable data",
+   "item_en": "Service, Course, Event and the right type",
+   "applies_to": "Koşullu",
+   "method": "review",
+   "checks": [
+    "STR-23"
+   ],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Choosing the right type needs judgement."
+  },
+  {
+   "id": "SEO-108",
+   "group": "10 · Schema ve makinece okunabilir veri",
+   "item": "FAQPage görünürlük beklentisi",
+   "priority": "P2",
+   "group_en": "10 · Schema and machine-readable data",
+   "item_en": "FAQPage visibility",
+   "applies_to": "SSS olan sayfalar",
+   "method": "partial",
+   "checks": [
+    "STR-3"
+   ],
+   "rules": [
+    "str3.qa"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "faq",
+   "maya_note": "FAQPage presence noted; Google shows FAQ results only for some sites."
+  },
+  {
+   "id": "SEO-109",
+   "group": "10 · Schema ve makinece okunabilir veri",
+   "item": "Duplicate JSON-LD üretimi",
+   "priority": "P1",
+   "group_en": "10 · Schema and machine-readable data",
+   "item_en": "Duplicate JSON-LD",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "STR-3",
+    "STR-11"
+   ],
+   "rules": [
+    "str11.",
+    "str3.type_clash",
+    "str3.dangling"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Contradicting values found; identical duplicate blocks not counted."
+  },
+  {
+   "id": "SEO-110",
+   "group": "11 · Hız ve Core Web Vitals",
+   "item": "Saha verisi ayrımı",
+   "priority": "P1",
+   "group_en": "11 · Speed and Core Web Vitals",
+   "item_en": "Field data kept apart",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "PRF-3"
+   ],
+   "rules": [],
+   "needs": [
+    "pagespeed"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Field (CrUX) and lab (Lighthouse) kept apart."
+  },
+  {
+   "id": "SEO-111",
+   "group": "11 · Hız ve Core Web Vitals",
+   "item": "LCP p75",
+   "priority": "P1",
+   "group_en": "11 · Speed and Core Web Vitals",
+   "item_en": "LCP p75",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "PRF-3"
+   ],
+   "rules": [],
+   "needs": [
+    "pagespeed"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-112",
+   "group": "11 · Hız ve Core Web Vitals",
+   "item": "INP p75",
+   "priority": "P1",
+   "group_en": "11 · Speed and Core Web Vitals",
+   "item_en": "INP p75",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "PRF-3"
+   ],
+   "rules": [],
+   "needs": [
+    "pagespeed"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-113",
+   "group": "11 · Hız ve Core Web Vitals",
+   "item": "CLS p75",
+   "priority": "P1",
+   "group_en": "11 · Speed and Core Web Vitals",
+   "item_en": "CLS p75",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "PRF-3"
+   ],
+   "rules": [],
+   "needs": [
+    "pagespeed"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-114",
+   "group": "11 · Hız ve Core Web Vitals",
+   "item": "Şablon ve cihaz segmenti",
+   "priority": "P1",
+   "group_en": "11 · Speed and Core Web Vitals",
+   "item_en": "Template and device segments",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "PRF-3"
+   ],
+   "rules": [],
+   "needs": [
+    "pagespeed"
+   ],
+   "rest": [
+    "pagespeed"
+   ],
+   "when": null,
+   "maya_note": "Origin field data and up to 5 PSI URLs; per-template sampling not done (templates now stored)."
+  },
+  {
+   "id": "SEO-115",
+   "group": "11 · Hız ve Core Web Vitals",
+   "item": "LCP hero görsel yükü",
+   "priority": "P1",
+   "group_en": "11 · Speed and Core Web Vitals",
+   "item_en": "LCP hero image weight",
+   "applies_to": "Görsel yoğun siteler",
+   "method": "partial",
+   "checks": [
+    "STR-7"
+   ],
+   "rules": [
+    "str7.heavy",
+    "str7.over_",
+    "str7.preload"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Heavy images and preload types; the actual LCP element is not measured."
+  },
+  {
+   "id": "SEO-116",
+   "group": "11 · Hız ve Core Web Vitals",
+   "item": "Resim boyutu ve modern format",
+   "priority": "P2",
+   "group_en": "11 · Speed and Core Web Vitals",
+   "item_en": "Image size and modern formats",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "STR-7"
+   ],
+   "rules": [
+    "str7.format",
+    "str7.heavy",
+    "str7.over_",
+    "str7.unsized"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-117",
+   "group": "11 · Hız ve Core Web Vitals",
+   "item": "Render-blocking CSS/JS",
+   "priority": "P1",
+   "group_en": "11 · Speed and Core Web Vitals",
+   "item_en": "Render-blocking CSS/JS",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "TSEO-1"
+   ],
+   "rules": [
+    "tseo1.blocking_scripts"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Blocking scripts in <head>; render-blocking CSS not measured."
+  },
+  {
+   "id": "SEO-118",
+   "group": "11 · Hız ve Core Web Vitals",
+   "item": "Üçüncü taraf script bütçesi",
+   "priority": "P1",
+   "group_en": "11 · Speed and Core Web Vitals",
+   "item_en": "Third-party script budget",
+   "applies_to": "Tüm siteler",
+   "method": "missing",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Rule missing: third-party script count/weight per page."
+  },
+  {
+   "id": "SEO-119",
+   "group": "11 · Hız ve Core Web Vitals",
+   "item": "Cache/CDN/compression",
+   "priority": "P2",
+   "group_en": "11 · Speed and Core Web Vitals",
+   "item_en": "Cache/CDN/compression",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "PRF-1"
+   ],
+   "rules": [
+    "prf1.not_cached"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "CDN cache status; compression and cache-control not checked."
+  },
+  {
+   "id": "SEO-120",
+   "group": "11 · Hız ve Core Web Vitals",
+   "item": "Font ve layout sıçraması",
+   "priority": "P2",
+   "group_en": "11 · Speed and Core Web Vitals",
+   "item_en": "Fonts and layout shift",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "PRF-3",
+    "STR-7"
+   ],
+   "rules": [
+    "str7.unsized"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Unsized images; fonts not checked."
+  },
+  {
+   "id": "SEO-121",
+   "group": "12 · Mobil UX, erişilebilirlik ve dönüşüm",
+   "item": "Mobile-first içerik eşitliği",
+   "priority": "P1",
+   "group_en": "12 · Mobile UX, accessibility and conversion",
+   "item_en": "Mobile-first content parity",
+   "applies_to": "Tüm siteler",
+   "method": "missing",
+   "checks": [
+    "ACC-4"
+   ],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Rule missing: mobile vs desktop user-agent content parity."
+  },
+  {
+   "id": "SEO-122",
+   "group": "12 · Mobil UX, erişilebilirlik ve dönüşüm",
+   "item": "Mobil menü ve alt kategori",
+   "priority": "P1",
+   "group_en": "12 · Mobile UX, accessibility and conversion",
+   "item_en": "Mobile menu and subcategories",
+   "applies_to": "Tüm siteler",
+   "method": "missing",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Rule missing: mobile menu reachable subcategories (mobile viewport render)."
+  },
+  {
+   "id": "SEO-123",
+   "group": "12 · Mobil UX, erişilebilirlik ve dönüşüm",
+   "item": "Form ve checkout kritik yol",
+   "priority": "P1",
+   "group_en": "12 · Mobile UX, accessibility and conversion",
+   "item_en": "Form and checkout critical path",
+   "applies_to": "Dönüşüm sağlayan siteler",
+   "method": "manual",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "manual"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Checkout and forms need a real session."
+  },
+  {
+   "id": "SEO-124",
+   "group": "12 · Mobil UX, erişilebilirlik ve dönüşüm",
+   "item": "Mobil okunabilirlik",
+   "priority": "P1",
+   "group_en": "12 · Mobile UX, accessibility and conversion",
+   "item_en": "Mobile readability",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "TSEO-1"
+   ],
+   "rules": [
+    "tseo1.no_viewport",
+    "tseo1.no_zoom"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Viewport and zoom; font size and tap targets not measured."
+  },
+  {
+   "id": "SEO-125",
+   "group": "12 · Mobil UX, erişilebilirlik ve dönüşüm",
+   "item": "Pop-up/interstitial",
+   "priority": "P2",
+   "group_en": "12 · Mobile UX, accessibility and conversion",
+   "item_en": "Pop-ups/interstitials",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "RND-5"
+   ],
+   "rules": [
+    "rnd5."
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Consent, age, login and paywall walls; timed pop-ups not rendered."
+  },
+  {
+   "id": "SEO-126",
+   "group": "12 · Mobil UX, erişilebilirlik ve dönüşüm",
+   "item": "Core interaction QA",
+   "priority": "P1",
+   "group_en": "12 · Mobile UX, accessibility and conversion",
+   "item_en": "Core interaction QA",
+   "applies_to": "İnteraktif siteler",
+   "method": "manual",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "manual"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Interaction QA."
+  },
+  {
+   "id": "SEO-127",
+   "group": "12 · Mobil UX, erişilebilirlik ve dönüşüm",
+   "item": "Temel erişilebilirlik",
+   "priority": "P2",
+   "group_en": "12 · Mobile UX, accessibility and conversion",
+   "item_en": "Basic accessibility",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "STR-2",
+    "STR-7",
+    "STR-9",
+    "STR-14"
+   ],
+   "rules": [
+    "str7.no_alt",
+    "str14.",
+    "shared.link_no_text",
+    "str9.lang",
+    "str2."
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Basic accessibility signals; no axe/Lighthouse audit."
+  },
+  {
+   "id": "SEO-128",
+   "group": "12 · Mobil UX, erişilebilirlik ve dönüşüm",
+   "item": "CTA içerik uyumu",
+   "priority": "P2",
+   "group_en": "12 · Mobile UX, accessibility and conversion",
+   "item_en": "CTA and content match",
+   "applies_to": "Tüm siteler",
+   "method": "review",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-129",
+   "group": "13 · JS, render ve head yönetimi",
+   "item": "Source vs rendered HTML",
+   "priority": "P1",
+   "group_en": "13 · JS, rendering and head management",
+   "item_en": "Source versus rendered HTML",
+   "applies_to": "JS ağırlıklı siteler",
+   "method": "full",
+   "checks": [
+    "RND-1",
+    "RND-2"
+   ],
+   "rules": [
+    "rnd1.",
+    "rnd2."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-130",
+   "group": "13 · JS, render ve head yönetimi",
+   "item": "Googlebot rendered görünüm",
+   "priority": "P1",
+   "group_en": "13 · JS, rendering and head management",
+   "item_en": "Googlebot rendered view",
+   "applies_to": "Tüm siteler",
+   "method": "data",
+   "checks": [
+    "IDX-9"
+   ],
+   "rules": [],
+   "needs": [
+    "gsc"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Needs GSC URL Inspection live test."
+  },
+  {
+   "id": "SEO-131",
+   "group": "13 · JS, render ve head yönetimi",
+   "item": "CSR rotalarda HTTP status",
+   "priority": "P1",
+   "group_en": "13 · JS, rendering and head management",
+   "item_en": "HTTP status on CSR routes",
+   "applies_to": "SPA / Headless",
+   "method": "partial",
+   "checks": [
+    "IDX-1",
+    "RND-1"
+   ],
+   "rules": [
+    "idx1.soft404",
+    "rnd1."
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": "js_gap",
+   "maya_note": "Soft 404 on 200 pages; client-side routes not tested."
+  },
+  {
+   "id": "SEO-132",
+   "group": "13 · JS, render ve head yönetimi",
+   "item": "Canonical/head hydration tutarlılığı",
+   "priority": "P1",
+   "group_en": "13 · JS, rendering and head management",
+   "item_en": "Canonical/head hydration consistency",
+   "applies_to": "JS ağırlıklı siteler",
+   "method": "partial",
+   "checks": [
+    "ACC-3",
+    "TSEO-1"
+   ],
+   "rules": [
+    "tseo1.head_closed",
+    "acc3.robots_outside_head"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Broken <head>; raw vs rendered canonical/title diff not raised."
+  },
+  {
+   "id": "SEO-133",
+   "group": "13 · JS, render ve head yönetimi",
+   "item": "Temel linklerin href formatı",
+   "priority": "P1",
+   "group_en": "13 · JS, rendering and head management",
+   "item_en": "href format of key links",
+   "applies_to": "SPA / JS siteler",
+   "method": "full",
+   "checks": [
+    "STR-19"
+   ],
+   "rules": [
+    "str19."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-134",
+   "group": "13 · JS, render ve head yönetimi",
+   "item": "Lazy content tetiklenmesi",
+   "priority": "P1",
+   "group_en": "13 · JS, rendering and head management",
+   "item_en": "Lazy content triggering",
+   "applies_to": "JS / Infinite scroll",
+   "method": "full",
+   "checks": [
+    "RND-3"
+   ],
+   "rules": [
+    "rnd3."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-135",
+   "group": "13 · JS, render ve head yönetimi",
+   "item": "Hydration ve API hata senaryoları",
+   "priority": "P1",
+   "group_en": "13 · JS, rendering and head management",
+   "item_en": "Hydration and API errors",
+   "applies_to": "JS ağırlıklı siteler",
+   "method": "missing",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Rule missing: console errors and failed API calls in the render."
+  },
+  {
+   "id": "SEO-136",
+   "group": "13 · JS, render ve head yönetimi",
+   "item": "Dinamik metadata sayfa tipleri",
+   "priority": "P1",
+   "group_en": "13 · JS, rendering and head management",
+   "item_en": "Dynamic metadata per page type",
+   "applies_to": "Headless / JS siteler",
+   "method": "partial",
+   "checks": [
+    "STR-1",
+    "STR-16",
+    "TSEO-1"
+   ],
+   "rules": [
+    "str1.",
+    "str16.",
+    "tseo1.title_",
+    "tseo1.description"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": "js_gap",
+   "maya_note": "Metadata per page; per-template patterns not reported."
+  },
+  {
+   "id": "SEO-137",
+   "group": "13 · JS, render ve head yönetimi",
+   "item": "Gizli paywall / auth",
+   "priority": "P1",
+   "group_en": "13 · JS, rendering and head management",
+   "item_en": "Hidden paywall / auth",
+   "applies_to": "Login ağırlıklı siteler",
+   "method": "full",
+   "checks": [
+    "RND-5"
+   ],
+   "rules": [
+    "rnd5."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-138",
+   "group": "14 · Görsel, video ve medya SEO",
+   "item": "Görsel ALT kalitesi",
+   "priority": "P1",
+   "group_en": "14 · Image, video and media SEO",
+   "item_en": "Image ALT quality",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "STR-7"
+   ],
+   "rules": [
+    "str7.placeholder",
+    "str7.alt_split"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Placeholder/filename alts; descriptiveness needs AI."
+  },
+  {
+   "id": "SEO-139",
+   "group": "14 · Görsel, video ve medya SEO",
+   "item": "Gerçek HTML ALT kontrolü",
+   "priority": "P1",
+   "group_en": "14 · Image, video and media SEO",
+   "item_en": "ALT in the real HTML",
+   "applies_to": "Görsel yoğun siteler",
+   "method": "full",
+   "checks": [
+    "STR-7"
+   ],
+   "rules": [
+    "str7.no_alt",
+    "str7.alt"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-140",
+   "group": "14 · Görsel, video ve medya SEO",
+   "item": "Görsel keşfi ve erişimi",
+   "priority": "P1",
+   "group_en": "14 · Image, video and media SEO",
+   "item_en": "Image discovery and access",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "STR-7"
+   ],
+   "rules": [
+    "str7.broken",
+    "str7.mime"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Image files that do not load; robots blocking of image paths not checked."
+  },
+  {
+   "id": "SEO-141",
+   "group": "14 · Görsel, video ve medya SEO",
+   "item": "Görsel dosya adı ve bağlam",
+   "priority": "P3",
+   "group_en": "14 · Image, video and media SEO",
+   "item_en": "Image file names and context",
+   "applies_to": "Tüm siteler",
+   "method": "review",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-142",
+   "group": "14 · Görsel, video ve medya SEO",
+   "item": "Video keşfedilebilirliği",
+   "priority": "P2",
+   "group_en": "14 · Image, video and media SEO",
+   "item_en": "Video discoverability",
+   "applies_to": "Video siteleri",
+   "method": "partial",
+   "checks": [
+    "STR-3",
+    "STR-7",
+    "STR-20"
+   ],
+   "rules": [
+    "str7.video",
+    "str3.video",
+    "str20."
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": "video",
+   "maya_note": "Video markup and placeholders; video sitemap/indexing not checked."
+  },
+  {
+   "id": "SEO-143",
+   "group": "14 · Görsel, video ve medya SEO",
+   "item": "PDF ve indirilebilir döküman",
+   "priority": "P2",
+   "group_en": "14 · Image, video and media SEO",
+   "item_en": "PDFs and downloads",
+   "applies_to": "PDF barındıran siteler",
+   "method": "missing",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": "pdf",
+   "maya_note": "Rule missing: PDFs linked, readable text, indexability."
+  },
+  {
+   "id": "SEO-144",
+   "group": "15 · Uluslararası ve yerel SEO",
+   "item": "hreflang söz dizimi",
+   "priority": "P1",
+   "group_en": "15 · International and local SEO",
+   "item_en": "hreflang syntax",
+   "applies_to": "Çok dilli / ülkeli",
+   "method": "full",
+   "checks": [
+    "STR-9"
+   ],
+   "rules": [
+    "str9."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "languages",
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-145",
+   "group": "15 · Uluslararası ve yerel SEO",
+   "item": "Hreflang canonical ilişkisi",
+   "priority": "P1",
+   "group_en": "15 · International and local SEO",
+   "item_en": "hreflang and canonical",
+   "applies_to": "Çok dilli / ülkeli",
+   "method": "full",
+   "checks": [
+    "STR-9"
+   ],
+   "rules": [
+    "str9."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "languages",
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-146",
+   "group": "15 · Uluslararası ve yerel SEO",
+   "item": "Dil/ülke URL stratejisi",
+   "priority": "P2",
+   "group_en": "15 · International and local SEO",
+   "item_en": "Language/country URL strategy",
+   "applies_to": "Çok dilli / ülkeli",
+   "method": "partial",
+   "checks": [
+    "STR-9"
+   ],
+   "rules": [
+    "str9."
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": "languages",
+   "maya_note": "Folders and hreflang read; IP/language redirects not tested from other countries."
+  },
+  {
+   "id": "SEO-147",
+   "group": "15 · Uluslararası ve yerel SEO",
+   "item": "Çeviri kalite ve para birimi",
+   "priority": "P2",
+   "group_en": "15 · International and local SEO",
+   "item_en": "Translation quality and currency",
+   "applies_to": "Çok dilli / ülkeli",
+   "method": "review",
+   "checks": [
+    "STR-12"
+   ],
+   "rules": [
+    "str12."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "languages",
+   "maya_note": "Wrong-language pages detected; translation quality and currency need review."
+  },
+  {
+   "id": "SEO-148",
+   "group": "15 · Uluslararası ve yerel SEO",
+   "item": "Google Business Profile doğruluğu",
+   "priority": "P1",
+   "group_en": "15 · International and local SEO",
+   "item_en": "Google Business Profile accuracy",
+   "applies_to": "Yerel işletmeler",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "gbp"
+   ],
+   "rest": null,
+   "when": "local",
+   "maya_note": "Needs Google Business Profile (DataForSEO business listing is a paid partial)."
+  },
+  {
+   "id": "SEO-149",
+   "group": "15 · Uluslararası ve yerel SEO",
+   "item": "NAP tutarlılığı",
+   "priority": "P2",
+   "group_en": "15 · International and local SEO",
+   "item_en": "NAP consistency",
+   "applies_to": "Yerel işletmeler",
+   "method": "partial",
+   "checks": [
+    "STR-5"
+   ],
+   "rules": [
+    "str5."
+   ],
+   "needs": [],
+   "rest": [
+    "gbp"
+   ],
+   "when": "local",
+   "maya_note": "Name consistency on the site; directories and GBP not compared."
+  },
+  {
+   "id": "SEO-150",
+   "group": "15 · Uluslararası ve yerel SEO",
+   "item": "Şube / şehir landing sayfaları",
+   "priority": "P1",
+   "group_en": "15 · International and local SEO",
+   "item_en": "Branch / city landing pages",
+   "applies_to": "Çok şubeli / yerel",
+   "method": "review",
+   "checks": [
+    "IDX-8"
+   ],
+   "rules": [
+    "idx8.location"
+   ],
+   "needs": [],
+   "rest": null,
+   "when": "local",
+   "maya_note": "Location page quality needs judgement; template copies are detected."
+  },
+  {
+   "id": "SEO-151",
+   "group": "15 · Uluslararası ve yerel SEO",
+   "item": "Yorum sinyali ve yanıtlar",
+   "priority": "P2",
+   "group_en": "15 · International and local SEO",
+   "item_en": "Reviews and replies",
+   "applies_to": "Yerel işletmeler",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "gbp"
+   ],
+   "rest": null,
+   "when": "local",
+   "maya_note": "Needs GBP reviews."
+  },
+  {
+   "id": "SEO-152",
+   "group": "16 · Crawl kurulumu ve veri kalitesi",
+   "item": "Tarama kapsamı ve başlangıç URL’leri",
+   "priority": "P1",
+   "group_en": "16 · Crawl setup and data quality",
+   "item_en": "Crawl scope and start URLs",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Start URL, scope, caps and key pages recorded in every report."
+  },
+  {
+   "id": "SEO-153",
+   "group": "16 · Crawl kurulumu ve veri kalitesi",
+   "item": "Render modu ve örneklem doğrulaması",
+   "priority": "P1",
+   "group_en": "16 · Crawl setup and data quality",
+   "item_en": "Render mode and sample check",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "RND-1",
+    "RND-2"
+   ],
+   "rules": [
+    "rnd1.",
+    "rnd2."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-154",
+   "group": "16 · Crawl kurulumu ve veri kalitesi",
+   "item": "Hız, limit ve bot tuzakları",
+   "priority": "P1",
+   "group_en": "16 · Crawl setup and data quality",
+   "item_en": "Speed, limits and bot traps",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [
+    "ACC-7"
+   ],
+   "rules": [
+    "acc7."
+   ],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Politeness, rate limits, parameter dedupe."
+  },
+  {
+   "id": "SEO-155",
+   "group": "16 · Crawl kurulumu ve veri kalitesi",
+   "item": "Crawl tamamlanma ve kapsama kontrolü",
+   "priority": "P1",
+   "group_en": "16 · Crawl setup and data quality",
+   "item_en": "Crawl completion and coverage",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-156",
+   "group": "17 · Off-page ve dış bağlantılar",
+   "item": "Backlink ve referring domain envanteri",
+   "priority": "P2",
+   "group_en": "17 · Off-page and external links",
+   "item_en": "Backlink and referring domain inventory",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "dataforseo"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Referring domains, backlinks, rank, spam score."
+  },
+  {
+   "id": "SEO-157",
+   "group": "17 · Off-page ve dış bağlantılar",
+   "item": "Değerli backlink hedeflerinin sağlığı",
+   "priority": "P1",
+   "group_en": "17 · Off-page and external links",
+   "item_en": "Health of valuable backlink targets",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "dataforseo"
+   ],
+   "rest": [
+    "dataforseo"
+   ],
+   "when": null,
+   "maya_note": "Broken backlink count; per-target health not crawled."
+  },
+  {
+   "id": "SEO-158",
+   "group": "17 · Off-page ve dış bağlantılar",
+   "item": "Dış bağlantı niteliği ve risk incelemesi",
+   "priority": "P2",
+   "group_en": "17 · Off-page and external links",
+   "item_en": "External link quality and risk",
+   "applies_to": "Tüm siteler",
+   "method": "review",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": ""
+  },
+  {
+   "id": "SEO-159",
+   "group": "18 · GSC manuel işlemler ve güvenlik",
+   "item": "Manuel işlemler raporu",
+   "priority": "P1",
+   "group_en": "18 · GSC manual actions and security",
+   "item_en": "Manual actions report",
+   "applies_to": "Tüm siteler",
+   "method": "manual",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "manual"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "GSC Manual Actions has no API."
+  },
+  {
+   "id": "SEO-160",
+   "group": "18 · GSC manuel işlemler ve güvenlik",
+   "item": "Güvenlik sorunları ve hack belirtileri",
+   "priority": "P1",
+   "group_en": "18 · GSC manual actions and security",
+   "item_en": "Security issues and hacking signs",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [
+    "ACC-4",
+    "IDX-6",
+    "TSEO-1"
+   ],
+   "rules": [
+    "acc4.",
+    "tseo1.mixed"
+   ],
+   "needs": [],
+   "rest": [
+    "gsc"
+   ],
+   "when": null,
+   "maya_note": "Cloaking for Googlebot and mixed content seen; GSC security report and injected-spam scan missing."
+  },
+  {
+   "id": "SEO-161",
+   "group": "19 · Ölçüm doğruluğu",
+   "item": "GA4 ve GTM mükerrer / eksik ölçüm",
+   "priority": "P1",
+   "group_en": "19 · Measurement accuracy",
+   "item_en": "GA4 and GTM duplicate / missing tracking",
+   "applies_to": "Ölçüm kullanan siteler",
+   "method": "partial",
+   "checks": [
+    "TSEO-1"
+   ],
+   "rules": [
+    "tseo1.analytics_twice"
+   ],
+   "needs": [],
+   "rest": "review",
+   "when": null,
+   "maya_note": "Duplicate tags in HTML; firing and events need a browser session."
+  },
+  {
+   "id": "SEO-162",
+   "group": "19 · Ölçüm doğruluğu",
+   "item": "Dönüşüm ve ticari veri eşleştirmesi",
+   "priority": "P1",
+   "group_en": "19 · Measurement accuracy",
+   "item_en": "Conversion and commercial data match",
+   "applies_to": "Lead / e-ticaret",
+   "method": "data",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "ga4",
+    "crm"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Needs GA4/CRM/orders."
+  },
+  {
+   "id": "SEO-163",
+   "group": "19 · Ölçüm doğruluğu",
+   "item": "Domainler arası ve ödeme dönüşü attribution",
+   "priority": "P1",
+   "group_en": "19 · Measurement accuracy",
+   "item_en": "Cross-domain and payment return attribution",
+   "applies_to": "Çok domainli dönüşüm akışı",
+   "method": "manual",
+   "checks": [],
+   "rules": [],
+   "needs": [
+    "manual"
+   ],
+   "rest": null,
+   "when": null,
+   "maya_note": "Cross-domain checkout needs a real session."
+  },
+  {
+   "id": "SEO-164",
+   "group": "20 · Düzeltme sonrası doğrulama",
+   "item": "Bulgu bazında yeniden test",
+   "priority": "P1",
+   "group_en": "20 · Verification after fixes",
+   "item_en": "Re-test per finding",
+   "applies_to": "Tüm siteler",
+   "method": "full",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": null,
+   "when": null,
+   "maya_note": "Serious findings re-asked in the same audit; audits compared."
+  },
+  {
+   "id": "SEO-165",
+   "group": "20 · Düzeltme sonrası doğrulama",
+   "item": "Bulgu kapatma ve performans izleme",
+   "priority": "P1",
+   "group_en": "20 · Verification after fixes",
+   "item_en": "Closing findings and tracking performance",
+   "applies_to": "Tüm siteler",
+   "method": "partial",
+   "checks": [],
+   "rules": [],
+   "needs": [],
+   "rest": [
+    "gsc",
+    "ga4"
+   ],
+   "when": null,
+   "maya_note": "Audit-to-audit comparison; performance tracking needs GSC/GA4."
+  }
+ ]
+}

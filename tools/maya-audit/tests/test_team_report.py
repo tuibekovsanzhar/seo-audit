@@ -437,10 +437,16 @@ def test_each_language_downloads_only_that_language_through_the_real_routes(fini
     crossed = client.get(f"{base}/downloads/team", params={"lang": "en", "build": tr_token})
     assert crossed.headers["x-maya-language"] == "en" and crossed.headers["content-disposition"].endswith('-team-report-en.pdf"')
     tr_phrases, en_phrases = _template_phrases("tr"), _template_phrases("en")
+    # DECISIONS 342: the team's checklist names its Turkish items with English words ("Önemli URL HTTP status"); they
+    # are the team's own wording, not a template of the other language.
+    from maya_audit import checklist
+    names = {"tr": [re.sub(r"\s+", "", x) for it in checklist.items() for x in (it["item"], it["group"])], "en": []}
     for lang, (pdf_text, xlsx_text) in got.items():
         foreign = en_phrases if lang == "tr" else tr_phrases
         own = tr_phrases if lang == "tr" else en_phrases
         for name, text in (("PDF", pdf_text), ("XLSX", xlsx_text)):
+            for own_name in sorted(names[lang], key=len, reverse=True):
+                text = text.replace(own_name, "")
             leaked = sorted(p for p in foreign if p in text)
             assert leaked == [], f"{lang} {name} holds the other language's template text: {leaked[:5]}"
         assert sum(p in pdf_text for p in own) >= 10, f"the {lang} PDF holds too little of its own templates"

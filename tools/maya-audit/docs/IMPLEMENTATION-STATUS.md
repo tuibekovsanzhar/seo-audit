@@ -2014,4 +2014,31 @@ Merged cards of the saved audits checked for rows without their own value: fee70
 | fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3153 passed, 4 skipped, 135 deselected, 1 warning in 540.54s (0:09:00)` |
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3288 passed, 4 skipped, 1 warning in 951.14s (0:15:51)` |
 | Owner's web app on port 8770 | NOT RUN here (restart needed) |
+| Push | `ec46b7b..f3285d1` pushed 2026-11-11 (owner: "push"). CI run 43098088162 (`maya-audit`) was created 20:47:12Z and was still "queued" with no job at 2026-11-12 09:28 UTC; GitHub refused both cancel ("completed") and re-run ("already running"). Owner: leave it, start nothing else for it. |
+
+## SEO team's 165-item checklist in every audit (2026-11-12, DECISIONS 342)
+
+Ek: "Kontrol listesi" (165 rows: ID, group, item, priority, result, evidence, Maya rule / card, missing data source)
+and "Kontrol listesi özeti" (totals per result and per group). Team report: one page "SEO kontrol listesi" (outside
+RG-15's ten pages). Built from the same selection as the cards, so every saved audit has it.
+
+enpara fee70191 (current-engine copy, provider-free, PDF 10 pages, gate passed):
+
+| | Items | Geçti | Sorun | Veri eksik | İnceleme gerekli | Uygulanmaz |
+|---|---|---|---|---|---|---|
+| Total | 165 | 41 | 13 | 31 | 49 | 31 |
+
+Missing data sources: Search Console 18, GA4 10, Manuel 7, DataForSEO 3, Bing Webmaster Tools 1, PageSpeed 1, CRM 1.
+Sorun: SEO-011/033 (card 2), -043/064 (card 5), -056/127 (card 3), -061 (card 6), -065 (card 4), -066 (card 8),
+-100/101 (card 7), -132 (card 1), -112 (INP p75 323 ms, CrUX). Uygulanmaz: the 15 e-commerce items (banking, no
+product page), local SEO (no local-business signal), news sitemap, IndexNow (no key), SPA items (no render gap), video,
+internal search, large-site crawl budget. The hreflang and image-weight cards wait under "Teyit edin": İnceleme gerekli.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_checklist_342.py` | `14 passed` |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3167 passed, 4 skipped, 135 deselected, 1 warning in 527.22s (0:08:47)` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3302 passed, 4 skipped, 1 warning in 967.85s (0:16:07)` |
+| Owner's web app on port 8770 | NOT RUN here (restart needed) |
 | Push | NOT DONE (owner: don't push) |
+

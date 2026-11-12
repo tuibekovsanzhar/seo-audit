@@ -703,12 +703,20 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         # DECISIONS 341: each page's early-closed head as the check reads it (every page, not only the 40 the
         # evidence keeps), for its row in the appendix
         "_head_rows": head_rows(report),
+        # DECISIONS 342: what the SEO team's checklist reads besides the findings (check statuses, connections, CrUX,
+        # the site's shape), for its appendix sheet and the team report's page
+        "_checklist_facts": checklist_facts(report),
     }
 
 
 # ---------------------------------------------------------------- issue type and templates (Stage 8a, DECISIONS 315)
 
 ISSUE_TYPES = ("issue", "warning", "opportunity")
+
+
+def checklist_facts(report: dict) -> dict:
+    from .checklist import facts
+    return facts(report)
 
 
 def head_rows(report: dict) -> dict[str, dict]:

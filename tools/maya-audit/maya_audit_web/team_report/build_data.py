@@ -2151,7 +2151,8 @@ class Builder:
         # counted among the recorded issues) and notes.
         split = {"problems": sum(1 for g in sel["confirm"] if g["severity"] in SEVERITIES),
                  "notes": sum(1 for g in sel["confirm"] if g["severity"] not in SEVERITIES)}
-        return {"own_limits": limits, "confirm": confirm, "confirm_more": more_confirm, "confirm_split": split, "key_pages": pages,
+        return {"checklist": self.checklist_page(todos),
+                "own_limits": limits, "confirm": confirm, "confirm_more": more_confirm, "confirm_split": split, "key_pages": pages,
                 "business_line": business_line, "key_pages_not_found": not_found,
                 "templates": self.templates_rows(),
                 "key_pages_note": L["key_pages_empty"][reason] if reason and not pages else None,
@@ -2160,6 +2161,34 @@ class Builder:
                              "line": fmt(L["appendix_line"], file=name, findings=c["findings"], cards=len(todos),
                                                                confirm=c["confirm"], notes=c["notes"],
                                                                appendix=c["appendix_only"], limits=c["own_limits"])}}
+
+    CHECKLIST_ISSUES = 14
+
+    def checklist_page(self, todos):
+        """DECISIONS 342: the team's 165-item checklist on one page: the totals per result and per group, the missing
+        data sources and the items with an issue (their card or rule). Every item's row is in the appendix."""
+        try:
+            from maya_audit import checklist as cl  # type: ignore
+        except ImportError:
+            return None
+        if not (self.sel or {}).get("_checklist_facts"):
+            return None
+        lang = self.lang
+        rows = cl.rows(self.sel, lang, todos, title=lambda cid, text: self.w.title(cid, text)[0])
+        t = cl.totals(rows)
+        W = cl.WORDS[lang]
+        sources: dict[str, int] = {}
+        for r in rows:
+            for s in r["missing_sources"]:
+                sources[s] = sources.get(s, 0) + 1
+        issues = [{"id": r["id"], "item": r["item"], "ref": r["ref"]} for r in rows if r["result"] == "issue"]
+        self.fact(t["n"], *t["all"].values(), *sources.values(),
+                  *(v for g in t["groups"] for v in (g["n"], *g["counts"].values())))
+        return {"n": t["n"],
+                "results": [{"key": k, "label": W["result"][k], "n": t["all"][k]} for k in cl.RESULTS],
+                "groups": [{"group": g["group"], "n": g["n"], "counts": [g["counts"][k] for k in cl.RESULTS]} for g in t["groups"]],
+                "sources": [{"label": W["source"][k], "n": n} for k, n in sorted(sources.items(), key=lambda kv: -kv[1])],
+                "issues": issues[:self.CHECKLIST_ISSUES], "issues_more": max(0, len(issues) - self.CHECKLIST_ISSUES)}
 
     def worst(self, row):
         """A by_page row's worst severity; from its findings when a saved row lacks it."""

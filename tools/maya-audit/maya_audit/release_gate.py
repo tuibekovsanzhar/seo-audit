@@ -35,7 +35,7 @@ Rules (hard = blocks, soft = conditional):
     RG-13 soft  no visible card text ends cut off ("+" or "·" with nothing after it)
     RG-14 hard  the site's content was read: a report with 0 pages read is not delivered as a result (DECISIONS 287);
                 pages read through a reader count (DECISIONS 288)
-    RG-15 hard  a client PDF has at most 10 pages (DECISIONS 300)
+    RG-15 hard  a client PDF has at most 10 pages (DECISIONS 300); the checklist page is not counted (DECISIONS 342)
     RG-16 hard  a client PDF has at most 15 cards
     RG-17 hard  the client report's appendix (the XLSX) holds every finding of the report
 """
