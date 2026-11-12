@@ -190,7 +190,7 @@ def current(source: Path, affected_path: Path | None = None, *, folder: Path | N
                 folder.mkdir(parents=True, exist_ok=True)
                 _write(meta_path, {"key": key, "reassessed": False, "engine": eng, "read": read_of(new)})
                 return Current(source, affected_path, source, False, eng)
-            record = {"kind": "saved-data additions", "rules": "DECISIONS 309, 321, 329 and 334", "source_audit_id": audit_id,
+            record = {"kind": "saved-data additions", "rules": "DECISIONS 309, 321, 329, 334, 337, 338, 340 and 343", "source_audit_id": audit_id,
                       "processed_at": datetime.now(timezone.utc).isoformat(), "requests": 0, "changes": changes,
                       "unchanged": "every other finding, observation, time and count is the source report's"}
             aff = affected

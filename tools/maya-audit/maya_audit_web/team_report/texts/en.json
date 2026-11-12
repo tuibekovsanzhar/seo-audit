@@ -4253,6 +4253,82 @@
    ],
    "verify": "The browser's network tab shows a smaller file for the image.",
    "summary": "Large image files"
+  },
+  "idx1.error_redirect": {
+   "title": "Return 404/410 at missing addresses instead of a 302",
+   "finding": "Missing addresses redirect to an error page",
+   "explanation": "An address that does not exist should answer 404 (or 410) itself instead of redirecting to an error page.",
+   "why": "A redirect to an error page tells engines the page moved; missing pages leave the index late or count as soft errors.",
+   "steps": [
+    "Turn off the redirect in the server's error settings",
+    "Show the error page at the requested address with a 404 status",
+    "Use 410 for removed pages"
+   ],
+   "verify": "A missing address asked with curl -I should answer 404 (or 410) at once, with no Location header.",
+   "summary": "404 at missing addresses"
+  },
+  "idx8.self_canonical_copies": {
+   "title": "301 the second addresses of a page to its main address",
+   "finding": "One page opens at two addresses",
+   "explanation": "Choose each pair's main address and redirect the second one to it with a 301.",
+   "why": "Two addresses of one page split its link value and crawl budget; the engine picks which one to show.",
+   "steps": [
+    "Choose each pair's main address",
+    "Redirect the second address to it with a 301",
+    "Point links and the sitemap at the main address"
+   ],
+   "verify": "The second address should 301 to the main one; the main address's canonical should name itself.",
+   "summary": "Second addresses"
+  },
+  "str3.product_on_article": {
+   "title": "Remove the Product markup from blog posts",
+   "finding": "Blog posts carry Product and rating markup",
+   "explanation": "Remove the Product and AggregateRating markup from blog and article pages and keep Article/BlogPosting.",
+   "why": "Product ratings on an article break Google's structured data rules; rich results can be lost or a manual action can follow.",
+   "steps": [
+    "Find the Product and AggregateRating block in the blog template",
+    "Remove it and keep BlogPosting",
+    "Check a few posts in the Rich Results Test"
+   ],
+   "verify": "The Rich Results Test should show no Product or rating on a blog post, and BlogPosting.",
+   "summary": "Product markup on blog posts"
+  },
+  "str1.subpage_copies_parent": {
+   "title": "Give sub-pages their own title, H1 and hreflang",
+   "finding": "Sub-pages carry the parent's title and hreflang",
+   "explanation": "Give each sub-page a title, H1 and description about its own topic, and make its hreflang name its own language versions.",
+   "why": "The same title and H1, with hreflang naming the parent, make engines read the sub-pages as copies of the parent.",
+   "steps": [
+    "Write each sub-page's title, H1 and description for its own topic",
+    "Point hreflang at the sub-page's own address and language versions"
+   ],
+   "verify": "The sub-page's source should show its own title and H1; its hreflang for its language should be its own address.",
+   "summary": "Sub-page copies"
+  },
+  "str2.h1_parent_name": {
+   "title": "Give each sub-page an H1 about its own topic",
+   "finding": "Sub-pages use the section's name as their H1",
+   "explanation": "Make each sub-page's H1 say its own topic; keep the section name in the breadcrumb.",
+   "why": "An H1 that names the section does not tell engines what the page is about; pages of one section look alike.",
+   "steps": [
+    "Write each sub-page's H1 from the topic in its title",
+    "Move the section name to the breadcrumb or above the H1 as plain text"
+   ],
+   "verify": "The sub-page's source should hold one H1 that names its own topic.",
+   "summary": "H1 with the section name"
+  },
+  "str13.markers_data": {
+   "title": "Fix the unfilled template variable in the JSON-LD",
+   "finding": "Structured data or meta tags show an unfilled template variable",
+   "explanation": "Find the template that writes the variable and give it its value, or leave the field out.",
+   "why": "A variable in double curly braces is read by engines as a real value; the structured data becomes invalid or wrong.",
+   "steps": [
+    "Find the field and the text from the evidence in the template",
+    "Give the variable its value or remove the field",
+    "Check the page source has no variable left"
+   ],
+   "verify": "The page source should hold no variable in curly braces or double percent signs; the Rich Results Test should show no error.",
+   "summary": "Unfilled variable"
   }
  }
 }

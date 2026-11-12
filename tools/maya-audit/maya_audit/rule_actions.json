@@ -1520,6 +1520,98 @@
      "Replace the file at the same address"
     ]
    }
+  },
+  "idx1.error_redirect": {
+   "en": "Return 404/410 at missing addresses instead of a 302",
+   "tr": "Olmayan adreslerde 302 yerine doğrudan 404/410 döndürün",
+   "steps": {
+    "tr": [
+     "Sunucunun hata ayarında yönlendirmeyi kapatın",
+     "Hata sayfasını istenen adreste 404 durumuyla gösterin",
+     "Kaldırılan sayfalarda 410 kullanın"
+    ],
+    "en": [
+     "Turn off the redirect in the server's error settings",
+     "Show the error page at the requested address with a 404 status",
+     "Use 410 for removed pages"
+    ]
+   }
+  },
+  "idx8.self_canonical_copies": {
+   "en": "301 the second addresses of a page to its main address",
+   "tr": "Aynı sayfanın ikinci adreslerini asıl adrese 301'leyin",
+   "steps": {
+    "tr": [
+     "Her çiftin asıl adresini seçin",
+     "İkinci adresi asıl adrese 301 ile yönlendirin",
+     "Bağlantıları ve site haritasını asıl adrese çevirin"
+    ],
+    "en": [
+     "Choose each pair's main address",
+     "Redirect the second address to it with a 301",
+     "Point links and the sitemap at the main address"
+    ]
+   }
+  },
+  "str3.product_on_article": {
+   "en": "Remove the Product markup from blog posts",
+   "tr": "Blog yazılarındaki Product işaretlemesini kaldırın",
+   "steps": {
+    "tr": [
+     "Blog şablonundaki Product ve AggregateRating bloğunu bulun",
+     "Bu bloğu kaldırın, BlogPosting'i bırakın",
+     "Rich Results Test ile birkaç yazıyı kontrol edin"
+    ],
+    "en": [
+     "Find the Product and AggregateRating block in the blog template",
+     "Remove it and keep BlogPosting",
+     "Check a few posts in the Rich Results Test"
+    ]
+   }
+  },
+  "str1.subpage_copies_parent": {
+   "en": "Give sub-pages their own title, H1 and hreflang",
+   "tr": "Alt sayfalara kendi başlığını, H1'ini ve hreflang'ini verin",
+   "steps": {
+    "tr": [
+     "Her alt sayfanın başlık, H1 ve açıklamasını kendi konusuna göre yazın",
+     "hreflang'i alt sayfanın kendi adresine ve dil sürümlerine çevirin"
+    ],
+    "en": [
+     "Write each sub-page's title, H1 and description for its own topic",
+     "Point hreflang at the sub-page's own address and language versions"
+    ]
+   }
+  },
+  "str2.h1_parent_name": {
+   "en": "Give each sub-page an H1 about its own topic",
+   "tr": "Alt sayfalara kendi konusunu anlatan bir H1 verin",
+   "steps": {
+    "tr": [
+     "Her alt sayfanın H1'ini başlığındaki konuyla yazın",
+     "Bölüm adını breadcrumb'a ya da H1'in üstüne düz metin olarak taşıyın"
+    ],
+    "en": [
+     "Write each sub-page's H1 from the topic in its title",
+     "Move the section name to the breadcrumb or above the H1 as plain text"
+    ]
+   }
+  },
+  "str13.markers_data": {
+   "en": "Fix the unfilled template variable in the JSON-LD",
+   "tr": "JSON-LD'deki doldurulmamış şablon değişkenini düzeltin",
+   "steps": {
+    "tr": [
+     "Kanıttaki alanı ve metni şablonda bulun",
+     "Değişkene değerini verin ya da alanı kaldırın",
+     "Sayfa kaynağında değişken kalmadığını kontrol edin"
+    ],
+    "en": [
+     "Find the field and the text from the evidence in the template",
+     "Give the variable its value or remove the field",
+     "Check the page source has no variable left"
+    ]
+   }
   }
  }
 }

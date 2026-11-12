@@ -224,11 +224,12 @@ def test_idx1_the_probe_obeys_robots_txt_the_delay_and_the_off_switch():
 
 
 def test_idx1_a_redirect_somewhere_else_is_recorded_but_not_called_a_soft_404():
-    outcome, seen = soft_site(Response(302, "", headers={"Location": "/tr/hata/"}))
+    # Not an error page by its address (/tr/hata/ is one since DECISIONS 343: tests/test_team_rules_343.py).
+    outcome, seen = soft_site(Response(302, "", headers={"Location": "/tr/kampanyalar/"}))
     idx1 = outcome.by_id["IDX-1"]
     assert not [f for f in idx1.findings if "soft 404" in f.title]
     probe = idx1.evidence["soft_404_probe"]
-    assert probe["assessed"] is False and probe["final_url"] == outcome.base + "/tr/hata/" and "not followed" in probe["verdict"]
+    assert probe["assessed"] is False and probe["final_url"] == outcome.base + "/tr/kampanyalar/" and "not followed" in probe["verdict"]
     assert len(probes(seen)) == 1
 
 

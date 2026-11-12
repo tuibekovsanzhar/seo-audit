@@ -31,7 +31,7 @@ def _respond(request):
 
 
 def _audit():
-    cfg = CrawlConfig(**{**QUIET, "max_pages": 5, "sitemap_check_max": 25})
+    cfg = CrawlConfig(**{**QUIET, "max_pages": 5, "sitemap_check_max": 25, "sitemap_check_all_up_to": 0})
     return run_audit(H + "/", cfg, httpx.MockTransport(_respond))
 
 

@@ -132,7 +132,7 @@ def _canonical_redirect(ev):
 EXTRACTORS: dict[str, Callable[[dict], list[dict]]] = {
     "str3.organization_broken": _org, "str2.home_hidden_h1": _hidden_h1, "prf1.home_ttfb": _ttfb,
     "rnd6.home_large": _bytes, "rnd6.large": _bytes, "str7.heavy": _images, "str7.video": _videos,
-    "idx5.drafts": _pages, "str1.no_title": _pages, "str13.markers": _markers, "idx8.two_addresses": _pairs,
+    "idx5.drafts": _pages, "str1.no_title": _pages, "str13.markers": _markers, "str13.markers_data": _markers, "idx8.two_addresses": _pairs,
     "str5.og_site_name": _og_site_name, "str1.shared": _shared_titles, "idx1.4xx.referenced": _referenced,
     "idx1.4xx.referenced.linked": _referenced, "idx1.href_mistyped": _referenced, "idx1.4xx.sitemap_only": _sitemap_entries, "judgment.empty.repeated": _empty, "judgment.empty.single": _empty,
     "str2.home_outline": _outline, "tseo1.head_closed_lost": _head_closed, "tseo1.head_closed_later": _head_closed,

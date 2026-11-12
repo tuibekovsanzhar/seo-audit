@@ -733,6 +733,16 @@ def _ask_together(requests: "LightRequests", asked: list[str], answered: dict[in
         thread.join()
 
 
+def sitemap_check_cap(cfg: CrawlConfig, listed: int) -> int:
+    """DECISIONS 343: a sitemap of `sitemap_check_all_up_to` (1,000) addresses or fewer is checked whole (every 404, redirect and
+    noindex entry found), whatever the sample cap; above it the cap's sample spread over the files (DECISIONS 294).
+    Not in a fast check."""
+    cap = max(0, cfg.sitemap_check_max)
+    if cap and not cfg.fast_check and listed <= cfg.sitemap_check_all_up_to:
+        return max(cap, listed)
+    return cap
+
+
 def check_sitemap_urls(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig) -> SitemapCheck:
     """IDX-5 (DECISIONS 206): every sitemap URL, not only those the crawl read. A URL the crawl read is judged from the
     crawl (no request); a file (a nested sitemap, an image, a PDF) is left out; a URL robots.txt disallows is counted
@@ -740,7 +750,7 @@ def check_sitemap_urls(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig) 
     sample spread evenly over the sitemap files when there are more (DECISIONS 294), up to SITEMAP_CHECK_WORKERS at once
     through the shared site limit."""
     policy = result.robots_policy_by_origin.get(result.origin)
-    check = SitemapCheck(cap=max(0, cfg.sitemap_check_max), listed=len(result.sitemap_urls))
+    check = SitemapCheck(cap=sitemap_check_cap(cfg, len(result.sitemap_urls)), listed=len(result.sitemap_urls))
     read = {p.url for p in result.pages}
     wanted: list[str] = []
     for url in result.sitemap_urls:

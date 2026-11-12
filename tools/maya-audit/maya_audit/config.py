@@ -159,6 +159,8 @@ TEMPLATE_MARKERS = (
     ("<%...%>", r"<%=?\s*[\w$.\-() ]{1,60}?\s*%>"),
     ("%7B...%7D", r"%7B(?:%7B)?[\w$.\-]{1,60}%7D(?:%7D)?"),
     ("{...} in a URL", r"(?<=/)\{[\w$.\-]{1,60}\}(?=$|[/?#])"),
+    # DECISIONS 343: a variable of an SEO plugin's title and description templates left unfilled (Yoast: %%title%%).
+    ("%%...%%", r"%%[A-Za-z_][\w.\-]{0,40}%%"),
 )
 # IDX-6: query parameters that tag a visit for analytics. On a link from the site to itself they create a second
 # address for the same page and credit the visit to the wrong source.
@@ -213,6 +215,10 @@ def default_time_limit_s(*args, **kwargs) -> float:
 # DataForSEO backlink panel: a referring domain whose spam score (0-100, DataForSEO's own measure) is
 # at or above this is counted as "looks like spam". Policy, not fact; every report states the value used.
 SPAM_SCORE_THRESHOLD = 50
+
+
+# DECISIONS 343: a sitemap of this many addresses or fewer is checked whole by IDX-5, whatever sitemap_check_max says.
+SITEMAP_CHECK_ALL_UP_TO = 1000
 
 
 @dataclass(frozen=True)
@@ -389,6 +395,8 @@ class CrawlConfig:
     # (Quick), 300 from 500 (Standard) and 0 for a single page (DECISIONS 294; were 200 and 1,000). Above the cap a
     # sample spread evenly over the sitemap files is asked, the same every run, 4 at a time through the site limit.
     sitemap_check_max: int = 100
+    # DECISIONS 343: a sitemap of this many addresses or fewer is asked whole, whatever sitemap_check_max says (0: off).
+    sitemap_check_all_up_to: int = SITEMAP_CHECK_ALL_UP_TO
     # Fast check (DECISIONS 219, --fast, the web app's "Fast check" switch): fewer optional requests, the FAST_* caps.
     # Pages read, robots.txt samples, ACC-4, redirect re-checks, the page reader and paid data are unchanged.
     fast_check: bool = False

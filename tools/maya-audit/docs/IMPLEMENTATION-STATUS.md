@@ -2044,5 +2044,50 @@ internal search, large-site crawl budget. The hreflang and image-weight cards wa
 | Fix | the unused line removed; `python -m compileall -q maya_audit maya_audit_web maya_audit_web_lite.py tests` and `ruff check --select E9,F821,F841 maya_audit maya_audit_web maya_audit_web_lite.py`: `All checks passed!` |
 | fast suite after the fix | `3167 passed, 4 skipped, 135 deselected, 1 warning in 574.41s (0:09:34)` |
 | full suite after the fix | `3302 passed, 4 skipped, 1 warning in 954.46s (0:15:54)` |
-| Push of the fix | NOT DONE (waiting for the owner's "push") |
+| Push of the fix | `f0f7bf4..757ed76` pushed 2026-11-12 (owner: "push"). CI run 43206110467 (`maya-audit`, job `fast`) green: 11:05:38-11:16:34Z (~11 min). f3285d1's run 43098088162 still "queued" (checked 2026-11-12), left alone as the owner asked. |
+
+## Technical rules from the SEO team's review (Efsa's enpara report) (2026-11-12, DECISIONS 343)
+
+New rules in `maya_audit/checks/team_rules.py`, run live and on saved reports (both reassessment paths); STR-13 gets
+%%…%% and `str13.markers_data` for JSON-LD/meta; the sitemap check reads a sitemap of up to 1,000 addresses whole.
+Every Ek row of the new cards says what was seen on that page.
+
+enpara fee70191, from the saved data (copies of `artifacts/` in a scratch folder, built the app's way; before: the
+committed engine `757ed76`, after: this change):
+
+| # | Before | After |
+|---|---|---|
+| 1 | Head'i erken kapatan öğeyi taşıyın (Yüksek) | same |
+| 2 | Site haritasındaki hata veren adresleri düzeltin ya da çıkarın (Yüksek, 21 adres) | same |
+| 3 | Metni olmayan bağlantılara ad verin (Düşük) | **Blog yazılarındaki Product işaretlemesini kaldırın** (Orta, 39 sayfa) |
+| 4 | hreflang bağlantılarını karşılıklı yapın | **Alt sayfalara kendi başlığını, H1'ini ve hreflang'ini verin** (Orta, 12 sayfa) |
+| 5 | Büyük görselleri hafifletin | **Aynı sayfanın ikinci adreslerini asıl adrese 301'leyin** (Orta, 2 sayfa: /bireysel-basvuru/kimlik-bilgileriniz ve ?sw=1) |
+| 6 | H1 etiketi olmayan sayfalara tek bir H1 etiketi ekleyin | **Olmayan adreslerde 302 yerine doğrudan 404/410 döndürün** (Orta, 21 adres) |
+| 7 | Aynı açıklamayı paylaşan sayfalara ayrı açıklama yazın | Metni olmayan bağlantılara ad verin |
+| 8 | Bağlantıları doğrudan son adrese verin | **Alt sayfalara kendi konusunu anlatan bir H1 verin** (Düşük, 20 sayfa) |
+| 9-14 / 9-15 | 9 ayrıştırılamayan JSON-LD, 10 hreflang'deki çalışmayan adresler, 11 H2/H3, 12 tablo başlık hücreleri, 13-14 two note cards | 9 hreflang karşılıklı, 10 büyük görseller, 11 H1 yok, 12 ortak açıklama, 13 son adrese bağlantı, 14 ayrıştırılamayan JSON-LD, 15 hreflang'deki çalışmayan adresler |
+
+Before 14 cards, after 15 (the limit): H2/H3, table header cells and the two note cards ("Küçük bağlantı ve etiket
+tutarsızlıkları", "Soru başlıkları") now go to the Ek.
+
+Kontrol listesi: Geçti 41 → 39, Sorun 18 → 24, Veri eksik 31 → 30, İnceleme gerekli 44 → 41, Uygulanmaz 31 → 31.
+Changed: SEO-013 Veri eksik → Sorun (card 6), SEO-041 Geçti → Sorun and SEO-049, SEO-076 İnceleme → Sorun (card 5),
+SEO-062 İnceleme → Sorun (card 4), SEO-106 Geçti → Sorun (card 3).
+
+Not confirmable from the saved data (need a new run, not claimed): /anasayfa vs / (found, not read: page cap 150),
+/sss/default.aspx (not found); the 185 sitemap addresses the sample left out (the next run asks all 285 not read).
+Rule 4: no template variable in the JSON-LD or meta tags of the 174 saved copies.
+
+Side effect found and stopped: verification builds earlier on 2026-11-12 (DECISIONS 342 and this one) were pointed at
+fee70191's `current-engine/report.json`, so the app's own derived-copy code wrote `current-engine/report.current-engine/`
+inside that audit (a copy the app does not read). Left for the owner to remove; builds now run on copies in a scratch folder.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_team_rules_343.py` | `26 passed` |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3193 passed, 4 skipped, 135 deselected, 1 warning in 525.48s (0:08:45)` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3328 passed, 4 skipped, 1 warning in 936.15s (0:15:36)` |
+| CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
+| Owner's web app on port 8770 | NOT RUN here (restart needed) |
+| Push | NOT DONE (owner: don't push) |
 

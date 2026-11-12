@@ -60,6 +60,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"asks .* to wait", "developer", "S", "The site asked this audit to slow down. The audit obeyed, which limited how many pages it could read in the time it had."),
     ),
     "IDX-1": (
+        (r"redirect to an error page instead of 404/410", "developer", "S", "A missing page that redirects tells engines it has moved: it stays in their index as a redirect, or leaves it late, instead of being dropped at once."),  # DECISIONS 343
         (r"server error \(5xx\)", "developer", "M", "A page that answers with a server error cannot be read, indexed or quoted, and repeated errors make crawlers visit less often."),
         (r"fail at the connection level", "developer", "M", "A page that cannot be connected to does not exist as far as a crawler is concerned."),
         (r"time out on every attempt", "developer", "M", "A page that never answers in time is given up on by crawlers, as it would be by a visitor."),
@@ -139,6 +140,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"clicks from the homepage", "seo", "M", "Pages many clicks deep are crawled later and less often, and are treated as less important."),
     ),
     "IDX-8": (
+        (r"second address\(es\) of a page answer 200", "developer", "S", "Two addresses of one page split its links and crawl visits, and the engine picks which one to show."),  # DECISIONS 343
         (r"differ mostly by the place name", "content", "L", "Many pages that repeat one text with only the place name changed can be treated as doorway pages, and none of them gives a reason to be shown."),
         (r"identical visible text", "seo", "M", "When several addresses show the same content, engines pick one to show, and it may not be the one you want."),
         (r"share the title", "content", "S", "Pages with the same title look like the same page in search results, so engines and visitors cannot tell them apart."),
@@ -193,12 +195,14 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"no <main> or <article>", "developer", "S", "The assessed HTML has no <main> or <article> element. Content may still be identified through other structure; extraction failure was not assessed."),
     ),
     "STR-1": (
+        (r"repeat their parent page's title or H1", "content", "M", "Sub-pages with the parent's title and an hreflang naming the parent look like copies of it, so engines may show the parent alone."),  # DECISIONS 343
         (r"have no <title>", "content", "S", "The title is the name an engine shows for the page. Without one, the engine makes one up."),
         (r"title\(s\) are shared", "content", "S", "Pages with the same title look like the same page in search results, so engines and visitors cannot tell them apart."),
         (r"generic title", "content", "S", "A title such as 'Home' or only the site name says nothing about what the page is about."),
         (r"begin with the same", "content", "S", "Repeated prefixes can obscure the page subject when a title is truncated. Display width varies; there is no fixed Google character limit."),
     ),
     "STR-2": (
+        (r"section's name as their H1", "content", "S", "An H1 that names the section does not say what the page is about, so the pages of one section look alike."),  # DECISIONS 343
         (r"only <h1> is hidden|only a hidden <h1>", "developer", "S", "A heading hidden from readers may be read as hidden text, and the page's topic is then left to weaker hints."),
         (r"have no <h1>", "content", "S", "The main heading tells engines what the page is about. Without it they rely on weaker hints."),
         (r"have an empty <h1>", "content", "S", "An empty heading does not supply a meaningful page topic."),
@@ -209,6 +213,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"more than one <h1>", "content", "S", "Several main headings make it less clear which one names the page's topic. This is a small matter."),
     ),
     "STR-3": (
+        (r"carry Product or AggregateRating markup", "developer", "S", "Product ratings on an article break Google's structured data rules, and the site's rich results can be lost."),  # DECISIONS 343
         # The checklist's quick checks (DECISIONS 304).
         (r"name no author", "content", "S", "A named author with a page of their own is one of the signals engines use to judge who stands behind advice and how far to trust it."),
         (r"Product markup without a GTIN or MPN", "developer", "S", "A GTIN or MPN lets Google match the product to the same item elsewhere, which its shopping results and merchant listings rely on."),

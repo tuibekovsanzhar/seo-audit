@@ -60,8 +60,9 @@ def test_every_rule_and_merge_group_has_every_text_field(lang):
             if len(value) > limit:
                 problems.append(f"{name}.{field}: {len(value)} > {limit}")
             # The catalogue's approved steps may name a heading tag (<h1>, or "H1 etiketi" as the SEO team writes it,
-            # DECISIONS 338); no other digit, in either source.
-            if re.search(r"\d", re.sub(r"</?h[1-6]>|\bH[1-6]\b", "", value)) or "{" in value \
+            # DECISIONS 338) and the HTTP status codes of the SEO team's card titles (301, 302, 404, 410: DECISIONS 343); no
+            # other digit, in either source.
+            if re.search(r"\d", re.sub(r"</?h[1-6]>|\bH[1-6]\b|\b(?:301|302|404|410)\b", "", value)) or "{" in value \
                     or re.search(r"\bLG-\d|\b(?:ACC|IDX|STR|RND|PRF|TSEO|ANS)-\d", value):
                 problems.append(f"{name}.{field}: digit, placeholder or internal code: {value!r}")
             if lang == "tr" and EN_WORDS.search(value):

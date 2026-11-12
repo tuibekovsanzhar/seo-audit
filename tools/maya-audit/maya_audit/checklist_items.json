@@ -248,7 +248,8 @@
    "rules": [
     "idx1.soft404",
     "idx1.empty",
-    "idx1.error_text"
+    "idx1.error_text",
+    "idx1.error_redirect"
    ],
    "needs": [],
    "rest": [
@@ -848,7 +849,8 @@
    "rules": [
     "idx4.different",
     "idx4.same",
-    "idx4.variant"
+    "idx4.variant",
+    "idx8.self_canonical_copies"
    ],
    "needs": [],
    "rest": null,
@@ -893,7 +895,8 @@
    "rules": [
     "str1.shared",
     "idx8.",
-    "str16."
+    "str16.",
+    "str1.subpage_copies_parent"
    ],
    "needs": [],
    "rest": null,
@@ -1010,7 +1013,8 @@
    "rules": [
     "idx8.two_addresses",
     "idx5.not_encoded",
-    "tseo1.url_decomposed"
+    "tseo1.url_decomposed",
+    "idx8.self_canonical_copies"
    ],
    "needs": [],
    "rest": "review",
@@ -1311,7 +1315,8 @@
    ],
    "rules": [
     "str16.",
-    "tseo1.description"
+    "tseo1.description",
+    "str1.subpage_copies_parent"
    ],
    "needs": [],
    "rest": "review",
@@ -1336,7 +1341,9 @@
     "str2.hidden_h1",
     "str2.home_hidden_h1",
     "str2.home_no_h1",
-    "str2.many_h1"
+    "str2.many_h1",
+    "str2.h1_parent_name",
+    "str1.subpage_copies_parent"
    ],
    "needs": [],
    "rest": null,
@@ -2032,7 +2039,9 @@
    "rules": [
     "str3.required",
     "str3.invalid",
-    "str3.unparsed"
+    "str3.unparsed",
+    "str13.markers_data",
+    "str3.product_on_article"
    ],
    "needs": [],
    "rest": [
@@ -2140,7 +2149,8 @@
    ],
    "rules": [
     "str3.article",
-    "str6."
+    "str6.",
+    "str3.product_on_article"
    ],
    "needs": [],
    "rest": null,
@@ -2746,7 +2756,8 @@
     "str1.",
     "str16.",
     "tseo1.title_",
-    "tseo1.description"
+    "tseo1.description",
+    "str13.markers"
    ],
    "needs": [],
    "rest": "review",
@@ -2925,7 +2936,8 @@
     "STR-9"
    ],
    "rules": [
-    "str9."
+    "str9.",
+    "str1.subpage_copies_parent"
    ],
    "needs": [],
    "rest": null,

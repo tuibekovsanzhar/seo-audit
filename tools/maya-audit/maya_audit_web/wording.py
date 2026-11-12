@@ -231,6 +231,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "{who} {did} Maya's direct crawler. {read:page was|pages were} read through Firecrawl instead. Genuine AI-crawler access was not measured."),
     ),
     "IDX-1": (
+        # The SEO team's technical review (DECISIONS 343).
+        ("idx1.error_redirect", "{n#} missing address(es) answer a redirect to an error page instead of 404/410",
+         "{n:missing address answers|missing addresses answer} a redirect to an error page instead of 404/410"),
         ("idx1.5xx", "{n#} URL(s) return a server error (5xx) on every attempt", "{n:URL returns|URLs return} a server error (5xx) on every attempt"),
         ("idx1.connection", "{n#} URL(s) fail at the connection level on every attempt", "{n:URL fails|URLs fail} at the connection level on every attempt"),
         ("idx1.timeout", "{n#} URL(s) time out on every attempt ({limit#}s limit)", "{n:URL times|URLs time} out on every attempt ({limit}s limit)"),
@@ -398,6 +401,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "{n:page is|pages are} listed only in the sitemap, with no internal links to [n:it|them]"),
     ),
     "IDX-8": (
+        # DECISIONS 343: two addresses of one page, each its own canonical.
+        ("idx8.self_canonical_copies", "{n#} second address(es) of a page answer 200 and name themselves canonical",
+         "{n:second address of a page answers|second addresses of a page answer} 200 and [n:names itself|name themselves] canonical"),
         # One finding for every group of copies and near-copies (DECISIONS 225); the two below are for saved reports.
         ("idx8.copies", "{groups#} {unit} of indexable pages that are copies or near-copies of each other ({pages#} pages)",
          "{groups} {unit} of indexable pages that are copies or near-copies of each other ({pages} pages)"),
@@ -510,6 +516,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("rnd7.no_region", "{n#} page(s) have no <main> or <article> element", "{n:page has|pages have} no <main> or <article> element"),
     ),
     "STR-1": (
+        # DECISIONS 343: sub-pages copying the parent's head, hreflang to the parent.
+        ("str1.subpage_copies_parent", "{n#} sub-page(s) repeat their parent page's title or H1, with hreflang to the parent",
+         "{n:sub-page repeats its|sub-pages repeat their} parent page's title or H1, with hreflang to the parent"),
         ("str1.no_title", "{n#} page(s) have no <title>", "{n:page has|pages have} no <title>"),
         ("str1.shared", "{titles#} title(s) are shared by {pages#} different indexable pages", "{titles:title is|titles are} shared by {pages} different indexable pages"),
         ("str1.same_start", "{n#} page title(s) begin with the same {chars#} characters as another page's, so they look alike where a title is cut short",
@@ -517,6 +526,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("str1.generic", "{n#} page(s) have a generic title", "{n:page has|pages have} a generic title"),
     ),
     "STR-2": (
+        # DECISIONS 343: the section's name as a sub-page's H1.
+        ("str2.h1_parent_name", "{n#} sub-page(s) use their section's name as their H1",
+         "{n:sub-page uses its|sub-pages use their} section's name as [n:its|their] H1"),
         ("str2.home_no_h1", "The homepage has no <h1>", "The homepage has no <h1>"),
         ("str2.home_hidden_h1", "The homepage's only <h1> is hidden", "The homepage's only <h1> is hidden"),
         ("str2.home_outline", "The homepage has {n#} visible section heading(s) for {words#} words",
@@ -531,6 +543,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("str2.many_h1", "{n#} page(s) have more than one <h1>", "{n:page has|pages have} more than one <h1>"),
     ),
     "STR-3": (
+        # DECISIONS 343: the SEO team's technical review.
+        ("str3.product_on_article", "{n#} blog or article page(s) carry Product or AggregateRating markup",
+         "{n:blog or article page carries|blog or article pages carry} Product or AggregateRating markup"),
         # The checklist's quick checks (DECISIONS 304).
         ("str3.article_no_author", "{n#} article page(s) name no author (no byline or author markup)",
          "{n:article page names|article pages name} no author (no byline or author markup)"),
@@ -666,7 +681,10 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("str12.placeholder", "{n#} page(s) contain placeholder or template text", "{n:page contains|pages contain} placeholder or template text"),
     ),
     "STR-13": (
-        ("str13.markers", "{n#} page(s) have unfilled template markers in {where~:JSON-LD|meta tag|the title|link or image URL|visible text}: {markers}{more~:(?: and \\d+ more)?}",
+        # DECISIONS 343: in JSON-LD or a meta tag, a rule (and card) of its own; elsewhere str13.markers.
+        ("str13.markers_data", "{n#} page(s) have unfilled template markers in {where~:JSON-LD|meta tag}: {markers}{more~:(?: and \\d+ more)?}",
+         "{n:page has|pages have} unfilled template markers in {where}: {markers}{more}"),
+        ("str13.markers", "{n#} page(s) have unfilled template markers in {where~:the title|link or image URL|visible text}: {markers}{more~:(?: and \\d+ more)?}",
          "{n:page has|pages have} unfilled template markers in {where}: {markers}{more}"),
         # Zero-width spaces, soft hyphens and the like in the main text (DECISIONS 210).
         ("str13.invisible", "{n#} page(s) have invisible characters in the main text ({count#} in all)",

@@ -114,6 +114,8 @@ def _short(text, limit: int = 70) -> str:
 def _record_words(rec: dict, ev: dict, lang: str, check_id: str | None = None) -> list[str]:
     """The measured values of one page's evidence record, in plain words; keys this does not know are left out."""
     W, out = WORDS[lang], []
+    if isinstance(rec.get("row"), dict) and (rec["row"].get(lang) or rec["row"].get("en")):
+        return [rec["row"].get(lang) or rec["row"]["en"]]  # DECISIONS 343: the rule wrote this page's line itself
     if isinstance(rec.get("bytes"), (int, float)):
         out.append(W["html" if check_id == "RND-6" else "size"].format(n=_kb(rec["bytes"], lang)))
     if isinstance(rec.get("main_offset_bytes"), (int, float)):

@@ -319,6 +319,12 @@
   "tseo1.description_long": "opportunity",
   "tseo1.heading_jumps": "issue",
   "shared.heading_jump": "issue",
-  "shared.heading_jump_varied": "issue"
+  "shared.heading_jump_varied": "issue",
+  "idx1.error_redirect": "issue",
+  "idx8.self_canonical_copies": "issue",
+  "str3.product_on_article": "issue",
+  "str1.subpage_copies_parent": "issue",
+  "str2.h1_parent_name": "issue",
+  "str13.markers_data": "issue"
  }
 }

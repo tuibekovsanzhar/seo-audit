@@ -155,7 +155,7 @@ def test_the_files_of_a_sitemap_index_are_read_in_turn_by_kind():
 
 def test_a_large_sitemap_index_is_read_until_there_are_enough_addresses_and_says_the_count_is_partial():
     handler, asked, files = _shop_with_index()
-    cfg = CrawlConfig(**{**QUIET, "max_pages": 10, "sitemap_check_max": 20})
+    cfg = CrawlConfig(**{**QUIET, "max_pages": 10, "sitemap_check_max": 20, "sitemap_check_all_up_to": 0})
     with clock.using(clock.FakeClock()):
         outcome = run_audit("https://shop.test/", cfg, httpx.MockTransport(handler))
     result = outcome.result
@@ -172,7 +172,7 @@ def test_a_large_sitemap_index_is_read_until_there_are_enough_addresses_and_says
 
 def test_a_small_sitemap_index_is_read_whole_and_the_count_is_not_called_partial():
     handler, asked, files = _shop_with_index(products_files=2, per_file=5)
-    cfg = CrawlConfig(**{**QUIET, "max_pages": 10, "sitemap_check_max": 20})
+    cfg = CrawlConfig(**{**QUIET, "max_pages": 10, "sitemap_check_max": 20, "sitemap_check_all_up_to": 0})
     with clock.using(clock.FakeClock()):
         outcome = run_audit("https://shop.test/", cfg, httpx.MockTransport(handler))
     assert len(asked) == 1 + len(files) and len(outcome.result.sitemap_urls) == 20

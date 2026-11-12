@@ -287,7 +287,7 @@ def test_idx5_keeps_the_page_cap_gap_only_when_the_sitemap_check_sampled(no_look
     # IDX-1 also uses its own response/probe population rather than a content-only cap.
     assert not [p for p in every.by_id["IDX-1"].coverage["not_assessed"] if p["part"] == "pages found but not read"]
     assert every.by_id["IDX-1"].evidence["assessment_scope"]["status_counts"]
-    sampled = audited(routes, sitemap=paths, max_pages=5, sitemap_check_max=10)
+    sampled = audited(routes, sitemap=paths, max_pages=5, sitemap_check_max=10, sitemap_check_all_up_to=0)
     assert sampled.result.index.sitemap_check.sampled
     gaps = sampled.by_id["IDX-5"].coverage["not_assessed"]
     assert not [p for p in gaps if p["part"] == "pages found but not read"]

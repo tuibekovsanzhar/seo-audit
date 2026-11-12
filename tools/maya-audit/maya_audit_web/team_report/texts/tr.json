@@ -4253,6 +4253,82 @@
    ],
    "verify": "Tarayıcının ağ sekmesinde görselin dosya boyutunun küçüldüğü görülmeli.",
    "summary": "Büyük görsel dosyaları"
+  },
+  "idx1.error_redirect": {
+   "title": "Olmayan adreslerde 302 yerine doğrudan 404/410 döndürün",
+   "finding": "Olmayan adresler hata sayfasına yönleniyor",
+   "explanation": "Olmayan bir adres, hata sayfasına yönlendirmek yerine o adreste 404 (ya da 410) döndürmeli.",
+   "why": "Hata sayfasına yönlendiren adres arama motoruna \"burası taşındı\" der; olmayan sayfalar dizinden geç düşer ya da soft 404 sayılır.",
+   "steps": [
+    "Sunucunun hata ayarında yönlendirmeyi kapatın",
+    "Hata sayfasını istenen adreste 404 durumuyla gösterin",
+    "Kaldırılan sayfalarda 410 kullanın"
+   ],
+   "verify": "Olmayan bir adres curl -I ile istendiğinde ilk yanıt 404 (ya da 410) olmalı, Location başlığı olmamalı.",
+   "summary": "Olmayan adreslerde 404"
+  },
+  "idx8.self_canonical_copies": {
+   "title": "Aynı sayfanın ikinci adreslerini asıl adrese 301'leyin",
+   "finding": "Aynı sayfa iki adreste açılıyor",
+   "explanation": "Her çiftin asıl adresini seçin ve ikinci adresi ona 301 ile yönlendirin.",
+   "why": "Aynı sayfanın iki adresi bağlantı değerini ve tarama bütçesini böler; motor hangisini göstereceğini kendi seçer.",
+   "steps": [
+    "Her çiftin asıl adresini seçin",
+    "İkinci adresi asıl adrese 301 ile yönlendirin",
+    "Bağlantıları ve site haritasını asıl adrese çevirin"
+   ],
+   "verify": "İkinci adres açıldığında 301 ile asıl adrese gitmeli; asıl adresin kanonik etiketi kendisini göstermeli.",
+   "summary": "İkinci adresler"
+  },
+  "str3.product_on_article": {
+   "title": "Blog yazılarındaki Product işaretlemesini kaldırın",
+   "finding": "Blog yazılarında Product ve puan işaretlemesi var",
+   "explanation": "Blog ve makale sayfalarından Product ve AggregateRating işaretlemesini kaldırın, Article/BlogPosting'i bırakın.",
+   "why": "Makalede ürün puanı Google'ın yapılandırılmış veri kurallarına aykırıdır; zengin sonuçlar kaybedilebilir ya da elle işlem gelebilir.",
+   "steps": [
+    "Blog şablonundaki Product ve AggregateRating bloğunu bulun",
+    "Bu bloğu kaldırın, BlogPosting'i bırakın",
+    "Rich Results Test ile birkaç yazıyı kontrol edin"
+   ],
+   "verify": "Rich Results Test'te blog yazısında Product ya da puan görünmemeli; BlogPosting görünmeli.",
+   "summary": "Blogda Product işaretlemesi"
+  },
+  "str1.subpage_copies_parent": {
+   "title": "Alt sayfalara kendi başlığını, H1'ini ve hreflang'ini verin",
+   "finding": "Alt sayfalar üst sayfanın başlığını ve hreflang'ini taşıyor",
+   "explanation": "Her alt sayfaya kendi konusunu anlatan başlık, H1 ve açıklama verin; hreflang alt sayfanın kendi dil sürümlerini göstersin.",
+   "why": "Aynı başlık ve H1, üst sayfayı gösteren hreflang ile birleşince motorlar alt sayfaları üst sayfanın kopyası sayar.",
+   "steps": [
+    "Her alt sayfanın başlık, H1 ve açıklamasını kendi konusuna göre yazın",
+    "hreflang'i alt sayfanın kendi adresine ve dil sürümlerine çevirin"
+   ],
+   "verify": "Alt sayfanın kaynağında başlık ve H1 kendi konusunu söylemeli; hreflang tr değeri alt sayfanın kendi adresi olmalı.",
+   "summary": "Alt sayfa kopyaları"
+  },
+  "str2.h1_parent_name": {
+   "title": "Alt sayfalara kendi konusunu anlatan bir H1 verin",
+   "finding": "Alt sayfaların H1'i bölümün adı",
+   "explanation": "Her alt sayfanın H1'i kendi konusunu söylesin; bölüm adı içerik yolunda kalsın.",
+   "why": "Bölüm adını taşıyan H1, sayfanın neyle ilgili olduğunu motorlara söylemez; aynı bölümdeki sayfalar birbirine benzer görünür.",
+   "steps": [
+    "Her alt sayfanın H1'ini başlığındaki konuyla yazın",
+    "Bölüm adını breadcrumb'a ya da H1'in üstüne düz metin olarak taşıyın"
+   ],
+   "verify": "Alt sayfanın kaynağında tek H1 olmalı ve sayfanın kendi konusunu söylemeli.",
+   "summary": "Bölüm adındaki H1"
+  },
+  "str13.markers_data": {
+   "title": "JSON-LD'deki doldurulmamış şablon değişkenini düzeltin",
+   "finding": "Yapısal veride ya da meta etiketinde doldurulmamış değişken var",
+   "explanation": "Değişkeni yazan şablonu bulun ve değerini verin; değer yoksa alanı yazmayın.",
+   "why": "Çift süslü parantezli bir değişken motorlara gerçek değer gibi okunur; yapılandırılmış veri geçersiz ya da yanlış olur.",
+   "steps": [
+    "Kanıttaki alanı ve metni şablonda bulun",
+    "Değişkene değerini verin ya da alanı kaldırın",
+    "Sayfa kaynağında değişken kalmadığını kontrol edin"
+   ],
+   "verify": "Sayfa kaynağında süslü parantez ya da çift yüzde işaretiyle yazılmış değişken kalmamalı; Rich Results Test hata vermemeli.",
+   "summary": "Doldurulmamış değişken"
   }
  }
 }

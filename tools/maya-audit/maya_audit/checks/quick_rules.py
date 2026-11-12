@@ -512,7 +512,10 @@ def product_no_identifier(read, groups: dict, key_urls=frozenset()) -> tuple[lis
 RULE_CHECKS = {"IDX-5": "SEO-036", "IDX-6": "SEO-061, links to redirects (Stage 8a)", "IDX-7": "SEO-046, SEO-093",
                "STR-3": "SEO-078, SEO-097", "STR-15": "SEO-099", "TSEO-1": "decomposed characters, SEO-067", "ACC-3": "SEO-031",
                # Stage 8a, borrowed from Screaming Frog (DECISIONS 315, checks/stage8_rules.py).
-               "IDX-4": "canonical chains", "STR-9": "hreflang target language", "STR-7": "images over 100 KB"}
+               "IDX-4": "canonical chains", "STR-9": "hreflang target language", "STR-7": "images over 100 KB",
+               # The SEO team's technical review (DECISIONS 343, checks/team_rules.py).
+               "IDX-1": "redirects to an error page", "IDX-8": "second addresses of a page",
+               "STR-1": "sub-pages copying the parent", "STR-2": "H1 of the section's name"}
 
 
 def findings(result, *, key_urls=frozenset(), check_ids=None, saved: bool = False) -> tuple[dict[str, list[Finding]], list[dict]]:
@@ -581,6 +584,12 @@ def findings(result, *, key_urls=frozenset(), check_ids=None, saved: bool = Fals
                                "why": "the saved report keeps no image sample"})
         else:
             out["STR-7"] += s8.images_over_100kb(structure, key_urls)
+    # DECISIONS 343: the SEO team's technical review (checks/team_rules.py).
+    from . import team_rules
+    made, missing = team_rules.findings(result, read, groups, wanted, key_urls, saved=saved)
+    for check_id, new in made.items():
+        out[check_id] += new
+    unassessed.extend(missing)
     return out, unassessed
 
 

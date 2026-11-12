@@ -414,6 +414,10 @@ def english(text):
 
 
 # ---------------------------------------------------------------- çekirdek
+# DECISIONS 343: rules whose card words name HTTP status codes (the SEO team's titles).
+STATUS_TITLES = ("idx1.error_redirect", "idx8.self_canonical_copies")
+
+
 class Builder:
     def __init__(self, report, lang, labels, catalog, wording, rev, audit_id, reanalysis=False, affected=None, cards=None,
                  selection=None):
@@ -482,6 +486,26 @@ class Builder:
         if head:  # DECISIONS 339: said from the evidence, not the rule's fixed words
             entry = {**entry, "why": head["why"], "explanation": head["explanation"], "verify": head["verify"],
                      "steps": head["steps"].split("\n")}
+        if rule in STATUS_TITLES:
+            entry = self.status_words(f, rule, entry)
+        return entry
+
+    def status_words(self, f, rule, entry):
+        """DECISIONS 343: the HTTP status codes a card's words name. A redirect card names the code the site answered
+        (302 in the words, 301 or 307 when the evidence says so); 301, 404 and 410 are what to answer instead. Each is
+        a fact of the card, as a value from report.json is."""
+        said = []
+        if rule == "idx1.error_redirect":
+            seen = [s for r in (f.get("evidence") or {}).get("pages") or [] if isinstance(r, dict)
+                    for s in (r.get("statuses") or [])[:1] if isinstance(s, int)]
+            code = max(set(seen), key=seen.count) if seen else 302
+            if code != 302:
+                entry = {k: (v.replace("302", str(code)) if isinstance(v, str) else
+                             [x.replace("302", str(code)) for x in v] if isinstance(v, list) else v) for k, v in entry.items()}
+            said = [code, 404, 410]
+        elif rule == "idx8.self_canonical_copies":
+            said = [301]
+        self.fact(*said)
         return entry
 
     def finish(self, data):

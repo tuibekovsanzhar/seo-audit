@@ -4737,3 +4737,62 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      RG-15 (at most 10 pages) does not count it: the page was asked for on top of a report that may already have ten.
      Tests: `tests/test_checklist_342.py` (14); the sheet lists in `test_xlsx_pages_322`, `test_v03_client_report`;
      `checklist_items.json` in the package data.
+343. **Technical issues from the SEO team's review (Efsa's enpara report, `enpara-seo-tum-bulgular-2026-11-12.xlsx`)
+     as global rules (Owner, 2026-11-12: the seven issues, the four card titles, every affected page in the Ek with its
+     evidence, "say so when saved data cannot confirm", the checklist mapping; the detection details, severities, the
+     other two titles and the sitemap limit's wording are agent defaults).** Global rules for every audit; enpara
+     fee70191 was only the test case. New module `maya_audit/checks/team_rules.py`, run with the checklist's quick checks
+     (`quick_rules.findings`), so a live audit, an older saved report (`reassess_rules.apply`) and a saved report of the
+     current schema (`reassess_rules.saved_data`, `_decisions_343`) get the same rules. Every evidence record carries
+     `row` ({tr, en}), the line its Ek row shows (`page_rows._record_words`).
+     (1) *`idx1.error_redirect`* (IDX-1, Medium, verified), card "Olmayan adreslerde 302 yerine doğrudan 404/410
+     döndürün": a requested address whose redirect hops all answer 3xx and whose target is an error page (a path segment
+     or file named 404/410/500/error(s)/hata/not-found/page-not-found/sayfa-bulunamadi/bulunamadi/sayfa-yok, or an
+     `aspxerrorpath` query), from the crawl's redirect records (`crawl.redirects`, schema 1.26) and the missing-page probe
+     (`crawl.index.soft_404`), whose verdict now says `redirect_to_error_page`. Row: "302 → /404?aspxerrorpath=… → 404".
+     (2) *`idx8.self_canonical_copies`* (IDX-8, Medium, verified), card "Aynı sayfanın ikinci adreslerini asıl adrese
+     301'leyin": addresses of one page, that is the same path but for a last segment naming the page above it
+     (/anasayfa, /ana-sayfa, /home, /default.aspx, /index.html …) or the query (?sw=1), read with the same visible text
+     (its hash), title and H1, each 200 with no canonical to another address (relative canonicals resolved) and no
+     hreflang between them. Pairs apart only by a trailing slash, a file extension or the letter case stay
+     `idx8.two_addresses`'s (Low); different pages that share one text stay `idx8.copies`'s (and rule 7's). The main
+     address is the homepage's root when it is one of them, else the most linked, else the shortest. Rows: the main
+     address ("asıl adres önerisi") and each second one ("… → / adresine 301"). The judgment layer's "compare purposes
+     before consolidating" (`judgments.py`, IDX-8) does not apply: it is one page.
+     (3) *`str3.product_on_article`* (STR-3, Medium, verified), card "Blog yazılarındaki Product işaretlemesini
+     kaldırın": a page typed blog_article by the page grouping or carrying Article/BlogPosting/NewsArticle/TechArticle/
+     Report, with Product or AggregateRating. Row: the types.
+     (4) *Template variables:* STR-13 (`str13.markers`) already read JSON-LD, meta tags, the title, links and visible
+     text; added: the %%…%% form (`config.TEMPLATE_MARKERS`, an SEO plugin's title variables; "100%%" is not one) and a
+     rule of its own for the JSON-LD and meta-tag findings, `str13.markers_data`, with the card "JSON-LD'deki
+     doldurulmamış şablon değişkenini düzeltin" (`rules.assign` gives saved findings the new id too). No second rule.
+     (5) *`str1.subpage_copies_parent`* (STR-1, Medium, verified), card "Alt sayfalara kendi başlığını, H1'ini ve
+     hreflang'ini verin": a page read under a parent page read (the nearest one in its address path, never the
+     homepage), canonical to itself, whose hreflang names the parent (not itself) and whose title, H1 or description is
+     the parent's. Row: what is shared, the title, canonical and hreflang.
+     (6) *The sitemap check reads a sitemap of up to 1,000 addresses whole* (`config.SITEMAP_CHECK_ALL_UP_TO`,
+     `index_data.sitemap_check_cap`): every address the crawl did not read is asked, whatever `sitemap_check_max`
+     (100/300) says; above 1,000 the sample as before (DECISIONS 294); not in a fast check; off stays off. Discovery reads
+     enough of the sitemap for it (`enough` in the crawler). A saved audit cannot gain the addresses it did not ask.
+     (7) *`str2.h1_parent_name`* (STR-2, Low, verified), card "Alt sayfalara kendi konusunu anlatan bir H1 verin": a page
+     read whose H1 is the H1 of the parent page read above it (or, when the trail's names are recorded, the breadcrumb
+     step above it); the pages of rule 5 and rule 2's second addresses are left out (their fix is another).
+     *Card words with HTTP status codes:* the team's titles name 301, 302, 404 and 410; the text checks accept these four
+     codes (as they accept H1), the team report counts them as the card's facts, and the redirect card names the code the
+     site answered (302 in the words; 301 or 307 when the evidence says so) (`build_data.status_words`). The sitemap
+     limit is a setting, `sitemap_check_all_up_to` (1,000; 0 turns it off; the sample's own tests use 0).
+     *Checklist:* SEO-013 (+error_redirect), -041 and -049 (+self_canonical_copies), -043 and -064 and -145
+     (+subpage_copies_parent), -065 (+h1_parent_name, subpage_copies_parent), -101 (+markers_data, product_on_article),
+     -106 (+product_on_article), -136 (+str13.markers).
+     *enpara fee70191 from the saved data (no request):* (1) confirmed: Maya's made-up address answered 302 to
+     /404?aspxerrorpath=… and 21 crawled addresses do the same (21 rows); (2) one pair,
+     /bireysel-basvuru/kimlik-bilgileriniz and its ?sw=1 copy (pages such as /ucretler and /ucretler/para-transferleri
+     share one text but are two pages: idx8.copies and rule 7); the review's
+     /anasayfa vs / was found (linked) but not read (page cap 150) and /sss/default.aspx was not found at all: both need a
+     fetch, so they are not claimed; (3) 39 blog pages with Product and AggregateRating; (4) no variable in the JSON-LD
+     or meta tags of the 174 saved copies (STR-13 found markers only in link addresses and visible text, as before);
+     (5) 12 sub-pages (/sss/* and /sirketim/sss/odeme-ve-transferler); (6) not confirmable: 415 sitemap addresses, 130
+     read by the crawl and 100 of the other 285 asked; the next run asks all 285; (7) 20 pages (/odemeler/*,
+     /transferler/*, /iletisim/*, /ucretler/kredi-karti ...).
+     Tests: `tests/test_team_rules_343.py` (26); `test_answer_key` (a redirect to /tr/kampanyalar/ is "elsewhere"; /tr/hata/
+     is an error page now), the sitemap sample tests set `sitemap_check_all_up_to=0`.

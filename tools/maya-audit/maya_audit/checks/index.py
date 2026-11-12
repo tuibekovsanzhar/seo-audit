@@ -78,6 +78,11 @@ def soft_404_verdict(probe: dict, result: CrawlResult) -> dict:
     if status and 300 <= status < 400 and target and target.rstrip("/") in homes:
         return {"soft_404": True, "kind": "redirect_to_homepage", "assessed": True,
                 "text": f"a made-up address redirects ({status}) to the homepage"}
+    from .team_rules import error_page
+    if status and 300 <= status < 400 and target and error_page(target):
+        # DECISIONS 343: its own finding (idx1.error_redirect), with every crawled address that does the same
+        return {"soft_404": False, "kind": "redirect_to_error_page", "assessed": True,
+                "text": f"a made-up address redirects ({status}) to an error page ({target}) instead of answering 404"}
     if status and 300 <= status < 400:
         return {"soft_404": False, "kind": "redirect_elsewhere", "assessed": False,
                 "text": f"a made-up address redirects ({status}) to {target}; the redirect was not followed, so where "

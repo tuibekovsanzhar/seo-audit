@@ -894,7 +894,9 @@ class Crawler:
             cfg.max_sitemap_bytes, skipped, self._lastmods, deadline, self._sitemap_named_in, self._sitemap_file_of,
             # Enough addresses for the page cap and the sitemap check's sample, spread over the index's files
             # (DECISIONS 299): the rest of a large index is not read.
-            enough=cfg.max_pages + max(0, cfg.sitemap_check_max),
+            # A sitemap of up to SITEMAP_CHECK_ALL_UP_TO addresses is read whole, to be checked whole (DECISIONS 343).
+            enough=cfg.max_pages + max(0, cfg.sitemap_check_max,
+                                       cfg.sitemap_check_all_up_to if cfg.sitemap_check_max and not cfg.fast_check else 0),
             loc_of=self._sitemap_loc_of, read_at=self._sitemap_read_at,
         )
         self._sitemap_notes.extend(notes)

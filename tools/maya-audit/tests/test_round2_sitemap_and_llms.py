@@ -56,7 +56,7 @@ def thirty():
 
 def test_a_sitemap_larger_than_the_cap_is_sampled_over_its_sections_the_same_way_every_run(no_lookups):
     routes, paths = thirty()
-    first = audited(routes, sitemap=paths, sitemap_check_max=10)
+    first = audited(routes, sitemap=paths, sitemap_check_max=10, sitemap_check_all_up_to=0)
     asked = light(first)
     assert len(asked) == 10 and len(set(asked)) == 10
     # One from each section in turn, each in sitemap order.
@@ -79,7 +79,7 @@ def test_a_sitemap_larger_than_the_cap_is_sampled_over_its_sections_the_same_way
     assert len(gaps) == 1 and gaps[0]["count"] == share.evidence["sitemap_check"]["not_checked"]
     assert "sitemap request cap" in gaps[0]["reason"]
     assert not any(p["part"] == "pages found but not read" for p in first.by_id["IDX-5"].coverage["not_assessed"])
-    second = audited(routes, sitemap=paths, sitemap_check_max=10)
+    second = audited(routes, sitemap=paths, sitemap_check_max=10, sitemap_check_all_up_to=0)
     assert light(second) == asked
     # Shown in Turkish, note and title.
     assert wording.title("IDX-5", share.title, "tr")[1] and wording.note(share.notes[0], "tr")[1]
