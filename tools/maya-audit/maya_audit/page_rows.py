@@ -350,6 +350,14 @@ def measured(finding: dict, url: str, lang: str = "tr", page: dict | None = None
     (`page`, a `page_measures` record, DECISIONS 323). An address that was not read says so; a page read whose values
     were not kept says "not kept" — never empty, zero or made up."""
     W, ev = WORDS[lang], finding.get("evidence") or {}
+    # DECISIONS 344: a line the rule wrote for this page says it all (the status chain and the 301 target, a flow
+    # redirect and how to check it): no other words of the evidence beside it
+    for value in ev.values():
+        for rec in value if isinstance(value, list) else ():
+            if isinstance(rec, dict) and isinstance(rec.get("row"), dict) and _same(rec.get("url"), url):
+                own = rec["row"].get(lang) or rec["row"].get("en")
+                if own:
+                    return own
     if finding.get("rule_id") == "tseo1.url_decomposed":
         found_in_address = _decomposed(url, lang)
         if found_in_address:
@@ -442,16 +450,25 @@ HEAD_WORDS = {
            "title_later": "<head> erken kapanıyor: yalnız meta ve Open Graph etiketleri sonra geliyor",
            "value_lost": "{tags}, {element} sonrasında; head'de bu etiketin bir kopyası yok. {element} öncesinde, head'de: {kept}",
            "value_later": "{element} sonrasında: {after}; {kept} ondan önce, head'de",
-           "fix_lost": "{element} öğesini gövdeye taşıyın; {tags} head'de, bu öğeden önce kalmalı.",
-           "fix_later": "{element} öğesini gövdeye taşıyın ya da onu basan eklentiyi head etiketlerinden sonra yükleyin.",
-           "second": "ikinci bir {tag} kopyası", "none": "canonical, title ya da hreflang yok"},
+           "fix_lost": "{element} öğesini{place} gövdeye taşıyın; {tags} head'de, bu öğeden önce kalmalı.",
+           "fix_later": "{element} öğesini{place} gövdeye taşıyın ya da onu basan eklentiyi head etiketlerinden sonra yükleyin.",
+           "second": "ikinci bir {tag} kopyası", "none": "canonical, title ya da hreflang yok",
+           # DECISIONS 344: which element, where, and how many heads the source writes
+           "place": " (head içinde, ham HTML satır {line})",
+           "where": "Head'i kapatan öğe: {element}, ham HTML satır {line}",
+           "tags": "ham HTML'de {open} <head>, {close} </head>{lines}", "tags_lines": " (</head> satır {lines})",
+           "tags_unknown": "<head>/</head> sayısı bu denetimde kaydedilmedi (sonraki denetimde ölçülür)"},
     "en": {"title_lost": "<head> ends early: {tags} comes after that element",
            "title_later": "<head> ends early: only meta and Open Graph tags come after it",
            "value_lost": "{tags} after {element}, with no copy in the head. Before {element}, in the head: {kept}",
            "value_later": "after {element}: {after}; {kept} before it, in the head",
-           "fix_lost": "Move {element} into the body; {tags} must stay in the head, before it.",
-           "fix_later": "Move {element} into the body, or load the widget that prints it after the head tags.",
-           "second": "a second {tag} copy", "none": "no canonical, title or hreflang"},
+           "fix_lost": "Move {element}{place} into the body; {tags} must stay in the head, before it.",
+           "fix_later": "Move {element}{place} into the body, or load the widget that prints it after the head tags.",
+           "second": "a second {tag} copy", "none": "no canonical, title or hreflang",
+           "place": " (inside the head, raw HTML line {line})",
+           "where": "The element that ends the head: {element}, raw HTML line {line}",
+           "tags": "the raw HTML has {open} <head> and {close} </head>{lines}", "tags_lines": " (</head> on line {lines})",
+           "tags_unknown": "<head>/</head> count not recorded in this audit (measured from the next one)"},
 }
 
 
@@ -462,7 +479,15 @@ def head_row_words(row: dict, lang: str = "tr") -> dict[str, str]:
     from .checks.page_markup import RESTRICTIVE_ROBOTS
     H = HEAD_WORDS[lang]
     c = row.get("closed_by") or {}
-    element = f"<{c.get('tag') or '?'}" + (f"#{c['id']}" if c.get("id") else "") + ">"
+    element = head_element(c)
+    line = c.get("line")
+    place = H["place"].format(line=line) if line else ""
+    tags_seen = row.get("head_tags") or {}
+    where = "; ".join(x for x in (
+        H["where"].format(element=element, line=line) if line else "",
+        H["tags"].format(open=tags_seen.get("open"), close=tags_seen.get("close"),
+                         lines=H["tags_lines"].format(lines=", ".join(map(str, tags_seen.get("close_lines") or [])))
+                         if tags_seen.get("close_lines") else "") if tags_seen else H["tags_unknown"]) if x)
     kept_set = set(row.get("kept_in_head") or [])
     kept = ", ".join(t for t in ("canonical", "title", "hreflang", "robots") if t in kept_set) or H["none"]
     lost = [t for t, key in (("canonical", "canonical_after"), ("hreflang", "hreflang_after"), ("title", "title_after"))
@@ -472,8 +497,9 @@ def head_row_words(row: dict, lang: str = "tr") -> dict[str, str]:
         lost.append(f"robots ({', '.join(values[:2])})")
     if lost:
         tags = ", ".join(lost)
-        return {"title": H["title_lost"].format(tags=tags), "value": H["value_lost"].format(tags=tags, element=element, kept=kept),
-                "fix": H["fix_lost"].format(element=element, tags=tags)}
+        return {"title": H["title_lost"].format(tags=tags),
+                "value": H["value_lost"].format(tags=tags, element=element, kept=kept) + f". {where}",
+                "fix": H["fix_lost"].format(element=element, tags=tags, place=place)}
     after = []
     for tag, key in (("canonical", "canonical_after"), ("hreflang", "hreflang_after")):
         if row.get(key):
@@ -485,8 +511,27 @@ def head_row_words(row: dict, lang: str = "tr") -> dict[str, str]:
     plain = [v for v in row.get("robots_content") or [] if v]
     if row.get("robots_after"):
         after.append(f"robots ({', '.join(plain[:2])})" if plain else "robots")
-    return {"title": H["title_later"], "value": H["value_later"].format(element=element, after=", ".join(after) or "—", kept=kept),
-            "fix": H["fix_later"].format(element=element)}
+    return {"title": H["title_later"],
+            "value": H["value_later"].format(element=element, after=", ".join(after) or "—", kept=kept) + f". {where}",
+            "fix": H["fix_later"].format(element=element, place=place)}
+
+
+def row_fix(finding: dict, url: str, lang: str) -> str | None:
+    """A page's own "what to do" when the rule wrote one in its evidence (`fix`, {tr, en}): a 301 target, a canonical
+    to the main step, 410 (DECISIONS 344)."""
+    for value in (finding.get("evidence") or {}).values():
+        if not isinstance(value, list):
+            continue
+        for rec in value:
+            if isinstance(rec, dict) and isinstance(rec.get("fix"), dict) and _same(rec.get("url"), url):
+                return rec["fix"].get(lang) or rec["fix"].get("en")
+    return None
+
+
+def head_element(c: dict) -> str:
+    """<tag#id.class> of the element that ended the head (DECISIONS 344: its class too)."""
+    cls = ".".join(x for x in str(c.get("class") or "").split() if x)[:60]
+    return f"<{c.get('tag') or '?'}" + (f"#{c['id']}" if c.get("id") else "") + (f".{cls}" if cls else "") + ">"
 
 
 def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *, todos: list[dict] | None = None,
@@ -521,9 +566,11 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
                 read = None if hosts or not url else url.rstrip("/") in read_urls
                 # DECISIONS 341: an early-closed head is said per page, from that page's record
                 head = (head_row_words(heads[url], lang) if m.get("rule_id") in HEAD_RULES and url in heads else None)
+                own_fix = row_fix(m, url, lang) if url and not head else None  # DECISIONS 344: this page's own step
                 rows.append({
                     "finding_id": m.get("id"), "check_id": m.get("check_id"), "rule_id": m.get("rule_id"),
-                    "title": head["title"] if head else name, "short": short, "fix": head["fix"] if head else todo,
+                    "title": head["title"] if head else name, "short": short,
+                    "fix": head["fix"] if head else own_fix or todo,
                     "severity": sev, "issue_type": g.get("issue_type") or "issue",
                     "placement": g.get("placement"), "card": by_id.get(m.get("id")),
                     "url": url, "address": display_address(url, hosts) if url else W["site"],

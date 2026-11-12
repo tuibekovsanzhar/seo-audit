@@ -1,0 +1,241 @@
+{
+ "_about": "Expert review of Maya Audit cards: one SEO expert's verdict per card, kept as accuracy data (DECISIONS 338, 340, 344). verdict: the expert's (correct, wrong, wording, incomplete); assessment: what the saved evidence showed when checked (agree, right, mostly_right, partly_right, not_supported). follow_up: rules whose verdict was wrong.",
+ "audit": "enpara fee70191 (Akıllı ~150, 2026-11-11), Ek built from the DECISIONS 343 rules (5687276)",
+ "reviewer": "SEO expert (team)",
+ "reviewed_on": "2026-11-12",
+ "review": 3,
+ "source_file": "the enpara Ek built from 5687276, the expert's notes per card as the owner relayed them (2026-11-12); card numbers there differ from 5687276's PDF, so cards are named by rule",
+ "cards": [
+  {
+   "card": 1,
+   "title": "Head'i erken kapatan öğeyi taşıyın",
+   "rule_ids": [
+    "tseo1.head_closed_lost",
+    "tseo1.head_closed_later"
+   ],
+   "expert_note": "Head 5 yerde kapanıyor, öneri doğru değil; hangi head içinde olduğu söylenmeli.",
+   "verdict": "wrong",
+   "assessment": "partly_right",
+   "finding": "Each page's record names the element (div#blueLightOverlay) and its raw HTML line (1, 21, 39, 61, 440 or 478 by template), but the card and the rows did not say where, and the report keeps no count of <head>/</head>.",
+   "fix": "DECISIONS 344 (1): rows give the element (tag#id.class), its line, the <head>/</head> count (recorded from the next audit) and what comes after; the card says once that one template element closes the head on every page and lists its lines."
+  },
+  {
+   "card": 2,
+   "title": "Site haritasındaki hata veren adresleri düzeltin ya da çıkarın",
+   "rule_ids": [
+    "idx1.4xx.sitemap_only"
+   ],
+   "expert_note": "Doğru.",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "21 sitemap addresses end at a 4xx.",
+   "fix": "Kept; DECISIONS 344 (4) adds the redirect chain and a 301 target or 410 per address."
+  },
+  {
+   "card": 3,
+   "title": "Blog yazılarındaki Product işaretlemesini kaldırın",
+   "rule_ids": [
+    "str3.product_on_article"
+   ],
+   "expert_note": "Doğru.",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "39 blog pages with Product and AggregateRating.",
+   "fix": "Correct as written."
+  },
+  {
+   "card": 4,
+   "title": "Alt sayfalara kendi başlığını, H1'ini ve hreflang'ini verin",
+   "rule_ids": [
+    "str1.subpage_copies_parent"
+   ],
+   "expert_note": "Sayfadaki bir soruya ya da sol menü başlığına tıklayınca yeni URL açılıyor; site genelinde bir yapı sorunu, tek kart olmalı.",
+   "verdict": "incomplete",
+   "assessment": "right",
+   "finding": "The /sss sub-pages carry the parent's title, H1 and hreflang; the same structure shows in the H1 card (/odemeler/*, /transferler/*).",
+   "fix": "DECISIONS 344 (2): one site-wide card str1.sections_as_pages, type Kontrol edin, the recommendation a decision (real pages, or anchors/canonical to the parent); every URL with its parent in the Ek."
+  },
+  {
+   "card": 5,
+   "title": "Olmayan adreslerde 302 yerine doğrudan 404/410 döndürün",
+   "rule_ids": [
+    "idx1.error_redirect"
+   ],
+   "expert_note": "Site haritası kartıyla aynı 21 adres; birleştirilmeli, her adres için 301 hedefi önerilmeli, ilgili sayfa yoksa 410.",
+   "verdict": "incomplete",
+   "assessment": "right",
+   "finding": "The 21 addresses are the sitemap card's; only Maya's made-up address is not in another card.",
+   "fix": "DECISIONS 344 (4): the sitemap card takes the chain, the server advice and a 301 target (or 410) per address; the 302 card keeps only Maya's made-up address."
+  },
+  {
+   "card": 6,
+   "title": "Metni olmayan bağlantılara ad verin",
+   "rule_ids": [
+    "str14.no_text"
+   ],
+   "expert_note": "Doğru.",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "41 pages.",
+   "fix": "Correct as written."
+  },
+  {
+   "card": 7,
+   "title": "Alt sayfalara kendi konusunu anlatan bir H1 verin",
+   "rule_ids": [
+    "str2.h1_parent_name"
+   ],
+   "expert_note": "Bir önceki kartla aynı yapı sorunu; H1'i kendi başlığı olan sayfaları (ör. /yatirim-hesabi/hisse-senedi) çıkarın, 20 sayfayı yeniden kontrol edin.",
+   "verdict": "incomplete",
+   "assessment": "mostly_right",
+   "finding": "Of the 20 pages, 10 have their own title as H1 (/iletisim/*, /ucretler/*, /yatirim-hesabi/hisse-senedi ...); 10 carry the section's name.",
+   "fix": "DECISIONS 344 (2): merged into str1.sections_as_pages; a page whose H1 is its own title is left out unless its hreflang names the parent (22 pages: the 12 /sss sub-pages and 10)."
+  },
+  {
+   "card": 8,
+   "title": "hreflang bağlantılarını karşılıklı yapın",
+   "rule_ids": [
+    "str9.no_return"
+   ],
+   "expert_note": "Doğru.",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "14 pages.",
+   "fix": "Correct as written."
+  },
+  {
+   "card": 9,
+   "title": "Büyük görselleri hafifletin",
+   "rule_ids": [
+    "str7.over_100kb"
+   ],
+   "expert_note": "Doğru.",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "9 pages.",
+   "fix": "Correct as written."
+  },
+  {
+   "card": 10,
+   "title": "H1 etiketi olmayan sayfalara tek bir H1 etiketi ekleyin",
+   "rule_ids": [
+    "str2.no_h1"
+   ],
+   "expert_note": "Doğru.",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "6 pages.",
+   "fix": "Correct as written."
+  },
+  {
+   "card": 11,
+   "title": "Aynı açıklamayı paylaşan sayfalara ayrı açıklama yazın",
+   "rule_ids": [
+    "str16.shared"
+   ],
+   "expert_note": "Doğru.",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "3 pages.",
+   "fix": "Correct as written."
+  },
+  {
+   "card": 12,
+   "title": "Bağlantıları doğrudan son adrese verin",
+   "rule_ids": [
+    "idx6.links_to_redirect"
+   ],
+   "expert_note": "Bağlantıya tıkladığımda son sayfa doğrudan açılıyor; yeniden kontrol edin.",
+   "verdict": "wrong",
+   "assessment": "partly_right",
+   "finding": "Maya asked /kredi-musteri/kredi-basvuru as a new visitor with no cookie and got 302 -> /kredi-musteri/ihtiyac-kredisi-hesaplama (200); an application step whose redirect a visitor in the flow may not see.",
+   "fix": "DECISIONS 344 (5): a temporary redirect of an application, sign-in or session step is a note (Bilgi), idx6.links_to_flow_redirect, with the chain and how to check it (DevTools > Network with Preserve log, httpstatus.io)."
+  },
+  {
+   "card": 13,
+   "title": "Ayrıştırılamayan JSON-LD'yi düzeltin",
+   "rule_ids": [
+    "str3.unparsed"
+   ],
+   "expert_note": "Doğru.",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "2 pages.",
+   "fix": "Correct as written."
+  },
+  {
+   "card": 14,
+   "title": "hreflang'deki çalışmayan adresleri düzeltin",
+   "rule_ids": [
+    "str9.status"
+   ],
+   "expert_note": "Doğru.",
+   "verdict": "correct",
+   "assessment": "agree",
+   "finding": "2 pages.",
+   "fix": "Correct as written."
+  },
+  {
+   "card": 15,
+   "title": "Aynı sayfanın ikinci adreslerini asıl adrese 301'leyin",
+   "rule_ids": [
+    "idx8.self_canonical_copies"
+   ],
+   "expert_note": "301 önerisi yanlış; başvuru adımı.",
+   "verdict": "wrong",
+   "assessment": "partly_right",
+   "finding": "The pair is /bireysel-basvuru/kimlik-bilgileriniz and its ?sw=1 copy: an application step, where a 301 would break the flow.",
+   "fix": "DECISIONS 344 (3): a second address of an application or form step (başvuru, -kk, ?sw=, a page with a form) is idx8.form_step_copies: canonical to the main step or noindex, never a 301; the 301 stays for /anasayfa, default.aspx, index.html."
+  }
+ ],
+ "summary": {
+  "wrong": 3,
+  "correct": 9,
+  "incomplete": 3
+ },
+ "follow_up": [
+  {
+   "rule_ids": [
+    "tseo1.head_closed_lost",
+    "tseo1.head_closed_later"
+   ],
+   "verdict": "wrong",
+   "fix": "DECISIONS 344 (1): rows give the element (tag#id.class), its line, the <head>/</head> count (recorded from the next audit) and what comes after; the card says once that one template element closes the head on every page and lists its lines."
+  },
+  {
+   "rule_ids": [
+    "str1.subpage_copies_parent"
+   ],
+   "verdict": "incomplete",
+   "fix": "DECISIONS 344 (2): one site-wide card str1.sections_as_pages, type Kontrol edin, the recommendation a decision (real pages, or anchors/canonical to the parent); every URL with its parent in the Ek."
+  },
+  {
+   "rule_ids": [
+    "idx1.error_redirect"
+   ],
+   "verdict": "incomplete",
+   "fix": "DECISIONS 344 (4): the sitemap card takes the chain, the server advice and a 301 target (or 410) per address; the 302 card keeps only Maya's made-up address."
+  },
+  {
+   "rule_ids": [
+    "str2.h1_parent_name"
+   ],
+   "verdict": "incomplete",
+   "fix": "DECISIONS 344 (2): merged into str1.sections_as_pages; a page whose H1 is its own title is left out unless its hreflang names the parent (22 pages: the 12 /sss sub-pages and 10)."
+  },
+  {
+   "rule_ids": [
+    "idx6.links_to_redirect"
+   ],
+   "verdict": "wrong",
+   "fix": "DECISIONS 344 (5): a temporary redirect of an application, sign-in or session step is a note (Bilgi), idx6.links_to_flow_redirect, with the chain and how to check it (DevTools > Network with Preserve log, httpstatus.io)."
+  },
+  {
+   "rule_ids": [
+    "idx8.self_canonical_copies"
+   ],
+   "verdict": "wrong",
+   "fix": "DECISIONS 344 (3): a second address of an application or form step (başvuru, -kk, ?sw=, a page with a form) is idx8.form_step_copies: canonical to the main step or noindex, never a 301; the 301 stays for /anasayfa, default.aspx, index.html."
+  }
+ ]
+}

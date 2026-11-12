@@ -17,7 +17,7 @@ from collections import defaultdict
 
 LINK_4XX = ("idx1.4xx.referenced", "idx1.4xx.referenced.linked", "idx1.4xx.sitemap_only", "idx1.href_mistyped")
 SERVER = ("idx1.5xx", "idx1.5xx.once")
-TO_REDIRECT = ("idx6.links_to_redirect",)
+TO_REDIRECT = ("idx6.links_to_redirect", "idx6.links_to_flow_redirect")  # DECISIONS 344: the note too, to check
 CHAINS = ("idx3.chain", "idx3.loop", "idx3.cookie", "idx3.intermittent", "idx3.self_once")
 CANONICAL = ("idx4.broken", "idx4.redirecting", "idx4.redirect_loop")
 HREFLANG = ("str9.status",)

@@ -9,9 +9,13 @@ shows ({"tr", "en"}): the status chain, the duplicate pair, the schema types, th
 |---|---|---|
 | idx1.error_redirect | IDX-1 | missing pages answer a redirect to an error page instead of 404/410 |
 | idx8.self_canonical_copies | IDX-8 | two addresses of one page (/x and /x/default.aspx, /anasayfa and /), each 200 and its own canonical |
+| idx8.form_step_copies | IDX-8 | the same, for an application or form step: canonical or noindex, never a 301 (DECISIONS 344) |
 | str3.product_on_article | STR-3 | Product or AggregateRating markup on blog or article pages |
-| str1.subpage_copies_parent | STR-1 | sub-pages with the parent's title/H1/description, canonical to themselves, hreflang to the parent |
-| str2.h1_parent_name | STR-2 | a sub-page whose H1 is its parent section's name |
+| str1.sections_as_pages | STR-1 | sub-pages opening a part of their parent page at their own address (DECISIONS 344) |
+
+DECISIONS 344 (İlginay's review of the enpara Ek): the sub-page rules are one site-wide card; the second addresses of a
+form step are not told to 301; the sitemap-errors card takes the redirects to an error page (`settle`), with a 301
+target per address.
 
 Unfilled template variables in JSON-LD and meta tags (the review's fourth point) are STR-13's: it already reads the
 JSON-LD, meta tags, title, links and visible text. DECISIONS 343 adds the %%...%% form (config.TEMPLATE_MARKERS) and
@@ -56,15 +60,21 @@ PRODUCT_ARTICLE_FIX = ("Remove the Product and AggregateRating markup from the b
 PRODUCT_ARTICLE_NOTE = ("Google's structured data rules: markup must describe the page's main content, and review "
                         "ratings must come from visible reviews of the item; ratings on an article can lose the site "
                         "its rich results or bring a manual action.")
-SUBPAGE_EXPECTED = "each sub-page has its own title, H1 and description, and hreflang to its own language versions"
-SUBPAGE_FIX = ("Give each sub-page its own title, H1 and meta description about its own topic, and make its hreflang "
-               "name the sub-page's own language versions (itself for its language), not the parent page.")
-SUBPAGE_NOTE = ("An hreflang that names the parent tells engines the sub-page is a language version of the parent, "
-                "while its canonical says it is a page of its own; with the same title and H1, engines see copies.")
-H1_PARENT_EXPECTED = "a sub-page's H1 names its own topic"
-H1_PARENT_FIX = ("Write each sub-page's own topic as its H1 (its title says it, e.g. \"Fatura Ödemeleri\"), and keep "
-                 "the section name in the breadcrumb or above the H1 as plain text.")
-
+FORM_STEP_EXPECTED = "a step of an application or form is indexed at one address, or not at all"
+FORM_STEP_FIX = ("Point the second address's canonical to the main step, or add noindex to the step's other addresses. "
+                 "Do not redirect them with a 301: the application or form uses them and would stop working.")
+FORM_STEP_NOTE = ("Application and form steps (başvuru, -kk, ?sw=, a page with a form) often need their own addresses "
+                  "to work; only their indexing is at stake, so a canonical or noindex is the fix, never a redirect.")
+SECTIONS_EXPECTED = "each address is a page of its own, or a part of a page is reached with an anchor, not a new address"
+SECTIONS_FIX = ("Decide for the site: either make each of these addresses a real page (its own title, H1, description, "
+                "content, and hreflang to itself), or keep one page and reach its parts with anchors (#section) or "
+                "point each address's canonical to the parent page.")
+SECTIONS_NOTE = ("Clicking a question or a left-menu heading on one page opens a new address that repeats the parent's "
+                 "title, H1 or hreflang: engines see many thin copies of one page. A site-wide structure choice; "
+                 "pages whose H1 is their own title are left out.")
+SITEMAP_ERROR_REDIRECT_NOTE = ("These addresses answer a redirect to an error page (status chain per address): the "
+                               "server should answer 404/410 at the address itself, not redirect to an error page. Each "
+                               "row suggests the live page to send it to with a 301, or 410 when none is related.")
 
 # -- helpers -----------------------------------------------------------------------------------------------------------
 
@@ -174,12 +184,16 @@ def error_redirects(pages, redirects: list[dict] | None, probe: dict | None, key
                     importance_tier=0 if any(u in key_urls for u in urls) else 2, rule_id="idx1.error_redirect")]
 
 
-# -- 2. idx8.self_canonical_copies -------------------------------------------------------------------------------------
+# -- 2. idx8.self_canonical_copies / idx8.form_step_copies ------------------------------------------------------------
 
 # A last path segment that names the page it sits under: /anasayfa is /, /sss/default.aspx is /sss.
 ALIAS_SEGMENTS = frozenset({"default.aspx", "default.asp", "default.htm", "default.html", "index.html", "index.htm",
                             "index.php", "index.aspx", "index.asp", "index.jsp", "anasayfa", "ana-sayfa", "home",
                             "homepage", "default", "index"})
+# DECISIONS 344: a step of an application or form (İlginay: a 301 there is wrong; canonical to the main step or noindex).
+_FORM_WORDS = re.compile(r"basvur|application|apply|form|kayit|register|signup|sign-up|checkout|odeme-adim|adim|step|"
+                         r"kimlik-bilgi|bilgileriniz", re.IGNORECASE)
+_FORM_QUERY = ("sw", "step", "adim", "stage", "page_step")
 
 
 def _plain(url: str) -> str:
@@ -197,19 +211,36 @@ def alias_key(url: str) -> str:
         segs = segs[:-1]
     return f"{parts.netloc.lower()}/" + "/".join(segs)
 
+
+def form_step(page) -> bool:
+    """A step of an application or form: its address names one (başvuru, form, kayıt, -kk ...), it carries a step
+    query (?sw=, ?step=), or the page holds a form whose action is not a search."""
+    parts = urlsplit(page.url)
+    if _FORM_WORDS.search(unquote(parts.path)) or re.search(r"-kk(?:/|$)", parts.path.lower()):
+        return True
+    if any(k.lower() in _FORM_QUERY for k, _ in parse_qsl(parts.query, keep_blank_values=True)):
+        return True
+    actions = (page.analysis or {}).get("form_actions") or []
+    return any(isinstance(a, dict) and not re.search(r"search|arama|ara\b", str(a.get("action") or a), re.I) or
+               isinstance(a, str) and not re.search(r"search|arama", a, re.I) for a in actions)
+
+
 def _hreflang_targets(analysis: dict, url: str = "") -> set[str]:
     return {_key(urljoin(url, h["href"])) for h in analysis.get("hreflang") or [] if isinstance(h, dict) and h.get("href")}
 
 
 def self_canonical_copies(read, inlinks: dict[str, int] | None = None, key_urls=frozenset(),
                           skip: set[str] | None = None) -> list[Finding]:
+    """Addresses of one page, each 200 and its own canonical. Two cards: a second address of a page (/anasayfa,
+    /default.aspx, ?query) -> 301 to the main one; a second address of an application or form step -> canonical to the
+    main step or noindex, never a 301 (DECISIONS 344)."""
     groups: dict[tuple, list] = defaultdict(list)
     for p in read:
         a = p.analysis
         if not _ok(p) or not a.get("text_sha256") or not self_canonical(p.url, a) or p.url in (skip or ()):
             continue
         groups[(alias_key(p.url), a["text_sha256"], _text(a.get("title")).casefold(), tuple(h.casefold() for h in h1s(a)))].append(p)
-    rows, urls, pairs = [], [], 0
+    kinds: dict[str, dict] = {"alias": {"rows": [], "urls": [], "pairs": 0}, "form": {"rows": [], "urls": [], "pairs": 0}}
     for members in groups.values():
         if len(members) < 2:
             continue
@@ -222,28 +253,48 @@ def self_canonical_copies(read, inlinks: dict[str, int] | None = None, key_urls=
         # The main address: the homepage's root when it is one of them, else the most linked, else the shortest.
         main = sorted(members, key=lambda p: (urlsplit(p.url).path not in ("", "/"), -(inlinks or {}).get(p.url, 0),
                                               len(_short(p.url)), p.url))[0]
-        pairs += len(members) - 1
+        kind = "form" if any(form_step(p) for p in members) else "alias"
+        k = kinds[kind]
+        k["pairs"] += len(members) - 1
         for p in members:
+            others = ", ".join(_short(q.url) for q in members if q is not main)
             if p is main:
-                others = ", ".join(_short(q.url) for q in members if q is not main)
                 row = _row(f"asıl adres önerisi; aynı içerik, başlık ve H1: {others}; ikisi de 200 ve kendini kanonik gösteriyor",
                            f"suggested main address; same text, title and H1: {others}; both 200 and their own canonical")
+                fix = None
+            elif kind == "alias":
+                row = _row(f"{_short(main.url)} ile aynı içerik, başlık ve H1; 200 ve kendini kanonik gösteriyor",
+                           f"same text, title and H1 as {_short(main.url)}; 200 and its own canonical")
+                fix = _row(f"Bu adresi {_short(main.url)} adresine 301 ile yönlendirin.",
+                           f"Redirect this address to {_short(main.url)} with a 301.")
             else:
-                row = _row(f"{_short(main.url)} ile aynı içerik, başlık ve H1; 200 ve kendini kanonik gösteriyor → {_short(main.url)} adresine 301",
-                           f"same text, title and H1 as {_short(main.url)}; 200 and its own canonical → 301 to {_short(main.url)}")
-            rows.append({"url": p.url, "main": main.url, "title": _text(p.analysis.get("title")), "row": row})
-            urls.append(p.url)
-    if not rows:
-        return []
-    return [Finding("IDX-8", f"{pairs} second address(es) of a page answer 200 and name themselves canonical",
-                    Severity.S3, Confidence.VERIFIED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(urls),
-                    {"pages": rows[:MAX_ROWS], "second_addresses": pairs,
-                     "rule": "addresses of one page (the same path but for case, a trailing slash, the query, or a last "
-                             "segment such as /anasayfa, /default.aspx or /index.html) read with the same visible text, "
-                             "title and H1, each answering 200 with no canonical to another address, and no hreflang "
-                             "between them"},
-                    COPIES_EXPECTED, COPIES_FIX, importance_tier=0 if any(u in key_urls for u in urls) else 2,
-                    rule_id="idx8.self_canonical_copies")]
+                row = _row(f"başvuru/form adımı; {_short(main.url)} ile aynı içerik, başlık ve H1; 200 ve kendini kanonik gösteriyor",
+                           f"an application/form step; same text, title and H1 as {_short(main.url)}; 200 and its own canonical")
+                fix = _row(f"Kanonik etiketini {_short(main.url)} adresine verin ya da noindex ekleyin; 301 vermeyin (adım çalışmayı bırakır).",
+                           f"Point its canonical to {_short(main.url)} or add noindex; no 301 (the step would stop working).")
+            k["rows"].append({"url": p.url, "main": main.url, "title": _text(p.analysis.get("title")), "row": row,
+                              **({"fix": fix} if fix else {})})
+            k["urls"].append(p.url)
+    out = []
+    tier = lambda urls: 0 if any(u in key_urls for u in urls) else 2  # noqa: E731
+    rule = ("addresses of one page (the same path but for case, a trailing slash, the query, or a last segment such as "
+            "/anasayfa, /default.aspx or /index.html) read with the same visible text, title and H1, each answering 200 "
+            "with no canonical to another address, and no hreflang between them")
+    if kinds["alias"]["rows"]:
+        k = kinds["alias"]
+        out.append(Finding("IDX-8", f"{k['pairs']} second address(es) of a page answer 200 and name themselves canonical",
+                           Severity.S3, Confidence.VERIFIED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(k["urls"]),
+                           {"pages": k["rows"][:MAX_ROWS], "second_addresses": k["pairs"], "rule": rule},
+                           COPIES_EXPECTED, COPIES_FIX, importance_tier=tier(k["urls"]), rule_id="idx8.self_canonical_copies"))
+    if kinds["form"]["rows"]:
+        k = kinds["form"]
+        out.append(Finding("IDX-8", f"{k['pairs']} second address(es) of an application or form step answer 200 and name themselves canonical",
+                           Severity.S4, Confidence.VERIFIED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(k["urls"]),
+                           {"pages": k["rows"][:MAX_ROWS], "second_addresses": k["pairs"],
+                            "rule": rule + "; one of them a step of an application or form (its address, a step query or a form)"},
+                           FORM_STEP_EXPECTED, FORM_STEP_FIX, notes=[FORM_STEP_NOTE], importance_tier=tier(k["urls"]),
+                           rule_id="idx8.form_step_copies"))
+    return out
 
 
 # -- 3. str3.product_on_article ----------------------------------------------------------------------------------------
@@ -273,90 +324,196 @@ def product_on_article(read, groups: dict, key_urls=frozenset()) -> list[Finding
                     importance_tier=0 if any(u in key_urls for u in urls) else 2, rule_id="str3.product_on_article")]
 
 
-# -- 5. str1.subpage_copies_parent -------------------------------------------------------------------------------------
+# -- 5 and 7. str1.sections_as_pages ----------------------------------------------------------------------------------
 
-def subpage_copies_parent(read, key_urls=frozenset()) -> tuple[list[Finding], set[str]]:
-    """(findings, the sub-pages found): a sub-page under a read parent, canonical to itself, whose hreflang names the
-    parent and whose title, H1 or description is the parent's."""
+def _title_head(title: str) -> str:
+    """A title without its brand part: "Hisse Senedi | Enpara" -> "Hisse Senedi"."""
+    return re.split(r"\s+[|\-–—:]\s+", _text(title))[0]
+
+
+def sections_as_pages(read, key_urls=frozenset()) -> list[Finding]:
+    """DECISIONS 344 (İlginay: clicking a question or a left-menu heading on one page opens a new address): a page read
+    under a parent page read (its address path; never the homepage), canonical to itself, that carries the parent's
+    title or H1, or whose hreflang names the parent. One site-wide card, a decision for the site; a page whose H1 is
+    its own title (\"Hisse Senedi\" on \"Hisse Senedi | Enpara\") is left out: it names its own topic."""
     by_key = {_key(p.url): p for p in read if _ok(p)}
     rows = []
     for p in read:
         if not _ok(p) or not self_canonical(p.url, p.analysis):
             continue
         parent = _parent(p.url, by_key)
-        targets = _hreflang_targets(p.analysis, p.url)
-        if parent is None or _key(parent.url) not in targets or _key(p.url) in targets:
+        if parent is None:
             continue
         a, b = p.analysis, parent.analysis
-        shared = [name for name, mine, theirs in (("title", _text(a.get("title")), _text(b.get("title"))),
-                                                  ("H1", (h1s(a) or [""])[0], (h1s(b) or [""])[0]),
-                                                  ("description", description(a), description(b)))
-                  if _same(mine, theirs)]
-        if not shared:
+        h1 = (h1s(a) or [""])[0]
+        targets = _hreflang_targets(a, p.url)
+        to_parent = _key(parent.url) in targets and _key(p.url) not in targets
+        # A page whose H1 is its own title names its own topic (İlginay: /yatirim-hesabi/hisse-senedi); not when its
+        # hreflang names the parent (the /sss sub-pages: a language version of the parent, by their own markup).
+        if h1 and not to_parent and (_same(h1, _title_head(a.get("title"))) or _same(h1, _text(a.get("title")))):
             continue
-        what_tr = ", ".join({"title": "başlık", "H1": "H1", "description": "açıklama"}[s] for s in shared)
-        rows.append({"url": p.url, "parent": parent.url, "shared": shared, "title": _text(a.get("title")),
-                     "h1": (h1s(a) or [""])[0],
-                     "row": _row(f"{what_tr} {_short(parent.url)} ile aynı (\"{_text(a.get('title'))}\"); canonical kendisi, "
-                                 f"hreflang {_short(parent.url)}",
-                                 f"{', '.join(shared)} same as {_short(parent.url)} (\"{_text(a.get('title'))}\"); canonical "
-                                 f"to itself, hreflang to {_short(parent.url)}")})
-    if not rows:
-        return [], set()
-    urls = [r["url"] for r in rows]
-    parents = sorted({r["parent"] for r in rows})
-    return [Finding("STR-1", f"{len(rows)} sub-page(s) repeat their parent page's title or H1, with hreflang to the parent",
-                    Severity.S3, Confidence.VERIFIED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(urls),
-                    {"pages": rows[:MAX_ROWS], "parents": parents[:20],
-                     "rule": "a page read under a parent page read (its address path), canonical to itself, whose "
-                             "hreflang names the parent and whose title, H1 or description is the parent's"},
-                    SUBPAGE_EXPECTED, SUBPAGE_FIX, notes=[SUBPAGE_NOTE],
-                    importance_tier=0 if any(u in key_urls for u in urls) else 2, rule_id="str1.subpage_copies_parent")], set(urls)
-
-
-# -- 7. str2.h1_parent_name --------------------------------------------------------------------------------------------
-
-def h1_parent_name(read, key_urls=frozenset(), skip: set[str] | None = None) -> list[Finding]:
-    """A sub-page whose H1 is the name of its section: the H1 of the parent page read, or the trail's step above it."""
-    by_key = {_key(p.url): p for p in read if _ok(p)}
-    rows = []
-    for p in read:
-        if not _ok(p) or p.url in (skip or ()):
+        signs = []
+        if to_parent:
+            signs.append(("hreflang", "hreflang üst sayfayı gösteriyor", "hreflang names the parent"))
+        if _same(_text(a.get("title")), _text(b.get("title"))):
+            signs.append(("title", "başlık üst sayfayla aynı", "the parent's title"))
+        if h1 and _same(h1, (h1s(b) or [""])[0]):
+            signs.append(("h1", f"H1 \"{h1}\" üst sayfanın H1'i", f"H1 \"{h1}\" is the parent's H1"))
+        if not signs:
             continue
-        h1 = (h1s(p.analysis) or [""])[0]
-        if not h1:
-            continue
-        parent = _parent(p.url, by_key)
-        source = None
-        if parent is not None and _same(h1, (h1s(parent.analysis) or [""])[0]):
-            source = ("parent", parent.url)
-        else:
-            trail = (p.analysis.get("breadcrumbs") or [None])[0] or {}
-            names = [_text(x) for x in (trail.get("names") or str(trail.get("text") or "").split(">"))] if trail else []
-            if len(names) >= 3 and _same(h1, names[-2]) and not _same(h1, names[-1]):
-                source = ("trail", names[-2])
-        if source is None:
-            continue
-        title = _text(p.analysis.get("title"))
-        where_tr = f"{_short(source[1])} sayfasının H1'i" if source[0] == "parent" else "içerik yolundaki üst adım"
-        where_en = f"the H1 of {_short(source[1])}" if source[0] == "parent" else "the step above it in the breadcrumb"
-        rows.append({"url": p.url, "h1": h1, "parent": source[1] if source[0] == "parent" else None, "title": title,
-                     "row": _row(f"H1 \"{h1}\" = {where_tr}; sayfa başlığı \"{title}\"",
-                                 f"H1 \"{h1}\" = {where_en}; page title \"{title}\"")})
+        if description(a) and _same(description(a), description(b)):
+            signs.append(("description", "açıklama üst sayfayla aynı", "the parent's description"))
+        title = _text(a.get("title"))
+        rows.append({"url": p.url, "parent": parent.url, "signs": [x[0] for x in signs], "title": title, "h1": h1,
+                     "row": _row(f"üst sayfa {_short(parent.url)}; " + ", ".join(x[1] for x in signs) + f"; sayfa başlığı \"{title}\"",
+                                 f"parent {_short(parent.url)}; " + ", ".join(x[2] for x in signs) + f"; page title \"{title}\"")})
     if not rows:
         return []
     urls = [r["url"] for r in rows]
-    return [Finding("STR-2", f"{len(rows)} sub-page(s) use their section's name as their H1",
-                    Severity.S4, Confidence.VERIFIED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(urls),
-                    {"pages": rows[:MAX_ROWS], "rule": "a page read whose H1 is the H1 of the parent page read above it "
-                                                        "in the address path, or the breadcrumb step above it"},
-                    H1_PARENT_EXPECTED, H1_PARENT_FIX, importance_tier=0 if any(u in key_urls for u in urls) else 2,
-                    rule_id="str2.h1_parent_name")]
+    parents = sorted({r["parent"] for r in rows})
+    return [Finding("STR-1", f"{len(rows)} sub-page(s) open a part of their parent page at an address of their own",
+                    Severity.S3, Confidence.ESTIMATED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(urls),
+                    {"pages": rows[:MAX_ROWS], "parents": parents[:40], "parent_count": len(parents),
+                     "rule": "a page read under a parent page read (its address path), canonical to itself, with the "
+                             "parent's title or H1 or an hreflang naming the parent; a page whose H1 is its own title is left out"},
+                    SECTIONS_EXPECTED, SECTIONS_FIX, notes=[SECTIONS_NOTE],
+                    importance_tier=0 if any(u in key_urls for u in urls) else 2, rule_id="str1.sections_as_pages")]
+
+
+# -- 4. the sitemap-errors card takes the redirects to an error page (DECISIONS 344) -------------------------------------
+
+_STOP = frozenset({"ve", "ile", "icin", "nedir", "nasil", "neler", "nelerdir", "bir", "the", "and", "for", "what", "how",
+                   "mi", "mu", "da", "de", "en", "tr", "www", "html", "aspx"})
+
+
+def _tokens(text: str) -> set[str]:
+    from ..page_words import fold
+    return {t for t in re.split(r"[^a-z0-9]+", fold(unquote(text or "")).lower()) if len(t) >= 3 and t not in _STOP}
+
+
+def suggest_target(url: str, live: list) -> tuple[str | None, str]:
+    """(the live page to send a missing address to, why) or (None, "none"): the page whose address and title share the
+    most words with the missing address's last segment (at least a quarter of them), nearer folders first; else the
+    nearest page above it in the same folder; else None (410)."""
+    parts = urlsplit(url)
+    segs = [s for s in parts.path.split("/") if s]
+    want = _tokens(segs[-1]) if segs else set()
+    best, best_score = None, 0.0
+    for p in live:
+        if p.url == url:
+            continue
+        psegs = [s for s in urlsplit(p.url).path.split("/") if s]
+        if not psegs:
+            continue
+        have = _tokens(psegs[-1]) | _tokens(p.analysis.get("title") or "")
+        if not want or not have:
+            continue
+        sim = len(want & have) / len(want | have)
+        prefix = next((i for i, (x, y) in enumerate(zip(segs, psegs)) if x.lower() != y.lower()), min(len(segs), len(psegs)))
+        score = sim + 0.1 * prefix
+        if sim >= 0.25 and score > best_score:
+            best, best_score = p.url, score
+    if best:
+        return best, "similar"
+    by_key = {_key(p.url): p for p in live}
+    for n in range(len(segs) - 1, 0, -1):
+        page = by_key.get(_key(f"{parts.scheme}://{parts.netloc}/" + "/".join(segs[:n])))
+        if page is not None:
+            return page.url, "parent"
+    return None, "none"
+
+
+def _g(f, name):
+    return f.get(name) if isinstance(f, dict) else getattr(f, name, None)
+
+
+def settle(checks, result) -> None:
+    """After the broken-link split (DECISIONS 337): the sitemap-errors card gets, per address, its status chain and a
+    suggested 301 target (410 when no page fits), and the server advice when the addresses redirect to an error page;
+    the separate "redirect instead of 404/410" card keeps only addresses no other card lists (Maya's made-up address).
+    Works on the engine's findings; `reassess_rules` passes saved ones the same way. Idempotent."""
+    from .stage8_rules import redirect_records
+    idx1 = next((c for c in checks if _g(c, "check_id") == "IDX-1"), None)
+    if idx1 is None:
+        return
+    findings = list(_g(idx1, "findings") or [])
+    pages = list(getattr(result, "pages", None) or [])
+    records = {r["url"]: r for r in (getattr(result, "redirects", None) or redirect_records(pages)) if isinstance(r, dict)}
+    live = [p for p in pages if _ok(p) and getattr(p, "content_checks_eligible", True) is not False]
+    covered: set[str] = set()
+    for f in findings:
+        if _g(f, "rule_id") not in ("idx1.4xx.sitemap_only", "idx1.4xx.referenced", "idx1.4xx.referenced.linked"):
+            continue
+        ev = _g(f, "evidence") or {}
+        addresses = [e.get("url") for e in ev.get("sitemap_entries") or [] if isinstance(e, dict)] or list(ev.get("sitemap_only") or [])
+        covered |= set(addresses) | set(ev.get("target_urls") or [])
+        if _g(f, "rule_id") != "idx1.4xx.sitemap_only" or ev.get("suggestions"):
+            continue
+        rows, via_error = [], 0
+        for u in addresses:
+            rec = records.get(u) or {}
+            hops = rec.get("hops") or []
+            chain = (" → ".join([str(h.get("status")) for h in hops] + [_short(rec.get("final") or "")]
+                                + ([str(rec["final_status"])] if rec.get("final_status") else [])) if hops else None)
+            to_error = bool(hops) and (error_page(rec.get("final") or "") or any(error_page(h.get("target") or "") for h in hops))
+            via_error += int(to_error)
+            target, why = suggest_target(u, live)
+            why_tr = {"similar": "adres ve başlık benzerliği", "parent": "aynı klasörün üst sayfası"}.get(why)
+            why_en = {"similar": "address and title words", "parent": "the folder's page above it"}.get(why)
+            said_tr = (f"{chain}; " if chain else "") + (f"önerilen 301 hedefi: {_short(target)} ({why_tr})" if target
+                                                           else "ilgili bir sayfa yok: 410")
+            said_en = (f"{chain}; " if chain else "") + (f"suggested 301 target: {_short(target)} ({why_en})" if target
+                                                           else "no related page: 410")
+            fix = (_row(f"Site haritasından çıkarın ve bu adresi {_short(target)} adresine 301 ile yönlendirin.",
+                        f"Take it out of the sitemap and redirect it to {_short(target)} with a 301.") if target else
+                   _row("Site haritasından çıkarın; adres 410 döndürsün (ilgili sayfa yok).",
+                        "Take it out of the sitemap; let the address answer 410 (no related page)."))
+            rows.append({"url": u, "chain": chain, "redirects_to_error": to_error, "target": target, "target_basis": why,
+                         "row": _row(said_tr, said_en), "fix": fix})
+        new_ev = {**ev, "suggestions": rows, "redirects_to_error_page": via_error}
+        if isinstance(f, dict):
+            f["evidence"] = new_ev
+            if via_error:
+                f["notes"] = list(f.get("notes") or []) + [SITEMAP_ERROR_REDIRECT_NOTE]
+        else:
+            f.evidence = new_ev
+            if via_error:
+                f.notes = list(f.notes) + [SITEMAP_ERROR_REDIRECT_NOTE]
+    for f in list(findings):
+        if _g(f, "rule_id") != "idx1.error_redirect":
+            continue
+        ev = _g(f, "evidence") or {}
+        left = [r for r in ev.get("pages") or [] if isinstance(r, dict) and (r.get("probe") or r.get("url") not in covered)]
+        if len(left) == len(ev.get("pages") or []):
+            continue
+        findings.remove(f)
+        if not left:
+            continue
+        crawled = [r for r in left if not r.get("probe")]
+        n = len(crawled) or 1
+        urls = [r["url"] for r in crawled] or [r["url"] for r in left]
+        title = f"{n} missing address(es) answer a redirect to an error page instead of 404/410"
+        evidence = {**ev, "pages": left, "redirecting_to_error": len(crawled),
+                    "in_other_cards": sorted(covered & {r.get("url") for r in ev.get("pages") or [] if isinstance(r, dict)})[:40]}
+        if isinstance(f, dict):
+            f.update(title=title, evidence=evidence, scope={"kind": "page" if len(urls) == 1 else "template",
+                                                            "count": len(urls), "urls": urls[:25]})
+        else:
+            f.title, f.evidence, f.scope = title, evidence, scope_for(urls)
+            f.id = ""
+            f.__post_init__()
+        findings.append(f)
+    if isinstance(idx1, dict):
+        idx1["findings"] = findings
+    else:
+        idx1.findings = findings
 
 
 # -- all of them -------------------------------------------------------------------------------------------------------
 
-RULE_CHECKS = {"IDX-1", "IDX-8", "STR-1", "STR-2", "STR-3"}
+RULE_CHECKS = {"IDX-1", "IDX-8", "STR-1", "STR-3"}
+RULES = ("idx1.error_redirect", "idx8.self_canonical_copies", "idx8.form_step_copies", "str3.product_on_article",
+         "str1.sections_as_pages")
 
 
 def soft_404_probe(result) -> dict | None:
@@ -373,20 +530,16 @@ def findings(result, read, groups: dict, wanted: set[str], key_urls=frozenset(),
     pages = list(result.pages)
     if "IDX-1" in wanted:
         out["IDX-1"] += error_redirects(pages, getattr(result, "redirects", None), soft_404_probe(result), key_urls)
-    sub, subpages = subpage_copies_parent(read, key_urls) if "STR-1" in wanted else ([], set())
-    if sub:
-        out["STR-1"] += sub
-    seconds: set[str] = set()  # second addresses of a page: their fix is a 301, so no other card for their H1
+    sections = sections_as_pages(read, key_urls) if "STR-1" in wanted else []
+    if sections:
+        out["STR-1"] += sections
     if "IDX-8" in wanted:
         inlinks: dict[str, int] = defaultdict(int)
         for p in read:
             for edge in p.outlinks or []:
                 inlinks[(edge.get("target") or "").split("#")[0]] += 1
-        copies = self_canonical_copies(read, inlinks, key_urls, skip=subpages)
-        out["IDX-8"] += copies
-        seconds = {r["url"] for f in copies for r in f.evidence["pages"] if r["url"] != r["main"]}
+        skip = {u for f in sections for u in f.scope.get("_all_urls") or []}
+        out["IDX-8"] += self_canonical_copies(read, inlinks, key_urls, skip=skip)
     if "STR-3" in wanted:
         out["STR-3"] += product_on_article(read, groups, key_urls)
-    if "STR-2" in wanted:
-        out["STR-2"] += h1_parent_name(read, key_urls, skip=subpages | seconds)
     return out, unassessed

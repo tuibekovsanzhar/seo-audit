@@ -4293,30 +4293,6 @@
    "verify": "Rich Results Test'te blog yazısında Product ya da puan görünmemeli; BlogPosting görünmeli.",
    "summary": "Blogda Product işaretlemesi"
   },
-  "str1.subpage_copies_parent": {
-   "title": "Alt sayfalara kendi başlığını, H1'ini ve hreflang'ini verin",
-   "finding": "Alt sayfalar üst sayfanın başlığını ve hreflang'ini taşıyor",
-   "explanation": "Her alt sayfaya kendi konusunu anlatan başlık, H1 ve açıklama verin; hreflang alt sayfanın kendi dil sürümlerini göstersin.",
-   "why": "Aynı başlık ve H1, üst sayfayı gösteren hreflang ile birleşince motorlar alt sayfaları üst sayfanın kopyası sayar.",
-   "steps": [
-    "Her alt sayfanın başlık, H1 ve açıklamasını kendi konusuna göre yazın",
-    "hreflang'i alt sayfanın kendi adresine ve dil sürümlerine çevirin"
-   ],
-   "verify": "Alt sayfanın kaynağında başlık ve H1 kendi konusunu söylemeli; hreflang tr değeri alt sayfanın kendi adresi olmalı.",
-   "summary": "Alt sayfa kopyaları"
-  },
-  "str2.h1_parent_name": {
-   "title": "Alt sayfalara kendi konusunu anlatan bir H1 verin",
-   "finding": "Alt sayfaların H1'i bölümün adı",
-   "explanation": "Her alt sayfanın H1'i kendi konusunu söylesin; bölüm adı içerik yolunda kalsın.",
-   "why": "Bölüm adını taşıyan H1, sayfanın neyle ilgili olduğunu motorlara söylemez; aynı bölümdeki sayfalar birbirine benzer görünür.",
-   "steps": [
-    "Her alt sayfanın H1'ini başlığındaki konuyla yazın",
-    "Bölüm adını breadcrumb'a ya da H1'in üstüne düz metin olarak taşıyın"
-   ],
-   "verify": "Alt sayfanın kaynağında tek H1 olmalı ve sayfanın kendi konusunu söylemeli.",
-   "summary": "Bölüm adındaki H1"
-  },
   "str13.markers_data": {
    "title": "JSON-LD'deki doldurulmamış şablon değişkenini düzeltin",
    "finding": "Yapısal veride ya da meta etiketinde doldurulmamış değişken var",
@@ -4329,6 +4305,45 @@
    ],
    "verify": "Sayfa kaynağında süslü parantez ya da çift yüzde işaretiyle yazılmış değişken kalmamalı; Rich Results Test hata vermemeli.",
    "summary": "Doldurulmamış değişken"
+  },
+  "str1.sections_as_pages": {
+   "title": "Sayfa içindeki başlıklar/sorular ayrı adres oluşturuyor",
+   "finding": "Bir sayfanın bölümleri kendi adreslerinde açılıyor",
+   "explanation": "Karar verin: ya her adres kendi başlığı, H1'i ve içeriğiyle gerçek bir sayfa olsun, ya da tek sayfa kalsın ve bölümlere çapayla gidilsin.",
+   "why": "Bir soruya ya da menü başlığına tıklamak yeni bir adres açıyor; üst sayfanın başlığını ve hreflang'ini taşıyan bu adresler motorlara ince kopyalar gibi görünür.",
+   "steps": [
+    "Bu adreslerin ayrı sayfa olup olmayacağına karar verin",
+    "Ayrı sayfaysa her birine kendi başlık, H1, açıklama ve hreflang'ini verin",
+    "Değilse bölümlere çapayla gidin ya da kanonik etiketi üst sayfaya verin"
+   ],
+   "verify": "Bir soruya tıklayınca ya adres değişmemeli (çapa), ya da açılan sayfanın kendi başlığı, H1'i ve kendini gösteren hreflang'i olmalı.",
+   "summary": "Bölümlerin kendi adresleri"
+  },
+  "idx8.form_step_copies": {
+   "title": "Başvuru adımlarının ikinci adreslerine canonical ya da noindex verin",
+   "finding": "Bir başvuru adımı iki adreste açılıyor",
+   "explanation": "İkinci adresin kanonik etiketini ana adıma verin ya da noindex ekleyin; yönlendirmeyin, adım çalışmayı bırakır.",
+   "why": "Aynı adımın iki adresi dizinde iki sayfa gibi görünür; yönlendirme ise başvuru akışını bozabilir.",
+   "steps": [
+    "Her adımın ana adresini seçin",
+    "İkinci adrese ana adımı gösteren kanonik etiket ya da noindex ekleyin",
+    "Başvuru akışını uçtan uca deneyin"
+   ],
+   "verify": "İkinci adresin kaynağında kanonik etiket ana adımı göstermeli ya da noindex olmalı; başvuru adımları çalışmaya devam etmeli.",
+   "summary": "Başvuru adımlarının ikinci adresleri"
+  },
+  "idx6.links_to_flow_redirect": {
+   "title": "Başvuru adımına giden bağlantıların yönlendirmesini doğrulayın",
+   "finding": "Bağlantılar geçici yönlendiren bir başvuru adımına gidiyor",
+   "explanation": "Yönlendirmenin her ziyaretçide olup olmadığını kontrol edin; yalnız yeni ziyaretçide oluyorsa başvuru akışıdır ve kalabilir.",
+   "why": "Maya siteyi çerezsiz, yeni bir ziyaretçi gibi okur; başvuru akışındaki biri doğrudan sayfaya gidebilir.",
+   "steps": [
+    "Bağlantıyı gizli pencerede DevTools > Network ve Preserve log açıkken açın",
+    "Ya da adresi httpstatus.io'da sorgulayın",
+    "Herkes yönleniyorsa bağlantıyı son adrese verin"
+   ],
+   "verify": "Network sekmesinde ilk yanıt doğrudan sayfa olmalı ya da yönlendirme yalnız başvuru akışında görünmeli.",
+   "summary": "Başvuru adımı yönlendirmesi"
   }
  }
 }

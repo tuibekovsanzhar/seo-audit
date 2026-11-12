@@ -1569,34 +1569,6 @@
     ]
    }
   },
-  "str1.subpage_copies_parent": {
-   "en": "Give sub-pages their own title, H1 and hreflang",
-   "tr": "Alt sayfalara kendi başlığını, H1'ini ve hreflang'ini verin",
-   "steps": {
-    "tr": [
-     "Her alt sayfanın başlık, H1 ve açıklamasını kendi konusuna göre yazın",
-     "hreflang'i alt sayfanın kendi adresine ve dil sürümlerine çevirin"
-    ],
-    "en": [
-     "Write each sub-page's title, H1 and description for its own topic",
-     "Point hreflang at the sub-page's own address and language versions"
-    ]
-   }
-  },
-  "str2.h1_parent_name": {
-   "en": "Give each sub-page an H1 about its own topic",
-   "tr": "Alt sayfalara kendi konusunu anlatan bir H1 verin",
-   "steps": {
-    "tr": [
-     "Her alt sayfanın H1'ini başlığındaki konuyla yazın",
-     "Bölüm adını breadcrumb'a ya da H1'in üstüne düz metin olarak taşıyın"
-    ],
-    "en": [
-     "Write each sub-page's H1 from the topic in its title",
-     "Move the section name to the breadcrumb or above the H1 as plain text"
-    ]
-   }
-  },
   "str13.markers_data": {
    "en": "Fix the unfilled template variable in the JSON-LD",
    "tr": "JSON-LD'deki doldurulmamış şablon değişkenini düzeltin",
@@ -1610,6 +1582,54 @@
      "Find the field and the text from the evidence in the template",
      "Give the variable its value or remove the field",
      "Check the page source has no variable left"
+    ]
+   }
+  },
+  "str1.sections_as_pages": {
+   "en": "Headings and questions on one page open their own addresses",
+   "tr": "Sayfa içindeki başlıklar/sorular ayrı adres oluşturuyor",
+   "steps": {
+    "tr": [
+     "Bu adreslerin ayrı sayfa olup olmayacağına karar verin",
+     "Ayrı sayfaysa her birine kendi başlık, H1, açıklama ve hreflang'ini verin",
+     "Değilse bölümlere çapayla gidin ya da kanonik etiketi üst sayfaya verin"
+    ],
+    "en": [
+     "Decide whether these addresses are to be pages of their own",
+     "If so, give each its own title, H1, description and hreflang",
+     "If not, use anchors or point the canonical to the parent page"
+    ]
+   }
+  },
+  "idx8.form_step_copies": {
+   "en": "Give the second addresses of application steps a canonical or noindex",
+   "tr": "Başvuru adımlarının ikinci adreslerine canonical ya da noindex verin",
+   "steps": {
+    "tr": [
+     "Her adımın ana adresini seçin",
+     "İkinci adrese ana adımı gösteren kanonik etiket ya da noindex ekleyin",
+     "Başvuru akışını uçtan uca deneyin"
+    ],
+    "en": [
+     "Choose each step's main address",
+     "Give the second address a canonical to the main step, or noindex",
+     "Try the application from start to end"
+    ]
+   }
+  },
+  "idx6.links_to_flow_redirect": {
+   "en": "Check the redirect of links to an application step",
+   "tr": "Başvuru adımına giden bağlantıların yönlendirmesini doğrulayın",
+   "steps": {
+    "tr": [
+     "Bağlantıyı gizli pencerede DevTools > Network ve Preserve log açıkken açın",
+     "Ya da adresi httpstatus.io'da sorgulayın",
+     "Herkes yönleniyorsa bağlantıyı son adrese verin"
+    ],
+    "en": [
+     "Open the link in a private window, DevTools > Network, Preserve log on",
+     "Or ask httpstatus.io for the address",
+     "If everyone is redirected, link to the final address"
     ]
    }
   }

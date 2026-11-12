@@ -54,6 +54,9 @@ def settle(checks, result) -> None:
     from .facts import attach
     from .rules import assign
     broken_link_sources(checks, result)  # skips a finding already traced (it has target_urls)
+    # DECISIONS 344: the sitemap-errors card takes the redirects to an error page, with a 301 target per address
+    from .checks.team_rules import settle as team_settle
+    team_settle(checks, result)
     assign(checks)
     attach(checks)
     # Page kinds for the site checks, as before; the answer-engine panel never had them.

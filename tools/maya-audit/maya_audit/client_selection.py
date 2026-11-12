@@ -733,7 +733,8 @@ def head_rows(report: dict) -> dict[str, dict]:
                          "robots_after": sorted(ROBOTS_META & set(o.get("meta") or [])), "robots_content": o.get("robots_content"),
                          "hreflang_after": o.get("hreflang", 0), "meta_after": sorted(set(o.get("meta") or []) - ROBOTS_META)[:10],
                          "properties_after": sorted(set(o.get("properties") or []))[:10], "title_after": o.get("title", 0),
-                         "kept_in_head": kept_in_head(a)}
+                         "kept_in_head": kept_in_head(a),
+                         **({"head_tags": a["head_tags"]} if a.get("head_tags") else {})}
     for c in report.get("checks") or []:
         for f in c.get("findings") or []:
             if (f.get("rule_id") or "").startswith("tseo1.head_closed"):

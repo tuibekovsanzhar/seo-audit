@@ -794,13 +794,16 @@ def _order(report: dict) -> list[str]:
 
 
 def _decisions_343(report: dict, affected: dict, changes: list[str], unassessed: list[dict] | None = None) -> None:
-    """DECISIONS 343 (the SEO team's technical review, Efsa's enpara report): the rules of `checks.team_rules`, run on
-    the saved page records with the engine's own functions, for a report of the current schema too. A rule already in
-    the report is left as it is."""
+    """DECISIONS 343 and 344 (the SEO team's technical review, Efsa's enpara report; İlginay's review of its Ek): the rules
+    of `checks.team_rules` and the links to a redirect (`stage8_rules.links_to_redirect`, split for application and
+    sign-in steps), recomputed from the saved page records with the engine's own functions; a finding of these rules
+    already in the report is replaced. Then the sitemap-errors card takes the redirects to an error page
+    (`team_rules.settle`). For a report of the current schema too."""
     from types import SimpleNamespace
+    from .checks import team_rules
     from .checks.access import _status
     from .checks.quick_rules import _read, grouping_of
-    from .checks.team_rules import findings as team_findings
+    from .checks.stage8_rules import links_to_redirect
     from .launch_gate import items_of
     from .models import page_from_record, to_jsonable
     crawl = report.get("crawl") or {}
@@ -810,30 +813,54 @@ def _decisions_343(report: dict, affected: dict, changes: list[str], unassessed:
             pages.append(page_from_record(p))
         except (KeyError, TypeError, ValueError):  # a record without a page's fields (a hand-made or very old report)
             continue
+    if not pages:
+        return
     result = SimpleNamespace(pages=pages, start_url=crawl.get("start_url") or "", origin=crawl.get("origin"),
                              discovered_urls=crawl.get("discovered_urls") or [], sitemap_urls=crawl.get("sitemap_urls") or [],
                              page_grouping=None, redirects=crawl.get("redirects"), index=crawl.get("index"))
     read = _read(pages)
-    if not read and not pages:
-        return
     checks = {c.get("check_id"): c for c in report.get("checks") or [] if c.get("status") != "not_assessed"}
-    made, missing = team_findings(result, read, grouping_of(result) if read else {}, set(checks), saved=True)
+    replaced = set(team_rules.RULES) | {"str1.subpage_copies_parent", "str2.h1_parent_name", "idx6.links_to_redirect",
+                                        "idx6.links_to_flow_redirect"}
+    before = {}
+    for check in checks.values():
+        for f in list(check.get("findings") or []):
+            if f.get("rule_id") in replaced:
+                before[f["rule_id"]] = f.get("title")
+                check["findings"].remove(f)
+                affected.pop(f.get("id"), None)
+    made, missing = team_rules.findings(result, read, grouping_of(result) if read else {}, set(checks), saved=True)
+    if "IDX-6" in checks:
+        made["IDX-6"] = list(made.get("IDX-6") or []) + links_to_redirect(pages, read)
     if unassessed is not None:
         unassessed.extend(missing)
     for check_id, new in made.items():
         check = checks.get(check_id)
         if check is None or not new:
             continue
-        have = {f.get("rule_id") for f in check.get("findings") or []}
         for finding in new:
-            if finding.rule_id in have:
-                continue
             finding.launch_gated = items_of(check_id, finding)[0]
             urls = list(finding.scope.get("_all_urls") or finding.scope.get("urls") or [])
             record = to_jsonable(finding)
             check.setdefault("findings", []).append(record)
             affected[record["id"]] = urls
-            changes.append(f"{record['id']}: added: {record['title']} ({record['severity']}; DECISIONS 343)")
+            if before.get(record["rule_id"]) != record["title"]:
+                changes.append(f"{record['id']}: {record['title']} ({record['severity']}; DECISIONS 343, 344)")
+    # DECISIONS 344: the sitemap-errors card takes the redirects to an error page, with a 301 target per address
+    if "IDX-1" in checks:
+        team_rules.settle([checks["IDX-1"]], result)
+        for f in checks["IDX-1"].get("findings") or []:
+            if f.get("rule_id") == "idx1.4xx.sitemap_only" and (f.get("evidence") or {}).get("suggestions") is not None:
+                if "suggestions" not in str(changes):
+                    changes.append(f"{f['id']}: a status chain and a 301 target (or 410) per address (DECISIONS 344)")
+            if f.get("rule_id") == "idx1.error_redirect":
+                rows = [r for r in (f.get("evidence") or {}).get("pages") or [] if isinstance(r, dict)]
+                urls = [r["url"] for r in rows if not r.get("probe")] or [r["url"] for r in rows]
+                _refresh_id(f, affected, f.get("id"), urls)
+                f["rule_id"] = "idx1.error_redirect"
+        for f in checks["IDX-1"].get("findings") or []:
+            affected.setdefault(f["id"], list((f.get("scope") or {}).get("urls") or []))
+    for check in checks.values():
         check["status"] = _status(check.get("findings") or [], check.get("review_items") or ())
 
 
@@ -944,6 +971,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_337(r, aff, changes)
     _decisions_338(r, aff, changes)
     _decisions_340(r, aff, changes)
+    _decisions_343(r, aff, changes, quick_unassessed)  # DECISIONS 343, 344: replaces what _decisions_304 added
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -959,7 +987,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338, 340 and 343, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338, 340, 343 and 344, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,

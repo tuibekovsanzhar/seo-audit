@@ -323,8 +323,9 @@
   "idx1.error_redirect": "issue",
   "idx8.self_canonical_copies": "issue",
   "str3.product_on_article": "issue",
-  "str1.subpage_copies_parent": "issue",
-  "str2.h1_parent_name": "issue",
-  "str13.markers_data": "issue"
+  "str13.markers_data": "issue",
+  "str1.sections_as_pages": "warning",
+  "idx8.form_step_copies": "issue",
+  "idx6.links_to_flow_redirect": "warning"
  }
 }

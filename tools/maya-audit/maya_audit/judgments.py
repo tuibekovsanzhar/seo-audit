@@ -158,7 +158,7 @@ def qualify(finding, *, sitemap=None):
         status='diagnostic_concern';action=THIN_ACTION;owner,effort='content','M';decision=True
         interpretation='A word-count threshold measures length, not whether the page fulfils its purpose.'
     # DECISIONS 343: one page at a second address (/anasayfa and /) is not two pages whose purposes need comparing.
-    if cid=='IDX-8' and f.get('rule_id')!='idx8.self_canonical_copies' and 'second address(es) of a page' not in title:
+    if cid=='IDX-8' and f.get('rule_id') not in ('idx8.self_canonical_copies','idx8.form_step_copies') and 'second address(es) of a' not in title:
         action=DUPLICATE_ACTION;status='diagnostic_concern';owner,effort='seo','M';decision=True
         interpretation='Text similarity does not establish identical business purpose or justify page consolidation.'
     if cid=='STR-2' and ('no subheadings'in title or 'more than one <h1>'in title):

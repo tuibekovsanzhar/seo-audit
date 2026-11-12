@@ -23,9 +23,12 @@ def test_a_high_row_names_the_tag_after_the_break_and_what_the_head_keeps():
            "kept_in_head": ["canonical", "title"]}
     words = head_row_words(row, "tr")
     assert words["title"] == "<head> erken kapanıyor: robots (noindex) bu öğeden sonra kalıyor"
+    # DECISIONS 344: the element's raw HTML line, and the <head>/</head> count when the audit recorded it
     assert words["value"] == ("robots (noindex), <div#blueLightOverlay> sonrasında; head'de bu etiketin bir kopyası yok. "
-                              "<div#blueLightOverlay> öncesinde, head'de: canonical, title")
-    assert words["fix"] == "<div#blueLightOverlay> öğesini gövdeye taşıyın; robots (noindex) head'de, bu öğeden önce kalmalı."
+                              "<div#blueLightOverlay> öncesinde, head'de: canonical, title. Head'i kapatan öğe: "
+                              "<div#blueLightOverlay>, ham HTML satır 1; <head>/</head> sayısı bu denetimde kaydedilmedi (sonraki denetimde ölçülür)")
+    assert words["fix"] == ("<div#blueLightOverlay> öğesini (head içinde, ham HTML satır 1) gövdeye taşıyın; robots (noindex) "
+                            "head'de, bu öğeden önce kalmalı.")
 
 
 def test_a_medium_row_lists_what_comes_after_and_what_is_before_it():
@@ -34,8 +37,8 @@ def test_a_medium_row_lists_what_comes_after_and_what_is_before_it():
            "properties_after": ["og:image"], "kept_in_head": ["canonical", "hreflang", "title"]}
     words = head_row_words(row, "tr")
     assert words["title"] == "<head> erken kapanıyor: yalnız meta ve Open Graph etiketleri sonra geliyor"
-    assert words["value"] == ("<div#blueLightOverlay> sonrasında: ikinci bir canonical kopyası, description, Open Graph, "
-                              "generator, robots (index, follow); canonical, title, hreflang ondan önce, head'de")
+    assert words["value"].startswith("<div#blueLightOverlay> sonrasında: ikinci bir canonical kopyası, description, Open Graph, "
+                                     "generator, robots (index, follow); canonical, title, hreflang ondan önce, head'de. ")
     assert "canonical, robots ve hreflang" not in words["fix"]
 
 
@@ -57,7 +60,8 @@ def test_every_row_of_the_card_says_its_own_page(rows):
     assert set(rows) == {"/form", "/a", "/b", "/c"}
     assert rows["/form"]["severity"] == "S2" and rows["/form"]["value"].startswith("robots (noindex), <div#overlay> sonrasında")
     for path in ("/a", "/b", "/c"):
-        assert rows[path]["value"] == "<div#overlay> sonrasında: description, Open Graph; canonical, title ondan önce, head'de"
+        assert rows[path]["value"].startswith("<div#overlay> sonrasında: description, Open Graph; canonical, title ondan önce, head'de. "
+                                              "Head'i kapatan öğe: <div#overlay>, ham HTML satır 1; ham HTML'de 1 <head>, 1 </head>")
     assert not any(r["value"] in ("", "—") or "kritik etiketler okunmuyor" in r["title"] for r in rows.values())
 
 

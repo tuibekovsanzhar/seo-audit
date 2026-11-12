@@ -24,8 +24,7 @@ from test_m1_broken_links import audit
 from test_review_fixes import TR
 from test_firecrawl import no_lookups  # noqa: F401  (fixture)
 
-NEW = ("idx1.error_redirect", "idx8.self_canonical_copies", "str3.product_on_article", "str1.subpage_copies_parent",
-       "str2.h1_parent_name")
+NEW = ("idx1.error_redirect", "idx8.self_canonical_copies", "str3.product_on_article", "str1.sections_as_pages")
 LINKS = ["/anasayfa", "/eski-sayfa", "/blog/kredi", "/kampanya", "/sss", "/sss/hesaplar", "/odemeler", "/odemeler/fatura"]
 
 
@@ -90,7 +89,9 @@ def test_two_addresses_of_one_page_each_their_own_canonical(site):
     _, found, base = site
     rows = path_rows(found["idx8.self_canonical_copies"], base)
     assert set(rows) == {"/", "/anasayfa"}
-    assert rows["/anasayfa"].startswith("/ ile aynı içerik, başlık ve H1; 200 ve kendini kanonik gösteriyor → / adresine 301")
+    assert rows["/anasayfa"] == "/ ile aynı içerik, başlık ve H1; 200 ve kendini kanonik gösteriyor"
+    fix = {r["url"].removeprefix(base): r.get("fix") for r in found["idx8.self_canonical_copies"]["evidence"]["pages"]}
+    assert fix["/anasayfa"]["tr"] == "Bu adresi / adresine 301 ile yönlendirin."  # DECISIONS 344: the row's own step
     assert rows["/"].startswith("asıl adres önerisi")
 
 
@@ -107,17 +108,14 @@ def test_an_unfilled_variable_in_a_meta_tag_is_str13s_with_its_own_card(site):
     assert f["scope"]["urls"] == [base + "/kampanya"]
 
 
-def test_a_sub_page_with_its_parents_head_and_hreflang(site):
+def test_sub_pages_opening_a_part_of_their_parent_are_one_card(site):
+    # DECISIONS 344: the parent's head with hreflang to it, and the section's name as H1, are one site-wide card
     _, found, base = site
-    rows = path_rows(found["str1.subpage_copies_parent"], base)
-    assert rows == {"/sss/hesaplar": 'başlık, H1 /sss ile aynı ("Sıkça Sorulan Sorular | Banka"); canonical kendisi, hreflang /sss'}
-
-
-def test_a_sub_page_whose_h1_is_its_sections_name(site):
-    _, found, base = site
-    rows = path_rows(found["str2.h1_parent_name"], base)
-    # /sss/hesaplar is the card above's (its fix is its own title, H1 and hreflang), not this one's
-    assert rows == {"/odemeler/fatura": 'H1 "Ödemeler" = /odemeler sayfasının H1\'i; sayfa başlığı "Fatura Ödemeleri | Banka"'}
+    rows = path_rows(found["str1.sections_as_pages"], base)
+    assert rows == {"/sss/hesaplar": 'üst sayfa /sss; hreflang üst sayfayı gösteriyor, başlık üst sayfayla aynı, H1 "Sıkça '
+                                     'sorulan sorular" üst sayfanın H1\'i; sayfa başlığı "Sıkça Sorulan Sorular | Banka"',
+                    "/odemeler/fatura": 'üst sayfa /odemeler; H1 "Ödemeler" üst sayfanın H1\'i; sayfa başlığı "Fatura Ödemeleri | Banka"'}
+    assert found["str1.sections_as_pages"]["severity"] == "S3"
 
 
 def sitemap_only(n: int, cap: int) -> dict:
@@ -213,7 +211,7 @@ def test_each_rule_has_its_own_card_title(site, tmp_path):
     titles = {t["title"] for t in data["todos"] + (data.get("notes_more") or [])}
     for title in ("Olmayan adreslerde 302 yerine doğrudan 404/410 döndürün", "Aynı sayfanın ikinci adreslerini asıl adrese 301'leyin",
                   "Blog yazılarındaki Product işaretlemesini kaldırın",
-                  "Alt sayfalara kendi başlığını, H1'ini ve hreflang'ini verin", "Alt sayfalara kendi konusunu anlatan bir H1 verin"):
+                  "Sayfa içindeki başlıklar/sorular ayrı adres oluşturuyor"):
         assert title in titles, title
     # A new check's finding waits under "Teyit edin" here (one page); as a card it carries the review's title.
     from maya_audit_web.team_report import texts
@@ -226,8 +224,8 @@ def test_each_rule_has_its_own_card_title(site, tmp_path):
                                              ("SEO-049", "idx8.self_canonical_copies", "IDX-8"),
                                              ("SEO-101", "str13.markers_data", "STR-13"),
                                              ("SEO-106", "str3.product_on_article", "STR-3"),
-                                             ("SEO-145", "str1.subpage_copies_parent", "STR-1"),
-                                             ("SEO-065", "str2.h1_parent_name", "STR-2")])
+                                             ("SEO-145", "str1.sections_as_pages", "STR-1"),
+                                             ("SEO-065", "str1.sections_as_pages", "STR-1")])
 def test_the_checklist_items_each_rule_covers(item, rule, check):
     from maya_audit import checklist
     from test_checklist_342 import group, selection

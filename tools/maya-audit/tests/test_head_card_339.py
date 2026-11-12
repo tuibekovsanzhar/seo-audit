@@ -83,16 +83,18 @@ def test_the_card_says_what_is_lost_what_stays_and_counts_each_severity(built):
     card = head_card(data)
     assert card["severity_label"] == "Yüksek"
     assert card["scope"] == "1 sayfa (+3 sayfa: Orta)"
-    assert card["why"].startswith("1 sayfada robots (noindex) head kırıldıktan sonra geliyor; Google bu kuralı uygulamayabilir.")
-    assert "3 sayfada canonical, title head'de; yalnız description, Open Graph sonra geliyor." in card["why"]
+    # DECISIONS 344: one element on every page is one template cause, said first; then what is lost
+    assert card["why"] == ("Tüm 4 sayfada head'i aynı şablon öğesi kapatıyor: <div#overlay>. 1 sayfada robots (noindex) "
+                           "head kırıldıktan sonra geliyor; Google bu kuralı uygulamayabilir.")
     assert "yok sayılır" not in card["why"]  # never the old "canonical, robots or hreflang are ignored"
-    assert card["steps"].split("\n") == ["<div#overlay> öğesini <head>'den çıkarın",
+    assert card["steps"].split("\n") == ["<div#overlay> öğesini <head>'den çıkarın (satır 1)",
                                          "Onu basan eklentiyi head etiketlerinden sonra yükleyin",
                                          "Search Console Adres Denetimi'nde robots (noindex) kuralını teyit edin"]
-    assert card["verify"] == "Sayfa kaynağında robots (noindex), <div#overlay> öğesinden önce yer almalı."
+    assert card["verify"] == "Sayfa kaynağında tek <head> ve tek </head> olmalı; robots (noindex), <div#overlay> öğesinden önce gelmeli."
     prio = next(p for p in data["priorities"] if card["finding_ids"][0] in p["finding_ids"])
     assert prio["value"] == "1 sayfa (+3 sayfa: Orta)"
-    assert prio["text"] == "<div#overlay> öğesini gövdeye taşıyın; robots (noindex) head'de, bu öğeden önce kalmalı."
+    assert prio["text"] == ("Tüm 4 sayfada head'i aynı şablon öğesi kapatıyor: <div#overlay>. Onu gövdeye taşıyın; robots "
+                            "(noindex) ondan önce kalmalı.")  # DECISIONS 344
 
 
 def test_a_medium_only_head_card_names_what_stays_and_what_comes_after(tmp_path):
@@ -104,7 +106,9 @@ def test_a_medium_only_head_card_names_what_stays_and_what_comes_after(tmp_path)
     (folder / REPORT_JSON).write_text(json.dumps(final.seal(outcome).report), encoding="utf-8")
     card = head_card(build_data.build_from_files(folder / REPORT_JSON, "en")[0])
     assert card["severity_label"] == "Medium" and card["scope"] == "4 pages"
-    assert card["why"] == "On 4 pages, the head keeps canonical, title; only description, Open Graph, robots (index, follow) after the break, which previews may miss."
+    assert card["why"] == ("On all 4 pages the same template element ends the head: <div#overlay>. On 4 pages, the head keeps "
+                           "canonical, title; only description, Open Graph, robots (index, follow) after the break, which "
+                           "previews may miss.")
     assert "Search Console" not in card["steps"]
 
 

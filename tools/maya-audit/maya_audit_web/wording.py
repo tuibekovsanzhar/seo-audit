@@ -371,6 +371,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("idx6.cf_email", "Cloudflare e-mail obfuscation is on: the address is readable only with JavaScript",
          "Cloudflare e-mail obfuscation is on: the address is readable only with JavaScript"),
         # Stage 8a (DECISIONS 315): links to an address that redirects.
+        # DECISIONS 344: a temporary redirect of an application or sign-in step: a note.
+        ("idx6.links_to_flow_redirect", "{links#} internal link(s) on {pages#} page(s) point to an application or sign-in step that redirects temporarily",
+         "{links:internal link|internal links} on {pages:page|pages} [links:points|point] to an application or sign-in step that redirects temporarily"),
         ("idx6.links_to_redirect", "{links#} internal link(s) on {pages#} page(s) point to an address that redirects",
          "{links:internal link|internal links} on {pages:page|pages} [links:points|point] to an address that redirects"),
         ("idx6.tracking", "{links#} internal link(s) on {pages#} page(s) carry tracking parameters ({params})",
@@ -402,6 +405,8 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
     ),
     "IDX-8": (
         # DECISIONS 343: two addresses of one page, each its own canonical.
+        ("idx8.form_step_copies", "{n#} second address(es) of an application or form step answer 200 and name themselves canonical",
+         "{n:second address of an application or form step answers|second addresses of an application or form step answer} 200 and [n:names itself|name themselves] canonical"),
         ("idx8.self_canonical_copies", "{n#} second address(es) of a page answer 200 and name themselves canonical",
          "{n:second address of a page answers|second addresses of a page answer} 200 and [n:names itself|name themselves] canonical"),
         # One finding for every group of copies and near-copies (DECISIONS 225); the two below are for saved reports.
@@ -516,9 +521,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("rnd7.no_region", "{n#} page(s) have no <main> or <article> element", "{n:page has|pages have} no <main> or <article> element"),
     ),
     "STR-1": (
-        # DECISIONS 343: sub-pages copying the parent's head, hreflang to the parent.
-        ("str1.subpage_copies_parent", "{n#} sub-page(s) repeat their parent page's title or H1, with hreflang to the parent",
-         "{n:sub-page repeats its|sub-pages repeat their} parent page's title or H1, with hreflang to the parent"),
+        # DECISIONS 344: sub-pages opening a part of their parent page at their own address (one site-wide card).
+        ("str1.sections_as_pages", "{n#} sub-page(s) open a part of their parent page at an address of their own",
+         "{n:sub-page opens|sub-pages open} a part of [n:its|their] parent page at an address of [n:its|their] own"),
         ("str1.no_title", "{n#} page(s) have no <title>", "{n:page has|pages have} no <title>"),
         ("str1.shared", "{titles#} title(s) are shared by {pages#} different indexable pages", "{titles:title is|titles are} shared by {pages} different indexable pages"),
         ("str1.same_start", "{n#} page title(s) begin with the same {chars#} characters as another page's, so they look alike where a title is cut short",
@@ -526,9 +531,6 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("str1.generic", "{n#} page(s) have a generic title", "{n:page has|pages have} a generic title"),
     ),
     "STR-2": (
-        # DECISIONS 343: the section's name as a sub-page's H1.
-        ("str2.h1_parent_name", "{n#} sub-page(s) use their section's name as their H1",
-         "{n:sub-page uses its|sub-pages use their} section's name as [n:its|their] H1"),
         ("str2.home_no_h1", "The homepage has no <h1>", "The homepage has no <h1>"),
         ("str2.home_hidden_h1", "The homepage's only <h1> is hidden", "The homepage's only <h1> is hidden"),
         ("str2.home_outline", "The homepage has {n#} visible section heading(s) for {words#} words",

@@ -4293,30 +4293,6 @@
    "verify": "The Rich Results Test should show no Product or rating on a blog post, and BlogPosting.",
    "summary": "Product markup on blog posts"
   },
-  "str1.subpage_copies_parent": {
-   "title": "Give sub-pages their own title, H1 and hreflang",
-   "finding": "Sub-pages carry the parent's title and hreflang",
-   "explanation": "Give each sub-page a title, H1 and description about its own topic, and make its hreflang name its own language versions.",
-   "why": "The same title and H1, with hreflang naming the parent, make engines read the sub-pages as copies of the parent.",
-   "steps": [
-    "Write each sub-page's title, H1 and description for its own topic",
-    "Point hreflang at the sub-page's own address and language versions"
-   ],
-   "verify": "The sub-page's source should show its own title and H1; its hreflang for its language should be its own address.",
-   "summary": "Sub-page copies"
-  },
-  "str2.h1_parent_name": {
-   "title": "Give each sub-page an H1 about its own topic",
-   "finding": "Sub-pages use the section's name as their H1",
-   "explanation": "Make each sub-page's H1 say its own topic; keep the section name in the breadcrumb.",
-   "why": "An H1 that names the section does not tell engines what the page is about; pages of one section look alike.",
-   "steps": [
-    "Write each sub-page's H1 from the topic in its title",
-    "Move the section name to the breadcrumb or above the H1 as plain text"
-   ],
-   "verify": "The sub-page's source should hold one H1 that names its own topic.",
-   "summary": "H1 with the section name"
-  },
   "str13.markers_data": {
    "title": "Fix the unfilled template variable in the JSON-LD",
    "finding": "Structured data or meta tags show an unfilled template variable",
@@ -4329,6 +4305,45 @@
    ],
    "verify": "The page source should hold no variable in curly braces or double percent signs; the Rich Results Test should show no error.",
    "summary": "Unfilled variable"
+  },
+  "str1.sections_as_pages": {
+   "title": "Headings and questions on one page open their own addresses",
+   "finding": "Parts of one page open at addresses of their own",
+   "explanation": "Decide: either each address is a real page with its own title, H1 and content, or one page stays and its parts are reached with anchors.",
+   "why": "Clicking a question or a menu heading opens a new address; with the parent's title and hreflang, these addresses look to engines like thin copies.",
+   "steps": [
+    "Decide whether these addresses are to be pages of their own",
+    "If so, give each its own title, H1, description and hreflang",
+    "If not, use anchors or point the canonical to the parent page"
+   ],
+   "verify": "Clicking a question should either keep the address (an anchor) or open a page with its own title, H1 and an hreflang naming itself.",
+   "summary": "Parts of a page at own addresses"
+  },
+  "idx8.form_step_copies": {
+   "title": "Give the second addresses of application steps a canonical or noindex",
+   "finding": "An application step opens at two addresses",
+   "explanation": "Point the second address's canonical to the main step or add noindex; do not redirect it, the step would stop working.",
+   "why": "Two addresses of one step look like two pages in the index, while a redirect can break the application flow.",
+   "steps": [
+    "Choose each step's main address",
+    "Give the second address a canonical to the main step, or noindex",
+    "Try the application from start to end"
+   ],
+   "verify": "The second address's source should hold a canonical to the main step or noindex, and the steps should still work.",
+   "summary": "Second addresses of steps"
+  },
+  "idx6.links_to_flow_redirect": {
+   "title": "Check the redirect of links to an application step",
+   "finding": "Links go to an application step that redirects temporarily",
+   "explanation": "Check whether the redirect happens for every visitor; if only for a new visitor, it is the application flow and can stay.",
+   "why": "Maya reads the site as a new visitor with no cookie; someone in the application flow may go straight to the page.",
+   "steps": [
+    "Open the link in a private window, DevTools > Network, Preserve log on",
+    "Or ask httpstatus.io for the address",
+    "If everyone is redirected, link to the final address"
+   ],
+   "verify": "In the Network tab the first answer should be the page itself, or the redirect should appear only in the application flow.",
+   "summary": "Application step redirect"
   }
  }
 }

@@ -4796,3 +4796,47 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      /transferler/*, /iletisim/*, /ucretler/kredi-karti ...).
      Tests: `tests/test_team_rules_343.py` (26); `test_answer_key` (a redirect to /tr/kampanyalar/ is "elsewhere"; /tr/hata/
      is an error page now), the sitemap sample tests set `sitemap_check_all_up_to=0`.
+344. **The SEO expert's review of the enpara Ek built from the DECISIONS 343 rules, as global rules (Owner, 2026-11-12:
+     İlginay's notes per card, the five fixes, the one-card title "Sayfa içindeki başlıklar/sorular ayrı adres
+     oluşturuyor", type Kontrol edin, "canonical or noindex, never 301" for form steps, a 301 target per missing address
+     or 410, "Bilgi" for a conditional or application redirect, how to check it; the detection details, the target
+     scoring, the wording and the steps' order are agent defaults).** Global rules for every audit; enpara fee70191 was
+     only the test case. Also: the stray derived copy `…/fee70191…/current-engine/report.current-engine/` (written by
+     verification builds pointed at the wrong file, DECISIONS 343) was deleted at the owner's word; nothing else.
+     (1) *The head-closed card says where.* The analysis records how many `<head>` and `</head>` the raw HTML writes and
+     the line of each `</head>` (`analysis.head_tags`; a new audit, the saved ones keep no raw HTML: their rows say
+     "kaydedilmedi (sonraki denetimde ölçülür)"). Each Ek row names the element that ends the head as tag#id.class, its
+     raw HTML line, the counts and what comes after it; its fix names the element and the place ("… (head içinde, ham
+     HTML satır 61) gövdeye taşıyın"). The card reads every page's record (`_head_rows`): when one element ends the head
+     on all of them it says so once ("Tüm N sayfada head'i aynı şablon öğesi kapatıyor: <div#blueLightOverlay>"), its
+     first step lists the element's lines per template, and its check asks for one `<head>` and one `</head>`.
+     (2) *One site-wide card for sub-pages:* `str1.subpage_copies_parent` and `str2.h1_parent_name` are replaced by
+     `str1.sections_as_pages` (STR-1, Medium, estimated, issue type warning = "Kontrol edin"): a page read under a parent
+     page read, canonical to itself, with the parent's title, the parent's H1 or an hreflang naming the parent; left out:
+     a page whose H1 is its own title (title without its brand part), unless its hreflang names the parent. The fix is a
+     decision for the site: real pages (own title, H1, description, content, hreflang to itself) or one page with anchors
+     or a canonical to the parent. Each Ek row gives the parent and the signs seen.
+     (3) *Form steps are not told to 301:* a group of second addresses with a step of an application or form (its
+     address names başvuru/application/form/kayıt/register/checkout/adım/step/kimlik-bilgi/-bilgileriniz or ends -kk, a
+     step query sw/step/adim/stage, or the page holds a form whose action is not a search) is `idx8.form_step_copies`
+     (IDX-8, Low): canonical to the main step or noindex, never a 301; `idx8.self_canonical_copies` (301) stays for the
+     other alias addresses. The judgment layer's "compare purposes" does not apply to either. Each row has its own fix.
+     (4) *The sitemap-errors card takes the redirects to an error page* (`team_rules.settle`, after the broken-link split
+     live in `final.settle`, offline in `_decisions_343`): per address the status chain and a suggested 301 target (the
+     live page read sharing at least a quarter of the words of the address's last segment with its own address and
+     title, nearer folders first; else the nearest page read above it; else 410), as the Ek row's value and its own fix;
+     when they redirect to an error page the card's first two steps say "301 to the suggested page, else 410" and "the
+     server answers 404/410 itself". The separate `idx1.error_redirect` card keeps only addresses no other card lists
+     (Maya's made-up address).
+     (5) *Application and sign-in redirects are a note:* a link whose target's first answer is a temporary redirect
+     (302, 303, 307) and whose address or end names an application, sign-in or session step (basvur, application, apply,
+     login, giris, signup, kayit, register, checkout, sepet, cart, oturum, session, auth, hesap-ac, musteri-ol) is
+     `idx6.links_to_flow_redirect` (Info, estimated): the chain, that Maya asked as a new visitor with no cookie, and how
+     to check (DevTools > Network with "Preserve log" in a private window, or httpstatus.io). Other links to a redirect
+     stay `idx6.links_to_redirect`. Offline, `_decisions_343` recomputes these from the saved pages (replacing the
+     DECISIONS 343 findings) for both reassessment paths.
+     *Review 3 kept:* `docs/expert-reviews/enpara-fee70191-review3.json` (15 cards: correct 9, wrong 3, incomplete 3;
+     per-card note, the evidence's assessment and the fix), ACCURACY regenerated (43 cards, 51% correct).
+     *Checklist:* SEO-041 and -049 add `idx8.form_step_copies`; `str1.sections_as_pages` takes the old sub-page rules'
+     places (SEO-043, -064, -065, -145).
+     Tests: `tests/test_expert_review_344.py` (9); updated `test_team_rules_343`, `test_head_rows_341`, `test_head_card_339`.

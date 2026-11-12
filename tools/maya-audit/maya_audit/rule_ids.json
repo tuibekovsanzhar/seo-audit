@@ -527,6 +527,10 @@
     "Cloudflare\\ e\\-mail\\ obfuscation\\ is\\ on:\\ the\\ address\\ is\\ readable\\ only\\ with\\ JavaScript"
    ],
    [
+    "idx6.links_to_flow_redirect",
+    "(?P<links>\\d+(?:\\.\\d+)?)\\ internal\\ link\\(s\\)\\ on\\ (?P<pages>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ point\\ to\\ an\\ application\\ or\\ sign\\-in\\ step\\ that\\ redirects\\ temporarily"
+   ],
+   [
     "idx6.links_to_redirect",
     "(?P<links>\\d+(?:\\.\\d+)?)\\ internal\\ link\\(s\\)\\ on\\ (?P<pages>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ point\\ to\\ an\\ address\\ that\\ redirects"
    ],
@@ -578,6 +582,10 @@
    ]
   ],
   "IDX-8": [
+   [
+    "idx8.form_step_copies",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ second\\ address\\(es\\)\\ of\\ an\\ application\\ or\\ form\\ step\\ answer\\ 200\\ and\\ name\\ themselves\\ canonical"
+   ],
    [
     "idx8.self_canonical_copies",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ second\\ address\\(es\\)\\ of\\ a\\ page\\ answer\\ 200\\ and\\ name\\ themselves\\ canonical"
@@ -795,8 +803,8 @@
   ],
   "STR-1": [
    [
-    "str1.subpage_copies_parent",
-    "(?P<n>\\d+(?:\\.\\d+)?)\\ sub\\-page\\(s\\)\\ repeat\\ their\\ parent\\ page's\\ title\\ or\\ H1,\\ with\\ hreflang\\ to\\ the\\ parent"
+    "str1.sections_as_pages",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ sub\\-page\\(s\\)\\ open\\ a\\ part\\ of\\ their\\ parent\\ page\\ at\\ an\\ address\\ of\\ their\\ own"
    ],
    [
     "str1.no_title",
@@ -980,10 +988,6 @@
    ]
   ],
   "STR-2": [
-   [
-    "str2.h1_parent_name",
-    "(?P<n>\\d+(?:\\.\\d+)?)\\ sub\\-page\\(s\\)\\ use\\ their\\ section's\\ name\\ as\\ their\\ H1"
-   ],
    [
     "str2.home_no_h1",
     "The\\ homepage\\ has\\ no\\ <h1>"

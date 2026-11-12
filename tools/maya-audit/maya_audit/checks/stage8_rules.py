@@ -14,6 +14,7 @@ and non-200 / non-canonical targets (STR-9), missing alt and width/height (STR-7
 """
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 
 from ..findings import Finding, Severity, scope_for
@@ -69,36 +70,84 @@ LINKS_TO_REDIRECT_FIX = ("Change each link to the final address its redirect end
                          "target); when a template writes the link, change it there.")
 
 
+# DECISIONS 344 (İlginay: "when I click the link the final page opens directly"): a temporary redirect (302, 303, 307)
+# of an application, sign-in or session step answers a fresh visitor differently from one already in the flow; a
+# browser with the site's cookies may never see it. Such links are a note, with the chain and how to check it.
+FLOW_WORDS = re.compile(r"basvur|application|apply|login|giris|signin|sign-in|signup|sign-up|kayit|register|checkout|"
+                        r"sepet|cart|oturum|session|auth|hesap-ac|musteri-ol", re.IGNORECASE)
+FLOW_STATUSES = (302, 303, 307)
+LINKS_TO_FLOW_EXPECTED = "a link's target opens the page it names, for every visitor"
+LINKS_TO_FLOW_FIX = ("Check whether the redirect happens for every visitor: open the link in a private window with the "
+                     "browser's DevTools > Network tab and \"Preserve log\" on, or ask httpstatus.io for the address. If "
+                     "it redirects for every visitor, link to the final address; if only a new visitor or one without "
+                     "an application session is redirected, it is the application flow and can stay.")
+LINKS_TO_FLOW_NOTE = ("A temporary redirect of an application, sign-in or session step: Maya asked as a new visitor, with "
+                      "no cookie; a visitor already in the flow may be sent straight to the page. Kept as a note, not a "
+                      "problem, until the check above shows it happens for everyone.")
+
+
+def _flow(url: str, walk: dict) -> bool:
+    from urllib.parse import unquote, urlsplit
+    statuses = [h["status"] for h in walk["hops"]]
+    words = " ".join(unquote(urlsplit(u).path) for u in [url, walk.get("final") or ""])
+    return bool(statuses) and statuses[0] in FLOW_STATUSES and bool(FLOW_WORDS.search(words))
+
+
 def links_to_redirect(pages, read, key_urls=frozenset()) -> list[Finding]:
     redirects = redirect_map(pages)
     if not redirects:
         return []
     statuses = {p.url: p.status for p in pages}
-    links, sources, targets = 0, [], defaultdict(set)
+    by_target: dict[str, set] = defaultdict(set)
+    counts: dict[str, int] = defaultdict(int)
     for p in read:
-        found = 0
         for edge in p.outlinks or []:
             target = _bare(edge.get("target") or "")
             if target in redirects and target != p.url:
-                found += int(edge.get("links") or 1)
-                targets[target].add(p.url)
-        if found:
-            links += found
-            sources.append(p.url)
-    if not sources:
+                counts[(p.url, target)] += int(edge.get("links") or 1)
+                by_target[target].add(p.url)
+    if not by_target:
         return []
-    rows = []
-    for t in sorted(targets, key=lambda t: (-len(targets[t]), t)):
-        walk = follow(t, redirects, statuses)
-        rows.append({"url": t, "final": walk["final"], "final_status": walk["final_status"], "loop": walk["loop"],
-                     "hops": [h["url"] for h in walk["hops"]] + [walk["final"]], "statuses": [h["status"] for h in walk["hops"]],
-                     "linked_from_pages": len(targets[t]), "linked_from": sorted(targets[t])[:10]})
-    return [Finding("IDX-6", f"{links} internal link(s) on {len(sources)} page(s) point to an address that redirects",
-                    Severity.S4, Confidence.VERIFIED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(sources),
-                    {"link_count": links, "page_count": len(sources), "redirecting_targets": len(targets), "targets": rows[:40],
-                     "rule": "a link (menu, content or footer) on a page read to an address that answered with a redirect "
-                             "in this crawl; link to the final address instead"},
-                    LINKS_TO_REDIRECT_EXPECTED, LINKS_TO_REDIRECT_FIX, importance_tier=_tier(sources, key_urls))]
+    walks = {t: follow(t, redirects, statuses) for t in by_target}
+    flow = {t for t in by_target if _flow(t, walks[t])}
+    out = []
+    for kind, targets in (("plain", [t for t in by_target if t not in flow]), ("flow", [t for t in by_target if t in flow])):
+        if not targets:
+            continue
+        sources = sorted({s for t in targets for s in by_target[t]})
+        links = sum(n for (src, t), n in counts.items() if t in targets)
+        rows = []
+        for t in sorted(targets, key=lambda t: (-len(by_target[t]), t)):
+            walk = walks[t]
+            chain = " → ".join([str(h["status"]) for h in walk["hops"]] + [walk["final"]]
+                               + ([str(walk["final_status"])] if walk.get("final_status") else []))
+            rows.append({"url": t, "final": walk["final"], "final_status": walk["final_status"], "loop": walk["loop"],
+                         "hops": [h["url"] for h in walk["hops"]] + [walk["final"]], "statuses": [h["status"] for h in walk["hops"]],
+                         "chain": chain, "linked_from_pages": len(by_target[t]), "linked_from": sorted(by_target[t])[:10]})
+        if kind == "plain":
+            out.append(Finding("IDX-6", f"{links} internal link(s) on {len(sources)} page(s) point to an address that redirects",
+                               Severity.S4, Confidence.VERIFIED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(sources),
+                               {"link_count": links, "page_count": len(sources), "redirecting_targets": len(targets), "targets": rows[:40],
+                                "rule": "a link (menu, content or footer) on a page read to an address that answered with a redirect "
+                                        "in this crawl; link to the final address instead"},
+                               LINKS_TO_REDIRECT_EXPECTED, LINKS_TO_REDIRECT_FIX, importance_tier=_tier(sources, key_urls)))
+        else:
+            pages_rows = []
+            for src in sources:
+                mine = [r for r in rows if src in by_target[r["url"]]]
+                said = "; ".join(f"{r['url']}: {r['chain']}" for r in mine[:2])
+                pages_rows.append({"url": src, "row": {
+                    "tr": f"bağlantı {said} (Maya yeni ziyaretçi olarak, çerezsiz sordu); DevTools > Network, \"Preserve log\" açık, gizli pencerede ya da httpstatus.io ile doğrulayın",
+                    "en": f"link {said} (Maya asked as a new visitor, no cookie); check in DevTools > Network with \"Preserve log\" on, in a private window, or with httpstatus.io"}})
+            out.append(Finding("IDX-6", f"{links} internal link(s) on {len(sources)} page(s) point to an application or sign-in step that redirects temporarily",
+                               Severity.INFO, Confidence.ESTIMATED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(sources),
+                               {"link_count": links, "page_count": len(sources), "redirecting_targets": len(targets), "targets": rows[:40],
+                                "pages": pages_rows,
+                                "rule": "a link to an address whose first answer is a temporary redirect (302, 303, 307) and "
+                                        "whose address or end names an application, sign-in or session step"},
+                               LINKS_TO_FLOW_EXPECTED, LINKS_TO_FLOW_FIX, notes=[LINKS_TO_FLOW_NOTE],
+                               importance_tier=_tier(sources, key_urls), rule_id="idx6.links_to_flow_redirect"))
+    return out
 
 
 # -- idx4.chain ---------------------------------------------------------------------------------------------------------

@@ -120,6 +120,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
     ),
     "IDX-6": (
         # The checklist's quick checks (DECISIONS 304); Stage 8a (DECISIONS 315).
+        (r"point to an application or sign-in step that redirects temporarily", "developer", "S", "An application step may redirect only a new visitor; checked in a browser it may open directly, so this is a note to confirm, not a problem."),  # DECISIONS 344
         (r"point to an address that redirects", "developer", "S", "Each link to a redirect costs crawlers and visitors one more request; linking to the final address removes it."),
         (r"whose canonical is another page", "developer", "S", "A link to a duplicate address sends crawlers to a page they then fold into another one: visits are spent twice and the canonical page gets its links second-hand."),
         (r"external destination.*GET redirect cycle", "developer", "M", "An observed redirect cycle prevents that request from reaching its destination; other client contexts may differ."),
@@ -140,6 +141,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"clicks from the homepage", "seo", "M", "Pages many clicks deep are crawled later and less often, and are treated as less important."),
     ),
     "IDX-8": (
+        (r"second address\(es\) of an application or form step", "developer", "S", "Two addresses of one application step look like two pages in the index; a canonical or noindex keeps the flow working."),  # DECISIONS 344
         (r"second address\(es\) of a page answer 200", "developer", "S", "Two addresses of one page split its links and crawl visits, and the engine picks which one to show."),  # DECISIONS 343
         (r"differ mostly by the place name", "content", "L", "Many pages that repeat one text with only the place name changed can be treated as doorway pages, and none of them gives a reason to be shown."),
         (r"identical visible text", "seo", "M", "When several addresses show the same content, engines pick one to show, and it may not be the one you want."),
@@ -195,14 +197,13 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"no <main> or <article>", "developer", "S", "The assessed HTML has no <main> or <article> element. Content may still be identified through other structure; extraction failure was not assessed."),
     ),
     "STR-1": (
-        (r"repeat their parent page's title or H1", "content", "M", "Sub-pages with the parent's title and an hreflang naming the parent look like copies of it, so engines may show the parent alone."),  # DECISIONS 343
+        (r"open a part of their parent page", "seo", "M", "Parts of one page at addresses of their own, with the parent's title or hreflang, look like thin copies of it, so engines may show the parent alone."),  # DECISIONS 344
         (r"have no <title>", "content", "S", "The title is the name an engine shows for the page. Without one, the engine makes one up."),
         (r"title\(s\) are shared", "content", "S", "Pages with the same title look like the same page in search results, so engines and visitors cannot tell them apart."),
         (r"generic title", "content", "S", "A title such as 'Home' or only the site name says nothing about what the page is about."),
         (r"begin with the same", "content", "S", "Repeated prefixes can obscure the page subject when a title is truncated. Display width varies; there is no fixed Google character limit."),
     ),
     "STR-2": (
-        (r"section's name as their H1", "content", "S", "An H1 that names the section does not say what the page is about, so the pages of one section look alike."),  # DECISIONS 343
         (r"only <h1> is hidden|only a hidden <h1>", "developer", "S", "A heading hidden from readers may be read as hidden text, and the page's topic is then left to weaker hints."),
         (r"have no <h1>", "content", "S", "The main heading tells engines what the page is about. Without it they rely on weaker hints."),
         (r"have an empty <h1>", "content", "S", "An empty heading does not supply a meaningful page topic."),

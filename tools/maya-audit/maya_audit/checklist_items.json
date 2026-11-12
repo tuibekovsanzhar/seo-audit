@@ -850,7 +850,8 @@
     "idx4.different",
     "idx4.same",
     "idx4.variant",
-    "idx8.self_canonical_copies"
+    "idx8.self_canonical_copies",
+    "idx8.form_step_copies"
    ],
    "needs": [],
    "rest": null,
@@ -896,7 +897,7 @@
     "str1.shared",
     "idx8.",
     "str16.",
-    "str1.subpage_copies_parent"
+    "str1.sections_as_pages"
    ],
    "needs": [],
    "rest": null,
@@ -1014,7 +1015,8 @@
     "idx8.two_addresses",
     "idx5.not_encoded",
     "tseo1.url_decomposed",
-    "idx8.self_canonical_copies"
+    "idx8.self_canonical_copies",
+    "idx8.form_step_copies"
    ],
    "needs": [],
    "rest": "review",
@@ -1316,7 +1318,7 @@
    "rules": [
     "str16.",
     "tseo1.description",
-    "str1.subpage_copies_parent"
+    "str1.sections_as_pages"
    ],
    "needs": [],
    "rest": "review",
@@ -1342,8 +1344,7 @@
     "str2.home_hidden_h1",
     "str2.home_no_h1",
     "str2.many_h1",
-    "str2.h1_parent_name",
-    "str1.subpage_copies_parent"
+    "str1.sections_as_pages"
    ],
    "needs": [],
    "rest": null,
@@ -2937,7 +2938,7 @@
    ],
    "rules": [
     "str9.",
-    "str1.subpage_copies_parent"
+    "str1.sections_as_pages"
    ],
    "needs": [],
    "rest": null,

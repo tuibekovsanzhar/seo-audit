@@ -1215,6 +1215,18 @@ def invisible_characters(blocks: list[str]) -> dict | None:
     return {"count": count, "inside_words": inside, "by_character": by_character, "examples": examples}
 
 
+_HEAD_OPEN = re.compile(r"<head(?=[\s>/])", re.IGNORECASE)
+_HEAD_CLOSE = re.compile(r"</head\s*>", re.IGNORECASE)
+
+
+def head_tags(html: str) -> dict:
+    """{"open": n, "close": n, "close_lines": [line of each </head>, at most 5]} in the raw HTML as sent."""
+    text = html or ""
+    closes = [m.start() for m in _HEAD_CLOSE.finditer(text)]
+    return {"open": len(_HEAD_OPEN.findall(text)), "close": len(closes),
+            "close_lines": [text.count("\n", 0, i) + 1 for i in closes[:5]]}
+
+
 def analyze_html(html: str, page_url: str | None = None) -> dict:
     """What the checks read on one page. `page_url` is the page's own address, given when the HTML came through a
     reader that rewrites addresses (so a link to "this page, nowhere in particular" is still recognised)."""
@@ -1322,6 +1334,8 @@ def analyze_html(html: str, page_url: str | None = None) -> dict:
                          "closed_early_by": parser.head_closed_by, "hreflang": parser.outside_hreflang,
                          "robots_content": parser.outside_robots,
                          "properties": parser.outside_properties},
+        # DECISIONS 344: how many <head> and </head> the raw source writes, and each </head>'s line
+        "head_tags": head_tags(html),
         "canvases": [{"in_main": c["in_main"], "aria_label": c["aria_label"], "fallback_chars": c["chars"],
                       "hidden": c["hidden"], "role": c["role"], "hint": c["hint"]} for c in parser.canvases],
         "pdf_links": parser.pdf_links,

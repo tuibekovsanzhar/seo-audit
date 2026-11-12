@@ -49,9 +49,9 @@ NEEDS = {"SEO-023": ["gsc"], "SEO-037": ["bing"], "SEO-038": ["indexnow"], "SEO-
          "SEO-024": ["gsc", "logs"], "SEO-148": ["gbp"], "SEO-151": ["gbp"], "SEO-162": ["ga4", "crm"]}
 # Rule IDs read from the mapping's text that are not finding rule prefixes, and items whose whole check is too wide.
 # DECISIONS 343 added the SEO team's technical-review rules to SEO-013, -041, -043, -049, -064, -065, -101, -106, -136
-# and -145.
+# and -145; DECISIONS 344 merged the two sub-page rules into str1.sections_as_pages and added idx8.form_step_copies.
 RULES = {"SEO-081": ["str3.qa"], "SEO-108": ["str3.qa"], "SEO-097": ["str3.product_no_identifier"],
-         "SEO-078": ["str3.article_no_author"], "SEO-064": ["str16.", "tseo1.description", "str1.subpage_copies_parent"], "SEO-072": ["str10."],
+         "SEO-078": ["str3.article_no_author"], "SEO-064": ["str16.", "tseo1.description", "str1.sections_as_pages"], "SEO-072": ["str10."],
          "SEO-012": ["idx1.5xx", "prf2."], "SEO-161": ["tseo1.analytics_twice"], "SEO-117": ["tseo1.blocking_scripts"],
          "SEO-124": ["tseo1.no_viewport", "tseo1.no_zoom"], "SEO-132": ["tseo1.head_closed", "acc3.robots_outside_head"],
          "SEO-063": ["tseo1.title_"], "SEO-010": ["idx2.expires", "idx2.invalid", "tseo1.mixed"],
@@ -65,11 +65,11 @@ RULES = {"SEO-081": ["str3.qa"], "SEO-108": ["str3.qa"], "SEO-097": ["str3.produ
          "SEO-102": ["str3.organization", "str5."], "SEO-149": ["str5."], "SEO-109": ["str11.", "str3.type_clash", "str3.dangling"],
          "SEO-104": ["str3.product", "str3.required", "str4."], "SEO-106": ["str3.article", "str6.", "str3.product_on_article"],
          "SEO-094": ["str4."], "SEO-098": ["str21."], "SEO-142": ["str7.video", "str3.video", "str20."],
-         "SEO-043": ["str1.shared", "idx8.", "str16.", "str1.subpage_copies_parent"], "SEO-062": ["str1."], "SEO-065": ["str2.no_h1", "str2.empty_h1", "str2.hidden_h1", "str2.home_hidden_h1", "str2.home_no_h1", "str2.many_h1",
-                     "str2.h1_parent_name", "str1.subpage_copies_parent"],
+         "SEO-043": ["str1.shared", "idx8.", "str16.", "str1.sections_as_pages"], "SEO-062": ["str1."], "SEO-065": ["str2.no_h1", "str2.empty_h1", "str2.hidden_h1", "str2.home_hidden_h1", "str2.home_no_h1", "str2.many_h1",
+                     "str1.sections_as_pages"],
          "SEO-066": ["str2.no_subheadings", "str2.styled", "tseo1.heading"], "SEO-075": ["str15.", "rnd7."],
          "SEO-076": ["idx8."], "SEO-088": ["idx8."], "SEO-150": ["idx8.location"], "SEO-084": ["str12.", "str9.lang"],
-         "SEO-147": ["str12."], "SEO-144": ["str9."], "SEO-145": ["str9.", "str1.subpage_copies_parent"], "SEO-146": ["str9."],
+         "SEO-147": ["str12."], "SEO-144": ["str9."], "SEO-145": ["str9.", "str1.sections_as_pages"], "SEO-146": ["str9."],
          "SEO-019": ["acc3.", "idx4.", "idx9."], "SEO-021": ["acc3."], "SEO-030": ["acc2.", "acc3."],
          "SEO-016": ["acc4.", "acc9."], "SEO-011": ["idx1."], "SEO-018": ["prf1.slow", "prf1.home_ttfb"],
          "SEO-119": ["prf1.not_cached"], "SEO-125": ["rnd5."], "SEO-137": ["rnd5."], "SEO-129": ["rnd1.", "rnd2."],
@@ -79,8 +79,9 @@ RULES = {"SEO-081": ["str3.qa"], "SEO-108": ["str3.qa"], "SEO-097": ["str3.produ
          "SEO-032": ["idx5.none", "idx5.failed"], "SEO-033": ["idx5.not_live", "idx5.drafts", "acc3.sitemap_noindex", "idx1.4xx.sitemap", "judgment.sitemap"],
          "SEO-035": ["idx5.identical", "idx5.stamped", "idx5.future", "str6."], "SEO-036": ["idx5.no_image_sitemap", "idx5.no_video_sitemap"],
          "SEO-029": ["acc1."], "SEO-020": ["acc3.noindex", "acc3.sitemap_noindex"], "SEO-031": ["acc3.robots_noindex"],
-         "SEO-039": ["idx4."], "SEO-040": ["idx4.broken", "idx4.redirect"], "SEO-041": ["idx4.different", "idx4.same", "idx4.variant", "idx8.self_canonical_copies"],
-         "SEO-042": ["idx4.conflict", "idx4.mixed"], "SEO-049": ["idx8.two_addresses", "idx5.not_encoded", "tseo1.url_decomposed", "idx8.self_canonical_copies"],
+         "SEO-039": ["idx4."], "SEO-040": ["idx4.broken", "idx4.redirect"], "SEO-041": ["idx4.different", "idx4.same", "idx4.variant", "idx8.self_canonical_copies", "idx8.form_step_copies"],
+         "SEO-042": ["idx4.conflict", "idx4.mixed"], "SEO-049": ["idx8.two_addresses", "idx5.not_encoded", "tseo1.url_decomposed", "idx8.self_canonical_copies",
+                     "idx8.form_step_copies"],
          "SEO-067": ["tseo1.url_slug_unclear", "tseo1.url_decomposed"], "SEO-013": ["idx1.soft404", "idx1.empty", "idx1.error_text", "idx1.error_redirect"],
          "SEO-014": ["idx3.chain", "idx3.loop", "idx3.to_http", "idx3.cookie", "idx3.intermittent"], "SEO-015": ["idx1.soft404.redirect", "idx3.other_host"],
          "SEO-046": ["idx7.pagination_unlinked"], "SEO-093": ["idx7.product_no_category", "str15.empty_collections"],

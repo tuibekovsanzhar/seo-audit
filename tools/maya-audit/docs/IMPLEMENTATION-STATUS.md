@@ -2091,3 +2091,45 @@ inside that audit (a copy the app does not read). Left for the owner to remove; 
 | Owner's web app on port 8770 | NOT RUN here (restart needed) |
 | Push | NOT DONE (owner: don't push) |
 
+## The SEO expert's review of the enpara Ek built from the DECISIONS 343 rules (2026-11-12, DECISIONS 344)
+
+Removed at the owner's word: `~/.maya-audit/web/audits/fee70191335c4e608540a08f084abd7c/current-engine/report.current-engine/`
+(report.json, affected-urls.json, meta.json; made from `current-engine/report.json` by DECISIONS 343's verification
+builds). Nothing else in that audit was touched.
+
+enpara fee70191 from the saved data (copies of `artifacts/` in a scratch folder; before: `5687276`, after: this change):
+
+| # | Before (5687276) | After |
+|---|---|---|
+| 1 | Head'i erken kapatan öğeyi taşıyın | same; why: "Tüm 90 sayfada head'i aynı şablon öğesi kapatıyor: <div#blueLightOverlay>"; step "… (satır 1, 21, 39, 478)" |
+| 2 | Site haritasındaki hata veren adresleri … (21) | same, each row "302 → /404?aspxerrorpath=… → 404; önerilen 301 hedefi: …" (21 targets: 7 by address and title words, e.g. /hesaplar/altin-hesabi/altin-hesabi → /hesaplar/altin-hesabi, /aktif-kampanyalar → /kampanyalar; 14 the folder's page above, e.g. /sirketim/anasayfa/… → /sirketim; none 410) |
+| 3 | Blog yazılarındaki Product … (39) | same |
+| 4 | Alt sayfalara kendi başlığını, H1'ini ve hreflang'ini verin (12) | **Sayfa içindeki başlıklar/sorular ayrı adres oluşturuyor** (Kontrol edin, 22 sayfa) |
+| 5 | Aynı sayfanın ikinci adreslerini asıl adrese 301'leyin (2) | Olmayan adreslerde 302 yerine … (1 adres: Maya's made-up address) |
+| 6 | Olmayan adreslerde 302 yerine … (21) | Metni olmayan bağlantılara ad verin |
+| 7 | Metni olmayan bağlantılara ad verin | hreflang bağlantılarını karşılıklı yapın |
+| 8 | Alt sayfalara kendi konusunu anlatan bir H1 verin (20) | Büyük görselleri hafifletin |
+| 9-12 | hreflang karşılıklı, büyük görseller, H1 yok, ortak açıklama | H1 yok, ortak açıklama, ayrıştırılamayan JSON-LD, hreflang'deki çalışmayan adresler |
+| 13 | Bağlantıları doğrudan son adrese verin (3) | Uzun sayfalardaki bölüm başlıkları (H2/H3) |
+| 14 | Ayrıştırılamayan JSON-LD | **Başvuru adımlarının ikinci adreslerine canonical ya da noindex verin** (2) |
+| 15 | hreflang'deki çalışmayan adresler | Veri tablolarının başlık hücreleri |
+
+"Bağlantıları doğrudan son adrese verin" became the note "N iç bağlantı … geçici yönlendiren bir başvuru adımına
+gidiyor" (Bilgi; /kredi-musteri/kredi-basvuru: 302 → /kredi-musteri/ihtiyac-kredisi-hesaplama → 200).
+Sub-page card: the 12 /sss sub-pages and 10 with the section's H1; left out, their H1 being their own title: /iletisim/* (2),
+/sirketim/iletisim/* (2), /ucretler/* (3), /sirketim/ucretler/* (2), /yatirim-hesabi/hisse-senedi.
+Head rows: `<head>`/`</head>` counts "kaydedilmedi" for fee70191 (no raw HTML kept); the next audit records them.
+
+Kontrol listesi: Geçti 39 → 40, Sorun 24 → 23, Veri eksik 30, İnceleme gerekli 41, Uygulanmaz 31. Changed: SEO-061
+Sorun → Geçti (the only link to a redirect is an application step's, a note); SEO-041, -049, -076 now name card 14
+(form steps); SEO-043, -062, -064, -065, -145 card 4 (sections).
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_expert_review_344.py` | `9 passed` |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3201 passed, 4 skipped, 135 deselected, 1 warning in 522.35s (0:08:42)` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3336 passed, 4 skipped, 1 warning in 926.40s (0:15:26)` |
+| CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
+| Owner's web app on port 8770 | NOT RUN here (restart needed) |
+| Push | NOT DONE (owner: don't push) |
+

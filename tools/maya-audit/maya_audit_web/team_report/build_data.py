@@ -415,7 +415,7 @@ def english(text):
 
 # ---------------------------------------------------------------- çekirdek
 # DECISIONS 343: rules whose card words name HTTP status codes (the SEO team's titles).
-STATUS_TITLES = ("idx1.error_redirect", "idx8.self_canonical_copies")
+STATUS_TITLES = ("idx1.error_redirect", "idx8.self_canonical_copies", "idx1.4xx.sitemap_only")
 
 
 class Builder:
@@ -505,6 +505,15 @@ class Builder:
             said = [code, 404, 410]
         elif rule == "idx8.self_canonical_copies":
             said = [301]
+        elif rule == "idx1.4xx.sitemap_only":
+            # DECISIONS 344: when the addresses redirect to an error page, the card says what to do with each (a 301 to
+            # the page the appendix suggests, or 410) and what the server should answer
+            ev = f.get("evidence") or {}
+            if not ev.get("redirects_to_error_page") or "sitemap_step_target" not in self.L:
+                return entry
+            steps = [self.L["sitemap_step_target"], self.L["sitemap_step_server"]] + list(entry.get("steps") or [])[:2]
+            entry = {**entry, "steps": steps[:STEP_LINES]}
+            said = [301, 404, 410] + [s for r in ev.get("suggestions") or [] for s in str(r.get("chain") or "").split(" → ")[:1] if s.isdigit()]
         self.fact(*said)
         return entry
 
@@ -642,6 +651,19 @@ class Builder:
             return None
         L, lang = self.L, self.lang
         element = self._head_element([r for _, rows in parts.values() for r in rows])
+        # DECISIONS 344: every page's own record (not only the evidence sample): one element on all of them is one
+        # template cause, said once; the raw HTML lines where it sits, per template.
+        from maya_audit.page_rows import head_element  # type: ignore
+        urls = {u for m in members if m.get("rule_id") in ("tseo1.head_closed_lost", "tseo1.head_closed_later")
+                for u in (self.affected.get(m.get("id")) or (m.get("scope") or {}).get("urls") or [])}
+        every = [r for u, r in ((self.sel or {}).get("_head_rows") or {}).items() if u in urls] or \
+            [r for _, rows in parts.values() for r in rows]
+        shapes = Counter(head_element(r.get("closed_by") or {}) for r in every)
+        one = len(shapes) == 1
+        if one:
+            element = next(iter(shapes))
+        lines = sorted({(r.get("closed_by") or {}).get("line") for r in every if isinstance((r.get("closed_by") or {}).get("line"), int)})[:6]
+        total = len(every)
         why, tags_said = [], []
         if "lost" in parts:
             n, rows = parts["lost"]
@@ -669,17 +691,22 @@ class Builder:
                        kept=", ".join(kept) or "—", after=", ".join(after) or "—")
             if not why or len(why[0]) + 1 + len(line) <= T.LIMITS["why"] + 60:
                 why.append(line)
-        steps = [fmt(L["head_step_move"], element=element), L["head_step_widget"]]
+        if one and total > 1 and "head_why_one" in L:  # DECISIONS 344: one template cause, said once
+            why = [fmt(L["head_why_one"], n=fmt_int(total, lang), element=element)] + why[:1]
+        steps = [fmt(L["head_step_move_at"], element=element, lines=", ".join(map(str, lines))) if lines and "head_step_move_at" in L
+                 else fmt(L["head_step_move"], element=element), L["head_step_widget"]]
+        self.fact(total, *lines)
         if any(t.startswith("canonical") for t in tags_said):
             steps.append(L["head_step_canonical"])
         elif any(t.startswith("robots") for t in tags_said):
             steps.append(fmt(L["head_step_robots"], values=tags_said[-1][len("robots ("):-1]))
         said = tags_said or self._head_after(parts["later"][1])[:3]
+        fix_key = ("head_fix_lost" if tags_said else "head_fix") + ("_one" if one and "head_fix_one" in L else "")
         return {"why": " ".join(why),
-                "explanation": fmt(L["head_fix_lost" if tags_said else "head_fix"], element=element,
-                                   tags=", ".join(tags_said)),
+                "explanation": fmt(L[fix_key], element=element, tags=", ".join(tags_said), n=fmt_int(total, lang)),
                 "steps": "\n".join(steps),
-                "verify": fmt(L["head_verify"], tags=", ".join(said) or "meta", element=element)}
+                "verify": fmt(L["head_verify_one" if "head_verify_one" in L else "head_verify"], tags=", ".join(said) or "meta",
+                              element=element)}
 
     def _head_after(self, rows):
         """What comes after the break on these pages: a second canonical/hreflang named as such, robots with its
@@ -1877,6 +1904,14 @@ class Builder:
                 head = self.head_words(members)
                 if head:  # DECISIONS 339: the head card's steps and check name the element and what is lost
                     pre_steps, conditional, pre_verify = head["steps"], [], head["verify"]
+                if rule == "idx1.4xx.sitemap_only" and (f.get("evidence") or {}).get("redirects_to_error_page") \
+                        and "sitemap_step_target" in self.L:
+                    # DECISIONS 344: what to do with each address (the appendix's 301 target, or 410) and the server's answer
+                    # first: a full card keeps only its first steps (the sitemap file of each address is in the appendix)
+                    lines = [x for x in (pre_steps or "").split("\n") if x.strip()][:2]
+                    pre_steps = "\n".join([self.L["sitemap_step_target"], self.L["sitemap_step_server"]] + lines)
+                    conditional = [c for c in conditional if c.get("text") in lines]
+                    self.fact(301, 404, 410)
                 # Maya Audit P2: bozuk bloğun düzelince de eksik kalacak önerilen alanları (ör. logo, sameAs)
                 lacking = (f.get("evidence") or {}).get("recommended_still_lacking") or []
                 if lacking:
