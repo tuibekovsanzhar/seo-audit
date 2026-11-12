@@ -2089,7 +2089,7 @@ inside that audit (a copy the app does not read). Left for the owner to remove; 
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3328 passed, 4 skipped, 1 warning in 936.15s (0:15:36)` |
 | CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
 | Owner's web app on port 8770 | NOT RUN here (restart needed) |
-| Push | NOT DONE (owner: don't push) |
+| Push | pushed with 5a91953 on 2026-11-12 (see DECISIONS 344's row) |
 
 ## The SEO expert's review of the enpara Ek built from the DECISIONS 343 rules (2026-11-12, DECISIONS 344)
 
@@ -2131,5 +2131,42 @@ Sorun → Geçti (the only link to a redirect is an application step's, a note);
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3336 passed, 4 skipped, 1 warning in 926.40s (0:15:26)` |
 | CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
 | Owner's web app on port 8770 | NOT RUN here (restart needed) |
+| Push | `757ed76..5a91953` (with 5687276) pushed 2026-11-12 (owner: "push"). CI run 43241573282: attempt 1 failed only on the flaky sitemap-order test (`test_round2_sitemap_and_llms`, the log order of four requests in flight), attempt 2 passed 15:05-15:19Z; the test is fixed in DECISIONS 345. |
+
+## 301 targets of the sitemap-errors card: section, closest parent, "kontrol edin" (2026-11-12, DECISIONS 345)
+
+enpara fee70191, all 21 sitemap addresses (copies of `artifacts/` in a scratch folder; before: `5a91953`, after: this
+change). After: 15 firm 301 targets, 6 "kontrol edin", no 410; the five the owner marked weak are rows 1, 13, 14, 12, 19.
+
+| Address | Before (5a91953) | After |
+|---|---|---|
+| /kartlar/enparacom-kredi-karti/kredi-karti-basvuru-sartla… | 301 → /ucretler/kredi-karti (adres ve başlık benzerliği) | 301 → /kartlar/enparacom-kredi-karti (üst klasör sayfası) |
+| /sirketim/anasayfa/apartman-site-yönetimleri-de-tüm-avant… | 301 → /sirketim (aynı klasörün üst sayfası) | kontrol edin: /sirketim (en yakın var olan üst sayfa) |
+| /sirketim/anasayfa/kısa-başvuru-formumuzu-hemen-doldurun | 301 → /sirketim (aynı klasörün üst sayfası) | kontrol edin: /sirketim (en yakın var olan üst sayfa) |
+| /sirketim/anasayfa/maas-fatura-vergi-sgk-gibi-tüm-odemele… | 301 → /sirketim (aynı klasörün üst sayfası) | kontrol edin: /sirketim (en yakın var olan üst sayfa) |
+| /hesaplar/altin-hesabi/altin-hesabi | 301 → /hesaplar/altin-hesabi (adres ve başlık benzerliği) | 301 → /hesaplar/altin-hesabi (üst klasör sayfası) |
+| /kartlar/encard-genc/çocuğunuz-da-enparalı-oluyor--) | 301 → /kartlar/encard-genc (aynı klasörün üst sayfası) | 301 → /kartlar/encard-genc (üst klasör sayfası) |
+| /odemeler/islem-kisitlari/islem-limit-ve-kisitlari | 301 → /odemeler (aynı klasörün üst sayfası) | 301 → /odemeler/islem-kisitlari (üst klasör sayfası; site haritasında, bu denetimde okunmadı) |
+| /sirketim/anasayfa/en-az-3-yıl-eft-havale-ve-hesap-isleti… | 301 → /sirketim (aynı klasörün üst sayfası) | kontrol edin: /sirketim/anasayfa/eft-fast-havale-masrafi-yok (aynı bölümde, adres ve başlık benzerliği; site haritasında, bu denetimde okunmadı) |
+| /sirketim/hesaplar/altin-hesabi/sirketim-icin-nasil-altin… | 301 → /sirketim/hesaplar/altin-hesabi (adres ve başlık benzerliği) | 301 → /sirketim/hesaplar/altin-hesabi (üst klasör sayfası) |
+| /hesaplar/altin-hesabi/empty | 301 → /hesaplar/altin-hesabi (aynı klasörün üst sayfası) | 301 → /hesaplar/altin-hesabi (üst klasör sayfası) |
+| /kartlar/encard-genc/çocuğunuz-için-güvenlik--güvenlik--g… | 301 → /kartlar/encard-genc (aynı klasörün üst sayfası) | 301 → /kartlar/encard-genc (üst klasör sayfası) |
+| /odemeler/islem-kisitlari/islem-saatleri | 301 → /odemeler (aynı klasörün üst sayfası) | 301 → /odemeler/islem-kisitlari (üst klasör sayfası; site haritasında, bu denetimde okunmadı) |
+| /sirketim/anasayfa/kredi-kartı-aidatı-yok! | 301 → /ucretler/kredi-karti (adres ve başlık benzerliği) | kontrol edin: /sirketim/kartlar/kredi-karti (aynı bölümde, adres ve başlık benzerliği; site haritasında, bu denetimde okunmadı) |
+| /sirketim/hesaplar/altin-hesabi/sirketimin-altin-hesabina… | 301 → /bilgi-bankasi/altin-hesabina-nasil-altin-eklenir (adres ve başlık benzerliği) | 301 → /sirketim/hesaplar/altin-hesabi (üst klasör sayfası) |
+| /hesaplar/birikim-hesabi/birikim-hesabi | 301 → /hesaplar/birikim-hesabi (adres ve başlık benzerliği) | 301 → /hesaplar/birikim-hesabi (üst klasör sayfası) |
+| /sirketim/hesaplar/altin-hesabi/sirketimin-altin-hesabind… | 301 → /sirketim/hesaplar/altin-hesabi (aynı klasörün üst sayfası) | 301 → /sirketim/hesaplar/altin-hesabi (üst klasör sayfası) |
+| /hesaplar/birikim-hesabi/birikim-hesabi-birikmis-parami-d… | 301 → /hesaplar/birikim-hesabi (aynı klasörün üst sayfası) | 301 → /hesaplar/birikim-hesabi (üst klasör sayfası) |
+| /kartlar/encard-genc/10-17-yaş-arasındaki-çocuğunuz-için-… | 301 → /kartlar/encard-genc (aynı klasörün üst sayfası) | 301 → /kartlar/encard-genc (üst klasör sayfası) |
+| /sirketim/hesaplar/gunluk-hesap/en-az-3-yıl-boyunca-hesap… | 301 → /sirketim (aynı klasörün üst sayfası) | 301 → /sirketim/hesaplar/gunluk-hesap (üst klasör sayfası; site haritasında, bu denetimde okunmadı) |
+| /hesaplar/birikim-hesabi/birikim-hesabindan-odeme-para-tr… | 301 → /hesaplar/birikim-hesabi (aynı klasörün üst sayfası) | 301 → /hesaplar/birikim-hesabi (üst klasör sayfası) |
+| /aktif-kampanyalar | 301 → /kampanyalar (adres ve başlık benzerliği) | kontrol edin: /kampanyalar (aynı bölümde, zayıf adres benzerliği) |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_redirect_targets_345.py` | `7 passed` |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3208 passed, 4 skipped, 135 deselected, 1 warning in 536.51s (0:08:56)` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3343 passed, 4 skipped, 1 warning in 961.17s (0:16:01)` |
+| CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
 

@@ -4840,3 +4840,27 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      *Checklist:* SEO-041 and -049 add `idx8.form_step_copies`; `str1.sections_as_pages` takes the old sub-page rules'
      places (SEO-043, -064, -065, -145).
      Tests: `tests/test_expert_review_344.py` (9); updated `test_team_rules_343`, `test_head_rows_341`, `test_head_card_339`.
+345. **The sitemap-errors card's 301 targets: within the section, the closest existing parent, words only when clearly
+     better, "kontrol edin" when weak; the flaky sitemap-order test (Owner, 2026-11-12: the five weak enpara targets, the
+     four rules, "existing" including sitemap addresses and known 200s; the shares and the firm/weak line are agent
+     defaults).** Global rules for every audit; enpara fee70191 was only the test case.
+     (1) *Known live addresses* (`team_rules.known_live`): pages that answered 200 (read: with their title), sitemap-check
+     answers of 200 without noindex, and sitemap addresses no request showed to fail; never one of the missing
+     addresses, an error page, or an address that answered anything but 200.
+     (2) *The target* (`team_rules.suggest_target`): only inside the missing address's top section (its first folder:
+     /sirketim stays /sirketim, /en stays /en; an address at the top stays at the top). The direct parent when it is
+     known (firm, also when only the sitemap lists it: "site haritasında, bu denetimde okunmadı"), unless a page in the
+     same folder shares at least 60% of the words of the address's last segment (with its own address and title).
+     Without a direct parent: a page of the section sharing at least half the words (firm when this audit saw it answer,
+     else "kontrol edin": a sitemap-only page may be another broken entry of the same list); else the closest known
+     parent further up ("kontrol edin"); else a page sharing a quarter of the words ("kontrol edin"); else 410. A weak
+     row says "önerilen hedef (kontrol edin): X (why)" and its fix "X uygunsa 301 ile oraya yönlendirin, değilse 410
+     döndürün". `evidence.suggestion_rule` = 345 marks the rows made this way (an older card's are made again).
+     *enpara fee70191 (21):* 15 firm, 6 "kontrol edin", no 410; the five weak ones now: /kartlar/enparacom-kredi-karti
+     (direct parent), /sirketim/kartlar/kredi-karti (same section, kontrol edin), /sirketim/hesaplar/altin-hesabi,
+     /odemeler/islem-kisitlari and /sirketim/hesaplar/gunluk-hesap (direct parents the sitemap lists).
+     (3) *The sitemap sample test* (`test_round2_sitemap_and_llms`) compares which addresses were asked (and their
+     spread over the sections, counted), not the order the four requests in flight were logged in: CI run 43241573282
+     failed once on that order.
+     *Also fixed:* an audit with no redirect at all (an empty `redirects` list) no longer rebuilds the records from pages.
+     Tests: `tests/test_redirect_targets_345.py` (7); `test_expert_review_344` follows the direct-parent rule.

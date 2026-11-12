@@ -127,8 +127,9 @@ def test_the_sitemap_card_gives_each_address_its_chain_and_a_301_target_or_410(s
     assert f["evidence"]["redirects_to_error_page"] == 2
     rows = rows_of(sealed, "idx1.4xx.sitemap_only", base)
     fatura = rows["/odemeler/eski-fatura"]
-    assert fatura["value"].startswith("302 → /404?aspxerrorpath=/odemeler/eski-fatura → 404; önerilen 301 hedefi: /odemeler/fatura")
-    assert fatura["fix"] == "Site haritasından çıkarın ve bu adresi /odemeler/fatura adresine 301 ile yönlendirin."
+    # DECISIONS 345: the direct parent first (a page in the same folder only when it shares most words)
+    assert fatura["value"] == "302 → /404?aspxerrorpath=/odemeler/eski-fatura → 404; önerilen 301 hedefi: /odemeler (üst klasör sayfası)"
+    assert fatura["fix"] == "Site haritasından çıkarın ve bu adresi /odemeler adresine 301 ile yönlendirin."
     assert rows["/kampanya-yok"]["value"].endswith("ilgili bir sayfa yok: 410")
     # the same addresses are not a second card
     assert "idx1.error_redirect" not in found
@@ -175,6 +176,7 @@ def test_a_saved_report_with_the_old_rules_gets_the_new_ones(site):
                 f["rule_id"] = renamed[f["rule_id"]]
             if f.get("rule_id") == "idx1.4xx.sitemap_only":
                 f["evidence"].pop("suggestions", None)
+                f["evidence"].pop("suggestion_rule", None)
     new, changes = reassess_rules.saved_data(old, dict(sealed.affected))
     rules = {f["rule_id"] for c in new["checks"] for f in c["findings"]}
     assert {"str1.sections_as_pages", "idx6.links_to_flow_redirect", "idx8.form_step_copies"} <= rules

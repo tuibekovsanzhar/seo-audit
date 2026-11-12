@@ -59,9 +59,11 @@ def test_a_sitemap_larger_than_the_cap_is_sampled_over_its_sections_the_same_way
     first = audited(routes, sitemap=paths, sitemap_check_max=10, sitemap_check_all_up_to=0)
     asked = light(first)
     assert len(asked) == 10 and len(set(asked)) == 10
-    # One from each section in turn, each in sitemap order.
-    sections = [p.split("/")[1] for p in asked]
-    assert sections[:3] == sorted(set(sections[:3]), key=sections[:3].index) and len(set(sections[:3])) == 3
+    # Spread over the sections (one from each in turn: 4, 3, 3). DECISIONS 345: counted, not read from the log's order,
+    # which the four requests in flight at once may change on a slow runner.
+    from collections import Counter
+    spread = Counter(p.split("/")[1] for p in asked)
+    assert len(spread) == 3 and max(spread.values()) - min(spread.values()) <= 1
     [share] = idx5(first, "are not live, indexable pages")
     checked = share.evidence["sitemap_check"]["checked"]
     # Two empty responses plus two recorded HTTP404s are already IDX-1's (nine-corrections #5).
@@ -80,7 +82,7 @@ def test_a_sitemap_larger_than_the_cap_is_sampled_over_its_sections_the_same_way
     assert "sitemap request cap" in gaps[0]["reason"]
     assert not any(p["part"] == "pages found but not read" for p in first.by_id["IDX-5"].coverage["not_assessed"])
     second = audited(routes, sitemap=paths, sitemap_check_max=10, sitemap_check_all_up_to=0)
-    assert light(second) == asked
+    assert sorted(light(second)) == sorted(asked)  # the same addresses every run (DECISIONS 345: not the same log order)
     # Shown in Turkish, note and title.
     assert wording.title("IDX-5", share.title, "tr")[1] and wording.note(share.notes[0], "tr")[1]
     assert first.int4.state == "compliant"

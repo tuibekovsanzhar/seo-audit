@@ -391,36 +391,104 @@ def _tokens(text: str) -> set[str]:
     return {t for t in re.split(r"[^a-z0-9]+", fold(unquote(text or "")).lower()) if len(t) >= 3 and t not in _STOP}
 
 
-def suggest_target(url: str, live: list) -> tuple[str | None, str]:
-    """(the live page to send a missing address to, why) or (None, "none"): the page whose address and title share the
-    most words with the missing address's last segment (at least a quarter of them), nearer folders first; else the
-    nearest page above it in the same folder; else None (410)."""
+# DECISIONS 345 (the owner's check of the 21 enpara targets): a target never leaves the address's top section, the
+# closest existing parent comes first, words decide only within the section and only when clearly better, and a weak
+# case says "kontrol edin".
+SIMILAR_STRONG = 0.5   # share of words that makes a page in the section a firm target over a parent two levels up
+SIMILAR_WEAK = 0.25    # the least share for a target "to check" when no parent exists
+SIBLING_OVER_PARENT = 0.6  # a page in the same folder beats the direct parent only with this share
+
+
+def _segs(url: str) -> list[str]:
+    return [s for s in urlsplit(url or "").path.split("/") if s]
+
+
+def _section(url: str) -> str:
+    """The top folder of an address (/sirketim, /en, /kartlar); "" for an address at the top (its section is the top)."""
+    segs = _segs(url)
+    return segs[0].lower() if len(segs) > 1 else ""
+
+
+def known_live(result, missing: set[str]) -> dict[str, dict]:
+    """{url: {"title", "basis"}} of the addresses this audit knows to exist: pages that answered 200 (read: with their
+    title), sitemap-check answers of 200, and sitemap addresses no request showed to fail. Never one of `missing`, an
+    error page, or an address that answered anything but 200."""
+    pages = list(getattr(result, "pages", None) or [])
+    bad = set(missing)
+    out: dict[str, dict] = {}
+    for p in pages:
+        if getattr(p, "status", None) == 200:
+            title = (p.analysis or {}).get("title") if isinstance(getattr(p, "analysis", None), dict) else None
+            out[p.url] = {"title": title or "", "basis": "read"}
+        elif getattr(p, "status", None) is not None:
+            bad.add(p.url)
+    index = getattr(result, "index", None)
+    check = index.get("sitemap_check") if isinstance(index, dict) else getattr(index, "sitemap_check", None)
+    rows = (check.get("rows") if isinstance(check, dict) else getattr(check, "rows", None)) or []
+    for row in rows:
+        if not isinstance(row, dict) or not row.get("url"):
+            continue
+        if row.get("status") == 200 and not row.get("noindex"):
+            out.setdefault(row["url"], {"title": "", "basis": "answered"})
+        else:
+            bad.add(row["url"])
+    for u in getattr(result, "sitemap_urls", None) or []:
+        if isinstance(u, str) and u not in bad:
+            out.setdefault(u, {"title": "", "basis": "sitemap"})
+    return {u: v for u, v in out.items() if u not in bad and not error_page(u) and _segs(u)}
+
+
+def suggest_target(url: str, known: dict[str, dict]) -> tuple[str | None, str, bool]:
+    """(target, basis, firm) for a missing address: within its top section only; the direct parent when it exists
+    (firm, also when only the sitemap lists it), unless a page in the same folder shares most words; else a page of
+    the section sharing at least half the words (firm when this audit saw it answer); else the closest parent further
+    up, or a page sharing a quarter of the words (both "to check"); else (None, "none", True): 410."""
     parts = urlsplit(url)
-    segs = [s for s in parts.path.split("/") if s]
+    segs = _segs(url)
+    section = _section(url)
     want = _tokens(segs[-1]) if segs else set()
-    best, best_score = None, 0.0
-    for p in live:
-        if p.url == url:
+    by_key = {_key(u): u for u in known}
+    parent, depth = None, 0
+    for n in range(len(segs) - 1, 0, -1):
+        hit = by_key.get(_key(f"{parts.scheme}://{parts.netloc}/" + "/".join(segs[:n])))
+        if hit:
+            parent, depth = hit, len(segs) - n
+            break
+    best, best_sim, best_folder = None, 0.0, False
+    for u, info in known.items():
+        if u == url or _section(u) != section or u == parent:
             continue
-        psegs = [s for s in urlsplit(p.url).path.split("/") if s]
-        if not psegs:
-            continue
-        have = _tokens(psegs[-1]) | _tokens(p.analysis.get("title") or "")
+        have = _tokens(_segs(u)[-1]) | _tokens(info.get("title") or "")
         if not want or not have:
             continue
         sim = len(want & have) / len(want | have)
-        prefix = next((i for i, (x, y) in enumerate(zip(segs, psegs)) if x.lower() != y.lower()), min(len(segs), len(psegs)))
-        score = sim + 0.1 * prefix
-        if sim >= 0.25 and score > best_score:
-            best, best_score = p.url, score
-    if best:
-        return best, "similar"
-    by_key = {_key(p.url): p for p in live}
-    for n in range(len(segs) - 1, 0, -1):
-        page = by_key.get(_key(f"{parts.scheme}://{parts.netloc}/" + "/".join(segs[:n])))
-        if page is not None:
-            return page.url, "parent"
-    return None, "none"
+        same_folder = _segs(u)[:-1] == segs[:-1]
+        if (sim, same_folder) > (best_sim, best_folder):
+            best, best_sim, best_folder = u, sim, same_folder
+    # A page chosen by its words is firm only when this audit saw it answer (read, or 200 in the sitemap check); one only
+    # listed in the sitemap may be another broken entry of the same list: "to check".
+    seen = best is not None and (known.get(best) or {}).get("basis") in ("read", "answered")
+    if parent and depth == 1:
+        if best and best_folder and best_sim >= SIBLING_OVER_PARENT:
+            return best, "sibling", seen
+        return parent, "parent", True
+    if best and best_sim >= SIMILAR_STRONG:
+        return best, "similar", seen
+    if parent:
+        return parent, "far_parent", False
+    if best and best_sim >= SIMILAR_WEAK:
+        return best, "similar_weak", False
+    return None, "none", True
+
+
+TARGET_WHY = {"tr": {"parent": "üst klasör sayfası", "sibling": "aynı klasörde, adres ve başlık benzerliği",
+                     "similar": "aynı bölümde, adres ve başlık benzerliği", "far_parent": "en yakın var olan üst sayfa",
+                     "similar_weak": "aynı bölümde, zayıf adres benzerliği"},
+              "en": {"parent": "the folder's page above it", "sibling": "same folder, address and title words",
+                     "similar": "same section, address and title words", "far_parent": "the closest existing page above it",
+                     "similar_weak": "same section, few shared words"}}
+TARGET_BASIS = {"tr": {"read": "", "answered": "; site haritası kontrolünde 200", "sitemap": "; site haritasında, bu denetimde okunmadı"},
+                "en": {"read": "", "answered": "; 200 in the sitemap check", "sitemap": "; in the sitemap, not read in this audit"}}
 
 
 def _g(f, name):
@@ -438,8 +506,8 @@ def settle(checks, result) -> None:
         return
     findings = list(_g(idx1, "findings") or [])
     pages = list(getattr(result, "pages", None) or [])
-    records = {r["url"]: r for r in (getattr(result, "redirects", None) or redirect_records(pages)) if isinstance(r, dict)}
-    live = [p for p in pages if _ok(p) and getattr(p, "content_checks_eligible", True) is not False]
+    saved = getattr(result, "redirects", None)
+    records = {r["url"]: r for r in (saved if saved is not None else redirect_records(pages)) if isinstance(r, dict)}
     covered: set[str] = set()
     for f in findings:
         if _g(f, "rule_id") not in ("idx1.4xx.sitemap_only", "idx1.4xx.referenced", "idx1.4xx.referenced.linked"):
@@ -447,8 +515,9 @@ def settle(checks, result) -> None:
         ev = _g(f, "evidence") or {}
         addresses = [e.get("url") for e in ev.get("sitemap_entries") or [] if isinstance(e, dict)] or list(ev.get("sitemap_only") or [])
         covered |= set(addresses) | set(ev.get("target_urls") or [])
-        if _g(f, "rule_id") != "idx1.4xx.sitemap_only" or ev.get("suggestions"):
+        if _g(f, "rule_id") != "idx1.4xx.sitemap_only" or ev.get("suggestion_rule") == 345:
             continue
+        known = known_live(result, set(addresses))
         rows, via_error = [], 0
         for u in addresses:
             rec = records.get(u) or {}
@@ -457,20 +526,30 @@ def settle(checks, result) -> None:
                                 + ([str(rec["final_status"])] if rec.get("final_status") else [])) if hops else None)
             to_error = bool(hops) and (error_page(rec.get("final") or "") or any(error_page(h.get("target") or "") for h in hops))
             via_error += int(to_error)
-            target, why = suggest_target(u, live)
-            why_tr = {"similar": "adres ve başlık benzerliği", "parent": "aynı klasörün üst sayfası"}.get(why)
-            why_en = {"similar": "address and title words", "parent": "the folder's page above it"}.get(why)
-            said_tr = (f"{chain}; " if chain else "") + (f"önerilen 301 hedefi: {_short(target)} ({why_tr})" if target
-                                                           else "ilgili bir sayfa yok: 410")
-            said_en = (f"{chain}; " if chain else "") + (f"suggested 301 target: {_short(target)} ({why_en})" if target
-                                                           else "no related page: 410")
-            fix = (_row(f"Site haritasından çıkarın ve bu adresi {_short(target)} adresine 301 ile yönlendirin.",
-                        f"Take it out of the sitemap and redirect it to {_short(target)} with a 301.") if target else
-                   _row("Site haritasından çıkarın; adres 410 döndürsün (ilgili sayfa yok).",
-                        "Take it out of the sitemap; let the address answer 410 (no related page)."))
+            target, why, firm = suggest_target(u, known)
+            basis = (known.get(target) or {}).get("basis")
+            why_tr = TARGET_WHY["tr"].get(why, "") + (TARGET_BASIS["tr"][basis] if target and basis in TARGET_BASIS["tr"] else "")
+            why_en = TARGET_WHY["en"].get(why, "") + (TARGET_BASIS["en"][basis] if target and basis in TARGET_BASIS["en"] else "")
+            if not target:
+                said_tr, said_en = "ilgili bir sayfa yok: 410", "no related page: 410"
+                fix = _row("Site haritasından çıkarın; adres 410 döndürsün (ilgili sayfa yok).",
+                           "Take it out of the sitemap; let the address answer 410 (no related page).")
+            elif firm:
+                said_tr = f"önerilen 301 hedefi: {_short(target)} ({why_tr})"
+                said_en = f"suggested 301 target: {_short(target)} ({why_en})"
+                fix = _row(f"Site haritasından çıkarın ve bu adresi {_short(target)} adresine 301 ile yönlendirin.",
+                           f"Take it out of the sitemap and redirect it to {_short(target)} with a 301.")
+            else:
+                said_tr = f"önerilen hedef (kontrol edin): {_short(target)} ({why_tr})"
+                said_en = f"suggested target (check it): {_short(target)} ({why_en})"
+                fix = _row(f"Site haritasından çıkarın; {_short(target)} uygunsa 301 ile oraya yönlendirin, değilse 410 döndürün.",
+                           f"Take it out of the sitemap; 301 it to {_short(target)} if that fits, else answer 410.")
+            said_tr = (f"{chain}; " if chain else "") + said_tr
+            said_en = (f"{chain}; " if chain else "") + said_en
             rows.append({"url": u, "chain": chain, "redirects_to_error": to_error, "target": target, "target_basis": why,
+                         "target_firm": firm, "target_known_as": basis,
                          "row": _row(said_tr, said_en), "fix": fix})
-        new_ev = {**ev, "suggestions": rows, "redirects_to_error_page": via_error}
+        new_ev = {**ev, "suggestions": rows, "redirects_to_error_page": via_error, "suggestion_rule": 345}
         if isinstance(f, dict):
             f["evidence"] = new_ev
             if via_error:
