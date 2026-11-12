@@ -2040,5 +2040,9 @@ internal search, large-site crawl budget. The hreflang and image-weight cards wa
 | fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3167 passed, 4 skipped, 135 deselected, 1 warning in 527.22s (0:08:47)` |
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3302 passed, 4 skipped, 1 warning in 967.85s (0:16:07)` |
 | Owner's web app on port 8770 | NOT RUN here (restart needed) |
-| Push | NOT DONE (owner: don't push) |
+| Push | `f3285d1..f0f7bf4` pushed 2026-11-12 (owner: "push"). CI run 43201559274 FAILED 10:34:27-10:35:08Z at "Syntax and undefined names": ruff F841, an unused `pages` in `maya_audit/checklist.py` (the local suites do not run that lint). f3285d1's run 43098088162 still "queued". |
+| Fix | the unused line removed; `python -m compileall -q maya_audit maya_audit_web maya_audit_web_lite.py tests` and `ruff check --select E9,F821,F841 maya_audit maya_audit_web maya_audit_web_lite.py`: `All checks passed!` |
+| fast suite after the fix | `3167 passed, 4 skipped, 135 deselected, 1 warning in 574.41s (0:09:34)` |
+| full suite after the fix | `3302 passed, 4 skipped, 1 warning in 954.46s (0:15:54)` |
+| Push of the fix | NOT DONE (waiting for the owner's "push") |
 

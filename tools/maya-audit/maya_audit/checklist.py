@@ -186,7 +186,6 @@ def facts(report: dict) -> dict:
     grouping = crawl.get("page_grouping") or crawl.get("reader_page_grouping") or {}
     types_seen = ((by.get("STR-3") or {}).get("evidence") or {}).get("types_seen") or {}
     discovered = [str(u) for u in crawl.get("discovered_urls") or []]
-    pages = [p for p in crawl.get("pages") or [] if isinstance(p, dict)]
     rule_ids = {f.get("rule_id") or "" for c in report.get("checks") or [] for f in c.get("findings") or []}
     bt = crawl.get("business_type") or {}
     locales = crawl.get("locales") or {}
