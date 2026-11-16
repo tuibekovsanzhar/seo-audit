@@ -2237,3 +2237,25 @@ older check ("Teyit edin" title naming /cart).
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3406 passed, 4 skipped, 1 warning in 991.62s (0:16:31)` |
 | CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+## Appendix and sector downloads of naturesgarden.net 342a0b14 (2026-11-16, DECISIONS 349)
+
+Reproduced with the app's own code (`create_app` + TestClient) on a scratch copy of the audit folder and a backup of
+`web-v1.db`; the running app on 8770 was not touched (its API asks for the browser's session).
+
+| | Before | After |
+|---|---|---|
+| `GET …/downloads/xlsx?lang=tr` | 409 `release_blocked` (RG-7: STR-3-58e82347, a blog post of type "unknown"); Chrome saved "xlsx.json" | 200, `maya-audit-naturesgarden.net-2026-11-16-ek-tr.xlsx`, 12 sheets, valid xlsx |
+| `GET …/downloads/sector` | 409 `release_blocked` | 200, `maya-audit-naturesgarden.net-2026-11-16-sektor-audit.xlsx`, 5 sheets, valid xlsx |
+| Release gate (current-engine copy) | BLOCKED (RG-7) | PASS (the 26 blog posts with a product widget left out of STR-3) |
+| Pages read | Maya 6 (429 on the 7th request), Firecrawl 146 (146 distinct pages read) | same |
+
+The running app needs a restart to load the fix.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_download_blocked_349.py` | `7 passed` |
+| fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3278 passed, 4 skipped, 135 deselected, 1 warning in 550.48s (0:09:10)` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3413 passed, 4 skipped, 1 warning in 974.48s (0:16:14)` |
+| CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

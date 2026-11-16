@@ -237,6 +237,12 @@ def listing_reason(page, products: set[str] | frozenset[str] = frozenset()) -> s
     return None
 
 
+# DECISIONS 349 (naturesgarden.net: Shopify recipe posts under /blogs/recipes/ show a product widget with a price and
+# "ADD TO CART" and were taken for product pages): a page in a blog folder is never a product by its price and buy
+# button. Shopify's folder is "blogs"; ARTICLE_FOLDERS itself stays as it is (DECISIONS 298).
+BLOG_FOLDERS = frozenset({"blogs"})
+
+
 def product_template(pages: list, home: str) -> dict:
     """The pages that look like a product page by what they show (DECISIONS 229): not the homepage, not under a category
     or an article folder, exactly one price of the page's own (`located_prices`: in its main content, not in link text,
@@ -249,7 +255,7 @@ def product_template(pages: list, home: str) -> dict:
     products, maybe = {}, []
     for p in pages:
         segments = [fold(s) for s in urlsplit(p.url).path.split("/") if s]
-        if p.url == home or not p.analysis or set(segments) & (CATEGORY_WORDS | ARTICLE_FOLDERS):
+        if p.url == home or not p.analysis or set(segments) & (CATEGORY_WORDS | ARTICLE_FOLDERS | BLOG_FOLDERS):
             continue
         own = [t for t in located_prices(p.analysis, teasers, sitewide, shared_blocks) if t["not_own"] is None]
         if len({t["value"] for t in own}) != 1:  # one amount, however often it is shown
@@ -3671,7 +3677,20 @@ def annotate_page_types(checks, result: CrawlResult) -> None:
     for check in checks:
         for finding in getattr(check, "findings", None) or []:
             urls = finding.scope.get("_all_urls") or finding.scope.get("urls") or []
-            finding.page_types = {u: kind_of(u) for u in urls if isinstance(u, str)} or None
+            judged = evidence_page_kinds(getattr(finding, "evidence", None))
+            finding.page_types = {u: (judged.get(u) if kind_of(u) == "unknown" and judged.get(u) else kind_of(u))
+                                  for u in urls if isinstance(u, str)} or None
+
+
+def evidence_page_kinds(evidence) -> dict[str, str]:
+    """DECISIONS 349: {url: page kind} as the check itself judged each page in its evidence rows (`page_kind`). A page
+    only the page reader read is not among Maya's own pages; the kind its check gave it is established all the same."""
+    out: dict[str, str] = {}
+    for value in (evidence or {}).values() if isinstance(evidence, dict) else ():
+        for row in value if isinstance(value, list) else ():
+            if isinstance(row, dict) and isinstance(row.get("url"), str) and isinstance(row.get("page_kind"), str):
+                out.setdefault(row["url"], row["page_kind"])
+    return out
 
 
 # -- DECISIONS 338: listing pages left out of "long page(s) ... have no subheadings" --------------------------------

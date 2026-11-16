@@ -1946,7 +1946,9 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         if format != "evidence":  # the raw evidence is not a report; every report form passes the release gate
             # The appendix belongs to the team report: it is gated and built on the current-engine copy (DECISIONS 308).
             now = current_report(audit)[:2] if format in ("xlsx", "sector") else None
-            sealed = publishable(audit, draft, now)
+            # DECISIONS 349: the team's working files come from a plain link the browser saves as it is: a blocked
+            # report gives the marked draft ("-draft.xlsx"), never a JSON error saved as "xlsx.json".
+            sealed = publishable(audit, draft or format in ("xlsx", "sector"), now)
             blocked = sealed.decision == release_gate.BLOCKED
             gate = {"X-Maya-Release-Gate": str(sealed.decision)}
             if blocked:

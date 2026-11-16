@@ -4952,3 +4952,27 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      the count of addresses it would get are made from the saved data. The team report of 9269c4f8 is refused before
      and after this change by an older check ("Teyit edin" title naming /cart, not among the report's addresses).
      Tests: `tests/test_rate_limit_handoff_348.py` (13); `test_rate_limited_start` (a later page now waits 60 s once).
+349. **The appendix and sector downloads of a blocked report, and the cause of the block on naturesgarden.net (Owner,
+     2026-11-16: in Chrome "Download the appendix (Turkish)" and "Download the sector audit" ended as "Site wasn't
+     available" and saved "xlsx.json"; the fixes and the draft file are agent defaults).** Global rules.
+     *The error* (342a0b14, reproduced with the app's own code on a copy of the audit and the app's database): both
+     `GET /audits/{id}/downloads/xlsx?lang=tr` and `/downloads/sector` answered **409 `release_blocked`**: "The release
+     gate blocked this report (1 hard violation). It can be downloaded only as a draft (add draft=true)", rule RG-7:
+     "STR-3-58e82347 gives content advice for …/blogs/recipes/dried-cranberry-walnut-salad, a page of type unknown". The
+     page's buttons are plain links, so the browser saved the JSON error as "xlsx.json". The run itself was the first
+     after 4a480f9: Maya read 6 pages (429 after 7 requests), Firecrawl read 146 (DECISIONS 348).
+     (1) *Blog posts with a product widget are not products* (`structure.product_template`, `BLOG_FOLDERS`): Shopify's
+     /blogs/ folder joins the article folders for the price-and-buy-button rule (26 recipe and tip posts showing a
+     product card with a price and ADD TO CART were "product" pages missing Product markup).
+     (2) *A page only the reader read has the kind its check gave it* (`structure.annotate_page_types`,
+     `evidence_page_kinds`): `Finding.page_types` took kinds from Maya's own pages only, so every reader-only page was
+     "unknown" and any content advice on it a hard RG-7 violation; the kind the finding's evidence records (`page_kind`)
+     is used instead of "unknown".
+     (3) *Saved audits* (`reassess_rules._decisions_349`, both reassessment paths): STR-3 rows of a page in a blog or
+     article folder taken for a product by its price and buy button alone are left out (a finding with none left goes;
+     the count, scope and id follow), and unknown page kinds are filled from the evidence. 342a0b14: STR-3-58e82347
+     (26 blog posts) removed; the gate PASSES.
+     (4) *The team's working files never download as JSON:* the appendix and the sector file are served as the marked
+     draft ("-draft.xlsx", `X-Maya-Release-Gate: BLOCKED`) when the gate blocks, because they come from a plain link;
+     the client's report forms (PDF, Markdown, JSON, client export) stay refused without `draft=true` (DECISIONS 280).
+     Tests: `tests/test_download_blocked_349.py` (7).

@@ -793,6 +793,55 @@ def _order(report: dict) -> list[str]:
     return [f["id"] for f in sorted(findings, key=key)]
 
 
+def _decisions_349(report: dict, affected: dict, changes: list[str]) -> None:
+    """DECISIONS 349 (naturesgarden.net 342a0b14, whose appendix and sector file were refused by RG-7): (1) a page in a
+    blog or article folder that an STR-3 finding took for a product by its price and buy button alone is not one: the
+    row goes, and a finding with no row left goes too; (2) a finding's page kinds take the kind its own evidence gave a
+    page that only the page reader read (before: "unknown", which the release gate refuses content advice for)."""
+    import re as _re
+    from urllib.parse import unquote, urlsplit
+    from .checks.structure import ARTICLE_FOLDERS, BLOG_FOLDERS, evidence_page_kinds
+    from .page_words import fold
+    folders = ARTICLE_FOLDERS | BLOG_FOLDERS
+
+    def in_blog(url: str) -> bool:
+        return bool({fold(unquote(x)) for x in urlsplit(url or "").path.split("/") if x} & folders)
+    for check in report.get("checks") or []:
+        for f in list(check.get("findings") or []):
+            ev = f.get("evidence") or {}
+            rows = ev.get("pages")
+            if (f.get("rule_id") or "").startswith("str3.") and isinstance(rows, list):
+                kept = [r for r in rows if not (isinstance(r, dict) and r.get("page_kind") == "product"
+                                                and str(r.get("classified_by") or "").startswith("one price of its own")
+                                                and in_blog(r.get("url") or ""))]
+                if len(kept) != len(rows):
+                    dropped = len(rows) - len(kept)
+                    if not kept:
+                        check["findings"].remove(f)
+                        affected.pop(f.get("id"), None)
+                        changes.append(f"{f.get('id')}: removed; its {dropped} page(s) are blog posts with a product "
+                                       "widget, not product pages (DECISIONS 349)")
+                        continue
+                    old = f.get("id")
+                    urls = [r["url"] for r in kept if isinstance(r, dict) and r.get("url")]
+                    ev["pages"] = kept
+                    f["title"] = _re.sub(r"^\d+", str(len(kept)), f.get("title") or "", count=1)
+                    f["scope"] = {**(f.get("scope") or {}), "urls": urls, "count": len(urls)}
+                    _refresh_id(f, affected, old, urls)
+                    changes.append(f"{f['id']}: {dropped} blog post(s) with a product widget left out (DECISIONS 349)")
+            judged = evidence_page_kinds(ev)
+            kinds = f.get("page_types")
+            if judged and isinstance(kinds, dict):
+                filled = {u: judged[u] for u, k in kinds.items() if k == "unknown" and judged.get(u)}
+                if filled:
+                    f["page_types"] = {**kinds, **filled}
+                    changes.append(f"{f.get('id')}: the kind of {len(filled)} page(s) read by the page reader taken "
+                                   "from the finding's own evidence (DECISIONS 349)")
+    from .checks.access import _status
+    for check in report.get("checks") or []:
+        check["status"] = _status(check.get("findings") or [], check.get("review_items") or ())
+
+
 def _decisions_347(report: dict, changes: list[str]) -> None:
     """DECISIONS 347 (the review of atasunoptik): (1) the page grouping worked out again with the current method when
     the saved one is older (`page_groups.METHOD_VERSION`): a sitewide og:type is a site default, item addresses with an
@@ -1020,6 +1069,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_338(r, aff, changes)
     _decisions_340(r, aff, changes)
     _decisions_347(r, changes)  # DECISIONS 347: page types again; training-only robots blocks their own rule
+    _decisions_349(r, aff, changes)  # DECISIONS 349: blog posts with a product widget; reader pages' kinds
     _decisions_343(r, aff, changes, quick_unassessed)  # DECISIONS 343, 344: replaces what _decisions_304 added
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
@@ -1036,7 +1086,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338, 340, 343, 344 and 347, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338, 340, 343, 344, 347 and 349, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
@@ -1068,6 +1118,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         # DECISIONS 343: the SEO team's technical review (redirects to an error page, second addresses, Product on
         # articles, sub-pages copying the parent, the section's name as H1)
         _decisions_347(r, cert)  # DECISIONS 347: page types again; training-only robots blocks their own rule
+        _decisions_349(r, affected, cert)  # DECISIONS 349: blog posts with a product widget; reader pages' kinds
         _decisions_343(r, affected, cert)
     if cert:
         from .report import problem_summary
