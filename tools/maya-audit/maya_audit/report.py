@@ -1318,6 +1318,11 @@ def analysis_payload(report: dict[str, Any]) -> dict[str, Any]:
     out = {**{k: v for k, v in report.items() if k != "crawl"}, "crawl_summary": summary}
 
     def compact(finding: dict) -> dict:
+        # DECISIONS 347: each page's own step for the links to a redirect repeats the evidence's targets (old address ->
+        # final address); the appendix reads it, the brief does not need it.
+        ev = finding.get("evidence")
+        if isinstance(ev, dict) and "page_fixes" in ev:
+            finding = {**finding, "evidence": {k: v for k, v in ev.items() if k != "page_fixes"}}
         # Each affected page's kind repeats its address; the brief needs how many pages of each kind (DECISIONS 278).
         kinds = finding.get("page_types")
         if not isinstance(kinds, dict):

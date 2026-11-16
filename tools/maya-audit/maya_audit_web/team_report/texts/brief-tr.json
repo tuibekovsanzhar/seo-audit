@@ -143,6 +143,7 @@
   "help": "İade, teslimat ve yardım gibi güven veren bilgiler; müşteri satın almadan önce bakar, yapay zekâ asistanları bu soruları buradan yanıtlar.",
   "utility": "Sepet, hesap ya da arama gibi yardımcı bir sayfa; müşteri için gerekli ama Google'da görünmesi gerekmez.",
   "other": "Sitenizin önemli sayfalarından biri; müşteriler, Google ve yapay zekâ asistanları sizi tanırken buraya da bakar.",
+  "location": "Mağazanızı arayan müşterinin adres ve saat bulduğu sayfa; Google'daki yakın konum aramaları ve yapay zekâ asistanlarının konum yanıtları bu bilgiye dayanır.",
   "stores": "Mağazanızı arayan müşterinin adres ve saat bulduğu sayfa; Google'daki yakın konum aramaları ve yapay zekâ asistanlarının konum yanıtları bu bilgiye dayanır.",
   "campaign": "İndirim ve kampanyaların duyurulduğu sayfa; indirim aramalarında Google'da, kampanya sorularında yapay zekâ yanıtlarında görünür.",
   "support": "Müşterilerin sorun çözdüğü sayfa; Google'da ve yapay zekâ asistanlarında nasıl yapılır sorularının cevabı buradan gelir.",

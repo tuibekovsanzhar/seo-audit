@@ -297,6 +297,128 @@ def self_canonical_copies(read, inlinks: dict[str, int] | None = None, key_urls=
     return out
 
 
+# -- 2b. idx8.typo_copies (DECISIONS 347) ----------------------------------------------------------------------------
+
+TYPO_EXPECTED = "a misspelt address of a page answers 404 or redirects to that page"
+TYPO_FIX = ("Redirect each misspelt address to the real page with a 301 (or, if it must stay, point its canonical to "
+            "the real page), and correct the links that lead to it.")
+TYPO_NOTE = ("A misspelt address that answers 200 with content is a second, weaker copy of the page (a soft duplicate); "
+             "one that redirects elsewhere sends its visitors and links away from the page its address names.")
+TYPO_MIN = 10       # the shorter last segment has at least this many characters (agent default)
+TYPO_EDIT = 2       # characters added, removed or changed in one place (agent default)
+TYPO_LINK_SHARE = 4  # the misspelt address is linked from fewer than a quarter of the real page's pages (agent default)
+_TYPO_BUCKET = 6    # misspellings are compared within the addresses sharing the first characters of the segment
+
+
+def _typo_pair(a: str, b: str) -> bool:
+    """Two folded last segments one small edit apart in one place (`TYPO_EDIT` characters at most), the edit not a
+    number (an item id, a year) and neither segment shorter than TYPO_MIN."""
+    if a == b or min(len(a), len(b)) < TYPO_MIN or abs(len(a) - len(b)) > TYPO_EDIT:
+        return False
+    i = 0
+    while i < min(len(a), len(b)) and a[i] == b[i]:
+        i += 1
+    j = 0
+    while j < min(len(a), len(b)) - i and a[-1 - j] == b[-1 - j]:
+        j += 1
+    da, db = a[i:len(a) - j], b[i:len(b) - j]
+    if max(len(da), len(db)) > TYPO_EDIT:
+        return False
+    return not any(c.isdigit() for c in da + db)
+
+
+def _last(url: str) -> tuple[str, str]:
+    from ..page_words import fold
+    parts = urlsplit(url or "")
+    segs = [s for s in unquote(parts.path).split("/") if s]
+    return ("/".join(fold(s) for s in segs[:-1]), fold(segs[-1]) if segs else "")
+
+
+def typo_copies(pages, read, inlinks: dict[str, int] | None = None, sitemap: set[str] | None = None,
+                redirects: list[dict] | None = None, key_urls=frozenset()) -> list[Finding]:
+    """Addresses one small typo away from a real page in the same folder (DECISIONS 347): a misspelt address answering
+    200 with content of its own (a soft duplicate), or redirecting somewhere else than the page it names. The real
+    page: the one more pages read link to, then the one the sitemap lists, then the shorter address."""
+    from ..structure_data import same_page
+    inlinks = inlinks or {}
+    sitemap = {_key(u) for u in sitemap or ()}
+    live = [p for p in read if _ok(p) and self_canonical(p.url, p.analysis) and not urlsplit(p.url).query]
+    if redirects is None:
+        from .stage8_rules import redirect_records
+        redirects = redirect_records(pages)
+    ends = {r.get("url"): r for r in redirects or [] if isinstance(r, dict) and r.get("url")}
+    moved = [p for p in pages if p.url in ends and not urlsplit(p.url).query]
+    buckets: dict[tuple, list] = defaultdict(list)
+    for p in live:
+        folder, seg = _last(p.url)
+        if seg:
+            buckets[(folder, seg[:_TYPO_BUCKET])].append(p)
+    rows, urls, seen = [], [], set()
+    # Pages read linking to each address (its own links left out): a misspelt address is linked from few pages.
+    linked: dict[str, set] = defaultdict(set)
+    for p in read:
+        for edge in p.outlinks or []:
+            t = _key((edge.get("target") or "").split("#")[0])
+            if t != _key(p.url):
+                linked[t].add(p.url)
+
+    def ins(p) -> int:
+        return len(linked.get(_key(p.url), ()))
+
+    def real_of(a, b):
+        return sorted((a, b), key=lambda p: (-ins(p), _key(p.url) not in sitemap, -inlinks.get(p.url, 0), len(p.url), p.url))
+
+    for members in buckets.values():
+        for n, a in enumerate(members):
+            for b in members[n + 1:]:
+                if not _typo_pair(_last(a.url)[1], _last(b.url)[1]):
+                    continue
+                real, typo = real_of(a, b)
+                # Two pages the site means to have are both linked; a misspelt one far less than the real one
+                # (under a quarter of the pages), or, neither linked, only one of them in the sitemap.
+                if not (ins(typo) * TYPO_LINK_SHARE < ins(real) or (
+                        ins(real) == 0 and (_key(real.url) in sitemap) != (_key(typo.url) in sitemap))):
+                    continue
+                if typo.url in seen:
+                    continue
+                seen.add(typo.url)
+                rows.append({"url": typo.url, "real": real.url, "status": typo.status, "kind": "copy",
+                             "row": _row(f"200 ve kendi içeriğiyle açılıyor; doğru adres {_short(real.url)} (yazım farkı)",
+                                         f"answers 200 with content of its own; the real address is {_short(real.url)} (a typo)"),
+                             "fix": _row(f"Bu adresi {_short(real.url)} adresine 301 ile yönlendirin ya da kanonik etiketini oraya verin.",
+                                         f"Redirect this address to {_short(real.url)} with a 301, or point its canonical there.")})
+                urls.append(typo.url)
+    by_bucket_live = {(f, s): p for p in live for f, s in [_last(p.url)]}
+    for p in moved:
+        folder, seg = _last(p.url)
+        rec = ends[p.url]
+        final = rec.get("final") or ""
+        near = next((q for (f, s), q in by_bucket_live.items() if f == folder and _typo_pair(seg, s)), None)
+        if near is None or same_page(final, near.url) or p.url in seen:
+            continue
+        seen.add(p.url)
+        status = (rec.get("hops") or [{}])[0].get("status")
+        rows.append({"url": p.url, "real": near.url, "status": status, "final": final, "kind": "redirect",
+                     "row": _row(f"{status} ile {_short(final)} adresine gidiyor; yazımı yakın sayfa {_short(near.url)}",
+                                 f"{status} to {_short(final)}; the page its address names is {_short(near.url)}"),
+                     "fix": _row(f"Yönlendirmeyi {_short(near.url)} adresine çevirin (301).",
+                                 f"Point the redirect at {_short(near.url)} (301).")})
+        urls.append(p.url)
+    if not rows:
+        return []
+    copies = sum(1 for r in rows if r["kind"] == "copy")
+    tier = 0 if any(u in key_urls for u in urls) else 2
+    return [Finding("IDX-8", f"{len(rows)} misspelt address(es) of a page answer instead of leading to it",
+                    Severity.S3 if copies else Severity.S4, Confidence.VERIFIED, DOCUMENTED, [GOOGLE, COPILOT],
+                    scope_for(urls),
+                    {"pages": rows[:MAX_ROWS], "copies": copies, "redirects_elsewhere": len(rows) - copies,
+                     "rule": "an address in the same folder as a page read, its last segment one small edit (up to two "
+                             "characters in one place, not a number) from that page's, answering 200 with content and "
+                             "naming itself canonical, or redirecting somewhere else; the real page is the one more "
+                             "pages link to (the misspelt one: under a quarter of them), else the one the sitemap lists"},
+                    TYPO_EXPECTED, TYPO_FIX, notes=[TYPO_NOTE], importance_tier=tier, rule_id="idx8.typo_copies")]
+
+
 # -- 3. str3.product_on_article ----------------------------------------------------------------------------------------
 
 def product_on_article(read, groups: dict, key_urls=frozenset()) -> list[Finding]:
@@ -605,7 +727,7 @@ def settle(checks, result) -> None:
 
 RULE_CHECKS = {"IDX-1", "IDX-8", "STR-1", "STR-3"}
 RULES = ("idx1.error_redirect", "idx8.self_canonical_copies", "idx8.form_step_copies", "str3.product_on_article",
-         "str1.sections_as_pages")
+         "str1.sections_as_pages", "idx8.typo_copies")
 
 
 def soft_404_probe(result) -> dict | None:
@@ -632,6 +754,9 @@ def findings(result, read, groups: dict, wanted: set[str], key_urls=frozenset(),
                 inlinks[(edge.get("target") or "").split("#")[0]] += 1
         skip = {u for f in sections for u in f.scope.get("_all_urls") or []}
         out["IDX-8"] += self_canonical_copies(read, inlinks, key_urls, skip=skip)
+        # DECISIONS 347: misspelt addresses of a page (a soft duplicate, or a redirect elsewhere)
+        out["IDX-8"] += typo_copies(pages, read, inlinks, set(getattr(result, "sitemap_urls", None) or []),
+                                    getattr(result, "redirects", None), key_urls)
     if "STR-3" in wanted:
         out["STR-3"] += product_on_article(read, groups, key_urls)
     return out, unassessed

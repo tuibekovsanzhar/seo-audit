@@ -4344,6 +4344,57 @@
    ],
    "verify": "In the Network tab the first answer should be the page itself, or the redirect should appear only in the application flow.",
    "summary": "Application step redirect"
+  },
+  "acc2.training_block.sitewide": {
+   "title": "Compare the block of AI training crawlers with your policy",
+   "finding": "robots.txt blocks AI training crawlers only",
+   "explanation": "This is a policy choice: if you want to keep training crawlers out the rule can stay; if not, remove it.",
+   "why": "Training crawlers collect data to train models; search and live-answer crawlers are separate and this rule does not block them.",
+   "steps": [
+    "Confirm that blocking training crawlers is a deliberate choice",
+    "If it is not, remove the Disallow rule from these crawlers' group",
+    "Check that search and live-answer crawlers are allowed"
+   ],
+   "verify": "In robots.txt only the training crawlers' group should keep the Disallow rule.",
+   "summary": "Training crawler block"
+  },
+  "acc2.training_block.sample": {
+   "title": "Compare the block of AI training crawlers with your policy",
+   "finding": "robots.txt blocks AI training crawlers only on some pages",
+   "explanation": "This is a policy choice: if you want to keep training crawlers out the rule can stay; if not, narrow or remove it.",
+   "why": "Training crawlers collect data to train models; search and live-answer crawlers are separate and this rule does not block them.",
+   "steps": [
+    "Confirm that blocking training crawlers is a deliberate choice",
+    "If it is not, remove the Disallow rule from these crawlers' group",
+    "Check that search and live-answer crawlers are allowed"
+   ],
+   "verify": "In robots.txt only the training crawlers' group should keep the Disallow rule.",
+   "summary": "Training crawler block"
+  },
+  "idx6.links_to_login_redirect": {
+   "title": "Links to pages behind a sign-in redirect to it (expected)",
+   "finding": "Links go to a page behind a sign-in, which asks to sign in",
+   "explanation": "Nothing to change: account, order and cart pages send a visitor without a session to the sign-in page.",
+   "why": "Maya reads the site as a new visitor with no cookie; a signed-in visitor goes straight to the page.",
+   "steps": [
+    "Keep the link as it is",
+    "Keep sign-in and account pages out of the sitemap"
+   ],
+   "verify": "Open the link while signed in; the page should open directly.",
+   "summary": "Sign-in redirect (expected)"
+  },
+  "idx8.typo_copies": {
+   "title": "Redirect misspelt addresses to the real page",
+   "finding": "Misspelt addresses open with content or lead elsewhere",
+   "explanation": "Redirect each misspelt address to the real page with a 301 and correct the links that lead to it.",
+   "why": "A misspelt address that opens with content is a weak copy of the page; one that leads elsewhere takes visitors away from the page they wanted.",
+   "steps": [
+    "See each address's real page in the appendix",
+    "Redirect the address to the real page with a 301",
+    "Correct the links and the sitemap entry that lead to it"
+   ],
+   "verify": "Open the misspelt address; it should reach the real page with a single 301.",
+   "summary": "Misspelt addresses"
   }
  }
 }

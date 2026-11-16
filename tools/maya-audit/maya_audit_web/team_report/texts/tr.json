@@ -4344,6 +4344,57 @@
    ],
    "verify": "Network sekmesinde ilk yanıt doğrudan sayfa olmalı ya da yönlendirme yalnız başvuru akışında görünmeli.",
    "summary": "Başvuru adımı yönlendirmesi"
+  },
+  "acc2.training_block.sitewide": {
+   "title": "Yapay zekâ eğitim tarayıcıları engelini politikanızla karşılaştırın",
+   "finding": "robots.txt yalnız yapay zekâ eğitim tarayıcılarını engelliyor",
+   "explanation": "Bu bir politika tercihidir: eğitim tarayıcılarını engellemek istiyorsanız kural kalabilir, istemiyorsanız kaldırın.",
+   "why": "Eğitim tarayıcıları modellerin eğitim verisini toplar; arama ve canlı yanıt tarayıcıları ayrıdır ve bu kural onları engellemez.",
+   "steps": [
+    "Eğitim tarayıcılarını engellemek bilinçli bir tercih mi, teyit edin",
+    "İstenmiyorsa bu tarayıcıların grubundaki Disallow kuralını kaldırın",
+    "Arama ve canlı yanıt tarayıcılarına izin verildiğini kontrol edin"
+   ],
+   "verify": "robots.txt dosyasında yalnız eğitim tarayıcılarının grubunda Disallow kuralı kalmalı.",
+   "summary": "Eğitim tarayıcısı engeli"
+  },
+  "acc2.training_block.sample": {
+   "title": "Yapay zekâ eğitim tarayıcıları engelini politikanızla karşılaştırın",
+   "finding": "robots.txt bazı sayfalarda yalnız eğitim tarayıcılarını engelliyor",
+   "explanation": "Bu bir politika tercihidir: eğitim tarayıcılarını engellemek istiyorsanız kural kalabilir, istemiyorsanız daraltın ya da kaldırın.",
+   "why": "Eğitim tarayıcıları modellerin eğitim verisini toplar; arama ve canlı yanıt tarayıcıları ayrıdır ve bu kural onları engellemez.",
+   "steps": [
+    "Eğitim tarayıcılarını engellemek bilinçli bir tercih mi, teyit edin",
+    "İstenmiyorsa bu tarayıcıların grubundaki Disallow kuralını kaldırın",
+    "Arama ve canlı yanıt tarayıcılarına izin verildiğini kontrol edin"
+   ],
+   "verify": "robots.txt dosyasında yalnız eğitim tarayıcılarının grubunda Disallow kuralı kalmalı.",
+   "summary": "Eğitim tarayıcısı engeli"
+  },
+  "idx6.links_to_login_redirect": {
+   "title": "Oturum gerektiren sayfalara giden bağlantılar girişe yönleniyor (beklenen)",
+   "finding": "Bağlantılar oturum gerektiren bir sayfaya gidiyor, giriş istenir",
+   "explanation": "Değiştirilecek bir şey yok: hesap, sipariş ve sepet sayfaları oturumu olmayan ziyaretçiyi giriş sayfasına gönderir.",
+   "why": "Maya siteyi çerezsiz, yeni bir ziyaretçi gibi okur; giriş yapmış ziyaretçi bu sayfaya doğrudan gider.",
+   "steps": [
+    "Bağlantıyı olduğu gibi tutun",
+    "Giriş ve hesap sayfalarını site haritasına koymayın"
+   ],
+   "verify": "Giriş yapmışken bağlantıyı açın; sayfa doğrudan açılmalı.",
+   "summary": "Giriş yönlendirmesi (beklenen)"
+  },
+  "idx8.typo_copies": {
+   "title": "Yazımı hatalı adresleri doğru sayfaya yönlendirin",
+   "finding": "Yazımı hatalı adresler içerikle açılıyor ya da başka yere gidiyor",
+   "explanation": "Her yazım hatalı adresi 301 ile doğru sayfaya yönlendirin ve ona giden bağlantıları düzeltin.",
+   "why": "İçerikle açılan yazım hatalı adres sayfanın zayıf bir kopyasıdır; başka yere giden adres ziyaretçiyi aradığı sayfadan uzaklaştırır.",
+   "steps": [
+    "Ek'te her adresin doğru sayfasına bakın",
+    "Adresi doğru sayfaya 301 ile yönlendirin",
+    "Bu adrese giden bağlantıları ve site haritası kaydını düzeltin"
+   ],
+   "verify": "Yazım hatalı adresi açın; doğru sayfaya tek bir 301 ile gitmeli.",
+   "summary": "Yazım hatalı adresler"
   }
  }
 }

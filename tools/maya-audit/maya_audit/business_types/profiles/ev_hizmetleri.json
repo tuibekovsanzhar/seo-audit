@@ -46,7 +46,8 @@
    },
    "citable": false,
    "generic": [
-    "category"
+    "category",
+    "location"
    ],
    "signals": {
     "url": [

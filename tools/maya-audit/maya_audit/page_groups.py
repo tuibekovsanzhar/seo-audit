@@ -36,8 +36,11 @@ from urllib.parse import unquote, urlsplit
 
 from .page_words import ARTICLE_FOLDERS, CATEGORY_WORDS, PRODUCT_FOLDERS, fold
 
-METHOD_VERSION = 2
-PAGE_TYPES = ("home", "category", "product", "blog_article", "policy", "utility", "other")
+# 3 (DECISIONS 347): a sitewide og:type is a site default, not a page's type; item addresses with an id are products,
+# pages listing them categories; store and branch pages are "location"; account and sign-in pages are utility; the
+# homepage is the most important page.
+METHOD_VERSION = 3
+PAGE_TYPES = ("home", "category", "product", "blog_article", "location", "policy", "utility", "other")
 
 # -- URL pattern ---------------------------------------------------------------------------------------------------
 
@@ -155,6 +158,61 @@ UTILITY_SEGMENTS = frozenset({
     "uye-girisi", "register", "signup", "sign-up", "kayit", "uye-ol", "uyelik", "wishlist", "favoriler",
     "favorilerim", "orders", "siparislerim", "siparis-takibi", "order-tracking", "password", "sifremi-unuttum"})
 UTILITY_TYPES = frozenset({"SearchResultsPage", "CheckoutPage", "ProfilePage"})
+# DECISIONS 347 (atasunoptik: /Uye/PlusLogin, /Uye/OrderTracker typed "ürün"): a segment naming an account, a sign-in, a
+# membership or one's orders, as a word of it (/uye, /my-orders, /siparis-takip) or at its end (/PlusLogin). Words that
+# also name products or offers (sepet, profil, hesap-ac) count only as a whole segment (UTILITY_SEGMENTS).
+ACCOUNT_WORD = re.compile(
+    r"(?:^|[-_.])(?:uye|uyeler|uyelik|myaccount|my-account|hesabim|login|logout|signin|signout|signup|register|kayit-ol|"
+    r"giris-yap|uye-girisi|siparislerim|siparis-takip|siparis-takibi|ordertracker|order-tracking|my-orders|"
+    r"sifremi-unuttum|adreslerim|favorilerim|profilim|my-profile)(?:$|[-_.])|(?:login|logout|signin|signup|register|tracker)$")
+
+
+def account_segment(segment: str) -> bool:
+    """A folded address segment that names an account, sign-in, order or cart page (DECISIONS 347)."""
+    return bool(ACCOUNT_WORD.search(segment))
+
+
+# DECISIONS 347: an item address with an id: a name of several words, at least two of them holding a digit (a model
+# code, a colour code, a size), and a trailing number of four digits or more ("…-0ax2034s-600087-…_82087").
+_ITEM_ID = re.compile(r"^(?P<name>.+?)[_-](?P<id>\d{4,})$")
+
+
+def item_address(url: str) -> bool:
+    segs = _segments(url)
+    if not segs:
+        return False
+    m = _ITEM_ID.match(fold(segs[-1]))
+    if not m:
+        return False
+    words = [w for w in re.split(r"[-_.]+", m.group("name")) if w]
+    return len(words) >= 4 and sum(1 for w in words if any(c.isdigit() for c in w)) >= 2
+
+
+LOCATION_TYPES = frozenset({"Store", "LocalBusiness", "Optician", "AutoDealer", "Pharmacy", "Restaurant", "CafeOrCoffeeShop",
+                            "MedicalClinic", "Dentist", "Hospital", "BankOrCreditUnion", "ClothingStore", "ShoeStore",
+                            "ElectronicsStore", "HomeGoodsStore", "GroceryStore", "DepartmentStore", "JewelryStore",
+                            "SportingGoodsStore", "HealthAndBeautyBusiness", "AutoRepair", "Hotel", "Place"})
+PLACE_DETAIL_TYPES = frozenset({"GeoCoordinates", "OpeningHoursSpecification", "PostalAddress"})
+_MAP = re.compile(r"google\.[a-z.]+/maps|maps\.google|yandex\.[a-z.]+/map|/maps/embed|openstreetmap\.org", re.IGNORECASE)
+_HOURS = re.compile(r"\b(?:çalışma|calisma|açılış|acilis|mağaza|magaza|ziyaret) saatleri\b|\bopening hours\b|\bstore hours\b",
+                    re.IGNORECASE)
+
+
+def location_reason(page) -> str | None:
+    """DECISIONS 347: a store, branch or other place of the business: its own place markup with an address, coordinates
+    or opening hours; or an embedded map with opening hours in its headings. None otherwise."""
+    a = page.analysis or {}
+    types = set((a.get("structured_data") or {}).get("types") or [])
+    place = sorted(types & LOCATION_TYPES)
+    if place and types & PLACE_DETAIL_TYPES:
+        return f"{place[0]} markup with {sorted(types & PLACE_DETAIL_TYPES)[0]}"
+    maps = any(_MAP.search(f.get("src") or "") for f in a.get("iframes") or [] if isinstance(f, dict))
+    heads = " ".join(h.get("text") or "" for h in a.get("headings") or [] if isinstance(h, dict))
+    if maps and _HOURS.search(heads):
+        return "an embedded map and opening hours"
+    if maps and "GeoCoordinates" in types:
+        return "an embedded map and GeoCoordinates"
+    return None
 # "blogs" too (Shopify); STR-3's ARTICLE_FOLDERS is left as it is.
 ARTICLE_FOLDERS_GROUPING = ARTICLE_FOLDERS | frozenset({"blogs"})
 POLICY_FOLDERS = frozenset({"policies", "policy", "legal", "yasal", "politikalar", "sozlesmeler"})
@@ -168,8 +226,13 @@ POLICY_TITLE = re.compile(
     r"\b(?:privacy policy|cookie policy|terms of (?:service|use)|terms and conditions|refund policy|shipping policy|"
     r"return policy|politikas[ıi]|s[öo]zle[şs]mesi|kvkk|ayd[ıi]nlatma metni|kullan[ıi]m ko[şs]ullar[ıi])\b",
     re.IGNORECASE)
-TYPE_WEIGHT = {"home": 100, "category": 80, "product": 70, "blog_article": 60, "other": 50, "policy": 15,
+TYPE_WEIGHT = {"home": 100, "category": 80, "product": 70, "blog_article": 60, "location": 50, "other": 50, "policy": 15,
                "utility": 0}
+# DECISIONS 347: an og:type on this share of the pages read (and at least OG_DEFAULT_MIN pages) is the site's default.
+OG_DEFAULT_SHARE = 0.5
+OG_DEFAULT_MIN = 4
+# A page linking (outside its menu and footer) to this many item addresses lists products.
+ITEM_LINKS_MIN = 3
 # A pattern holding at least this many typed pages, this share of them one type, lends that type to its "other" pages.
 TEMPLATE_MIN_PAGES = 3
 TEMPLATE_SHARE = 0.8
@@ -194,8 +257,30 @@ def _home_language_versions(pages, home: str) -> set[str]:
     return out
 
 
-def page_type(page, home: str, homes: set[str], products: dict) -> tuple[str, str]:
-    """(type, basis). The order: home, utility, policy, then the STR-3 page kind (`structure.page_kind`)."""
+def _og(page) -> str:
+    return ((page.analysis.get("og") or {}).get("og:type") or [""])[0].casefold()
+
+
+def og_default(read) -> str | None:
+    """The og:type most pages read carry when it is the site's default (DECISIONS 347), else None: on at least half of
+    them, OG_DEFAULT_MIN or more."""
+    kinds = Counter(_og(p) for p in read)
+    kinds.pop("", None)
+    if not kinds or not read:
+        return None
+    top, n = kinds.most_common(1)[0]
+    return top if n >= OG_DEFAULT_MIN and n / len(read) >= OG_DEFAULT_SHARE else None
+
+
+def _item_links(page) -> set[str]:
+    return {t for t in _body_targets(page) if item_address(t)}
+
+
+def page_type(page, home: str, homes: set[str], products: dict, site_og: str | None = None,
+              sitewide_types: frozenset = frozenset()) -> tuple[str, str]:
+    """(type, basis). The order: home, utility (an account or sign-in address too), policy, an item address with an id,
+    a place of the business, then the STR-3 page kind (`structure.page_kind`) with a sitewide og:type left out
+    (`site_og`, DECISIONS 347), own Product markup, links to item addresses."""
     from .checks.structure import nested_product, page_kind
     if page.url == home:
         return "home", "the start address's final page"
@@ -205,6 +290,9 @@ def page_type(page, home: str, homes: set[str], products: dict) -> tuple[str, st
     utility = next((s for s in segs if s in UTILITY_SEGMENTS), None)
     if utility:
         return "utility", f"/{utility} in the address"
+    account = next((s for s in segs if account_segment(s)), None)
+    if account:
+        return "utility", f"an account, sign-in or order address (/{account})"
     types = set(page.analysis["structured_data"]["types"]) & UTILITY_TYPES
     if types:
         return "utility", f"its structured data is a {sorted(types)[0]}"
@@ -220,9 +308,27 @@ def page_type(page, home: str, homes: set[str], products: dict) -> tuple[str, st
     if len(body) >= 2 and body[0] in ARTICLE_FOLDERS_GROUPING and not set(body) & CATEGORY_WORDS and (
             len(body) >= 3 or body[0] in ARTICLE_FOLDERS):
         return "blog_article", f"path /{body[0]}/…"
+    if item_address(page.url):
+        return "product", "an item address with a model code and an id"
+    place = location_reason(page)
+    if place:
+        return "location", place
     kind, why = page_kind(page, home, products)
+    own_types = set(page.analysis["structured_data"]["types"]) - set(sitewide_types)
+    if kind == "product" and site_og == "product" and (why or "").startswith("og:type"):
+        # og:type=product on most pages read is the site's default, not this page's type (DECISIONS 347)
+        if page.url in products:
+            return "product", products[page.url]
+        if len(body) >= 2 and body[0] in PRODUCT_FOLDERS:
+            return "product", f"path /{body[0]}/…"
+        if "Product" in own_types and own_types & {"Offer", "AggregateOffer"}:
+            return "product", "its own Product markup with an Offer"
+        kind, why = None, None
     if kind == "product":
         return "product", why
+    items = _item_links(page)
+    if len(items) >= ITEM_LINKS_MIN:
+        return "category", f"links to {len(items)} item addresses outside its menu and footer"
     if kind in ("category", "pagination"):
         return "category", why
     if kind == "article":
@@ -441,6 +547,14 @@ LISTING_MIN_LINKS = 3
 SECTION_MIN_PAGES = 2
 
 
+def _sitewide_types(read) -> frozenset:
+    """Structured-data types on at least OG_DEFAULT_SHARE of the pages read: a site default, not a page's own."""
+    if len(read) < OG_DEFAULT_MIN:
+        return frozenset()
+    counts = Counter(t for p in read for t in set((p.analysis.get("structured_data") or {}).get("types") or []))
+    return frozenset(t for t, n in counts.items() if n / len(read) >= OG_DEFAULT_SHARE)
+
+
 def _body_targets(page) -> set[str]:
     return {e.get("target") for e in page.outlinks or [] if not e.get("nav") and not e.get("footer")} - {page.url}
 
@@ -465,10 +579,16 @@ def refine_types(read, types: dict[str, tuple[str, str]], keys: dict[str, str], 
     for url, (kind, _) in types.items():
         if kind != "other":
             by_key[keys[url]][kind] += 1
+    pages_by_url = {p.url: p for p in read}
+    site_items = any(_item_links(p) for p in read)  # the site's listings link to item addresses
     for url, (kind, _) in list(types.items()):
         if kind == "other" and by_key[keys[url]]:
             top, n = by_key[keys[url]].most_common(1)[0]
             total = sum(by_key[keys[url]].values())
+            # DECISIONS 347 (atasunoptik's /iletisim on the listings' layout): a page that links to no item lists
+            # nothing, whatever template it shares.
+            if top == "category" and site_items and url in pages_by_url and not _item_links(pages_by_url[url]):
+                continue
             if top in ("product", "category", "blog_article") and n >= TEMPLATE_MIN_PAGES and n / total >= TEMPLATE_SHARE:
                 types[url] = (top, f"same template as {n} {top} page(s)")
     # Types by pattern, so a link to an article or a product that was not read still counts as one.
@@ -501,6 +621,22 @@ def refine_types(read, types: dict[str, tuple[str, str]], keys: dict[str, str], 
                                       f"{len(under_read)} of them read")
 
 
+HOME_FIRST = "the homepage is the most important page (DECISIONS 347)"
+
+
+def home_first(records: dict[str, dict], key: str = "page_type") -> None:
+    """DECISIONS 347 (owner): the homepage is always the most important page. A homepage (or a language version of it)
+    scoring below another page takes that page's importance; its parts say so. Changed in place."""
+    homes = [g for g in records.values() if isinstance(g, dict) and g.get(key) == "home" and "importance" in g]
+    others = [g["importance"] for g in records.values() if isinstance(g, dict) and g.get(key) != "home"
+              and isinstance(g.get("importance"), (int, float))]
+    top = max(others, default=0)
+    for g in homes:
+        if g["importance"] < top:
+            g["importance"] = top
+            g["importance_parts"] = {**(g.get("importance_parts") or {}), "raised": HOME_FIRST}
+
+
 # -- the whole -----------------------------------------------------------------------------------------------------
 
 def annotate(result) -> dict:
@@ -526,7 +662,9 @@ def annotate(result) -> dict:
     except (KeyError, TypeError):  # a saved page record without the working data the price reader needs
         products = {}
     homes = _home_language_versions(read, home)
-    types = {p.url: page_type(p, home, homes, products) for p in read}
+    site_og = og_default(read)
+    sitewide_types = _sitewide_types(read)
+    types = {p.url: page_type(p, home, homes, products, site_og, sitewide_types) for p in read}
     refine_types(read, types, keys, layouts, patterns)
 
     unread = {c for c in aliases.values() if c not in nodes}  # canonicals scored from their aliases
@@ -647,11 +785,12 @@ def annotate(result) -> dict:
         return out
 
     groupings = {url: grouping(url) for url in scored_urls}
+    home_first(groupings)
 
     def order(url: str):
         g, first = groupings[url], min([crawl_at.get(a, len(pages)) for a in by_canonical.get(url, [])] or [len(pages)])
         tb = g["tie_break"]
-        return (-g["importance"], -tb["body_inlinks"], -tb["products_listed"],
+        return (g["page_type"] != "home", -g["importance"], -tb["body_inlinks"], -tb["products_listed"],
                 tb["sitemap_position"] if tb["sitemap_position"] is not None else math.inf, crawl_at.get(url, first))
     for i, url in enumerate(sorted(scored_urls, key=order), 1):
         groupings[url]["importance_rank"] = i

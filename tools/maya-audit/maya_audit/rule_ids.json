@@ -21,12 +21,20 @@
   ],
   "ACC-2": [
    [
+    "acc2.training_block.sitewide",
+    "robots\\.txt\\ line\\ (?P<line>\\d+(?:\\.\\d+)?)\\ \\(Disallow:\\ (?P<pattern>.+?)\\)\\ blocks\\ (?P<role>training)\\ bot\\(s\\)\\ (?P<tokens>.+?)\\ sitewide"
+   ],
+   [
+    "acc2.training_block.sample",
+    "robots\\.txt\\ line\\ (?P<line>\\d+(?:\\.\\d+)?)\\ \\(Disallow:\\ (?P<pattern>.+?)\\)\\ blocks\\ (?P<role>training)\\ bot\\(s\\)\\ (?P<tokens>.+?)\\ on\\ (?P<n>\\d+(?:\\.\\d+)?)\\ sampled\\ URL\\(s\\)"
+   ],
+   [
     "acc2.blocks.sitewide",
-    "robots\\.txt\\ line\\ (?P<line>\\d+(?:\\.\\d+)?)\\ \\(Disallow:\\ (?P<pattern>.+?)\\)\\ blocks\\ (?P<role>[\\w'<>/.-]+(?: [\\w'<>/.-]+)?(?: [\\w'<>/.-]+)?)\\ bot\\(s\\)\\ (?P<tokens>.+?)\\ sitewide"
+    "robots\\.txt\\ line\\ (?P<line>\\d+(?:\\.\\d+)?)\\ \\(Disallow:\\ (?P<pattern>.+?)\\)\\ blocks\\ (?P<role>(?:search|live))\\ bot\\(s\\)\\ (?P<tokens>.+?)\\ sitewide"
    ],
    [
     "acc2.blocks.sample",
-    "robots\\.txt\\ line\\ (?P<line>\\d+(?:\\.\\d+)?)\\ \\(Disallow:\\ (?P<pattern>.+?)\\)\\ blocks\\ (?P<role>[\\w'<>/.-]+(?: [\\w'<>/.-]+)?(?: [\\w'<>/.-]+)?)\\ bot\\(s\\)\\ (?P<tokens>.+?)\\ on\\ (?P<n>\\d+(?:\\.\\d+)?)\\ sampled\\ URL\\(s\\)"
+    "robots\\.txt\\ line\\ (?P<line>\\d+(?:\\.\\d+)?)\\ \\(Disallow:\\ (?P<pattern>.+?)\\)\\ blocks\\ (?P<role>(?:search|live))\\ bot\\(s\\)\\ (?P<tokens>.+?)\\ on\\ (?P<n>\\d+(?:\\.\\d+)?)\\ sampled\\ URL\\(s\\)"
    ],
    [
     "acc2.mismatch",
@@ -527,6 +535,10 @@
     "Cloudflare\\ e\\-mail\\ obfuscation\\ is\\ on:\\ the\\ address\\ is\\ readable\\ only\\ with\\ JavaScript"
    ],
    [
+    "idx6.links_to_login_redirect",
+    "(?P<links>\\d+(?:\\.\\d+)?)\\ internal\\ link\\(s\\)\\ on\\ (?P<pages>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ point\\ to\\ a\\ page\\ behind\\ a\\ sign\\-in\\ that\\ redirects\\ to\\ it"
+   ],
+   [
     "idx6.links_to_flow_redirect",
     "(?P<links>\\d+(?:\\.\\d+)?)\\ internal\\ link\\(s\\)\\ on\\ (?P<pages>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ point\\ to\\ an\\ application\\ or\\ sign\\-in\\ step\\ that\\ redirects\\ temporarily"
    ],
@@ -582,6 +594,10 @@
    ]
   ],
   "IDX-8": [
+   [
+    "idx8.typo_copies",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ misspelt\\ address\\(es\\)\\ of\\ a\\ page\\ answer\\ instead\\ of\\ leading\\ to\\ it"
+   ],
    [
     "idx8.form_step_copies",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ second\\ address\\(es\\)\\ of\\ an\\ application\\ or\\ form\\ step\\ answer\\ 200\\ and\\ name\\ themselves\\ canonical"

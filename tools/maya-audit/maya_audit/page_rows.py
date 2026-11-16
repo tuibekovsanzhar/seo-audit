@@ -14,7 +14,7 @@ from __future__ import annotations
 from typing import Callable
 from urllib.parse import urlsplit
 
-from .client_selection import PROBLEM, affected, host_level, merge_group, severity
+from .client_selection import PROBLEM, affected, host_level, merge_group, not_a_page, severity
 
 SEVERITIES = ("S1", "S2", "S3", "S4", "Info")
 # Findings that are not the site's problems: Maya's own limits and what a manual check rejected.
@@ -563,7 +563,8 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
             for url in urls:
                 rec = importance.get(url) or {} if url else {}
                 # DECISIONS 323: read or not; a host's file or the whole site is not a page (None)
-                read = None if hosts or not url else url.rstrip("/") in read_urls
+                file = bool(url) and not_a_page(url)  # DECISIONS 347: a sitemap, feed or data file is not a page
+                read = None if hosts or not url or file else url.rstrip("/") in read_urls
                 # DECISIONS 341: an early-closed head is said per page, from that page's record
                 head = (head_row_words(heads[url], lang) if m.get("rule_id") in HEAD_RULES and url in heads else None)
                 own_fix = row_fix(m, url, lang) if url and not head else None  # DECISIONS 344: this page's own step
@@ -574,8 +575,8 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
                     "severity": sev, "issue_type": g.get("issue_type") or "issue",
                     "placement": g.get("placement"), "card": by_id.get(m.get("id")),
                     "url": url, "address": display_address(url, hosts) if url else W["site"],
-                    "host_level": bool(hosts), "page": bool(url) and not hosts,
-                    "page_type": rec.get("page_type"), "importance": rec.get("importance"),
+                    "host_level": bool(hosts), "page": bool(url) and not hosts and not file,
+                    "page_type": None if file else rec.get("page_type"), "importance": None if file else rec.get("importance"),
                     "value": head["value"] if head else
                     measured(m, url, lang, measures.get(url.rstrip("/")) if read else None, read) if url else "",
                     "read": read,
@@ -603,12 +604,13 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
         for url in t.get("all_urls") or []:
             if url in covered:
                 continue
-            rec = importance.get(url) or {}
-            read = url.rstrip("/") in read_urls
+            file = not_a_page(url)  # DECISIONS 347
+            rec = {} if file else importance.get(url) or {}
+            read = None if file else url.rstrip("/") in read_urls
             rows.append({"finding_id": " · ".join(t.get("finding_ids") or []), "check_id": None, "rule_id": None,
                          "title": t.get("title") or "", "short": t.get("title") or "", "fix": (t.get("steps") or "").split("\n")[0],
                          "severity": t.get("severity") or "Info", "issue_type": "issue", "placement": "note", "card": t.get("n"),
-                         "url": url, "address": display_address(url, None), "host_level": False, "page": True,
+                         "url": url, "address": display_address(url, None), "host_level": False, "page": not file,
                          "page_type": rec.get("page_type"), "importance": rec.get("importance"), "value": notes.get(url, ""),
                          "read": read, "_group": 10_000 + (t.get("n") or 99)})
     order = {s: i for i, s in enumerate(SEVERITIES)}

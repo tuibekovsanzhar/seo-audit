@@ -4875,3 +4875,48 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      neden". A row with no suggestion (an older card) keeps the old words. enpara fee70191: 21 of 21 rows with a target
      (15 firm, 6 kontrol edin; 13 also "oluşturucuyu düzeltin").
      Tests: `tests/test_where_targets_346.py` (2); `test_link_places_337` follows the new cell.
+347. **The review of the atasunoptik audit (Smart ~150, 149 pages read) as global rules (Owner, 2026-11-16: the six
+     points; the word lists, shares and thresholds below are agent defaults).** atasunoptik f06a2129 was only the test case.
+     (1) *Links to a page behind a sign-in are a note:* a link whose target's first answer is a temporary redirect (302,
+     303, 307) and whose address names an account, order or membership page (`page_groups.account_segment`: /uye,
+     /hesabim, /siparislerim, /PlusLogin …), or whose redirect ends at a sign-in page or carries a return address
+     (?ReturnUrl=, ?next=, ?redirect= …), is `idx6.links_to_login_redirect` (Info, "(beklenen)"): no card, and its fix says
+     there is nothing to change (never "kaldırın"). It is checked before the application-step note (344). The other
+     links to a redirect stay `idx6.links_to_redirect`, each page's row now naming its own step with the final address
+     (`page_fixes`: "Bağlantıyı doğrudan son adrese verin: /eski → /son.").
+     (2) *A robots.txt block of AI training bots only is a policy check:* the title's role picks the rule
+     (`acc2.training_block.sitewide` / `.sample` for training bots; `acc2.blocks.*` for search and live-fetch bots, which
+     stay a problem and an automatic P0 when sitewide). The training rules are "Kontrol edin" (issue type warning), not in
+     the P0 rules nor the sector method's robots check, and a card made only of them is at most P2
+     (`priority_levels.POLICY_RULES`); a person may still set P0 by hand.
+     (3) *A file is never a page:* an XML, feed or data address (any `.xml`, `.xml.gz`, `.rss`, `.atom`, `.json`, `.txt`,
+     `/feed`), or a response whose media type is not HTML, is not a page read (`client_selection.not_a_page`), is never
+     typed or scored, and is not a row of "Sayfa bazında"; its findings' rows say "—" for "Okundu mu?" and no page type.
+     A host-level finding counts every such file as the site's (atasunoptik's /kurumsal.xml had been taken for a page).
+     (4) *Page types from what a page is:* (a) an og:type on at least half of the pages read (four or more) is the site's
+     default and no longer types a page (`page_groups.og_default`); such a page is a product only with a price and a buy
+     control of its own, its own Product markup with an Offer, or a product folder (/products/…); (b) an item address with an id (a name of four or more
+     words, two of them holding a digit, then `_` or `-` and four or more digits: …-0ax2034s-600087-…_82087) is a
+     product; (c) a page linking, outside its menu and footer, to three or more item addresses is a category, and a page
+     linking to none is not lent "category" by its template; (d) a store or branch page (place markup such as Store,
+     LocalBusiness, Optician with PostalAddress, GeoCoordinates or OpeningHoursSpecification; or an embedded map with
+     opening hours) is the new general type `location` ("mağaza / konum"), which each profile's place type (E-ticaret's
+     stores, clinics, branches, dealers, service areas) takes; (e) the E-ticaret profile is suggested when product and
+     category pages are at least 30% of the pages typed and five or more (`suggest.page_types` in its profile, +4).
+     `page_groups.METHOD_VERSION` 3 and `business_types.VERSION` 3: a saved audit's grouping and suggestion are worked
+     out again offline (`reassess_rules._decisions_347`, both reassessment paths).
+     (5) *Misspelt addresses of a page:* an address in the same folder as a page read, its last segment one small edit
+     away (up to two characters in one place, not a number, ten characters or more), answering 200 with content of its
+     own and naming itself canonical, or redirecting somewhere else than that page, is `idx8.typo_copies` (Medium with a
+     200 copy, else Low). The real page is the one more pages read link to (the misspelt one: under a quarter of them),
+     else the one the sitemap lists; each row gives it as the 301 (or canonical) target. atasunoptik:
+     /inesta-marka-gunes-gozlugu-modellerix (200, its own content) → /inesta-marka-gunes-gozlugu-modelleri;
+     /cocuk-gunes-gozlugu-modelleri- answered 301 to /gunes-gozlugu in this crawl (not 200), so its row says to point the
+     redirect at /cocuk-gunes-gozlugu-modelleri.
+     (6) *Account pages and the homepage:* an account, sign-in or order address is utility under every profile (at most
+     20); the homepage (and its language versions) is always the most important page: one scoring below another page
+     takes that page's importance (`page_groups.home_first`, "raised" in its parts) and comes first in the order.
+     *Also:* the AI brief's payload leaves out the per-page steps of the links to a redirect (`page_fixes`, the same as
+     the evidence's targets); the recommendation catalogue has a note for each new rule.
+     Tests: `tests/test_shop_review_347.py` (50, a fake shop on loopback); `test_page_groups` (method 3) and
+     `test_web_app` (a training-bot title sample) updated.

@@ -87,7 +87,7 @@ WORDS = {
         "stop": {"page_cap": "sayfa sınırı", "time_limit": "süre sınırı", "done": "okunacak sayfa kalmadı"},
         "form": {"PHONE": "telefon", "DESKTOP": "masaüstü"},
         "page_type": {"home": "ana sayfa", "category": "kategori", "product": "ürün", "blog_article": "blog",
-                      "policy": "politika", "utility": "yardımcı", "other": "diğer"},
+                      "location": "mağaza / konum", "policy": "politika", "utility": "yardımcı", "other": "diğer"},
     },
     "en": {
         "result": {"pass": "Pass", "issue": "Issue", "missing_data": "Data missing", "review": "Needs review", "na": "Not applicable"},
@@ -144,7 +144,7 @@ WORDS = {
         "stop": {"page_cap": "page cap", "time_limit": "time limit", "done": "no pages left"},
         "form": {"PHONE": "phone", "DESKTOP": "desktop"},
         "page_type": {"home": "home", "category": "category", "product": "product", "blog_article": "blog",
-                      "policy": "policy", "utility": "utility", "other": "other"},
+                      "location": "store / location", "policy": "policy", "utility": "utility", "other": "other"},
     },
 }
 # A check that could not run, and the data source it waited for.

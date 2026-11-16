@@ -309,6 +309,22 @@ def retest_state(f: dict) -> str:
 # card for it names the hosts; "addresses not read ... add nothing to the priority score" is never said of it.
 HOST_CHECKS = frozenset({"IDX-2", "ACC-1", "ACC-2", "ACC-6", "ACC-7", "ACC-8", "IDX-5"})
 SITE_FILE = re.compile(r"/(?:robots\.txt|llms(?:-full)?\.txt|[^/]*sitemap[^/]*\.xml(?:\.gz)?)$", re.I)
+# DECISIONS 347 (atasunoptik: /kurumsal.xml, a sitemap with no "sitemap" in its name, listed as a page): an XML, feed or
+# data file is never a page, whatever its name: not a page read, not typed, not a row of "Sayfa bazında".
+NOT_A_PAGE = re.compile(r"\.(?:xml|xml\.gz|gz|rss|atom|rdf|json|txt|xsl|csv)$|/(?:feed|rss|atom)/?$", re.I)
+PAGE_MEDIA = ("text/html", "application/xhtml+xml")
+
+
+def not_a_page(url: str | None, content_type: str | None = None) -> bool:
+    """True for an address that is a file, not a page: a sitemap or other XML, a feed, robots.txt, llms.txt, JSON, or
+    a response whose media type is not HTML (DECISIONS 347)."""
+    if content_type and content_type.split(";", 1)[0].strip().lower() not in PAGE_MEDIA:
+        return True
+    try:
+        path = urlsplit(url or "").path
+    except ValueError:
+        return False
+    return bool(SITE_FILE.search(path) or NOT_A_PAGE.search(path))
 
 
 def host_level(f: dict) -> list[str] | None:
@@ -322,7 +338,7 @@ def host_level(f: dict) -> list[str] | None:
     hosts = []
     for u in urls:
         parts = urlsplit(u)
-        if not parts.hostname or not (parts.path in ("", "/") and not parts.query or SITE_FILE.search(parts.path)):
+        if not parts.hostname or not (parts.path in ("", "/") and not parts.query or not_a_page(u)):
             return None
         if parts.hostname not in hosts:
             hosts.append(parts.hostname)
@@ -459,7 +475,8 @@ def pages_read(report: dict) -> set[str]:
     """The addresses whose content was read: Maya's own pages (2xx with content) and the page reader's."""
     crawl = report.get("crawl") or {}
     urls = {p.get("url") for p in crawl.get("pages") or [] if isinstance(p, dict) and isinstance(p.get("status"), int)
-            and 200 <= p["status"] < 300 and p.get("content_checks_eligible") is not False}
+            and 200 <= p["status"] < 300 and p.get("content_checks_eligible") is not False
+            and not not_a_page(p.get("url"), p.get("content_type"))}  # DECISIONS 347: a file is never a page read
     urls |= {p.get("url") for p in (report.get("firecrawl") or {}).get("pages") or []
              if isinstance(p, dict) and p.get("outcome") == "read"}
     return {u for u in urls if isinstance(u, str)}

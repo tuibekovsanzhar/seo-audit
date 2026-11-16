@@ -86,7 +86,9 @@
     "en": "Branches and location"
    },
    "citable": false,
-   "generic": [],
+   "generic": [
+    "location"
+   ],
    "signals": {
     "url": [
      "sube",

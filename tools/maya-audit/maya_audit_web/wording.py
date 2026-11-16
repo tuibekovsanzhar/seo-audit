@@ -119,9 +119,15 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "{n:robots.txt rule comes|robots.txt rules come} before any User-agent line, so no crawler applies them"),
     ),
     "ACC-2": (
-        ("acc2.blocks.sitewide", "robots.txt line {line#} (Disallow: {pattern}) blocks {role~} bot(s) {tokens} sitewide",
+        # DECISIONS 347: a block of AI training bots only is a policy choice to check, never an indexing blocker: rules
+        # of their own, apart from the blocks of search and live-fetch bots.
+        ("acc2.training_block.sitewide", "robots.txt line {line#} (Disallow: {pattern}) blocks {role~:training} bot(s) {tokens} sitewide",
          "robots.txt line {line} (Disallow: {pattern}) blocks {role} bots {tokens} sitewide"),
-        ("acc2.blocks.sample", "robots.txt line {line#} (Disallow: {pattern}) blocks {role~} bot(s) {tokens} on {n#} sampled URL(s)",
+        ("acc2.training_block.sample", "robots.txt line {line#} (Disallow: {pattern}) blocks {role~:training} bot(s) {tokens} on {n#} sampled URL(s)",
+         "robots.txt line {line} (Disallow: {pattern}) blocks {role} bots {tokens} on {n:sampled URL|sampled URLs}"),
+        ("acc2.blocks.sitewide", "robots.txt line {line#} (Disallow: {pattern}) blocks {role~:(?:search|live)} bot(s) {tokens} sitewide",
+         "robots.txt line {line} (Disallow: {pattern}) blocks {role} bots {tokens} sitewide"),
+        ("acc2.blocks.sample", "robots.txt line {line#} (Disallow: {pattern}) blocks {role~:(?:search|live)} bot(s) {tokens} on {n#} sampled URL(s)",
          "robots.txt line {line} (Disallow: {pattern}) blocks {role} bots {tokens} on {n:sampled URL|sampled URLs}"),
         ("acc2.mismatch", "Policy mismatch: declared policy blocks {role~} bots, but robots.txt allows {allowed} on at least one sampled URL",
          "Policy mismatch: declared policy blocks {role} bots, but robots.txt allows {allowed} on at least one sampled URL"),
@@ -372,6 +378,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "Cloudflare e-mail obfuscation is on: the address is readable only with JavaScript"),
         # Stage 8a (DECISIONS 315): links to an address that redirects.
         # DECISIONS 344: a temporary redirect of an application or sign-in step: a note.
+        # DECISIONS 347: a link to a page behind a sign-in that sends a visitor without a session to sign in: a note.
+        ("idx6.links_to_login_redirect", "{links#} internal link(s) on {pages#} page(s) point to a page behind a sign-in that redirects to it",
+         "{links:internal link|internal links} on {pages:page|pages} [links:points|point] to a page behind a sign-in that redirects to it"),
         ("idx6.links_to_flow_redirect", "{links#} internal link(s) on {pages#} page(s) point to an application or sign-in step that redirects temporarily",
          "{links:internal link|internal links} on {pages:page|pages} [links:points|point] to an application or sign-in step that redirects temporarily"),
         ("idx6.links_to_redirect", "{links#} internal link(s) on {pages#} page(s) point to an address that redirects",
@@ -405,6 +414,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
     ),
     "IDX-8": (
         # DECISIONS 343: two addresses of one page, each its own canonical.
+        # DECISIONS 347: misspelt addresses of a page that answer with content or redirect elsewhere.
+        ("idx8.typo_copies", "{n#} misspelt address(es) of a page answer instead of leading to it",
+         "{n:misspelt address of a page answers|misspelt addresses of a page answer} instead of leading to it"),
         ("idx8.form_step_copies", "{n#} second address(es) of an application or form step answer 200 and name themselves canonical",
          "{n:second address of an application or form step answers|second addresses of an application or form step answer} 200 and [n:names itself|name themselves] canonical"),
         ("idx8.self_canonical_copies", "{n#} second address(es) of a page answer 200 and name themselves canonical",

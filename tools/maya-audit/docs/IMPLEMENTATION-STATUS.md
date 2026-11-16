@@ -2185,5 +2185,29 @@ edin); 13 made from a heading also end "; site haritası oluşturucuyu düzeltin
 | fast suite, `pytest -q -rfE -p no:cacheprovider -m "not slow and not timing"` | `3210 passed, 4 skipped, 135 deselected, 1 warning in 535.85s (0:08:55)` |
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3345 passed, 4 skipped, 1 warning in 929.83s (0:15:29)` |
 | CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
-| Push | NOT DONE (owner: don't push) |
+| Push | `3c5f9ea` pushed on the owner's word (2026-11-12); CI run 43306672486 passed, 21:05:07-21:18:14 UTC (recorded with DECISIONS 347) |
 
+
+## The atasunoptik review as global rules: sign-in links, training-bot blocks, files, page types, typos, homepage (2026-11-16, DECISIONS 347)
+
+atasunoptik f06a2129 (Smart ~150, 149 pages read; copy of `artifacts/` in a scratch folder, before = `git archive HEAD`,
+after = this change; the person's E-ticaret choice kept):
+
+| | Before | After |
+|---|---|---|
+| Card 4 "Bağlantıları doğrudan son adrese verin" | 149 addresses (menu "Sipariş Takip" → /Uye/Siparislerim 302 → sign-in) | 3 addresses, each row "son adrese verin: /eski → /gunes-gozlugu"; the sign-in links are a Bilgi note "(beklenen)" |
+| Card 5 robots.txt (Bytespider only) | Düşük, Sorun, **P0** | Düşük, **Kontrol edin**, P3 (`acc2.training_block.sitewide`, at most P2) |
+| /sitemap.xml, /kurumsal.xml in the Ek | rows of "Sayfa bazında" | not pages: "—", no type, not in "Sayfa bazında" |
+| Page types, no profile | ürün 140, politika 3, blog 3, yardımcı 2, ana sayfa 1 | kategori 116, diğer 11, yardımcı 7, ürün 4, konum 3, politika 3, blog 3, ana sayfa 1 |
+| Suggested business type | Diğer | E-ticaret ("120 okunan sayfa ürün ya da kategori sayfası") |
+| E-ticaret: /Uye/PlusLogin, /Uye, /kurumsal/uyelik_1519 | ürün 77-90 | utility 20 (and /Uye/OrderTracker 18) |
+| E-ticaret: homepage | 85, below categories at 90 | 98, rank 1 |
+| Typo addresses | none | new card (Orta, P3): /inesta-…-modellerix 200 → /inesta-…-modelleri; /cocuk-…-modelleri- 301 → /gunes-gozlugu, point it at /cocuk-…-modelleri |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_shop_review_347.py` | `50 passed` |
+| fast suite, first run | `6 failed, 3204 passed` (all fixed: payload size, two catalog notes, a title sample, method version, product folders under a sitewide og:type; the 429 sitemap test passed alone, a timing flake) |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3395 passed, 4 skipped, 1 warning in 1074.29s (0:17:54)` |
+| CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

@@ -142,7 +142,9 @@
     "en": "Dealers and service"
    },
    "citable": false,
-   "generic": [],
+   "generic": [
+    "location"
+   ],
    "signals": {
     "url": [
      "bayi",

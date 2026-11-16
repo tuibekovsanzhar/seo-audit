@@ -1477,6 +1477,8 @@ BUILT_TITLES = {
     "ACC-2": ((("blocks {role} bot(s)", '"sitewide" if pattern.strip()'), "robots.txt line 4 (Disallow: /) blocks search bot(s) GPTBot, OAI-SearchBot sitewide"),
               (("blocks {role} bot(s)", "sampled URL(s)"), "robots.txt line 7 (Disallow: /private/) blocks training bot(s) GPTBot on 2 sampled URL(s)"),
               (("blocks {role} bot(s)",), "robots.txt line 9 (Disallow: /app/) blocks live bot(s) ChatGPT-User on 1 sampled URL(s)"),
+              # DECISIONS 347: a block of training bots only has its own rule
+              (("blocks {role} bot(s)", '"sitewide" if pattern.strip()'), "robots.txt line 417 (Disallow: /) blocks training bot(s) Bytespider sitewide"),
               (("Policy mismatch: declared policy blocks {role} bots",), "Policy mismatch: declared policy blocks training bots, but robots.txt allows GPTBot, CCBot on at least one sampled URL")),
     "ACC-3": ((('f"noindex via {where}"',), "noindex via meta robots on 5 page(s)"),
               (("(page intent should be reviewed)",), "noindex via X-Robots-Tag (googlebot) (page intent should be reviewed) on 1 page(s)"),

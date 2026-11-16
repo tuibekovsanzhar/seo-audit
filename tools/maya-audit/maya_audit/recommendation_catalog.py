@@ -120,6 +120,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
     ),
     "IDX-6": (
         # The checklist's quick checks (DECISIONS 304); Stage 8a (DECISIONS 315).
+        (r"point to a page behind a sign-in that redirects to it", "developer", "S", "A page behind a sign-in sends a visitor without a session to the sign-in page; this is how such pages work, so it is a note, not a redirect to fix."),  # DECISIONS 347
         (r"point to an application or sign-in step that redirects temporarily", "developer", "S", "An application step may redirect only a new visitor; checked in a browser it may open directly, so this is a note to confirm, not a problem."),  # DECISIONS 344
         (r"point to an address that redirects", "developer", "S", "Each link to a redirect costs crawlers and visitors one more request; linking to the final address removes it."),
         (r"whose canonical is another page", "developer", "S", "A link to a duplicate address sends crawlers to a page they then fold into another one: visits are spent twice and the canonical page gets its links second-hand."),
@@ -141,6 +142,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"clicks from the homepage", "seo", "M", "Pages many clicks deep are crawled later and less often, and are treated as less important."),
     ),
     "IDX-8": (
+        (r"misspelt address\(es\) of a page answer instead of leading to it", "developer", "S", "A misspelt address that opens with content is a weak copy of the page, and one that redirects elsewhere takes visitors and links away from the page its name points to."),  # DECISIONS 347
         (r"second address\(es\) of an application or form step", "developer", "S", "Two addresses of one application step look like two pages in the index; a canonical or noindex keeps the flow working."),  # DECISIONS 344
         (r"second address\(es\) of a page answer 200", "developer", "S", "Two addresses of one page split its links and crawl visits, and the engine picks which one to show."),  # DECISIONS 343
         (r"differ mostly by the place name", "content", "L", "Many pages that repeat one text with only the place name changed can be treated as doorway pages, and none of them gives a reason to be shown."),

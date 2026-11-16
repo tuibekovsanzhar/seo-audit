@@ -326,6 +326,10 @@
   "str13.markers_data": "issue",
   "str1.sections_as_pages": "warning",
   "idx8.form_step_copies": "issue",
-  "idx6.links_to_flow_redirect": "warning"
+  "idx6.links_to_flow_redirect": "warning",
+  "acc2.training_block.sitewide": "warning",
+  "acc2.training_block.sample": "warning",
+  "idx6.links_to_login_redirect": "warning",
+  "idx8.typo_copies": "issue"
  }
 }

@@ -42,6 +42,10 @@
    "tüm ürünler",
    "shop",
    "new in"
+  ],
+  "page_types": [
+   "product",
+   "category"
   ]
  },
  "page_types": [
@@ -135,7 +139,9 @@
     "en": "Stores and points of sale"
    },
    "citable": false,
-   "generic": [],
+   "generic": [
+    "location"
+   ],
    "signals": {
     "url": [
      "magazalar",

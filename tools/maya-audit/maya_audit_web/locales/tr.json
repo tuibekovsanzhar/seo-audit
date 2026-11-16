@@ -1228,6 +1228,7 @@
  "c6.type.category": "kategori",
  "c6.type.product": "ürün",
  "c6.type.blog_article": "makale",
+ "c6.type.location": "mağaza / konum",
  "c6.type.policy": "politika",
  "c6.type.utility": "yardımcı",
  "c6.type.other": "diğer",

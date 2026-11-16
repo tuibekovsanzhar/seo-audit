@@ -33,6 +33,13 @@ def _tier(urls, key_urls) -> int:
     return 0 if any(u in key_urls for u in urls) else 2
 
 
+def _path(url: str) -> str:
+    """/path?query of an address (the host left out, as the Ek's other cells write a same-site address)."""
+    from urllib.parse import urlsplit
+    parts = urlsplit(url or "")
+    return (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
+
+
 def _bare(url: str) -> str:
     return (url or "").split("#", 1)[0]
 
@@ -86,6 +93,35 @@ LINKS_TO_FLOW_NOTE = ("A temporary redirect of an application, sign-in or sessio
                       "problem, until the check above shows it happens for everyone.")
 
 
+# DECISIONS 347 (atasunoptik: the menu's "Sipariş Takip" -> /Uye/Siparislerim -> 302 to the sign-in page on every page
+# read): a page behind a sign-in (an account, orders, a cart, a wishlist) sends a visitor without a session to sign in.
+# That is expected: a note at most, never a card and never "remove the link". Its address names an account page, or the
+# redirect's end is a sign-in page or carries a return address (?ReturnUrl=, ?next=, ?redirect=).
+RETURN_PARAMS = re.compile(r"(?:^|&)(?:returnurl|return_url|returnto|return_to|redirect|redirect_uri|redirecturl|redirect_to|"
+                           r"next|continue|goto|backurl)=", re.IGNORECASE)
+SIGN_IN_WORDS = re.compile(r"(?:^|[/_.-])(?:login|logon|signin|sign-in|giris|giris-yap|oturum-ac|auth|uye-girisi)(?:$|[/_.-])|login$")
+LOGIN_EXPECTED = "a link to a page behind a sign-in leads a visitor without a session to the sign-in page"
+LOGIN_FIX = ("Nothing to change: a page behind a sign-in (account, orders, cart) sends a visitor without a session to "
+             "sign in, as it should. Keep the link; keep the sign-in page out of the sitemap.")
+LOGIN_NOTE = ("A page that needs a signed-in visitor answered Maya (a new visitor, no cookie) with a temporary redirect "
+              "to sign in. This is how such pages work; it is not a redirect to fix.")
+
+
+def _login(url: str, walk: dict) -> bool:
+    """A link to a page behind a sign-in: its first answer is a temporary redirect, and its address names an account
+    page (`page_groups.account_segment`) or the redirect's end is a sign-in page or carries a return address."""
+    from urllib.parse import unquote, urlsplit
+    from ..page_groups import account_segment
+    from ..page_words import fold
+    statuses = [h["status"] for h in walk["hops"]]
+    if not statuses or statuses[0] not in FLOW_STATUSES:
+        return False
+    end = urlsplit(walk.get("final") or "")
+    if RETURN_PARAMS.search(end.query) or SIGN_IN_WORDS.search(fold(unquote(end.path))):
+        return True
+    return any(account_segment(fold(unquote(seg))) for seg in urlsplit(url).path.split("/") if seg)
+
+
 def _flow(url: str, walk: dict) -> bool:
     from urllib.parse import unquote, urlsplit
     statuses = [h["status"] for h in walk["hops"]]
@@ -109,9 +145,11 @@ def links_to_redirect(pages, read, key_urls=frozenset()) -> list[Finding]:
     if not by_target:
         return []
     walks = {t: follow(t, redirects, statuses) for t in by_target}
-    flow = {t for t in by_target if _flow(t, walks[t])}
+    login = {t for t in by_target if _login(t, walks[t])}
+    flow = {t for t in by_target if t not in login and _flow(t, walks[t])}
     out = []
-    for kind, targets in (("plain", [t for t in by_target if t not in flow]), ("flow", [t for t in by_target if t in flow])):
+    for kind, targets in (("plain", [t for t in by_target if t not in flow and t not in login]),
+                          ("flow", [t for t in by_target if t in flow]), ("login", [t for t in by_target if t in login])):
         if not targets:
             continue
         sources = sorted({s for t in targets for s in by_target[t]})
@@ -125,12 +163,38 @@ def links_to_redirect(pages, read, key_urls=frozenset()) -> list[Finding]:
                          "hops": [h["url"] for h in walk["hops"]] + [walk["final"]], "statuses": [h["status"] for h in walk["hops"]],
                          "chain": chain, "linked_from_pages": len(by_target[t]), "linked_from": sorted(by_target[t])[:10]})
         if kind == "plain":
+            # DECISIONS 347: each page's own step names the final address of the links it holds
+            fixes = []
+            for src in sources:
+                mine = [r for r in rows if src in by_target[r["url"]] and not r["loop"]]
+                if mine:
+                    tr = "; ".join(f"{_path(r['url'])} → {_path(r['final'])}" for r in mine[:3])
+                    fixes.append({"url": src, "fix": {"tr": f"Bağlantıyı doğrudan son adrese verin: {tr}.",
+                                                      "en": f"Link straight to the final address: {tr}."}})
             out.append(Finding("IDX-6", f"{links} internal link(s) on {len(sources)} page(s) point to an address that redirects",
                                Severity.S4, Confidence.VERIFIED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(sources),
                                {"link_count": links, "page_count": len(sources), "redirecting_targets": len(targets), "targets": rows[:40],
+                                "page_fixes": fixes[:500],
                                 "rule": "a link (menu, content or footer) on a page read to an address that answered with a redirect "
                                         "in this crawl; link to the final address instead"},
                                LINKS_TO_REDIRECT_EXPECTED, LINKS_TO_REDIRECT_FIX, importance_tier=_tier(sources, key_urls)))
+        elif kind == "login":
+            pages_rows = []
+            for src in sources:
+                mine = [r for r in rows if src in by_target[r["url"]]]
+                said = "; ".join(f"{r['url']}: {r['chain']}" for r in mine[:2])
+                pages_rows.append({"url": src, "row": {
+                    "tr": f"bağlantı {said}; oturum gerektiren sayfa, oturumu olmayan ziyaretçi girişe gönderiliyor (beklenen)",
+                    "en": f"link {said}; a page behind a sign-in, a visitor without a session is sent to sign in (expected)"}})
+            out.append(Finding("IDX-6", f"{links} internal link(s) on {len(sources)} page(s) point to a page behind a sign-in that redirects to it",
+                               Severity.INFO, Confidence.ESTIMATED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(sources),
+                               {"link_count": links, "page_count": len(sources), "redirecting_targets": len(targets), "targets": rows[:40],
+                                "pages": pages_rows,
+                                "rule": "a link to an address whose first answer is a temporary redirect (302, 303, 307) and whose "
+                                        "address names an account, order or cart page, or whose redirect ends at a sign-in page "
+                                        "or carries a return address (DECISIONS 347)"},
+                               LOGIN_EXPECTED, LOGIN_FIX, notes=[LOGIN_NOTE],
+                               importance_tier=2, rule_id="idx6.links_to_login_redirect"))
         else:
             pages_rows = []
             for src in sources:

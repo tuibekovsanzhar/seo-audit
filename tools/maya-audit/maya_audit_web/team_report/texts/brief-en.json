@@ -143,6 +143,7 @@
   "help": "Trust information such as returns, delivery and help; customers read it before buying, and AI assistants answer these questions from it.",
   "utility": "A helper page such as the cart, an account or search; customers need it, but it does not need to appear in Google.",
   "other": "One of your site's important pages; customers, Google and AI assistants look here too when they get to know you.",
+  "location": "Where customers looking for your store find its address and hours; nearby searches in Google and AI assistants' location answers rely on it.",
   "stores": "Where customers looking for your store find its address and hours; nearby searches in Google and AI assistants' location answers rely on it.",
   "campaign": "Where sales and offers are announced; it appears in Google for discount searches and in AI answers about offers.",
   "support": "Where customers solve problems; answers to how-to questions in Google and AI assistants come from here.",

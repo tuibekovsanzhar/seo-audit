@@ -382,6 +382,7 @@
    "category": "kategori",
    "product": "ürün",
    "blog_article": "makale",
+   "location": "mağaza / konum",
    "policy": "politika",
    "utility": "yardımcı",
    "other": "diğer"
@@ -460,6 +461,7 @@
    "category": "kategori şablonu",
    "product": "ürün şablonu",
    "blog_article": "blog şablonu",
+   "location": "mağaza / konum şablonu",
    "policy": "politika şablonu",
    "utility": "yardımcı sayfa şablonu",
    "other": "sayfa şablonu"
@@ -874,6 +876,7 @@
    "category": "category",
    "product": "product",
    "blog_article": "article",
+   "location": "store / location",
    "policy": "policy",
    "utility": "utility",
    "other": "other"
@@ -951,6 +954,7 @@
    "category": "category template",
    "product": "product template",
    "blog_article": "blog template",
+   "location": "store / location template",
    "policy": "policy template",
    "utility": "utility page template",
    "other": "page template"

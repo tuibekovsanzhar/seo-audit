@@ -1585,6 +1585,7 @@ STRINGS["en"].update({
     "c6.type.category": "category",
     "c6.type.product": "product",
     "c6.type.blog_article": "article",
+    "c6.type.location": "store / location",
     "c6.type.policy": "policy",
     "c6.type.utility": "utility",
     "c6.type.other": "other",

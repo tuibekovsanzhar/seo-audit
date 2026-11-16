@@ -793,6 +793,54 @@ def _order(report: dict) -> list[str]:
     return [f["id"] for f in sorted(findings, key=key)]
 
 
+def _decisions_347(report: dict, changes: list[str]) -> None:
+    """DECISIONS 347 (the review of atasunoptik): (1) the page grouping worked out again with the current method when
+    the saved one is older (`page_groups.METHOD_VERSION`): a sitewide og:type is a site default, item addresses with an
+    id are products, pages listing them categories, store pages "location", account and sign-in pages utility, the
+    homepage first; (2) the ACC-2 findings' rule read again from their titles, so a block of training bots only is
+    `acc2.training_block.*` (a policy choice, never P0 or P1). Offline, from the saved page records."""
+    from types import SimpleNamespace
+    from .models import page_from_record
+    from .page_groups import METHOD_VERSION, annotate
+    from .rules import rule_id
+    crawl = report.get("crawl") or {}
+    summary = crawl.get("page_grouping")
+    if isinstance(summary, dict) and (summary.get("method_version") or 0) < METHOD_VERSION and not (
+            isinstance(crawl.get("reader_page_grouping"), dict) and crawl["reader_page_grouping"].get("pages")):
+        records = [rec for rec in crawl.get("pages") or [] if isinstance(rec, dict)]
+        pages = []
+        for rec in records:
+            try:
+                pages.append((rec, page_from_record(rec)))
+            except (KeyError, TypeError, ValueError):
+                pages = []
+                break
+        if pages:
+            result = SimpleNamespace(pages=[pg for _, pg in pages], start_url=crawl.get("start_url") or "",
+                                     origin=crawl.get("origin"), discovered_urls=crawl.get("discovered_urls") or [],
+                                     sitemap_urls=crawl.get("sitemap_urls") or [], page_grouping=None)
+            try:
+                fresh = annotate(result)
+            except Exception as exc:  # noqa: BLE001  the saved grouping stays, said so
+                changes.append(f"page grouping not worked out again ({type(exc).__name__}); the saved one is used (DECISIONS 347)")
+                fresh = None
+            if fresh is not None:
+                before = dict(summary.get("page_types") or {})
+                for rec, pg in pages:
+                    rec["grouping"] = pg.grouping
+                crawl["page_grouping"] = {**fresh, **{k: summary[k] for k in ("business_type", "importance_source") if k in summary}}
+                changes.append(f"page types worked out again (method {METHOD_VERSION}, DECISIONS 347): {before} -> "
+                               f"{fresh.get('page_types')}")
+    for check in report.get("checks") or []:
+        if check.get("check_id") != "ACC-2":
+            continue
+        for f in check.get("findings") or []:
+            new = rule_id("ACC-2", f.get("title") or "")
+            if new and new != f.get("rule_id"):
+                changes.append(f"{f.get('id')}: rule {f.get('rule_id')} -> {new} (DECISIONS 347)")
+                f["rule_id"] = new
+
+
 def _decisions_343(report: dict, affected: dict, changes: list[str], unassessed: list[dict] | None = None) -> None:
     """DECISIONS 343 and 344 (the SEO team's technical review, Efsa's enpara report; İlginay's review of its Ek): the rules
     of `checks.team_rules` and the links to a redirect (`stage8_rules.links_to_redirect`, split for application and
@@ -821,7 +869,7 @@ def _decisions_343(report: dict, affected: dict, changes: list[str], unassessed:
     read = _read(pages)
     checks = {c.get("check_id"): c for c in report.get("checks") or [] if c.get("status") != "not_assessed"}
     replaced = set(team_rules.RULES) | {"str1.subpage_copies_parent", "str2.h1_parent_name", "idx6.links_to_redirect",
-                                        "idx6.links_to_flow_redirect"}
+                                        "idx6.links_to_flow_redirect", "idx6.links_to_login_redirect"}
     before = {}
     for check in checks.values():
         for f in list(check.get("findings") or []):
@@ -971,6 +1019,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_337(r, aff, changes)
     _decisions_338(r, aff, changes)
     _decisions_340(r, aff, changes)
+    _decisions_347(r, changes)  # DECISIONS 347: page types again; training-only robots blocks their own rule
     _decisions_343(r, aff, changes, quick_unassessed)  # DECISIONS 343, 344: replaces what _decisions_304 added
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
@@ -987,7 +1036,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338, 340, 343 and 344, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338, 340, 343, 344 and 347, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
@@ -1018,6 +1067,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_340(r, affected, cert)  # DECISIONS 340: FAQPage only for a real Q&A block
         # DECISIONS 343: the SEO team's technical review (redirects to an error page, second addresses, Product on
         # articles, sub-pages copying the parent, the section's name as H1)
+        _decisions_347(r, cert)  # DECISIONS 347: page types again; training-only robots blocks their own rule
         _decisions_343(r, affected, cert)
     if cert:
         from .report import problem_summary

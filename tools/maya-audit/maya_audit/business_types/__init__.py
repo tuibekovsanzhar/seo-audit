@@ -28,7 +28,8 @@ from ..page_words import fold
 
 # 2 (DECISIONS 316): "Havayolu" split from "Seyahat / rezervasyon" (now "Tur / otel"), and country-language folders
 # left out of address words; a saved suggestion of version 1 is worked out again.
-VERSION = 2
+# 3 (DECISIONS 347): product and category pages among the pages read count for E-ticaret.
+VERSION = 3
 AUTO = "auto"
 DEFAULT = "diger"
 # Weights by rank in a profile's list (owner, configurable here or per profile with "weights").
@@ -49,6 +50,12 @@ SCORES = {"url": 4, "schema": 3, "heading": 2, "menu": 2, "content": 1,
           "person": 5}
 MIN_SCORE = 3
 NOT_FOUND_TOP = 3        # "not found" notes for the profile's first three page types (owner)
+# DECISIONS 347 (owner, atasunoptik: "suggest E-ticaret when product/category signals are strong instead of Diğer"):
+# product and category pages (the general page type) at least this share of the pages typed, and this many, add
+# TYPES_SCORE to the profiles whose "suggest" names them (`page_types`; E-ticaret only) (agent defaults).
+TYPES_SHARE = 0.3
+TYPES_MIN = 5
+TYPES_SCORE = 4
 GROUPS = {"finans": {"tr": "Finans", "en": "Finance"},
           "seyahat": {"tr": "Seyahat / rezervasyon", "en": "Travel / booking"}}  # DECISIONS 316
 KIND_LABELS = {"url": {"tr": "adres sözcüğü", "en": "address word"},
@@ -464,11 +471,14 @@ def apply(records: dict[str, dict], facts: dict[str, dict], pid: str | None, fol
         if g.get("read") is not False:
             counts[kind] += 1
 
+    from ..page_groups import home_first
+    home_first(scored)  # DECISIONS 347: the homepage is the most important page under every profile too
+
     def order(item):
         url, g = item
         tb = g.get("tie_break") or {}
         pos = tb.get("sitemap_position")
-        return (-g["importance"], -(tb.get("body_inlinks") or 0), -(tb.get("products_listed") or 0),
+        return (g.get("page_type") != "home", -g["importance"], -(tb.get("body_inlinks") or 0), -(tb.get("products_listed") or 0),
                 pos if pos is not None else float("inf"), g.get("importance_rank_links") or 10**9)
     for i, (url, g) in enumerate(sorted(scored.items(), key=order), 1):
         g["importance_rank"] = i
@@ -498,9 +508,13 @@ def not_found(records: dict[str, dict], pid: str | None, top: int = NOT_FOUND_TO
 # ---------------------------------------------------------------- suggestion
 
 def suggest(home_analysis: dict | None, home_outlinks: list | None, platform: str | None,
-            urls: Iterable[str] = (), folders: Iterable[str] = ()) -> dict:
+            urls: Iterable[str] = (), folders: Iterable[str] = (), types: dict | None = None) -> dict:
     """{id, label, reason{tr,en}, signals, scores}: the business type the homepage's structured data, the platform,
-    the site's addresses and the homepage's menu point to; "diger" when no type stands out."""
+    the site's addresses, the homepage's menu and the general page types of the pages read (`types`: {type: pages},
+    DECISIONS 347) point to; "diger" when no type stands out."""
+    typed = {k: v for k, v in (types or {}).items() if k not in ("home", "utility", "policy") and isinstance(v, int)}
+    shop_pages = typed.get("product", 0) + typed.get("category", 0)
+    shop = shop_pages >= TYPES_MIN and shop_pages / (sum(typed.values()) or 1) >= TYPES_SHARE
     a = home_analysis or {}
     schema = set((a.get("structured_data") or {}).get("types") or [])
     menu = _norm(" | ".join(x for e in home_outlinks or [] if e.get("nav")
@@ -555,6 +569,10 @@ def suggest(home_analysis: dict | None, home_outlinks: list | None, platform: st
         if words:
             score += min(4, len(words))
             signals.append({"kind": "menu", "values": words[:3]})
+        if shop and s.get("page_types"):  # the profile's own "suggest.page_types" (E-ticaret: product, category)
+            score += TYPES_SCORE
+            signals.append({"kind": "types", "count": shop_pages,
+                            "values": [f"{k} {typed[k]}" for k in ("product", "category") if typed.get(k)]})
         rows.append((score, p["order"], p["id"], signals))
     rows.sort(key=lambda r: (-r[0], r[1]))
     scores = {r[2]: r[0] for r in rows}
@@ -602,6 +620,9 @@ def _reason(signals: list[dict]) -> dict:
         elif s["kind"] == "menu":
             tr.append(f"menüde {v}")
             en.append(f"menu words {v}")
+        elif s["kind"] == "types":
+            tr.append(f"{s['count']:,}".replace(",", ".") + " okunan sayfa ürün ya da kategori sayfası")
+            en.append(f"{s['count']:,} pages read are product or category pages")
         elif s["kind"] == "routes":
             tr.append(f"{s['count']:,}".replace(",", ".") + f" adreste havalimanı kodlu rota ({v})")
             en.append(f"{s['count']:,} addresses with airport-code routes ({v})")
@@ -635,7 +656,9 @@ def attach(result) -> dict | None:
     urls = [p.url for p in pages] + list(getattr(result, "discovered_urls", None) or []) + list(
         getattr(result, "sitemap_urls", None) or [])
     folders = _folders(getattr(result, "locales", None), urls, getattr(result, "start_url", None))
-    suggestion = suggest(home.analysis if home else None, home.outlinks if home else None, platform, urls, folders)
+    types = Counter(p.grouping.get("page_type") for p in read)
+    suggestion = suggest(home.analysis if home else None, home.outlinks if home else None, platform, urls, folders,
+                         dict(types))
     config = getattr(result, "config", None)
     choice = (config.get("business_type") if isinstance(config, dict) else getattr(config, "business_type", None))
     chosen = resolve(choice, suggestion)
@@ -715,8 +738,9 @@ def for_report(report: dict, records: dict[str, dict], choice: str | None = None
                 platform = (recognise_saved(report) or {}).get("name")
             except Exception:  # noqa: BLE001
                 platform = None
+        types = Counter(g.get("page_type") for g in records.values() if isinstance(g, dict) and g.get("read") is not False)
         suggestion = suggest(home.get("analysis"), home.get("outlinks"), platform, _report_urls(crawl),
-                             _folders(crawl.get("locales"), _report_urls(crawl), crawl.get("start_url")))
+                             _folders(crawl.get("locales"), _report_urls(crawl), crawl.get("start_url")), dict(types))
     if not choice and saved and saved.get("chosen_by") == "user":
         choice = saved.get("id")
     chosen = resolve(choice, suggestion)
