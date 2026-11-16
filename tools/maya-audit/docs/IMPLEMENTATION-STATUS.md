@@ -2259,3 +2259,28 @@ The running app needs a restart to load the fix.
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3413 passed, 4 skipped, 1 warning in 974.48s (0:16:14)` |
 | CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+## isbank review: place pages, profile page types in the Ek, template links, the reader's new pages (2026-11-16, DECISIONS 350)
+
+isbank 1b81bee4 (Smart ~150, Bankacılık suggested), copy of `artifacts/` in a scratch folder; before = `git archive
+HEAD`, after = this change. The 15 cards keep their order and severities.
+
+| | Before | After |
+|---|---|---|
+| /ihtiyac-kredisi, /ek-hesap | mağaza / konum sayfası | Finansal ürün ve ürün listesi |
+| "Sayfa bazında" types | diğer 123, blog 8, kategori 4, mağaza / konum 3, politika 3, ana sayfa 2, yardımcı 1 | Finansal ürün ve ürün listesi 42, Destek 39, diğer 32, Ücret ve başvuru 11, Hesaplama aracı 9, Rehber / SSS / blog 5, politika 3, ana sayfa 2, yardımcı 1 |
+| Card 7 `idx6.alias_links` (124 pages) | generic steps | "Şablonda alt bilgideki “Çerez Ayarları” bağlantısını bir kez değiştirin" / "Yeni adresi: www.isbank.com.tr/" |
+| Card 8 `idx6.links_to_redirect` (124 pages) | generic steps | "Şablonda menüdeki “Kredi” bağlantısını bir kez değiştirin" / "Yeni adresi: personalloanapp.isbank.com.tr/?amount=50000&term=24" |
+| Kapsam "Engel sayfaları" | "en çok 2 sayfa okuyabilirdi, 91 sayfa okudu" | "Maya'nın okumadığı en çok 2 yeni sayfa okuyabilirdi, 0 yeni sayfa okudu (ayrıca Maya'nın okuduğu 91 sayfayı yeniden okudu)" |
+| Team PDF | built | built (11 pages) |
+
+Cards 7 and 8 are two different template links (footer and menu), not one link counted twice. atasunoptik's three store
+pages stay "location".
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_bank_review_350.py` | `14 passed` |
+| fast suite, first run | `1 failed, 3291 passed` (`test_blocked_reader_317` expected the line without the new counts; updated) |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3427 passed, 4 skipped, 1 warning in 960.88s (0:16:00)` |
+| CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

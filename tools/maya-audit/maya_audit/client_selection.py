@@ -1092,8 +1092,15 @@ def block_pages_line(report: dict) -> dict | None:
     limit = cov.get("page_limit")
     if not reader.get("used") or not isinstance(limit, dict) or not limit.get("block_answers"):
         return None
+    # DECISIONS 350 (isbank: "en çok 2 sayfa okuyabilirdi, 91 sayfa okudu"): the limit is on pages Maya did not read;
+    # the reader also reads Maya's own pages again. Both counts are said apart.
+    maya_read = {p.get("url") for p in (report.get("crawl") or {}).get("pages") or [] if isinstance(p, dict)
+                 and isinstance(p.get("status"), int) and 200 <= p["status"] < 300 and p.get("content_checks_eligible") is not False}
+    rows = [r for r in reader.get("pages") or [] if isinstance(r, dict) and r.get("outcome") == "read"]
+    new = len({r.get("url") for r in rows} - maya_read) if rows else None
     return {"kind": "block_pages", "blocked": limit["block_answers"], "allowed": limit.get("reader_new_pages_allowed"),
-            "read": reader.get("pages_read") or 0, "plan": limit.get("plan"), "stopped": cov.get("not_requested_because")}
+            "read": reader.get("pages_read") or 0, "new": new, "plan": limit.get("plan"), "maya_read": limit.get("maya_pages_read"),
+            "stopped": cov.get("not_requested_because")}
 
 
 def coverage(report: dict, limits: list[dict], records: dict[str, dict] | None = None) -> dict:

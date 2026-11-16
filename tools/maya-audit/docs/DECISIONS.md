@@ -4976,3 +4976,31 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      draft ("-draft.xlsx", `X-Maya-Release-Gate: BLOCKED`) when the gate blocks, because they come from a plain link;
      the client's report forms (PDF, Markdown, JSON, client export) stay refused without `draft=true` (DECISIONS 280).
      Tests: `tests/test_download_blocked_349.py` (7).
+350. **The review of the isbank audit (Smart ~150, Bankacılık; 1b81bee4) as global rules (Owner, 2026-11-16: the
+     three points; the type lists, the 80% template share and the wording are agent defaults).** isbank was only the
+     test case.
+     (1) *A store/location page is mainly one place* (`page_groups.location_reason`, METHOD_VERSION 4): its own place
+     markup (not a type most pages read carry) with GeoCoordinates or OpeningHoursSpecification, or an embedded map with
+     opening hours or coordinates; a PostalAddress alone no longer counts (any organisation's markup has one), and a
+     page with product, offer, loan, account, card, service or application markup (`NOT_A_PLACE_TYPES`) is never one.
+     isbank's /ihtiyac-kredisi and /ek-hesap (BankOrCreditUnion + PostalAddress beside LoanOrCredit, Offer, FAQ) and
+     /?efl--edit=1 were "location" (DECISIONS 347's rule); now none; atasunoptik's three store pages stay.
+     *The Ek's page types follow the profile* (`page_rows.page_kind_of`, `type_word`): with a business profile, each
+     row's type is the profile's (its own label, as the sampling and the key pages use them), the general type only for
+     a page the profile did not match; the same in the web app's affected-pages list. isbank "Sayfa bazında": before
+     diğer 123, kategori 4, mağaza / konum 3; after Finansal ürün ve ürün listesi 42, Destek 39, diğer 32, Ücret ve
+     başvuru 11, Hesaplama aracı 9, Rehber / SSS / blog 5.
+     (2) *One template link, named* (`stage8_rules.template_link`): cards 7 (`idx6.alias_links`) and 8
+     (`idx6.links_to_redirect`) were two different links, each a template link on (nearly) every page read, not one
+     link counted twice: the footer's "Çerez Ayarları" → /?efl--edit=1 (canonical /) on 122 pages, and the menu's
+     "Kredi" → /internet/MainPageEnter.aspx?…site=megamenu (301 → personalloanapp.isbank.com.tr/?amount=50000&term=24)
+     on 124. When one target is linked from at least 80% of a finding's pages (5 or more), the finding's evidence holds
+     `template_link` (its address, most common text, menu/footer/content, and the final address or canonical), and the
+     card's first two steps say it: "Şablonda alt bilgideki “Çerez Ayarları” bağlantısını bir kez değiştirin" / "Yeni
+     adresi: www.isbank.com.tr/". A saved alias-links card gets it offline (`reassess_rules._decisions_350`); the
+     redirect card is made again from the saved pages (DECISIONS 343).
+     (3) *The block-pages line* (`client_selection.block_pages_line`, `client_appendix.block_pages_text`): the reader's
+     limit is on pages Maya did not read, so its new pages are counted apart from Maya's pages it read again: "sayfa
+     okuyucu Maya'nın okumadığı en çok 2 yeni sayfa okuyabilirdi, 0 yeni sayfa okudu (ayrıca Maya'nın okuduğu 91 sayfayı
+     yeniden okudu)" (before: "en çok 2 sayfa okuyabilirdi, 91 sayfa okudu").
+     Tests: `tests/test_bank_review_350.py` (14); method version 4 in `test_page_groups`, `test_shop_review_347`.

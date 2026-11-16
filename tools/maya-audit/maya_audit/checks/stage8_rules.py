@@ -129,6 +129,36 @@ def _flow(url: str, walk: dict) -> bool:
     return bool(statuses) and statuses[0] in FLOW_STATUSES and bool(FLOW_WORDS.search(words))
 
 
+TEMPLATE_LINK_SHARE = 0.8  # DECISIONS 350: one target linked from this share of a finding's pages is a template link
+
+
+def template_link(read, target: str, sources, final: str | None, kind: str) -> dict | None:
+    """DECISIONS 350 (isbank: two cards, each on 124 pages, each one header link): the link a template puts on most of
+    the finding's pages: its address, its most common text, where it sits (menu, footer or content) and the address
+    to link to instead (`final`: where the redirect ends, or the canonical). None when no target is on most pages."""
+    from collections import Counter
+    sources = set(sources)
+    if not sources:
+        return None
+    anchors: Counter = Counter()
+    where: Counter = Counter()
+    pages = set()
+    for p in read:
+        if p.url not in sources:
+            continue
+        for edge in p.outlinks or []:
+            if _bare(edge.get("target") or "") != target:
+                continue
+            pages.add(p.url)
+            for a in edge.get("anchors") or ([edge["anchor"]] if edge.get("anchor") else []):
+                if a and a.strip():
+                    anchors[" ".join(a.split())[:60]] += 1
+            where["menu" if edge.get("nav") else "footer" if edge.get("footer") else "content"] += 1
+    return {"url": target, "final": final, "kind": kind, "pages": len(pages),
+            "anchor": anchors.most_common(1)[0][0] if anchors else None,
+            "where": where.most_common(1)[0][0] if where else None}
+
+
 def links_to_redirect(pages, read, key_urls=frozenset()) -> list[Finding]:
     redirects = redirect_map(pages)
     if not redirects:
@@ -171,10 +201,13 @@ def links_to_redirect(pages, read, key_urls=frozenset()) -> list[Finding]:
                     tr = "; ".join(f"{_path(r['url'])} → {_path(r['final'])}" for r in mine[:3])
                     fixes.append({"url": src, "fix": {"tr": f"Bağlantıyı doğrudan son adrese verin: {tr}.",
                                                       "en": f"Link straight to the final address: {tr}."}})
+            top = max(targets, key=lambda t: len(by_target[t]))
+            shared = (template_link(read, top, by_target[top], walks[top]["final"], "redirect")
+                      if len(by_target[top]) >= TEMPLATE_LINK_SHARE * len(sources) and len(sources) >= 5 else None)
             out.append(Finding("IDX-6", f"{links} internal link(s) on {len(sources)} page(s) point to an address that redirects",
                                Severity.S4, Confidence.VERIFIED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(sources),
                                {"link_count": links, "page_count": len(sources), "redirecting_targets": len(targets), "targets": rows[:40],
-                                "page_fixes": fixes[:500],
+                                "page_fixes": fixes[:500], **({"template_link": shared} if shared else {}),
                                 "rule": "a link (menu, content or footer) on a page read to an address that answered with a redirect "
                                         "in this crawl; link to the final address instead"},
                                LINKS_TO_REDIRECT_EXPECTED, LINKS_TO_REDIRECT_FIX, importance_tier=_tier(sources, key_urls)))

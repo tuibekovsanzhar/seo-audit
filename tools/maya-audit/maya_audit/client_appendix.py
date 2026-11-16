@@ -203,16 +203,28 @@ def _manual(text: str, W: dict) -> str:
 
 def block_pages_text(line: dict, lang: str) -> str:
     """DECISIONS 317: the block answers Maya's crawler got did not use up the page limit; what the page reader could
-    read and read. One sentence for the PDF, the web summary and the appendix."""
+    read and read. One sentence for the PDF, the web summary and the appendix. DECISIONS 350: the reader's limit is on
+    pages Maya did not read; the pages it read again are said apart from its new ones."""
     blocked, allowed, read = int(line.get("blocked") or 0), int(line.get("allowed") or 0), int(line.get("read") or 0)
-    time_first = line.get("stopped") == "time_limit" and read < allowed
+    new = line.get("new")
+    again = read - new if isinstance(new, int) else None
+    time_first = line.get("stopped") == "time_limit" and (new if isinstance(new, int) else read) < allowed
     if lang == "tr":
-        return (f"Engel sayfaları sayfa sınırına sayılmadı: Maya'nın tarayıcısı {blocked} istekte engel sayfası ya da 429 aldı; sayfa "
-                f"okuyucu en çok {allowed} sayfa okuyabilirdi, {read} sayfa okudu" + (" (süre sınırı daha önce doldu)." if time_first else "."))
+        head = f"Engel sayfaları sayfa sınırına sayılmadı: Maya'nın tarayıcısı {blocked} istekte engel sayfası ya da 429 aldı; "
+        if isinstance(new, int):
+            body = (f"sayfa okuyucu Maya'nın okumadığı en çok {allowed} yeni sayfa okuyabilirdi, {new} yeni sayfa okudu"
+                    + (f" (ayrıca Maya'nın okuduğu {again} sayfayı yeniden okudu)" if again else ""))
+        else:
+            body = f"sayfa okuyucu en çok {allowed} sayfa okuyabilirdi, {read} sayfa okudu"
+        return head + body + (" (süre sınırı daha önce doldu)." if time_first else ".")
     req = "request" if blocked == 1 else "requests"
-    pages = "page" if allowed == 1 else "pages"
-    return (f"Block pages did not count toward the page limit: Maya's crawler got a block page or a 429 on {blocked} {req}; the page "
-            f"reader could read up to {allowed} {pages} and read {read}" + (" (the time limit came first)." if time_first else "."))
+    head = f"Block pages did not count toward the page limit: Maya's crawler got a block page or a 429 on {blocked} {req}; "
+    if isinstance(new, int):
+        body = (f"the page reader could read up to {allowed} new {'page' if allowed == 1 else 'pages'} Maya had not read and "
+                f"read {new}" + (f" (and read {again} of Maya's pages again)" if again else ""))
+    else:
+        body = f"the page reader could read up to {allowed} {'page' if allowed == 1 else 'pages'} and read {read}"
+    return head + body + (" (the time limit came first)." if time_first else ".")
 
 
 def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = None,
@@ -421,7 +433,8 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
     rows = page_rows.finding_rows(selection, lists, lang, todos=todos, words=words, title=title, fix=fix)
     _, cards = page_rows.card_of(selection, todos, lang, title)
     sev = lambda s: W["severity"].get(s, s or "")  # noqa: E731
-    ptype = lambda t: W["page_type"].get(t, t or "") if t else ""  # noqa: E731
+    profile_id = (selection.get("business_type") or {}).get("id")  # DECISIONS 350: the profile's own type words
+    ptype = lambda t: page_rows.type_word(t, lang, profile_id, W["page_type"])  # noqa: E731
     found = [[r["title"], sev(r["severity"]), W["itype"].get(r["issue_type"], ""),
               _link(r["url"], r["address"]), page_rows.read_word(r["read"], lang), r["value"], r["fix"], r["card"] if r["card"] is not None else "",
               W["placement"].get(r["placement"], r["placement"] or ""), ptype(r["page_type"]),

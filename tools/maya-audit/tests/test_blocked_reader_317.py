@@ -115,7 +115,8 @@ def test_a_saved_audit_with_block_pages_gets_its_page_limit_worked_out_offline()
                      "reader_new_pages_allowed": 50, "worked_out_offline": True}
     assert any("Page limit: 3 block answer(s)" in c for c in record["changes"])
     line = cs.block_pages_line(new)
-    assert line == {"kind": "block_pages", "blocked": 3, "allowed": 50, "read": 2, "plan": 50, "stopped": "time_limit"}
+    assert line == {"kind": "block_pages", "blocked": 3, "allowed": 50, "read": 2, "plan": 50, "stopped": "time_limit",
+                    "new": 2, "maya_read": 0}  # DECISIONS 350: the reader's new pages said apart
 
 
 # ---------------------------------------------------------------- 2: an access finding for a named bot-protection service

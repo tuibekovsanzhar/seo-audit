@@ -793,6 +793,33 @@ def _order(report: dict) -> list[str]:
     return [f["id"] for f in sorted(findings, key=key)]
 
 
+def _decisions_350(report: dict, changes: list[str]) -> None:
+    """DECISIONS 350: a saved `idx6.alias_links` finding names the link a template puts on most of its pages (its text,
+    place and canonical), from the saved page records. (`idx6.links_to_redirect` is made again by DECISIONS 343.)"""
+    from .checks.stage8_rules import TEMPLATE_LINK_SHARE, template_link
+    from .models import page_from_record
+    pages = None
+    for check in report.get("checks") or []:
+        for f in check.get("findings") or []:
+            ev = f.get("evidence") or {}
+            if f.get("rule_id") != "idx6.alias_links" or ev.get("template_link") or not ev.get("targets"):
+                continue
+            top, count = ev["targets"][0], ev.get("page_count") or 0
+            if (top.get("linked_from_pages") or 0) < TEMPLATE_LINK_SHARE * count or count < 5:
+                continue
+            if pages is None:
+                pages = []
+                for rec in (report.get("crawl") or {}).get("pages") or []:
+                    try:
+                        pages.append(page_from_record(rec))
+                    except (KeyError, TypeError, ValueError):
+                        continue
+            shared = template_link(pages, top["url"], {p.url for p in pages}, top.get("canonical"), "canonical")
+            if shared and shared.get("pages"):
+                ev["template_link"] = shared
+                changes.append(f"{f.get('id')}: the template link named ({shared.get('where')}, {top['url']}) (DECISIONS 350)")
+
+
 def _decisions_349(report: dict, affected: dict, changes: list[str]) -> None:
     """DECISIONS 349 (naturesgarden.net 342a0b14, whose appendix and sector file were refused by RG-7): (1) a page in a
     blog or article folder that an STR-3 finding took for a product by its price and buy button alone is not one: the
@@ -1070,6 +1097,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_340(r, aff, changes)
     _decisions_347(r, changes)  # DECISIONS 347: page types again; training-only robots blocks their own rule
     _decisions_349(r, aff, changes)  # DECISIONS 349: blog posts with a product widget; reader pages' kinds
+    _decisions_350(r, changes)  # DECISIONS 350: the alias-links card names its template link
     _decisions_343(r, aff, changes, quick_unassessed)  # DECISIONS 343, 344: replaces what _decisions_304 added
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
@@ -1086,7 +1114,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338, 340, 343, 344, 347 and 349, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338, 340, 343, 344, 347, 349 and 350, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
@@ -1119,6 +1147,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         # articles, sub-pages copying the parent, the section's name as H1)
         _decisions_347(r, cert)  # DECISIONS 347: page types again; training-only robots blocks their own rule
         _decisions_349(r, affected, cert)  # DECISIONS 349: blog posts with a product widget; reader pages' kinds
+        _decisions_350(r, cert)  # DECISIONS 350: the alias-links card names its template link
         _decisions_343(r, affected, cert)
     if cert:
         from .report import problem_summary

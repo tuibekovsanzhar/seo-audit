@@ -2292,7 +2292,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                 "columns": {k: say(f"cards.col.{k}") for k in ("address", "read", "page_type", "importance", "value", "finding")},
                 "rows": [{"url": r["url"], "address": r["address"], "read": r["read"],  # DECISIONS 323
                           "read_label": page_rows.read_word(r["read"], chosen),
-                          "page_type": W["page_type"].get(r["page_type"], r["page_type"] or "") if r["page_type"] else "",
+                          "page_type": page_rows.type_word(r["page_type"], chosen, (data.get("_selection_business") or {}).get("id"),
+                                                           W["page_type"]),  # DECISIONS 350
                           "importance": r["importance"] if isinstance(r["importance"], (int, float)) else None,
                           "value": "; ".join(r["values"]), "finding_ids": r["finding_ids"]} for r in rows]}
 

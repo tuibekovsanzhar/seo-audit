@@ -38,8 +38,9 @@ from .page_words import ARTICLE_FOLDERS, CATEGORY_WORDS, PRODUCT_FOLDERS, fold
 
 # 3 (DECISIONS 347): a sitewide og:type is a site default, not a page's type; item addresses with an id are products,
 # pages listing them categories; store and branch pages are "location"; account and sign-in pages are utility; the
-# homepage is the most important page.
-METHOD_VERSION = 3
+# homepage is the most important page. 4 (DECISIONS 350): a place page needs coordinates or opening hours, its own place
+# markup, and no product, offer or service markup.
+METHOD_VERSION = 4
 PAGE_TYPES = ("home", "category", "product", "blog_article", "location", "policy", "utility", "other")
 
 # -- URL pattern ---------------------------------------------------------------------------------------------------
@@ -192,18 +193,29 @@ LOCATION_TYPES = frozenset({"Store", "LocalBusiness", "Optician", "AutoDealer", 
                             "MedicalClinic", "Dentist", "Hospital", "BankOrCreditUnion", "ClothingStore", "ShoeStore",
                             "ElectronicsStore", "HomeGoodsStore", "GroceryStore", "DepartmentStore", "JewelryStore",
                             "SportingGoodsStore", "HealthAndBeautyBusiness", "AutoRepair", "Hotel", "Place"})
-PLACE_DETAIL_TYPES = frozenset({"GeoCoordinates", "OpeningHoursSpecification", "PostalAddress"})
+# DECISIONS 350 (isbank: /ihtiyac-kredisi and /ek-hesap carry the bank's BankOrCreditUnion and PostalAddress markup
+# beside their loan offer): a postal address alone is any organisation's; a place page has coordinates or opening hours.
+PLACE_DETAIL_TYPES = frozenset({"GeoCoordinates", "OpeningHoursSpecification"})
+# Markup of what a page sells or does: such a page is a product, fee or calculator page, never one place.
+NOT_A_PLACE_TYPES = frozenset({"Product", "ProductGroup", "Offer", "AggregateOffer", "LoanOrCredit", "FinancialProduct",
+                               "BankAccount", "DepositAccount", "CreditCard", "PaymentCard", "InvestmentOrDeposit",
+                               "MortgageLoan", "Service", "FinancialService", "WebApplication", "SoftwareApplication",
+                               "ItemList", "OfferCatalog"})
 _MAP = re.compile(r"google\.[a-z.]+/maps|maps\.google|yandex\.[a-z.]+/map|/maps/embed|openstreetmap\.org", re.IGNORECASE)
 _HOURS = re.compile(r"\b(?:çalışma|calisma|açılış|acilis|mağaza|magaza|ziyaret) saatleri\b|\bopening hours\b|\bstore hours\b",
                     re.IGNORECASE)
 
 
-def location_reason(page) -> str | None:
-    """DECISIONS 347: a store, branch or other place of the business: its own place markup with an address, coordinates
-    or opening hours; or an embedded map with opening hours in its headings. None otherwise."""
+def location_reason(page, sitewide_types: frozenset = frozenset()) -> str | None:
+    """DECISIONS 347, 350: a page that is mainly one place of the business (a store, a branch): its own place markup
+    (not one most pages carry) with coordinates or opening hours; or an embedded map with opening hours in its headings
+    or GeoCoordinates. Never a page whose markup says it sells or does something (a product, a loan, an offer, a
+    service, a calculator). None otherwise."""
     a = page.analysis or {}
     types = set((a.get("structured_data") or {}).get("types") or [])
-    place = sorted(types & LOCATION_TYPES)
+    if types & NOT_A_PLACE_TYPES:
+        return None
+    place = sorted((types - set(sitewide_types)) & LOCATION_TYPES)
     if place and types & PLACE_DETAIL_TYPES:
         return f"{place[0]} markup with {sorted(types & PLACE_DETAIL_TYPES)[0]}"
     maps = any(_MAP.search(f.get("src") or "") for f in a.get("iframes") or [] if isinstance(f, dict))
@@ -213,6 +225,8 @@ def location_reason(page) -> str | None:
     if maps and "GeoCoordinates" in types:
         return "an embedded map and GeoCoordinates"
     return None
+
+
 # "blogs" too (Shopify); STR-3's ARTICLE_FOLDERS is left as it is.
 ARTICLE_FOLDERS_GROUPING = ARTICLE_FOLDERS | frozenset({"blogs"})
 POLICY_FOLDERS = frozenset({"policies", "policy", "legal", "yasal", "politikalar", "sozlesmeler"})
@@ -310,7 +324,7 @@ def page_type(page, home: str, homes: set[str], products: dict, site_og: str | N
         return "blog_article", f"path /{body[0]}/…"
     if item_address(page.url):
         return "product", "an item address with a model code and an id"
-    place = location_reason(page)
+    place = location_reason(page, sitewide_types)
     if place:
         return "location", place
     kind, why = page_kind(page, home, products)

@@ -534,6 +534,23 @@ def head_element(c: dict) -> str:
     return f"<{c.get('tag') or '?'}" + (f"#{c['id']}" if c.get("id") else "") + (f".{cls}" if cls else "") + ">"
 
 
+def page_kind_of(rec: dict) -> str | None:
+    """DECISIONS 350: a page's type as the rows show it: the business profile's type when one applies (as the sampling
+    and the key pages use it), the general page type for a page the profile did not match or with no profile."""
+    biz = rec.get("business_page_type")
+    return biz if biz and biz != "other" else rec.get("page_type")
+
+
+def type_word(kind: str | None, lang: str, profile_id: str | None, generic: dict) -> str:
+    """The words for a page type: the general type's (`generic`), else the profile's own label (DECISIONS 350)."""
+    if not kind:
+        return ""
+    if kind in generic:
+        return generic[kind]
+    from .business_types import type_label
+    return type_label(profile_id, kind, lang) or kind
+
+
 def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *, todos: list[dict] | None = None,
                  words: Callable[[dict], dict | None] | None = None, title: Callable[[str, str], str] | None = None,
                  fix: Callable[[str], str] | None = None) -> list[dict]:
@@ -576,7 +593,7 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
                     "placement": g.get("placement"), "card": by_id.get(m.get("id")),
                     "url": url, "address": display_address(url, hosts) if url else W["site"],
                     "host_level": bool(hosts), "page": bool(url) and not hosts and not file,
-                    "page_type": None if file else rec.get("page_type"), "importance": None if file else rec.get("importance"),
+                    "page_type": None if file else page_kind_of(rec), "importance": None if file else rec.get("importance"),
                     "value": head["value"] if head else
                     measured(m, url, lang, measures.get(url.rstrip("/")) if read else None, read) if url else "",
                     "read": read,
@@ -611,7 +628,7 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
                          "title": t.get("title") or "", "short": t.get("title") or "", "fix": (t.get("steps") or "").split("\n")[0],
                          "severity": t.get("severity") or "Info", "issue_type": "issue", "placement": "note", "card": t.get("n"),
                          "url": url, "address": display_address(url, None), "host_level": False, "page": not file,
-                         "page_type": rec.get("page_type"), "importance": rec.get("importance"), "value": notes.get(url, ""),
+                         "page_type": page_kind_of(rec), "importance": rec.get("importance"), "value": notes.get(url, ""),
                          "read": read, "_group": 10_000 + (t.get("n") or 99)})
     order = {s: i for i, s in enumerate(SEVERITIES)}
     # DECISIONS 323: within each card (and among the rows of no card), the pages read first, the addresses never read

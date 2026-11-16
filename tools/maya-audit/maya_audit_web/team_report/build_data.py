@@ -358,6 +358,7 @@ def topic_text(kind, topics, lang):
 
 # Kart adımları kutusuna güvenle sığan biçim (DECISIONS 270): en çok 4 satır, satır başına en çok 75 karakter.
 STEP_LINES, STEP_CHARS = 4, 75
+TEMPLATE_LINK_RULES = ("idx6.alias_links", "idx6.links_to_redirect")  # DECISIONS 350
 
 
 def steps_from(text):
@@ -489,6 +490,23 @@ class Builder:
         if rule in STATUS_TITLES:
             entry = self.status_words(f, rule, entry)
         return entry
+
+    def template_link_words(self, f, entry):
+        """DECISIONS 350: a card whose pages all carry one template link names that link, where it sits and the
+        address to give it, in its first two steps (one fix in the template, not one per page)."""
+        tl = (f.get("evidence") or {}).get("template_link") if f else None
+        if not isinstance(tl, dict) or not tl.get("final") or "tpl_link_step" not in self.L:
+            return entry
+        final = re.sub(r"^https?://", "", str(tl["final"]))
+        where = self.L["tpl_link_where"].get(tl.get("where") or "", self.L["tpl_link_where"]["content"])
+        anchor = (tl.get("anchor") or "").strip()
+        first = fmt(self.L["tpl_link_step"], where=where, anchor=f"“{anchor[:24]}” " if anchor else "")
+        second = fmt(self.L["tpl_link_to"], final=final)
+        if len(second) > STEP_CHARS:
+            second = second[:STEP_CHARS - 1] + "…"
+        self.fact(final, anchor, tl.get("url"))
+        steps = [first[:STEP_CHARS], second] + [x for x in list(entry.get("steps") or [])[1:]]
+        return {**entry, "steps": steps[:STEP_LINES]}
 
     def status_words(self, f, rule, entry):
         """DECISIONS 343: the HTTP status codes a card's words name. A redirect card names the code the site answered
@@ -1912,6 +1930,13 @@ class Builder:
                     pre_steps = "\n".join([self.L["sitemap_step_target"], self.L["sitemap_step_server"]] + lines)
                     conditional = [c for c in conditional if c.get("text") in lines]
                     self.fact(301, 404, 410)
+                if rule in TEMPLATE_LINK_RULES:
+                    # DECISIONS 350: one template link on every page: its place and text, and the address to give it
+                    named = self.template_link_words(f, {"steps": (pre_steps or "").split("\n")})
+                    if named.get("steps") and named["steps"][:1] != (pre_steps or "").split("\n")[:1]:
+                        lines = [x for x in named["steps"] if x.strip()]
+                        pre_steps = "\n".join(lines[:STEP_LINES])
+                        conditional = [c for c in conditional if c.get("text") in lines]
                 # Maya Audit P2: bozuk bloğun düzelince de eksik kalacak önerilen alanları (ör. logo, sameAs)
                 lacking = (f.get("evidence") or {}).get("recommended_still_lacking") or []
                 if lacking:
@@ -2131,7 +2156,8 @@ class Builder:
             elif line["kind"] == "block_pages":  # DECISIONS 317
                 from maya_audit.client_appendix import block_pages_text  # type: ignore
                 limits.append(block_pages_text(line, lang))
-                self.fact(line.get("blocked"), line.get("allowed"), line.get("read"), 429)  # DECISIONS 348: "or a 429"
+                self.fact(line.get("blocked"), line.get("allowed"), line.get("read"), line.get("new"), 429,  # DECISIONS 348
+                          (line.get("read") or 0) - (line.get("new") or 0) if isinstance(line.get("new"), int) else None)
             elif line["kind"] == "sampling":  # DECISIONS 327: pages read per page type of an Akıllı audit
                 from maya_audit.sampling import coverage_text as sampled_text  # type: ignore
                 limits.append(sampled_text(line.get("rows") or [], lang))

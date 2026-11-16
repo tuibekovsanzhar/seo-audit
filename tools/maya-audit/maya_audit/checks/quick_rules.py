@@ -174,9 +174,14 @@ def alias_links(read, groups: dict, key_urls=frozenset()) -> list[Finding]:
         return []
     patterns = Counter((groups.get(t) or {}).get("url_pattern") or "/" for t in targets)
     top = sorted(targets, key=lambda t: (-len(targets[t]), t))[:20]
+    # DECISIONS 350: the link a template puts on most of these pages, named with its text, place and canonical
+    from .stage8_rules import TEMPLATE_LINK_SHARE, template_link
+    shared = (template_link(read, top[0], targets[top[0]], aliases[top[0]], "canonical")
+              if len(targets[top[0]]) >= TEMPLATE_LINK_SHARE * len(pages) and len(pages) >= 5 else None)
     return [Finding("IDX-6", f"{links} internal link(s) on {len(pages)} page(s) point to an address whose canonical is another page",
         Severity.S4, Confidence.VERIFIED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(pages),
         {"link_count": links, "page_count": len(pages), "alias_targets": len(targets),
+         **({"template_link": shared} if shared else {}),
          "targets": [{"url": t, "canonical": aliases[t], "linked_from_pages": len(targets[t])} for t in top],
          "target_patterns": dict(patterns.most_common(10)),
          "rule": "a link (menu, content or footer) to a page read whose canonical names another address (page grouping's aliases)"},
