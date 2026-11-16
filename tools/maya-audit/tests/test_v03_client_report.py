@@ -125,7 +125,8 @@ def test_maya_own_limits_are_coverage_never_a_client_card():
     r["crawl"].update(stop_reason="page_cap", config={"max_pages": 50}, deadline_hit=True)
     sel = cs.select(r)
     assert not sel["cards"] and sel["own_limits"][0]["finding_ids"] == ["R"]
-    assert [line["kind"] for line in sel["coverage"]["lines"]][:3] == ["page_cap", "time_budget", "reader"]
+    # DECISIONS 348: each source's reads come first
+    assert [line["kind"] for line in sel["coverage"]["lines"]][:4] == ["sources", "page_cap", "time_budget", "reader"]
 
 
 def test_at_most_fifteen_cards_but_every_blocker_and_high_is_kept():

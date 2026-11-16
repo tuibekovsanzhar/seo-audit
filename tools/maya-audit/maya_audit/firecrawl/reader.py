@@ -578,6 +578,39 @@ def _own_pace(client: ContentProvider, options: Options, result: CrawlResult, cf
     return clock.reader_pace
 
 
+MAYA_STOPPED_SCOPE_WHY = ("Maya's own crawler was stopped (rate limit or block) before it asked for the plan's pages, so "
+                          "the reader reads every planned, sitemap and linked address up to the page limit, not only the "
+                          "pages Maya could not read (DECISIONS 348)")
+
+
+def _jitter() -> float:
+    """A factor from 1.0 to 1.5 on a retry's wait, so the retried requests do not all arrive at once."""
+    import random
+    return 1.0 + random.random() / 2
+
+
+def _maya_stopped(result: CrawlResult) -> str | None:
+    """Why Maya's own page requests stopped early (a rate limit, or a block answered with 429), else None."""
+    from .. import maya_blocked
+    if result.stop_reason == StopReason.RATE_LIMIT:
+        return "rate_limit"
+    try:
+        if maya_blocked.holds(result):
+            return "blocked"
+    except Exception:  # noqa: BLE001  a partial result: not stopped by a block
+        return None
+    return None
+
+
+def _retry_later(retries: deque, due: float, url: str, via, depth) -> None:
+    """Put a second try in the retry queue, kept in time order (a jittered wait may be shorter than one queued)."""
+    items = list(retries)
+    at = next((i for i, item in enumerate(items) if item[0] > due), len(items))
+    items.insert(at, (due, url, via, depth))
+    retries.clear()
+    retries.extend(items)
+
+
 def needed_scope(result: CrawlResult, cfg: CrawlConfig) -> dict[str, Any]:
     """DECISIONS 327 (Akıllı, "needed"): which pages the reader reads. A page Maya could not read (block page, 429,
     empty); every page of a URL template where a page Maya read shows the raw-HTML JavaScript signals (empty mount node,
@@ -688,9 +721,16 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
     # so it never uses up the limit; Maya's pages that were read count also when the crawl as a whole counted as blocked
     # (before, a blocked crawl's few good pages were left out, and the two together could pass the plan).
     own_read = {page.url for page in result.pages if _usable(page)}
-    scope = needed_scope(result, cfg) if options.read_scope == "needed" and not blocked else None
+    # DECISIONS 348 (owner, naturesgarden.net: Maya's crawler stopped by a Retry-After of 60 s after 7 pages, and the
+    # "needed" reading then read only those 7 of 144 allowed): when Maya's own crawler was stopped by a rate limit or a
+    # block, every address of the plan (sitemap and links, up to the page limit) goes to the reader, not only the pages
+    # Maya could not read and one per template.
+    maya_stopped = _maya_stopped(result)
+    scope = (needed_scope(result, cfg) if options.read_scope == "needed" and not blocked and not maya_stopped else None)
     if scope is not None:
         info["scope"] = scope["record"]
+    elif options.read_scope == "needed" and maya_stopped:
+        info["scope"] = {"mode": "all", "why": MAYA_STOPPED_SCOPE_WHY, "maya_stopped": maya_stopped}
     budget_new = max(0, options.max_pages - len(own_read)) if own_read else None
     over_budget: list[str] = []
 
@@ -754,6 +794,7 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
     now = clock.clock if clock is not None and hasattr(clock, "clock") else _clock.monotonic
     nap = clock.sleep if clock is not None and hasattr(clock, "sleep") else _clock.sleep
     retries: deque = deque()
+    rate_retried: set[str] = set()  # DECISIONS 348: pages asked once more after a 429
     timed_out: set[str] = set()     # pages whose first call timed out
     sent_again: set[str] = set()    # pages asked for a second time
     skipped_after_timeout: list[str] = []
@@ -862,10 +903,15 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
                 raise
             except ProviderRateLimited as exc:
                 # Firecrawl's own limit, not the site's answer: fewer requests at once, and the reading goes on.
+                # DECISIONS 348: the page is asked for once more after a jittered wait, then left.
                 asked += 1
                 sent += 1
-                rows.append({"url": url, "outcome": "failed", "reason": str(exc)})
                 back_off("429 from Firecrawl")
+                if url not in rate_retried:
+                    rate_retried.add(url)
+                    _retry_later(retries, now() + settings.RETRY_WAIT_S * _jitter(), url, via, depth)
+                else:
+                    rows.append({"url": url, "outcome": "failed", "reason": str(exc), "retried": True})
                 continue
             except (PossiblyBilled, ProviderTimedOut) as exc:
                 if not getattr(exc, "timed_out", False):
@@ -912,6 +958,11 @@ def _read_pages(result: CrawlResult, cfg: CrawlConfig, client: ContentProvider, 
                 # The site's own answer to Firecrawl: Firecrawl's pace slows down. Maya's own limit is about this
                 # computer's requests, so it is left as it is (DECISIONS 295).
                 back_off(f"{'429' if fetched.status == 429 else '5xx'} from the site")
+                if fetched.status == 429 and url not in rate_retried and not fetched.cached:
+                    # DECISIONS 348: the site's 429 through Firecrawl: once more after a jittered wait
+                    rate_retried.add(url)
+                    _retry_later(retries, now() + settings.RETRY_WAIT_S * _jitter(), url, via, depth)
+                    continue
             media = str(getattr(fetched, 'content_type', '') or '').lower()
             if media.startswith(('audio/', 'video/')):
                 diagnostic = {"url": url, "kind": "media", "source": via, "outcome": "unsupported_resource",

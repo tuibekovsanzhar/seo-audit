@@ -498,6 +498,7 @@ class Crawler:
         fetches = 0
         consecutive_rate_limited = 0
         total_cooldown_s = 0.0
+        long_waits: dict[str, float] = {}  # DECISIONS 348: host -> the one long Retry-After waited out there
         rate_limit_notes: list[str] = []
         start_chain = True  # still following the start URL's redirect chain
         stop_reason: StopReason | None = None
@@ -566,6 +567,12 @@ class Crawler:
             # The start page's 429 has a longer cap (DECISIONS 286): without it nothing is read at all. Still once.
             cap = (max(cfg.max_retry_after_s, cfg.start_max_retry_after_s)
                    if via == "start" and response.status == 429 else cfg.max_retry_after_s)
+            host = (urlsplit(url).hostname or "").lower()
+            if (response.status in (429, 503) and retry_after is not None and cap < retry_after <= cfg.long_retry_after_s
+                    and host not in long_waits):
+                # DECISIONS 348: one longer wait (up to long_retry_after_s) per host, then the same single retry
+                long_waits[host] = retry_after
+                cap = retry_after
             if response.status in (429, 503) and retry_after is not None and retry_after <= cap:
                 if response.status == 503:  # a 429's wait is counted below, with the rate limit
                     total_cooldown_s += retry_after
@@ -652,10 +659,16 @@ class Crawler:
                     break
                 if retry_after is not None and retry_after > cfg.max_retry_after_s:
                     stop_reason = StopReason.RATE_LIMIT
-                    stop_detail = (
-                        f"{url} asked Maya to wait {retry_after:.0f}s (Retry-After), longer than the "
-                        f"{cfg.max_retry_after_s:.0f}s allowed; stopped requesting pages"
-                    )
+                    if retry_after > cfg.long_retry_after_s:
+                        stop_detail = (
+                            f"{url} asked Maya to wait {retry_after:.0f}s (Retry-After), longer than the "
+                            f"{cfg.long_retry_after_s:.0f}s allowed; stopped requesting pages"
+                        )
+                    else:
+                        stop_detail = (
+                            f"{url} asked Maya to wait {retry_after:.0f}s (Retry-After) again, after the one long wait "
+                            f"of {long_waits.get(host, retry_after):.0f}s allowed per host; stopped requesting pages"
+                        )
                     break
                 if consecutive_rate_limited >= cfg.rate_limit_stop_after:
                     stop_reason = StopReason.RATE_LIMIT

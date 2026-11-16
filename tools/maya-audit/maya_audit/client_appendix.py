@@ -115,7 +115,7 @@ WORDS = {
                       "intent": "kasıtlı olabilir", "firecrawl_only": "yalnız Firecrawl kopyasında görüldü", "rendered_html": "işlenmiş HTML (Firecrawl), ham boyutla karşılaştırılamaz",
                       "spoofed_googlebot": "Googlebot kimliğiyle yapılan isteğe 403/429",
                       "names_in_markup": "diğer marka adları yalnız yapısal veride"},
-           "kind": {"page_cap": "Sayfa sınırı", "time_budget": "Süre sınırı", "reader": "Okuma yolu", "block_pages": "Engel sayfaları", "sampling": "Akıllı örneklem",
+           "kind": {"page_cap": "Sayfa sınırı", "time_budget": "Süre sınırı", "reader": "Okuma yolu", "block_pages": "Engel sayfaları", "sampling": "Akıllı örneklem", "sources": "Kaynaklar",
                     "not_assessed": "Değerlendirilmedi"},
            "page_type": {"home": "ana sayfa", "category": "kategori", "product": "ürün", "blog_article": "blog yazısı",
                          "location": "mağaza / konum sayfası", "policy": "politika sayfası", "utility": "yardımcı sayfa (arama, sepet, hesap)", "other": "diğer"},
@@ -163,7 +163,7 @@ WORDS = {
                       "intent": "may be intentional", "firecrawl_only": "seen only in Firecrawl's copy", "rendered_html": "rendered HTML (Firecrawl), not comparable with a raw size",
                       "spoofed_googlebot": "403/429 to a request with Googlebot's user agent",
                       "names_in_markup": "the other brand names are only in structured data"},
-           "kind": {"page_cap": "Page cap", "time_budget": "Time budget", "reader": "How pages were read", "block_pages": "Block pages", "sampling": "Smart sample",
+           "kind": {"page_cap": "Page cap", "time_budget": "Time budget", "reader": "How pages were read", "block_pages": "Block pages", "sampling": "Smart sample", "sources": "Sources",
                     "not_assessed": "Not assessed"},
            "page_type": {"home": "homepage", "category": "category", "product": "product", "blog_article": "blog article",
                          "location": "store / location page", "policy": "policy page", "utility": "utility page (search, cart, account)", "other": "other"},
@@ -207,11 +207,11 @@ def block_pages_text(line: dict, lang: str) -> str:
     blocked, allowed, read = int(line.get("blocked") or 0), int(line.get("allowed") or 0), int(line.get("read") or 0)
     time_first = line.get("stopped") == "time_limit" and read < allowed
     if lang == "tr":
-        return (f"Engel sayfaları sayfa sınırına sayılmadı: Maya'nın tarayıcısı {blocked} istekte engel sayfası aldı; sayfa "
+        return (f"Engel sayfaları sayfa sınırına sayılmadı: Maya'nın tarayıcısı {blocked} istekte engel sayfası ya da 429 aldı; sayfa "
                 f"okuyucu en çok {allowed} sayfa okuyabilirdi, {read} sayfa okudu" + (" (süre sınırı daha önce doldu)." if time_first else "."))
     req = "request" if blocked == 1 else "requests"
     pages = "page" if allowed == 1 else "pages"
-    return (f"Block pages did not count toward the page limit: Maya's crawler got a block page on {blocked} {req}; the page "
+    return (f"Block pages did not count toward the page limit: Maya's crawler got a block page or a 429 on {blocked} {req}; the page "
             f"reader could read up to {allowed} {pages} and read {read}" + (" (the time limit came first)." if time_first else "."))
 
 
@@ -229,6 +229,9 @@ def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = No
                 else f"Time budget {line.get('seconds')} s; steps cut by time: {line.get('cut') or '—'}")
     if kind == "block_pages":
         return block_pages_text(line, lang)
+    if kind == "sources":  # DECISIONS 348
+        from .read_sources import lines as source_lines
+        return " ".join(source_lines(line, lang))
     if kind == "sampling":  # DECISIONS 327
         from .sampling import coverage_text as sampled_text
         return sampled_text(line.get("rows") or [], lang)

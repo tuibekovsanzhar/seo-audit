@@ -101,12 +101,13 @@ def test_the_start_page_cap_is_120_seconds(slept, no_lookups, wait, retried):
         assert outcome.result.stop_reason == StopReason.RATE_LIMIT and outcome.result.pages[0]._attempts == []
 
 
-def test_a_later_page_keeps_the_30_second_cap(slept, no_lookups):
-    """Counter-example: only the start page waits longer; any other page asking for 60 s still stops the crawl."""
+def test_a_later_page_waits_60_seconds_once_per_host_then_stops(slept, no_lookups):
+    """DECISIONS 348 (was: a later page kept the 30 s cap): a later page asking for 60 s is waited out once per host;
+    asked again, the crawl stops."""
     handler, _ = site([(200, None)], other=lambda r: httpx.Response(429, headers={**HTML, "retry-after": "60"}, text="x"))
     outcome = audit(handler)
     about = next(p for p in outcome.result.pages if p.url.endswith("/about"))
-    assert not about.retried_after_429 and 60.0 not in slept
+    assert about.retried_after_429 and slept.count(60.0) == 1
     assert outcome.result.stop_reason == StopReason.RATE_LIMIT
 
 

@@ -2210,4 +2210,30 @@ after = this change; the person's E-ticaret choice kept):
 | fast suite, first run | `6 failed, 3204 passed` (all fixed: payload size, two catalog notes, a title sample, method version, product folders under a sitewide og:type; the 429 sitemap test passed alone, a timing flake) |
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3395 passed, 4 skipped, 1 warning in 1074.29s (0:17:54)` |
 | CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
+| Push | `2af8d74` pushed on the owner's word (2026-11-16); CI run 43876848811 passed, 13:33:11-13:46:22 UTC (recorded with DECISIONS 348) |
+
+## A rate-limited site: the reader takes the whole plan, Maya waits up to 90 s once per host, reads per source (2026-11-16, DECISIONS 348)
+
+naturesgarden.net (Shopify), runs 7549f7ce, f105ec3c, 9269c4f8, from the saved data: Maya read 6 pages, then
+/collections/all answered 429 with Retry-After: 60 and the crawl stopped; Firecrawl was asked for 7 addresses and read
+all 7 (200 each; 0 × 403, 0 × 429, 0 challenge pages; 0 known addresses counted as "not requested" although 384 were
+unread). Cause: the Akıllı "needed" reading sent only addresses Maya had asked for. Züber 2bf9b1ce read 148 because its
+crawl counted as blocked (2 pages read), which skips that scope.
+
+| | Before | After |
+|---|---|---|
+| Reader after Maya's rate limit or block | "needed" scope: 7 addresses | the plan, links and sitemap up to the page limit: up to 144 new pages for 9269c4f8 |
+| Firecrawl 429 (its own or the site's) | the page failed, not asked again | asked once more after a 1.0-1.5 × jittered wait; concurrency steps down |
+| Maya's Retry-After 31-90 s on a later page | stop | waited once per host, then asked again; a second long one stops |
+| Kapsam / PDF / audit page | no per-source line | "Kaynaklar": Maya direct 7 asked, 6 read, 0 block, 1 × 429 (hız sınırında durdu); Firecrawl 7 asked, 7 read, 0 block, 0 × 429 |
+
+Not done offline: the extra pages need Firecrawl (paid) calls. The 9269c4f8 team report is refused before and after by an
+older check ("Teyit edin" title naming /cart).
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_rate_limit_handoff_348.py tests/test_rate_limited_start.py` | `27 passed` |
+| fast suite, first run | `2 failed, 3269 passed` (expected text of the block-pages line and the coverage order; updated) |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3406 passed, 4 skipped, 1 warning in 991.62s (0:16:31)` |
+| CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |

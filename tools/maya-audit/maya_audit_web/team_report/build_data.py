@@ -2124,10 +2124,14 @@ class Builder:
                 text, _ = self.w.title(None, line.get("title") or "")
                 limits.append(text or line.get("title"))
                 self.fact(line.get("title"))
+            elif line["kind"] == "sources":  # DECISIONS 348: each source's reads, block pages and 429s
+                from maya_audit.read_sources import lines as source_lines, numbers as source_numbers  # type: ignore
+                limits.extend(source_lines(line, lang))
+                self.fact(*source_numbers(line), 429)  # the status code the lines name
             elif line["kind"] == "block_pages":  # DECISIONS 317
                 from maya_audit.client_appendix import block_pages_text  # type: ignore
                 limits.append(block_pages_text(line, lang))
-                self.fact(line.get("blocked"), line.get("allowed"), line.get("read"))
+                self.fact(line.get("blocked"), line.get("allowed"), line.get("read"), 429)  # DECISIONS 348: "or a 429"
             elif line["kind"] == "sampling":  # DECISIONS 327: pages read per page type of an Akıllı audit
                 from maya_audit.sampling import coverage_text as sampled_text  # type: ignore
                 limits.append(sampled_text(line.get("rows") or [], lang))

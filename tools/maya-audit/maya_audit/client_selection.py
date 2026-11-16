@@ -1123,6 +1123,10 @@ def coverage(report: dict, limits: list[dict], records: dict[str, dict] | None =
     rows = sampled(report, records) if (report.get("crawl") or {}).get("sampling") else []
     if rows:
         lines.append({"kind": "sampling", "rows": rows})
+    from .read_sources import summary as by_source  # DECISIONS 348: each source's reads, block pages and 429s
+    sources = by_source(report)
+    if sources:
+        lines.insert(0, {"kind": "sources", **sources})
     reader = report.get("firecrawl") or {}
     return {"pages_read": status.get("pages_read", counts.get("pages_checked")),
             "known_not_read": unread,

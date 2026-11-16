@@ -101,7 +101,7 @@ def test_a_blocked_crawls_good_pages_count_and_its_block_pages_do_not(tmp_path, 
 def test_the_coverage_line_says_the_block_pages_did_not_count_in_both_languages():
     line = {"kind": "block_pages", "blocked": 50, "allowed": 50, "read": 13, "plan": 50, "stopped": "time_limit"}
     assert block_pages_text(line, "en") == ("Block pages did not count toward the page limit: Maya's crawler got a block page "
-                                            "on 50 requests; the page reader could read up to 50 pages and read 13 (the time limit came first).")
+                                            "or a 429 on 50 requests; the page reader could read up to 50 pages and read 13 (the time limit came first).")
     assert block_pages_text(line, "tr").startswith("Engel sayfaları sayfa sınırına sayılmadı: Maya'nın tarayıcısı 50 istekte")
     assert block_pages_text({**line, "stopped": "page_cap", "read": 50}, "tr").endswith("50 sayfa okudu.")
 

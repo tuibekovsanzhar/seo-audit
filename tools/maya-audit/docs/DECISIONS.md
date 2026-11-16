@@ -4920,3 +4920,35 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      the evidence's targets); the recommendation catalogue has a note for each new rule.
      Tests: `tests/test_shop_review_347.py` (50, a fake shop on loopback); `test_page_groups` (method 3) and
      `test_web_app` (a training-bot title sample) updated.
+348. **A site that rate-limits Maya's crawler: the reader takes the whole plan, Maya waits up to 90 s once per host,
+     and each source says what it read (Owner, 2026-11-16, after naturesgarden.net's three runs 7549f7ce, f105ec3c and
+     9269c4f8 each read 7 pages: the four points; the 90 s, the 1.0-1.5 jitter and the wording are as asked or agent
+     defaults).** Global rules; naturesgarden was only the test case.
+     *Why 7 (from the saved data, the same in all three runs):* Maya's crawler read 6 pages, then /collections/all
+     answered 429 with Retry-After: 60 (over the 30 s cap) and the crawl stopped. Firecrawl was asked for 7 addresses
+     and read all 7 (status 200 each; 0 × 403, 0 × 429, 0 challenge pages; `known_urls_not_requested` 0,
+     `sitemap_addresses_found` 0, 368 sitemap and 390 discovered addresses known). The other addresses were never sent:
+     the Akıllı plan's "needed" reading (DECISIONS 327) reads only pages Maya asked for and could not read, plus one per
+     template, and Maya had asked for only those 7. Züber (2bf9b1ce, also stopped by a rate limit) read 148 because Maya
+     had read only 2 pages there, so its crawl counted as blocked, and a blocked crawl skips the "needed" scope.
+     (1) *The reader after a stop* (`firecrawl.reader._read_pages`): when Maya's own page requests stopped on a rate
+     limit or a block (`_maya_stopped`), the "needed" scope is not applied: the plan's addresses in its order, then the
+     links and the sitemap, go to the reader up to the page limit (pages Maya read count against it, DECISIONS 316),
+     within robots.txt. `firecrawl.scope` says so (`mode: all`, `maya_stopped`). Firecrawl's own 429, and the site's
+     429 seen through Firecrawl, now ask for that page once more after `RETRY_WAIT_S` × a jitter of 1.0-1.5 (the retry
+     queue kept in time order); the reader's concurrency still steps down on each (DECISIONS 295). naturesgarden
+     9269c4f8 would now hand the reader up to 144 new pages from 384 known addresses Maya did not read.
+     (2) *Maya's own crawler* (`crawler.py`, `CrawlConfig.long_retry_after_s` 90): a Retry-After over 30 s and up to
+     90 s is waited out once per host, then the page is asked again; a second long one on that host stops the crawl
+     ("… asked Maya to wait 60s (Retry-After) again, after the one long wait of 60s allowed per host"); over 90 s stops
+     at once as before. The start page keeps its 120 s (DECISIONS 286).
+     (3) *Per source* (`read_sources`): a "Kaynaklar" line first in the coverage section: Maya's direct crawler (page
+     requests, read, block pages, 429s, why it stopped) and Firecrawl (the same, plus known addresses not requested, or
+     "kullanılmadı"). Shown in the Ek's "Kapsam", the team report's limits and the web app's audit summary (C6). The
+     block-pages line now says "engel sayfası ya da 429" (it counts both). 9269c4f8: "Maya'nın doğrudan tarayıcısı: 7
+     sayfa isteği, 6 okundu, 0 engel sayfası, 1 × 429 (hız sınırında durdu). Firecrawl: 7 sayfa isteği, 7 okundu, 0 engel
+     sayfası, 0 × 429."
+     *Not rebuilt offline:* the pages the reader would now read need Firecrawl calls (paid); only the coverage lines and
+     the count of addresses it would get are made from the saved data. The team report of 9269c4f8 is refused before
+     and after this change by an older check ("Teyit edin" title naming /cart, not among the report's addresses).
+     Tests: `tests/test_rate_limit_handoff_348.py` (13); `test_rate_limited_start` (a later page now waits 60 s once).

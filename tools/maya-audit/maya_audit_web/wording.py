@@ -1025,6 +1025,8 @@ TERM_PATTERNS = _frames((
     ("stop.cooldown", "spent {waited#}s waiting out rate limits, over the {allowed#}s allowed; stopped requesting pages"),
     ("stop.blocked_429", "blocked for Maya's crawler (429 on pages): {detail~:.+}"),
     ("stop.retry_after", "{url:https?://\\S+} asked Maya to wait {wait#}s (Retry-After), longer than the {allowed#}s allowed; stopped requesting pages"),
+    # DECISIONS 348: a second long Retry-After on a host after the one long wait allowed there
+    ("stop.retry_after_again", "{url:https?://\\S+} asked Maya to wait {wait#}s (Retry-After) again, after the one long wait of {allowed#}s allowed per host; stopped requesting pages"),
     ("stop.consecutive", "{count#} consecutive rate-limited responses"),
     ("stop.start_failed", "start URL could not be fetched: {error}"),
     ("stop.robots_status", "robots.txt returned {status#}; RFC 9309: assume complete disallow"),

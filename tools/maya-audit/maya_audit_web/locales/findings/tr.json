@@ -1538,7 +1538,8 @@
   "int4.empty_over_cap": "{n} boş sayfa tarayıcı denetimi isteği {cap} üst sınırını aştı",
   "int4.empty_untagged": "{n} boş sayfa tarayıcı denetimi isteğinde {header} başlığı yoktu",
   "int4.empty_agents": "boş sayfa tarayıcı denetimi istekleri başka kullanıcı aracıları kullandı: {agents}",
-  "fc.request_allowance": "Bu denetimin {pages} istek ve bir başlangıç payından oluşan toplam {total} Firecrawl istek hakkı kullanıldı. Yeni istek gönderilmedi."
+  "fc.request_allowance": "Bu denetimin {pages} istek ve bir başlangıç payından oluşan toplam {total} Firecrawl istek hakkı kullanıldı. Yeni istek gönderilmedi.",
+  "stop.retry_after_again": "{url}, Maya'dan yine {wait} saniye beklemesini istedi (Retry-After); bu sunucu için izin verilen tek uzun bekleme ({allowed} saniye) kullanılmıştı; sayfa istemek durduruldu"
  },
  "labels": {
   "robots.txt availability": "robots.txt erişilebilirliği",

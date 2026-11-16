@@ -287,6 +287,9 @@ class CrawlConfig:
     # The start page alone (DECISIONS 286): a 429 there with a Retry-After up to this long is waited out once, because
     # without it nothing at all is read (nihan.com.tr answered its first page request with 429 and Retry-After: 60).
     start_max_retry_after_s: float = 120.0
+    # DECISIONS 348 (owner, naturesgarden.net: Retry-After 60 stopped every run at 7 pages): a longer Retry-After, up to
+    # this long, is waited out once per host; a second long one on that host (or one longer than this) stops the crawl.
+    long_retry_after_s: float = 90.0
     # Stop after this many consecutive rate-limited pages without Retry-After.
     rate_limit_stop_after: int = 3
     # Adaptive backoff. A rate-limited response widens the gap between *all* later requests by this
