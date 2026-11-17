@@ -4395,6 +4395,18 @@
    ],
    "verify": "Yazım hatalı adresi açın; doğru sayfaya tek bir 301 ile gitmeli.",
    "summary": "Yazım hatalı adresler"
+  },
+  "idx6.links_to_entry_redirect": {
+   "title": "Giriş ve başvuru bağlantılarının yönlendirmesini kontrol edin",
+   "finding": "Bağlantılar yönlendiren bir giriş ya da başvuru girişine gidiyor",
+   "explanation": "Bağlantıyı tutun; yönlendirme kalıcıysa doğrudan son adrese verebilirsiniz. Menüdeki bağlantıyı kaldırmayın.",
+   "why": "Giriş ve başvuru girişleri ziyaretçinin siteye girdiği kapıdır; ara yönlendirme yalnız bir istek ekler.",
+   "steps": [
+    "Bağlantıyı menüde tutun",
+    "Yönlendirme kalıcıysa bağlantıyı son adrese verin"
+   ],
+   "verify": "Bağlantıyı açın; giriş ya da başvuru sayfası açılmalı.",
+   "summary": "Giriş ve başvuru bağlantıları"
   }
  }
 }

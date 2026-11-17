@@ -378,6 +378,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
          "Cloudflare e-mail obfuscation is on: the address is readable only with JavaScript"),
         # Stage 8a (DECISIONS 315): links to an address that redirects.
         # DECISIONS 344: a temporary redirect of an application or sign-in step: a note.
+        # DECISIONS 351: a link to a sign-in or application entry that redirects: keep it, at most link to its end.
+        ("idx6.links_to_entry_redirect", "{links#} internal link(s) on {pages#} page(s) point to a sign-in or application entry that redirects",
+         "{links:internal link|internal links} on {pages:page|pages} [links:points|point] to a sign-in or application entry that redirects"),
         # DECISIONS 347: a link to a page behind a sign-in that sends a visitor without a session to sign in: a note.
         ("idx6.links_to_login_redirect", "{links#} internal link(s) on {pages#} page(s) point to a page behind a sign-in that redirects to it",
          "{links:internal link|internal links} on {pages:page|pages} [links:points|point] to a page behind a sign-in that redirects to it"),

@@ -17,11 +17,13 @@ from collections import defaultdict
 
 LINK_4XX = ("idx1.4xx.referenced", "idx1.4xx.referenced.linked", "idx1.4xx.sitemap_only", "idx1.href_mistyped")
 SERVER = ("idx1.5xx", "idx1.5xx.once")
-TO_REDIRECT = ("idx6.links_to_redirect", "idx6.links_to_flow_redirect")  # DECISIONS 344: the note too, to check
+TO_REDIRECT = ("idx6.links_to_redirect", "idx6.links_to_flow_redirect",  # DECISIONS 344: the note too, to check
+               "idx6.links_to_entry_redirect")  # DECISIONS 351
+ALIAS = ("idx6.alias_links",)  # DECISIONS 351: each link to an address whose canonical is another page
 CHAINS = ("idx3.chain", "idx3.loop", "idx3.cookie", "idx3.intermittent", "idx3.self_once")
 CANONICAL = ("idx4.broken", "idx4.redirecting", "idx4.redirect_loop")
 HREFLANG = ("str9.status",)
-WHERE_RULES = LINK_4XX + SERVER + TO_REDIRECT + CHAINS + CANONICAL + HREFLANG
+WHERE_RULES = LINK_4XX + SERVER + TO_REDIRECT + CHAINS + CANONICAL + HREFLANG + ALIAS
 MAX_ROWS = 500  # per finding; the appendix says when more were cut
 
 
@@ -87,11 +89,18 @@ class _Crawl:
         if suggested is None:
             suggested = (end if end != links_to and isinstance(final_status, int) and 200 <= final_status < 300 and not loop
                          else "fix_loop" if loop else "remove")
+            # DECISIONS 351: a link to a redirect is pointed at where it ends, also when the crawl did not ask that
+            # address (another host: an application, a sign-in); it is never to be removed.
+            if suggested == "remove" and finding.get("rule_id") in TO_REDIRECT and end != links_to:
+                suggested = end
         edge = self.edge.get((source or "", links_to)) or {}
+        where = position or self.position(source, links_to)
+        if suggested == "remove" and where in ("menu", "footer"):
+            suggested = "fix_nav"  # DECISIONS 351: a menu or footer link is mended, never removed
         return {"finding_id": finding.get("id"), "rule_id": finding.get("rule_id"), "kind": kind,
                 "links_to": links_to, "status": first, "ends_at": end, "final_status": final_status, "loop": loop,
                 "source": source, "link_text": text if text is not None else (edge.get("anchor") or None),
-                "href": href or edge.get("href"), "position": position or self.position(source, links_to),
+                "href": href or edge.get("href"), "position": where,
                 "in_sitemap": links_to in self.listed, "sitemap_file": self.files.get(links_to), "suggested": suggested,
                 **extra}
 
@@ -150,6 +159,18 @@ def _rows_for(f: dict, c: _Crawl) -> list[dict]:
         return c.linked(f, [u for u in urls if isinstance(u, str) and u])
     if rule in TO_REDIRECT:
         return c.linked(f, [t.get("url") for t in _dicts(ev.get("targets")) if t.get("url")], direct_only=True)
+    if rule in ALIAS:
+        # DECISIONS 351: every link to an address whose canonical is another page, with the canonical as the target
+        rows = []
+        for t in _dicts(ev.get("targets")):
+            if not t.get("url"):
+                continue
+            for r in c.linked(f, [t["url"]], direct_only=True):
+                if r.get("kind") == "link":
+                    r.update(suggested=t.get("canonical") or r.get("suggested"), canonical=t.get("canonical"),
+                             replacement_url=t.get("canonical"))
+                    rows.append(r)
+        return rows
     if rule in CHAINS:
         starts = [ch["hops"][0] for ch in _dicts(ev.get("chains")) if ch.get("hops")]
         starts += [loop[0] for key in ("loops", "loops_in_the_crawl") for loop in ev.get(key) or [] if isinstance(loop, list) and loop]

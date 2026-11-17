@@ -33,6 +33,8 @@ SITEWIDE_P0 = ("acc2.blocks.sitewide",)
 # never urgent. A card made only of these rules is at most P2, whatever it scores; a person may still set P0 by hand.
 POLICY_RULES = ("acc2.training_block",)
 POLICY_CAP = "P2"
+# DECISIONS 351: links to a sign-in or application entry: a check, at most P3.
+RULE_CAPS = {"acc2.training_block": "P2", "idx6.links_to_entry_redirect": "P3"}
 # DECISIONS 329 (owner, after enpara 87f0425a's High broken-link card came out P3): the lowest level of a High or
 # Blocker card. The score and the card order are unchanged.
 HIGH_FLOOR = {"S1": "P2", "S2": "P2"}
@@ -41,10 +43,11 @@ WORDS = {"tr": {"P0": "Acil", "P1": "Öncelikli", "P2": "Planlı", "P3": "Sıras
 REASONS = {"tr": {"auto": "otomatik: indeksleme engeli ({where})", "set": "elle P0 yapıldı ({by}, {date})",
                   "removed": "otomatik P0 elle kaldırıldı ({by}, {date})", "home": "ana sayfa", "site": "site geneli",
                   "type": "{type}: {n}/{total} sayfa", "floor": "yüksek önem: en az P2",
-                  "policy": "politika tercihi: en fazla P2"},
+                  "policy": "politika tercihi: en fazla P2", "check": "kontrol edin: en fazla P3"},
            "en": {"auto": "automatic: indexing blocker ({where})", "set": "set to P0 by hand ({by}, {date})",
                   "removed": "automatic P0 taken off by hand ({by}, {date})", "home": "homepage", "site": "whole site",
-                  "type": "{type}: {n}/{total} pages", "floor": "high severity: at least P2", "policy": "a policy choice: at most P2"}}
+                  "type": "{type}: {n}/{total} pages", "floor": "high severity: at least P2", "policy": "a policy choice: at most P2",
+                  "check": "a check: at most P3"}}
 
 
 def spread(n: int, total: int) -> int:
@@ -159,10 +162,13 @@ def label(group: dict, ctx: Context, lists: dict | None, confirmations: dict | N
     for fid in group.get("finding_ids") or []:
         mark = (confirmations or {}).get("p0:" + str(fid)) or mark
     members = group.get("members") or []
-    if members and all(_matches(m.get("rule_id"), POLICY_RULES) for m in members):
+    caps = [next((c for r, c in RULE_CAPS.items() if _matches(m.get("rule_id"), (r,))), None) for m in members]
+    if members and all(caps):
+        # DECISIONS 347, 351: a card made only of capped rules is at most its loosest cap, whatever it scores
+        cap = max(caps, key=LEVELS.index)
         auto = None
-        if computed in ("P0", "P1"):
-            computed, floor = POLICY_CAP, words.get("policy") or floor
+        if computed is not None and LEVELS.index(computed) < LEVELS.index(cap):
+            computed, floor = cap, words.get("policy" if cap == POLICY_CAP else "check") or floor
     final, reason = ("P0", auto) if auto else (computed, None)
     if mark and mark.get("action") == "set":
         final, reason = "P0", words["set"].format(by=mark.get("by", ""), date=mark.get("date", ""))

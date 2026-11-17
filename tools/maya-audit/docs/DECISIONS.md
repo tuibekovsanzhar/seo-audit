@@ -5004,3 +5004,38 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      okuyucu Maya'nın okumadığı en çok 2 yeni sayfa okuyabilirdi, 0 yeni sayfa okudu (ayrıca Maya'nın okuduğu 91 sayfayı
      yeniden okudu)" (before: "en çok 2 sayfa okuyabilirdi, 91 sayfa okudu").
      Tests: `tests/test_bank_review_350.py` (14); method version 4 in `test_page_groups`, `test_shop_review_347`.
+351. **The follow-up on the isbank audit: entry links are kept, platform advice only on its platform, CMS edit
+     addresses are not pages (Owner, 2026-11-17: the three points; the word lists, the P3 cap's wording and the Kapsam
+     sentence are agent defaults).** Global rules; isbank (1b81bee4, rebuilt with f5d8066: the "690098d9" named in the
+     review is not an audit id in the history; this audit's current-engine copy was used) was only the test case.
+     (1) *Sign-in and application entries* (`stage8_rules._entry`, `idx6.links_to_entry_redirect`): a link to an
+     address that redirects (any status) whose address, query or end names a sign-in, internet banking, application or
+     sign-up entry (login, giris, internet şubesi, MainPageEnter, basvuru, application, apply, signup, register, kayıt,
+     üye ol, müşteri ol, hesap aç, onboarding), or whose redirect ends on another host named like an application or a
+     sign-in (app, login, online, internet, şube, secure, auth, apply, portal), is its own rule: Low, "Kontrol edin",
+     at most P3 (`priority_levels.RULE_CAPS`); the fix keeps the link and only says it may point straight at the final
+     address when the redirect is permanent; a template link's steps say "Şablonda menüdeki “Kredi” bağlantısını tutun;
+     kaldırmayın" / "Son adresi: …". It is checked after the sign-in (347) and application-step (344) notes.
+     *Never "kaldırın" for a link to a redirect:* "Bağlantı yerleri" gives such a link the address its redirect ends
+     at, also when the crawl did not ask that address (another host); a broken menu or footer link is "bağlantıyı
+     çalışan sayfaya verin (menü bağlantısı kalmalı)", never "kaldırın" (`link_places`, `fix_nav`).
+     (2) *Platform advice only on its platform* (`quick_rules.alias_fix`): the alias-links fix gives Shopify's step
+     ("within: collection") only when the platform is Shopify or the links are Shopify's /collections/…/products/…;
+     else "change the links to name the canonical address; when a template builds them (a menu, a footer, a card),
+     change it there, once". Saved findings are rewritten (`reassess_rules._decisions_351`). The card's links are
+     rows of "Bağlantı yerleri" (`link_places.ALIAS`): page, link text, place, written href and the canonical as the
+     suggested target.
+     (3) *CMS edit and preview addresses* (`urls.edit_preview`: efl--edit, edit, preview, preview_theme_id,
+     elementor-preview, vc_editable, et_fb, fl_builder, customize_changeset_uuid, wcmmode … and any key ending
+     "--edit"/"-preview"): the crawl folds a link to one into its clean address (asked once, under that address); a
+     saved one is no page read (`client_selection.not_a_page`), is not typed or scored (`page_groups` METHOD_VERSION
+     5), and is no row of "Sayfa bazında"; the alias-links card still names links to it, with the clean address as
+     their canonical; Kapsam says how many were read or linked ("CMS düzenleme/önizleme adresleri ayrı sayfa
+     sayılmadı: 1 okunan, 2 bağlantı verilen adres (/?efl--edit=1) …").
+     *isbank, before → after:* card 8 "Bağlantıları doğrudan son adrese verin" (P2, Sorun; 124 "Önerilen hedef:
+     kaldırın") → "Giriş ve başvuru bağlantılarının yönlendirmesini kontrol edin" (P3, Kontrol edin; 124 rows to
+     personalloanapp.isbank.com.tr/?amount=50000&term=24); card 7 keeps its place and steps, its "Ne yapılmalı" loses
+     the Shopify text, and its 139 link rows are in "Bağlantı yerleri"; pages read 148 → 147; card 15 sameAs (the
+     homepage and its edit copy) → "Videodaki mesajı sayfaya metin olarak yazın" (sameAs now reaches one page).
+     Tests: `tests/test_bank_followup_351.py` (19); method version 5 in `test_page_groups`, `test_shop_review_347`; the
+     alias fix as a run-time choice in `test_wording`.

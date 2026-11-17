@@ -330,6 +330,7 @@
   "acc2.training_block.sitewide": "warning",
   "acc2.training_block.sample": "warning",
   "idx6.links_to_login_redirect": "warning",
-  "idx8.typo_copies": "issue"
+  "idx8.typo_copies": "issue",
+  "idx6.links_to_entry_redirect": "warning"
  }
 }

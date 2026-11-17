@@ -210,6 +210,9 @@ def engine_sentences():
 # A fix or an expected result the engine puts together at run time: (check id, kind, the source expression) -> the
 # sentences it can produce, as the engine writes them. A new place fails the test until it is listed here.
 BUILT = {
+    # DECISIONS 351: the alias-links fix is the general one, or Shopify's step on a Shopify site
+    ("IDX-6", "fix", "alias_fix(platform, targets)"): [__import__("maya_audit.checks.quick_rules", fromlist=["x"]).ALIAS_LINKS_FIX,
+                                                       __import__("maya_audit.checks.quick_rules", fromlist=["x"]).ALIAS_LINKS_FIX_SHOPIFY],
     ("STR-7", "fix", "FORMAT_ACTION"): [__import__("maya_audit.evidence_accuracy", fromlist=["FORMAT_ACTION"]).FORMAT_ACTION],
     ("STR-7", "expected", "FORMAT_EXPECTED"): [__import__("maya_audit.evidence_accuracy", fromlist=["FORMAT_EXPECTED"]).FORMAT_EXPECTED],
     ("ACC-9", "fix", None): ['If you own this site: allow the user agent "Maya-Audit" in the firewall or bot-protection rules and run the audit again; verify ownership '

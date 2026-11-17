@@ -209,7 +209,7 @@ def test_page_types_from_what_each_page_is_not_the_sitewide_og_type(shop):
     assert t["/magaza/merkez"] == "location"
     assert t["/iletisim"] not in ("category", "product")
     assert t["/hesabim"] == "utility" and t["/uye/giris"] == "utility"
-    assert sealed.report["crawl"]["page_grouping"]["method_version"] == page_groups.METHOD_VERSION == 4
+    assert sealed.report["crawl"]["page_grouping"]["method_version"] == page_groups.METHOD_VERSION == 5
 
 
 @pytest.mark.parametrize("url,item", [

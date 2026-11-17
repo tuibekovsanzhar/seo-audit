@@ -120,6 +120,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
     ),
     "IDX-6": (
         # The checklist's quick checks (DECISIONS 304); Stage 8a (DECISIONS 315).
+        (r"point to a sign-in or application entry that redirects", "developer", "S", "A sign-in or application entry is the visitor's way in; its redirect costs one request, and the link must stay."),  # DECISIONS 351
         (r"point to a page behind a sign-in that redirects to it", "developer", "S", "A page behind a sign-in sends a visitor without a session to the sign-in page; this is how such pages work, so it is a note, not a redirect to fix."),  # DECISIONS 347
         (r"point to an application or sign-in step that redirects temporarily", "developer", "S", "An application step may redirect only a new visitor; checked in a browser it may open directly, so this is a note to confirm, not a problem."),  # DECISIONS 344
         (r"point to an address that redirects", "developer", "S", "Each link to a redirect costs crawlers and visitors one more request; linking to the final address removes it."),

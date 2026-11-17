@@ -320,6 +320,9 @@ def not_a_page(url: str | None, content_type: str | None = None) -> bool:
     a response whose media type is not HTML (DECISIONS 347)."""
     if content_type and content_type.split(";", 1)[0].strip().lower() not in PAGE_MEDIA:
         return True
+    from .urls import edit_preview
+    if edit_preview(url):  # DECISIONS 351: a CMS edit or preview address is its clean page, not another page
+        return True
     try:
         path = urlsplit(url or "").path
     except ValueError:
@@ -1103,6 +1106,20 @@ def block_pages_line(report: dict) -> dict | None:
             "stopped": cov.get("not_requested_because")}
 
 
+def edit_pages_line(report: dict) -> dict | None:
+    """DECISIONS 351: the CMS edit and preview addresses (?efl--edit=1, ?preview=) the crawl met, read or linked: each
+    is its clean page, so none counts as a page read. {"kind": "edit_pages", "read", "linked", "examples"} or None."""
+    from .urls import edit_preview
+    crawl = report.get("crawl") or {}
+    pages = [p for p in crawl.get("pages") or [] if isinstance(p, dict)]
+    read = sorted({p.get("url") for p in pages if edit_preview(p.get("url"))})
+    linked = sorted({(e.get("target") or "").split("#")[0] for p in pages for e in p.get("outlinks") or []
+                     if edit_preview((e.get("target") or "").split("#")[0])})
+    if not read and not linked:
+        return None
+    return {"kind": "edit_pages", "read": len(read), "linked": len(linked), "examples": (read or linked)[:3]}
+
+
 def coverage(report: dict, limits: list[dict], records: dict[str, dict] | None = None) -> dict:
     """What Maya read and what it could not, for the coverage section: our limits, never a client problem."""
     crawl = report.get("crawl") or {}
@@ -1130,6 +1147,9 @@ def coverage(report: dict, limits: list[dict], records: dict[str, dict] | None =
     rows = sampled(report, records) if (report.get("crawl") or {}).get("sampling") else []
     if rows:
         lines.append({"kind": "sampling", "rows": rows})
+    edits = edit_pages_line(report)  # DECISIONS 351: CMS edit and preview addresses, not pages of their own
+    if edits:
+        lines.append(edits)
     from .read_sources import summary as by_source  # DECISIONS 348: each source's reads, block pages and 429s
     sources = by_source(report)
     if sources:

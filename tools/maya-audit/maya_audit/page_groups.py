@@ -39,8 +39,8 @@ from .page_words import ARTICLE_FOLDERS, CATEGORY_WORDS, PRODUCT_FOLDERS, fold
 # 3 (DECISIONS 347): a sitewide og:type is a site default, not a page's type; item addresses with an id are products,
 # pages listing them categories; store and branch pages are "location"; account and sign-in pages are utility; the
 # homepage is the most important page. 4 (DECISIONS 350): a place page needs coordinates or opening hours, its own place
-# markup, and no product, offer or service markup.
-METHOD_VERSION = 4
+# markup, and no product, offer or service markup. 5 (DECISIONS 351): CMS edit and preview addresses are not pages.
+METHOD_VERSION = 5
 PAGE_TYPES = ("home", "category", "product", "blog_article", "location", "policy", "utility", "other")
 
 # -- URL pattern ---------------------------------------------------------------------------------------------------
@@ -662,7 +662,9 @@ def annotate(result) -> dict:
 
     pages = list(result.pages)
     home = homepage_url(result)
-    read = [p for p in pages if p.analysis and readable_html(p)]
+    from .urls import edit_preview
+    # DECISIONS 351: a CMS edit or preview address is its clean page: never typed or scored as a page of its own
+    read = [p for p in pages if p.analysis and readable_html(p) and not edit_preview(p.url)]
     nodes = {p.url for p in read}
     origin = getattr(result, "origin", None) or ""
     known = [u for u in [p.url for p in pages] + list(result.discovered_urls or []) + list(result.sitemap_urls or [])

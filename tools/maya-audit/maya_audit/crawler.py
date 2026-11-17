@@ -42,7 +42,7 @@ from .render_discovery import LinkDiscovery
 from .scratchpad import (BLOCKED, CRAWLED, FAILED, MEMORY, QUEUED, RATE_LIMITED, SKIPPED,
                          FrontierUrl, Scratchpad, robots_fingerprint)
 from .sitemap import discover_sitemap_urls
-from .urls import (crawl_identity, host_allowed, is_allowed_origin_move, is_loopback_host, lock_key, normalize_url,
+from .urls import (crawl_identity, edit_preview, without_edit_preview, host_allowed, is_allowed_origin_move, is_loopback_host, lock_key, normalize_url,
                    origin_of, same_origin)
 from . import clock as _clock
 
@@ -464,6 +464,9 @@ class Crawler:
         def enqueue(items: list) -> None:
             kept = []
             for item in items:
+                if item.via not in ("redirect", "start") and edit_preview(item.url):
+                    # DECISIONS 351: a CMS edit or preview address is its clean page, asked for once under that address
+                    item = replace(item, url=without_edit_preview(item.url))
                 first = seen_identity.setdefault(crawl_identity(item.url), item.url)
                 if first == item.url or item.via in ("redirect", "start"):
                     kept.append(item)

@@ -192,6 +192,35 @@ def _tracking(key: str) -> bool:
     return key.startswith("utm_") or key in _TRACKING_PARAMETERS or "sessid" in key
 
 
+# DECISIONS 351 (isbank: /?efl--edit=1, a CMS edit-mode address of the homepage, was read as a page of its own): query
+# parameters that open a page in a CMS's edit or preview mode. The address is the clean page, not another page.
+EDIT_PREVIEW_PARAMETERS = frozenset({
+    "edit", "editmode", "preview", "preview_id", "preview_nonce", "preview_theme_id", "_preview", "preview_mode",
+    "elementor-preview", "vc_editable", "et_fb", "fl_builder", "customize_changeset_uuid", "customize_theme",
+    "wcmmode", "designmode", "pb-preview", "sitecore_mode", "sc_mode", "_storyblok", "cms_preview", "draft"})
+
+
+def _edit_key(key: str) -> bool:
+    key = key.lower()
+    return key in EDIT_PREVIEW_PARAMETERS or key.endswith("--edit") or key.endswith("-preview")
+
+
+def edit_preview(url: str | None) -> bool:
+    """True for an address with a CMS edit or preview parameter (?efl--edit=1, ?preview=true, ?preview_theme_id=)."""
+    try:
+        query = urlsplit(url or "").query
+    except ValueError:
+        return False
+    return any(_edit_key(pair.split("=", 1)[0]) for pair in query.split("&") if pair)
+
+
+def without_edit_preview(url: str) -> str:
+    """The address with its edit and preview parameters taken off (the clean page)."""
+    parts = urlsplit(url)
+    pairs = [pair for pair in parts.query.split("&") if pair and not _edit_key(pair.split("=", 1)[0])]
+    return urlunsplit((parts.scheme, parts.netloc, parts.path or "/", "&".join(pairs), ""))
+
+
 def crawl_identity(url: str) -> str:
     """The key under which the crawl counts `url` as already seen (A2): tracking and session parameters taken off
     (`utm_*`, gclid, fbclid, `*sessid*`, `;jsessionid=` in the path) and the rest put in a fixed order. Never sent: the

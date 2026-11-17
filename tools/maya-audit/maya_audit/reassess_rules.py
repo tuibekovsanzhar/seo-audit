@@ -793,6 +793,27 @@ def _order(report: dict) -> list[str]:
     return [f["id"] for f in sorted(findings, key=key)]
 
 
+def _decisions_351(report: dict, changes: list[str]) -> None:
+    """DECISIONS 351: a saved `idx6.alias_links` finding gives Shopify's step only on a Shopify site."""
+    from .checks.quick_rules import ALIAS_LINKS_FIX_SHOPIFY, alias_fix
+    platform = (report.get("platform") or {}).get("name") if isinstance(report.get("platform"), dict) else None
+    if not platform:
+        try:
+            from .site_platform import recognise_saved
+            platform = (recognise_saved(report) or {}).get("name")
+        except Exception:  # noqa: BLE001  a hint only
+            platform = None
+    for check in report.get("checks") or []:
+        for f in check.get("findings") or []:
+            if f.get("rule_id") != "idx6.alias_links" or f.get("how_to_fix") != ALIAS_LINKS_FIX_SHOPIFY:
+                continue
+            new = alias_fix(platform, [t.get("url") for t in (f.get("evidence") or {}).get("targets") or [] if t.get("url")])
+            if new != f["how_to_fix"]:
+                f["how_to_fix"] = new
+                changes.append(f"{f.get('id')}: the general fix, not Shopify's (platform: {platform or 'not recognised'}) "
+                               "(DECISIONS 351)")
+
+
 def _decisions_350(report: dict, changes: list[str]) -> None:
     """DECISIONS 350: a saved `idx6.alias_links` finding names the link a template puts on most of its pages (its text,
     place and canonical), from the saved page records. (`idx6.links_to_redirect` is made again by DECISIONS 343.)"""
@@ -945,7 +966,8 @@ def _decisions_343(report: dict, affected: dict, changes: list[str], unassessed:
     read = _read(pages)
     checks = {c.get("check_id"): c for c in report.get("checks") or [] if c.get("status") != "not_assessed"}
     replaced = set(team_rules.RULES) | {"str1.subpage_copies_parent", "str2.h1_parent_name", "idx6.links_to_redirect",
-                                        "idx6.links_to_flow_redirect", "idx6.links_to_login_redirect"}
+                                        "idx6.links_to_flow_redirect", "idx6.links_to_login_redirect",
+                                        "idx6.links_to_entry_redirect"}
     before = {}
     for check in checks.values():
         for f in list(check.get("findings") or []):
@@ -1098,6 +1120,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_347(r, changes)  # DECISIONS 347: page types again; training-only robots blocks their own rule
     _decisions_349(r, aff, changes)  # DECISIONS 349: blog posts with a product widget; reader pages' kinds
     _decisions_350(r, changes)  # DECISIONS 350: the alias-links card names its template link
+    _decisions_351(r, changes)  # DECISIONS 351: Shopify's step only on a Shopify site
     _decisions_343(r, aff, changes, quick_unassessed)  # DECISIONS 343, 344: replaces what _decisions_304 added
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
@@ -1114,7 +1137,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338, 340, 343, 344, 347, 349 and 350, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338, 340, 343, 344, 347, 349, 350 and 351, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
@@ -1148,6 +1171,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_347(r, cert)  # DECISIONS 347: page types again; training-only robots blocks their own rule
         _decisions_349(r, affected, cert)  # DECISIONS 349: blog posts with a product widget; reader pages' kinds
         _decisions_350(r, cert)  # DECISIONS 350: the alias-links card names its template link
+        _decisions_351(r, cert)  # DECISIONS 351: Shopify's step only on a Shopify site
         _decisions_343(r, affected, cert)
     if cert:
         from .report import problem_summary

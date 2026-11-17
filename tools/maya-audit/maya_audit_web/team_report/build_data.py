@@ -358,7 +358,8 @@ def topic_text(kind, topics, lang):
 
 # Kart adımları kutusuna güvenle sığan biçim (DECISIONS 270): en çok 4 satır, satır başına en çok 75 karakter.
 STEP_LINES, STEP_CHARS = 4, 75
-TEMPLATE_LINK_RULES = ("idx6.alias_links", "idx6.links_to_redirect")  # DECISIONS 350
+TEMPLATE_LINK_RULES = ("idx6.alias_links", "idx6.links_to_redirect", "idx6.links_to_entry_redirect")  # DECISIONS 350, 351
+KEEP_LINK_RULES = ("idx6.links_to_entry_redirect",)  # DECISIONS 351: the link stays; only its address may change
 
 
 def steps_from(text):
@@ -500,8 +501,9 @@ class Builder:
         final = re.sub(r"^https?://", "", str(tl["final"]))
         where = self.L["tpl_link_where"].get(tl.get("where") or "", self.L["tpl_link_where"]["content"])
         anchor = (tl.get("anchor") or "").strip()
-        first = fmt(self.L["tpl_link_step"], where=where, anchor=f"“{anchor[:24]}” " if anchor else "")
-        second = fmt(self.L["tpl_link_to"], final=final)
+        keep = f.get("rule_id") in KEEP_LINK_RULES and "tpl_keep_step" in self.L
+        first = fmt(self.L["tpl_keep_step" if keep else "tpl_link_step"], where=where, anchor=f"“{anchor[:24]}” " if anchor else "")
+        second = fmt(self.L["tpl_keep_to" if keep else "tpl_link_to"], final=final)
         if len(second) > STEP_CHARS:
             second = second[:STEP_CHARS - 1] + "…"
         self.fact(final, anchor, tl.get("url"))
@@ -2149,6 +2151,10 @@ class Builder:
                 text, _ = self.w.title(None, line.get("title") or "")
                 limits.append(text or line.get("title"))
                 self.fact(line.get("title"))
+            elif line["kind"] == "edit_pages":  # DECISIONS 351: CMS edit and preview addresses
+                from maya_audit.client_appendix import edit_pages_text  # type: ignore
+                limits.append(edit_pages_text(line, lang))
+                self.fact(line.get("read"), line.get("linked"), *(line.get("examples") or []))
             elif line["kind"] == "sources":  # DECISIONS 348: each source's reads, block pages and 429s
                 from maya_audit.read_sources import lines as source_lines, numbers as source_numbers  # type: ignore
                 limits.extend(source_lines(line, lang))

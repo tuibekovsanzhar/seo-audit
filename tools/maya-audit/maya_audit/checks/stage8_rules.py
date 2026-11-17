@@ -122,6 +122,34 @@ def _login(url: str, walk: dict) -> bool:
     return any(account_segment(fold(unquote(seg))) for seg in urlsplit(url).path.split("/") if seg)
 
 
+# DECISIONS 351 (isbank: the mega menu's "Kredi" -> /internet/MainPageEnter.aspx?src=…HizliKrediBasvuru… -> 301 to
+# personalloanapp.isbank.com.tr): a link to a sign-in, internet banking, application or sign-up entry is the site's way
+# in, whatever its redirect. Never "remove it"; at most link straight to the final address. Its address, its query or
+# its end names an entry, or the redirect ends on another host whose name says it is an application or a sign-in.
+ENTRY_WORDS = re.compile(r"login|logon|signin|sign-in|giris|oturum|internetbankacilig|internet-bankacilig|internetsube|"
+                         r"internet-sube|mainpageenter|basvur|application|apply|signup|sign-up|register|kayit|uye-ol|"
+                         r"musteri-ol|hesap-ac|onboarding", re.IGNORECASE)
+ENTRY_HOSTS = re.compile(r"app|login|online|internet|sube|basvur|secure|auth|onboarding|apply|portal", re.IGNORECASE)
+ENTRY_EXPECTED = "a link to a sign-in or application entry keeps working, straight or through its redirect"
+ENTRY_FIX = ("Keep the link: it is the site's way in to sign in or apply. If its redirect is permanent (301, 308), you "
+             "may link straight to the final address; never remove the navigation link.")
+ENTRY_NOTE = ("A sign-in, internet banking or application entry often passes through a redirect (a tracking or routing "
+              "address, another host for the application); the link itself is needed in the menu.")
+
+
+def _entry(url: str, walk: dict) -> bool:
+    from urllib.parse import unquote, urlsplit
+    from ..page_words import fold
+    if not walk.get("hops"):
+        return False
+    start, end = urlsplit(url), urlsplit(walk.get("final") or "")
+    words = " ".join(fold(unquote(x)) for x in (start.path, start.query, end.path, end.query))
+    if ENTRY_WORDS.search(words):
+        return True
+    first = (end.hostname or "").split(".")[0]
+    return bool(end.hostname) and end.hostname != start.hostname and bool(ENTRY_HOSTS.search(first))
+
+
 def _flow(url: str, walk: dict) -> bool:
     from urllib.parse import unquote, urlsplit
     statuses = [h["status"] for h in walk["hops"]]
@@ -177,9 +205,11 @@ def links_to_redirect(pages, read, key_urls=frozenset()) -> list[Finding]:
     walks = {t: follow(t, redirects, statuses) for t in by_target}
     login = {t for t in by_target if _login(t, walks[t])}
     flow = {t for t in by_target if t not in login and _flow(t, walks[t])}
+    entry = {t for t in by_target if t not in login and t not in flow and _entry(t, walks[t])}  # DECISIONS 351
     out = []
-    for kind, targets in (("plain", [t for t in by_target if t not in flow and t not in login]),
-                          ("flow", [t for t in by_target if t in flow]), ("login", [t for t in by_target if t in login])):
+    for kind, targets in (("plain", [t for t in by_target if t not in flow and t not in login and t not in entry]),
+                          ("flow", [t for t in by_target if t in flow]), ("login", [t for t in by_target if t in login]),
+                          ("entry", [t for t in by_target if t in entry])):
         if not targets:
             continue
         sources = sorted({s for t in targets for s in by_target[t]})
@@ -211,6 +241,29 @@ def links_to_redirect(pages, read, key_urls=frozenset()) -> list[Finding]:
                                 "rule": "a link (menu, content or footer) on a page read to an address that answered with a redirect "
                                         "in this crawl; link to the final address instead"},
                                LINKS_TO_REDIRECT_EXPECTED, LINKS_TO_REDIRECT_FIX, importance_tier=_tier(sources, key_urls)))
+        elif kind == "entry":
+            pages_rows = []
+            for src in sources:
+                mine = [r for r in rows if src in by_target[r["url"]]]
+                said = "; ".join(f"{_path(r['url'])}: {r['chain']}" for r in mine[:2])
+                final = mine[0]["final"] if mine else ""
+                pages_rows.append({"url": src, "row": {
+                    "tr": f"bağlantı {said}; giriş ya da başvuru girişi, bağlantı kalmalı",
+                    "en": f"link {said}; a sign-in or application entry, the link stays"},
+                    "fix": {"tr": f"Bağlantıyı tutun; yönlendirme kalıcıysa doğrudan son adrese verebilirsiniz: {final}",
+                            "en": f"Keep the link; if the redirect is permanent you may link straight to {final}"}})
+            top = max(targets, key=lambda t: len(by_target[t]))
+            shared = (template_link(read, top, by_target[top], walks[top]["final"], "redirect")
+                      if len(by_target[top]) >= TEMPLATE_LINK_SHARE * len(sources) and len(sources) >= 5 else None)
+            out.append(Finding("IDX-6", f"{links} internal link(s) on {len(sources)} page(s) point to a sign-in or application entry that redirects",
+                               Severity.S4, Confidence.VERIFIED, DOCUMENTED, [GOOGLE, COPILOT], scope_for(sources),
+                               {"link_count": links, "page_count": len(sources), "redirecting_targets": len(targets), "targets": rows[:40],
+                                "pages": pages_rows[:500], **({"template_link": shared} if shared else {}),
+                                "rule": "a link to an address that redirects and whose address, query or end names a sign-in, "
+                                        "internet banking, application or sign-up entry, or whose redirect ends on an "
+                                        "application or sign-in host (DECISIONS 351)"},
+                               ENTRY_EXPECTED, ENTRY_FIX, notes=[ENTRY_NOTE], importance_tier=_tier(sources, key_urls),
+                               rule_id="idx6.links_to_entry_redirect"))
         elif kind == "login":
             pages_rows = []
             for src in sources:

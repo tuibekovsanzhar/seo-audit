@@ -4395,6 +4395,18 @@
    ],
    "verify": "Open the misspelt address; it should reach the real page with a single 301.",
    "summary": "Misspelt addresses"
+  },
+  "idx6.links_to_entry_redirect": {
+   "title": "Check the redirect of sign-in and application links",
+   "finding": "Links go to a sign-in or application entry that redirects",
+   "explanation": "Keep the link; if the redirect is permanent you may link straight to the final address. Never remove the menu link.",
+   "why": "Sign-in and application entries are the visitor's way in; the redirect in between only adds one request.",
+   "steps": [
+    "Keep the link in the menu",
+    "If the redirect is permanent, link to the final address"
+   ],
+   "verify": "Open the link; the sign-in or application page should open.",
+   "summary": "Sign-in and application links"
   }
  }
 }

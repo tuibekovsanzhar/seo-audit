@@ -59,9 +59,22 @@ SEARCH_CRAWLERS = ("Googlebot", "Bingbot")
 VIDEO_HOSTS = re.compile(r"(?:youtube(?:-nocookie)?\.com/embed|player\.vimeo\.com|fast\.wistia\.net|youtu\.be/)", re.IGNORECASE)
 
 ALIAS_LINKS_EXPECTED = "internal links point to each page's canonical address"
-ALIAS_LINKS_FIX = ("Change the links to name the canonical address. When a template builds them (on Shopify, product "
-                   "links inside a collection, /collections/<c>/products/<p>), change it there: remove "
-                   "\"within: collection\" from the product card's link so it points to /products/<p>.")
+ALIAS_LINKS_FIX_SHOPIFY = ("Change the links to name the canonical address. When a template builds them (on Shopify, product "
+                           "links inside a collection, /collections/<c>/products/<p>), change it there: remove "
+                           "\"within: collection\" from the product card's link so it points to /products/<p>.")
+# DECISIONS 351 (isbank: a bank's card showed the Shopify step): the Shopify step only on a Shopify site.
+ALIAS_LINKS_FIX = ("Change the links to name the canonical address. When a template builds them (a menu, a footer, a "
+                   "card), change it there, once.")
+
+
+def alias_fix(platform: str | None, targets=()) -> str:
+    """The alias-links fix for this site: Shopify's step only when the platform is Shopify (or the links are Shopify's
+    /collections/<c>/products/<p>), else the general one."""
+    from .structure import nested_product
+    from ..page_words import fold
+    shopify = (platform or "").casefold() == "shopify" or any(
+        nested_product([fold(x) for x in urlsplit(t).path.split("/") if x]) for t in targets)
+    return ALIAS_LINKS_FIX_SHOPIFY if shopify else ALIAS_LINKS_FIX
 EMPTY_COLLECTIONS_EXPECTED = "every indexable collection or category page lists products"
 EMPTY_COLLECTIONS_FIX = ("Fill these collections or merge each into a related one with a 301 redirect; while one is "
                          "empty, add noindex to it and take it out of the menu and the sitemap.")
@@ -154,9 +167,16 @@ def _path(url: str) -> str:
 
 # -- SEO-061: links to an alias --------------------------------------------------------------------------------------
 
-def alias_links(read, groups: dict, key_urls=frozenset()) -> list[Finding]:
+def alias_links(read, groups: dict, key_urls=frozenset(), platform: str | None = None) -> list[Finding]:
     # A canonical that differs only in how it is percent-encoded (%CC%87 / %cc%87) names the page itself.
     aliases = {u: g["canonical"] for u, g in groups.items() if g.get("canonical") and unquote(g["canonical"]) != unquote(u)}
+    # DECISIONS 351: a link to a CMS edit or preview address (?efl--edit=1) names its clean page, read or not
+    from ..urls import edit_preview, without_edit_preview
+    for p in read:
+        for edge in p.outlinks or []:
+            target = _bare(edge.get("target") or "")
+            if target and target not in aliases and edit_preview(target):
+                aliases[target] = without_edit_preview(target)
     if not aliases:
         return []
     links, pages, targets = 0, [], defaultdict(set)
@@ -185,7 +205,7 @@ def alias_links(read, groups: dict, key_urls=frozenset()) -> list[Finding]:
          "targets": [{"url": t, "canonical": aliases[t], "linked_from_pages": len(targets[t])} for t in top],
          "target_patterns": dict(patterns.most_common(10)),
          "rule": "a link (menu, content or footer) to a page read whose canonical names another address (page grouping's aliases)"},
-        ALIAS_LINKS_EXPECTED, ALIAS_LINKS_FIX, importance_tier=_tier(pages, key_urls))]
+        ALIAS_LINKS_EXPECTED, alias_fix(platform, targets), importance_tier=_tier(pages, key_urls))]
 
 
 # -- SEO-099: empty or near-empty collections ------------------------------------------------------------------------
@@ -545,7 +565,12 @@ def findings(result, *, key_urls=frozenset(), check_ids=None, saved: bool = Fals
                                + list(getattr(result, "discovered_urls", None) or []) + sitemap))
     known = [u for u in known if u and (not origin or same_origin(u, origin))]
     if "IDX-6" in wanted:
-        out["IDX-6"] += alias_links(read, groups, key_urls)
+        try:
+            from ..site_platform import recognise
+            platform = (recognise(result) or {}).get("name")
+        except Exception:  # noqa: BLE001  a hint only: the general fix
+            platform = None
+        out["IDX-6"] += alias_links(read, groups, key_urls, platform)
     if "STR-15" in wanted:
         out["STR-15"] += empty_collections(read, groups, indexable, key_urls)
     if "TSEO-1" in wanted:

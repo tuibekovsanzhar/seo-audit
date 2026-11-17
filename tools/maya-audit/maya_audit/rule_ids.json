@@ -535,6 +535,10 @@
     "Cloudflare\\ e\\-mail\\ obfuscation\\ is\\ on:\\ the\\ address\\ is\\ readable\\ only\\ with\\ JavaScript"
    ],
    [
+    "idx6.links_to_entry_redirect",
+    "(?P<links>\\d+(?:\\.\\d+)?)\\ internal\\ link\\(s\\)\\ on\\ (?P<pages>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ point\\ to\\ a\\ sign\\-in\\ or\\ application\\ entry\\ that\\ redirects"
+   ],
+   [
     "idx6.links_to_login_redirect",
     "(?P<links>\\d+(?:\\.\\d+)?)\\ internal\\ link\\(s\\)\\ on\\ (?P<pages>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ point\\ to\\ a\\ page\\ behind\\ a\\ sign\\-in\\ that\\ redirects\\ to\\ it"
    ],

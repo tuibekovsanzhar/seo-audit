@@ -42,7 +42,7 @@ READ = {
                            "redirects": "yönlendiriyor", "not_recorded": "kaydedilmedi (eski denetim)",
                            "positions": {"menu": "menü", "footer": "altbilgi", "body": "gövde", "head": "<head>"},
                            "kinds": {"canonical": "kanonik etiketi", "hreflang": "hreflang etiketi"},
-                           "suggest": {"remove": "kaldırın", "remove_or_redirect": "kaldırın veya yönlendirin",
+                           "suggest": {"remove": "kaldırın", "fix_nav": "bağlantıyı çalışan sayfaya verin (menü bağlantısı kalmalı)", "remove_or_redirect": "kaldırın veya yönlendirin",
                                        "fix_generator": "site haritası oluşturucuyu düzeltin", "fix_loop": "döngüyü düzeltin"},
                            "cause": "çıkarım: {page} sayfasındaki «{heading}» başlığından üretilmiş görünüyor",
                            "mistyped": "yanlış yazılmış adres"},
@@ -78,7 +78,7 @@ READ = {
                            "redirects": "redirects", "not_recorded": "not recorded (older audit)",
                            "positions": {"menu": "menu", "footer": "footer", "body": "body", "head": "<head>"},
                            "kinds": {"canonical": "canonical tag", "hreflang": "hreflang tag"},
-                           "suggest": {"remove": "remove", "remove_or_redirect": "remove or redirect",
+                           "suggest": {"remove": "remove", "fix_nav": "point the link at a working page (keep the menu link)", "remove_or_redirect": "remove or redirect",
                                        "fix_generator": "fix the sitemap generator", "fix_loop": "fix the loop"},
                            "cause": "inference: seems made from the heading “{heading}” on {page}",
                            "mistyped": "mistyped address"},
@@ -115,7 +115,7 @@ WORDS = {
                       "intent": "kasıtlı olabilir", "firecrawl_only": "yalnız Firecrawl kopyasında görüldü", "rendered_html": "işlenmiş HTML (Firecrawl), ham boyutla karşılaştırılamaz",
                       "spoofed_googlebot": "Googlebot kimliğiyle yapılan isteğe 403/429",
                       "names_in_markup": "diğer marka adları yalnız yapısal veride"},
-           "kind": {"page_cap": "Sayfa sınırı", "time_budget": "Süre sınırı", "reader": "Okuma yolu", "block_pages": "Engel sayfaları", "sampling": "Akıllı örneklem", "sources": "Kaynaklar",
+           "kind": {"page_cap": "Sayfa sınırı", "time_budget": "Süre sınırı", "reader": "Okuma yolu", "block_pages": "Engel sayfaları", "sampling": "Akıllı örneklem", "sources": "Kaynaklar", "edit_pages": "Düzenleme adresleri",
                     "not_assessed": "Değerlendirilmedi"},
            "page_type": {"home": "ana sayfa", "category": "kategori", "product": "ürün", "blog_article": "blog yazısı",
                          "location": "mağaza / konum sayfası", "policy": "politika sayfası", "utility": "yardımcı sayfa (arama, sepet, hesap)", "other": "diğer"},
@@ -163,7 +163,7 @@ WORDS = {
                       "intent": "may be intentional", "firecrawl_only": "seen only in Firecrawl's copy", "rendered_html": "rendered HTML (Firecrawl), not comparable with a raw size",
                       "spoofed_googlebot": "403/429 to a request with Googlebot's user agent",
                       "names_in_markup": "the other brand names are only in structured data"},
-           "kind": {"page_cap": "Page cap", "time_budget": "Time budget", "reader": "How pages were read", "block_pages": "Block pages", "sampling": "Smart sample", "sources": "Sources",
+           "kind": {"page_cap": "Page cap", "time_budget": "Time budget", "reader": "How pages were read", "block_pages": "Block pages", "sampling": "Smart sample", "sources": "Sources", "edit_pages": "Edit addresses",
                     "not_assessed": "Not assessed"},
            "page_type": {"home": "homepage", "category": "category", "product": "product", "blog_article": "blog article",
                          "location": "store / location page", "policy": "policy page", "utility": "utility page (search, cart, account)", "other": "other"},
@@ -227,6 +227,18 @@ def block_pages_text(line: dict, lang: str) -> str:
     return head + body + (" (the time limit came first)." if time_first else ".")
 
 
+def edit_pages_text(line: dict, lang: str) -> str:
+    """DECISIONS 351: CMS edit and preview addresses are their clean page, never a page of their own."""
+    from urllib.parse import urlsplit
+    ex = ", ".join((urlsplit(u).path or "/") + (f"?{urlsplit(u).query}" if urlsplit(u).query else "") for u in line.get("examples") or [])
+    read, linked = int(line.get("read") or 0), int(line.get("linked") or 0)
+    if lang == "tr":
+        return (f"CMS düzenleme/önizleme adresleri ayrı sayfa sayılmadı: {read} okunan, {linked} bağlantı verilen adres"
+                + (f" ({ex})" if ex else "") + "; okunan sayfa sayısına ve sayfa türlerine katılmadı, temiz adresleri sayıldı.")
+    return (f"CMS edit and preview addresses were not counted as pages of their own: {read} read, {linked} linked"
+            + (f" ({ex})" if ex else "") + "; left out of the pages read and the page types, their clean addresses counted.")
+
+
 def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = None,
                   sentence: Callable[[str], str] | None = None, title: Callable[[str, str], str] | None = None) -> str:
     """A coverage line in the report's language (DECISIONS 306): the engine's part and reason through the reader's
@@ -241,6 +253,8 @@ def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = No
                 else f"Time budget {line.get('seconds')} s; steps cut by time: {line.get('cut') or '—'}")
     if kind == "block_pages":
         return block_pages_text(line, lang)
+    if kind == "edit_pages":  # DECISIONS 351
+        return edit_pages_text(line, lang)
     if kind == "sources":  # DECISIONS 348
         from .read_sources import lines as source_lines
         return " ".join(source_lines(line, lang))

@@ -2284,3 +2284,27 @@ pages stay "location".
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3427 passed, 4 skipped, 1 warning in 960.88s (0:16:00)` |
 | CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+## isbank follow-up: entry links kept, platform advice only on its platform, CMS edit addresses (2026-11-17, DECISIONS 351)
+
+isbank 1b81bee4 (the audit the review called 690098d9: no such id in the history; its current-engine copy, rebuilt with
+f5d8066, was used), copy of `artifacts/` in a scratch folder; before = `git archive HEAD`, after = this change.
+
+| | Before | After |
+|---|---|---|
+| Card 8 | "Bağlantıları doğrudan son adrese verin" (P2, Sorun, `idx6.links_to_redirect`, 124 adres) | "Giriş ve başvuru bağlantılarının yönlendirmesini kontrol edin" (P3, Kontrol edin, `idx6.links_to_entry_redirect`); steps "Şablonda menüdeki “Kredi” bağlantısını tutun; kaldırmayın" / "Son adresi: personalloanapp.isbank.com.tr/?amount=50000&term=24" / "Yönlendirmesi kalıcıysa (301, 308) doğrudan son adrese verebilirsiniz" / "Menüdeki bağlantıyı asla kaldırmayın" |
+| Card 8 in "Bağlantı yerleri" | 124 rows, "Önerilen hedef: kaldırın" | 124 rows, the final address |
+| Card 7 "Ne yapılmalı" | the Shopify "within: collection" step | "Bağlantıları kanonik adresi gösterecek şekilde değiştirin. Bağlantıları bir şablon üretiyorsa (menü, alt bilgi, kart), bir kez orada değiştirin." |
+| Card 7 in "Bağlantı yerleri" | none | 139 rows (page, link text, place, href, canonical), e.g. "Çerez Ayarları", altbilgi, /?efl--edit=1 → https://www.isbank.com.tr/ |
+| /?efl--edit=1 | a page read, typed "category", a row of "Sayfa bazında" | not a page; Kapsam: "CMS düzenleme/önizleme adresleri ayrı sayfa sayılmadı: 1 okunan, 2 bağlantı verilen adres (/?efl--edit=1) …" |
+| Pages read | 148 | 147 |
+| Card 15 | sameAs (the homepage and its edit copy) | "Videodaki mesajı sayfaya metin olarak yazın" (sameAs now reaches one page and drops to the appendix) |
+| Team PDF | built, 11 pages | built, 11 pages |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_bank_followup_351.py` | `19 passed` |
+| fast suite, first run | `1 failed, 3310 passed` (`test_wording`: the alias fix chosen at run time was not listed; added) |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3446 passed, 4 skipped, 1 warning in 1057.06s (0:17:37)` |
+| CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |
