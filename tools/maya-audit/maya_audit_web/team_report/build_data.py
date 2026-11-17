@@ -1877,7 +1877,8 @@ class Builder:
                     sub = self.chain_lines(group["chain"])
                 # DECISIONS 305: addresses that were not read add nothing to the score; the card says how many. Never
                 # of a host-level finding (DECISIONS 321 (2)): its "addresses" are hosts and files; the card names them.
-                hosts = self.hosts_of(f)
+                # DECISIONS 355: a card made of several host-level findings names every member's host.
+                hosts = list(dict.fromkeys(h for m in members for h in (self.hosts_of(m) or []))) if self.hosts_of(f) else None
                 hosts_line = fmt(L["hosts_line"], hosts=", ".join(hosts)) if hosts else None
                 if hosts_line:
                     sub = list(sub or []) + [hosts_line]
@@ -1992,6 +1993,10 @@ class Builder:
                 # steps when the site runs on it).
                 entry = self.lib(f)
                 lib_steps, lib_platform = T.steps(entry, platform)
+                # DECISIONS 355: another card has this title on the same pages for another problem: say which one this is.
+                detail = (group or {}).get("title_detail")
+                if detail and action:
+                    action = f"{action}: {T.lower_first(T.rule(detail, self.lang).get('summary') or '', self.lang)}".rstrip(": ")
                 title_v = self.slot(f"todos[{i}].title", "yapılacak işin adı, fiille başlar", f.get("title"), 80, prefill=action,
                                     fallback=entry["title"])
                 steps_v = self.slot(f"todos[{i}].steps", "2-4 somut adım; her adım yeni satırda, en fazla 100 karakter",

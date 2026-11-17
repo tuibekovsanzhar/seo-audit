@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import json
 import re
+from functools import lru_cache
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -573,6 +574,7 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
         if g is None:
             g = out[key] = {"key": key, "members": []}
         g["members"].append(f)
+    out = same_card(out, lists)
     rows = []
     for g in out.values():
         members = g["members"]
@@ -613,8 +615,75 @@ def groups(report: dict, lists: dict | None = None, confirmations: dict | None =
             "merge_group": (merge_group(lead) or {}).get("id"),
             "chain": chain_summary(members),
             "manual": next((manual(m, confirmations) for m in members if manual(m, confirmations)), None),
+            # DECISIONS 355: another card would show this card's title on the same pages for another problem: the card
+            # adds what its finding is (the text library's summary of `title_detail`) to its title.
+            "title_detail": g.get("title_detail"),
         })
     return rows
+
+
+# ---------------------------------------------------------------- one title, one card (DECISIONS 355)
+
+@lru_cache(maxsize=None)
+def _card_texts() -> tuple[dict, dict]:
+    """The card titles and steps the reports show: the approved catalogue (rule_actions.json) over the text library
+    (maya_audit_web/team_report/texts/tr.json, read as data; absent in an engine-only install: rule ids then)."""
+    here = Path(__file__).resolve().parent
+    actions = json.loads((here / "rule_actions.json").read_text(encoding="utf-8"))["actions"]
+    library = here.parent / "maya_audit_web" / "team_report" / "texts" / "tr.json"
+    rules = json.loads(library.read_text(encoding="utf-8")).get("rules") or {} if library.is_file() else {}
+    return actions, rules
+
+
+def card_title(rule_id: str | None) -> str:
+    actions, rules = _card_texts()
+    rid = rule_id or ""
+    return (actions.get(rid) or {}).get("tr") or (rules.get(rid) or {}).get("title") or rid
+
+
+def card_steps(rule_id: str | None) -> tuple[str, ...]:
+    actions, rules = _card_texts()
+    rid = rule_id or ""
+    approved = ((actions.get(rid) or {}).get("steps") or {}).get("tr") or []
+    return tuple(approved or (rules.get(rid) or {}).get("steps") or ())
+
+
+def _page_path(url: str) -> str:
+    parts = urlsplit(url)
+    return (parts.path or "/") + (f"?{parts.query}" if parts.query else "") if parts.scheme else url
+
+
+def same_card(buckets: dict[tuple, dict], lists: dict | None) -> dict[tuple, dict]:
+    """DECISIONS 355: two groups that would print the same card title on the same pages, in the same state (intent,
+    to confirm, re-test, Info), are one card when they are one problem (one rule, or rules with the same steps): their
+    findings and evidence are kept together. Different problems (other steps) stay two cards, each titled with what
+    its finding is. Merge groups and redirect chains are cards of their own already and are left as they are."""
+    out: dict[tuple, dict] = {}
+    seen: dict[tuple, tuple] = {}
+    from .rules import rule_id as rule_of
+    for key, g in buckets.items():
+        lead = g["members"][0]
+        # An older report keeps no rule id on its findings: it is read from the title; none found, never merged.
+        rule = lead.get("rule_id") or rule_of(lead.get("check_id") or "", lead.get("title") or "")
+        if str(key[1]).startswith("merge:") or not rule:
+            out[key] = g
+            continue
+        pages = frozenset(_page_path(u) for m in g["members"] for u in affected(m, lists))
+        sig = (card_title(rule), pages, key[2:])
+        first = seen.get(sig)
+        if first is None:
+            seen[sig], out[key], g["_rule"] = key, g, rule
+            continue
+        other = out[first]
+        if card_steps(other["_rule"]) == card_steps(rule):
+            other["members"].extend(g["members"])
+            continue
+        other.setdefault("title_detail", other["_rule"])
+        g["title_detail"] = rule
+        out[key] = g
+    for g in out.values():
+        g.pop("_rule", None)
+    return out
 
 
 def _order(rows: list[dict]) -> list[dict]:

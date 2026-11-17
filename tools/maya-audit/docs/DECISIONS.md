@@ -5179,3 +5179,25 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Note topics, 1 generic, 165 checklist items; 223 rules seen in the 79 audits). The second reader stays off: the
      `anthropic` package is not installed until the SEO team has rewritten the catalogue (owner).
      Tests: `tests/test_english_lines_354.py` (4).
+
+355. **One title, one card (Owner, 2026-11-17, after DECISIONS 353/354 flagged repeated cards).** Global for every
+     audit; moodisthastanesi.com and adilehanim.com were only test cases.
+     *Rule* (`client_selection.same_card`, in `groups()` so the PDF, the brief, the XLSX and the sector file agree): two
+     groups that would print the same card title (the approved catalogue's, else the text library's: `card_title`) on
+     the same pages (paths, as RG-22 reads them) in the same state (intent, to confirm, re-test, Info) are one card when
+     they are one problem: the same rule, or rules with the same steps (`card_steps`). Both findings, their evidence
+     lines and every host stay on the card. Different problems (other steps) stay two cards, and each card's title adds
+     its finding's short name from the text library ("<title>: <summary>"). Merge groups and redirect chains are left as
+     they were. A finding whose rule id cannot be found (older reports keep none; it is read from the title with
+     `rules.rule_id`) is never merged. A merged host-level card names every member's host.
+     *Cause:* findings of one rule are kept apart by their dedup key (one per field, one per host) while the card title
+     comes from the rule, so the cards repeated their title.
+     *Before -> after* (saved audits, scratch copies; team report as built today vs the previous commit):
+     moodisthastanesi.com 9156e1fd, e346db8d, b366e1c3: cards 3 and 4 "Çelişen yapısal veri değerlerini giderin" (one
+     for dateModified, one for name, the same 2 pages) -> one card 3 with both findings and both lines; text check
+     BLOCKED (RG-22) -> PASS; cards 15 -> 14, 15, 15 (the freed place is taken by the next card when there is one).
+     adilehanim.com 88aff6d1: cards 12 and 13 "http adreslerini https adreslerine yönlendirin" (www.adilehanim.com,
+     adilehanim.com) -> one card naming both domains; the three Open Graph notes on the same 51 pages (og:title,
+     og:description, og:image) -> one note; text check BLOCKED -> PASS; cards 15 -> 14 (no candidate left).
+     All 79 saved audits: the text check now flags nothing.
+     Tests: `tests/test_same_card_355.py` (7).

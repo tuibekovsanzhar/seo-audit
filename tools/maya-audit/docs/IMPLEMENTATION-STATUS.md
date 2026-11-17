@@ -2397,3 +2397,25 @@ VERIFIED locally; not pushed.
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3485 passed, 4 skipped, 1 warning in 984.11s (0:16:24)` |
 | `python3.11 -m compileall`, `ruff --select E9,F821,F841` (source folders) | OK, `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+## One title, one card (DECISIONS 355, 2026-11-17)
+
+VERIFIED locally; not pushed. Cards with the same title on the same pages are one card when they are one problem, else
+titled apart (`client_selection.same_card`).
+
+| Audit | Before | After |
+|---|---|---|
+| moodisthastanesi.com 9156e1fd | cards 3, 4 "Çelişen yapısal veri değerlerini giderin" (dateModified / name, same 2 pages); 15 cards; check BLOCKED (RG-22) | one card 3 with both findings; 14 cards; PASS |
+| moodisthastanesi.com e346db8d | same pair; 15 cards; BLOCKED | one card; 15 cards; PASS |
+| moodisthastanesi.com b366e1c3 | same pair; 15 cards; BLOCKED | one card; 15 cards; PASS |
+| adilehanim.com 88aff6d1 | cards 12, 13 "http adreslerini https adreslerine yönlendirin" (www / apex); 3 Open Graph notes on 51 pages; 15 cards; BLOCKED | one card naming both domains; one Open Graph note; 14 cards; PASS |
+
+All 79 saved audits: the text check flags nothing.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_same_card_355.py` | `7 passed` |
+| fast suite | `3357 passed, 4 skipped, 135 deselected, 1 warning in 565.19s (0:09:25)` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3492 passed, 4 skipped, 1 warning in 1002.71s (0:16:42)` |
+| `python3.11 -m compileall`, `ruff --select E9,F821,F841` (source folders) | OK, `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |
