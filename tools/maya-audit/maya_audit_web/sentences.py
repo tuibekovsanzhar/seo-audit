@@ -318,6 +318,10 @@ LINE_PATTERNS: tuple[tuple[str, str], ...] = (
     ('ans1.zero', "Zero cited URLs on this site in the data supplied ({freshness~:.+})."),
     ('ans1.not_assessed', "Not assessed: no cited URL on this site in the data supplied, but the data is {completeness~:.+}. This is not 'zero citations'."),
     ('ans2.not_assessed', "Not assessed: {why~:(?:\\d+ of \\d+ record|no claims in the citation file).+}"),
+    # DECISIONS 354: lines older saved reports hold.
+    ('saved.host.unresolved', "{host:[\\w.:-]+}: host could not be resolved safely: {name:[\\w.:-]+}"),
+    ('saved.robots.disallows', "{host:[\\w.:-]+}: robots.txt for {url:\\S+} disallows it: robots.txt returned unexpected status {status#} after redirects; treated as unreachable"),
+    ('saved.robots.unavailable', "{host:[\\w.:-]+}: robots.txt for {url:\\S+} is unavailable: robots.txt returned unexpected status {status#} after redirects; treated as unreachable"),
     ('gap.image.robots', "robots.txt for {origin} disallows it: {verb:allowed|disallowed} by line {line#}: {directive:[A-Za-z-]+}: {pattern}"),
     ('str19.old.findings', "{n#} finding(s): {links#} link(s) without a usable address."),
     ('acc4.note.transport', "transport failure for the bot user agent ({error}) while the browser request succeeded"),

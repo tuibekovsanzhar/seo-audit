@@ -54,7 +54,7 @@ EN_WORDS = re.compile(r"\b(the|and|with|of|to|is|are|this|that|from|for|not|page
 # Quoted site text, markup, addresses and code names: never read as the report's own words or numbers.
 QUOTED = re.compile(r"«[^»]*»|\"[^\"]*\"|“[^”]*”|‘[^’]*’|'[^'\s][^']*'|`[^`]*`")
 MARKUP = re.compile(r"<[^<>]{1,80}>|https?://\S+|(?<![\w])/[\w\-./%?=&#~+]*|\b[\w-]+\.(?:txt|xml|json|js|css|html?|php)\b")
-CODE_NUMBERS = re.compile(r"\b[Hh][1-6]\b|\b[1-5]xx\b|\bUTF-?8\b|\bISO-\d+(?:-\d+)?\b|\bWCAG\s?\d(?:\.\d)?\b|\bHTTP/\d(?:\.\d)?\b|"
+CODE_NUMBERS = re.compile(r"\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}[./]\d{1,2}[./]\d{4}\b|\b[Hh][1-6]\b|\b[1-5]xx\b|\bUTF-?8\b|\bISO-\d+(?:-\d+)?\b|\bWCAG\s?\d(?:\.\d)?\b|\bHTTP/\d(?:\.\d)?\b|"
                           r"\bIPv[46]\b|\bP[0-3]\b|\bS[1-4]\b|\b[A-Z]{2,5}-\d+\b|\bx-default\b|\b\d+(?:\.\d+)?\s?(?:KB|KiB|MB|ms|px)\b|"
                           r"\b(?:Core Web Vitals|schema\.org)\b")
 NUMBER = re.compile(r"\d+(?:[.,]\d+)*")

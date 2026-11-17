@@ -324,6 +324,11 @@
   "idx8.typo_copies": "Bir sayfanın yazımı hatalı {n} adresi o sayfaya götürmek yerine yanıt veriyor",
   "idx6.links_to_entry_redirect": "{pages} sayfadaki {links} iç bağlantı, yönlendiren bir giriş ya da başvuru girişine gidiyor"
  },
+ "saved_titles": {
+  "saved.acc1.unreachable": "robots.txt, {samples} istekten {failed} tanesinde sunucu hatası döndürdü ya da ulaşılamadı",
+  "saved.acc9.own_crawler": "{who}, Maya'nın kendi tarayıcısını (doğrulanmamış bir bot) doğrulamaya yönlendirdi. Doğrulanmış arama ve yapay zekâ tarayıcıları normalde etkilenmez (burada ölçülmedi); site Firecrawl üzerinden okundu.",
+  "saved.rnd4.iframe": "{n} sayfa içeriği bir iframe içinde gösteriyor; bu metin sayfanın parçası sayılmaz"
+ },
  "fixes": {
   "Check Google Search Console (Settings → Crawl stats, by response) for 403 or 429 answers to the real Googlebot. Maya's request came from Maya's own address, which a firewall may refuse on purpose as a fake Googlebot; change nothing unless the real Googlebot is refused too.": "Google Search Console'da (Ayarlar → Tarama istatistikleri, yanıta göre) gerçek Googlebot'a 403 veya 429 yanıtı verilip verilmediğine bakın. Maya'nın isteği Maya'nın kendi adresinden geldi; güvenlik duvarı bunu bilerek sahte Googlebot sayıp reddetmiş olabilir. Gerçek Googlebot da reddedilmiyorsa hiçbir şeyi değiştirmeyin.",
   "Give each page content that is specific to its place, or keep one page that lists the places and remove or noindex the thin copies.": "Her sayfaya yalnız o yere özgü içerik verin ya da yerleri listeleyen tek bir sayfa bırakıp zayıf kopyaları kaldırın veya noindex yapın.",
@@ -609,7 +614,10 @@
   "Nothing to change: a page behind a sign-in (account, orders, cart) sends a visitor without a session to sign in, as it should. Keep the link; keep the sign-in page out of the sitemap.": "Değiştirilecek bir şey yok: oturum gerektiren bir sayfa (hesap, siparişler, sepet) oturumu olmayan ziyaretçiyi girişe gönderir, olması gereken budur. Bağlantıyı tutun; giriş sayfasını site haritasına koymayın.",
   "Redirect each misspelt address to the real page with a 301 (or, if it must stay, point its canonical to the real page), and correct the links that lead to it.": "Yazımı hatalı her adresi 301 ile doğru sayfaya yönlendirin (kalması gerekiyorsa kanonik etiketini doğru sayfaya verin) ve ona giden bağlantıları düzeltin.",
   "Keep the link: it is the site's way in to sign in or apply. If its redirect is permanent (301, 308), you may link straight to the final address; never remove the navigation link.": "Bağlantıyı tutun: sitenin giriş ve başvuru kapısıdır. Yönlendirmesi kalıcıysa (301, 308) doğrudan son adrese verebilirsiniz; menüdeki bağlantıyı asla kaldırmayın.",
-  "Change the links to name the canonical address. When a template builds them (a menu, a footer, a card), change it there, once.": "Bağlantıları kanonik adresi gösterecek şekilde değiştirin. Bağlantıları bir şablon üretiyorsa (menü, alt bilgi, kart), bir kez orada değiştirin."
+  "Change the links to name the canonical address. When a template builds them (a menu, a footer, a card), change it there, once.": "Bağlantıları kanonik adresi gösterecek şekilde değiştirin. Bağlantıları bir şablon üretiyorsa (menü, alt bilgi, kart), bir kez orada değiştirin.",
+  "Make /robots.txt reliably return 200, or 404 if you have no rules. Under RFC 9309 a 5xx or unreachable robots.txt means compliant crawlers assume the whole site is disallowed, even if it happens only sometimes.": "/robots.txt adresinin her zaman 200 döndürmesini sağlayın; kuralınız yoksa 404 döndürsün. RFC 9309'a göre 5xx döndüren ya da ulaşılamayan bir robots.txt, kurallara uyan tarayıcıların sitenin tamamını yasaklanmış saymasına yol açar; bu yalnızca ara sıra olsa bile.",
+  "Nothing needs fixing for this audit. To let Maya's own crawler read the site directly, allow its user agent in the firewall or bot-protection rules. To see what named AI crawlers receive, verify ownership so ACC-4 can test them.": "Bu denetim için düzeltilecek bir şey yok. Maya'nın kendi tarayıcısının siteyi doğrudan okuması için güvenlik duvarı ya da bot koruması kurallarında kullanıcı aracısına izin verin. Adı bilinen yapay zekâ tarayıcılarının ne aldığını görmek için sahipliği doğrulayın; ACC-4 onları da sınayabilsin.",
+  "Change these links to the address on this site. The path matches one of this site's pages exactly, so the other domain is almost certainly a mistake, and the link most likely leads nowhere.": "Bu bağlantıları bu sitedeki adresle değiştirin. Yol bu sitenin bir sayfasıyla tam olarak eşleşiyor; diğer alan adı büyük olasılıkla bir hata ve bağlantı büyük olasılıkla hiçbir yere gitmiyor."
  },
  "fix_patterns": {
   "acc2.search": "{engines} bu sayfaları bulup atıf yapabilsin istiyorsanız, {line}. satırdaki kuralı bu kullanıcı aracıları için kaldırın veya daraltın. Engelleme bilinçli bir tercihse “kasıtlı” olarak işaretleyin.",
@@ -1749,7 +1757,8 @@
   "image delivery formats": "Sunulan görsel biçimleri",
   "source pages missing retained image markup": "Görsel işaretlemesi saklanmamış kaynak sayfalar",
   "hreflang target pages (title, description, noindex, canonical)": "hreflang hedef sayfaları (başlık, açıklama, noindex, canonical)",
-  "localized entity names": "Varlığın farklı dillerdeki adları"
+  "localized entity names": "Varlığın farklı dillerdeki adları",
+  "grids not checked for a form control beside them": "yanında form denetimi olup olmadığı kontrol edilmeyen tablolar"
  },
  "label_patterns": {
   "dfs.top_domains": "İlk {n} yönlendiren alan adı",
@@ -2006,7 +2015,9 @@
   "The earlier format finding included these URLs, but eligible image markup is unavailable in the retained page records; they are not passed or reclassified.": "Önceki biçim bulgusunda bu adresler vardı; saklanan sayfa kayıtlarında uygun görsel işaretlemesi bulunmuyor. Bunlar başarılı sayılmaz veya yeniden sınıflandırılmaz.",
   "Find out why the empty pages listed under IDX-1 send nothing, then re-run.": "IDX-1 altında listelenen boş sayfaların neden hiçbir şey göndermediğini bulun, ardından yeniden çalıştırın.",
   "the target answered but was not crawled, so its page was not read": "hedef yanıt verdi ama taranmadı, bu yüzden sayfası okunmadı",
-  "Different-language names of the same declared entity require owner confirmation; translation or alias meaning is not established.": "Aynı tanımlanmış varlığın farklı dillerdeki adları içerik sahibince doğrulanmalı; çeviri veya alternatif ad ilişkisi kanıtlanmadı."
+  "Different-language names of the same declared entity require owner confirmation; translation or alias meaning is not established.": "Aynı tanımlanmış varlığın farklı dillerdeki adları içerik sahibince doğrulanmalı; çeviri veya alternatif ad ilişkisi kanıtlanmadı.",
+  "a form control beside a grid (a calculator's input column next to its result column): the report does not keep the page's structure around a grid": "tablonun yanındaki form denetimi (bir hesaplayıcının giriş sütunu ile sonuç sütunu): rapor, tablonun çevresindeki sayfa yapısını saklamıyor",
+  "on another site; external link checks are off (--check-external-links)": "başka bir sitede; dış bağlantı kontrolleri kapalı (--check-external-links)"
  },
  "line_patterns": {
   "gap.probe_cap": "her çift sınanmadan önce {cap} isteklik sınama sınırına ulaşıldı",
@@ -2305,7 +2316,10 @@
   "int2.caveat.sitemap_other_host": "robots.txt başka bir adreste {n} site haritası dosyası adlandırıyor; bunlar okunmadı: {urls}.",
   "int2.caveat.sitemap_off_origin": "site haritaları başka bir kökende (https yanında http ya da yalın adın yanında www) {n} adres listeliyor; bunlar bu sitenin sayfaları olarak alınmadı: {urls}.",
   "str9.target_pages": "{n} hreflang hedef sayfası başlık, açıklama ve dizine girme açısından okunmadı (bkz. kanıt).",
-  "str9.out_of_scope": "{n} hreflang hedefi başka bir alan adında, bu denetimin dışında (bkz. kanıt)."
+  "str9.out_of_scope": "{n} hreflang hedefi başka bir alan adında, bu denetimin dışında (bkz. kanıt).",
+  "saved.host.unresolved": "{host}: alan adı güvenli biçimde çözümlenemedi: {name}",
+  "saved.robots.disallows": "{host}: {url} için robots.txt buna izin vermiyor: robots.txt yönlendirmelerden sonra beklenmeyen {status} durum kodu döndürdü; ulaşılamaz sayıldı",
+  "saved.robots.unavailable": "{host}: {url} için robots.txt alınamadı: robots.txt yönlendirmelerden sonra beklenmeyen {status} durum kodu döndürdü; ulaşılamaz sayıldı"
  },
  "examples": {
   "Put what is different first:  <title>Privacy Policy · Brand</title>   (not  <title>Brand's long tagline · Privacy Policy</title>)": "Farklı olanı başa yazın:  <title>Privacy Policy · Brand</title>   (şöyle değil:  <title>Brand's long tagline · Privacy Policy</title>)",

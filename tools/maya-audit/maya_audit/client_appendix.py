@@ -262,7 +262,7 @@ def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = No
         from .sampling import coverage_text as sampled_text
         return sampled_text(line.get("rows") or [], lang)
     if kind == "reader":
-        shown = (title(None, line.get("title") or "") if title else None) or line.get("title")
+        shown = (title(line.get("check_id") or "ACC-9", line.get("title") or "") if title else None) or line.get("title")
         return f"{shown} ({', '.join(line.get('finding_ids') or [])})"
     if kind == "not_assessed" and (line.get("part") or line.get("reason")) and (label or sentence):
         part = (label(line.get("part")) if label and line.get("part") else None) or line.get("part") or ""

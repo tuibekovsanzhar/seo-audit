@@ -2148,7 +2148,7 @@ class Builder:
                 limits.append(fmt(L["own_time"], seconds=fmt_int(int(line.get("seconds") or 0), lang)))
                 self.fact(int(line.get("seconds") or 0))
             elif line["kind"] == "reader":
-                text, _ = self.w.title(None, line.get("title") or "")
+                text, _ = self.w.title(line.get("check_id") or "ACC-9", line.get("title") or "")
                 limits.append(text or line.get("title"))
                 self.fact(line.get("title"))
             elif line["kind"] == "edit_pages":  # DECISIONS 351: CMS edit and preview addresses

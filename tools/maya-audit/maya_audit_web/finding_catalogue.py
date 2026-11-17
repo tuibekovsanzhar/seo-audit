@@ -289,7 +289,7 @@ def export(path: Path, home: Path | None = None) -> dict:
          "widths": [40, 8, 14, 30, 40]},
     ]
     Path(path).write_bytes(xlsx.workbook(sheets))
-    kinds = Counter(r["Tür"].split(" · ")[0] for r in made)
+    kinds = Counter("Kural çeşidi" if r["Tür"].startswith("Kural · ") else r["Tür"] for r in made)
     return {"rows": len(made), "rules": kinds.get("Kural", 0), "kinds": dict(kinds),
             "audits": seen.audits, "triggered": sum(1 for r in made if r["Tür"] == "Kural" and not r["Kaç denetimde"].startswith("0/"))}
 

@@ -845,6 +845,24 @@ for _cid, _rows in {
 }.items():
     _TITLES[_cid] = (*_TITLES.get(_cid,()), *_rows)
 
+# DECISIONS 354: titles only older saved reports hold, in a wording today's engine no longer writes. They are matched
+# after every current frame and never give a rule id (TITLES and rule_ids.json leave them out); the translation is
+# `saved_titles[key]` in the language file.
+SAVED_TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
+    "ACC-1": (("saved.acc1.unreachable", "robots.txt returned a server error or was unreachable on {failed#} of {samples#} fetches",
+               "robots.txt returned a server error or was unreachable on {failed} of {samples} fetches"),),
+    "ACC-9": (("saved.acc9.own_crawler", "{who:[^.]+?} challenged Maya's own crawler (an unverified bot). Verified search and AI crawlers "
+                                         "are normally not affected (not measured here); the site was read through Firecrawl.",
+               "{who} challenged Maya's own crawler (an unverified bot). Verified search and AI crawlers are normally not affected "
+               "(not measured here); the site was read through Firecrawl."),),
+    "RND-4": (("saved.rnd4.iframe", "{n#} page(s) embed content in an iframe; its text is not part of the page",
+               "{n:page embeds|pages embed} content in an iframe; its text is not part of the page"),),
+}
+_SAVED_FRAMES = {check: _frames(rows) for check, rows in SAVED_TITLES.items()}
+_SAVED_ENGLISH = {key: english for rows in SAVED_TITLES.values() for key, _, english in rows}
+# An older title that repeats its details after " — " (STR-14's shared links): the part before is the title.
+_DETAIL_TAIL = " — "
+
 TITLES: dict[str, tuple[tuple[str, str], ...]] = {check: tuple((key, Frame(key, frame).regex.pattern) for key, frame, _ in rows)
                                                  for check, rows in _TITLES.items()}
 ENGLISH: dict[str, str] = {key: english for rows in _TITLES.values() for key, _, english in rows}
@@ -1092,7 +1110,7 @@ def _load() -> dict[str, dict[str, dict[str, str]]]:
 
 
 TABLES = _load()
-SECTIONS = ("titles", "fixes", "fix_patterns", "expected", "expected_patterns", "notes", "note_patterns", "outcomes", "terms", "term_patterns",
+SECTIONS = ("titles", "saved_titles", "fixes", "fix_patterns", "expected", "expected_patterns", "notes", "note_patterns", "outcomes", "terms", "term_patterns",
             "labels", "label_patterns", "lines", "line_patterns", "examples")
 
 
@@ -1237,6 +1255,20 @@ def title(check_id: str, text: str, language: str | None = None) -> tuple[str, b
             # begins with a value put back unchanged ("llms.txt") keeps it as it is.
             first = re.match(r"\{(\w+)\}", template)
             return (_capital(found, language) if first and frame.kinds.get(first.group(1)) in ("~", "?") else found), True
+    for frame in _SAVED_FRAMES.get(check_id, ()):  # DECISIONS 354: an older saved wording
+        values = frame.values(text or "")
+        if values is None:
+            continue
+        if language == strings.DEFAULT_LANGUAGE:
+            return fill(_SAVED_ENGLISH[frame.key], values), True
+        found = _translated(frame, values, _table(language, "saved_titles").get(frame.key), language)
+        if found is not None:
+            return found, True
+    if text and _DETAIL_TAIL in text:
+        head = text.split(_DETAIL_TAIL, 1)[0]
+        shown, done = title(check_id, head, language)
+        if done:
+            return shown, True
     if language == strings.DEFAULT_LANGUAGE or not text:
         return english(text), True
     return _marked(text, language), False

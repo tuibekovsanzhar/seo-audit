@@ -2377,3 +2377,23 @@ a repeated card, "kritik öneme sahiptir"): all six found.
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3481 passed, 4 skipped, 1 warning in 965.69s (0:16:05)` |
 | `python3.11 -m compileall`, `ruff --select E9,F821,F841` (source folders) | OK, `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+## English left in Turkish reports (DECISIONS 354, 2026-11-17)
+
+VERIFIED locally; not pushed.
+
+- The Züber line (page reader's Kapsam line) is Turkish: the coverage line carries its check id.
+- Sweep of all 79 saved audits (report copies in the scratchpad; team data and the XLSX as downloaded): 16 English
+  sentences before, 0 after (older wordings in `wording.SAVED_TITLES` and `saved_titles`, the rest ordinary entries).
+- 26 older saved audits could not build a team report (`external_scripts` saved as a number); fixed.
+- Still flagged, left as found: repeated cards (RG-22) in moodisthastanesi.com 9156e1fd, e346db8d, b366e1c3 and
+  adilehanim.com 88aff6d1; their downloads are drafts.
+- Catalogue exported to `~/Downloads/bulgu-katalogu.xlsx` (535 rows; 319 rules). `anthropic` not installed (owner).
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_english_lines_354.py tests/test_text_check_353.py` | `24 passed` |
+| fast suite | `3350 passed, 4 skipped, 135 deselected, 1 warning in 555.62s (0:09:15)` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3485 passed, 4 skipped, 1 warning in 984.11s (0:16:24)` |
+| `python3.11 -m compileall`, `ruff --select E9,F821,F841` (source folders) | OK, `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

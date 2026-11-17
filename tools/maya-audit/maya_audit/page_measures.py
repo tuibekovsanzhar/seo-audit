@@ -93,7 +93,8 @@ def measure(page: Any) -> dict[str, Any]:
     if imgs:
         out["images"] = sum(int((v or {}).get("total") or 0) for v in imgs.values() if isinstance(v, dict))
         out["images_missing_alt"] = sum(int((v or {}).get("missing_alt") or 0) for v in imgs.values() if isinstance(v, dict))
-    scripts = [s for s in a.get("external_scripts") or [] if isinstance(s, dict)]
+    # DECISIONS 354: an older report kept only the number of scripts; no list, no blocking-script count.
+    scripts = [s for s in a.get("external_scripts") if isinstance(s, dict)] if isinstance(a.get("external_scripts"), list) else []
     if isinstance(a.get("external_scripts"), list):
         out["blocking_scripts"] = sum(1 for s in scripts if s.get("in_head") and not s.get("async") and not s.get("defer")
                                       and str(s.get("type") or "") in ("", "text/javascript"))

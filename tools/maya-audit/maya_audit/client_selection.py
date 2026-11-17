@@ -1135,7 +1135,8 @@ def coverage(report: dict, limits: list[dict], records: dict[str, dict] | None =
         lines.append({"kind": "time_budget", "seconds": cfg.get("time_limit_s"),
                       "cut": len(cuts) if isinstance(cuts, list) else cuts or None})
     for g in limits:
-        lines.append({"kind": "reader", "finding_ids": g["finding_ids"], "title": g["title"]})
+        # DECISIONS 354: the check id goes with the title, so its Turkish frame is found (reader notes are ACC-9's).
+        lines.append({"kind": "reader", "finding_ids": g["finding_ids"], "title": g["title"], "check_id": g.get("check_id") or "ACC-9"})
     block = block_pages_line(report)
     if block:
         lines.append(block)

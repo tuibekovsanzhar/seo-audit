@@ -5150,3 +5150,32 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      a card, a repeated card, "kritik öneme sahiptir") were all found. Catalogue on the 79 saved audits: 223 of the 319
      rules were triggered at least once.
      Tests: `tests/test_text_check_353.py` (20; made-up cards and reports, a fake second reader, the demo web app).
+
+354. **English left in Turkish reports, swept over every saved audit (Owner, 2026-11-17, after DECISIONS 353's check
+     flagged Züber; Turkish wording is agent-written for the SEO team's catalogue review).** Global for every audit.
+     *Cause of the Züber line:* the Kapsam/coverage line of a page reader ("Cloudflare rate-limited Maya's direct
+     crawler on 1 of 2 request(s). 148 page(s) were read through Firecrawl instead…") was worded with no check id
+     (`title(None, …)` in `build_data` and `client_appendix`), so ACC-9's Turkish frames were never tried. The coverage
+     line now carries its check id (`client_selection`, default ACC-9) and both readers pass it.
+     *Sweep:* every saved audit on this computer (79, copies of their reports; the web home only read), the team
+     report's data and the XLSX built as downloaded, every sentence shown untranslated collected. Found 16 older
+     wordings, from reports an earlier engine wrote, with no Turkish entry: ACC-1 "…server error or was unreachable on
+     N of M fetches", RND-4 "N page(s) embed content in an iframe; its text is not part of the page", ACC-9 "<CDN>
+     challenged Maya's own crawler (an unverified bot)…", STR-14 shared-link titles that repeat their details after
+     " — ", three older fixes (robots.txt 5xx or unreachable, "Nothing needs fixing for this audit…", the other-domain
+     links), lines "host could not be resolved safely", robots.txt "disallows it" / "is unavailable" after an
+     unexpected 301, "--check-external-links", and two current lines of the offline reassessment (a form control beside
+     a grid; its label). Older titles go into `wording.SAVED_TITLES` (matched after every current frame, never a rule id;
+     Turkish in the language file's new `saved_titles` section); a title with " — " details is worded by its head;
+     the rest are ordinary `fixes`, `labels`, `lines` and `line_patterns` entries. After the change the sweep finds no
+     English sentence in any of the 79.
+     *Found on the way:* 26 older saved audits could not build a team report at all (`external_scripts` saved as a
+     number, `page_measures.measure` expected a list); a number is now ignored. A date in a card's status
+     ("elle teyit edildi (2026-11-05)") is no longer read as a count by RG-18. Left as found (RG-22, real): two cards
+     with the same title on the same pages in three moodisthastanesi.com audits (str11.two_values, 9156e1fd, e346db8d,
+     b366e1c3) and one adilehanim.com audit (idx2.no_redirect, 88aff6d1); their downloads are drafts until the cards
+     are merged or told apart.
+     *Catalogue:* exported to ~/Downloads/bulgu-katalogu.xlsx (535 rows: 319 rules, 16 variants, 9 merged cards, 25
+     Note topics, 1 generic, 165 checklist items; 223 rules seen in the 79 audits). The second reader stays off: the
+     `anthropic` package is not installed until the SEO team has rewritten the catalogue (owner).
+     Tests: `tests/test_english_lines_354.py` (4).
