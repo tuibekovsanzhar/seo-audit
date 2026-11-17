@@ -336,7 +336,8 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
     if maya is None or lang != "tr":
         return reader + listed + technical
     from . import maya_sheets
-    made = maya_sheets.build(maya.get("summary"), maya.get("report") or {}, maya.get("evidence"))
+    made = maya_sheets.build(maya.get("summary"), maya.get("report") or {}, maya.get("evidence"),
+                             selection.get("_importance"), (selection.get("business_type") or {}).get("id"))  # DECISIONS 357
     R, W = READ[lang], WORDS[lang]
     for sheet in reader:
         if sheet["name"] == R["how"]:

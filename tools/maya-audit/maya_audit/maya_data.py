@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Iterator
 from urllib.parse import unquote, urlsplit, urlunsplit
 
-VERSION = 1
+VERSION = 2  # DECISIONS 357: a page counted once per answer (run) in the per-prompt page counts
 SUMMARY_FILE = "maya-data-summary.json"
 FOLDER = "maya-data"
 
@@ -481,8 +481,9 @@ def _ai(found: dict[str, Source], origin: str, brand_domains: list[str], brand_n
     prov_brand: Counter = Counter()
     domain_prompts: dict[str, set] = defaultdict(set)
     pages: dict[str, dict] = {}
-    prompt_urls: dict[str, Counter] = defaultdict(Counter)   # non-brand addresses per prompt (runs)
-    prompt_brand_pages: dict[str, Counter] = defaultdict(Counter)
+    # DECISIONS 357: per prompt, the answers (runs) that cite each address, each answer once however often it cites it
+    prompt_urls: dict[str, dict[str, set]] = defaultdict(lambda: defaultdict(set))   # non-brand addresses
+    prompt_brand_pages: dict[str, dict[str, set]] = defaultdict(lambda: defaultdict(set))
     prompt_runs: dict[str, set] = defaultdict(set)
     prompt_brand_runs: dict[str, set] = defaultdict(set)
     first = last = None
@@ -515,11 +516,11 @@ def _ai(found: dict[str, Source], origin: str, brand_domains: list[str], brand_n
                 rec["prompts"].add(pid)
                 rec["runs"].add(run)
                 rec["by_provider"][model] += 1
-                prompt_brand_pages[pid][u] += 1
+                prompt_brand_pages[pid][u].add(run)
         else:
             u = page_url(r.get("url") or domain)
             if u:
-                prompt_urls[pid][u] += 1
+                prompt_urls[pid][u].add(run)
     out["rows"]["citation-mentions"] = n
     out["period"] = [first, last] if first else None
     out["monthly"] = [{"month": m, "rows": monthly_rows[m], "brand_rows": monthly_brand[m]} for m in sorted(monthly_rows) if m]
@@ -529,8 +530,10 @@ def _ai(found: dict[str, Source], origin: str, brand_domains: list[str], brand_n
     out["prompts_cited"] = len(prompt_runs)
     out["pages"] = {u: {"prompts": len(rec["prompts"]), "runs": len(rec["runs"]), "by_provider": dict(rec["by_provider"]),
                         "prompt_ids": sorted(rec["prompts"])[:400]} for u, rec in pages.items()}
-    out["prompt_urls"] = {pid: dict(c.most_common(40)) for pid, c in prompt_urls.items()}
-    out["prompt_brand_pages"] = {pid: dict(c.most_common(10)) for pid, c in prompt_brand_pages.items()}
+    def most(by_url: dict[str, set], n: int) -> dict[str, int]:
+        return dict(Counter({u: len(runs) for u, runs in by_url.items()}).most_common(n))
+    out["prompt_urls"] = {pid: most(c, 40) for pid, c in prompt_urls.items()}
+    out["prompt_brand_pages"] = {pid: most(c, 10) for pid, c in prompt_brand_pages.items()}
     out["prompt_runs"] = {pid: len(v) for pid, v in prompt_runs.items()}
     out["prompt_brand_runs"] = {pid: len(v) for pid, v in prompt_brand_runs.items()}
     out["sov"] = _sov(found.get("result-items"), brand_names, out["rows"])
@@ -632,7 +635,22 @@ def load_for(folder: Path | str | None) -> dict | None:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    return data if isinstance(data, dict) and data.get("version") == VERSION else None
+    if isinstance(data, dict) and data.get("version") == VERSION:
+        return data
+    # DECISIONS 357: a summary of an older version is made again from the export files kept beside it, then saved.
+    files = Path(folder) / FOLDER
+    if isinstance(data, dict) and files.is_dir() and data.get("origin"):
+        try:
+            again = prepare([files], data["origin"])
+        except (MayaDataError, OSError, ValueError):
+            return None
+        again["fetched"] = data.get("fetched") or {}
+        try:
+            save(again, Path(folder))
+        except OSError:
+            pass
+        return again
+    return None
 
 
 # ---------------------------------------------------------------- a polite fetcher for `maya_sheets.enrich`

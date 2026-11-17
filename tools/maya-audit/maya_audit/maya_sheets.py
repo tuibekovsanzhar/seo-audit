@@ -104,8 +104,14 @@ def alias_key(url: str) -> str:
 class Crawl:
     """The audit's own pages: status, redirect, page type, canonical and the saved evidence (main text, JSON-LD)."""
 
-    def __init__(self, report: dict, evidence_dir: Path | None = None, fetched: dict | None = None):
+    def __init__(self, report: dict, evidence_dir: Path | None = None, fetched: dict | None = None,
+                 records: dict[str, dict] | None = None, profile: str | None = None):
         crawl = report.get("crawl") or {}
+        # DECISIONS 357: the page records the appendix's own sheets use (the selection's, typed for the business
+        # profile), so a page has one type in every sheet; the saved crawl's own grouping only without them.
+        self.records = {page_url(u, crawl.get("origin") or crawl.get("start_url") or "") or u: g
+                        for u, g in (records or {}).items() if isinstance(g, dict)}
+        self.profile = profile
         self.origin = crawl.get("origin") or crawl.get("start_url") or ""
         self.pages: dict[str, dict] = {}
         self.canonical: dict[str, str] = {}
@@ -143,10 +149,29 @@ class Crawl:
             return None, None
         return p.get("status"), p.get("redirect_location")
 
+    def record(self, url: str) -> dict:
+        return self.records.get(url) or (self.pages.get(url) or {}).get("grouping") or {}
+
+    def type_word(self, url: str) -> str:
+        """DECISIONS 357: the page's type in the words of "Sayfa bazında" (the profile's type when one applies)."""
+        from .client_appendix import WORDS
+        from .page_rows import page_kind_of, type_word
+        g = self.record(url)
+        if not g:
+            # a page this audit did not read: typed from its address with the same profile, as Akıllı sampling does
+            from . import business_types as bt
+            from .sampling import pre_type
+            kind, _ = pre_type(bt.profile(self.profile), url)
+            if kind == "file":
+                return "dosya (adresten)"
+            if kind == "other" and self.kind(url) in ("legal", "form"):
+                kind = "policy" if self.kind(url) == "legal" else "utility"
+            return (type_word(kind, "tr", self.profile, WORDS["tr"]["page_type"]) or "—") + " (adresten)"
+        return type_word(page_kind_of(g), "tr", self.profile, WORDS["tr"]["page_type"]) or "—"
+
     def kind(self, url: str) -> str:
-        """The page kind for the importance weight: the crawl's page type, else the address."""
-        p = self.pages.get(url) or {}
-        g = p.get("grouping") or {}
+        """The page kind for the importance weight: the page's type (the profile's when one applies), else the address."""
+        g = self.record(url)
         generic, biz = g.get("page_type"), str(g.get("business_page_type") or "")
         path = urlsplit(url).path.lower()
         if generic == "home" or path in ("", "/"):
@@ -157,13 +182,13 @@ class Crawl:
             return "legal"
         if re.search(r"fee|pricing|ucret", biz) or _FEE.search(path):
             return "fee"
-        if re.search(r"support|help|faq|contact", biz) or _SUPPORT.search(path):
+        if re.search(r"support|help|faq|contact|sales|guide", biz) and "blog" not in biz or _SUPPORT.search(path):
             return "support"
-        if generic == "blog_article" or re.search(r"guide|blog", biz) or _BLOG.search(path):
+        if generic == "blog_article" or re.search(r"blog", biz) or _BLOG.search(path):
             return "blog"
         if re.search(r"campaign", biz) or _CAMPAIGN.search(path):
             return "campaign"
-        if generic in ("product", "category") or biz and biz not in ("other",):
+        if generic in ("product", "category") or biz and biz not in ("other", "home", "utility", "policy"):
             return "product"
         return "other"
 
@@ -404,7 +429,7 @@ def segment_sheets(summary: dict, crawl: Crawl) -> tuple[dict, dict, list[dict],
     for i, r in enumerate(seg_rows, 2):
         g = r["gsc"] or {}
         first_row.setdefault(r["segment"], i)
-        body.append([r["importance"], _link(r["url"]), SEGMENTS[r["segment"]][0], TYPE_WORDS[r["kind"]], r["topic"] or "—",
+        body.append([r["importance"], _link(r["url"]), SEGMENTS[r["segment"]][0], crawl.type_word(r["url"]), r["topic"] or "—",
                      "Evet" if r["gsc"] else "Hayır (ölçülmedi)", round(g["clicks"]) if g else "", round(g["impressions"]) if g else "",
                      _pct(g.get("ctr")) if g else "", g.get("position") if g else "", round(r["weekly"]) if r["weekly"] else "",
                      r["n_prompts"], r["runs"]] + [r["by_provider"].get(p, 0) for p in providers] + [
@@ -458,7 +483,7 @@ def detail_sheet(summary: dict, crawl: Crawl, rows: list[dict]) -> dict:
             cells = [m["title"], m["meta_chars"] if m["meta_chars"] is not None else "yok", m["h1"], len(m["h2"]),
                      " | ".join(m["h2"][:8]), _words(m), m["tables"], _blank(m["faq_questions"]), _blank(m["numbers"]),
                      "Evet" if m["dated"] else "Hayır", ", ".join(m["types"]), m["first"] or ""]
-        body.append([r["importance"], _link(r["url"]), SEGMENTS[r["segment"]][0], TYPE_WORDS[r["kind"]], r["topic"] or "—",
+        body.append([r["importance"], _link(r["url"]), SEGMENTS[r["segment"]][0], crawl.type_word(r["url"]), r["topic"] or "—",
                      round(g["impressions"]) if g else "", round(g["clicks"]) if g else "", _pct(g.get("ctr")) if g else "",
                      g.get("position") if g else "", r["n_prompts"], r["topic_prompts"] or ""] + cells + [
                      competitors, "\n".join(findings(m)) if m and not m.get("error") else "", SEGMENT_ACTION[r["segment"]]])
@@ -507,14 +532,74 @@ def _domain(url: str) -> str:
     return (urlsplit(url).hostname or "").lower().removeprefix("www.")
 
 
-def topic_rows(summary: dict) -> list[dict]:
+def _key(name: str) -> str:
+    """A brand name as a comparable key: folded, letters and digits only ("T-Soft" -> "tsoft", "İkas" -> "ikas")."""
+    return re.sub(r"[^a-z0-9]", "", _fold(name))
+
+
+def _label(domain: str) -> str:
+    """The registrable domain's own name: "help.shopify.com" -> "shopify", "ideasoft.com.tr" -> "ideasoft"."""
+    from .urls import registrable_domain
+    return re.sub(r"[^a-z0-9]", "", (registrable_domain(domain) or domain).split(".")[0])
+
+
+# DECISIONS 357: a third-party page lists several brands when its address or title says so (a comparison, a list, the
+# best of, alternatives), or when its fetched text names two or more of the brands.
+_LISTING = re.compile(r"(?<![a-z])(en iyi|karsilastir\w*|alternatif\w*|vs|versus|best \w+ (?:for|to)|top \d+|\d+ (?:en|best)|liste\w*|"
+                      r"hangisi|platformlari|altyapilari|firmalari|sirketleri|comparison|compare|review\w*|inceleme\w*)(?![a-z])")
+_NOT_PAGES = re.compile(r"^(images|img|cdn|static|media|assets|i)\.|\.(png|jpe?g|gif|webp|svg|pdf)$")
+
+
+def competitor_keys(summary: dict) -> dict[str, str]:
+    """{key: name} of the competitor brands: the meta's competitors and their aliases, the competitor-mentions names and
+    the topic visibility leaders; generic words and the brand's own names left out (DECISIONS 357)."""
+    from .maya_data import is_generic
+    names: list[str] = []
+    for c in summary.get("competitors") or []:
+        names += [c.get("name") or ""] + list(c.get("aliases") or [])
+    names += [a for a in summary.get("aliases") or [] if isinstance(a, str)]
+    for row in ((summary.get("mentions") or {}).get("top") or []):
+        names.append(row[0] or "")
+    for t in ((summary.get("visibility") or {}).get("topics") or []):
+        names.append(t.get("leader") or "")
+    own = {_key(n) for n in summary.get("brand_names") or []} | {_label(d) for d in summary.get("brand_domains") or []}
+    out: dict[str, str] = {}
+    for n in names:
+        k = _key(n)
+        if len(k) >= 3 and k not in own and not is_generic(n) and not k.isdigit() and "." not in (n or "").strip("."):
+            out.setdefault(k, n)
+    return out
+
+
+def domain_kind(domain: str, summary: dict, keys: dict[str, str], explicit: set[str], url: str = "",
+                text: str | None = None) -> str:
+    """brand, competitor (a competitor brand's own site), social, comparison (a third party listing several brands) or
+    other (a third party that does not show it does)."""
+    brand = set(summary.get("brand_domains") or [summary.get("domain") or ""]) - {""}
+    if any(domain == b or domain.endswith("." + b) for b in brand):
+        return "brand"
+    if any(domain == c or domain.endswith("." + c) for c in explicit) or _label(domain) in keys:
+        return "competitor"
+    if any(domain == s or domain.endswith("." + s) for s in SOCIAL):
+        return "social"
+    if _NOT_PAGES.search(domain) or _NOT_PAGES.search(urlsplit(url).path.lower()):
+        return "other"
+    words = _fold(f"{domain} {urlsplit(url).path} {text or ''}".replace("-", " ").replace("/", " ").replace(".", " "))
+    if _LISTING.search(words) or (text and sum(1 for k in keys if k in re.sub(r"[^a-z0-9 ]", "", _fold(text)).replace(" ", "")) >= 2):
+        return "comparison"
+    return "other"
+
+
+def topic_rows(summary: dict, crawl: "Crawl | None" = None) -> list[dict]:
     ai = summary.get("ai") or {}
     info = ai.get("prompts") or {}
     topics = _topics(summary)
     vis = {t["topic"]: t for t in ((summary.get("visibility") or {}).get("topics") or [])}
-    comp_domains = {c["domain"] for c in summary.get("competitors") or [] if c.get("domain")}
-    comp_domains |= {d for _, _, d in ((summary.get("mentions") or {}).get("top") or []) if d}
-    brand = set(summary.get("brand_domains") or [summary["domain"]])
+    explicit = {c["domain"] for c in summary.get("competitors") or [] if c.get("domain")}
+    explicit |= {d for _, _, d in ((summary.get("mentions") or {}).get("top") or []) if d}
+    keys = competitor_keys(summary)
+    fetched = summary.get("fetched") or {}
+    home = (summary.get("origin") or "").rstrip("/")
     by_topic: dict[str, list[str]] = defaultdict(list)
     for pid, t in topics.items():
         if t and info.get(pid, {}).get("active", True):
@@ -523,7 +608,7 @@ def topic_rows(summary: dict) -> list[dict]:
     for topic, pids in by_topic.items():
         runs = sum((ai.get("prompt_runs") or {}).get(p, 0) for p in pids)
         brand_runs = sum((ai.get("prompt_brand_runs") or {}).get(p, 0) for p in pids)
-        brand_pages: Counter = Counter()
+        brand_pages: Counter = Counter()  # answers (runs) citing each brand page, each answer once (DECISIONS 357)
         for p in pids:
             brand_pages.update((ai.get("prompt_brand_pages") or {}).get(p) or {})
         urls: Counter = Counter()
@@ -534,19 +619,22 @@ def topic_rows(summary: dict) -> list[dict]:
                 urls[u] += n
                 url_prompts[u].add(p)
                 dom_prompts[_domain(u)].add(p)
-        def kind(d):
-            if any(d == b or d.endswith("." + b) for b in brand):
-                return "brand"
-            if any(d == c or d.endswith("." + c) for c in comp_domains):
-                return "competitor"
-            if any(d == s or d.endswith("." + s) for s in SOCIAL):
-                return "social"
-            return "comparison"
-        comp_page = next(((u, n) for u, n in urls.most_common() if kind(_domain(u)) == "competitor"), None)
-        cmp_page = next(((u, n) for u, n in urls.most_common() if kind(_domain(u)) == "comparison"), None)
+
+        def kind(u):
+            m = fetched.get(u) if isinstance(fetched.get(u), dict) else {}
+            text = " ".join([m.get("title") or "", m.get("h1") or "", *(m.get("h2") or []), m.get("first") or ""]) if m else None
+            return domain_kind(_domain(u), summary, keys, explicit, u, text)
+        comp_page = next(((u, n) for u, n in urls.most_common() if kind(u) == "competitor"), None)
+        cmp_page = next(((u, n) for u, n in urls.most_common() if kind(u) == "comparison"), None)
+        cited = brand_pages.most_common()
+        # DECISIONS 357: the brand page compared is the topic's most cited one other than the homepage, unless only the
+        # homepage is cited
+        own = next((u for u, _ in cited if u.rstrip("/") != home), cited[0][0] if cited else None)
         v = vis.get(topic) or {}
         out.append({"topic": topic, "prompts": pids, "n": len(pids), "runs": runs, "brand_share": brand_runs / runs if runs else None,
-                    "brand_pages": [(u, n / brand_runs if brand_runs else 0) for u, n in brand_pages.most_common(3)],
+                    # a page's share: the answers in the topic that cite it (never above 100%)
+                    "brand_pages": [(u, min(1.0, n / runs) if runs else 0) for u, n in cited[:3]],
+                    "brand_page": own,
                     "vis": v or None, "gap": v.get("gap"),
                     "domains": [(d, len(ps) / len(pids)) for d, ps in sorted(dom_prompts.items(), key=lambda kv: -len(kv[1]))[:5]],
                     "competitor_page": (comp_page[0], comp_page[1], len(url_prompts[comp_page[0]])) if comp_page else None,
@@ -586,7 +674,7 @@ def insight(t: dict) -> tuple[str, str]:
 
 def topic_sheet(summary: dict, rows: list[dict]) -> dict:
     header = ["Öncelik", "Konu", "Panel prompt (n)", "Yalnız gösterge (n<10)", "Marka citation payı (koşu)",
-              "Markanın kaynak gösterilen sayfaları (koşu payı)", "Konu görünürlüğü marka (ilk → son hafta)",
+              "Markanın kaynak gösterilen sayfaları (konudaki cevapların payı)", "Konu görünürlüğü marka (ilk → son hafta)",
               "Lider rakip (ilk → son hafta)", "Fark (puan, son hafta)", "En çok kaynak gösterilen alan adları (prompt payı)",
               "En çok kaynak gösterilen rakip marka sayfası", "En çok kaynak gösterilen karşılaştırma sayfası",
               "Üçüncü taraf listelerde marka sırası", "İçgörü", "Önerilen aksiyon", "Örnek prompt'lar"]
@@ -609,8 +697,7 @@ def structure_targets(topics: list[dict], summary: dict) -> list[tuple[str, str,
     comparison page (at most MAX_EXTERNAL_PER_TOPIC external pages per topic)."""
     out = []
     for t in topics:
-        brand_page = t["brand_pages"][0][0] if t["brand_pages"] else None
-        out.append((t["topic"], "Marka", brand_page))
+        out.append((t["topic"], "Marka", t.get("brand_page")))
         ext = [("Rakip marka", t["competitor_page"][0] if t["competitor_page"] else None),
                ("Karşılaştırma sitesi", t["comparison_page"][0] if t["comparison_page"] else None)]
         for side, url in ext[:MAX_EXTERNAL_PER_TOPIC]:
@@ -658,12 +745,14 @@ def difference(mine: dict | None, other: dict) -> str:
 # ---------------------------------------------------------------- the whole
 
 
-def build(summary: dict | None, report: dict, evidence_dir: Path | None = None) -> dict[str, Any]:
-    """{"sheets": [...], "howto": [[text, link]], "coverage": [text], "method": [[part, value]]}."""
+def build(summary: dict | None, report: dict, evidence_dir: Path | None = None, records: dict[str, dict] | None = None,
+          profile: str | None = None) -> dict[str, Any]:
+    """{"sheets": [...], "howto": [[text, link]], "coverage": [text], "method": [[part, value]]}. `records`, `profile`:
+    the selection's page records and business type (DECISIONS 357), so every sheet names a page's type alike."""
     if not summary:
         return {"sheets": [], "howto": [], "coverage": ["Maya verisi eklenmedi: Search Console, AI citation ve rakip sayfaları yok."],
                 "method": []}
-    crawl = Crawl(report, evidence_dir, summary.get("fetched"))
+    crawl = Crawl(report, evidence_dir, summary.get("fetched"), records, profile)
     missing = summary.get("missing") or {}
     sheets, howto, coverage, method = [], [], [], []
     datasets = ", ".join(f"{d['dataset']} ({(d.get('period') or ['', ''])[0]} – {(d.get('period') or ['', ''])[1]})"
@@ -719,7 +808,7 @@ def build(summary: dict | None, report: dict, evidence_dir: Path | None = None) 
             if not_read:
                 coverage.append(f"Sayfa detay: {not_read} sayfa bu denetimde okunmadı ve ayrıca indirilmedi («okunmadı»)")
     if not skipped("competitors", "Rakip"):
-        topics = topic_rows(summary)
+        topics = topic_rows(summary, crawl)
         if topics:
             sheets.append(topic_sheet(summary, topics))
             sheets.append(structure_sheet(topics, summary, crawl))

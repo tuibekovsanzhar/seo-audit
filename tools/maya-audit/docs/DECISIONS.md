@@ -5252,3 +5252,31 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Uygulanmaz 30 -> 28. Text check PASS.
      Tests: `tests/test_saas_profile_356.py` (11; made-up software and shop sites); `test_business_types_311` now
      exempts SaaS from the sector file's shape (owner's change) and keeps its five ids.
+
+357. **The Maya sheets after the Ticimax review (Owner, 2026-11-17, reviewing the Ticimax Ek with Maya data; the list
+     words, the name matching and the "(adresten)" mark are agent defaults).** Global for every audit and profile.
+     1. *One page type everywhere:* "Organik×AI", "Sayfa detay" and "Rakip" take the selection's page records (typed for
+     the business profile) and name a type with `page_rows.type_word(page_kind_of(...))`, as "Sayfa bazında" does
+     (`maya_sheets.build(..., records, profile)` from `client_appendix.sheets`). A page the audit did not read is typed
+     from its address with the same profile (`sampling.pre_type`), marked "(adresten)"; files are "dosya". The importance
+     weight reads the same records (pricing -> ücret, guide/sales -> destek, blog, profile types -> ürün).
+     2. *Competitor brands:* a cited domain is a competitor brand's own site when its registrable name equals a
+     competitor's name as a key (folded, letters and digits: "T-Soft" = tsoft.com.tr, "IdeaSoft" = ideasoft.com.tr):
+     the meta's competitors and aliases, the competitor-mentions names, the Topic Pulse leaders; generic words and the
+     brand's own names never. A third party is a comparison site only when its domain, address or fetched title/H1/H2s
+     say it lists brands (en iyi, karşılaştır, alternatif, vs, top N, liste, hangisi, …) or name two or more of the
+     brands; image and CDN hosts and other third parties are neither.
+     3. *The brand page of a topic* ("Rakip - Sayfa yapısı"): the brand page most cited for the topic's prompts other
+     than the homepage, the homepage only when nothing else is cited.
+     4. *Shares:* the per-prompt page counts are answers (runs) citing the page, each answer once however often it
+     cites it (maya_data VERSION 2); a page's share is those answers over the topic's answers (never above 100%). A
+     summary of version 1 is made again from the export files kept beside it (`artifacts/maya-data/`) when read, and
+     saved; without the files it is not used.
+     *Ticimax c77ebf6d before -> after* (scratch copies with the attached exports; previous commit vs this build):
+     (1) /e-ticaret-paketleri "diğer" -> "Fiyatlandırma", /is-ortaklarimiz "ürün" -> "Entegrasyon"; pages in both
+     sheets with another type 8 of 9 -> 0. (2) "Rakip marka" filled 0 of 18 topics -> 17 of 18 (ikas.com 12, shopify.com
+     3, ideasoft.com.tr 2); ikas.com no longer a comparison site (it was 3 topics'); comparison sites are list pages
+     ("en-iyi-10-e-ticaret-sitesi", "turkiyede-en-cok-tercih-edilen-10-eticaret-altyapisi"). (3) brand page = homepage
+     16 of 18 topics -> 0 (11 different pages: posts, /e-ticaret-paketleri …). (4) highest share 329% (20 above 100%) ->
+     100% (none above); e.g. "E-Ticaret Satış": ticimax.com 163% -> 74%.
+     Tests: `tests/test_maya_review_357.py` (6; fake exports).

@@ -2444,3 +2444,24 @@ VERIFIED locally; not pushed. Profile `saas` relabelled "SaaS / Yazılım" with 
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3503 passed, 4 skipped, 1 warning in 977.56s (0:16:17)` |
 | `python3.11 -m compileall`, `ruff --select E9,F821,F841` (source folders) | OK, `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+Push (owner: "push", 2026-11-17): `20bfe15` (DECISIONS 356) pushed; CI run 44142856394 passed.
+
+## Maya sheets after the Ticimax review (DECISIONS 357, 2026-11-17)
+
+VERIFIED locally; not pushed.
+
+| Ticimax c77ebf6d (with Maya data) | Before | After |
+|---|---|---|
+| Page types vs "Sayfa bazında" | 8 of 9 shared pages differ; /e-ticaret-paketleri "diğer", /is-ortaklarimiz "ürün" | 0 differ; "Fiyatlandırma", "Entegrasyon" |
+| "Rakip marka" filled | 0 / 18 topics (ikas.com counted as a comparison site) | 17 / 18 (ikas.com, shopify.com, ideasoft.com.tr) |
+| Brand page in "Rakip - Sayfa yapısı" | homepage in 16 / 18 topics | homepage in 0 / 18; 11 different pages |
+| Brand page shares | up to 329% (20 above 100%) | up to 100% (none above) |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_maya_review_357.py tests/test_maya_data_352.py` | `21 passed` |
+| fast suite | `3374 passed, 4 skipped, 135 deselected, 1 warning in 552.14s (0:09:12)` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3509 passed, 4 skipped, 1 warning in 994.91s (0:16:34)` |
+| `ruff --select E9,F821,F841` (source folders) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |
