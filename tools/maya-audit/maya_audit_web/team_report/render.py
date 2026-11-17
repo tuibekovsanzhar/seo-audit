@@ -876,7 +876,8 @@ def write_appendix(d, out):
     report = json.loads(Path(d["_report_path"]).read_text(encoding="utf-8"))
     affected = json.loads(Path(d["_affected_path"]).read_text(encoding="utf-8")) if d.get("_affected_path") else None
     content, sealed = appendix_bytes(report, affected, d.get("_confirmations") or {}, d["lang"], d.get("_business"),
-                                     todos=(d.get("todos") or []) + (d.get("notes_more") or []) or None)
+                                     todos=(d.get("todos") or []) + (d.get("notes_more") or []) or None,
+                                     maya=maya_bundle(d.get("_artifacts")))
     path = out.with_name(out.stem + ("-appendix.xlsx" if d["lang"] == "en" else "-ek.xlsx"))
     path.write_bytes(content)
     problems = [f"HATA: {v['rule']}: {v['message']}" for v in
@@ -884,7 +885,7 @@ def write_appendix(d, out):
     return path, problems
 
 
-def appendix_bytes(report, affected, confirmations, lang, business=None, todos=None):
+def appendix_bytes(report, affected, confirmations, lang, business=None, todos=None, maya=None):
     """The XLSX appendix (DECISIONS 300 (4)) from the saved report, its address list and the owner's manual checks:
     (bytes, the final result). The one function of the skill's `-ek.xlsx` and the web app's "Ek (XLSX)" button, so
     both files are the same (DECISIONS 307). `todos`: the team report's cards, so the "Özet" sheet has the PDF's
@@ -896,8 +897,19 @@ def appendix_bytes(report, affected, confirmations, lang, business=None, todos=N
     content = client_appendix.build(selection, lang, sealed.affected,
                                     title=lambda cid, text: w.title(cid, text, lang)[0], fix=lambda text: w.fix(text, lang)[0],
                                     label=lambda text: w.label(text, lang)[0], line=lambda text: w.line(text, lang)[0],
-                                    todos=todos, words=plain_words(lang), places=sealed.cards)  # DECISIONS 337
+                                    todos=todos, words=plain_words(lang), places=sealed.cards,  # DECISIONS 337
+                                    maya={**(maya or {"summary": None}), "report": sealed.report})  # DECISIONS 352
     return content, sealed
+
+
+def maya_bundle(artifacts) -> dict:
+    """DECISIONS 352: the Maya data attached to an audit (its summary beside the report, the saved page evidence);
+    {"summary": None} when none is: the appendix then says "Maya verisi eklenmedi"."""
+    from pathlib import Path as _P
+    from maya_audit import maya_data  # type: ignore
+    folder = _P(artifacts) if artifacts else None
+    return {"summary": maya_data.load_for(folder) if folder else None,
+            "evidence": folder / "evidence" if folder and (folder / "evidence").is_dir() else None}
 
 
 def sector_bytes(report, affected, confirmations, business=None):

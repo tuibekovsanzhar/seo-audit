@@ -5039,3 +5039,57 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      homepage and its edit copy) → "Videodaki mesajı sayfaya metin olarak yazın" (sameAs now reaches one page).
      Tests: `tests/test_bank_followup_351.py` (19); method version 5 in `test_page_groups`, `test_shop_review_347`; the
      alias fix as a run-time choice in `test_wording`.
+352. **Maya data in the audit: Search Console, AI citations and competitors as appendix sheets (Owner, 2026-11-17,
+     requested by Efsa, reviewed by İlginay; the sheets follow Efsa's Enpara file "0", "B1", "B2", "C1", "C2", "D1" and
+     "Z"; dataset handling, word lists and the share-of-voice formula are agent defaults).** Global for every brand and
+     business profile; Enpara was only the test case.
+     *Input* (`maya_audit/maya_data.py`): the Maya export datasets attached to an audit (files, a folder or a zip),
+     matched by the dataset name in "<domain>-<dataset>[-<from>-<to>].csv|jsonl|json" (22 known names; others listed as
+     not used). The export's domain (file names and meta.json) must be the audited site's, else refused
+     ("Maya verisi başka bir siteye ait …"). Large files are read as a stream (citation-mentions 1.46 M rows / 411 MB
+     and result-items 326 MB in about 20 s) into one summary kept beside the report (`maya-data-summary.json`); from
+     meta.json only the domain, brand names, competitors (names, domains, aliases) and prompt label names are kept,
+     never a name, an e-mail address or account/integration data. Web app: an optional "Maya verisi" card in the
+     downloads (each file sent as it is to `PUT /audits/{id}/maya-data/files/{name}`, the only non-JSON body the server
+     accepts, still behind the cookie and the action token; `POST /audits/{id}/maya-data` reads them, `GET`/`DELETE`);
+     CLI: `build_data.py --maya-data PATH … [--maya-fetch]`.
+     *Search Console rules:* a 28-day snapshot row (gsc-page-scores, gsc-top-queries, gsc-query-opportunities) is never
+     summed: the latest row per page or query is used; daily rows (gsc-search-performance, gsc-daily-stats) are summed;
+     gsc-top-pages' weekly sample is a column of its own, never mixed in; every block names its dataset and period;
+     brand vs non-brand queries from the brand's names; device and country splits when the dataset has them.
+     *Sheets* (`maya_audit/maya_sheets.py`, after the reader sheets, Turkish): "Genel durum" (monthly clicks,
+     impressions and position with the average weekday for months of unequal length, Monday–Friday weeks, brand share
+     of AI citations per month, per provider share of voice and citation share, topic visibility brand vs leader with
+     gap, most cited other domains); "Organik×AI - Özet" and "- Segmentler" (one row per page joining GSC, AI citations
+     and the crawl; Efsa's segments 3, 1, 1b, 4, 2, 2b, 5, 6, 0 with thresholds from the site's own quartiles,
+     importance 0–100 = 40 × impressions percentile + 40 × AI prompt percentile + page-type weight; duplicates such as
+     /anasayfa or a page canonical to another merged into the clean main address and listed; "not in GSC" = not
+     measured; "Satırlara git" links); "Sayfa detay" (top 40 by importance: GSC, prompts, title, meta length, H1, H2s,
+     main-text words, tables, FAQ schema questions, numeric values, date signal, schema types, first sentence,
+     competitor pages cited for the same prompts, rule-based findings and action, from the crawl's record and saved
+     evidence); "Rakip - Konu" and "Rakip - Sayfa yapısı" (per topic: prompts, n < 10 only an indication, brand
+     citation share and pages, visibility brand vs leader and gap, top domains, top competitor-brand and comparison
+     page, insight, action, 2 sample prompts, sorted by gap; brand vs competitor vs comparison page structure with
+     "Fark [HİPOTEZ]"). Topics: Maya's prompt labels, else the visibility topic whose name words the prompt holds;
+     generic words Topic Pulse reports as competitors ("maid", "handyman", "urban" alone) are no competitor. Pages the
+     crawl did not read and up to 3 external pages per topic are measured only when fetched once by `enrich`
+     (polite, robots.txt, public addresses, browser identity, never counted toward the audit's page limit; the web
+     app's tick or `--maya-fetch`), else "okunmadı" / "alınamadı". Each sheet whose datasets are missing is left out and
+     Kapsam names the missing dataset; no Maya data: "Maya verisi eklenmedi". "Nasıl okunur" has a line per sheet, Kapsam
+     the datasets and periods, Yöntem the formulas and thresholds and "korelasyon nedensellik değildir".
+     *Share of voice* (result-items, optional): the brand's mentions over all brand mentions in the answers (the brand
+     and each answer's comparisonBrands), per provider and month; without result-items the column is "—".
+     *Not done:* the brand's position in third-party lists is "—" (not read from the pages); the per-prompt competitor
+     columns keep the 40 most cited addresses per prompt.
+     *Enpara (fee70191 with the exports in ~/Downloads, 15 Aug – 13 Nov) vs Efsa's file (13 Aug – 11 Nov):* GSC
+     September/October and AI citation rows September/October equal (501069 / 7889507, 443676 / 5920594; 595542 /
+     34407, 372611 / 22078); August and November differ by the two days the exports differ; provider citation shares
+     equal within rounding (ChatGPT 0.0692); top cited domains equal (Garanti 389, İş Bankası 388, Akbank 369, Ziraat
+     361; Yapı Kredi 369 vs 368); AI thresholds equal (≥ 15 prompts strong, < 7 few); AI prompts per page equal on 103
+     of the 125 pages both list (±1–4 from the period). Her Monday–Friday weeks from 13 Oct are Tuesday–Saturday (a
+     one-day shift); this file's are Monday–Friday. Share of voice is not hers (0.04–0.08 vs 0.09–0.19: her source is
+     not in the exports). Not comparable until exported: gsc-page-scores (or gsc-search-performance), so every page is
+     "GSC'de ölçülmedi" and segments 3/1/4/6 and the GSC part of the importance are empty (Sayfa detay shares 8 of her
+     37 pages); topic-visibility-snapshots and competitor-mentions-daily, so the two competitor sheets are left out;
+     meta.json, so no prompt labels or brand aliases.
+     Tests: `tests/test_maya_data_352.py` (15, fake exports and a made-up crawl; no live request).

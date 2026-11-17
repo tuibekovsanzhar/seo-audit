@@ -28,6 +28,8 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 TOKEN_HEADER = "x-maya-token"
+MAYA_UPLOAD = __import__("re").compile(r"^/api/v1/audits/[0-9a-f]{32}/maya-data/files/[^/]+$")
+MAX_UPLOAD_BYTES = 2 * 1024 ** 3  # one Maya export file
 COOKIE = "maya_session"
 SAFE_METHODS = {"GET", "HEAD"}
 CHANGING_METHODS = {"POST", "PUT", "DELETE"}
@@ -86,10 +88,15 @@ class Guard:
         length = request.headers.get("content-length")
         if length is None and method != "DELETE":
             return 411, "length_required", "The request must say how long its body is."
+        kind = request.headers.get("content-type", "").split(";")[0].strip().lower()
+        # DECISIONS 352: one Maya export file, sent as it is (citation-mentions can be 400 MB), to its own path only;
+        # the cookie and the action token above are still required, which no cross-site form can send.
+        upload = method == "PUT" and MAYA_UPLOAD.match(path) is not None and kind == "application/octet-stream"
+        limit = MAX_UPLOAD_BYTES if upload else MAX_BODY_BYTES
         # isascii: str.isdigit() also accepts "²", which int() then refuses with a 500 (D-19).
-        if length is not None and (not (length.isascii() and length.isdigit()) or int(length) > MAX_BODY_BYTES):
+        if length is not None and (not (length.isascii() and length.isdigit()) or int(length) > limit):
             return 413, "request_too_large", "The request is too large."
-        if method != "DELETE" and request.headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
+        if method != "DELETE" and kind != "application/json" and not upload:
             return 415, "json_required", "Actions must be sent as JSON."
         return None
 

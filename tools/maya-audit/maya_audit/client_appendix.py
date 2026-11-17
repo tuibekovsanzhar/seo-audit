@@ -323,15 +323,31 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
            title: Callable[[str, str], str] | None = None, fix: Callable[[str], str] | None = None,
            label: Callable[[str], str] | None = None, line: Callable[[str], str] | None = None,
            todos: list[dict] | None = None, words: Callable[[dict], dict | None] | None = None,
-           places: dict | None = None) -> list[dict]:
+           places: dict | None = None, maya: dict | None = None) -> list[dict]:
     """The appendix's sheets: the four for readers who are not technical (DECISIONS 322), then the technical ones.
     `todos`: the team report's cards, so "Özet" has the PDF's cards and the rows their numbers; `words(finding)`: the
-    text library's plain problem name and fix."""
+    text library's plain problem name and fix. `maya`: {"summary", "report", "evidence"} of the Maya data attached to
+    the audit (DECISIONS 352), whose sheets come after the reader sheets; without it Kapsam says none was attached."""
     from . import checklist
     # DECISIONS 342: the SEO team's 165-item checklist, after the reader sheets
     listed = checklist.sheets(selection, lang, todos, title) if selection.get("_checklist_facts") else []
-    return reader_sheets(selection, lang, lists, title=title, fix=fix, todos=todos, words=words, places=places) + \
-        listed + technical_sheets(selection, lang, lists, title, fix, label, line)
+    reader = reader_sheets(selection, lang, lists, title=title, fix=fix, todos=todos, words=words, places=places)
+    technical = technical_sheets(selection, lang, lists, title, fix, label, line)
+    if maya is None or lang != "tr":
+        return reader + listed + technical
+    from . import maya_sheets
+    made = maya_sheets.build(maya.get("summary"), maya.get("report") or {}, maya.get("evidence"))
+    R, W = READ[lang], WORDS[lang]
+    for sheet in reader:
+        if sheet["name"] == R["how"]:
+            sheet["rows"] = list(sheet["rows"]) + [[x] for x in made["howto"]]
+            break
+    for sheet in technical:
+        if sheet["name"] == W["coverage"]:
+            sheet["rows"] = list(sheet["rows"]) + [["Maya verisi", text, ""] for text in made["coverage"]]
+        elif sheet["name"] == W["method_sheet"]:
+            sheet["rows"] = list(sheet["rows"]) + [list(m) for m in made["method"]]
+    return reader + made["sheets"] + listed + technical
 
 
 def _link(url: str | None, text: str) -> dict | str:

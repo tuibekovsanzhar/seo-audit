@@ -1130,7 +1130,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                               for draft in [fmt != "evidence" and gate_decision(report) == release_gate.BLOCKED]],
                 "team_report": {"prepare": f"{base}/team-report", "pdf": f"{base}/downloads/team", "xlsx": f"{base}/downloads/xlsx",
                                 "default_lang": "tr", "brief": f"{base}/client-brief",
-                                "sector": f"{base}/downloads/sector", "sector_name": sector_name(audit)},  # DECISIONS 324
+                                "sector": f"{base}/downloads/sector", "sector_name": sector_name(audit),  # DECISIONS 324
+                                "maya": f"{base}/maya-data"},  # DECISIONS 352
                 "overview_url": f"{base}/overview",
                 # DECISIONS 329: the total time and each step's, for "How the audit ran"
                 "timing": timing_view(report),
@@ -1764,7 +1765,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         except build_data.BuildError:
             todos = None  # the selection's cards; the file is still the whole appendix
         return service.appendix(report, aff or None, manual_review.confirmations(manual_review.load(review_path(audit))),
-                                lang, business_choice(audit), todos=todos)
+                                lang, business_choice(audit), todos=todos, artifacts=artifact_folder(audit["id"]))
 
     def team_report(audit: dict[str, Any], lang: str):
         """The team report of this audit in `lang` (DECISIONS 307), rebuilt on every request so a manual check counts at
@@ -2296,6 +2297,68 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                                                            W["page_type"]),  # DECISIONS 350
                           "importance": r["importance"] if isinstance(r["importance"], (int, float)) else None,
                           "value": "; ".join(r["values"]), "finding_ids": r["finding_ids"]} for r in rows]}
+
+    # DECISIONS 352: Maya export data (Search Console, AI citations, competitors) attached to an audit
+    def maya_folder(audit_id: str) -> Path:
+        from maya_audit import maya_data
+        return artifact_folder(audit_id) / maya_data.FOLDER
+
+    def maya_status(audit: dict[str, Any]) -> dict[str, Any]:
+        from maya_audit import maya_data
+        folder = maya_folder(audit["id"])
+        files = sorted(f.name for f in folder.iterdir() if f.is_file()) if folder.is_dir() else []
+        summary = maya_data.load_for(artifact_folder(audit["id"]))
+        return {"files": files, "attached": summary is not None,
+                "datasets": [{k: d.get(k) for k in ("dataset", "file", "rows", "period")} for d in (summary or {}).get("datasets") or []],
+                "missing": (summary or {}).get("missing") or {}}
+
+    @api.get("/audits/{audit_id}/maya-data", summary="The Maya export files attached to this audit and what they cover")
+    def get_maya_data(audit_id: str) -> dict[str, Any]:
+        return maya_status(need_audit(audit_id))
+
+    @api.put("/audits/{audit_id}/maya-data/files/{name}", summary="Add one Maya export file (sent as it is)")
+    async def put_maya_file(audit_id: str, name: str, request: Request) -> dict[str, Any]:
+        from maya_audit import maya_data
+        audit = need_audit(audit_id)
+        safe = Path(name).name
+        if safe != name or not (maya_data.dataset_of(safe)[0] or safe.lower().endswith(".zip")):
+            raise ApiError(422, "maya_file_unknown", f"Bu dosya bir Maya export veri seti değil: {safe}")
+        folder = maya_folder(audit["id"])
+        folder.mkdir(parents=True, exist_ok=True)
+        part = folder / (safe + ".part")
+        with part.open("wb") as fh:
+            async for chunk in request.stream():
+                fh.write(chunk)
+        part.replace(folder / safe)
+        return maya_status(audit)
+
+    @api.post("/audits/{audit_id}/maya-data", summary="Read the attached Maya files for the appendix's sheets")
+    def post_maya_data(audit_id: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
+        from maya_audit import maya_data, maya_sheets
+        audit = need_audit(audit_id)
+        folder = maya_folder(audit["id"])
+        if not folder.is_dir() or not any(folder.iterdir()):
+            raise ApiError(422, "maya_data_missing", "Önce Maya export dosyalarını ekleyin.")
+        try:
+            summary = maya_data.prepare([folder], audit["url"])
+        except maya_data.MayaDataError as exc:
+            raise ApiError(422, "maya_domain_mismatch", str(exc)) from None
+        if (body or {}).get("fetch"):
+            # live, polite, only when the person asked for it: pages the sheets need and the crawl did not read
+            report, _ = current_report(audit)[:2]
+            evidence = artifact_folder(audit["id"]) / "evidence"
+            maya_sheets.enrich(summary, report, maya_data.polite_fetcher(), evidence if evidence.is_dir() else None)
+        maya_data.save(summary, artifact_folder(audit["id"]))
+        return maya_status(audit)
+
+    @api.delete("/audits/{audit_id}/maya-data", summary="Remove the Maya export files and their summary from this audit")
+    def delete_maya_data(audit_id: str) -> dict[str, Any]:
+        import shutil
+        from maya_audit import maya_data
+        audit = need_audit(audit_id)
+        shutil.rmtree(maya_folder(audit["id"]), ignore_errors=True)
+        (artifact_folder(audit["id"]) / maya_data.SUMMARY_FILE).unlink(missing_ok=True)
+        return maya_status(audit)
 
     @api.get("/audits/{audit_id}/review", summary="The findings to confirm first and the owner's manual checks")
     def get_review(audit_id: str) -> dict[str, Any]:

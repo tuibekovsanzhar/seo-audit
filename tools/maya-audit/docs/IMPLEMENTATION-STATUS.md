@@ -2308,3 +2308,35 @@ f5d8066, was used), copy of `artifacts/` in a scratch folder; before = `git arch
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3446 passed, 4 skipped, 1 warning in 1057.06s (0:17:37)` |
 | CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+## Maya data in the audit: Search Console, AI citations, competitors (2026-11-17, DECISIONS 352)
+
+Enpara fee70191 (copy of `artifacts/` in a scratch folder) with the exports in ~/Downloads (prompts, citation-mentions
+1.46 M rows, result-items 164 129 answers, gsc-daily-stats, gsc-top-pages, gsc-query-intents; 15 Aug – 13 Nov), read in
+about 20 s, compared with Efsa's "enpara-seo-tum-bulgular-2026-11-12_duzeltilmis (2).xlsx" (read in place, not copied).
+
+| | Efsa | This build |
+|---|---|---|
+| GSC Sep / Oct (clicks, impressions) | 501069 / 7889507, 443676 / 5920594 | equal |
+| AI citation rows Sep / Oct (all, Enpara) | 595542 / 34407, 372611 / 22078 | equal |
+| Aug / Nov | 13 Aug – 11 Nov export | differ by the two-day export shift |
+| Citation share per provider | ChatGPT 0.069 | 0.0692 |
+| Top cited domains (prompts of 400) | Garanti 389, İş 388, Akbank 369, Yapı Kredi 368, Ziraat 361 | 389, 388, 369, 369, 361 |
+| AI thresholds | ≥ 15 strong, < 7 few | equal |
+| AI prompts per page | 125 pages in both | equal on 103, ±1–4 on the rest |
+| Mon–Fri weeks from 13 Oct | Tue–Sat (one-day shift) | Mon–Fri |
+| Share of voice | 0.09–0.19 | 0.04–0.08 (her source not in the exports) |
+| Segments | 3: 32, 1: 8, 4: 10, 2: 29, 2b: 27, 5: 2, 6: 1, 0: 61 | 2b: 208, 5: 1, 0: 48 (no gsc-page-scores / gsc-search-performance) |
+| Sayfa detay | 37 pages | 40 pages, 8 shared (no GSC impressions in the importance) |
+| Rakip sheets | 12 topics | not built: topic-visibility-snapshots, competitor-mentions-daily, meta.json missing |
+
+To export for www.enpara.com (13 Aug – 11 Nov): gsc-page-scores or gsc-search-performance, topic-visibility-snapshots,
+competitor-mentions-daily, meta.json (gsc-top-queries, gsc-query-opportunities optional).
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_maya_data_352.py` | `15 passed` |
+| fast suite, first run | `3 failed, 3323 passed` (an English "(s)", the results page's link list, the skill's Ek without the "Maya verisi eklenmedi" line; fixed) |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3461 passed, 4 skipped, 1 warning in 979.54s (0:16:19)` |
+| CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

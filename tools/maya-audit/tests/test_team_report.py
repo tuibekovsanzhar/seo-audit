@@ -206,7 +206,8 @@ def test_the_results_page_offers_the_team_report_in_turkish_first(finished):
                     "xlsx": f"/api/v1/audits/{audit['id']}/downloads/xlsx", "default_lang": "tr",
                     "brief": f"/api/v1/audits/{audit['id']}/client-brief",
                     # DECISIONS 324: the team's sector audit workbook
-                    "sector": f"/api/v1/audits/{audit['id']}/downloads/sector", "sector_name": team["sector_name"]}
+                    "sector": f"/api/v1/audits/{audit['id']}/downloads/sector", "sector_name": team["sector_name"],
+                    "maya": f"/api/v1/audits/{audit['id']}/maya-data"}  # DECISIONS 352: the optional Maya data upload
     script = (ROOT / "maya_audit_web" / "static" / "app.js").read_text(encoding="utf-8")
     # DECISIONS 310: the Downloads card (team report PDF, appendix XLSX, client brief: DECISIONS 319), one language switch.
     assert 'T("download.pdf.title")' in script and 'T("download.xlsx.title")' in script and 'choice("tr"), choice("en")' in script

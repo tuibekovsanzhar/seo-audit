@@ -2474,6 +2474,12 @@ def main():
                     help="Kayıtlı kanıtın çevrimdışı yeniden analizi (yeni tarama yapılmadı). Yalnız gerçekten öyleyse ver.")
     ap.add_argument("--maya-src", default=None, help="maya_audit_web içeren Maya Audit kaynak klasörü (Türkçe başlıklar için)")
     ap.add_argument("--review", default=None, help="İnceleme dosyası (review.json); verilmezse report.json'un yanındaki")
+    ap.add_argument("--maya-data", action="append", default=[],
+                    help="Maya export dosyaları (CSV/JSONL/JSON, klasör ya da zip); eke Search Console, AI citation ve rakip "
+                         "sayfaları eklenir (DECISIONS 352). Özet report.json'un yanına yazılır.")
+    ap.add_argument("--maya-fetch", action="store_true",
+                    help="--maya-data ile: denetimde okunmayan önemli sayfaları ve konu başına en çok 3 rakip sayfayı canlı indir "
+                         "(nazik; robots.txt'e uyar). Verilmezse bu sayfalar «okunmadı / alınamadı» kalır.")
     ap.add_argument("--no-reassess", action="store_true",
                     help="Raporu olduğu gibi kullan; güncel motorla yeniden değerlendirme yapma (DECISIONS 308)")
     ap.add_argument("--by", default=None, help="--confirm/--reject: kim kontrol etti")
@@ -2486,6 +2492,11 @@ def main():
                     help="Sahibin elle kontrolde yanlış bulduğu bulgu; PDF'te gösterilmez, ekte 'reddedildi' olarak kalır")
     a = ap.parse_args()
     rp = Path(a.report).resolve()
+    if a.maya_data:
+        try:
+            attach_maya_data(rp, a.maya_data, fetch=a.maya_fetch)
+        except ValueError as exc:  # maya_data.MayaDataError: another site's export
+            sys.exit(f"HATA: {exc}")
     if a.confirm or a.reject:
         if not a.by or not a.seen:
             sys.exit("HATA: --confirm/--reject için --by (kim) ve --seen (ne görüldü) gerekir.")
@@ -2546,6 +2557,21 @@ def record_checks(rp, review, confirm, reject, *, by, seen, note=None, maya_src=
                 manual_review.record(review_path, manual_review.entry(fid, result, by=by, seen=seen, note=note,
                                                                       rule_id=known[fid].get("rule_id")))
     print(f"İnceleme dosyası güncellendi: {review_path}")
+
+
+def attach_maya_data(report_path, paths, *, fetch: bool = False, fetcher=None) -> Path:
+    """DECISIONS 352: read Maya export files for the audit of `report_path` and keep their summary beside it (the
+    appendix reads it). MayaDataError (a ValueError) when they belong to another site. `fetch`: fetch the pages the
+    sheets need that the crawl did not read (live; only on the owner's request)."""
+    from maya_audit import maya_data, maya_sheets  # type: ignore
+    report = load(Path(report_path))
+    start = (report.get("crawl") or {}).get("start_url") or (report.get("crawl") or {}).get("origin") or ""
+    summary = maya_data.prepare(paths, start)
+    if fetch or fetcher is not None:
+        folder = Path(report_path).parent
+        maya_sheets.enrich(summary, report, fetcher or maya_data.polite_fetcher(),
+                           folder / "evidence" if (folder / "evidence").is_dir() else None)
+    return maya_data.save(summary, Path(report_path).parent)
 
 
 def business_choice(review_path):
@@ -2640,6 +2666,7 @@ def build_from_files(report_path, lang, *, rev=None, audit_id=None, source=None,
     data["_engine"] = ((report.get("generation") or {}).get("analysis") or {}).get("engine")
     data["_reassess_failed"] = reassess_failed
     data["_review_path"] = str(review_path) if review_path.exists() else None
+    data["_artifacts"] = str(src.parent)  # DECISIONS 352: where an attached Maya export's summary is kept
     data["_digest"] = sealed.digest
     data["_gate_decision"] = sealed.decision
     data["meta"]["source"] = source

@@ -1454,7 +1454,40 @@ function teamReport(team) {
       team.brief ? el("div", { class: "dl-card brief" }, el("strong", { text: T("download.brief.title") }), el("p", { class: "muted small", text: T("download.brief.about") }), briefButton, briefWhy, briefReady) : null,
       // DECISIONS 324: the team's sector audit workbook, filled from this audit (Turkish, as the team's own file)
       team.sector ? el("div", { class: "dl-card" }, el("strong", { text: T("download.sector.title") }), el("p", { class: "muted small", text: T("download.sector.about") }),
-        el("a", { class: "button", href: team.sector, download: team.sector_name || "" }, T("download.sector.get"))) : null));
+        el("a", { class: "button", href: team.sector, download: team.sector_name || "" }, T("download.sector.get"))) : null,
+      team.maya ? mayaDataCard(team.maya) : null));
+}
+
+function mayaDataCard(base) {
+  // DECISIONS 352: attach Maya export files (several files or a zip); the appendix then gets the Search Console, AI
+  // citation and competitor sheets. Each file is sent as it is (citation-mentions can be 400 MB), then read once.
+  const input = el("input", { type: "file", multiple: "multiple", accept: ".csv,.jsonl,.json,.zip" });
+  const fetchBox = el("input", { type: "checkbox" });
+  const status = el("p", { class: "muted small" });
+  const button = el("button", { class: "button", type: "button" }, T("maya.add"));
+  const show = (body) => {
+    fill(status, body.attached ? T("maya.attached", { n: body.datasets.length }) + " " + body.datasets.map((d) => d.dataset).join(", ")
+      : (body.files.length ? T("maya.files", { n: body.files.length }) : T("maya.none")));
+  };
+  api("GET", base).then(show).catch(() => {});
+  button.addEventListener("click", async () => {
+    const files = Array.from(input.files || []);
+    if (!files.length) { fill(status, T("maya.pick")); return; }
+    button.disabled = true;
+    try {
+      for (const [i, f] of files.entries()) {
+        fill(status, T("maya.sending", { i: i + 1, n: files.length, name: f.name }));
+        const r = await fetch(base + "/files/" + encodeURIComponent(f.name), { method: "PUT", credentials: "same-origin",
+          headers: { "X-Maya-Token": state.token, "Content-Type": "application/octet-stream" }, body: f });
+        if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error((e.error && e.error.message) || r.statusText); }
+      }
+      fill(status, T("maya.reading"));
+      show(await api("POST", base, { fetch: fetchBox.checked }));
+    } catch (err) { fill(status, T("maya.error") + " " + err.message); }
+    button.disabled = false;
+  });
+  return el("div", { class: "dl-card" }, el("strong", { text: T("maya.title") }), el("p", { class: "muted small", text: T("maya.about") }),
+    input, el("label", { class: "small" }, fetchBox, " ", T("maya.fetch")), button, status);
 }
 
 function technicalView(view, context) {
