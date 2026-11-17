@@ -4386,14 +4386,14 @@
   "idx8.typo_copies": {
    "title": "Redirect misspelt addresses to the real page",
    "finding": "Misspelt addresses open with content or lead elsewhere",
-   "explanation": "Redirect each misspelt address to the real page with a 301 and correct the links that lead to it.",
+   "explanation": "Redirect each misspelt address to the real page with a permanent redirect and correct the links that lead to it.",
    "why": "A misspelt address that opens with content is a weak copy of the page; one that leads elsewhere takes visitors away from the page they wanted.",
    "steps": [
     "See each address's real page in the appendix",
-    "Redirect the address to the real page with a 301",
+    "Redirect the address to the real page with a permanent redirect",
     "Correct the links and the sitemap entry that lead to it"
    ],
-   "verify": "Open the misspelt address; it should reach the real page with a single 301.",
+   "verify": "Open the misspelt address; it should reach the real page with a single permanent redirect.",
    "summary": "Misspelt addresses"
   },
   "idx6.links_to_entry_redirect": {
@@ -4407,6 +4407,84 @@
    ],
    "verify": "Open the link; the sign-in or application page should open.",
    "summary": "Sign-in and application links"
+  },
+  "rnd2.saas_pricing_text": {
+   "title": "Write the prices on the page as text",
+   "finding": "No price in a pricing page's text",
+   "explanation": "Write the plans, what they include and the prices with the currency as text; images and scripts must not be the only place.",
+   "why": "Answer engines quote prices from text; a price in an image or drawn by a script is invisible to them.",
+   "steps": [
+    "Check where the page shows its prices: an image or a script",
+    "Write each plan's name, price and period as text",
+    "Add what each plan includes as a table or list"
+   ],
+   "verify": "In the page source each plan's price shows as text with its currency.",
+   "summary": "Prices as text"
+  },
+  "str3.saas_offer_schema": {
+   "title": "Add Offer markup to the pricing page",
+   "finding": "A page with prices has no Offer markup",
+   "explanation": "Add SoftwareApplication or Product markup with Offers that match the prices shown.",
+   "why": "Offer markup tells search and answer engines plainly what the price and currency are.",
+   "steps": [
+    "Write one Offer per plan: price and priceCurrency",
+    "Give the billing period in priceSpecification",
+    "Check the values match the prices on the page"
+   ],
+   "verify": "Schema Markup Validator lists the page's Offers without errors.",
+   "summary": "Price markup"
+  },
+  "str15.saas_feature_intro": {
+   "title": "Open feature pages with a paragraph that says what they do",
+   "finding": "A feature page's first paragraph does not say what it does",
+   "explanation": "Under the heading, write one or two sentences on what the feature does, for whom and the result.",
+   "why": "An answer engine quoting a feature takes the page's first lines; a slogan alone is not enough.",
+   "steps": [
+    "Read the first lines under the main heading",
+    "Write what it does and for whom in one or two sentences",
+    "Keep the slogan in the heading"
+   ],
+   "verify": "The page's first paragraph says what the feature does and for whom.",
+   "summary": "Feature description"
+  },
+  "str15.saas_story_result": {
+   "title": "Add a measurable result to customer stories",
+   "finding": "A customer story gives no measurable result",
+   "explanation": "Name the customer and write at least one measurable result: a percentage, a multiple, time or money.",
+   "why": "Stories with a name and a number are what answer engines cite as proof.",
+   "steps": [
+    "Ask the customer for result data",
+    "Write one measurable result with its period",
+    "Name the customer and their industry plainly"
+   ],
+   "verify": "The story's text shows the customer's name and at least one result with a number.",
+   "summary": "Result in stories"
+  },
+  "rnd4.saas_integrations_text": {
+   "title": "Write the integrations' names as text",
+   "finding": "Integrations are shown only as logos",
+   "explanation": "Write each integration's name as text beside its logo and give the logos their names as alt text.",
+   "why": "Answer engines cannot read a name inside a logo; the answer to 'does it integrate with X?' must be in the text.",
+   "steps": [
+    "Write the integration's name beside each logo",
+    "Say in one line what it connects",
+    "Give each logo its name as alt text"
+   ],
+   "verify": "In the page source each integration's name shows as text.",
+   "summary": "Integration names"
+  },
+  "acc3.saas_trial_blocked": {
+   "title": "Open demo and trial pages to indexing",
+   "finding": "A demo or trial page is closed",
+   "explanation": "Remove noindex from demo and trial pages and make them open without an error.",
+   "why": "The demo or trial page is closest to a sale; if it is not indexed, search and answer engines cannot send people there.",
+   "steps": [
+    "Check the page's meta robots and X-Robots-Tag",
+    "Remove noindex and confirm the page opens without an error",
+    "If the form must stay closed, keep a public page describing the demo"
+   ],
+   "verify": "In Search Console › URL Inspection the page shows as indexable.",
+   "summary": "Demo page access"
   }
  }
 }

@@ -188,7 +188,12 @@
   "account": "Hesap açma sayfası; ziyaretin müşteriye dönüştüğü yer.",
   "company": "Kurum ve destek bilgisi; müşteriye güven verir, Google ve yapay zekâ asistanları sizi bu bilgiyle tanıtır.",
   "platform": "İşlem platformunu anlatan sayfa; müşteri burada karar verir, yapay zekâ asistanları platform sorularını buradan yanıtlar.",
-  "service": "Servis ve abonelik koşulları; müşteri karar vermeden önce okur, yapay zekâ asistanları bu soruları buradan yanıtlar."
+  "service": "Servis ve abonelik koşulları; müşteri karar vermeden önce okur, yapay zekâ asistanları bu soruları buradan yanıtlar.",
+  "comparison": "Ürününüzü rakiplerle karşılaştıran sayfa; müşteri seçim yaparken buraya bakar, yapay zekâ asistanları da karşılaştırma sorularını buradan yanıtlar.",
+  "integrations": "Ürününüzün hangi araçlarla çalıştığını anlatan sayfa; 'şununla çalışıyor mu?' sorusunun cevabı burada.",
+  "demo": "Demo ya da deneme başlatılan sayfa; ziyaretin müşteri adayına döndüğü yer.",
+  "solutions": "Ürününüzü bir sektöre ya da kullanım alanına göre anlatan sayfa; müşteri kendi işine uygun mu diye burada bakar.",
+  "blog": "Müşterilerin sorularına cevap veren yazılar; Google'da bilgi aramalarında görünür, yapay zekâ asistanları en çok bu tür sayfalardan alıntı yapar."
  },
  "families": {
   "acc1": {

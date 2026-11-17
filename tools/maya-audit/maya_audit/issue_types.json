@@ -331,6 +331,12 @@
   "acc2.training_block.sample": "warning",
   "idx6.links_to_login_redirect": "warning",
   "idx8.typo_copies": "issue",
-  "idx6.links_to_entry_redirect": "warning"
+  "idx6.links_to_entry_redirect": "warning",
+  "rnd2.saas_pricing_text": "warning",
+  "str3.saas_offer_schema": "issue",
+  "str15.saas_feature_intro": "warning",
+  "str15.saas_story_result": "warning",
+  "rnd4.saas_integrations_text": "warning",
+  "acc3.saas_trial_blocked": "issue"
  }
 }

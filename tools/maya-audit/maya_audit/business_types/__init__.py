@@ -29,7 +29,7 @@ from ..page_words import fold
 # 2 (DECISIONS 316): "Havayolu" split from "Seyahat / rezervasyon" (now "Tur / otel"), and country-language folders
 # left out of address words; a saved suggestion of version 1 is worked out again.
 # 3 (DECISIONS 347): product and category pages among the pages read count for E-ticaret.
-VERSION = 3
+VERSION = 4  # DECISIONS 356: SaaS / Yazılım profile, menu and demo/trial signals
 AUTO = "auto"
 DEFAULT = "diger"
 # Weights by rank in a profile's list (owner, configurable here or per profile with "weights").
@@ -45,6 +45,9 @@ FORMULA = {"page_type": 0.5, "internal_link_score": 0.35, "click_depth": 0.15}  
 # Points per kind of signal; each kind counts once per page type. A type needs MIN_SCORE (agent defaults). The
 # address weighs most: it names the page; FAQ markup or a section heading only says what a part of it holds.
 SCORES = {"url": 4, "schema": 3, "heading": 2, "menu": 2, "content": 1,
+          # DECISIONS 356: linked from the homepage's main menu (a profile's type lists "nav" among its content signals):
+          # enough alone for that type (a software company's menu names its product pages), never above an address word
+          "nav": 3,
           # DECISIONS 329: a person's own profile page names what the page is more surely than a word inside its address
           # ("/team/klinik-psikolog-…" is a psychologist, not a clinic), so it outweighs an address word.
           "person": 5}
@@ -63,6 +66,7 @@ KIND_LABELS = {"url": {"tr": "adres sözcüğü", "en": "address word"},
                "heading": {"tr": "başlık sözcüğü", "en": "heading word"},
                "menu": {"tr": "menü veya bağlantı metni", "en": "menu or link text"},
                "content": {"tr": "içerik işareti", "en": "content signal"},
+               "nav": {"tr": "ana menüde bağlantı", "en": "linked from the main menu"},
                "person": {"tr": "kişi profili", "en": "a person's profile"}}
 CONTENT_SIGNALS = {
     "form": "a form that is not search, sign-in, cart or newsletter",
@@ -72,6 +76,8 @@ CONTENT_SIGNALS = {
     "faq": "FAQPage markup or three or more question headings",
     "table": "a data table",
     "list": "the general page type is a listing (category)",
+    "cta": "a demo or free-trial button on the page (DECISIONS 356)",
+    "nav": "the homepage's main menu links the page (DECISIONS 356)",
     "person": "a person's own profile page (DECISIONS 329): not an article; its main heading is a name, with Person or "
               "Physician markup, a professional title right before the name (title, description, address), or CV "
               "headings (education, areas of expertise)",
@@ -211,6 +217,11 @@ def _has(words: Iterable[str], text: str) -> list[str]:
     return [w for w in words if _norm(w) and f" {_norm(w)} " in padded]
 
 
+# DECISIONS 356: a software company's call to action: a demo, a free trial, a free start (folded text).
+TRIAL_WORDS = re.compile(r"(?<![a-z])(demo\w*|ucretsiz (?:dene|basla|deneme|kaydol)\w*|denemeye basla\w*|hemen basla\w*|"
+                         r"free trial|start (?:for )?free|try (?:it )?(?:for )?free|get started|book a demo|request a demo|"
+                         r"sign up free)(?![a-z])")
+APP_STORES = ("apps.apple.com", "itunes.apple.com", "play.google.com", "appgallery.huawei.com")
 _SKIP_FORMS = re.compile(r"search|arama|(?<![a-z])ara(?![a-z])|newsletter|bulten|subscribe|abone|login|giris|signin|"
                          r"cart|sepet|checkout|localization|currency|language|dil")
 
@@ -233,6 +244,8 @@ def content_signals(analysis: dict, generic: str | None = None) -> set[str]:
                        if isinstance(b, dict))
     if re.search(r"hesapla|calculat", fold(buttons + " " + heads)):
         out.add("calculator")
+    if TRIAL_WORDS.search(fold(buttons)):  # DECISIONS 356: a demo or free-trial button
+        out.add("cta")
     if "FAQPage" in types or sum(1 for h in a.get("headings") or [] if isinstance(h, dict)
                                  and (h.get("text") or "").strip().endswith("?")) >= 3:
         out.add("faq")
@@ -319,7 +332,7 @@ def location_types(pid: str | None) -> frozenset[str]:
 
 
 def page_facts(url: str, analysis: dict | None, menu: Iterable[str] = (), generic: str | None = None,
-               sitewide: set[str] = frozenset(), folders: Iterable[str] = ()) -> dict:
+               sitewide: set[str] = frozenset(), folders: Iterable[str] = (), nav: bool = False) -> dict:
     a = analysis or {}
     # The page's own name: its title and H1. Lower headings name sections (an FAQ block on a product page).
     heads = [a.get("title") or ""] + [h.get("text") or "" for h in a.get("h1_elements") or [] if isinstance(h, dict)]
@@ -330,7 +343,12 @@ def page_facts(url: str, analysis: dict | None, menu: Iterable[str] = (), generi
     if a and person_profile(url, a, set((a.get("structured_data") or {}).get("types") or []) - set(sitewide), generic):
         content = content | {"person"}
     return {"url": url, "segments": _segments(url, folders), "generic": generic, "schema": schema,
-            "heading": _norm(" | ".join(heads)), "menu": _norm(" | ".join(menu)), "content": content}
+            "heading": _norm(" | ".join(heads)), "menu": _norm(" | ".join(menu)), "content": content, "nav": bool(nav)}
+
+
+def nav_targets(home_outlinks: Iterable[dict] | None) -> set[str]:
+    """DECISIONS 356: the addresses the homepage's main menu links (its links marked `nav`)."""
+    return {(e.get("target") or "").split("#")[0] for e in home_outlinks or [] if isinstance(e, dict) and e.get("nav")} - {""}
 
 
 def link_texts(pages: Iterable[tuple[str, list]]) -> dict[str, list[str]]:
@@ -366,7 +384,10 @@ def match(t: dict, facts: dict) -> tuple[int, list[dict]]:
     wanted = set(s.get("content") or [])
     if "person" in wanted and "person" in facts["content"]:  # DECISIONS 329
         hits.append({"kind": "person", "value": "person"})
-    content = sorted((wanted - {"person"}) & facts["content"])
+    if "nav" in wanted and facts.get("nav") and not any(url_hit(w, facts["segments"]) or _has([w.replace("-", " ")], facts["heading"])
+                                                         for w in s.get("nav_except") or []):
+        hits.append({"kind": "nav", "value": "nav"})  # DECISIONS 356: a company page in the menu is not a product page
+    content = sorted((wanted - {"person", "nav"}) & facts["content"])
     if content:
         hits.append({"kind": "content", "value": content[0]})
     return sum(SCORES[h["kind"]] for h in hits), hits
@@ -388,6 +409,13 @@ def classify(prof: dict, facts: dict) -> tuple[str, str, list[dict]]:
             return claim["id"], "a policy or legal page (page grouping), which this business type counts here", []
         return "policy", "a policy or legal page (page grouping)", []
     best = None
+    # DECISIONS 356: an article (the page grouping's blog_article) in the folder of the profile's article type is that
+    # type, whatever word its slug holds ("/blog/yeni-ozellik" is a post, not a feature page).
+    article = next((t for t in types if "blog_article" in t["generic"]), None) if generic == "blog_article" else None
+    if article:
+        score, hits = match(article, facts)
+        if any(h["kind"] == "url" for h in hits):
+            return article["id"], f"an article in the {article['id']} folder (page grouping)", hits
 
     def depth(hits):
         return max((h.get("depth") or 0 for h in hits if h["kind"] == "url"), default=-1)
@@ -508,7 +536,8 @@ def not_found(records: dict[str, dict], pid: str | None, top: int = NOT_FOUND_TO
 # ---------------------------------------------------------------- suggestion
 
 def suggest(home_analysis: dict | None, home_outlinks: list | None, platform: str | None,
-            urls: Iterable[str] = (), folders: Iterable[str] = (), types: dict | None = None) -> dict:
+            urls: Iterable[str] = (), folders: Iterable[str] = (), types: dict | None = None,
+            home_external: list | None = None) -> dict:
     """{id, label, reason{tr,en}, signals, scores}: the business type the homepage's structured data, the platform,
     the site's addresses, the homepage's menu and the general page types of the pages read (`types`: {type: pages},
     DECISIONS 347) point to; "diger" when no type stands out."""
@@ -519,6 +548,12 @@ def suggest(home_analysis: dict | None, home_outlinks: list | None, platform: st
     schema = set((a.get("structured_data") or {}).get("types") or [])
     menu = _norm(" | ".join(x for e in home_outlinks or [] if e.get("nav")
                             for x in (e.get("anchors") or ([e.get("anchor")] if e.get("anchor") else [])) if x))
+    # DECISIONS 356: a demo or free-trial call to action (the menu or a button) and links to an app store
+    buttons = " ".join((b.get("text") or "") for b in (a.get("buttons") or []) + (a.get("input_buttons") or [])
+                       if isinstance(b, dict))
+    trial = sorted({m.group(1) for m in TRIAL_WORDS.finditer(fold(menu + " " + buttons))})
+    stores = sorted({h for e in home_external or [] if isinstance(e, dict)
+                     for h in APP_STORES if h in str(e.get("target") or e.get("url") or "")})
     # One address per page: the same page in 20 country folders is one page, not 20 (DECISIONS 316).
     from ..locales import page_key
     folders = tuple(folders)
@@ -569,6 +604,12 @@ def suggest(home_analysis: dict | None, home_outlinks: list | None, platform: st
         if words:
             score += min(4, len(words))
             signals.append({"kind": "menu", "values": words[:3]})
+        if trial and s.get("trial"):
+            score += 2
+            signals.append({"kind": "trial", "values": trial[:2]})
+        if stores and s.get("app_links"):
+            score += 2
+            signals.append({"kind": "apps", "values": stores[:2]})
         if shop and s.get("page_types"):  # the profile's own "suggest.page_types" (E-ticaret: product, category)
             score += TYPES_SCORE
             signals.append({"kind": "types", "count": shop_pages,
@@ -626,6 +667,12 @@ def _reason(signals: list[dict]) -> dict:
         elif s["kind"] == "routes":
             tr.append(f"{s['count']:,}".replace(",", ".") + f" adreste havalimanı kodlu rota ({v})")
             en.append(f"{s['count']:,} addresses with airport-code routes ({v})")
+        elif s["kind"] == "trial":  # DECISIONS 356
+            tr.append(f"ana sayfada demo / deneme çağrısı ({v})")
+            en.append(f"a demo or trial call to action on the homepage ({v})")
+        elif s["kind"] == "apps":
+            tr.append(f"uygulama mağazası bağlantısı ({v})")
+            en.append(f"links to an app store ({v})")
     return {"tr": "; ".join(tr), "en": "; ".join(en)}
 
 
@@ -658,7 +705,7 @@ def attach(result) -> dict | None:
     folders = _folders(getattr(result, "locales", None), urls, getattr(result, "start_url", None))
     types = Counter(p.grouping.get("page_type") for p in read)
     suggestion = suggest(home.analysis if home else None, home.outlinks if home else None, platform, urls, folders,
-                         dict(types))
+                         dict(types), getattr(home, "external_links", None) if home else None)
     config = getattr(result, "config", None)
     choice = (config.get("business_type") if isinstance(config, dict) else getattr(config, "business_type", None))
     chosen = resolve(choice, suggestion)
@@ -668,7 +715,9 @@ def attach(result) -> dict | None:
         records.setdefault(url, g)
     texts = link_texts((p.url, p.outlinks) for p in read)
     common = sitewide_schema(p.analysis for p in read)
-    facts = {p.url: page_facts(p.url, p.analysis, texts.get(p.url, ()), p.grouping.get("page_type"), common, folders)
+    menu = nav_targets(home.outlinks if home else None)  # DECISIONS 356
+    facts = {p.url: page_facts(p.url, p.analysis, texts.get(p.url, ()), p.grouping.get("page_type"), common, folders,
+                               p.url in menu)
              for p in read}
     chosen["page_types"] = apply(records, facts, chosen["id"], folders)
     chosen["not_found"] = not_found(records, chosen["id"])
@@ -740,7 +789,8 @@ def for_report(report: dict, records: dict[str, dict], choice: str | None = None
                 platform = None
         types = Counter(g.get("page_type") for g in records.values() if isinstance(g, dict) and g.get("read") is not False)
         suggestion = suggest(home.get("analysis"), home.get("outlinks"), platform, _report_urls(crawl),
-                             _folders(crawl.get("locales"), _report_urls(crawl), crawl.get("start_url")), dict(types))
+                             _folders(crawl.get("locales"), _report_urls(crawl), crawl.get("start_url")), dict(types),
+                             home.get("external_links"))
     if not choice and saved and saved.get("chosen_by") == "user":
         choice = saved.get("id")
     chosen = resolve(choice, suggestion)
@@ -748,8 +798,9 @@ def for_report(report: dict, records: dict[str, dict], choice: str | None = None
     texts = link_texts((p.get("url"), p.get("outlinks")) for p in pages)
     common = sitewide_schema(p.get("analysis") for p in pages if p.get("url") in records)
     folders = _folders(crawl.get("locales"), _report_urls(crawl), crawl.get("start_url"))
+    menu = nav_targets((home_record(report, records) or {}).get("outlinks"))  # DECISIONS 356
     facts = {p["url"]: page_facts(p["url"], p.get("analysis"), texts.get(p["url"], ()),
-                                  (records.get(p["url"]) or {}).get("page_type"), common, folders)
+                                  (records.get(p["url"]) or {}).get("page_type"), common, folders, p["url"] in menu)
              for p in pages if p.get("url") in records}
     chosen["page_types"] = apply(records, facts, chosen["id"], folders)
     chosen["not_found"] = not_found(records, chosen["id"])

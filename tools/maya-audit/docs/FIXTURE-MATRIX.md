@@ -15,7 +15,7 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | INT-4 | 30 | 11 |  |
 | ACC-1 | 16 | 12 |  |
 | ACC-2 | 16 | 9 |  |
-| ACC-3 | 17 | 11 |  |
+| ACC-3 | 18 | 11 |  |
 | ACC-4 | 15 | 9 |  |
 | ACC-5 | 5 | 1 |  |
 | ACC-6 | 4 | 2 |  |
@@ -33,7 +33,7 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | IDX-9 | 5 | 4 |  |
 | IDX-10 | 2 | 1 |  |
 | RND-1 | 14 | 10 |  |
-| RND-2 | 4 | 3 |  |
+| RND-2 | 5 | 3 |  |
 | RND-3 | 5 | 4 |  |
 | RND-4 | 10 | 9 |  |
 | RND-5 | 6 | 1 |  |
@@ -41,7 +41,7 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | RND-7 | 6 | 7 |  |
 | STR-1 | 30 | 21 |  |
 | STR-2 | 40 | 24 |  |
-| STR-3 | 11 | 14 |  |
+| STR-3 | 12 | 14 |  |
 | STR-4 | 13 | 6 |  |
 | STR-5 | 10 | 9 |  |
 | STR-6 | 7 | 2 |  |
@@ -123,7 +123,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### ACC-3
 
-- Finds the problem: `test_acc_scenarios.py::test_page_level_controls`, `test_acc_units.py::test_intent_marking_rules`, `test_ans_scenarios.py::test_panel_lists_every_failing_cited_url_with_the_site_checks_severity`, `test_brand_neutral.py::test_bank_multi_noindex_in_the_sitemap_is_one_s3_finding_acc3`, `test_brand_neutral.py::test_bank_multi_s1_s3_findings_are_exactly_the_expected_set`, `test_clean_on_read.py::test_a_partial_check_that_found_nothing_says_so_in_the_markdown_the_printed_report_and_the_card`, `test_evidence_report_accuracy.py::test_utility_noindex_action_requires_intent_even_when_observation_verified`, `test_idx_scenarios.py::test_sitemap_health`, `test_own_document.py::test_a_noindex_in_the_real_head_still_drops_the_page`, `test_own_document.py::test_the_new_sentences_have_turkish_wording_and_english_says_one_page`, `test_page_values_323.py::test_the_value_matches_the_kind_of_finding`, `test_page_wording.py::test_each_made_up_finding_reads_as_that_pages_own_fact`, `test_preview16_false_alarms.py::test_noindex_on_a_qr_menu_page_listed_in_the_sitemap_is_a_note_and_in_the_menu_a_blocker`, `test_quick_checks.py::test_noindex_behind_a_robots_rule_for_googlebot_is_found_when_maya_could_read_it`, `test_sector_method_324.py::test_team_report_and_web_cards_show_the_chip`, `test_w13_head_family.py::test_tags_after_early_head_close_are_one_finding`, `test_wording.py::test_numbers_and_quoted_values_are_kept_and_one_is_said_as_one_in_both_languages`
+- Finds the problem: `test_acc_scenarios.py::test_page_level_controls`, `test_acc_units.py::test_intent_marking_rules`, `test_ans_scenarios.py::test_panel_lists_every_failing_cited_url_with_the_site_checks_severity`, `test_brand_neutral.py::test_bank_multi_noindex_in_the_sitemap_is_one_s3_finding_acc3`, `test_brand_neutral.py::test_bank_multi_s1_s3_findings_are_exactly_the_expected_set`, `test_clean_on_read.py::test_a_partial_check_that_found_nothing_says_so_in_the_markdown_the_printed_report_and_the_card`, `test_evidence_report_accuracy.py::test_utility_noindex_action_requires_intent_even_when_observation_verified`, `test_idx_scenarios.py::test_sitemap_health`, `test_own_document.py::test_a_noindex_in_the_real_head_still_drops_the_page`, `test_own_document.py::test_the_new_sentences_have_turkish_wording_and_english_says_one_page`, `test_page_values_323.py::test_the_value_matches_the_kind_of_finding`, `test_page_wording.py::test_each_made_up_finding_reads_as_that_pages_own_fact`, `test_preview16_false_alarms.py::test_noindex_on_a_qr_menu_page_listed_in_the_sitemap_is_a_note_and_in_the_menu_a_blocker`, `test_quick_checks.py::test_noindex_behind_a_robots_rule_for_googlebot_is_found_when_maya_could_read_it`, `test_saas_profile_356.py::test_the_live_audit_adds_the_findings_once_to_their_checks`, `test_sector_method_324.py::test_team_report_and_web_cards_show_the_chip`, `test_w13_head_family.py::test_tags_after_early_head_close_are_one_finding`, `test_wording.py::test_numbers_and_quoted_values_are_kept_and_one_is_said_as_one_in_both_languages`
 - Must not flag: `test_acc_scenarios.py::test_ai_friendly_site_passes_everything`, `test_acc_scenarios.py::test_pattern_marking_never_covers_key_page`, `test_airastana_316.py::test_a_saved_audit_with_impervas_block_page_drops_what_was_measured_only_on_it`, `test_brand_neutral.py::test_bank_multi_sitemap_listing_noindex_pages_is_not_s2_acc3`, `test_counts_and_shared_elements.py::test_a_stamped_sitemap_finding_makes_no_page_row_and_a_stray_file_address_is_listed_under_files`, `test_own_document.py::test_a_robots_noindex_in_the_body_never_drops_the_page_and_acc3_says_so_once`, `test_own_document.py::test_with_no_indexable_page_the_checks_that_found_nothing_are_not_assessed_with_the_reason`, `test_rnd_scenarios.py::test_noindexed_pages_are_not_reported_as_content_gaps`, `test_sector_precision_325.py::test_rule_ids_match_exactly_never_by_a_shared_start`, `test_v03_client_report.py::test_search_and_cart_pages_without_noindex_are_one_low_finding`, `test_web_app.py::test_follow_up_answers_are_deterministic_use_ids_and_refuse_what_the_report_cannot_support`
 
 ### ACC-4
@@ -213,7 +213,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### RND-2
 
-- Finds the problem: `test_clean_on_read.py::test_which_checks_found_nothing_on_what_was_read`, `test_nine_corrections.py::test_shell_is_one_underlying_problem_with_raw_evidence_preserved`, `test_rnd_scenarios.py::test_critical_facts`, `test_time_limit.py::test_the_report_says_which_checks_the_time_limit_cut_and_why`
+- Finds the problem: `test_clean_on_read.py::test_which_checks_found_nothing_on_what_was_read`, `test_nine_corrections.py::test_shell_is_one_underlying_problem_with_raw_evidence_preserved`, `test_rnd_scenarios.py::test_critical_facts`, `test_saas_profile_356.py::test_a_saved_audit_gets_the_checks_offline_for_the_chosen_profile`, `test_time_limit.py::test_the_report_says_which_checks_the_time_limit_cut_and_why`
 - Must not flag: `test_checklist_342.py::test_a_check_that_could_not_run_is_missing_data_with_its_source`, `test_m1_h1.py::test_an_h1_only_a_script_adds_is_left_to_rnd2`, `test_rnd_scenarios.py::test_noindexed_pages_get_no_render_slot`
 
 ### RND-3
@@ -253,7 +253,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### STR-3
 
-- Finds the problem: `test_arjava_regression.py::test_the_same_broken_organization_block_on_another_page_is_one_finding`, `test_brand_neutral.py::test_news_video_video_named_video_is_an_unfilled_default_str3`, `test_gx3_noise.py::test_hygiene_notes_are_listed_after_the_notes_and_capped`, `test_page_values_323.py::test_the_value_matches_the_kind_of_finding`, `test_problem_summary.py::test_a_site_wide_problem_is_counted_once_under_the_whole_site_and_notes_appear_nowhere`, `test_round2_followups.py::test_a_note_and_a_top_problem_carry_the_unverified_label_in_print_in_both_languages`, `test_single_page.py::test_checks_that_compare_pages_are_set_aside_and_site_level_facts_are_still_checked`, `test_str_scenarios.py::test_structured_data_presence`, `test_str_scenarios.py::test_structured_data_graph_and_entity_identity`, `test_w4b_report_length.py::test_the_top_problems_name_each_check_once_in_priority_order`, `test_web_app.py::test_explanations_are_about_the_finding_they_sit_under`
+- Finds the problem: `test_arjava_regression.py::test_the_same_broken_organization_block_on_another_page_is_one_finding`, `test_brand_neutral.py::test_news_video_video_named_video_is_an_unfilled_default_str3`, `test_gx3_noise.py::test_hygiene_notes_are_listed_after_the_notes_and_capped`, `test_page_values_323.py::test_the_value_matches_the_kind_of_finding`, `test_problem_summary.py::test_a_site_wide_problem_is_counted_once_under_the_whole_site_and_notes_appear_nowhere`, `test_round2_followups.py::test_a_note_and_a_top_problem_carry_the_unverified_label_in_print_in_both_languages`, `test_saas_profile_356.py::test_a_saved_audit_gets_the_checks_offline_for_the_chosen_profile`, `test_single_page.py::test_checks_that_compare_pages_are_set_aside_and_site_level_facts_are_still_checked`, `test_str_scenarios.py::test_structured_data_presence`, `test_str_scenarios.py::test_structured_data_graph_and_entity_identity`, `test_w4b_report_length.py::test_the_top_problems_name_each_check_once_in_priority_order`, `test_web_app.py::test_explanations_are_about_the_finding_they_sit_under`
 - Must not flag: `test_arjava_regression.py::test_a_broken_organization_block_is_reported_as_broken_not_missing`, `test_brand_neutral.py::test_tarif_sube_recipe_without_image_misses_a_required_property_str3`, `test_brand_neutral.py::test_local_wp_dentist_without_address_misses_a_required_property_str3`, `test_brand_neutral.py::test_shopify_product_without_offers_misses_a_required_property_str3`, `test_brand_neutral.py::test_news_video_todays_named_video_is_not_a_default_str3`, `test_counts_and_shared_elements.py::test_the_homepage_without_a_main_heading_or_organization_data_is_medium_and_other_pages_stay_low`, `test_download_blocked_349.py::test_a_page_only_the_reader_read_takes_the_kind_its_finding_gave_it`, `test_download_blocked_349.py::test_a_saved_audit_leaves_out_blog_posts_taken_for_products_and_names_reader_pages`, `test_expert_review_340.py::test_a_saved_report_keeps_only_pages_with_an_faq_heading`, `test_page_groups.py::test_str3_page_kind_takes_a_product_inside_a_collection_for_a_product_not_a_listing`, `test_page_wording.py::test_a_finding_with_no_rule_of_its_own_says_whose_figure_its_title_carries`, `test_quick_checks.py::test_an_article_with_no_author_anywhere_is_found_and_a_meta_author_is_enough`, `test_quick_checks.py::test_product_markup_without_gtin_or_mpn_is_found_from_the_fields_kept_in_report_json`, `test_w13_page_kind.py::test_unknown_page_type_gets_no_content_advice_from_the_gate`
 
 ### STR-4

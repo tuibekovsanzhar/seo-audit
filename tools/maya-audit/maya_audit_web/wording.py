@@ -863,6 +863,23 @@ _SAVED_ENGLISH = {key: english for rows in SAVED_TITLES.values() for key, _, eng
 # An older title that repeats its details after " — " (STR-14's shared links): the part before is the title.
 _DETAIL_TAIL = " — "
 
+# DECISIONS 356: the SaaS / Yazılım profile's own checks (maya_audit/checks/profile_rules.py).
+for _cid, _rows in {
+    "RND-2": [("rnd2.saas_pricing_text", "{n#} pricing page(s) show no price with a currency in their text",
+               "{n:pricing page shows|pricing pages show} no price with a currency in [n:its|their] text")],
+    "STR-3": [("str3.saas_offer_schema", "{n#} pricing page(s) show prices with no Offer markup",
+               "{n:pricing page shows|pricing pages show} prices with no Offer markup")],
+    "STR-15": [("str15.saas_feature_intro", "{n#} feature page(s) do not say in their first paragraph what the feature does and for whom",
+                "{n:feature page does|feature pages do} not say in [n:its|their] first paragraph what the feature does and for whom"),
+               ("str15.saas_story_result", "{n#} customer story page(s) give no measurable result",
+                "{n:customer story page gives|customer story pages give} no measurable result")],
+    "RND-4": [("rnd4.saas_integrations_text", "{n#} integrations page(s) show integrations as logos whose names the text does not give",
+               "{n:integrations page shows|integrations pages show} integrations as logos whose names the text does not give")],
+    "ACC-3": [("acc3.saas_trial_blocked", "{n#} demo or trial page(s) are noindexed or answer an error",
+               "{n:demo or trial page is|demo or trial pages are} noindexed or [n:answers|answer] an error")],
+}.items():
+    _TITLES[_cid] = (*_TITLES.get(_cid, ()), *_rows)
+
 TITLES: dict[str, tuple[tuple[str, str], ...]] = {check: tuple((key, Frame(key, frame).regex.pattern) for key, frame, _ in rows)
                                                  for check, rows in _TITLES.items()}
 ENGLISH: dict[str, str] = {key: english for rows in _TITLES.values() for key, _, english in rows}

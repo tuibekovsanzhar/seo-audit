@@ -48,7 +48,8 @@ def is_file(url: str) -> bool:
     return urlsplit(url).path.lower().endswith(FILES)
 
 
-def pre_type(prof: dict, url: str, menu: Iterable[str] = (), folders: Iterable[str] = (), analysis: dict | None = None) -> tuple[str, str]:
+def pre_type(prof: dict, url: str, menu: Iterable[str] = (), folders: Iterable[str] = (), analysis: dict | None = None,
+             nav: bool = False) -> tuple[str, str]:
     """(page type, why) of one address before (or, with `analysis`, after) it is read."""
     from . import business_types as bt
     from . import page_groups
@@ -61,7 +62,7 @@ def pre_type(prof: dict, url: str, menu: Iterable[str] = (), folders: Iterable[s
         return "utility", "a search, cart or account address"
     last = page_groups._words(segs[-1])
     generic = "policy" if segs[0].lower() in page_groups.POLICY_FOLDERS or (last & page_groups.POLICY_WORDS) else None
-    facts = bt.page_facts(url, analysis, menu=list(menu), generic=generic, folders=folders)
+    facts = bt.page_facts(url, analysis, menu=list(menu), generic=generic, folders=folders, nav=nav)
     tid, basis, hits = bt.classify(prof, facts)
     if analysis is None:
         url_hits = [h for h in hits if h["kind"] == "url"]
@@ -195,7 +196,7 @@ class Sampler:
                 else:
                     continue
             keep[key] = u
-            self.types[u] = pre_type(self.prof, u, self.anchors.get(u, ()), self.folders)
+            self.types[u] = pre_type(self.prof, u, self.anchors.get(u, ()), self.folders, nav=u in self.menu_linked)
 
     def counts(self) -> dict[str, int]:
         return dict(Counter(t for t, _ in self.types.values() if t not in ("file", "home")))
@@ -267,7 +268,7 @@ class Sampler:
         template taking the template's type when RETYPE_MIN or more of its pages read agree (RETYPE_SHARE). Returns
         {url: type after reading}."""
         from . import page_groups
-        real = {u: pre_type(self.prof, u, self.anchors.get(u, ()), self.folders, analysis=a or {})[0]
+        real = {u: pre_type(self.prof, u, self.anchors.get(u, ()), self.folders, analysis=a or {}, nav=u in self.menu_linked)[0]
                 for u, a in read_pages.items() if not is_file(u)}
         patterns = page_groups.url_patterns(list(self.types) + list(real))
         votes: dict[str, Counter] = defaultdict(Counter)

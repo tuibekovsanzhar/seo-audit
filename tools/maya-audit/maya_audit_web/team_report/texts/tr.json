@@ -4386,14 +4386,14 @@
   "idx8.typo_copies": {
    "title": "Yazımı hatalı adresleri doğru sayfaya yönlendirin",
    "finding": "Yazımı hatalı adresler içerikle açılıyor ya da başka yere gidiyor",
-   "explanation": "Her yazım hatalı adresi 301 ile doğru sayfaya yönlendirin ve ona giden bağlantıları düzeltin.",
+   "explanation": "Her yazım hatalı adresi kalıcı yönlendirmeyle doğru sayfaya yönlendirin ve ona giden bağlantıları düzeltin.",
    "why": "İçerikle açılan yazım hatalı adres sayfanın zayıf bir kopyasıdır; başka yere giden adres ziyaretçiyi aradığı sayfadan uzaklaştırır.",
    "steps": [
     "Ek'te her adresin doğru sayfasına bakın",
-    "Adresi doğru sayfaya 301 ile yönlendirin",
+    "Adresi doğru sayfaya kalıcı yönlendirmeyle yönlendirin",
     "Bu adrese giden bağlantıları ve site haritası kaydını düzeltin"
    ],
-   "verify": "Yazım hatalı adresi açın; doğru sayfaya tek bir 301 ile gitmeli.",
+   "verify": "Yazım hatalı adresi açın; doğru sayfaya tek bir kalıcı yönlendirmeyle gitmeli.",
    "summary": "Yazım hatalı adresler"
   },
   "idx6.links_to_entry_redirect": {
@@ -4407,6 +4407,84 @@
    ],
    "verify": "Bağlantıyı açın; giriş ya da başvuru sayfası açılmalı.",
    "summary": "Giriş ve başvuru bağlantıları"
+  },
+  "rnd2.saas_pricing_text": {
+   "title": "Fiyatları sayfada metin olarak yazın",
+   "finding": "Fiyatlandırma sayfasının metninde fiyat yok",
+   "explanation": "Paketleri, kapsamlarını ve fiyatları para birimiyle metin olarak yazın; görsel ve betik fiyatın tek yeri olmasın.",
+   "why": "Yanıt motorları fiyatı metinden alıntılar; görseldeki ya da betikle gelen fiyatı göremez.",
+   "steps": [
+    "Sayfada fiyatın nerede gösterildiğine bakın: görsel mi, betik mi",
+    "Her paketin adını, fiyatını ve dönemini metin olarak yazın",
+    "Paketlerin neleri kapsadığını tablo ya da liste olarak ekleyin"
+   ],
+   "verify": "Sayfa kaynağında her paketin fiyatı para birimiyle metin olarak görünmeli.",
+   "summary": "Metin olarak fiyat"
+  },
+  "str3.saas_offer_schema": {
+   "title": "Fiyat sayfasına Offer işaretlemesi ekleyin",
+   "finding": "Fiyat gösteren sayfada Offer işaretlemesi yok",
+   "explanation": "Gösterilen fiyatlarla aynı Offer içeren SoftwareApplication ya da Product işaretlemesi ekleyin.",
+   "why": "Offer işaretlemesi, arama motorlarına ve yanıt motorlarına fiyatın ve para biriminin ne olduğunu açıkça söyler.",
+   "steps": [
+    "Paket başına bir Offer yazın: price ve priceCurrency",
+    "Ödeme dönemini priceSpecification içinde verin",
+    "Değerlerin sayfadaki fiyatlarla aynı olduğunu kontrol edin"
+   ],
+   "verify": "Schema Markup Validator sayfada Offer'ları hatasız listelemeli.",
+   "summary": "Fiyat işaretlemesi"
+  },
+  "str15.saas_feature_intro": {
+   "title": "Özellik sayfalarını ne yaptığını söyleyen bir paragrafla açın",
+   "finding": "Özellik sayfasının ilk paragrafı ne yaptığını söylemiyor",
+   "explanation": "Başlığın altına özelliğin ne yaptığını, kimin için olduğunu ve sonucunu anlatan bir iki cümle yazın.",
+   "why": "Bir özelliği alıntılayan yanıt motoru sayfanın ilk satırlarını alır; slogan tek başına yetmez.",
+   "steps": [
+    "Ana başlığın altındaki ilk satırları okuyun",
+    "Ne yaptığını ve kimin için olduğunu bir iki cümleyle yazın",
+    "Sloganı başlıkta bırakın"
+   ],
+   "verify": "Sayfanın ilk paragrafı özelliğin ne yaptığını ve kimin için olduğunu söylemeli.",
+   "summary": "Özellik tanımı"
+  },
+  "str15.saas_story_result": {
+   "title": "Müşteri hikâyelerine ölçülebilir sonuç ekleyin",
+   "finding": "Müşteri hikâyesinde ölçülebilir sonuç yok",
+   "explanation": "Müşterinin adını verin ve metne en az bir ölçülebilir sonuç yazın: yüzde, kat, zaman ya da para.",
+   "why": "Adı ve sayısı olan hikâyeler yanıt motorlarının kanıt olarak alıntıladığı içeriktir.",
+   "steps": [
+    "Müşteriden sonuç verisi isteyin",
+    "Bir ölçülebilir sonucu dönemiyle metne yazın",
+    "Müşterinin adını ve sektörünü açıkça verin"
+   ],
+   "verify": "Hikâye metninde müşterinin adı ve en az bir sayı ile sonuç görünmeli.",
+   "summary": "Hikâyede sonuç"
+  },
+  "rnd4.saas_integrations_text": {
+   "title": "Entegrasyonların adlarını metin olarak yazın",
+   "finding": "Entegrasyonlar yalnız logoyla gösteriliyor",
+   "explanation": "Her entegrasyonun adını logosunun yanında metin olarak yazın, logolara adlarını alt metin olarak verin.",
+   "why": "Logodaki adı yanıt motorları okuyamaz; 'X ile entegre mi?' sorusunun cevabı metinde olmalı.",
+   "steps": [
+    "Logoların yanına entegrasyonun adını yazın",
+    "Neyi bağladığını bir satırla anlatın",
+    "Her logoya adını alt metin olarak verin"
+   ],
+   "verify": "Sayfa kaynağında her entegrasyonun adı metin olarak görünmeli.",
+   "summary": "Entegrasyon adları"
+  },
+  "acc3.saas_trial_blocked": {
+   "title": "Demo ve deneme sayfalarını dizine açın",
+   "finding": "Demo ya da deneme sayfası kapalı",
+   "explanation": "Demo ve deneme sayfalarındaki noindex'i kaldırın, sayfanın hatasız açılmasını sağlayın.",
+   "why": "Demo ya da deneme sayfası satışa en yakın sayfadır; dizinde değilse arama ve yanıt motorları ona yönlendiremez.",
+   "steps": [
+    "Sayfadaki meta robots ve X-Robots-Tag'i kontrol edin",
+    "noindex'i kaldırın ve sayfanın hatasız açıldığını doğrulayın",
+    "Form kapalı kalacaksa demoyu anlatan açık bir sayfa bırakın"
+   ],
+   "verify": "Search Console › URL Denetimi'nde sayfa dizine eklenebilir görünmeli.",
+   "summary": "Demo sayfası erişimi"
   }
  }
 }

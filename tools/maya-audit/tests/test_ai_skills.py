@@ -79,7 +79,10 @@ def test_the_payload_stays_small_when_the_crawl_is_large(audited):
     fat = {**report, "crawl": {**report["crawl"], "pages": [{"body": "x" * 2000} for _ in range(500)]}}
     payload = analysis_payload(fat)
     assert len(json.dumps(fat)) > 1_000_000
-    assert len(json.dumps(payload)) < len(json.dumps(fat)) / 5
+    # The payload is the report without its crawl, plus a short summary of it (DECISIONS 356: the bound was a fifth of
+    # the fat report, which the fixture's findings came within 1% of; the property is that the crawl is gone).
+    without_crawl = len(json.dumps({k: v for k, v in fat.items() if k != "crawl"}))
+    assert len(json.dumps(payload)) < without_crawl + 5_000 and without_crawl < len(json.dumps(fat)) / 3
 
 
 def test_the_non_negotiable_rules_travel_with_every_prompt(audited):

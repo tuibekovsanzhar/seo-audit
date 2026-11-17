@@ -39,6 +39,7 @@ checks on Maya's own copies of the pages would mix readers when another reader (
 """
 from __future__ import annotations
 
+import json
 import re
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -793,6 +794,62 @@ def _order(report: dict) -> list[str]:
     return [f["id"] for f in sorted(findings, key=key)]
 
 
+def _texts_by_url(saved_texts: list[str] | None) -> dict[str, str]:
+    """{url: main text} of the saved page copies (Maya's and the page reader's evidence files, as text)."""
+    out: dict[str, str] = {}
+    for raw in saved_texts or []:
+        try:
+            saved = json.loads(raw)
+        except ValueError:
+            continue
+        if isinstance(saved, dict) and isinstance(saved.get("url"), str) and isinstance(saved.get("main_text"), str):
+            out.setdefault(saved["url"], saved["main_text"])
+    return out
+
+
+def _decisions_356(report: dict, affected: dict, changes: list[str], saved_texts: list[str] | None = None,
+                   business: str | None = None, unassessed: list[dict] | None = None) -> None:
+    """DECISIONS 356: the business profile's own checks (`checks.profile_rules`) on the saved page records, with the
+    pages typed for the audit's business type (the person's choice, else the report's or the suggestion) and the
+    main text of the saved evidence copies. A finding of these rules already in the report is replaced."""
+    from .checks import profile_rules
+    from .client_selection import grouping
+    from .launch_gate import items_of
+    from .models import to_jsonable
+    crawl = report.get("crawl") or {}
+    pages = [p for p in crawl.get("pages") or [] if isinstance(p, dict) and isinstance(p.get("analysis"), dict)]
+    checks = {c.get("check_id"): c for c in report.get("checks") or [] if c.get("status") != "not_assessed"}
+    before = {}
+    for check in checks.values():
+        for f in list(check.get("findings") or []):
+            if f.get("rule_id") in profile_rules.RULES:
+                before[f["rule_id"]] = f.get("title")
+                check["findings"].remove(f)
+                affected.pop(f.get("id"), None)
+    if not pages:
+        return
+    records, summary = grouping(report, business)
+    profile = (summary.get("business_type") or {}).get("id")
+    types = {u: g.get("business_page_type") for u, g in records.items()}
+    made, missing = profile_rules.findings(pages, types, profile, _texts_by_url(saved_texts))
+    if unassessed is not None:
+        unassessed.extend(missing)
+    for check_id, new in made.items():
+        check = checks.get(check_id)
+        if check is None:
+            continue
+        for finding in new:
+            finding.launch_gated = items_of(check_id, finding)[0]
+            urls = list(finding.scope.get("_all_urls") or finding.scope.get("urls") or [])
+            record = to_jsonable(finding)
+            check.setdefault("findings", []).append(record)
+            if check.get("status") == "pass":
+                check["status"] = "findings"
+            affected[record["id"]] = urls
+            if before.get(record["rule_id"]) != record["title"]:
+                changes.append(f"{record['id']}: {record['title']} ({record['severity']}; DECISIONS 356, {profile})")
+
+
 def _decisions_351(report: dict, changes: list[str]) -> None:
     """DECISIONS 351: a saved `idx6.alias_links` finding gives Shopify's step only on a Shopify site."""
     from .checks.quick_rules import ALIAS_LINKS_FIX_SHOPIFY, alias_fix
@@ -1087,7 +1144,8 @@ def _decisions_340(report: dict, affected: dict, changes: list[str]) -> None:
 
 
 def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | None = None,
-          jsonld_by_url: dict[str, list[str]] | None = None, saved_texts: list[str] | None = None) -> tuple[dict, dict, dict]:
+          jsonld_by_url: dict[str, list[str]] | None = None, saved_texts: list[str] | None = None,
+          business: str | None = None) -> tuple[dict, dict, dict]:
     """(report, affected, record) for a copy of `report` with the changed rules applied. `record` lists every change
     and what could not be assessed offline; it is also written to `generation.analysis`. `jsonld_by_url`: each page's
     saved JSON-LD blocks (the audit's evidence copies), for the Product fields and authors (DECISIONS 304).
@@ -1122,6 +1180,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_350(r, changes)  # DECISIONS 350: the alias-links card names its template link
     _decisions_351(r, changes)  # DECISIONS 351: Shopify's step only on a Shopify site
     _decisions_343(r, aff, changes, quick_unassessed)  # DECISIONS 343, 344: replaces what _decisions_304 added
+    _decisions_356(r, aff, changes, saved_texts, business, quick_unassessed)  # DECISIONS 356: the profile's checks
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -1137,7 +1196,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
                                            start_address=old.get("start_address"))
     r["release_gate"] = release_gate.run(r, aff)
     record = {
-        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338, 340, 343, 344, 347, 349, 350 and 351, applied by DECISIONS 285",
+        "kind": "offline rule reassessment", "rules": "DECISIONS 284 (3) and (4), 290, 300, 301, 304, 309, 315, 316, 317, 318, 321, 329, 337, 338, 340, 343, 344, 347, 349, 350, 351 and 356, applied by DECISIONS 285",
         "source_audit_id": source_audit_id, "processed_at": datetime.now(timezone.utc).isoformat(),
         "requests": 0, "changes": changes,
         "not_assessed_offline": ([{"rule": "STR-8 controls beside a grid", "why": NOT_ASSESSED_OFFLINE,
@@ -1150,7 +1209,8 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     return r, aff, record
 
 
-def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str] | None = None) -> tuple[dict, list[str]]:
+def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str] | None = None,
+               business: str | None = None) -> tuple[dict, list[str]]:
     """(copy, changes): only what DECISIONS 309 reads from the saved data (the platform, the RND-6 label), the certificate
     bands (321) and the place-name groups on location pages only (329), for a report of the current schema; `changes`
     is empty when nothing applies."""
@@ -1173,6 +1233,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_350(r, cert)  # DECISIONS 350: the alias-links card names its template link
         _decisions_351(r, cert)  # DECISIONS 351: Shopify's step only on a Shopify site
         _decisions_343(r, affected, cert)
+        _decisions_356(r, affected, cert, saved_texts, business)  # DECISIONS 356: the business profile's own checks
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

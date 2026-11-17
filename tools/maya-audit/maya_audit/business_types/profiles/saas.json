@@ -2,49 +2,73 @@
  "id": "saas",
  "order": 7,
  "label": {
-  "tr": "B2B SaaS",
-  "en": "B2B SaaS"
+  "tr": "SaaS / Yazılım",
+  "en": "SaaS / Software"
  },
- "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx",
+ "source": "docs/business-types/Maya-sektor-ve-oncelikli-sayfa-turleri.xlsx; DECISIONS 356 (owner, after the ticimax review)",
  "suggest": {
   "schema": [
    "SoftwareApplication",
-   "WebApplication"
+   "WebApplication",
+   "MobileApplication"
   ],
   "platforms": [],
   "url": [
    "pricing",
    "fiyatlandirma",
+   "fiyatlar",
+   "paketleri",
    "features",
    "ozellikler",
+   "ozellikleri",
    "integrations",
+   "entegrasyon",
    "entegrasyonlar",
    "demo",
    "signup",
+   "free-trial",
    "docs",
+   "dokumantasyon",
    "customers",
-   "case-studies"
+   "case-studies",
+   "referanslar",
+   "referanslarimiz",
+   "api"
   ],
   "words": [
    "fiyatlandırma",
+   "fiyatlar",
    "pricing",
+   "paketleri",
+   "planlar",
+   "plans",
    "özellikler",
+   "özellikleri",
    "features",
    "entegrasyonlar",
+   "entegrasyon çözümleri",
    "integrations",
    "demo",
    "ücretsiz dene",
+   "ücretsiz başlayın",
    "free trial",
-   "request a demo"
-  ]
+   "request a demo",
+   "referanslarımız",
+   "case studies",
+   "api",
+   "lisans"
+  ],
+  "trial": true,
+  "app_links": true
  },
  "page_types": [
   {
    "id": "pricing",
    "label": {
-    "tr": "Paket ve fiyat",
-    "en": "Plans and pricing"
+    "tr": "Fiyatlandırma",
+    "en": "Pricing"
    },
+   "weight": 100,
    "citable": false,
    "generic": [],
    "signals": {
@@ -52,10 +76,16 @@
      "pricing",
      "fiyatlandirma",
      "fiyatlar",
+     "fiyatlari",
+     "fiyat",
      "paketler",
+     "paketleri",
+     "paket",
      "plans",
+     "planlar",
      "plan",
-     "fiyat"
+     "lisans",
+     "ucretlendirme"
     ],
     "schema": [
      "Offer",
@@ -63,9 +93,14 @@
     ],
     "words": [
      "fiyatlandırma",
+     "fiyatlar",
+     "fiyatları",
      "pricing",
      "paketler",
-     "plans"
+     "paketleri",
+     "planlar",
+     "plans",
+     "lisans"
     ],
     "content": [
      "price",
@@ -76,12 +111,12 @@
   {
    "id": "features",
    "label": {
-    "tr": "Özellik ve entegrasyon",
-    "en": "Features and integrations"
+    "tr": "Özellik",
+    "en": "Feature"
    },
+   "weight": 95,
    "citable": false,
    "generic": [
-    "category",
     "product"
    ],
    "signals": {
@@ -90,59 +125,183 @@
      "feature",
      "ozellikler",
      "ozellik",
-     "integrations",
-     "entegrasyonlar",
-     "entegrasyon",
+     "ozellikleri",
      "product",
-     "urun",
-     "cozumler",
-     "solutions",
-     "platform"
+     "platform",
+     "modul",
+     "moduller",
+     "modules",
+     "tools",
+     "araclar",
+     "temalar",
+     "tema",
+     "themes",
+     "templates",
+     "sablonlar",
+     "modul",
+     "modulu",
+     "modulleri"
     ],
     "schema": [
      "SoftwareApplication",
-     "WebApplication"
+     "WebApplication",
+     "MobileApplication"
     ],
     "words": [
      "özellikler",
-     "entegrasyon",
+     "özellikleri",
+     "özellik",
      "features",
+     "modüller",
+     "araçlar",
+     "temalar",
+     "themes",
+     "modülü",
+     "modülleri"
+    ],
+    "content": [
+     "nav",
+     "cta"
+    ],
+    "nav_except": [
+     "about",
+     "about-us",
+     "hakkimizda",
+     "hakkinda",
+     "kurumsal",
+     "biz-kimiz",
+     "bizi-taniyin",
+     "kariyer",
+     "careers",
+     "jobs",
+     "team",
+     "ekibimiz",
+     "ekip",
+     "basin",
+     "basinda-biz",
+     "press",
+     "iletisim",
+     "contact",
+     "login",
+     "giris",
+     "signin",
+     "hesabim",
+     "account",
+     "yatirimci",
+     "investors"
+    ]
+   }
+  },
+  {
+   "id": "comparison",
+   "label": {
+    "tr": "Karşılaştırma",
+    "en": "Comparison"
+   },
+   "weight": 90,
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "vs",
+     "versus",
+     "karsilastirma",
+     "karsilastir",
+     "compare",
+     "comparison",
+     "alternatives",
+     "alternatif",
+     "alternatifleri",
+     "neden"
+    ],
+    "schema": [],
+    "words": [
+     "karşılaştırma",
+     "karşılaştırın",
+     "compare",
+     "alternatif",
+     "alternatives",
+     "neden"
+    ],
+    "content": [
+     "table"
+    ]
+   }
+  },
+  {
+   "id": "integrations",
+   "label": {
+    "tr": "Entegrasyon",
+    "en": "Integration"
+   },
+   "weight": 80,
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
      "integrations",
-     "çözümler",
-     "solutions"
+     "integration",
+     "entegrasyon",
+     "entegrasyonlar",
+     "entegrasyonlari",
+     "entegrasyonu",
+     "apps",
+     "marketplace",
+     "uygulamalar",
+     "partners",
+     "partner",
+     "ortaklarimiz",
+     "ortakliklarimiz",
+     "ortaklari",
+     "api",
+     "is-birligi",
+     "isbirligi"
+    ],
+    "schema": [],
+    "words": [
+     "entegrasyon",
+     "entegrasyonlar",
+     "entegrasyonları",
+     "integrations",
+     "iş ortaklarımız",
+     "iş ortaklıklarımız",
+     "partners",
+     "api"
     ],
     "content": []
    }
   },
   {
-   "id": "sales",
+   "id": "demo",
    "label": {
-    "tr": "Satış iletişimi",
-    "en": "Sales contact"
+    "tr": "Demo / deneme",
+    "en": "Demo / trial"
    },
+   "weight": 75,
    "citable": false,
    "generic": [],
    "signals": {
     "url": [
      "demo",
-     "iletisim",
-     "contact",
-     "contact-sales",
-     "satis",
-     "sales",
-     "demo-talep",
+     "trial",
+     "deneme",
+     "free-trial",
+     "ucretsiz-dene",
+     "get-started",
      "request-demo",
-     "teklif"
+     "demo-talep",
+     "signup",
+     "sign-up"
     ],
-    "schema": [
-     "ContactPage"
-    ],
+    "schema": [],
     "words": [
      "demo",
-     "satış",
-     "iletişim",
-     "contact sales",
-     "request a demo"
+     "deneme",
+     "ücretsiz dene",
+     "ücretsiz başlayın",
+     "free trial",
+     "request a demo",
+     "demo talep"
     ],
     "content": [
      "form"
@@ -150,43 +309,130 @@
    }
   },
   {
-   "id": "guide",
+   "id": "solutions",
    "label": {
-    "tr": "Rehber",
-    "en": "Guide"
+    "tr": "Çözüm / sektör",
+    "en": "Solution / industry"
    },
-   "citable": true,
-   "generic": [
-    "blog_article"
-   ],
+   "weight": 70,
+   "citable": false,
+   "generic": [],
    "signals": {
     "url": [
-     "blog",
+     "cozumler",
+     "cozum",
+     "cozumleri",
+     "solutions",
+     "solution",
+     "sektorler",
+     "sektorel",
+     "sektor",
+     "industries",
+     "industry",
+     "use-cases"
+    ],
+    "schema": [],
+    "words": [
+     "çözümler",
+     "çözüm",
+     "çözümleri",
+     "solutions",
+     "sektörel",
+     "sektörler",
+     "industries",
+     "use cases"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "references",
+   "label": {
+    "tr": "Müşteri hikâyesi / referans",
+    "en": "Customer story / reference"
+   },
+   "weight": 60,
+   "citable": false,
+   "generic": [],
+   "signals": {
+    "url": [
+     "referanslar",
+     "referanslarimiz",
+     "musteriler",
+     "musterilerimiz",
+     "musterilerimizden",
+     "customers",
+     "case-studies",
+     "case-study",
+     "basari-hikayeleri",
+     "basari-hikayesi",
+     "testimonials",
+     "references",
+     "tercih-edenler",
+     "yorumlari",
+     "yorumlar"
+    ],
+    "schema": [],
+    "words": [
+     "referanslar",
+     "referanslarımız",
+     "müşterilerimiz",
+     "başarı hikayeleri",
+     "case study",
+     "case studies",
+     "customers",
+     "tercih edenler",
+     "müşteri yorumları"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "guide",
+   "label": {
+    "tr": "Dokümantasyon / yardım",
+    "en": "Documentation / help"
+   },
+   "weight": 50,
+   "citable": true,
+   "generic": [],
+   "signals": {
+    "url": [
+     "docs",
+     "dokumantasyon",
+     "documentation",
+     "help",
+     "yardim",
+     "destek",
+     "support",
+     "academy",
+     "akademi",
+     "kampus",
+     "kaynaklar",
+     "resources",
+     "sss",
+     "faq",
+     "kilavuz",
      "rehber",
      "guide",
      "guides",
-     "docs",
-     "dokumantasyon",
-     "kaynaklar",
-     "resources",
-     "help",
-     "yardim",
-     "academy",
-     "sss",
-     "faq"
+     "knowledge-base",
+     "bilgi-bankasi"
     ],
     "schema": [
-     "Article",
-     "BlogPosting",
      "TechArticle"
     ],
     "words": [
-     "rehber",
-     "blog",
+     "dokümantasyon",
+     "yardım",
+     "destek",
+     "akademi",
      "kaynaklar",
+     "rehber",
      "docs",
-     "guide",
-     "resources"
+     "help",
+     "support",
+     "kampüs"
     ],
     "content": [
      "faq"
@@ -194,31 +440,99 @@
    }
   },
   {
-   "id": "references",
+   "id": "blog",
    "label": {
-    "tr": "Referanslar",
-    "en": "References"
+    "tr": "Blog",
+    "en": "Blog"
    },
+   "weight": 45,
+   "citable": true,
+   "generic": [
+    "blog_article"
+   ],
+   "signals": {
+    "url": [
+     "blog",
+     "haber",
+     "haberler",
+     "news",
+     "makale",
+     "makaleler",
+     "articles"
+    ],
+    "schema": [
+     "Article",
+     "BlogPosting"
+    ],
+    "words": [
+     "blog"
+    ],
+    "content": []
+   }
+  },
+  {
+   "id": "sales",
+   "label": {
+    "tr": "İletişim",
+    "en": "Contact"
+   },
+   "weight": 40,
    "citable": false,
    "generic": [],
    "signals": {
     "url": [
-     "referanslar",
-     "musteriler",
-     "musterilerimiz",
-     "customers",
-     "case-studies",
-     "basari-hikayeleri",
-     "testimonials",
-     "references"
+     "iletisim",
+     "contact",
+     "bize-ulasin",
+     "contact-sales",
+     "satis",
+     "sales",
+     "teklif"
+    ],
+    "schema": [
+     "ContactPage"
+    ],
+    "words": [
+     "iletişim",
+     "bize ulaşın",
+     "contact",
+     "contact sales",
+     "satış"
+    ],
+    "content": [
+     "form"
+    ]
+   }
+  },
+  {
+   "id": "policy",
+   "label": {
+    "tr": "Politika",
+    "en": "Policy"
+   },
+   "weight": 15,
+   "citable": false,
+   "generic": [
+    "policy"
+   ],
+   "signals": {
+    "url": [
+     "kvkk",
+     "gizlilik",
+     "privacy",
+     "terms",
+     "sozlesme",
+     "kullanim-kosullari",
+     "cerez",
+     "cookie"
     ],
     "schema": [],
     "words": [
-     "referanslar",
-     "müşterilerimiz",
-     "başarı hikayeleri",
-     "case study",
-     "customers"
+     "gizlilik",
+     "kvkk",
+     "sözleşme",
+     "privacy",
+     "terms"
     ],
     "content": []
    }

@@ -188,7 +188,12 @@
   "account": "Account opening; where a visit turns into a customer.",
   "company": "Company and support information; it builds trust, and Google and AI assistants describe you with it.",
   "platform": "Where your trading platform is described; customers decide here, and AI assistants answer platform questions from it.",
-  "service": "Service and subscription terms; customers read them before deciding, and AI assistants answer these questions from them."
+  "service": "Service and subscription terms; customers read them before deciding, and AI assistants answer these questions from them.",
+  "comparison": "Where your product is compared with others; customers look here when choosing, and AI assistants answer comparison questions from it.",
+  "integrations": "Where you say which tools your product works with; the answer to 'does it work with X?' is here.",
+  "demo": "Where a demo or trial starts; where a visit turns into a lead.",
+  "solutions": "Where your product is described for an industry or a use; customers check here whether it fits their business.",
+  "blog": "Posts that answer customers' questions; they show in Google's information searches and are what AI assistants quote most."
  },
  "families": {
   "acc1": {

@@ -113,6 +113,10 @@
    [
     "acc3.robots_outside_head",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ carry\\ a\\ robots\\ tag\\ outside\\ <head>:\\ browsers\\ ignore\\ it;\\ some\\ crawlers\\ may\\ not"
+   ],
+   [
+    "acc3.saas_trial_blocked",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ demo\\ or\\ trial\\ page\\(s\\)\\ are\\ noindexed\\ or\\ answer\\ an\\ error"
    ]
   ],
   "ACC-4": [
@@ -733,6 +737,10 @@
    [
     "rnd2.markup_only",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ declared\\ critical\\ fact\\(s\\)\\ exist\\ only\\ inside\\ markup\\ \\(script\\ data\\ or\\ attributes\\),\\ not\\ as\\ visible\\ text"
+   ],
+   [
+    "rnd2.saas_pricing_text",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ pricing\\ page\\(s\\)\\ show\\ no\\ price\\ with\\ a\\ currency\\ in\\ their\\ text"
    ]
   ],
   "RND-3": [
@@ -765,6 +773,10 @@
    [
     "rnd4.unnamed",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ iframe\\(s\\)\\ lack\\ an\\ accessible\\ name\\ on\\ (?P<pages>\\d+(?:\\.\\d+)?)\\ page\\(s\\)"
+   ],
+   [
+    "rnd4.saas_integrations_text",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ integrations\\ page\\(s\\)\\ show\\ integrations\\ as\\ logos\\ whose\\ names\\ the\\ text\\ does\\ not\\ give"
    ]
   ],
   "RND-5": [
@@ -957,6 +969,14 @@
    [
     "str15.thin",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ content\\ page\\(s\\)\\ have\\ fewer\\ than\\ (?P<words>\\d+(?:\\.\\d+)?)\\ words\\ of\\ their\\ own\\ text"
+   ],
+   [
+    "str15.saas_feature_intro",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ feature\\ page\\(s\\)\\ do\\ not\\ say\\ in\\ their\\ first\\ paragraph\\ what\\ the\\ feature\\ does\\ and\\ for\\ whom"
+   ],
+   [
+    "str15.saas_story_result",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ customer\\ story\\ page\\(s\\)\\ give\\ no\\ measurable\\ result"
    ]
   ],
   "STR-16": [
@@ -1153,6 +1173,10 @@
    [
     "str3.type_clash",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ @id\\(s\\)\\ are\\ given\\ different\\ types\\ in\\ different\\ places"
+   ],
+   [
+    "str3.saas_offer_schema",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ pricing\\ page\\(s\\)\\ show\\ prices\\ with\\ no\\ Offer\\ markup"
    ]
   ],
   "STR-4": [

@@ -85,6 +85,14 @@ def settle(checks, result) -> None:
             types[url] = g.get("business_page_type")
     gate_location_templates([c for c in checks if not _get(c, "check_id").startswith("ANS")], types,
                             (getattr(result, "business_type", None) or {}).get("id"), least)
+    # DECISIONS 356: the business profile's own checks (SaaS / Yazılım: pricing, features, integrations, stories, demo),
+    # once; their findings get rule ids and contract fields as every other.
+    from .checks.profile_rules import RULES as PROFILE_RULES, extend as profile_checks
+    site = [c for c in checks if not _get(c, "check_id").startswith("ANS")]
+    if not any(_get(f, "rule_id") in PROFILE_RULES for c in site for f in (_get(c, "findings") or [])):
+        profile_checks(site, result)
+        assign(checks)
+        attach(checks)
     # Every redirect hop of the crawl, per requested address (Stage 8a, DECISIONS 315).
     from .checks.stage8_rules import redirect_records
     result.redirects = redirect_records(result.pages)

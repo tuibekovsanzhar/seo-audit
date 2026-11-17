@@ -46,6 +46,11 @@ def test_one_profile_per_sector_of_the_owners_file_in_its_order_plus_restaurant_
     by_label = {p["label"]["tr"]: p for p in bt.profiles().values()}
     by_label["Seyahat / rezervasyon"] = bt.profile("seyahat")  # DECISIONS 316/324: now "Seyahat / rezervasyon (tur, otel)"
     for sector, types in rows:
+        if sector == "B2B SaaS":
+            # DECISIONS 356 (owner): "SaaS / Yazılım" with eleven page types and its own weights; the file's five types
+            # keep their ids (the sector method maps to them). tests/test_saas_profile_356.py covers the rest.
+            assert {"pricing", "features", "sales", "guide", "references"} <= {t["id"] for t in bt.profile("saas")["page_types"]}
+            continue
         prof = by_label[sector]
         ranked = [t for t in sorted((t for t in prof["page_types"] if t["rank"]), key=lambda t: t["rank"])]
         assert [t["label"]["tr"] for t in ranked] == types, sector

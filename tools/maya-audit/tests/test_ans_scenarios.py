@@ -179,9 +179,13 @@ def test_panel_never_changes_the_site_checks(cited):
     from maya_audit.checks.render import run_render_checks
     from maya_audit.checks.structure import run_structure_checks
 
+    # DECISIONS 356: the business profile's own checks run once the business type is known (final.settle), on the page
+    # text the report then drops; a fresh run of the site checks cannot make them, and the panel never touches them.
+    from maya_audit.checks.profile_rules import RULES as PROFILE_RULES
+
     def summarize(check_list):
         return sorted((f.check_id, f.title, f.severity.value, f.confidence.value, tuple(sorted(f.scope["urls"])))
-                      for c in check_list for f in c.findings)
+                      for c in check_list for f in c.findings if f.rule_id not in PROFILE_RULES)
 
     # Re-run the site checks from the same crawl: fresh objects the panel has never touched.
     render = run_render_checks(outcome.result, config)
@@ -191,7 +195,8 @@ def test_panel_never_changes_the_site_checks(cited):
     apply_severity(fresh, outcome.result)  # compare the same final owner policy, not raw constructor impact
     after_panel = [c for c in outcome.checks if not c.check_id.startswith("ANS")]
     assert summarize(after_panel) == summarize(fresh)
-    assert [c.status for c in after_panel] == [c.status for c in fresh]
+    assert [c.status for c in after_panel if not any(f.rule_id in PROFILE_RULES for f in c.findings)] == \
+        [c.status for c, a in zip(fresh, after_panel) if not any(f.rule_id in PROFILE_RULES for f in a.findings)]
     report = build_report(outcome.result, outcome.gates, outcome.checks)
     assert [c["check_id"] for c in report["answer_engine_panel"]] == ["ANS-1", "ANS-2", "ANS-3", "ANS-4", "ANS-5"]
     assert not any(c["check_id"].startswith("ANS") for c in report["checks"])

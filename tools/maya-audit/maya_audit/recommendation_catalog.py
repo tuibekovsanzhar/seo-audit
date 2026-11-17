@@ -51,6 +51,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"Group precedence", "seo", "S", "A crawler with its own section in robots.txt ignores the general (*) rules. A rule you thought applied to everyone may not apply to it."),
     ),
     "ACC-3": (
+        (r"demo or trial page\(s\) are noindexed", "seo", "S", "The demo or trial page is the one closest to a sale; while it is noindexed or failing, search and answer engines cannot send anyone there."),  # DECISIONS 356
         # The checklist's quick checks (DECISIONS 304).
         (r"carry noindex but robots\.txt blocks", "seo", "S", "A crawler that robots.txt keeps out never reads the page, so it never sees the noindex either, and the address can stay in the index from links to it."),
         (r"internal search or cart page\(s\) can be indexed", "developer", "S", "A site's own search results and cart are not pages to find in search: indexed, they spend crawl time and can show as thin or duplicate results."),
@@ -176,6 +177,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"may be client-rendered", "developer", "M", "The page's HTML looks like an empty shell that a script fills in. If so, crawlers that do not run JavaScript see nothing. It was not opened in a browser to confirm."),
     ),
     "RND-2": (
+        (r"pricing page\(s\) show no price with a currency", "content", "S", "Answer engines quote the prices they can read as text; plans and prices shown only in images or drawn by scripts are left out of their answers."),  # DECISIONS 356
         (r"declared critical fact", "developer", "M", "Key facts such as prices should be in the page the server sends, so that every crawler can read them."),
         (r"appear only after JavaScript", "developer", "M", "Headings and prices that appear only after scripts run are missing for crawlers that do not run them."),
     ),
@@ -184,6 +186,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"may hide content behind interaction", "developer", "M", "The page's HTML suggests content behind tabs, accordions or 'load more'. Crawlers do not click, so it may go unread. It was not opened in a browser to confirm."),
     ),
     "RND-4": (
+        (r"integrations as logos whose names", "content", "S", "A name inside a logo cannot be read; a question such as 'does it work with X?' is answered from pages that write the name."),  # DECISIONS 356
         (r"iframe.*accessible name", "developer", "S", "An unnamed frame lacks a label in the captured naming evidence. Verify its accessible name; this is an accessibility issue, not evidence of an SEO extraction failure."),
         (r"<canvas> is on .* part of the site's layout", "developer", "S", "A canvas draws pixels, not text, so nothing in it can be read by an engine. One that sits on every page is usually a background effect and holds nothing to read; this is recorded so that someone can confirm it."),
         (r"iframe(?!.*accessible name)", "developer", "M", "An iframe embeds a separate document. Its presence alone does not establish that essential content is inaccessible or that engines cannot extract it; inspect its purpose and equivalent page content."),
@@ -217,6 +220,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"more than one <h1>", "content", "S", "Several main headings make it less clear which one names the page's topic. This is a small matter."),
     ),
     "STR-3": (
+        (r"pricing page\(s\) show prices with no Offer markup", "developer", "S", "Offer markup tells engines plainly what each plan costs and in which currency, so the price they show is the page's own."),  # DECISIONS 356
         (r"carry Product or AggregateRating markup", "developer", "S", "Product ratings on an article break Google's structured data rules, and the site's rich results can be lost."),  # DECISIONS 343
         # The checklist's quick checks (DECISIONS 304).
         (r"name no author", "content", "S", "A named author with a page of their own is one of the signals engines use to judge who stands behind advice and how far to trust it."),
@@ -327,6 +331,8 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r".", "content", "S", "Titles, descriptions and headings are the basics every search engine reads to decide what a page is about and how to show it."),
     ),
     "STR-15": (
+        (r"customer story page\(s\) give no measurable result", "content", "S", "Stories with a named customer and a number are the proof answer engines cite; without a result a story reads as praise."),  # DECISIONS 356
+        (r"feature page\(s\) do not say in their first paragraph", "content", "S", "An engine quoting a feature takes the page's first lines; a slogan alone does not say what the feature does or who it is for."),  # DECISIONS 356
         # The checklist's quick checks (DECISIONS 304).
         (r"list no product or almost none", "content", "S", "An indexable list page with nothing in it can be treated as a soft 404, and a visitor who lands on it from search finds nothing to buy."),
     ),

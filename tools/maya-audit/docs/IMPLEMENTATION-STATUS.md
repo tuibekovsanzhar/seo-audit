@@ -2419,3 +2419,28 @@ All 79 saved audits: the text check flags nothing.
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3492 passed, 4 skipped, 1 warning in 1002.71s (0:16:42)` |
 | `python3.11 -m compileall`, `ruff --select E9,F821,F841` (source folders) | OK, `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+Push (owner: "push", 2026-11-17): DECISIONS 348–355 (`4a480f9`..`e21db34`) pushed to withmaya/seo-audit main; CI run
+44129811114 on `e21db34` passed (16:47–17:00 UTC, job "fast": success).
+
+## SaaS / Yazılım profile and its checks (DECISIONS 356, 2026-11-17)
+
+VERIFIED locally; not pushed. Profile `saas` relabelled "SaaS / Yazılım" with eleven page types and weights; menu
+("nav") and demo/trial signals; six profile-only rules (`checks/profile_rules.py`), live and offline.
+
+| www.ticimax.com c77ebf6d | Before | After |
+|---|---|---|
+| Business type | Diğer (closest E-ticaret 4 / Kart 4 / SaaS 3) | SaaS / Yazılım (9) |
+| Page types (147 read) | none typed | other 64, features 19, integrations 19, blog 11, references 7, policy 7, pricing 7, sales 6, guide 2, utility 2, demo 1, comparison 1, home 1 |
+| Cards | 15 | 15; new "Fiyat sayfasına Offer işaretlemesi ekleyin" (4 pages) |
+| Teyit edin (profile) | — | pricing as text 2, feature first paragraph 4, integrations as logos 3, story results 3 |
+| Checklist (Geçti/Sorun/Veri eksik/İnceleme/Uygulanmaz) | 50/21/21/43/30 | 48/23/21/45/28 |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_saas_profile_356.py` | `11 passed` |
+| fast suite, first run | `4 failed, 3364 passed` (fixture sites now SaaS: the panel test's fresh re-run, the payload bound, brief words and catalogue explanations for the new rules; fixed) |
+| fast suite | `3368 passed, 4 skipped, 135 deselected, 1 warning in 551.38s (0:09:11)` |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3503 passed, 4 skipped, 1 warning in 977.56s (0:16:17)` |
+| `python3.11 -m compileall`, `ruff --select E9,F821,F841` (source folders) | OK, `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

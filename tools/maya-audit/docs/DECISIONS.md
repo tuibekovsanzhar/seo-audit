@@ -5201,3 +5201,54 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      og:description, og:image) -> one note; text check BLOCKED -> PASS; cards 15 -> 14 (no candidate left).
      All 79 saved audits: the text check now flags nothing.
      Tests: `tests/test_same_card_355.py` (7).
+
+356. **SaaS / Yazılım business profile and its own checks (Owner, 2026-11-17, after reviewing www.ticimax.com, Smart
+     ~150: a software company typed "Diğer", 120 of 144 pages "diğer"; signal words, weights, thresholds and the rules'
+     heuristics are agent defaults).** Global for every audit; Ticimax was only the test case.
+     *Profile* (`business_types/profiles/saas.json`, id `saas` kept: the team's sector method maps to it): "SaaS /
+     Yazılım", eleven page types with explicit weights: fiyatlandırma 100, özellik 95, karşılaştırma 90, entegrasyon 80,
+     demo / deneme 75, çözüm / sektör 70, müşteri hikâyesi / referans 60, dokümantasyon / yardım 50, blog 45, iletişim
+     40, politika 15 (ana sayfa 85). The sector file's five type ids (pricing, features, sales, guide, references) keep
+     their ids under the new labels. Turkish word forms added ("paketleri", "fiyatları", "özellikleri", "entegrasyonları",
+     "-modülü", "referanslarımız", "tercih edenler", "iş birliği"). Selectable like the others.
+     *New signals* (`business_types`, VERSION 4, so saved suggestions are worked out again): "nav", a page the homepage's
+     main menu links (3 points, enough alone for the profile's feature type; used before reading by Akıllı sampling,
+     at typing and offline); "cta", a demo or free-trial button on a page (1 point); for the suggestion, a demo/trial
+     call to action in the homepage menu or buttons (+2) and links to an app store (+2) for profiles that ask for them
+     (`suggest.trial`, `suggest.app_links`; SaaS only). An article (the page grouping's blog_article) in the folder of
+     the profile's article type is that type whatever its slug says ("/blog/yeni-ozellik" is a post) — all profiles.
+     *Checks* (`checks/profile_rules.py`, only when the audit's business type is SaaS; live in `final.settle` after the
+     business type, offline in `reassess_rules._decisions_356` with the person's choice from `business-type.json`, which
+     is now part of the current-engine copy's key): rnd2.saas_pricing_text (RND-2, Kontrol edin, S3: a pricing page's
+     text holds no amount with a currency or "/ay"-type period), str3.saas_offer_schema (STR-3, Sorun, S4: prices in the
+     text, no Offer/AggregateOffer/Product/SoftwareApplication), str15.saas_feature_intro (STR-15, Kontrol edin, S4: no
+     80+ character line in the six after the H1, or one with no purpose or reader word: için, sağlar, size, -nız, you,
+     helps …), rnd4.saas_integrations_text (RND-4, Kontrol edin, S4: 6+ content images, fewer than half of their alt
+     names in the text), str15.saas_story_result (STR-15, Kontrol edin, S4: a page that calls itself a story with 150+
+     words and no number with %, kat, a currency, growth or saving), acc3.saas_trial_blocked (ACC-3, Sorun, S2: a demo
+     page with meta robots or X-Robots-Tag noindex, or status 400+). Text lines on half of the pages or more (a promo
+     banner, a cookie notice) are not a page's own text. The text comes from the page in memory or the saved evidence;
+     a page with no text kept is not judged and the rule says so. Each rule has its title frame, Turkish title, fix,
+     expected and note, issue type and card texts (TR/EN).
+     A company page in the menu (about, hakkımızda, kurumsal, kariyer, ekip, basın, iletişim, giriş: the feature type's
+     `nav_except`) gets no menu point. Each rule also has its web-catalogue explanation (`recommendation_catalog`, TR in
+     `locales/catalog/tr.json`); the brief has plain words for the new page types.
+     *Found on the way:* `idx8.typo_copies`' card texts said "301" (texts hold no digits): now "kalıcı yönlendirme".
+     *Tests changed:* `test_ans_scenarios::test_panel_never_changes_the_site_checks` leaves the profile's findings out
+     of its fresh re-run (they need the page text the report drops after `final.settle`; the panel never touches them);
+     `test_ai_skills::test_the_payload_stays_small_when_the_crawl_is_large` now asserts the payload is the report
+     without its crawl plus a short summary (its "a fifth of the fat report" bound was met at 99% before; the fixture,
+     a SaaS-like demo site, now has two more findings).
+     *Ticimax c77ebf6d before -> after* (scratch copies; previous commit vs this build): business type Diğer (closest
+     E-ticaret 4, Kart 4, SaaS 3) -> SaaS / Yazılım (9: 21 addresses with pricing/integration words, menu "fiyatlar",
+     "paketleri", "özellikleri", the demo/trial call "Ücretsiz Başlayın"); page types 147 untyped -> other 64, features
+     19, integrations 19, blog 11, references 7, policy 7, pricing 7, sales 6, guide 2, utility 2, demo 1, comparison 1,
+     home 1 (the 64 "other" are top-level news and event posts with no date, folder or article markup, and industry
+     landing pages "/<sektör>-e-ticaret-sitesi/" with no type word); key pages typed Fiyatlandırma, Özellik,
+     Karşılaştırma, Entegrasyon, Demo / deneme. Top cards: 15 -> 15, "Fiyat sayfasına Offer işaretlemesi ekleyin" (4
+     pricing pages) new at 6, "Yer tutucu alt metinlerini değiştirin" left the 15; Teyit edin adds pricing as text (2
+     pages), feature first paragraph (4), integrations as logos (3), story results (3); no demo-page problem
+     (/demo is indexable). Checklist: Geçti 50 -> 48, Sorun 21 -> 23, Veri eksik 21, İnceleme gerekli 43 -> 45,
+     Uygulanmaz 30 -> 28. Text check PASS.
+     Tests: `tests/test_saas_profile_356.py` (11; made-up software and shop sites); `test_business_types_311` now
+     exempts SaaS from the sector file's shape (owner's change) and keeps its five ids.
