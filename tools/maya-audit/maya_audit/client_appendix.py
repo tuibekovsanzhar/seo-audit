@@ -574,8 +574,14 @@ def _empty_reason(name: str, selection: dict, W: dict) -> str:
     return empty.get(key) or empty["findings"]
 
 
-def build(selection: dict, lang: str = "tr", lists: dict | None = None, **wording) -> bytes:
-    return xlsx.workbook(sheets(selection, lang, lists, **wording))
+def build(selection: dict, lang: str = "tr", lists: dict | None = None, text_check=None, **wording) -> bytes:
+    """`text_check`: the release gate's text check (DECISIONS 353), a record or a function returning one once every
+    sheet is written (so the sentences the sheets showed untranslated are in it); its sheet "Kontrol raporu" comes last."""
+    made = sheets(selection, lang, lists, **wording)
+    if text_check is not None:
+        from . import text_gate
+        made.append(text_gate.sheet(text_check() if callable(text_check) else text_check, lang))
+    return xlsx.workbook(made)
 
 
 def finding_ids(data: bytes, lang: str = "tr") -> set[str]:

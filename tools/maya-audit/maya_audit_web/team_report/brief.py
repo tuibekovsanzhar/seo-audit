@@ -641,6 +641,8 @@ class Brief:
     details: list[str] = field(default_factory=list)
     pages: int | None = None
     previews: list[bytes] = field(default_factory=list)
+    text_check: dict | None = None  # the release gate's text check (DECISIONS 353)
+    draft: bool = False
 
 
 def _reason(lang: str, kind: str, **values) -> str:
@@ -692,6 +694,15 @@ def build(report_path: Path, lang: str, *, review_path: Path | None = None, affe
     if errors:
         return _blocked(out, lang, errors)
     out.html = build_html(b)
+    # DECISIONS 353: the release gate's text check of the team report's cards the brief is made from and of the brief's
+    # own sentences; a blocking problem makes the brief a marked draft (every page says "TASLAK").
+    from maya_audit import text_gate
+    found = text_gate.check(data, report) + text_gate.check({"brief": b, "lang": lang}, report)
+    out.text_check = {"version": text_gate.VERSION, "decision": text_gate.decision(found), "violations": found,
+                      "hard": sum(1 for v in found if v["hard"])}
+    if out.text_check["decision"] == text_gate.BLOCKED:
+        out.draft = True
+        out.html = out.html.replace("<body>", "<body>" + text_gate.draft_mark(lang), 1)
     if not render_pdf:
         return out
     from maya_audit_web.team_report import render

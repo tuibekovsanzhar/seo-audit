@@ -1,0 +1,131 @@
+{
+ "_about": "Texts of the merged cards (DECISIONS 301, 315; moved out of client_selection.py by DECISIONS 353 so the SEO team's finding catalogue edits data, never code): per merge group its finding (what is wrong, for a findings table), title (the card's action) and fix, in Turkish and English. The rules, cause and worst_by of each group stay in maya_audit/client_selection.py.",
+ "groups": {
+  "html_weight": {
+   "finding": {
+    "tr": "Sayfa HTML'i ağır: satır içi veri, betik ve stil",
+    "en": "Page HTML is heavy: inlined data, scripts and styles"
+   },
+   "title": {
+    "tr": "Sayfa HTML'ini hafifletin",
+    "en": "Make the page HTML lighter"
+   },
+   "fix": {
+    "tr": "Satır içi JSON, betik, stil ve SVG'yi HTML'in dışına taşıyın; kullanılmayan tema bloklarını kaldırın; ana içerik HTML'in başına yakın başlasın.",
+    "en": "Move inlined JSON, scripts, styles and SVG out of the HTML; remove unused theme blocks; let the main content start early in the HTML."
+   }
+  },
+  "empty_pages": {
+   "finding": {
+    "tr": "Bazı sayfalar boş yanıt veriyor",
+    "en": "Some pages answer empty"
+   },
+   "title": {
+    "tr": "Boş yanıt veren sayfaları düzeltin",
+    "en": "Fix pages that answer empty"
+   },
+   "fix": {
+    "tr": "Boş yanıtın nedenini sunucu ya da CDN kayıtlarında bulun ve sayfanın içerikle yanıt vermesini sağlayın.",
+    "en": "Find why the page answers empty in the server or CDN logs and make it answer with its content."
+   }
+  },
+  "heading_levels": {
+   "finding": {
+    "tr": "Başlık düzeyleri atlanıyor",
+    "en": "Heading levels are skipped"
+   },
+   "title": {
+    "tr": "Başlık düzeylerini sıraya koyun",
+    "en": "Put heading levels in order"
+   },
+   "fix": {
+    "tr": "Başlıkları sırayla kullanın (H2'den sonra H3); tekrarlanan bloklardaki başlıkları temada düzeltin.",
+    "en": "Use heading levels in order (an H3 after an H2); fix the headings of repeated blocks in the theme."
+   }
+  },
+  "links_without_text": {
+   "finding": {
+    "tr": "Bazı bağlantıların metni yok",
+    "en": "Some links have no text"
+   },
+   "title": {
+    "tr": "Metni olmayan bağlantılara ad verin",
+    "en": "Name the links that have no text"
+   },
+   "fix": {
+    "tr": "Bağlantıya metin verin ya da içindeki görsele alt metin ekleyin; tekrarlanan bloklarda bunu temada yapın.",
+    "en": "Give the link text or give its image an alt text; in repeated blocks, do it in the theme."
+   }
+  },
+  "links_without_address": {
+   "finding": {
+    "tr": "Bazı bağlantıların izlenebilir adresi yok",
+    "en": "Some links have no address a crawler can follow"
+   },
+   "title": {
+    "tr": "Adresi olmayan bağlantıları düzeltin",
+    "en": "Fix links with no address"
+   },
+   "fix": {
+    "tr": "Sayfaya giden öğelere gerçek bir href verin; yalnız işlem yapan öğeler için <button> kullanın.",
+    "en": "Give elements that lead to a page a real href; use <button> for elements that only act."
+   }
+  },
+  "language_mismatch": {
+   "finding": {
+    "tr": "Dil sürümlerinde çevrilmemiş metin var",
+    "en": "Language versions carry untranslated text"
+   },
+   "title": {
+    "tr": "Dil sürümlerindeki çevrilmemiş metni düzeltin",
+    "en": "Fix untranslated text in language versions"
+   },
+   "fix": {
+    "tr": "Diğer dilde kalan bölgeleri (menü, başlıklar, metin) çevirin ya da <html lang>'i içeriğe göre düzeltin.",
+    "en": "Translate the regions left in the other language (menu, titles, text), or set <html lang> to match the content."
+   }
+  },
+  "sitemap_lastmod": {
+   "finding": {
+    "tr": "Site haritası lastmod tarihleri gerçek değil",
+    "en": "Sitemap lastmod dates are not the real edit dates"
+   },
+   "title": {
+    "tr": "Site haritası lastmod tarihlerini düzeltin",
+    "en": "Fix the sitemap lastmod dates"
+   },
+   "fix": {
+    "tr": "lastmod'u sayfanın gerçek son düzenleme tarihinden alın; alınamıyorsa lastmod'u yazmayın.",
+    "en": "Take lastmod from each page's real last edit; if that is not possible, leave lastmod out."
+   }
+  },
+  "template_meta": {
+   "finding": {
+    "tr": "Sayfalar aynı başlık ve açıklamayı paylaşıyor",
+    "en": "Pages share the same title and description"
+   },
+   "title": {
+    "tr": "Ortak başlık ve açıklamaları ayırın",
+    "en": "Give pages their own titles and descriptions"
+   },
+   "fix": {
+    "tr": "Şablonun her sayfaya aynı başlık ve açıklamayı yazmasını durdurun; her sayfaya kendi başlık ve açıklamasını verin.",
+    "en": "Stop the template writing one title and description on every page; give each page its own."
+   }
+  },
+  "redirect_chain": {
+   "finding": {
+    "tr": "Kanonik adresler ve bağlantılar bir yönlendirme zincirine gidiyor",
+    "en": "Canonicals and links lead into a redirect chain"
+   },
+   "title": {
+    "tr": "Kanonik adresleri ve bağlantıları zincirin son adresine verin",
+    "en": "Point canonicals and links at the chain's final address"
+   },
+   "fix": {
+    "tr": "Her sayfanın kanonik adresini kendisi (ya da zincirin bittiği son adres) yapın, iç bağlantıları son adrese verin ve zincirdeki fazla yönlendirmeleri kaldırın.",
+    "en": "Make each page's canonical itself (or the chain's final address), point internal links at the final address and remove the extra redirects in the chain."
+   }
+  }
+ }
+}

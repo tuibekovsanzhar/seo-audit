@@ -5093,3 +5093,60 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      37 pages); topic-visibility-snapshots and competitor-mentions-daily, so the two competitor sheets are left out;
      meta.json, so no prompt labels or brand aliases.
      Tests: `tests/test_maya_data_352.py` (15, fake exports and a made-up crawl; no live request).
+
+353. **The finding catalogue for the SEO team and a text check on every report (Owner, 2026-11-17, requested by
+     İlginay, SEO reviewer: the explanation and recommendation language "reads too AI-like and is sometimes wrong";
+     rule numbering, hard/soft split, the phrase list's first entries and the second reader's model are agent
+     defaults).** Global for every audit; the six saved audits were only test cases.
+     *Catalogue* (`maya_audit_web/finding_catalogue.py`, `scripts/finding_catalogue.py export OUT.xlsx --home
+     ~/.maya-audit/web`): one XLSX ("Nasıl kullanılır", "Bulgular", "Yasaklı ifadeler") with a row per rule
+     (319), per variant (Shopify/WordPress steps, region steps: 16), per merged card (9), per Note-card topic (25), the
+     generic text (1) and per checklist item (165): 535 rows. Columns: key, kind, rule id, family and its Turkish name,
+     severities seen, priority cap, issue type, the Turkish title, finding, "Neden önemli", "Ne yapılmalı" (sentence
+     and "- " steps), verify, the engine's finding sentence in Turkish and English with its placeholders, evidence
+     fields seen, business profiles (the sector method's core and sector checks), platforms, number of variants, how
+     many saved audits triggered it and one real Turkish sentence (saved reports are only read, the current-engine copy
+     when there is one), the source files; then empty "Yeni başlık", "Yeni açıklama", "Yeni öneri", "Yeni bulgu
+     cümlesi", "Not". "Yeni bulgu cümlesi" was added to the four asked for: it is the sentence with {n}/{url}
+     placeholders a rewrite could break.
+     *Import* (`scripts/finding_catalogue.py import EDITED.xlsx [--dry-run] [--report diff.md]`): only rows with a
+     "Yeni …" cell change anything. Yeni başlık -> the card title where it is shown (rule_actions.json when the
+     approved catalogue has one, else texts/tr.json; merge_group_texts.json for merged cards; checklist_items.json for
+     checklist items); Yeni açıklama -> "Neden önemli"; Yeni öneri -> first line "Ne yapılmalı", "- " lines the steps
+     (to the file the shown steps come from); Yeni bulgu cümlesi -> locales/findings/tr.json. Refused (and listed, the
+     rest still written): a placeholder added, dropped or renamed, unbalanced brackets, a digit where the old text had
+     none, a length over the field's limit (title 80, why 170, explanation 150, step 75, 2–4 steps), a different step
+     count where steps carry conditions (step_when), an unknown key. Notes are listed, never written. The diff report
+     shows old -> new per file and field. Excel/Google Sheets files are read (`xlsx.read_any`: shared strings, rich
+     text, relationship-named sheets). The texts were already data files except the merged cards' title, finding and
+     fix, which moved from `client_selection.py` to `maya_audit/merge_group_texts.json`.
+     *Text check* (`maya_audit/text_gate.py`, the release gate's RG-18 to RG-23, version text-gate-1): runs on the team
+     report's data before every team PDF, client brief, XLSX appendix and sector download (provider-free):
+     RG-18 hard: a placeholder left, or a number in a card that none of the card's own findings holds; RG-19 hard:
+     platform advice (Shopify, WordPress, …) on a site the report does not name as that platform (WordPress counts for
+     WooCommerce; evidence naming the platform allows it); RG-20 hard: "remove" for a menu/footer link or a link to a
+     sign-in/application/cart entry, or a step saying so; RG-21: English in Turkish text (hard in a card's own lines,
+     soft elsewhere; quoted site text, tags and addresses are not read; the appendix's untranslated sentences soft);
+     RG-22 hard: two cards with one rule or one title on the same pages; RG-23 soft: a phrase from
+     `maya_audit/banned_phrases.json` (the SEO team edits it: text, lang, block, why, instead; whole words, Turkish
+     i/ı), hard when "block": true. BLOCKED makes the download a marked draft, never a refusal: the team PDF says
+     "TASLAK" in every footer, the brief has a "TASLAK" mark on every page, file names end in "-draft", header
+     `X-Maya-Text-Check`. The appendix's last sheet "Kontrol raporu" lists the result, each finding (rule, blocking,
+     card, place, message, text) and the second reader's suggestions. The existing release gate (RG-1–RG-17) and its
+     saved decision are unchanged.
+     *Second reader* (`maya_audit_web/team_report/llm_review.py`): off by default; on only with `--llm-review`
+     (`scripts/text_check.py`) or `MAYA_AUDIT_LLM_REVIEW=1`, and a key `MAYA_AUDIT_ANTHROPIC_API_KEY` (environment,
+     then the .env file). Claude Opus 5.5 with structured output and the server-side refusal fallback reads each card's
+     lines and its findings' evidence and flags unclear or unnatural Turkish and claims the evidence does not support;
+     it only suggests ("Kontrol raporu", never blocking, never editing). The `anthropic` package is not installed in
+     the venv (no install without the owner's approval): until it is, the review says "not available". Tests use a fake
+     client; conftest clears the key.
+     *Run on the saved audits* (copies in the scratchpad; `scripts/text_check.py` and the appendix built as the download
+     builds it): Enpara fee70191 (80 findings, 15 cards) PASS; Atasun f06a2129 (55, 15) PASS; Züber 2bf9b1ce (43, 9)
+     CONDITIONAL: one engine line left in English in the coverage limits and the appendix ("Cloudflare rate-limited
+     Maya's direct crawler on 1 of 2 request(s). 148 page(s) were read through Firecrawl instead…", no Turkish
+     entry yet); MMI 536b4b64 (56, 15) PASS; Nature's Garden 342a0b14 (49, 8) PASS; İş Bankası 1b81bee4 (63, 15) PASS.
+     Planted problems in a copy of Atasun's cards (an invented number, a Shopify step, a menu link to remove, English in
+     a card, a repeated card, "kritik öneme sahiptir") were all found. Catalogue on the 79 saved audits: 223 of the 319
+     rules were triggered at least once.
+     Tests: `tests/test_text_check_353.py` (20; made-up cards and reports, a fake second reader, the demo web app).

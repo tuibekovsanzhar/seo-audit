@@ -242,7 +242,11 @@ def test_the_web_appendix_is_the_skills_appendix(finished, tmp_path):
                                           affected_path=folder / "affected-urls.json" if (folder / "affected-urls.json").is_file() else None)
     current = json.loads(Path(data["_report_path"]).read_text(encoding="utf-8"))
     current_affected = json.loads(Path(data["_affected_path"]).read_text(encoding="utf-8")) if data.get("_affected_path") else None
-    assert xlsx.read(web_file) == xlsx.read(render.appendix_bytes(current, current_affected, {}, "tr", todos=data["todos"])[0])
+    # DECISIONS 353: both end with the text check's "Kontrol raporu" of the same cards.
+    skill_file = render.appendix_bytes(current, current_affected, {}, "tr", todos=data["todos"],
+                                       text_check=render.text_record(data, current))[0]
+    assert list(xlsx.read(web_file))[-1] == "Kontrol raporu"
+    assert xlsx.read(web_file) == xlsx.read(skill_file)
 
 
 def _skill(*args, cwd):

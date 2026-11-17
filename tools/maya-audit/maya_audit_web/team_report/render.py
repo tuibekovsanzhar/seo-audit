@@ -350,6 +350,8 @@ def footer(d, L, n, total=4):
     left = (fmt(L["footer_left_src"], source=m["source"], audit_id=m["audit_id"]) if m.get("source")
             else fmt(L["footer_left"], audit_id=m["audit_id"]))
     right = fmt(L["footer_right"], version=m["engine_version"], date=m["date"])
+    if d.get("_draft"):  # DECISIONS 353: the text check found a blocking problem: every page says it is a draft
+        left = ("TASLAK · " if d["lang"] == "tr" else "DRAFT · ") + left
     return f'<div class="foot"><span>{e(left)}</span><span>{e(right)} &nbsp;&nbsp; {n:02d} / {total:02d}</span></div>'
 
 
@@ -877,7 +879,7 @@ def write_appendix(d, out):
     affected = json.loads(Path(d["_affected_path"]).read_text(encoding="utf-8")) if d.get("_affected_path") else None
     content, sealed = appendix_bytes(report, affected, d.get("_confirmations") or {}, d["lang"], d.get("_business"),
                                      todos=(d.get("todos") or []) + (d.get("notes_more") or []) or None,
-                                     maya=maya_bundle(d.get("_artifacts")))
+                                     maya=maya_bundle(d.get("_artifacts")), text_check=text_record(d, report))
     path = out.with_name(out.stem + ("-appendix.xlsx" if d["lang"] == "en" else "-ek.xlsx"))
     path.write_bytes(content)
     problems = [f"HATA: {v['rule']}: {v['message']}" for v in
@@ -885,20 +887,52 @@ def write_appendix(d, out):
     return path, problems
 
 
-def appendix_bytes(report, affected, confirmations, lang, business=None, todos=None, maya=None):
+NOT_GIVEN = object()  # appendix_bytes without a text check: no "Kontrol raporu" sheet (an older caller)
+
+
+def text_record(d, report=None):
+    """DECISIONS 353: the release gate's text check of this team report's data (maya_audit.text_gate), or None when
+    the engine or the report cannot be found (the sheet then says it did not run)."""
+    if load_gate(d) is None:
+        return None
+    from maya_audit import text_gate  # type: ignore
+    if report is None:
+        rp = d.get("_report_path")
+        if not rp or not Path(rp).exists():
+            return None
+        report = json.loads(Path(rp).read_text(encoding="utf-8"))
+    record = text_gate.run(d, report)
+    from maya_audit_web.team_report import llm_review
+    if llm_review.wanted():  # off by default; only suggests (DECISIONS 353)
+        record = llm_review.attach(record, llm_review.review(d, report))
+    return record
+
+
+def appendix_bytes(report, affected, confirmations, lang, business=None, todos=None, maya=None, text_check=NOT_GIVEN):
     """The XLSX appendix (DECISIONS 300 (4)) from the saved report, its address list and the owner's manual checks:
     (bytes, the final result). The one function of the skill's `-ek.xlsx` and the web app's "Ek (XLSX)" button, so
     both files are the same (DECISIONS 307). `todos`: the team report's cards, so the "Özet" sheet has the PDF's
-    cards and every row its card number (DECISIONS 322)."""
-    from maya_audit import client_appendix, client_selection, final  # type: ignore
+    cards and every row its card number (DECISIONS 322). `text_check`: the release gate's text check of the team
+    report's data (DECISIONS 353), None when it could not run; its "Kontrol raporu" sheet also lists every sentence
+    this file shows untranslated."""
+    from maya_audit import client_appendix, client_selection, final, text_gate  # type: ignore
     from maya_audit_web import wording as w
     sealed = final.from_report(report, affected)
     selection = client_selection.select(sealed.report, sealed.affected, confirmations or {}, business=business)
+    untranslated: list[tuple[str, str]] = []
+
+    def kept(where, shown):
+        if not shown[1] and shown[0]:
+            untranslated.append((where or "metin", shown[0]))
+        return shown[0]
+
     content = client_appendix.build(selection, lang, sealed.affected,
-                                    title=lambda cid, text: w.title(cid, text, lang)[0], fix=lambda text: w.fix(text, lang)[0],
-                                    label=lambda text: w.label(text, lang)[0], line=lambda text: w.line(text, lang)[0],
+                                    title=lambda cid, text: kept(cid, w.title(cid, text, lang)), fix=lambda text: kept("fix", w.fix(text, lang)),
+                                    label=lambda text: kept("label", w.label(text, lang)), line=lambda text: kept("line", w.line(text, lang)),
                                     todos=todos, words=plain_words(lang), places=sealed.cards,  # DECISIONS 337
-                                    maya={**(maya or {"summary": None}), "report": sealed.report})  # DECISIONS 352
+                                    maya={**(maya or {"summary": None}), "report": sealed.report},  # DECISIONS 352
+                                    text_check=None if text_check is NOT_GIVEN else
+                                    (lambda: text_gate.with_untranslated(text_check, untranslated, lang)))
     return content, sealed
 
 
@@ -1017,6 +1051,7 @@ def produce(d, out, pdf=None, *, png=None, force=False):
     "overflow": [field], "problems": [line]}. The skill's render step and the web app's team report (DECISIONS 307)."""
     lines, problems = [], []
     result = {"lines": lines, "stop": None, "html": None, "pdf": None, "appendix": None, "previews": None, "overflow": [],
+              "text_check": None, "draft": False,
               "shortened": [], "problems": problems}
     raw = json.dumps({k: v for k, v in d.items() if not k.startswith("_")}, ensure_ascii=False)
     if MARK in raw and not force:
@@ -1035,6 +1070,16 @@ def produce(d, out, pdf=None, *, png=None, force=False):
         if hard:
             result["stop"] = f"HATA: yayın kapısı {record['decision']}: {len(hard)} engelleyici ihlal. PDF üretilmedi."
             return result
+    # DECISIONS 353: the text check runs on every report; a blocking problem makes the PDF a marked draft, never a stop.
+    record = text_record(d)
+    result["text_check"] = record
+    if record:
+        for v in record["violations"]:
+            lines.append(("KONTROL" if v["hard"] else "UYARI") + f": {v['rule']}: {v['message']}")
+        if record["decision"] == "BLOCKED":
+            d["_draft"] = True
+            lines.append(f"TASLAK: Kontrol raporu {record['hard']} engelleyici bulgu buldu; PDF taslak olarak basıldı.")
+    result["draft"] = bool(d.get("_draft"))
     out.write_text(build_html(d), encoding="utf-8")
     result["html"] = out
     lines.append(f"HTML: {out}")

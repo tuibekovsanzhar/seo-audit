@@ -39,7 +39,9 @@ request: page importance comes from the report's page grouping or, for a report 
 """
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 from urllib.parse import urlsplit
@@ -70,22 +72,22 @@ OWN_LIMIT_RULES = frozenset({"acc9.reader", "acc9.reader.counted", "acc9.reader.
 # own cause. `title` and `fix` are the card's one title and one fix, in Turkish and English; `finding` names what is
 # wrong, for a findings table (DECISIONS 306: a findings table lists findings, the cards list actions).
 MERGE_GROUPS = (
-    {"id": "html_weight", "finding": {"tr": "Sayfa HTML'i ağır: satır içi veri, betik ve stil", "en": "Page HTML is heavy: inlined data, scripts and styles"}, "title": {"tr": "Sayfa HTML'ini hafifletin", "en": 'Make the page HTML lighter'}, "fix": {"tr": "Satır içi JSON, betik, stil ve SVG'yi HTML'in dışına taşıyın; kullanılmayan tema bloklarını kaldırın; ana içerik HTML'in başına yakın başlasın.", "en": 'Move inlined JSON, scripts, styles and SVG out of the HTML; remove unused theme blocks; let the main content start early in the HTML.'}, "cause": "the page HTML is too heavy (inlined data, scripts, styles, theme blocks)",
+    {"id": "html_weight", "cause": "the page HTML is too heavy (inlined data, scripts, styles, theme blocks)",
      "rules": ("rnd6.home_large", "rnd6.home_large_fc", "rnd6.large", "rnd6.large_fc", "rnd6.late", "rnd6.late_fc"),
      "worst_by": ("bytes", "main_offset_bytes")},
-    {"id": "empty_pages", "finding": {"tr": "Bazı sayfalar boş yanıt veriyor", "en": "Some pages answer empty"}, "title": {"tr": 'Boş yanıt veren sayfaları düzeltin', "en": 'Fix pages that answer empty'}, "fix": {"tr": 'Boş yanıtın nedenini sunucu ya da CDN kayıtlarında bulun ve sayfanın içerikle yanıt vermesini sağlayın.', "en": 'Find why the page answers empty in the server or CDN logs and make it answer with its content.'}, "cause": "pages answer with an empty document",
+    {"id": "empty_pages", "cause": "pages answer with an empty document",
      "rules": ("idx1.empty", "idx1.empty.bot", "judgment.empty.repeated", "judgment.empty.single")},
-    {"id": "heading_levels", "finding": {"tr": "Başlık düzeyleri atlanıyor", "en": "Heading levels are skipped"}, "title": {"tr": 'Başlık düzeylerini sıraya koyun', "en": 'Put heading levels in order'}, "fix": {"tr": "Başlıkları sırayla kullanın (H2'den sonra H3); tekrarlanan bloklardaki başlıkları temada düzeltin.", "en": 'Use heading levels in order (an H3 after an H2); fix the headings of repeated blocks in the theme.'}, "cause": "heading levels skip a level, in the pages or in a repeated block",
+    {"id": "heading_levels", "cause": "heading levels skip a level, in the pages or in a repeated block",
      "rules": ("tseo1.heading_jumps", "shared.heading_jump", "shared.heading_jump_varied")},
-    {"id": "links_without_text", "finding": {"tr": "Bazı bağlantıların metni yok", "en": "Some links have no text"}, "title": {"tr": 'Metni olmayan bağlantılara ad verin', "en": 'Name the links that have no text'}, "fix": {"tr": 'Bağlantıya metin verin ya da içindeki görsele alt metin ekleyin; tekrarlanan bloklarda bunu temada yapın.', "en": 'Give the link text or give its image an alt text; in repeated blocks, do it in the theme.'}, "cause": "links with no text (usually an image link with no alt)",
+    {"id": "links_without_text", "cause": "links with no text (usually an image link with no alt)",
      "rules": ("str14.no_text", "shared.link_no_text", "shared.block_links_no_text", "shared.link_no_text_pattern")},
-    {"id": "links_without_address", "finding": {"tr": "Bazı bağlantıların izlenebilir adresi yok", "en": "Some links have no address a crawler can follow"}, "title": {"tr": 'Adresi olmayan bağlantıları düzeltin', "en": 'Fix links with no address'}, "fix": {"tr": 'Sayfaya giden öğelere gerçek bir href verin; yalnız işlem yapan öğeler için <button> kullanın.', "en": 'Give elements that lead to a page a real href; use <button> for elements that only act.'}, "cause": "links and controls with no address a crawler can follow",
+    {"id": "links_without_address", "cause": "links and controls with no address a crawler can follow",
      "rules": ("str19.no_target", "shared.link_no_address", "shared.links_no_address", "str19.lead_nowhere")},
-    {"id": "language_mismatch", "finding": {"tr": "Dil sürümlerinde çevrilmemiş metin var", "en": "Language versions carry untranslated text"}, "title": {"tr": 'Dil sürümlerindeki çevrilmemiş metni düzeltin', "en": 'Fix untranslated text in language versions'}, "fix": {"tr": "Diğer dilde kalan bölgeleri (menü, başlıklar, metin) çevirin ya da <html lang>'i içeriğe göre düzeltin.", "en": 'Translate the regions left in the other language (menu, titles, text), or set <html lang> to match the content.'}, "cause": "a language version carries text of another language, or declares the wrong one",
+    {"id": "language_mismatch", "cause": "a language version carries text of another language, or declares the wrong one",
      "rules": ("str12.language", "str12.headings", "str9.lang_mismatch")},
-    {"id": "sitemap_lastmod", "finding": {"tr": "Site haritası lastmod tarihleri gerçek değil", "en": "Sitemap lastmod dates are not the real edit dates"}, "title": {"tr": 'Site haritası lastmod tarihlerini düzeltin', "en": 'Fix the sitemap lastmod dates'}, "fix": {"tr": "lastmod'u sayfanın gerçek son düzenleme tarihinden alın; alınamıyorsa lastmod'u yazmayın.", "en": "Take lastmod from each page's real last edit; if that is not possible, leave lastmod out."}, "cause": "sitemap <lastmod> dates are generated, not the pages' real edit dates",
+    {"id": "sitemap_lastmod", "cause": "sitemap <lastmod> dates are generated, not the pages' real edit dates",
      "rules": ("idx5.stamped", "idx5.identical", "idx5.future")},
-    {"id": "template_meta", "finding": {"tr": "Sayfalar aynı başlık ve açıklamayı paylaşıyor", "en": "Pages share the same title and description"}, "title": {"tr": 'Ortak başlık ve açıklamaları ayırın', "en": 'Give pages their own titles and descriptions'}, "fix": {"tr": 'Şablonun her sayfaya aynı başlık ve açıklamayı yazmasını durdurun; her sayfaya kendi başlık ve açıklamasını verin.', "en": 'Stop the template writing one title and description on every page; give each page its own.'}, "cause": "a template repeats one title or description across pages",
+    {"id": "template_meta", "cause": "a template repeats one title or description across pages",
      "rules": ("str1.shared", "str16.shared")},
 )
 MERGE_BY_RULE = {rule: group for group in MERGE_GROUPS for rule in group["rules"]}
@@ -95,15 +97,11 @@ MERGE_BY_RULE = {rule: group for group in MERGE_GROUPS for rule in group["rules"
 CHAIN_RULES = frozenset({"idx4.redirect_loop", "idx4.redirecting", "idx4.chain", "idx3.chain", "idx3.loop",
                          "idx3.cookie", "idx3.intermittent", "idx3.self_once", "idx6.links_to_redirect"})
 CHAIN_GROUP = {"id": "redirect_chain",
-               "finding": {"tr": "Kanonik adresler ve bağlantılar bir yönlendirme zincirine gidiyor",
-                           "en": "Canonicals and links lead into a redirect chain"},
-               "title": {"tr": "Kanonik adresleri ve bağlantıları zincirin son adresine verin",
-                         "en": "Point canonicals and links at the chain's final address"},
-               "fix": {"tr": "Her sayfanın kanonik adresini kendisi (ya da zincirin bittiği son adres) yapın, iç bağlantıları "
-                             "son adrese verin ve zincirdeki fazla yönlendirmeleri kaldırın.",
-                       "en": "Make each page's canonical itself (or the chain's final address), point internal links at the "
-                             "final address and remove the extra redirects in the chain."},
                "cause": "canonicals, redirects and links that form one redirect chain", "rules": tuple(sorted(CHAIN_RULES))}
+# DECISIONS 353: each group's finding, title and fix live in merge_group_texts.json (the SEO team's catalogue writes there).
+_GROUP_TEXTS = json.loads((Path(__file__).with_name("merge_group_texts.json")).read_text(encoding="utf-8"))["groups"]
+for _group in (*MERGE_GROUPS, CHAIN_GROUP):
+    _group.update({key: dict(_GROUP_TEXTS[_group["id"]][key]) for key in ("finding", "title", "fix")})
 MERGE_BY_ID = {**{g["id"]: g for g in MERGE_GROUPS}, CHAIN_GROUP["id"]: CHAIN_GROUP}
 # Kept for older callers: the empty-page rules were the first family (DECISIONS 284).
 RULE_FAMILY = {rule: "idx1.empty" for rule in MERGE_BY_RULE if MERGE_BY_RULE[rule]["id"] == "empty_pages"}

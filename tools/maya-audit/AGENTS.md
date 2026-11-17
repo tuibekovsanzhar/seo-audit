@@ -91,7 +91,7 @@ Every `.agents/skills/*/SKILL.md` follows this section instead of repeating it.
      `MAYA_AUDIT_HOME=<tmp>/home` (no real ledger, cache or history);
    - every provider key set empty: `MAYA_AUDIT_FIRECRAWL_API_KEY= MAYA_AUDIT_DATAFORSEO_LOGIN=
      MAYA_AUDIT_DATAFORSEO_PASSWORD= MAYA_AUDIT_CRUX_API_KEY= MAYA_AUDIT_GOOGLE_API_KEY= MAYA_AUDIT_BING_API_KEY=
-     MAYA_AUDIT_GSC_TOKEN=`;
+     MAYA_AUDIT_GSC_TOKEN= MAYA_AUDIT_ANTHROPIC_API_KEY=` (the last one: the optional second reader, DECISIONS 353);
    - CLI flag `--no-firecrawl`, and none of `--firecrawl`, `--firecrawl-render`, `--dataforseo`, `--dfs-search-data`,
      `--pagespeed`, `--gsc-site-url`, `--bing-site-url`, `--archives`; web app plans with `firecrawl: false` and no
      paid options;

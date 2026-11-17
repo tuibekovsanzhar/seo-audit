@@ -244,6 +244,57 @@ def read(data: bytes | str | Path) -> dict[str, list[list[str]]]:
     return out
 
 
+def read_any(data: bytes | str | Path) -> dict[str, list[list[str]]]:
+    """{sheet name: rows of cell text} of any .xlsx, also one Excel, LibreOffice or Google Sheets saved (DECISIONS 353:
+    the SEO team's edited catalogue): sheets found through the workbook's relationships, shared strings, inline and
+    rich text, numbers and formulas' cached values. No style, no date conversion: text as written."""
+    import posixpath
+    import xml.etree.ElementTree as ET
+    m = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+    r_id = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
+    rel = "{http://schemas.openxmlformats.org/package/2006/relationships}"
+    source = io.BytesIO(data) if isinstance(data, bytes) else data
+    out: dict[str, list[list[str]]] = {}
+    with zipfile.ZipFile(source) as z:
+        names = set(z.namelist())
+
+        def text_of(node) -> str:
+            return "".join(t.text or "" for t in node.iter(f"{m}t"))
+        shared = ([text_of(si) for si in ET.fromstring(z.read("xl/sharedStrings.xml")).findall(f"{m}si")]
+                  if "xl/sharedStrings.xml" in names else [])
+        targets = {}
+        if "xl/_rels/workbook.xml.rels" in names:
+            for x in ET.fromstring(z.read("xl/_rels/workbook.xml.rels")).findall(f"{rel}Relationship"):
+                target = x.get("Target") or ""
+                targets[x.get("Id")] = target.lstrip("/") if target.startswith("/") else posixpath.normpath(posixpath.join("xl", target))
+        book = ET.fromstring(z.read("xl/workbook.xml"))
+        for i, sheet in enumerate(book.find(f"{m}sheets"), 1):
+            part = targets.get(sheet.get(r_id)) or f"xl/worksheets/sheet{i}.xml"
+            if part not in names:
+                continue
+            rows = []
+            for row in ET.fromstring(z.read(part)).iter(f"{m}row"):
+                values: dict[int, str] = {}
+                for n_auto, c in enumerate(row.findall(f"{m}c"), 1):
+                    ref = re.match(r"[A-Z]+", c.get("r") or "")
+                    n = 0
+                    if ref:
+                        for ch in ref.group(0):
+                            n = n * 26 + ord(ch) - 64
+                    else:
+                        n = max(values, default=0) + 1
+                    kind, v = c.get("t"), c.find(f"{m}v")
+                    if kind == "s" and v is not None and (v.text or "").isdigit() and int(v.text) < len(shared):
+                        values[n] = shared[int(v.text)]
+                    elif kind == "inlineStr":
+                        values[n] = text_of(c)
+                    else:
+                        values[n] = (v.text or "") if v is not None else text_of(c)
+                rows.append([values.get(k, "") for k in range(1, max(values, default=0) + 1)])
+            out[sheet.get("name")] = rows
+    return out
+
+
 def links(data: bytes | str | Path) -> dict[str, dict[str, str]]:
     """{sheet name: {cell reference: link}} of a file this module wrote: an external address, or "#'Sheet'!A5" for a
     link inside the file. For tests and checks."""

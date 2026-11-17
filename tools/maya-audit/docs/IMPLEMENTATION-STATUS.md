@@ -2340,3 +2340,40 @@ competitor-mentions-daily, meta.json (gsc-top-queries, gsc-query-opportunities o
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3461 passed, 4 skipped, 1 warning in 979.54s (0:16:19)` |
 | CI's lint (`compileall`, `ruff --select E9,F821,F841`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+## Finding catalogue and the text check on every report (DECISIONS 353, 2026-11-17)
+
+Requested by İlginay (SEO reviewer). VERIFIED locally; not pushed.
+
+- `scripts/finding_catalogue.py export OUT.xlsx --home ~/.maya-audit/web`: 535 rows (319 rules, 16 platform/region
+  variants, 9 merged cards, 25 Note topics, 1 generic text, 165 checklist items), counted over 79 saved audits (copies of
+  the saved reports; the web home only read): 223 of the 319 rules triggered at least once.
+- `scripts/finding_catalogue.py import EDITED.xlsx [--dry-run]`: writes the "Yeni …" texts back with placeholder, digit,
+  length and step checks; refused rows listed in the diff report. The merged cards' texts moved to
+  `maya_audit/merge_group_texts.json`.
+- `maya_audit/text_gate.py` (RG-18–RG-23) before the team PDF, brief, XLSX and sector downloads; "Kontrol raporu" sheet;
+  a blocking result makes the download a marked draft. Banned phrases: `maya_audit/banned_phrases.json`.
+- Optional second reader (`llm_review.py`): off by default; needs `MAYA_AUDIT_ANTHROPIC_API_KEY` and the `anthropic`
+  package, which is NOT installed in the venv (no install without approval), so it is NOT RUN on real reports.
+
+Post-report check on the six saved audits (scratch copies; `scripts/text_check.py` and the appendix as downloaded):
+
+| Audit | Findings | Cards | Result | Flagged |
+|---|---|---|---|---|
+| Enpara fee70191 | 80 | 15 | PASS | — |
+| Atasun f06a2129 | 55 | 15 | PASS | — |
+| Züber 2bf9b1ce | 43 | 9 | CONDITIONAL | RG-21 (soft): the coverage-limits line "Cloudflare rate-limited Maya's direct crawler on 1 of 2 request(s) …" is English in the report and the appendix |
+| MMI 536b4b64 | 56 | 15 | PASS | — |
+| Nature's Garden 342a0b14 | 49 | 8 | PASS | — |
+| İş Bankası 1b81bee4 | 63 | 15 | PASS | — (an early version flagged "özetleyin" for the phrase "özetle"; phrases now match whole words) |
+
+Planted problems in a copy of Atasun's cards (invented number, Shopify step, menu link to remove, English in a card,
+a repeated card, "kritik öneme sahiptir"): all six found.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_text_check_353.py` | `20 passed` |
+| fast suite, first run | `1 failed, 3345 passed, 4 skipped, 135 deselected` (the skill-vs-web appendix test built the skill's file without the check; fixed, `test_team_report.py` 22 passed) |
+| full suite, `pytest -q -rfE -p no:cacheprovider` | `3481 passed, 4 skipped, 1 warning in 965.69s (0:16:05)` |
+| `python3.11 -m compileall`, `ruff --select E9,F821,F841` (source folders) | OK, `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

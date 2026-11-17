@@ -1755,17 +1755,29 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
 
     def appendix_xlsx(audit: dict[str, Any], now: tuple | None = None) -> bytes:
         """The XLSX appendix: the same function the maya-audit-pro skill writes its `-ek.xlsx` with (DECISIONS 307),
-        with the team report's cards in this language, so "Özet" lists the PDF's cards (DECISIONS 322)."""
+        with the team report's cards in this language, so "Özet" lists the PDF's cards (DECISIONS 322), and the
+        release gate's text check of those cards as "Kontrol raporu" (DECISIONS 353)."""
         from maya_audit import manual_review
         from .team_report import build_data, service
         report, aff = now if now is not None else current_report(audit)[:2]
         lang = current_language()
+        record = text_check_of(audit, lang)
         try:
             todos = build_data.cards_for_appendix(team_data(audit, lang))  # DECISIONS 339: with the Ek-only notes
         except build_data.BuildError:
             todos = None  # the selection's cards; the file is still the whole appendix
         return service.appendix(report, aff or None, manual_review.confirmations(manual_review.load(review_path(audit))),
-                                lang, business_choice(audit), todos=todos, artifacts=artifact_folder(audit["id"]))
+                                lang, business_choice(audit), todos=todos, artifacts=artifact_folder(audit["id"]),
+                                text_check=record)
+
+    def text_check_of(audit: dict[str, Any], lang: str) -> dict[str, Any] | None:
+        """DECISIONS 353: the release gate's text check of this audit's team report in `lang` (provider-free, no model),
+        or None when the team report's data cannot be built."""
+        from .team_report import build_data, render as team_render
+        try:
+            return team_render.text_record(team_data(audit, lang))
+        except build_data.BuildError:
+            return None
 
     def team_report(audit: dict[str, Any], lang: str):
         """The team report of this audit in `lang` (DECISIONS 307), rebuilt on every request so a manual check counts at
@@ -1796,8 +1808,14 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         # The provenance box's "Değerlendirme" line: re-evaluated (engine, date), or used as saved and why not.
         reassessed = (current.line_of(data.get("_engine") or {}, chosen) if not data.get("_reassess_failed")
                       else data["provenance"]["lines"][-1]["v"])
-        headers = {"X-Maya-Release-Gate": str(built.decision), "X-Maya-Pages": str(built.pages), "X-Maya-Language": chosen}
+        headers = {"X-Maya-Release-Gate": str(built.decision), "X-Maya-Pages": str(built.pages), "X-Maya-Language": chosen,
+                   "X-Maya-Text-Check": str((built.text_check or {}).get("decision") or "NOT_RUN")}
         return built, reassessed, headers
+
+    def drafted(name: str, draft: bool) -> str:
+        """DECISIONS 353: a file the text check marked a draft says so in its name too."""
+        stem, dot, ext = name.rpartition(".")
+        return f"{stem}-draft{dot}{ext}" if draft and not stem.endswith("-draft") else name
 
     def client_brief(audit: dict[str, Any], lang: str):
         """The client brief of this audit in `lang` (DECISIONS 319): the team report's data (current engine, the
@@ -1815,7 +1833,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             from .team_report import brief
             raise ApiError(422, "client_brief_blocked", brief.library(chosen)["blocked"]["title"],
                            reasons=built.reasons, details=built.details[:20], lang=chosen)
-        return built, {"X-Maya-Pages": str(built.pages), "X-Maya-Language": chosen}
+        return built, {"X-Maya-Pages": str(built.pages), "X-Maya-Language": chosen,
+                       "X-Maya-Text-Check": str((built.text_check or {}).get("decision") or "NOT_RUN")}
 
     @api.get("/audits/{audit_id}/client-brief", summary="Build the client brief in one language; the file is then one link away")
     def prepare_client_brief(audit_id: str, lang: str | None = Query(default=None, pattern="^[a-z]{2}$")) -> dict[str, Any]:
@@ -1824,7 +1843,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         chosen = team_chosen(lang)
         built, headers = brief_built(audit, chosen)
         token = secrets.token_urlsafe(16)
-        name = brief_name(audit, chosen)
+        name = drafted(brief_name(audit, chosen), built.draft)
         team_builds[token] = (audit["id"], "brief:" + chosen, built.pdf, name, headers)
         while len(team_builds) > 6:
             team_builds.pop(next(iter(team_builds)))
@@ -1838,12 +1857,13 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         chosen = team_chosen(lang)
         built, reassessed, headers = team_built(audit, chosen)
         token = secrets.token_urlsafe(16)
-        name = team_name(audit, chosen)
+        name = drafted(team_name(audit, chosen), built.draft)
         team_builds[token] = (audit["id"], chosen, built.pdf, name, headers)
         while len(team_builds) > 6:
             team_builds.pop(next(iter(team_builds)))
         base = f"/api/v1/audits/{audit['id']}/downloads"
         return {"lang": chosen, "pages": built.pages, "release_gate": built.decision, "reassessed": reassessed,
+                "text_check": (built.text_check or {}).get("decision"), "draft": built.draft,
                 "pdf": {"url": f"{base}/team?lang={chosen}&build={token}", "filename": name},
                 "xlsx": {"url": f"{base}/xlsx?lang={chosen}", "filename": appendix_name(audit, chosen)}}
 
@@ -1926,7 +1946,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                 _, _, content, name, headers = kept
             else:
                 built, headers = brief_built(audit, chosen)
-                content, name = built.pdf, brief_name(audit, chosen)
+                content, name = built.pdf, drafted(brief_name(audit, chosen), built.draft)
             return Response(content, media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{name}"',
                                                                      "Cache-Control": "no-store", **headers})
         if format == "team":
@@ -1939,7 +1959,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                 _, _, content, name, headers = kept
             else:
                 built, _, headers = team_built(audit, chosen)
-                content, name = built.pdf, team_name(audit, chosen)
+                content, name = built.pdf, drafted(team_name(audit, chosen), built.draft)
             return Response(content, media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{name}"',
                                                                      "Cache-Control": "no-store", **headers})
         gate: dict[str, str] = {}
@@ -1952,6 +1972,11 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             sealed = publishable(audit, draft or format in ("xlsx", "sector"), now)
             blocked = sealed.decision == release_gate.BLOCKED
             gate = {"X-Maya-Release-Gate": str(sealed.decision)}
+            if format in ("xlsx", "sector"):
+                # DECISIONS 353: the text check's blocking problems make the team's files a marked draft too.
+                checked = text_check_of(audit, "tr" if format == "sector" else report_language(audit, lang))
+                gate["X-Maya-Text-Check"] = str((checked or {}).get("decision") or "NOT_RUN")
+                blocked = blocked or (checked or {}).get("decision") == "BLOCKED"
             if blocked:
                 stem, dot, ext = name.rpartition(".")
                 name = f"{stem}-draft{dot}{ext}"

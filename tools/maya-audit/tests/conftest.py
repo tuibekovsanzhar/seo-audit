@@ -61,7 +61,8 @@ def no_public_dns(monkeypatch):
 
 # Credentials of the paid or third-party providers (AGENTS.md): never in a test, whatever the shell or .env holds.
 PROVIDER_KEYS = ("MAYA_AUDIT_DATAFORSEO_LOGIN", "MAYA_AUDIT_DATAFORSEO_PASSWORD", "MAYA_AUDIT_FIRECRAWL_API_KEY",
-                 "MAYA_AUDIT_CRUX_API_KEY", "MAYA_AUDIT_GOOGLE_API_KEY", "MAYA_AUDIT_BING_API_KEY", "MAYA_AUDIT_GSC_TOKEN")
+                 "MAYA_AUDIT_CRUX_API_KEY", "MAYA_AUDIT_GOOGLE_API_KEY", "MAYA_AUDIT_BING_API_KEY", "MAYA_AUDIT_GSC_TOKEN",
+                 "MAYA_AUDIT_ANTHROPIC_API_KEY", "MAYA_AUDIT_LLM_REVIEW")
 
 
 @pytest.fixture(autouse=True)

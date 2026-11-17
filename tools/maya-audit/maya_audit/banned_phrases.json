@@ -1,0 +1,23 @@
+{
+ "_about": "Banned phrases (DECISIONS 353): AI-style filler and empty emphasis the SEO team does not want in a report. The release gate's text check (RG-23, maya_audit/text_gate.py) lists every report text that holds one in the appendix's 'Kontrol raporu' sheet. Edit this file to add or remove a phrase: text (matched without case, Turkish i/ı respected), lang (tr, en or *), block (true makes the download a draft), why and instead (optional). No code change is needed.",
+ "phrases": [
+  {"text": "kritik öneme sahiptir", "lang": "tr", "block": false, "why": "boş vurgu", "instead": "neyi neden etkilediğini söyleyin"},
+  {"text": "büyük önem taşır", "lang": "tr", "block": false, "why": "boş vurgu"},
+  {"text": "son derece önemlidir", "lang": "tr", "block": false, "why": "boş vurgu"},
+  {"text": "ayrıca belirtmek gerekir ki", "lang": "tr", "block": false, "why": "dolgu"},
+  {"text": "belirtmekte fayda var", "lang": "tr", "block": false, "why": "dolgu"},
+  {"text": "unutulmamalıdır ki", "lang": "tr", "block": false, "why": "dolgu"},
+  {"text": "göz önünde bulundurulmalıdır", "lang": "tr", "block": false, "why": "dolgu"},
+  {"text": "sonuç olarak", "lang": "tr", "block": false, "why": "dolgu"},
+  {"text": "özetle", "lang": "tr", "block": false, "why": "dolgu"},
+  {"text": "dijital dünyada", "lang": "tr", "block": false, "why": "klişe"},
+  {"text": "günümüzün rekabetçi", "lang": "tr", "block": false, "why": "klişe"},
+  {"text": "kapsamlı bir şekilde", "lang": "tr", "block": false, "why": "dolgu"},
+  {"text": "etkili bir şekilde", "lang": "tr", "block": false, "why": "dolgu"},
+  {"text": "optimize etmek için", "lang": "tr", "block": false, "why": "belirsiz fiil", "instead": "ne yapılacağını söyleyin"},
+  {"text": "it is important to note", "lang": "en", "block": false, "why": "filler"},
+  {"text": "it's worth noting", "lang": "en", "block": false, "why": "filler"},
+  {"text": "crucial", "lang": "en", "block": false, "why": "empty emphasis"},
+  {"text": "in today's digital landscape", "lang": "en", "block": false, "why": "cliché"}
+ ]
+}
