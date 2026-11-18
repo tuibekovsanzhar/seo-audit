@@ -17,7 +17,8 @@ from test_v03_client_report import SITE, finding, page, report
 
 ROOT = Path(__file__).resolve().parents[1]
 TR_SHEETS = ["Nasıl okunur", "Özet", "Sayfa bazında", "Bulgu bazında", "Kontrol listesi", "Kontrol listesi özeti",  # 342
-             "Bulgular", "Etkilenen adresler", "Kilit sayfalar", "Şablonlar", "Kapsam", "Yöntem"]
+             "Bulgular", "Etkilenen adresler", "Kilit sayfalar", "Şablonlar", "Kapsam", "Yöntem",
+             "Düzeltme kaydı"]  # DECISIONS 363: Turkish Eks only
 EN_SHEETS = ["How to read", "Summary", "By page", "By finding", "Checklist", "Checklist totals",  # 342
              "Findings", "Affected URLs", "Key pages", "Templates", "Coverage", "Method"]
 
@@ -44,7 +45,7 @@ def _sheets(lang="tr", todos=None, r=None):
 # ---------------------------------------------------------------- the four sheets
 
 def test_the_reader_sheets_come_first_in_the_file_language():
-    assert list(_sheets("tr")) == TR_SHEETS
+    assert list(_sheets("tr")) == TR_SHEETS[:-1]  # "Düzeltme kaydı" is added by build() (DECISIONS 363)
     assert list(_sheets("en")) == EN_SHEETS
     book = xlsx.read(client_appendix.build(cs.select(_report()), "en"))
     assert book["By finding"][0][:7] == ["Problem", "Severity", "Issue type", "Page", "Read?", "Measured value", "What to do"]  # 323

@@ -1433,6 +1433,20 @@
     ]
    }
   },
+  "str3.article_org_author": {
+   "en": "Name the person behind each article",
+   "tr": "Her makalenin arkasındaki kişiyi belirtin",
+   "steps": {
+    "tr": [
+     "Makaleyi yazan ya da gözden geçiren kişinin adını gösterin",
+     "Article işaretlemesine author olarak bir Person ekleyin"
+    ],
+    "en": [
+     "Show the name of the person who wrote or reviewed it",
+     "Add a Person as author in the Article markup"
+    ]
+   }
+  },
   "str3.article_no_author": {
    "en": "Name the author of each article",
    "tr": "Her makalenin yazarını belirtin",

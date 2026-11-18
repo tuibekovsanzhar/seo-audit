@@ -300,6 +300,7 @@
   "idx6.alias_links": "{pages} sayfadaki {links} iç bağlantı, kanonik adresi başka bir sayfa olan bir adrese gidiyor",
   "idx7.pagination_unlinked": "{n} liste sayfası sonraki sayfasına <a href> bağlantısıyla bağlanmıyor",
   "idx7.product_no_category": "{n} ürün sayfasının içeriğinde içerik yolu (breadcrumb) ya da bir kategoriye bağlantı yok",
+  "str3.article_org_author": "{n} makale sayfası yazar olarak yalnız kurumu gösteriyor",
   "str3.article_no_author": "{n} makale sayfası yazar belirtmiyor (yazar satırı ya da yazar işaretlemesi yok)",
   "str3.product_no_identifier": "{n} ürün sayfasının Product işaretlemesinde GTIN ya da MPN yok",
   "str15.empty_collections": "{n} dizine eklenebilir koleksiyon veya kategori sayfasında hiç ya da neredeyse hiç ürün yok",
@@ -630,7 +631,8 @@
   "Open the page with one or two plain sentences under the main heading: what the feature does, for which kind of user or business, and the result it gives. Keep slogans for the heading.": "Sayfayı ana başlığın altında bir iki sade cümleyle açın: özellik ne yapar, hangi kullanıcı ya da işletme için, hangi sonucu verir. Sloganı başlığa bırakın.",
   "Write each integration's name (and one line on what it connects) as text beside its logo, or as a list or table; give each logo an alt text with the name.": "Her entegrasyonun adını (ve neyi bağladığını anlatan bir satırı) logosunun yanına metin olarak, ya da bir liste veya tablo olarak yazın; her logoya adını taşıyan bir alt metni verin.",
   "Name the customer and give at least one measurable result in the text (a percentage, a multiple, time or money saved) with the period it covers.": "Müşterinin adını verin ve metinde en az bir ölçülebilir sonuç yazın (yüzde, kat, kazanılan zaman ya da para), kapsadığı dönemle birlikte.",
-  "Remove the noindex (meta robots or X-Robots-Tag) from the demo or trial page and make it answer 200; if the form itself must stay out of search, keep a public page that describes the demo and links to it.": "Demo ya da deneme sayfasındaki noindex'i (meta robots ya da X-Robots-Tag) kaldırın ve sayfanın 200 yanıt vermesini sağlayın; form arama dışında kalmalıysa demoyu anlatan ve forma bağlantı veren herkese açık bir sayfa bırakın."
+  "Remove the noindex (meta robots or X-Robots-Tag) from the demo or trial page and make it answer 200; if the form itself must stay out of search, keep a public page that describes the demo and links to it.": "Demo ya da deneme sayfasındaki noindex'i (meta robots ya da X-Robots-Tag) kaldırın ve sayfanın 200 yanıt vermesini sağlayın; form arama dışında kalmalıysa demoyu anlatan ve forma bağlantı veren herkese açık bir sayfa bırakın.",
+  "Name the person who wrote or reviewed each article on the page, and add them as a Person author in the article's markup; keep the organization as the publisher.": "Makaleyi yazan ya da gözden geçiren kişinin adını sayfada gösterin ve makalenin işaretlemesine Person olarak author ekleyin; kurum yayıncı olarak kalsın."
  },
  "fix_patterns": {
   "acc2.search": "{engines} bu sayfaları bulup atıf yapabilsin istiyorsanız, {line}. satırdaki kuralı bu kullanıcı aracıları için kaldırın veya daraltın. Engelleme bilinçli bir tercihse “kasıtlı” olarak işaretleyin.",
@@ -877,7 +879,8 @@
   "a feature page says in its first paragraph what the feature does and for whom": "özellik sayfası ilk paragrafında özelliğin ne yaptığını ve kimin için olduğunu söyler",
   "an integrations page names each integration in text, not only with its logo": "entegrasyon sayfası her entegrasyonu yalnız logosuyla değil, adıyla metin olarak da verir",
   "a customer story names the customer and gives a measurable result": "müşteri hikâyesi müşterinin adını ve ölçülebilir bir sonucu verir",
-  "a demo or trial page answers 200 and can be indexed": "demo ya da deneme sayfası 200 yanıt verir ve dizine eklenebilir"
+  "a demo or trial page answers 200 and can be indexed": "demo ya da deneme sayfası 200 yanıt verir ve dizine eklenebilir",
+  "each article names the person who wrote or reviewed it, not only the organization": "her makale onu yazan ya da gözden geçiren kişiyi belirtir, yalnız kurumu değil"
  },
  "expected_patterns": {
   "acc2.declared": "robots.txt, beyan edildiği gibi {role} botlarını engeller",
@@ -1162,7 +1165,8 @@
   "An answer engine quoting a feature takes the page's first lines; a slogan or a heading alone says too little. This is read from the text, so check it before changing the page.": "Bir özelliği alıntılayan yanıt motoru sayfanın ilk satırlarını alır; slogan ya da tek başına başlık çok az şey söyler. Bu metinden okunur; sayfayı değiştirmeden önce kontrol edin.",
   "Stories with a named customer and a number are what answer engines cite as proof. Maya found no number with %, 'kat', a currency, growth or saving in this page's text; check it before changing the page.": "Müşterinin adını ve bir sayıyı veren hikâyeler, yanıt motorlarının kanıt olarak alıntıladığı içeriktir. Maya bu sayfanın metninde yüzde, 'kat', para birimi, artış ya da tasarruf içeren bir sayı bulamadı; sayfayı değiştirmeden önce kontrol edin.",
   "Most addresses on this host redirect; these answered with the page instead, so the same page has two addresses. Each was read once, at the address the crawl moved to.": "Bu adresteki adreslerin çoğu yönleniyor; bunlar ise sayfanın kendisini gösterdi, yani aynı sayfanın iki adresi var. Her sayfa bir kez, taramanın geçtiği adreste okundu.",
-  "Most addresses on this host redirect; these answered with the page instead, so the same page has two addresses. In this saved audit both copies were read; a new crawl reads each page once.": "Bu adresteki adreslerin çoğu yönleniyor; bunlar ise sayfanın kendisini gösterdi, yani aynı sayfanın iki adresi var. Bu kayıtlı denetimde iki kopya da okundu; yeni bir tarama her sayfayı bir kez okur."
+  "Most addresses on this host redirect; these answered with the page instead, so the same page has two addresses. In this saved audit both copies were read; a new crawl reads each page once.": "Bu adresteki adreslerin çoğu yönleniyor; bunlar ise sayfanın kendisini gösterdi, yani aynı sayfanın iki adresi var. Bu kayıtlı denetimde iki kopya da okundu; yeni bir tarama her sayfayı bir kez okur.",
+  "Estimated: the article's structured data names an author, and every author it names is an organization. For finance and health topics a named, qualified person is a trust signal.": "Tahmini: makalenin yapısal verisi bir yazar belirtiyor ve belirttiği her yazar bir kurum. Finans ve sağlık konularında adı ve uzmanlığı belli bir kişi güven işaretidir."
  },
  "note_patterns": {
   "source.firecrawl": "Kaynak: Firecrawl",

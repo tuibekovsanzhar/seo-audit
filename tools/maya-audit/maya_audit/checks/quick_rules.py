@@ -494,12 +494,29 @@ def author_signals(analysis: dict) -> list[str]:
     return sorted(signals)
 
 
+ORG_AUTHOR_EXPECTED = "each article names the person who wrote or reviewed it, not only the organization"
+ORG_AUTHOR_FIX = ("Name the person who wrote or reviewed each article on the page, and add them as a Person author in the "
+                  "article's markup; keep the organization as the publisher.")
+ORG_AUTHOR_NOTE = ("Estimated: the article's structured data names an author, and every author it names is an organization. "
+                   "For finance and health topics a named, qualified person is a trust signal.")
+
+
 def article_no_author(read, groups: dict, indexable: set[str], key_urls=frozenset(), saved: bool = False) -> list[Finding]:
+    from ..analysis import ORG_AUTHOR
     articles = [p for p in read if (groups.get(p.url) or {}).get("page_type") == "blog_article" and p.url in indexable]
     missing = [p.url for p in articles if not author_signals(p.analysis or {})]
+    # DECISIONS 363 (Efsa, enpara, a YMYL site): an article whose only author is the organization names no person
+    org_only = [p.url for p in articles if author_signals(p.analysis or {}) == [ORG_AUTHOR]]
+    out = []
+    if org_only:
+        out.append(Finding("STR-3", f"{len(org_only)} article page(s) name only an organization as author",
+            Severity.S4, Confidence.ESTIMATED, "Documented (Google: author markup best practices)", [GOOGLE, COPILOT],
+            scope_for(org_only), {"articles": len(articles), "organization_only": len(org_only), "pages": org_only[:40],
+                                  "rule": "an indexable article page whose structured data names only organizations as author"},
+            ORG_AUTHOR_EXPECTED, ORG_AUTHOR_FIX, notes=[ORG_AUTHOR_NOTE], importance_tier=_tier(org_only, key_urls)))
     if not missing:
-        return []
-    return [Finding("STR-3", f"{len(missing)} article page(s) name no author (no byline or author markup)",
+        return out
+    return out + [Finding("STR-3", f"{len(missing)} article page(s) name no author (no byline or author markup)",
         Severity.S4, Confidence.ESTIMATED, "Documented (Google: author markup best practices)", [GOOGLE, COPILOT],
         scope_for(missing),
         {"articles": len(articles), "without_author": len(missing),

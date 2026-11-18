@@ -247,6 +247,7 @@
   "str23.listed": "opportunity",
   "str23.pages": "opportunity",
   "str3.article_no_author": "opportunity",
+  "str3.article_org_author": "opportunity",
   "str3.product_no_identifier": "opportunity",
   "str3.unparsed": "issue",
   "str3.no_organization": "issue",

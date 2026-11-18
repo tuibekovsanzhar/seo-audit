@@ -1203,6 +1203,22 @@ def _malformed_sitemap_urls(result: CrawlResult) -> list[Finding]:
     return findings
 
 
+NO_LASTMOD = "sitemap files that give no address a <lastmod>"
+
+
+def sitemap_without_lastmod(docs) -> dict | None:
+    """DECISIONS 363 (Efsa, enpara): every address-listing sitemap file read gives no <lastmod>, so engines cannot tell
+    which pages changed. An observation (an opportunity, never a problem), or None. `docs`: SitemapDoc records or saved
+    dicts."""
+    def get(d, k):
+        return d.get(k) if isinstance(d, dict) else getattr(d, k, None)
+    files = [d for d in docs or [] if get(d, "kind") == "urlset" and (get(d, "urls_found") or 0) > 0]
+    if not files or any((get(d, "lastmod_count") or 0) > 0 for d in files):
+        return None
+    return {"metric": NO_LASTMOD, "files": len(files), "examples": [get(d, "url") for d in files[:5]],
+            "addresses": sum(get(d, "urls_found") or 0 for d in files)}
+
+
 def idx5_sitemap(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     title = "XML sitemap health"
     docs = result.sitemap_docs
@@ -1321,6 +1337,9 @@ def idx5_sitemap(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
         ))
     observations = ([{"metric": "sitemap URLs that canonicalize elsewhere", "value": len(not_self),
                       "sample": not_self[:20]}] if not_self else [])
+    no_lastmod = sitemap_without_lastmod(result.sitemap_docs)  # DECISIONS 363
+    if no_lastmod:
+        observations.append(no_lastmod)
     summary = (f"{len(findings)} finding(s) for {len(listed)} listed URL(s)." if findings
                else f"{len(usable)} sitemap document(s), {len(listed)} URL(s); {len(assessed)} of them fetched and none "
                     f"failing thresholds" + (f"; {len(unknown)} listed URL(s) not fetched, so not judged." if unknown

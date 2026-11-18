@@ -305,7 +305,17 @@ def acc1_robots_availability(result: CrawlResult, cfg: CrawlConfig) -> CheckResu
         summary += f" Applied policy: {policy.reason}."
     if unanswered:
         summary += f" {len(unanswered)} other fetch(es) got no answer and were not checked ({why})."
+    # DECISIONS 363: a directive written inside a comment ("# Content-Signal: search=yes, ai-train=no") is read by no
+    # crawler: an observation for the small-fixes card
+    commented = [(n, t) for n, t in getattr(getattr(policy, "robots", None), "commented", None) or []]
+    if commented:
+        observations = list(observations or []) + [{"metric": COMMENTED_DIRECTIVES, "lines": len(commented),
+                                                    "examples": [{"line": n, "text": t} for n, t in commented[:5]],
+                                                    "url": policy.url}]
     return CheckResult("ACC-1", title, _status(findings), summary, findings, evidence, observations)
+
+
+COMMENTED_DIRECTIVES = "robots.txt lines that write a directive inside a comment (no crawler reads it)"
 
 
 # -- ACC-2 -------------------------------------------------------------------
@@ -1171,6 +1181,26 @@ def acc7_crawl_delay(result: CrawlResult, cfg: CrawlConfig, acc4: CheckResult | 
 IDX1_SUFFIX = "; {same} of them lead to the empty pages reported under IDX-1"
 
 
+LLMS_ENCODING = "llms.txt files served without a charset, or starting with a byte-order mark"
+
+
+def llms_encoding(docs) -> dict | None:
+    """DECISIONS 363: the llms.txt files a reader may decode wrongly: served with no charset in the Content-Type (a reader
+    guesses; Turkish letters break) or starting with a UTF-8 byte-order mark. An observation, or None."""
+    rows = []
+    for d in docs or []:
+        if d.get("status") != 200 or not d.get("readable", True):
+            continue
+        why = []
+        if "charset" not in str(d.get("content_type") or "").lower():
+            why.append("no charset")
+        if d.get("bom"):
+            why.append("byte-order mark")
+        if why:
+            rows.append({"url": d["url"], "content_type": d.get("content_type"), "why": why})
+    return {"metric": LLMS_ENCODING, "files": len(rows), "examples": rows} if rows else None
+
+
 def acc8_llms_txt(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     title = "llms.txt presence (recorded, not scored)"
     docs = _access(result).llms
@@ -1221,7 +1251,9 @@ def acc8_llms_txt(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
                 {"file": d["url"], "first_line": line}, "llms.txt opens with one “# Site name” line",
                 "Start the file with one line “# Site name”, as the llms.txt proposal describes.",
                 notes=[f"First line: “{line[:120]}”."]))
-    return CheckResult("ACC-8", title, "findings" if findings else "pass", summary, findings, {"documents": docs})
+    encoding = llms_encoding(present)  # DECISIONS 363
+    return CheckResult("ACC-8", title, "findings" if findings else "pass", summary, findings, {"documents": docs},
+                       [encoding] if encoding else [])
 
 
 # -- ACC-9 ---------------------------------------------------------------------

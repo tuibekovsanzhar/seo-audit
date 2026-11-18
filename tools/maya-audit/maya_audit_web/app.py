@@ -1766,9 +1766,16 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             todos = build_data.cards_for_appendix(team_data(audit, lang))  # DECISIONS 339: with the Ek-only notes
         except build_data.BuildError:
             todos = None  # the selection's cards; the file is still the whole appendix
+        previous = None  # DECISIONS 363: the previous finished audit of the same site, for "Önceki denetimden değişenler"
+        try:
+            other = None if audit.get("analysis") else store.previous_audit(audit)
+            previous = ({**load_report(other), "_audit": {"id": other["id"][:8], "date": str(other.get("finished_at") or "")[:10]}}
+                        if other else None)
+        except Exception:  # noqa: BLE001  the sheet is left out, never the file
+            previous = None
         return service.appendix(report, aff or None, manual_review.confirmations(manual_review.load(review_path(audit))),
                                 lang, business_choice(audit), todos=todos, artifacts=artifact_folder(audit["id"]),
-                                text_check=record)
+                                text_check=record, previous=previous)
 
     def text_check_of(audit: dict[str, Any], lang: str) -> dict[str, Any] | None:
         """DECISIONS 353: the release gate's text check of this audit's team report in `lang` (provider-free, no model),

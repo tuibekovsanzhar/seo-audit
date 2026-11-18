@@ -210,7 +210,11 @@ def saved_jsonld(report: dict, blocks_by_url: dict[str, list[str]]) -> int:
             analysis.setdefault("structured_data", {})["products"] = products
             with_products += 1
         if jsonld_author([{"data": v} for v in values]):
-            analysis["author_signals"] = sorted(set(analysis.get("author_signals") or []) | {"JSON-LD author"})
+            from .analysis import ORG_AUTHOR, jsonld_author_kind
+            # DECISIONS 363: an author that is only an organization is said as that, not as a named author
+            org = jsonld_author_kind([{"data": v} for v in values]) == "organization"
+            signals = set(analysis.get("author_signals") or []) - {"JSON-LD author", ORG_AUTHOR}
+            analysis["author_signals"] = sorted(signals | {ORG_AUTHOR if org else "JSON-LD author"})
     return with_products
 
 
@@ -1024,6 +1028,72 @@ def _decisions_360(report: dict, affected: dict, changes: list[str]) -> None:
                 ev["page_fixes"] = no_text_fixes([r for r in ev.get("links") or [] if isinstance(r, dict)])[:500]
 
 
+def _decisions_363(report: dict, affected: dict, changes: list[str], jsonld_by_url: dict | None = None) -> None:
+    """DECISIONS 363 (the SEO team's gaps on enpara), on a saved report: the notes for a sitemap with no <lastmod>
+    (IDX-5), llms.txt served without a charset (ACC-8; a byte-order mark only in a new crawl), an <h1> question no
+    section answers (STR-2), and articles that name only an organization as author (STR-3, from the saved JSON-LD).
+    A note already in the report is not added again."""
+    from .checks.access import llms_encoding
+    from .checks.index import sitemap_without_lastmod
+    from .checks.quick_rules import ORG_AUTHOR_EXPECTED, ORG_AUTHOR_FIX, ORG_AUTHOR_NOTE
+    from .checks.structure import H1_PROMISE, h1_promise
+    from .findings import Finding, Severity, scope_for
+    from .launch_gate import items_of
+    from .models import Confidence, to_jsonable
+    crawl = report.get("crawl") or {}
+    checks = {c.get("check_id"): c for c in report.get("checks") or []}
+
+    def observe(cid: str, obs: dict | None) -> None:
+        check = checks.get(cid)
+        if not obs or check is None or check.get("status") == "not_assessed":
+            return
+        if any(o.get("metric") == obs["metric"] for o in check.get("observations") or []):
+            return
+        check.setdefault("observations", []).append(obs)
+        changes.append(f"{cid}: note added: {obs['metric']} (DECISIONS 363)")
+    observe("IDX-5", sitemap_without_lastmod(crawl.get("sitemap_docs")))
+    observe("ACC-8", llms_encoding((crawl.get("access") or {}).get("llms")))
+    pages = [p for p in crawl.get("pages") or [] if isinstance(p, dict) and isinstance(p.get("analysis"), dict)]
+    promised = [{"url": p["url"], "h1": h, "unanswered": left} for p in pages for h, left in [h1_promise(p["analysis"])] if left]
+    if promised:
+        observe("STR-2", {"metric": H1_PROMISE, "pages": len(promised), "examples": promised[:100]})
+    check = checks.get("STR-3")
+    if not jsonld_by_url or check is None or check.get("status") == "not_assessed" or any(
+            f.get("rule_id") == "str3.article_org_author" for f in check.get("findings") or []):
+        return
+    import json as _json
+    from .analysis import jsonld_author_kind
+    org_only = []
+    for p in pages:
+        if (p.get("grouping") or {}).get("page_type") != "blog_article" or not jsonld_by_url.get(p["url"]):
+            continue
+        signals = set(p["analysis"].get("author_signals") or []) - {"JSON-LD author", "JSON-LD author (organization)"}
+        values = []
+        for block in jsonld_by_url[p["url"]]:
+            try:
+                values.append(_json.loads(block, strict=False))
+            except ValueError:
+                continue
+        if not signals and jsonld_author_kind([{"data": v} for v in values]) == "organization" and not any(
+                m.get("name") == "author" and m.get("content") for m in p["analysis"].get("meta") or []):
+            org_only.append(p["url"])
+    if not org_only:
+        return
+    finding = Finding("STR-3", f"{len(org_only)} article page(s) name only an organization as author", Severity.S4,
+                      Confidence.ESTIMATED, "Documented (Google: author markup best practices)",
+                      ["Google AI Overviews / AI Mode", "Microsoft Copilot (Bing index)"], scope_for(org_only),
+                      {"organization_only": len(org_only), "pages": org_only[:40],
+                       "rule": "an indexable article page whose structured data names only organizations as author"},
+                      ORG_AUTHOR_EXPECTED, ORG_AUTHOR_FIX, notes=[ORG_AUTHOR_NOTE])
+    finding.launch_gated = items_of("STR-3", finding)[0]
+    record = to_jsonable(finding)
+    check.setdefault("findings", []).append(record)
+    if check.get("status") == "pass":
+        check["status"] = "findings"
+    affected[record["id"]] = org_only
+    changes.append(f"{record['id']}: {record['title']} (S4; DECISIONS 363)")
+
+
 def _decisions_351(report: dict, changes: list[str]) -> None:
     """DECISIONS 351: a saved `idx6.alias_links` finding gives Shopify's step only on a Shopify site."""
     from .checks.quick_rules import ALIAS_LINKS_FIX_SHOPIFY, alias_fix
@@ -1357,6 +1427,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_356(r, aff, changes, saved_texts, business, quick_unassessed)  # DECISIONS 356: the profile's checks
     _decisions_359(r, aff, changes)  # DECISIONS 359: the twin address's copies are one card
     _decisions_360(r, aff, changes)  # DECISIONS 360: İlginay's review of the MMI Ek
+    _decisions_363(r, aff, changes, jsonld_by_url)  # DECISIONS 363: the SEO team's gaps
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -1386,7 +1457,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
 
 
 def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str] | None = None,
-               business: str | None = None) -> tuple[dict, list[str]]:
+               business: str | None = None, jsonld_by_url: dict | None = None) -> tuple[dict, list[str]]:
     """(copy, changes): only what DECISIONS 309 reads from the saved data (the platform, the RND-6 label), the certificate
     bands (321) and the place-name groups on location pages only (329), for a report of the current schema; `changes`
     is empty when nothing applies."""
@@ -1412,6 +1483,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_356(r, affected, cert, saved_texts, business)  # DECISIONS 356: the business profile's own checks
         _decisions_359(r, affected, cert)  # DECISIONS 359: the twin address's copies are one card
         _decisions_360(r, affected, cert)  # DECISIONS 360: İlginay's review of the MMI Ek
+        _decisions_363(r, affected, cert, jsonld_by_url)  # DECISIONS 363: the SEO team's gaps
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

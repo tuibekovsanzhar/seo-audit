@@ -187,6 +187,26 @@
    "step": "Remove or fill the empty <meta> tags",
    "summary": "Empty meta tags"
   },
+  "sitemap without lastmod": {
+   "step": "Add each sitemap address's real last-modified date (lastmod)",
+   "summary": "Sitemap lastmod"
+  },
+  "llms.txt encoding": {
+   "step": "Serve llms.txt with charset=utf-8 and without a BOM",
+   "summary": "llms.txt encoding"
+  },
+  "robots directive in a comment": {
+   "step": "Write the rule commented out in robots.txt without the comment sign",
+   "summary": "Commented robots rule"
+  },
+  "FAQPage with fewer questions": {
+   "step": "Add every question the page shows to its FAQPage markup",
+   "summary": "FAQPage questions"
+  },
+  "h1 question without a section": {
+   "step": "Give each question the H1 asks a section with its own heading",
+   "summary": "H1 question's section"
+  },
   "parameters on links to other sites": {
    "step": "Remove tracking and member-view parameters from outbound links",
    "summary": "Outbound link parameters"
@@ -3310,6 +3330,18 @@
    ],
    "verify": "In the Rich Results Test, each job page should show a valid JobPosting.",
    "summary": "Job posting markup"
+  },
+  "str3.article_org_author": {
+   "title": "Name the person behind each article",
+   "finding": "Articles name only the organization as author",
+   "explanation": "Show the name of the person who wrote or reviewed each article and add them as author in the Article markup; keep the organization as publisher.",
+   "why": "On finance and health topics a named, qualified person is one of the signals engines use to judge how far to trust the content.",
+   "steps": [
+    "Show the name of the person who wrote or reviewed it",
+    "Add a Person as author in the Article markup"
+   ],
+   "verify": "A person's name should show on the article; in the Rich Results Test the Article's author should be a Person.",
+   "summary": "Person as author"
   },
   "str3.article_no_author": {
    "title": "Name the author of each article",

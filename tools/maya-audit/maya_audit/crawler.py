@@ -1059,6 +1059,8 @@ class Crawler:
                 ),
                 sitemap_lines=[{"value": v, "line": n} for v, n in policy.robots.sitemaps],
                 invalid_lines=policy.robots.invalid_lines,
+                # DECISIONS 363: directives written inside a comment, which no crawler reads
+                commented_directives=[{"line": n, "text": t} for n, t in getattr(policy.robots, "commented", [])],
             )
         return summary
 

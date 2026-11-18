@@ -1,0 +1,1202 @@
+{
+ "_about": "DECISIONS 363: the SEO team's notes on Maya reports, one item each (a note made in several versions of a file once, its newest file named). kaynak: the file or record and the person; brand_key: the audit it was noted on; sorun: the issue (short, Turkish); genel: the same issue worded with no brand, file or person (the Ek's Düzeltme kaydı); nasil: one plain sentence; decisions: the DECISIONS numbers; check: what the newest saved audit of the domain is tested by (maya_audit.fix_log.CHECKS; test: also covered by a test file). Brands are only where a note was made: every fix is a rule for every audit.",
+ "items": [
+  {
+   "kaynak": "İlginay — maya-audit-enpara.com-2026-11-09-İLGİNAY KONTROL.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Head'i erken kapatan öğe kartında öneri ve önem yanlıştı",
+   "genel": "<head>'i erken kapatan öğe kartında öneri ve önem yanlıştı",
+   "nasil": "Kart artık hangi öğenin <head>'i kapattığını ve neyin kaybolduğunu söylüyor; yalnız gerçekten kaybolan bir etiket varsa yüksek önem veriyor.",
+   "decisions": [
+    338,
+    339,
+    344
+   ],
+   "check": {
+    "card_text": {
+     "rules": [
+      "tseo1.head_closed_lost",
+      "tseo1.head_closed_later"
+     ],
+     "field": "why",
+     "regex": "öğe|<"
+    }
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-enpara.com-2026-11-09-İLGİNAY KONTROL.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Açılmayan sayfaların hangi sayfalardan bağlantı aldığı yazmıyordu",
+   "genel": "Açılmayan sayfaların hangi sayfalardan bağlantı aldığı yazmıyordu",
+   "nasil": "Ek'teki «Bağlantı yerleri» sayfası her hatalı adresi, bağlantının bulunduğu sayfayı, bağlantı metnini ve konumunu listeliyor.",
+   "decisions": [
+    337
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bağlantı yerleri",
+     "column": "Kural",
+     "regex": "^idx1\\."
+    }
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-enpara.com-2026-11-09-İLGİNAY KONTROL.xlsx",
+   "brand_key": "enpara",
+   "sorun": "robots.txt'deki bilinçli parametre engeli sorun gibi gösterildi",
+   "genel": "robots.txt'deki bilinçli parametre engeli sorun gibi gösterildi",
+   "nasil": "Ana sayfaya, kilit sayfalara ve site haritasına dokunmayan parametre engelleri artık yalnız «bilinçli görünüyor, teyit edin» notu.",
+   "decisions": [
+    338
+   ],
+   "check": {
+    "no_card": [
+     "acc2.blocks.sample"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-enpara.com-2026-11-09-İLGİNAY KONTROL.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Marka adı kartı hatası olmayan sayfaları gösterdi",
+   "genel": "Marka adı kartı hatası olmayan sayfaları gösterdi",
+   "nasil": "Alan adı yazımı ve bölüm adları marka adı sayılmıyor; yalnız başka bir ad taşıyan sayfalar listeleniyor.",
+   "decisions": [
+    338,
+    340
+   ],
+   "check": {
+    "no_card": [
+     "str5.names"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-enpara.com-2026-11-09-İLGİNAY KONTROL.xlsx",
+   "brand_key": "enpara",
+   "sorun": "«Ana başlık» yerine «H1 etiketi» denmeli",
+   "genel": "H1 kartlarında «ana başlık» yerine «H1 etiketi» denmeli",
+   "nasil": "H1 ile ilgili bütün kart metinleri «H1 etiketi» diyor.",
+   "decisions": [
+    338
+   ],
+   "check": {
+    "no_text": "ana başlık"
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-enpara.com-2026-11-09-İLGİNAY KONTROL.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Uzun sayfalar için bölüm başlığı önerisi hatalı çıkarımdı",
+   "genel": "Uzun sayfalar için bölüm başlığı önerisi başlıkları olan sayfalarda da çıkıyordu",
+   "nasil": "Liste sayfaları dışarıda; stille yazılmış bölüm başlıkları sayılıyor ve kart «H2/H3 olarak işaretleyin» diyor.",
+   "decisions": [
+    338
+   ],
+   "check": {
+    "card_text": {
+     "rules": [
+      "str2.no_subheadings",
+      "str2.styled_subheadings"
+     ],
+     "field": "title",
+     "regex": "H2|H3"
+    }
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-enpara.com-2026-11-09-İLGİNAY KONTROL.xlsx",
+   "brand_key": "enpara",
+   "sorun": "http→https geçici yönlendirme kartı hatalı bulguydu",
+   "genel": "HSTS varken http→https geçici yönlendirme sorun gösterildi",
+   "nasil": "En az bir yıllık HSTS varsa geçici yönlendirme yalnız bilgi notu.",
+   "decisions": [
+    338
+   ],
+   "check": {
+    "severity_info": [
+     "idx2.temporary"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-enpara.com-2026-11-09-İLGİNAY KONTROL.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Küçük düzeltmeler kartı hangi sayfaların yönlendiğini yazmıyordu",
+   "genel": "Küçük düzeltmeler kartı hangi sayfaların yönlendiğini yazmıyordu",
+   "nasil": "Her madde adreslerini ve neyin nereye yönlendiğini, ne yapılacağıyla birlikte veriyor.",
+   "decisions": [
+    338,
+    340
+   ],
+   "check": {
+    "title_text": {
+     "title": "Küçük bağlantı",
+     "field": "sub",
+     "regex": "."
+    }
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-enpara.com-2026-11-09-İLGİNAY KONTROL.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Soru başlıkları önerisi hangi sayfa için olduğunu söylemiyordu",
+   "genel": "Soru başlıkları önerisi hangi sayfa için olduğunu söylemiyordu",
+   "nasil": "Her sayfa kendi sorularıyla Ek'te bir satır; listelenmeyen sayfalar sayılıyor.",
+   "decisions": [
+    338
+   ],
+   "check": {
+    "title_text": {
+     "title": "Soru başlık",
+     "field": "sub",
+     "regex": "."
+    }
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-www.enpara.com-2026-11-11-ek-tr İlginay 2. Kontrol.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Site haritasında var denilen adresler dosyada bulunamadı",
+   "genel": "Site haritasında var denilen adresler dosyada bulunamadı",
+   "nasil": "Her adres site haritasında yazıldığı biçimde, satırı ve dosyanın okunduğu zamanla Ek'te veriliyor.",
+   "decisions": [
+    340
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bağlantı yerleri",
+     "column": "Site haritasındaki <loc> metni",
+     "regex": "."
+    }
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-www.enpara.com-2026-11-11-ek-tr İlginay 2. Kontrol.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Yönlenen bağlantılar kartında sayfa ve ölçülen değer karışıktı",
+   "genel": "Yönlenen bağlantılar kartında sayfa ve ölçülen değer karışıktı",
+   "nasil": "Çalışan sayfaya yönlenen bağlantılar ayrı «Yönlendiren bağlantılar» sayfasında: bağlantının olduğu sayfa, eski adres ve doğrudan verilecek adres.",
+   "decisions": [
+    340
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Yönlendiren bağlantılar",
+     "regex": "."
+    }
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-www.enpara.com-2026-11-11-ek-tr İlginay 2. Kontrol.xlsx",
+   "brand_key": "enpara",
+   "sorun": "İngilizce sayfanın başlığı marka adı sanıldı",
+   "genel": "Bir sayfanın başlığı ikinci bir marka adı sanıldı",
+   "nasil": "Sayfanın kendi başlığıyla aynı olan Organization adı marka adı sayılmıyor.",
+   "decisions": [
+    340
+   ],
+   "check": {
+    "no_card": [
+     "str5.names"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-www.enpara.com-2026-11-11-ek-tr İlginay 2. Kontrol.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Başlık olarak kullanılan sorulara FAQPage önerildi",
+   "genel": "Başlık olarak kullanılan sorulara FAQPage önerildi",
+   "nasil": "FAQPage yalnız açılır-kapanır soru-cevap bloğu ya da SSS başlığı altındaki sorular için öneriliyor.",
+   "decisions": [
+    340
+   ],
+   "check": {
+    "no_card": [
+     "str3.qa_no_faqpage"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-www.enpara.com-2026-11-11-ek-tr İlginay 2. Kontrol.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Yönlenen llms.txt bağlantıları için hedef adres verilmedi",
+   "genel": "Yönlenen bağlantılar için hedef adres verilmedi",
+   "nasil": "Her madde «bağlantıyı şu adrese verin» ya da hata sayfasına gidiyorsa ne yapılacağını söylüyor.",
+   "decisions": [
+    340
+   ],
+   "check": {
+    "title_text": {
+     "title": "Küçük bağlantı",
+     "field": "sub",
+     "regex": "adrese|kaldırın|→"
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip, ekibin notlarını iletti — enpara Ek (12 Kasım)",
+   "brand_key": "enpara",
+   "sorun": "Head beş yerde kapanıyor; hangi head içinde olduğu söylenmeli",
+   "genel": "<head>'in birkaç yerde kapandığı sayfalarda hangisi olduğu söylenmiyordu",
+   "nasil": "Her satır öğeyi, satırını, <head> ve </head> sayısını ve arkasından neyin geldiğini veriyor.",
+   "decisions": [
+    341,
+    344
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bulgu bazında",
+     "column": "Ölçülen değer",
+     "regex": "satır|line"
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip, ekibin notlarını iletti — enpara Ek (12 Kasım)",
+   "brand_key": "enpara",
+   "sorun": "Alt sayfaların aynı başlığı taşıması site genelinde bir yapı sorunu",
+   "genel": "Alt sayfaların aynı başlığı taşıması tek tek değil site geneli yapı sorunu olarak söylenmeli",
+   "nasil": "Tek site geneli «Kontrol edin» kartı; öneri bir karar (gerçek sayfa ya da ana sayfaya kanonik) ve her adres üst sayfasıyla Ek'te.",
+   "decisions": [
+    344
+   ],
+   "check": {
+    "has_finding": [
+     "str1.sections_as_pages"
+    ],
+    "no_problem": [
+     "str2.h1_parent_name",
+     "str1.subpage_copies_parent"
+    ]
+   }
+  },
+  {
+   "kaynak": "Sahip, ekibin notlarını iletti — enpara Ek (12 Kasım)",
+   "brand_key": "enpara",
+   "sorun": "Site haritası kartı ile 302 kartı aynı adresleri söylüyordu; 301 hedefi verilmeli",
+   "genel": "Site haritası hataları için her adrese 301 hedefi verilmeli",
+   "nasil": "Site haritası kartı yönlendirme zincirini ve her adres için 301 hedefini ya da 410'u veriyor.",
+   "decisions": [
+    344,
+    345,
+    346
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bağlantı yerleri",
+     "column": "Önerilen hedef",
+     "regex": "/|410"
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip, ekibin notlarını iletti — enpara Ek (12 Kasım)",
+   "brand_key": "enpara",
+   "sorun": "Başvuru adımındaki geçici yönlendirme sorun gösterildi",
+   "genel": "Başvuru ve giriş adımlarındaki geçici yönlendirme sorun gösterildi",
+   "nasil": "Başvuru, giriş ve oturum adımlarının geçici yönlendirmesi yalnız bilgi notu; nasıl kontrol edileceği yazıyor.",
+   "decisions": [
+    344,
+    347,
+    351
+   ],
+   "check": {
+    "severity_info": [
+     "idx6.links_to_flow_redirect",
+     "idx6.links_to_login_redirect",
+     "idx6.links_to_entry_redirect"
+    ]
+   }
+  },
+  {
+   "kaynak": "Sahip, ekibin notlarını iletti — enpara Ek (12 Kasım)",
+   "brand_key": "enpara",
+   "sorun": "Başvuru adımının ikinci adresine 301 önerildi",
+   "genel": "Form adımlarının ikinci adreslerine 301 önerildi",
+   "nasil": "Form ve başvuru adımlarına 301 değil kanonik ya da noindex öneriliyor.",
+   "decisions": [
+    344
+   ],
+   "check": {
+    "test": "tests/test_expert_review_344.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — enpara-seo-tum-bulgular-2026-11-12_duzeltilmis (2).xlsx",
+   "brand_key": "enpara",
+   "sorun": "Olmayan adresler 302 ile hata sayfasına gidiyor (bulunmuyordu)",
+   "genel": "Olmayan adreslerin 302 ile hata sayfasına gitmesi bulunmuyordu",
+   "nasil": "Yönlendirmesi hata sayfasında biten adresler kendi kartıyla bulunuyor.",
+   "decisions": [
+    343
+   ],
+   "check": {
+    "has_finding": [
+     "idx1.error_redirect",
+     "idx1.4xx.sitemap_only"
+    ]
+   }
+  },
+  {
+   "kaynak": "Efsa — enpara-seo-tum-bulgular-2026-11-12_duzeltilmis (2).xlsx",
+   "brand_key": "enpara",
+   "sorun": "Aynı sayfanın ikinci adresleri bulunmuyordu",
+   "genel": "Kendini kanonik gösteren ikinci adresler bulunmuyordu",
+   "nasil": "Aynı içeriği veren ve kendini kanonik gösteren ikinci adresler kendi kartıyla bulunuyor.",
+   "decisions": [
+    343,
+    344
+   ],
+   "check": {
+    "has_finding": [
+     "idx8.self_canonical_copies",
+     "idx8.form_step_copies"
+    ]
+   }
+  },
+  {
+   "kaynak": "Efsa — enpara-seo-tum-bulgular-2026-11-12_duzeltilmis (2).xlsx",
+   "brand_key": "enpara",
+   "sorun": "Blog yazılarındaki Product işaretlemesi bulunmuyordu",
+   "genel": "Blog yazılarındaki Product ve puan işaretlemesi bulunmuyordu",
+   "nasil": "Blog yazısında Product ya da puan işaretlemesi kendi kartıyla bulunuyor.",
+   "decisions": [
+    343
+   ],
+   "check": {
+    "has_finding": [
+     "str3.product_on_article"
+    ]
+   }
+  },
+  {
+   "kaynak": "Efsa — enpara-seo-tum-bulgular-2026-11-12_duzeltilmis (2).xlsx",
+   "brand_key": "enpara",
+   "sorun": "JSON-LD'deki doldurulmamış şablon değişkeni bulunmuyordu",
+   "genel": "Yapısal verideki doldurulmamış şablon değişkeni bulunmuyordu",
+   "nasil": "Şablon değişkenleri yapısal veride, başlıkta, meta etiketlerinde ve görünen metinde aranıyor.",
+   "decisions": [
+    343
+   ],
+   "check": {
+    "has_finding": [
+     "str13.markers",
+     "str13.markers_data",
+     "str3.unparsed"
+    ]
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Site haritası kısmen okunduğu için hatalı adres sayısı düşük çıktı",
+   "genel": "Büyük olmayan site haritaları kısmen okunuyordu",
+   "nasil": "1.000 adrese kadar site haritaları baştan sona okunup kontrol ediliyor.",
+   "decisions": [
+    343
+   ],
+   "check": {
+    "test": "tests/test_team_rules_343.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Site haritasında lastmod olmaması söylenmiyordu",
+   "genel": "Site haritasında lastmod olmaması söylenmiyordu",
+   "nasil": "Site haritası adreslerinin hiçbirinde lastmod yoksa bir fırsat notu çıkıyor.",
+   "decisions": [
+    363
+   ],
+   "check": {
+    "has_observation": {
+     "check": "IDX-5",
+     "metric": "sitemap files that give no address a <lastmod>"
+    },
+    "test": "tests/test_fix_log_363.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Site haritasında yönlenen ve zincirli adresler söylenmiyordu",
+   "genel": "Site haritasında yönlenen ve zincirli adresler söylenmiyordu",
+   "nasil": "Site haritasında 200 dönmeyen adresler zincir ve son adresle birlikte listeleniyor.",
+   "decisions": [
+    343,
+    344
+   ],
+   "check": {
+    "has_finding": [
+     "idx5.not_live",
+     "idx5.not_live.beside",
+     "idx5.not_live.idx1",
+     "idx5.bad_share",
+     "idx1.4xx.sitemap_only"
+    ]
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Kopya başlık ve açıklama grupları eksik sayıldı",
+   "genel": "Kopya başlık ve açıklama grupları eksik sayılıyordu",
+   "nasil": "Aynı başlığı ya da açıklamayı paylaşan bütün gruplar tek kartta, her sayfa Ek'te.",
+   "decisions": [
+    355
+   ],
+   "check": {
+    "has_finding": [
+     "str16.shared",
+     "str1.shared"
+    ]
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "JavaScript ile oluşan sayfa okunmadı",
+   "genel": "Yalnız JavaScript ile oluşan sayfa okunmadı",
+   "nasil": "Akıllı örneklem sayfa türlerini kapsıyor ve JavaScript ile gelen başlık ve fiyatlar kendi kartıyla bulunuyor; bu sayfanın okunması yeni tarama ister.",
+   "decisions": [
+    327,
+    331
+   ],
+   "check": {
+    "crawl": true,
+    "why": "Sayfa en yeni denetimin örnekleminde yok; yeni tarama gerekli"
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Blog yazarının yalnız kurum olması (YMYL) söylenmiyordu",
+   "genel": "Blog yazarının yalnız kurum olması söylenmiyordu",
+   "nasil": "Yazar adı olmayan makaleler kendi kartıyla bulunuyor.",
+   "decisions": [
+    304
+   ],
+   "check": {
+    "has_finding": [
+     "str3.article_org_author"
+    ],
+    "test": "tests/test_fix_log_363.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Görünür SSS ile FAQPage soru sayısı farkı söylenmiyordu",
+   "genel": "Görünür SSS ile FAQPage soru sayısının farklı olması söylenmiyordu",
+   "nasil": "FAQPage işaretlemesindeki soru sayısı sayfadaki açılır-kapanır sorulardan azsa bir not çıkıyor.",
+   "decisions": [
+    363
+   ],
+   "check": {
+    "test": "tests/test_fix_log_363.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Paylaşım görseli eksik sayfalar az sayıldı",
+   "genel": "Paylaşım görseli eksik sayfalar az sayılıyordu",
+   "nasil": "og:image olmayan sayfalar okunan bütün sayfalar üzerinden sayılıyor; fark kapsamdan geliyor.",
+   "decisions": [
+    327
+   ],
+   "check": {
+    "has_finding": [
+     "str10.no_tag"
+    ]
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "llms.txt'nin karakter kümesi belirtilmeden ve BOM ile sunulması söylenmiyordu",
+   "genel": "llms.txt'nin karakter kümesi belirtilmeden ya da BOM ile sunulması söylenmiyordu",
+   "nasil": "llms.txt karakter kümesi bildirmeden ya da başında BOM ile sunuluyorsa bir not çıkıyor.",
+   "decisions": [
+    363
+   ],
+   "check": {
+    "has_observation": {
+     "check": "ACC-8",
+     "metric": "llms.txt files served without a charset, or starting with a byte-order mark"
+    },
+    "test": "tests/test_fix_log_363.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "robots.txt'de yorum olarak yazılmış Content-Signal satırı söylenmiyordu",
+   "genel": "robots.txt'de yorum olarak yazılmış Content-Signal satırı söylenmiyordu",
+   "nasil": "Content-Signal satırı yorum işaretiyle yazılmışsa robots.txt kartına bir not ekleniyor.",
+   "decisions": [
+    363
+   ],
+   "check": {
+    "test": "tests/test_fix_log_363.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Başlığın vaat ettiği bölümün sayfada olmaması söylenmiyordu",
+   "genel": "H1'in vaat ettiği bölümün (ör. «nasıl alınır») sayfada olmaması söylenmiyordu",
+   "nasil": "Birden çok soru soran H1'in bir sorusuna karşılık gelen bölüm başlığı yoksa «Kontrol edin» notu çıkıyor.",
+   "decisions": [
+    363
+   ],
+   "check": {
+    "test": "tests/test_fix_log_363.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Organik performans, AI kaynak payı ve konu bazında rakip görünürlüğü yoktu",
+   "genel": "Search Console, AI kaynak payı ve konu bazında rakip görünürlüğü raporda yoktu",
+   "nasil": "Maya verisi eklenince Ek'te Genel durum, Organik×AI, Sayfa detay ve Rakip sayfaları oluşuyor.",
+   "decisions": [
+    352,
+    357,
+    362
+   ],
+   "check": {
+    "test": "tests/test_maya_data_352.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Sırasına göre beklenenden az tıklanan sayfalar söylenmiyordu",
+   "genel": "Sırasına göre beklenenden az tıklanan sayfalar söylenmiyordu",
+   "nasil": "Maya verisi eklenince her sayfanın tıklama oranı aynı sıradaki sayfaların ortancasıyla karşılaştırılıyor ve düşük kalanlar işaretleniyor.",
+   "decisions": [
+    363
+   ],
+   "check": {
+    "test": "tests/test_fix_log_363.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — SEO_Audit_Coverage_enpara_2026-11-12.xlsx",
+   "brand_key": "enpara",
+   "sorun": "Son denetimden bu yana değişen başlık ve açıklamalar izlenmiyordu",
+   "genel": "Son denetimden bu yana kötüleşen başlık ve açıklamalar söylenmiyordu",
+   "nasil": "Aynı sitenin önceki denetimi varsa başlığı ya da açıklaması değişen sayfalar Ek'te listeleniyor.",
+   "decisions": [
+    363
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Önceki denetimden değişenler",
+     "regex": "."
+    },
+    "test": "tests/test_fix_log_363.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — atasunoptik denetimi incelemesi (DECISIONS 347)",
+   "brand_key": "atasun",
+   "sorun": "Giriş gerektiren sayfalara giden bağlantılar sorun gösterildi",
+   "genel": "Giriş gerektiren sayfalara giden bağlantılar sorun gösterildi",
+   "nasil": "Giriş ya da hesap sayfasına geçici yönlenen bağlantılar yalnız bilgi notu.",
+   "decisions": [
+    347
+   ],
+   "check": {
+    "severity_info": [
+     "idx6.links_to_login_redirect"
+    ]
+   }
+  },
+  {
+   "kaynak": "Sahip — atasunoptik denetimi incelemesi (DECISIONS 347)",
+   "brand_key": "atasun",
+   "sorun": "Yalnız eğitim botlarını engellemek sorun gösterildi",
+   "genel": "Yalnız AI eğitim botlarını engellemek sorun gösterildi",
+   "nasil": "Yalnız eğitim botlarını engelleyen kural bir politika kararı olarak «Kontrol edin».",
+   "decisions": [
+    347
+   ],
+   "check": {
+    "test": "tests/test_shop_review_347.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — atasunoptik denetimi incelemesi (DECISIONS 347)",
+   "brand_key": "atasun",
+   "sorun": "XML dosyası sayfa sayıldı",
+   "genel": "XML ve veri dosyaları sayfa sayıldı",
+   "nasil": "XML, akış ve veri dosyaları sayfa sayılmıyor.",
+   "decisions": [
+    347
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Sayfa bazında",
+     "column": "Sayfa",
+     "regex": "\\.xml(\\.gz)?$"
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip — atasunoptik denetimi incelemesi (DECISIONS 347)",
+   "brand_key": "atasun",
+   "sorun": "Sayfa türleri site genelindeki og:type'a göre belirlendi",
+   "genel": "Sayfa türleri site genelindeki og:type'a göre belirlendi",
+   "nasil": "Sayfa türü sayfanın kendi gösterdiğinden (fiyat, sepete ekle, liste) belirleniyor.",
+   "decisions": [
+    347,
+    358
+   ],
+   "check": {
+    "test": "tests/test_shop_review_347.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — atasunoptik denetimi incelemesi (DECISIONS 347)",
+   "brand_key": "atasun",
+   "sorun": "Yanlış yazılmış sayfa kopyaları bulunmuyordu",
+   "genel": "Yanlış yazılmış adresli sayfa kopyaları bulunmuyordu",
+   "nasil": "Aynı klasörde tek harf farkıyla yazılmış kopya adresler kendi kartıyla bulunuyor.",
+   "decisions": [
+    347
+   ],
+   "check": {
+    "has_finding": [
+     "idx8.typo_copies"
+    ]
+   }
+  },
+  {
+   "kaynak": "Sahip — naturesgarden.net denetimi (DECISIONS 349)",
+   "brand_key": "naturesgarden",
+   "sorun": "Ürün bileşeni olan blog yazıları ürün sayıldı",
+   "genel": "Ürün bileşeni olan blog yazıları ürün sayıldı",
+   "nasil": "Blog klasöründeki yazılar ürün bileşeni taşısa da yazı sayılıyor.",
+   "decisions": [
+    349
+   ],
+   "check": {
+    "test": "tests/test_download_blocked_349.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — naturesgarden.net denetimi (DECISIONS 349)",
+   "brand_key": "naturesgarden",
+   "sorun": "Engellenen raporun eki ve sektör dosyası JSON olarak indi",
+   "genel": "Engellenen bir raporun eki JSON olarak indi",
+   "nasil": "Ek ve sektör dosyası her zaman XLSX, engelli raporda taslak olarak işaretli iniyor.",
+   "decisions": [
+    349
+   ],
+   "check": {
+    "test": "tests/test_download_blocked_349.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — isbank denetimi incelemesi (DECISIONS 350)",
+   "brand_key": "isbank",
+   "sorun": "Şube sayfaları yanlış türlendi",
+   "genel": "Şube ve mağaza sayfaları yanlış türlendi",
+   "nasil": "Kendi konum işaretlemesi ve haritası olan sayfa konum sayfası; ürün işaretlemesi olan değil.",
+   "decisions": [
+    350
+   ],
+   "check": {
+    "test": "tests/test_bank_review_350.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — isbank denetimi incelemesi (DECISIONS 350)",
+   "brand_key": "isbank",
+   "sorun": "Şablon bağlantısı kartta adlandırılmıyordu",
+   "genel": "Her sayfadaki şablon bağlantısı kartta adlandırılmıyordu",
+   "nasil": "Kart, sayfaların çoğundaki tek şablon bağlantısını metni ve yeriyle adlandırıyor.",
+   "decisions": [
+    350
+   ],
+   "check": {
+    "test": "tests/test_bank_review_350.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — isbank denetimi incelemesi (DECISIONS 351)",
+   "brand_key": "isbank",
+   "sorun": "Giriş ve başvuru bağlantıları için «kaldırın» dendi",
+   "genel": "Giriş, başvuru ve menü bağlantıları için «kaldırın» dendi",
+   "nasil": "Giriş, başvuru ve menü bağlantıları kaldırılmıyor, düzeltiliyor; metin kontrolü bunu engelliyor.",
+   "decisions": [
+    351,
+    353
+   ],
+   "check": {
+    "gate": "PASS"
+   }
+  },
+  {
+   "kaynak": "Sahip — isbank denetimi incelemesi (DECISIONS 351)",
+   "brand_key": "isbank",
+   "sorun": "CMS düzenleme ve önizleme adresleri sayfa sayıldı",
+   "genel": "CMS düzenleme ve önizleme adresleri sayfa sayıldı",
+   "nasil": "Düzenleme ve önizleme adresleri temiz sayfanın kopyası sayılıyor, ayrı sayfa değil.",
+   "decisions": [
+    351
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Sayfa bazında",
+     "column": "Sayfa",
+     "regex": "efl--edit|preview_theme_id|[?&](edit|preview)="
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip — Ticimax Ek incelemesi (DECISIONS 356)",
+   "brand_key": "ticimax",
+   "sorun": "Yazılım sitesi «Diğer» türünde değerlendirildi",
+   "genel": "Yazılım (SaaS) siteleri kendi profiliyle değerlendirilmiyordu",
+   "nasil": "SaaS / Yazılım profili kendi sayfa türleri ve kontrolleriyle eklendi.",
+   "decisions": [
+    356
+   ],
+   "check": {
+    "test": "tests/test_saas_profile_356.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — Ticimax Ek incelemesi, Maya sayfaları (DECISIONS 357)",
+   "brand_key": "ticimax",
+   "sorun": "Maya sayfalarında sayfa türleri «Sayfa bazında» ile farklıydı",
+   "genel": "Maya sayfalarında sayfa türleri «Sayfa bazında» ile farklıydı",
+   "nasil": "Bütün sayfalar sayfa türünü aynı yoldan veriyor.",
+   "decisions": [
+    357
+   ],
+   "check": {
+    "test": "tests/test_maya_review_357.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — Ticimax Ek incelemesi, Maya sayfaları (DECISIONS 357)",
+   "brand_key": "ticimax",
+   "sorun": "Rakip marka siteleri karşılaştırma sitesi sanıldı",
+   "genel": "Rakip marka siteleri karşılaştırma sitesi sanıldı",
+   "nasil": "Rakip markalar adlarından tanınıyor; karşılaştırma sitesi yalnız birden çok markayı listeleyen üçüncü taraf.",
+   "decisions": [
+    357
+   ],
+   "check": {
+    "test": "tests/test_maya_review_357.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — Ticimax Ek incelemesi, Maya sayfaları (DECISIONS 357)",
+   "brand_key": "ticimax",
+   "sorun": "Sayfa payları %100'ü aşıyordu",
+   "genel": "Maya sayfalarında sayfa payları %100'ü aşıyordu",
+   "nasil": "Her cevap bir kez sayılıyor; pay konunun cevapları üzerinden.",
+   "decisions": [
+    357
+   ],
+   "check": {
+    "test": "tests/test_maya_review_357.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — Ticimax ikinci inceleme (açık maddeler)",
+   "brand_key": "ticimax",
+   "sorun": "Rakip sayfaları «alınamadı» kalıyordu",
+   "genel": "Rakip ve karşılaştırma sayfaları «alınamadı» kalıyordu",
+   "nasil": "Sayfa indirilmediyse nedeni yazıyor; indirilen sayfalarda rakip ölçüleri dolu; «sayfaları da indir» sonradan da seçilebiliyor.",
+   "decisions": [
+    358,
+    363
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Rakip - Sayfa yapısı",
+     "column": "Ana metin (kelime)",
+     "regex": "^alınamadı$|^okunmadı$"
+    },
+    "test": "tests/test_fix_log_363.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — Ticimax ikinci inceleme (açık maddeler)",
+   "brand_key": "ticimax",
+   "sorun": "Promosyon bandı sayfanın ilk cümlesi sayıldı",
+   "genel": "Promosyon bandı sayfanın ilk cümlesi sayıldı",
+   "nasil": "İlk cümle sayfanın ana içeriğinden alınıyor; üst bant, menü ve birden çok sayfada tekrar eden satırlar atlanıyor.",
+   "decisions": [
+    363
+   ],
+   "check": {
+    "test": "tests/test_fix_log_363.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — Ticimax ikinci inceleme (açık maddeler)",
+   "brand_key": "ticimax",
+   "sorun": "Üçüncü taraf listelerde marka sırası boştu",
+   "genel": "Üçüncü taraf listelerde marka sırası hep boştu",
+   "nasil": "İndirilen karşılaştırma sayfasında markanın listedeki sırası başlıklardan bulunuyor.",
+   "decisions": [
+    363
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Rakip - Konu",
+     "column": "Üçüncü taraf listelerde marka sırası",
+     "regex": "^$"
+    },
+    "test": "tests/test_fix_log_363.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — carpexonline.com denetimi (DECISIONS 358)",
+   "brand_key": "carpex",
+   "sorun": "Tarama www adresine geçmediği için 32 sayfada kaldı",
+   "genel": "Site sayfalarını www adresine yönlendirdiğinde tarama orada kalıyordu",
+   "nasil": "Tarama sitenin kendi sayfalarının yönlendiği www/www'suz adrese geçiyor ve oradaki site haritasını okuyor.",
+   "decisions": [
+    358
+   ],
+   "check": {
+    "crawl": true,
+    "why": "En yeni denetim bazı sayfaları iki adreste saydı; yeni tarama gerekli"
+   }
+  },
+  {
+   "kaynak": "Sahip — carpexonline.com denetimi (DECISIONS 358)",
+   "brand_key": "carpex",
+   "sorun": "Ürün sayfaları «diğer» türlendi",
+   "genel": "Ürün sayfaları «diğer» türlendi",
+   "nasil": "Kendi Product işaretlemesi ya da sepete ekle düğmesi olan sayfa ürün sayılıyor.",
+   "decisions": [
+    358
+   ],
+   "check": {
+    "test": "tests/test_carpex_review_358.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — carpexonline.com denetimi (DECISIONS 358)",
+   "brand_key": "carpex",
+   "sorun": "Markanın kendisi rakip sayıldı",
+   "genel": "Markanın kendisi ya da eski adı rakip sayıldı",
+   "nasil": "Adı, takma adı ya da alan adı markanınkiyle eşleşen rakip markanın kendisi sayılıyor.",
+   "decisions": [
+    358,
+    362
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Rakip - Konu",
+     "column": "Lider rakip (ilk → son hafta)",
+     "regex": "^carpex"
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip — carpexonline.com denetimi (DECISIONS 358)",
+   "brand_key": "carpex",
+   "sorun": "Maya etiketleri (intent:…) konu sayıldı",
+   "genel": "Maya'nın konu olmayan etiketleri konu sayıldı",
+   "nasil": "Yalnız konu ve küme etiketleri konu; diğerleri «Konu dışı etiketler» satırında.",
+   "decisions": [
+    358,
+    362
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Rakip - Konu",
+     "column": "Konu",
+     "regex": "^intent:"
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip — carpexonline.com denetimi (DECISIONS 358)",
+   "brand_key": "carpex",
+   "sorun": "«Sayfaları da indir» seçeneği sonradan seçilince çalışmıyordu",
+   "genel": "«Sayfaları da indir» seçeneği dosyalar eklendikten sonra seçilince çalışmıyordu",
+   "nasil": "Seçenek her okumada uygulanıyor ve kart neyin indirildiğini söylüyor.",
+   "decisions": [
+    358
+   ],
+   "check": {
+    "test": "tests/test_carpex_review_358.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — Carpex yeniden denetimi (DECISIONS 359)",
+   "brand_key": "carpex",
+   "sorun": "Birleşik kart kendi bulgularında olmayan bir sayı gösterdi",
+   "genel": "Birleşik kartlar bulgu sayılarını toplayıp kanıtta olmayan bir sayı gösteriyordu",
+   "nasil": "Birleşik kart adreslerin birleşimini sayıyor; örnek listede «en az» diyor.",
+   "decisions": [
+    359
+   ],
+   "check": {
+    "gate": "PASS"
+   }
+  },
+  {
+   "kaynak": "Sahip — Carpex yeniden denetimi (DECISIONS 359)",
+   "brand_key": "carpex",
+   "sorun": "Bazı sayfalar www ve www'suz adreste iki kez okundu",
+   "genel": "Bazı sayfalar www ve www'suz adreste iki kez okundu",
+   "nasil": "Diğer adresin kendisi gösterdiği sayfalar tek kartta; yeni taramada her sayfa bir kez okunuyor.",
+   "decisions": [
+    359
+   ],
+   "check": {
+    "crawl": true,
+    "why": "Kayıtlı denetim iki kopyayı da okudu; yeni tarama gerekli"
+   }
+  },
+  {
+   "kaynak": "Sahip — Carpex yeniden denetimi (DECISIONS 359)",
+   "brand_key": "carpex",
+   "sorun": "İletişim ve referans sayfaları kategori sayıldı",
+   "genel": "İletişim, hakkımızda ve referans sayfaları kategori sayıldı",
+   "nasil": "Bu sayfalar adresinden tanınıyor ve kategori sayılmıyor.",
+   "decisions": [
+    359
+   ],
+   "check": {
+    "row_not": {
+     "sheet": "Sayfa bazında",
+     "key": "Sayfa",
+     "match": "/(referanslarimiz|bize-ulasin-?)$",
+     "column": "Sayfa türü",
+     "regex": "kategori"
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip — Carpex yeniden denetimi (DECISIONS 359)",
+   "brand_key": "carpex",
+   "sorun": "Konu adları ham anahtar olarak göründü",
+   "genel": "Maya konu adları ham anahtar olarak göründü",
+   "nasil": "Ham anahtarlar okunur sözcüklerle, istemlerdeki yazımla gösteriliyor.",
+   "decisions": [
+    359
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Rakip - Konu",
+     "column": "Konu",
+     "regex": "^[a-z0-9]+(-[a-z0-9]+)+$"
+    }
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-www.mmihomedelivery.ae-2026-11-16-ek-tr (1).xlsx",
+   "brand_key": "mmi",
+   "sorun": "Kanonik bağlantı kartında hangi bağlantı olduğu verilmedi",
+   "genel": "Bağlantı kartlarında hangi bağlantı olduğu verilmiyordu",
+   "nasil": "Bağlantı kartları sayfayı, bağlantı metnini, adresi ve konumu veriyor; içeriği farklı sayfaya kanonik veren hedef bağlantı sorunu sayılmıyor.",
+   "decisions": [
+    360
+   ],
+   "check": {
+    "no_card": [
+     "idx6.alias_links"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-www.mmihomedelivery.ae-2026-11-16-ek-tr (1).xlsx",
+   "brand_key": "mmi",
+   "sorun": "Başlığı olan sayfalara «başlık yok» dendi",
+   "genel": "Başlığı olan sayfalara «başlık yok» dendi",
+   "nasil": "Sayfanın herhangi bir kopyasında başlık varsa «başlık yok» denmiyor.",
+   "decisions": [
+    360
+   ],
+   "check": {
+    "no_card": [
+     "str1.no_title"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-www.mmihomedelivery.ae-2026-11-16-ek-tr (1).xlsx",
+   "brand_key": "mmi",
+   "sorun": "Gizli olmayan H1'ler gizli gösterildi",
+   "genel": "Gizli olmayan H1 etiketleri gizli gösterildi",
+   "nasil": "H1 yalnız gerçekten gizliyse bildiriliyor ve kanıt nedenini söylüyor.",
+   "decisions": [
+    360
+   ],
+   "check": {
+    "no_card": [
+     "str2.hidden_h1"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-www.mmihomedelivery.ae-2026-11-16-ek-tr (1).xlsx",
+   "brand_key": "mmi",
+   "sorun": "Ürün adları marka adı sanıldı",
+   "genel": "Ürün adları marka adı sanıldı",
+   "nasil": "Yalnız marka alanları karşılaştırılıyor; başlıktaki ürün adı markanın değil sayfanın konusu.",
+   "decisions": [
+    360
+   ],
+   "check": {
+    "no_card": [
+     "str5.names"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-www.mmihomedelivery.ae-2026-11-16-ek-tr (1).xlsx",
+   "brand_key": "mmi",
+   "sorun": "Yavaş sayfalar kartı başka sayfaların da etkilenebileceğini söylemiyordu",
+   "genel": "Örneklemle ölçülen kartlar kaç sayfa ölçüldüğünü söylemiyordu",
+   "nasil": "Kart kaç sayfanın ölçüldüğünü ve diğerlerinin de etkilenebileceğini söylüyor.",
+   "decisions": [
+    360,
+    361
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Özet",
+     "column": "Etkilenen adres",
+     "regex": "ölçülen"
+    }
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-www.mmihomedelivery.ae-2026-11-16-ek-tr (1).xlsx",
+   "brand_key": "mmi",
+   "sorun": "Metni olmayan bağlantıların hangileri olduğu öneride yoktu",
+   "genel": "Metni olmayan bağlantıların hangileri olduğu öneride yoktu",
+   "nasil": "Kart ve Ek bağlantının sayfasını, adresini ve yerini veriyor.",
+   "decisions": [
+    360,
+    361
+   ],
+   "check": {
+    "card_text": {
+     "rules": [
+      "str14.no_text"
+     ],
+     "field": "sub",
+     "regex": "metin yok",
+     "need": true
+    }
+   }
+  },
+  {
+   "kaynak": "İlginay — maya-audit-www.mmihomedelivery.ae-2026-11-16-ek-tr (1).xlsx",
+   "brand_key": "mmi",
+   "sorun": "Küçük düzeltmeler kartında hangi bağlantılar olduğu eksikti",
+   "genel": "Küçük düzeltmeler kartında hangi bağlantılar olduğu eksikti",
+   "nasil": "Parametreli bağlantılar sayfası, metni ve yeriyle «Bağlantı yerleri»nde ve kartta.",
+   "decisions": [
+    360
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bağlantı yerleri",
+     "column": "Kural",
+     "regex": "idx6.parameters"
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip — MMI yeniden kontrolü (DECISIONS 361)",
+   "brand_key": "mmi",
+   "sorun": "Shopify olmayan sitede Shopify önerisi çıktı",
+   "genel": "Platformu o olmayan sitelerde platforma özgü öneri çıkıyordu",
+   "nasil": "Platforma özgü öneri yalnız o platform tanındığında gösteriliyor; metin kontrolü bunu engelliyor.",
+   "decisions": [
+    361
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Bulgular",
+     "column": "Ne yapılmalı",
+     "regex": "shopify"
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip — MMI yeniden kontrolü (DECISIONS 361)",
+   "brand_key": "mmi",
+   "sorun": "Ek'teki «Ne yapılmalı» PDF'teki kartla aynı değildi",
+   "genel": "Ek'teki «Ne yapılmalı» PDF'teki kartla aynı değildi",
+   "nasil": "Ek kartın adımlarını, bağlantılarını ve kapsamını PDF'teki gibi veriyor.",
+   "decisions": [
+    361
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bulgular",
+     "column": "Ne yapılmalı",
+     "regex": "metin yok"
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip — MMI Ek, Maya verisi (DECISIONS 362)",
+   "brand_key": "mmi",
+   "sorun": "Markanın eski adı her konuda lider rakip göründü",
+   "genel": "Markanın eski adı lider rakip göründü",
+   "nasil": "Markayı adlandıran takma ad grubu markanın kendisi; lider ve fark gerçek rakiplerden hesaplanıyor.",
+   "decisions": [
+    362
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Rakip - Konu",
+     "column": "Lider rakip (ilk → son hafta)",
+     "regex": "^legalhomedelivery"
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip — MMI Ek, Maya verisi (DECISIONS 362)",
+   "brand_key": "mmi",
+   "sorun": "Kapsam'da ilgisiz dosya adları yazdı",
+   "genel": "Kapsam'da Maya verisiyle ilgisiz dosyaların adları yazıyordu",
+   "nasil": "İlgisiz dosyalar yalnız sayıyla söyleniyor ve denetimde tutulmuyor.",
+   "decisions": [
+    362
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Kapsam",
+     "regex": "\\.(tex|cls)\\b"
+    }
+   }
+  },
+  {
+   "kaynak": "Sahip — MMI Ek, Maya verisi (DECISIONS 362)",
+   "brand_key": "mmi",
+   "sorun": "Maya istem kategorileri konu sayıldı",
+   "genel": "Maya istem kategorileri konu sayıldı",
+   "nasil": "Kategoriler konu değil; etiketsiz istemler en yakın konuya atanıyor ve Kapsam kaçının atandığını söylüyor.",
+   "decisions": [
+    362
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Rakip - Konu",
+     "column": "Konu",
+     "regex": "^(Buying intent|Brand|Discovery|Problem|Comparison)$"
+    }
+   }
+  }
+ ]
+}

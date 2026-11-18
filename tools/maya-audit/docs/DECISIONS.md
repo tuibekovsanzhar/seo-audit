@@ -5493,3 +5493,51 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      "Kötü Koku Giderici" rows merged); the leader of 18 topics from the AI answers (Scentsan, Akscent, Atelier Rebul,
      …) where Topic Pulse named only Carpex or no rival. Text check PASS for both, before and after.
      Tests: `tests/test_maya_brand_topics_362.py` (5; fake exports, the web app).
+
+363. **The review fix log: every issue the SEO team noted, checked on the newest saved audit, and the gaps closed
+     (Owner, 2026-11-18, after Efsa and İlginay said noted issues still appeared; the item wording, the check of each item
+     and the thresholds below are agent defaults).** Global for every audit; the brands are where the notes were made.
+     1. *The log.* `maya_audit/fix_log.json` holds 76 items, one per note: the three Enpara reviews (İlginay's
+     "İLGİNAY KONTROL" file of 9 Nov, her second check of 11 Nov, the notes relayed on 12 Nov; `docs/expert-reviews/`),
+     Efsa's corrected report and her coverage comparison (`enpara-seo-tum-bulgular-2026-11-12_duzeltilmis (2).xlsx`,
+     `SEO_Audit_Coverage_enpara_2026-11-12.xlsx`: the seven issues taken in 343 and every gap she marked "Yalnız bizde"
+     or "Kısmen"), İlginay's MMI notes ("İLGİNAY'S NOT" in `…-ek-tr (1).xlsx`; the later copies (2)-(5) carry none), and
+     every review recorded in DECISIONS (Atasun 347, Nature's Garden 349, İş Bankası 350/351, Ticimax 356/357 and the
+     second review's three open items, Carpex 358/359, MMI 360-362). Plain report downloads without notes are left out;
+     a note in several files is listed once with its newest file. Efsa's own Search Console cards (rank losses,
+     impressions up and clicks down, noindex pages with impressions) are her analysis, not notes on Maya's report: the
+     ones her comparison marks as missing are in the log (organic trend, AI share, CTR by position, title changes).
+     Each item has a check that `tools/fix_log.py` runs on the newest finished audit of its domain (www and the bare name
+     are one domain), rebuilt from a copy with the current engine (no request; `~/.maya-audit/web` only read), and the
+     test files it names, which must pass: Durum is Düzeltildi when every check holds, Kısmen when some do, Hâlâ var when
+     none do, and Yeni tarama gerekli when the saved data cannot show it (Carpex's pages read twice, its 32-page crawl, an
+     Enpara page not in the newest sample). The tool writes `~/Downloads/duzeltme-kaydi.xlsx` (Nasıl okunur; Düzeltme
+     kaydı: No, Kaynak, Marka, Sorun, Durum, Nasıl düzeltildi, Tarih, Commit, DECISIONS no, Kontrol) and, with
+     `--write-status`, `maya_audit/fix_log_status.json`.
+     2. *Every Turkish Ek has a "Düzeltme kaydı" sheet* (`fix_log.ek_sheet`): the items that are rules for every audit,
+     worded with no brand, file or person (`genel`), their status, how each was fixed and its DECISIONS number, newest
+     first, at most 50. An English Ek has none (the items are Turkish).
+     3. *Gaps closed (Efsa's comparison):* a sitemap whose files give no address a <lastmod> (an IDX-5 note); llms.txt
+     served with no charset or starting with a byte-order mark (ACC-8 note; the BOM is recorded from the next crawl); a
+     directive written inside a robots.txt comment ("# Content-Signal: …", an ACC-1 note, from the next crawl); a
+     FAQPage that holds fewer questions than the page's real Q&A block shows (STR-3 note); an <h1> that asks two
+     questions or more where a later question has no section heading with its words (STR-2 note on the content card:
+     "Temettü nedir? Nasıl alınır?"); an article whose structured data names only organizations as author
+     (`str3.article_org_author`, S4 estimated; saved audits from their saved JSON-LD, which `saved_data` now receives);
+     pages whose CTR is under half the median CTR of the site's own pages at the same position, with 100 impressions or
+     more and three pages or more in the position band (Maya data, "Organik×AI - Segmentler": "Sırasına göre CTR"); and
+     the Ek's "Önceki denetimden değişenler" sheet: the pages read in this audit and the previous finished audit of the
+     same site (www and the bare name matched) whose title or meta description changed, with both values and whether it
+     got worse (gone, or out of 30-60 / 70-160 characters), or a line saying none changed.
+     4. *The second Ticimax review's open items:* a page with no measures says why ("alınamadı («sayfaları da indir»
+     seçilmedi)", the download's error, or the download limit); a page's first sentence skips a short promotional line
+     (a sale, a code, free shipping, a percentage; 20 words or fewer) and lines that open two or more measured pages of
+     the same site; "Üçüncü taraf listelerde marka sırası" gives the brand's place in the list page (the number written
+     before its heading, else its place among the headings that name a known brand, "listede yok", or why it was not
+     read).
+     *Result* (newest audits rebuilt 2026-11-18): 76 items: Düzeltildi 73, Yeni tarama gerekli 3 (Carpex 2, Enpara 1),
+     Hâlâ var 0, Kısmen 0. Before the fixes above: Hâlâ var 3 (lastmod, organization author, contact pages typed by an
+     unsuitable check) and 9 new-rule items not yet built. Enpara's newest audit now gets the lastmod and llms.txt notes
+     and 39 articles named by an organization only; its pages read in both 9 and 11 Nov audits (127) show no title or
+     description change.
+     Tests: `tests/test_fix_log_363.py` (15); `test_maya_data_352` expects the reason after "alınamadı".

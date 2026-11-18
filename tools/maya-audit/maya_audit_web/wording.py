@@ -567,6 +567,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("str3.product_on_article", "{n#} blog or article page(s) carry Product or AggregateRating markup",
          "{n:blog or article page carries|blog or article pages carry} Product or AggregateRating markup"),
         # The checklist's quick checks (DECISIONS 304).
+        # DECISIONS 363: an article whose only author is the organization
+        ("str3.article_org_author", "{n#} article page(s) name only an organization as author",
+         "{n:article page names|article pages name} only an organization as author"),
         ("str3.article_no_author", "{n#} article page(s) name no author (no byline or author markup)",
          "{n:article page names|article pages name} no author (no byline or author markup)"),
         ("str3.product_no_identifier", "{n#} product page(s) have Product markup without a GTIN or MPN",

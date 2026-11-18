@@ -908,7 +908,8 @@ def text_record(d, report=None):
     return record
 
 
-def appendix_bytes(report, affected, confirmations, lang, business=None, todos=None, maya=None, text_check=NOT_GIVEN):
+def appendix_bytes(report, affected, confirmations, lang, business=None, todos=None, maya=None, text_check=NOT_GIVEN,
+                   previous=None):
     """The XLSX appendix (DECISIONS 300 (4)) from the saved report, its address list and the owner's manual checks:
     (bytes, the final result). The one function of the skill's `-ek.xlsx` and the web app's "Ek (XLSX)" button, so
     both files are the same (DECISIONS 307). `todos`: the team report's cards, so the "Özet" sheet has the PDF's
@@ -932,7 +933,8 @@ def appendix_bytes(report, affected, confirmations, lang, business=None, todos=N
                                     todos=todos, words=plain_words(lang), places=sealed.cards,  # DECISIONS 337
                                     maya={**(maya or {"summary": None}), "report": sealed.report},  # DECISIONS 352
                                     text_check=None if text_check is NOT_GIVEN else
-                                    (lambda: text_gate.with_untranslated(text_check, untranslated, lang)))
+                                    (lambda: text_gate.with_untranslated(text_check, untranslated, lang)),
+                                    previous=previous, report=sealed.report)  # DECISIONS 363
     return content, sealed
 
 

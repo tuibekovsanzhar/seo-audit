@@ -192,6 +192,33 @@ class Crawl:
             return "product"
         return "other"
 
+    REPEAT_SAMPLE = 60  # pages of one site read for its repeated lines (DECISIONS 363)
+
+    def repeated(self, url: str) -> set[str]:
+        """DECISIONS 363: the lines that open two or more measured pages of the site `url` is on (a promo bar, a
+        cookie line): not a page's first sentence. From the crawl's own pages and the pages `enrich` fetched."""
+        host = (urlsplit(url).hostname or "").removeprefix("www.")
+        cache = self.__dict__.setdefault("_repeated", {})
+        if host not in cache:
+            seen: Counter = Counter()
+            urls = [u for u in list(self.evidence) + list(self.fetched) if (urlsplit(u).hostname or "").removeprefix("www.") == host]
+            for u in urls[:self.REPEAT_SAMPLE]:
+                m = self.measure(u) or {}
+                seen.update(set((m.get("first_candidates") or [])[:3]))
+            cache[host] = {line for line, n in seen.items() if n >= 2}
+        return cache[host]
+
+    def first(self, url: str, m: dict | None) -> str:
+        """The page's first sentence: its first line of six words or more that is no promotion and does not open the
+        site's other pages too (DECISIONS 363); the measure's own when it kept no candidates."""
+        if not m:
+            return ""
+        candidates = m.get("first_candidates")
+        if candidates is None:
+            return m.get("first") or ""
+        rep = self.repeated(url)
+        return next((x for x in candidates if x not in rep), "") or ""
+
     def measure(self, url: str) -> dict | None:
         """What "Sayfa detay" and "Rakip - Sayfa yapısı" show of a page: from the crawl's record and saved evidence,
         else from a page `enrich` fetched; None when the page was not read."""
@@ -207,13 +234,26 @@ class Crawl:
                              (a.get("structured_data") or {}).get("types") or [], a.get("time_elements") or [])
 
 
+PROMO = re.compile(r"(?<![a-z])(kampanya\w*|indirim\w*|firsat\w*|kupon\w*|kod\w*|sepette|ucretsiz kargo|kargo bedava|"
+                   r"black friday|efsane cuma|son gun|son \d+ (?:gun|saat)|sale|discount|coupon|promo\w*|free shipping|"
+                   r"limited time|offer ends|%\s?\d+|\d+\s?%)(?![a-z])")
+
+
+def _promo(line: str) -> bool:
+    """A short promotional line (20 words or fewer): a sale, a code, free shipping, a percentage off."""
+    return len(line.split()) <= 20 and bool(PROMO.search(_fold(line)))
+
+
 def measure_parts(title, meta, headings, main_text, jsonld_blocks, tables, types, times) -> dict:
     desc = next((m.get("content") or "" for m in meta or [] if isinstance(m, dict) and (m.get("name") or "").lower() == "description"), None)
     h1 = next((h.get("text") or "" for h in headings if isinstance(h, dict) and h.get("level") == 1), "")
     h2 = [h.get("text") or "" for h in headings if isinstance(h, dict) and h.get("level") == 2]
     lines = [x.strip() for x in (main_text or "").split("\n") if x.strip()] if main_text is not None else None
     words = sum(len(x.split()) for x in lines) if lines is not None else None
-    first = next((x for x in lines or [] if len(x.split()) >= 6), None)
+    # DECISIONS 363 (the Ticimax review): the first sentence of the page's own text: a short promotional line (a sale, a
+    # discount code, free shipping) is skipped; lines repeated on the site's other pages are skipped later (`Crawl.first`)
+    candidates = [x for x in lines or [] if len(x.split()) >= 6][:6]
+    first = next((x for x in candidates if not _promo(x)), None)
     numbers = len(_NUMBER.findall(main_text or "")) if main_text is not None else None
     faq = sum(len(re.findall(r'"@type"\s*:\s*"Question"', b)) for b in jsonld_blocks or []) if jsonld_blocks is not None else None
     big_tables = sum(1 for t in tables if isinstance(t, dict) and (t.get("rows") or 0) >= 3) if tables else 0
@@ -222,7 +262,10 @@ def measure_parts(title, meta, headings, main_text, jsonld_blocks, tables, types
     return {"title": title or "", "meta_chars": len(desc) if desc is not None else None, "h1": h1, "h2": h2,
             "question_h2": sum(1 for x in h2 if x.strip().endswith("?")), "words": words,
             "js_heavy": words is not None and words < 150, "tables": big_tables, "faq_questions": faq,
-            "numbers": numbers, "dated": dated, "types": sorted(set(types or [])), "first": first}
+            "numbers": numbers, "dated": dated, "types": sorted(set(types or [])), "first": first,
+            "first_candidates": [x[:300] for x in candidates if not _promo(x)],
+            # DECISIONS 363: the <h2>/<h3> in order, for a brand's place in a list page
+            "outline": [h.get("text") or "" for h in headings if isinstance(h, dict) and h.get("level") in (2, 3)][:80]}
 
 
 def measure_html(html: str) -> dict:
@@ -465,13 +508,47 @@ def overview_rows(summary: dict) -> list[list]:
     return rows
 
 
+# DECISIONS 363 (Efsa, enpara): a page clicked less than the site's own pages at its position. Agent defaults.
+CTR_MIN_IMPRESSIONS, CTR_MIN_PAGES, CTR_SHARE = 100, 3, 0.5
+
+
+def _bucket(position) -> str | None:
+    if not isinstance(position, (int, float)) or position <= 0:
+        return None
+    p = round(position)
+    return str(p) if p <= 10 else "11-20" if p <= 20 else "21+"
+
+
+def expected_ctr(summary: dict) -> tuple[dict[str, float], dict[str, dict]]:
+    """({position bucket: the median CTR of the site's pages there}, {url: {"ctr", "median", "bucket"}} of the pages with
+    CTR_MIN_IMPRESSIONS or more whose CTR is under CTR_SHARE of their bucket's median). A bucket needs CTR_MIN_PAGES pages;
+    the CTRs are the site's own (Search Console), never a general curve."""
+    pages_ = ((summary.get("gsc") or {}).get("pages") or {})
+    by: dict[str, list[float]] = defaultdict(list)
+    for g in pages_.values():
+        b = _bucket(g.get("position"))
+        if b and (g.get("impressions") or 0) >= CTR_MIN_IMPRESSIONS and isinstance(g.get("ctr"), (int, float)):
+            by[b].append(g["ctr"])
+    medians = {b: sorted(v)[len(v) // 2] if len(v) % 2 else sum(sorted(v)[len(v) // 2 - 1:len(v) // 2 + 1]) / 2
+               for b, v in by.items() if len(v) >= CTR_MIN_PAGES}
+    low = {}
+    for url, g in pages_.items():
+        b = _bucket(g.get("position"))
+        m = medians.get(b) if b else None
+        if m and (g.get("impressions") or 0) >= CTR_MIN_IMPRESSIONS and isinstance(g.get("ctr"), (int, float)) \
+                and g["ctr"] < CTR_SHARE * m:
+            low[url] = {"ctr": g["ctr"], "median": m, "bucket": b}
+    return medians, low
+
+
 def segment_sheets(summary: dict, crawl: Crawl) -> tuple[dict, dict, list[dict], dict]:
     rows, th = pages(summary, crawl)
+    _, low_ctr = expected_ctr(summary)
     seg_rows = [r for r in rows if r["segment"]]
     seg_rows.sort(key=lambda r: (ORDER.index(r["segment"]), -r["importance"], r["url"]))
     providers = [p for p, _ in sorted(((summary.get("ai") or {}).get("providers") or {}).items(), key=lambda kv: -kv[1]["rows"])][:5]
     header = ["Önem puanı", "Sayfa", "Segment", "Sayfa türü", "Konu", "GSC'de ölçüldü mü", "GSC tık", "GSC gösterim", "CTR",
-              "Ort. sıra", "GSC haftalık tık (örneklem)", "AI prompt", "AI koşu"] + [f"{p} koşu" for p in providers] + [
+              "Sırasına göre CTR", "Ort. sıra", "GSC haftalık tık (örneklem)", "AI prompt", "AI koşu"] + [f"{p} koşu" for p in providers] + [
               "Konudaki panel prompt sayısı", "Kopya adresler (citation onlara da sayıldı)", "Tarama durumu", "Ne yapılmalı", "Seg. kodu"]
     body = []
     first_row: dict[str, int] = {}
@@ -480,7 +557,8 @@ def segment_sheets(summary: dict, crawl: Crawl) -> tuple[dict, dict, list[dict],
         first_row.setdefault(r["segment"], i)
         body.append([r["importance"], _link(r["url"]), SEGMENTS[r["segment"]][0], crawl.type_word(r["url"]), r["topic"] or "—",
                      "Evet" if r["gsc"] else "Hayır (ölçülmedi)", round(g["clicks"]) if g else "", round(g["impressions"]) if g else "",
-                     _pct(g.get("ctr")) if g else "", g.get("position") if g else "", round(r["weekly"]) if r["weekly"] else "",
+                     _pct(g.get("ctr")) if g else "", _ctr_words(low_ctr.get(r["url"]), g),
+                     g.get("position") if g else "", round(r["weekly"]) if r["weekly"] else "",
                      r["n_prompts"], r["runs"]] + [r["by_provider"].get(p, 0) for p in providers] + [
                      r["topic_prompts"] or "", "; ".join(_short(d) for d in r["duplicates"]),
                      _status_words(r["status"], r["location"]), SEGMENT_ACTION[r["segment"]], r["segment"]])
@@ -493,12 +571,22 @@ def segment_sheets(summary: dict, crawl: Crawl) -> tuple[dict, dict, list[dict],
                           f"organikte güçlü = tık ≥ {round(th['org_strong'])} (üst çeyrek); organikte zayıf = tık < {round(th['org_weak'])} "
                           f"(medyan altı); AI'da güçlü = ≥ {round(th['ai_strong'])} prompt; AI'da az = < {round(th['ai_few'])} prompt; "
                           f"gösterim yüksek = ≥ {round(th['impr_high'])}"],
-                     ["Segment dışı sayfalar", sum(1 for r in rows if not r["segment"])], [], [CORRELATION]]
+                     ["Segment dışı sayfalar", sum(1 for r in rows if not r["segment"])],
+                     ["Sırasına göre az tıklanan sayfalar", sum(1 for r in seg_rows if r["url"] in low_ctr),
+                      f"CTR'si aynı sıradaki sayfaların ortancasının yarısından az ve en az {CTR_MIN_IMPRESSIONS} gösterimi olan "
+                      "sayfalar; ortanca sitenin kendi Search Console verisinden"], [], [CORRELATION]]
     sheet_summary = {"name": SHEETS["summary"], "header": ["Segment", "Tanım", "Sayfa sayısı", "Ne yapılmalı", "Satırlara git"],
                      "rows": summary_rows, "widths": [10, 60, 14, 50, 16]}
     sheet_segments = {"name": SHEETS["segments"], "header": header, "rows": body,
-                      "widths": [10, 60, 34, 14, 22, 14, 10, 12, 8, 8, 12, 9, 9] + [10] * len(providers) + [12, 40, 18, 60, 8]}
+                      "widths": [10, 60, 34, 14, 22, 14, 10, 12, 8, 26, 8, 12, 9, 9] + [10] * len(providers) + [12, 40, 18, 60, 8]}
     return sheet_summary, sheet_segments, rows, th
+
+
+def _ctr_words(low: dict | None, g: dict | None) -> str:
+    """DECISIONS 363: "düşük (aynı sıradaki sayfalar %3,4)" for a page clicked less than its position's pages, else ""."""
+    if not g or not low:
+        return ""
+    return f"düşük (aynı sıradaki sayfalar %{_tr(100 * low['median'])})"
 
 
 def _status_words(status, location) -> str:
@@ -527,17 +615,28 @@ def detail_sheet(summary: dict, crawl: Crawl, rows: list[dict]) -> dict:
         total = sum(others.values())
         competitors = "; ".join(f"{_short(u)} ({round(100 * n / total)}%)" for u, n in others.most_common(3)) if total else ""
         if m is None or m.get("error"):
-            cells = ["okunmadı" if m is None else "alınamadı"] + [""] * 11
+            cells = [unread_words(summary, m, own=True)] + [""] * 11
         else:
             cells = [m["title"], m["meta_chars"] if m["meta_chars"] is not None else "yok", m["h1"], len(m["h2"]),
                      " | ".join(m["h2"][:8]), _words(m), m["tables"], _blank(m["faq_questions"]), _blank(m["numbers"]),
-                     "Evet" if m["dated"] else "Hayır", ", ".join(m["types"]), m["first"] or ""]
+                     "Evet" if m["dated"] else "Hayır", ", ".join(m["types"]), crawl.first(r["url"], m)]
         body.append([r["importance"], _link(r["url"]), SEGMENTS[r["segment"]][0], crawl.type_word(r["url"]), r["topic"] or "—",
                      round(g["impressions"]) if g else "", round(g["clicks"]) if g else "", _pct(g.get("ctr")) if g else "",
                      g.get("position") if g else "", r["n_prompts"], r["topic_prompts"] or ""] + cells + [
                      competitors, "\n".join(findings(m)) if m and not m.get("error") else "", SEGMENT_ACTION[r["segment"]]])
     return {"name": SHEETS["detail"], "header": header, "rows": body,
             "widths": [10, 50, 30, 12, 20, 12, 10, 8, 8, 9, 12, 40, 10, 30, 9, 60, 14, 10, 10, 10, 10, 40, 60, 60, 50, 60]}
+
+
+def unread_words(summary: dict, m: dict | None, own: bool) -> str:
+    """DECISIONS 363 (the Ticimax review): why a page has no measures: not read by the audit, not downloaded (the "also
+    download pages" choice was not made, or the page was past the download limit), or downloaded and failed (why)."""
+    if m is not None and m.get("error"):
+        return f"alınamadı ({m['error']})" if m["error"] not in ("no page",) else "alınamadı (sayfa boş döndü)"
+    if not (summary.get("fetch") or {}).get("wanted"):
+        return "okunmadı (denetimde okunmadı; «sayfaları da indir» seçilmedi)" if own else \
+               "alınamadı («sayfaları da indir» seçilmedi)"
+    return "okunmadı (indirme sınırı dışında kaldı)" if own else "alınamadı (indirme sınırı dışında kaldı)"
 
 
 def _words(m: dict):
@@ -811,7 +910,7 @@ def insight(t: dict) -> tuple[str, str]:
     return ("Açık orta düzeyde.", "Kaynak gösterilen karşılaştırma sayfalarıyla kendi sayfanızı karşılaştırın.")
 
 
-def topic_sheet(summary: dict, rows: list[dict]) -> dict:
+def topic_sheet(summary: dict, rows: list[dict], crawl: "Crawl | None" = None) -> dict:
     header = ["Öncelik", "Konu", "Panel prompt (n)", "Yalnız gösterge (n<10)", "Marka citation payı (koşu)",
               "Markanın kaynak gösterilen sayfaları (konudaki cevapların payı)", "Konu görünürlüğü marka (ilk → son hafta)",
               "Lider rakip (ilk → son hafta)", "Fark (puan, son hafta)", "En çok kaynak gösterilen alan adları (prompt payı)",
@@ -831,7 +930,8 @@ def topic_sheet(summary: dict, rows: list[dict]) -> dict:
                      "; ".join(f"{d} ({round(100 * s)}%)" for d, s in t["domains"]),
                      f"{_short(t['competitor_page'][0])} ({t['competitor_page'][1]} koşu, {t['competitor_page'][2]} prompt)" if t["competitor_page"] else "—",
                      f"{_short(t['comparison_page'][0])} ({t['comparison_page'][1]} koşu, {t['comparison_page'][2]} prompt)" if t["comparison_page"] else "—",
-                     "—", why, act, " | ".join(t["samples"])])
+                     (list_rank(summary, crawl.measure(t["comparison_page"][0])) or unread_words(summary, crawl.measure(t["comparison_page"][0]), own=False))
+                     if t["comparison_page"] and crawl is not None else "—", why, act, " | ".join(t["samples"])])
     return {"name": SHEETS["topics"], "header": header, "rows": body,
             "widths": [8, 30, 10, 10, 12, 50, 18, 26, 10, 60, 50, 50, 18, 60, 60, 80]}
 
@@ -868,13 +968,35 @@ def structure_sheet(topics: list[dict], summary: dict, crawl: Crawl) -> dict:
                 body.append([shown, side, "—", "", "", "", "", "", "", "", "", "", ""])
                 continue
             if m is None or m.get("error"):
-                body.append([shown, side, _link(url), "alınamadı" if side != "Marka" else "okunmadı"] + [""] * 9)
+                body.append([shown, side, _link(url), unread_words(summary, m, own=side == "Marka")] + [""] * 9)
                 continue
             body.append([shown, side, _link(url), _words(m), len(m["h2"]), m["question_h2"], m["tables"],
                          _blank(m["faq_questions"]), _blank(m["numbers"]), "Evet" if m["dated"] else "Hayır", ", ".join(m["types"]),
-                         m["first"] or "", difference(mine, m) if side != "Marka" else ""])
+                         crawl.first(url, m), difference(mine, m) if side != "Marka" else ""])
     return {"name": SHEETS["structure"], "header": header, "rows": body,
             "widths": [26, 18, 60, 18, 6, 10, 10, 10, 10, 10, 40, 60, 60]}
+
+
+def list_rank(summary: dict, m: dict | None) -> str:
+    """DECISIONS 363 (the Ticimax review): the brand's place in a third-party list page: the number the list writes before
+    the brand's heading ("3. Ticimax"), else its place among the headings that name a known brand; "listede yok" when no
+    heading names it. "" when the page was not measured."""
+    if not m or m.get("error") or not m.get("outline"):
+        return ""
+    from .maya_data import name_key
+    own = {k for k in _own_keys(summary) if len(k) >= 4}
+    rivals = {k for k in competitor_keys(summary) if len(k) >= 4}
+
+    def names(text: str, keys: set[str]) -> bool:
+        k = name_key(text)
+        return any(key in k for key in keys)
+    entries = [h for h in m["outline"] if names(h, own | rivals)]
+    mine = next((h for h in entries if names(h, own)), None)
+    if mine is None:
+        return "listede yok"
+    numbered = re.match(r"^\s*(\d{1,3})\s*[.)\-–:]", mine)
+    rank = int(numbered.group(1)) if numbered else entries.index(mine) + 1
+    return f"{rank}. sıra ({len(entries)} markadan)" if not numbered else f"{rank}. sıra"
 
 
 def difference(mine: dict | None, other: dict) -> str:
@@ -967,7 +1089,7 @@ def build(summary: dict | None, report: dict, evidence_dir: Path | None = None, 
     if not skipped("competitors", "Rakip"):
         topics = topic_rows(summary, crawl)
         if topics:
-            sheets.append(topic_sheet(summary, topics))
+            sheets.append(topic_sheet(summary, topics, crawl))
             sheets.append(structure_sheet(topics, summary, crawl))
             howto.append(f"«{SHEETS['topics']}»: konu bazında marka ve lider rakip, en büyük açık en üstte; n < 10 yalnız gösterge.")
             howto.append(f"«{SHEETS['structure']}»: marka sayfası, rakip ve karşılaştırma sayfası yan yana; farklar [HİPOTEZ].")

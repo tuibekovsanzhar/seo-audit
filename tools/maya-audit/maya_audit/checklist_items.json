@@ -1597,7 +1597,8 @@
     "STR-3"
    ],
    "rules": [
-    "str3.article_no_author"
+    "str3.article_no_author",
+    "str3.article_org_author"
    ],
    "needs": [],
    "rest": null,

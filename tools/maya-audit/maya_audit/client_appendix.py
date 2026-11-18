@@ -615,10 +615,86 @@ def _empty_reason(name: str, selection: dict, W: dict) -> str:
     return empty.get(key) or empty["findings"]
 
 
-def build(selection: dict, lang: str = "tr", lists: dict | None = None, text_check=None, **wording) -> bytes:
+CHANGED = {"tr": {"name": "Önceki denetimden değişenler",
+                   "cols": ["Sayfa", "Ne değişti", "Önceki denetimde", "Bu denetimde", "Kötüleşti mi?"],
+                   "what": {"title": "Başlık (title)", "description": "Meta açıklaması"},
+                   "worse": {"gone": "Evet: artık yok", "short": "Evet: önerilen uzunluğun altına indi",
+                             "long": "Evet: önerilen uzunluğun üstüne çıktı", "": "Hayır"},
+                   "head": "Önceki denetim: {date} ({id}). Yalnız iki denetimde de okunan sayfalar karşılaştırıldı.",
+                   "none": "İki denetimde de okunan {n} sayfanın başlığı ve meta açıklaması değişmedi."},
+           "en": {"name": "Changed since the previous audit",
+                  "cols": ["Page", "What changed", "In the previous audit", "In this audit", "Worse?"],
+                  "what": {"title": "Title", "description": "Meta description"},
+                  "worse": {"gone": "Yes: now missing", "short": "Yes: now under the suggested length",
+                            "long": "Yes: now over the suggested length", "": "No"},
+                  "head": "Previous audit: {date} ({id}). Only pages read in both audits are compared.",
+                  "none": "The title and meta description of the {n} pages read in both audits did not change."}}
+# The suggested lengths a change is judged by (the same bands as TSEO-1's notes: 30-60 and 70-160 characters).
+BANDS = {"title": (30, 60), "description": (70, 160)}
+
+
+def _page_key(url: str) -> str:
+    """One key for a page in two audits: no scheme, no www., no trailing slash (www and the bare name are one site)."""
+    return re.sub(r"^https?://(www\.)?", "", url or "").rstrip("/").lower()
+
+
+def _heads(report: dict) -> dict[str, dict]:
+    """{page key: {"url", "title", "description"}} of the pages a report read: its page measures, else its records."""
+    crawl = report.get("crawl") or {}
+    out = {}
+    for url, m in (crawl.get("page_measures") or {}).items():
+        if isinstance(m, dict) and m.get("status") in (200, None):
+            out[_page_key(url)] = {"url": url, "title": m.get("title"), "description": m.get("description")}
+    for p in crawl.get("pages") or []:
+        a = p.get("analysis") if isinstance(p, dict) else None
+        if isinstance(a, dict) and p.get("status") == 200:
+            desc = next((m.get("content") for m in a.get("meta") or [] if m.get("name") == "description"), None)
+            out.setdefault(_page_key(p["url"]), {"url": p["url"], "title": a.get("title"), "description": desc})
+    return out
+
+
+def changed_sheet(report: dict, previous: dict | None, lang: str = "tr") -> dict | None:
+    """DECISIONS 363 (Efsa, enpara: titles and descriptions compared across two live audits): the pages read in both
+    this audit and the previous one of the same site whose title or meta description changed, each with both values and
+    whether it got worse (gone, or moved out of its suggested length while it was inside). None without a previous
+    audit or a change."""
+    if not previous:
+        return None
+    W = CHANGED.get(lang, CHANGED["tr"])
+    now, before = _heads(report), _heads(previous)
+    rows = []
+    for url in sorted(set(now) & set(before)):
+        for key in ("title", "description"):
+            a, b = (before[url].get(key) or "").strip(), (now[url].get(key) or "").strip()
+            if a == b:
+                continue
+            low, high = BANDS[key]
+            worse = ("gone" if a and not b else "short" if low <= len(a) <= high and len(b) < low and b else
+                     "long" if low <= len(a) <= high and len(b) > high else "")
+            rows.append([_link(now[url]["url"], now[url]["url"]), W["what"][key], a or "—", b or "—", W["worse"][worse]])
+    compared = len(set(now) & set(before))
+    if not compared:
+        return None
+    crawl = previous.get("crawl") or {}
+    said = previous.get("_audit") or {}
+    head = W["head"].format(date=said.get("date") or str(crawl.get("started_at") or "")[:10], id=said.get("id") or "—")
+    if not rows:  # compared, nothing changed: said so
+        rows = [[W["none"].format(n=compared), "", "", "", ""]]
+    return {"name": W["name"], "header": W["cols"], "rows": [[head, "", "", "", ""]] + rows, "widths": [70, 20, 60, 60, 30]}
+
+
+def build(selection: dict, lang: str = "tr", lists: dict | None = None, text_check=None, previous: dict | None = None,
+          report: dict | None = None, **wording) -> bytes:
     """`text_check`: the release gate's text check (DECISIONS 353), a record or a function returning one once every
     sheet is written (so the sentences the sheets showed untranslated are in it); its sheet "Kontrol raporu" comes last."""
     made = sheets(selection, lang, lists, **wording)
+    changed = changed_sheet(report, previous, lang) if report is not None else None  # DECISIONS 363
+    if changed:
+        made.append(changed)
+    from .fix_log import ek_sheet  # DECISIONS 363: the SEO team's notes and how each was fixed, newest first
+    log = ek_sheet(lang) if lang == "tr" else None  # its texts are Turkish, as the team's notes are
+    if log:
+        made.append(log)
     if text_check is not None:
         from . import text_gate
         record = text_check() if callable(text_check) else text_check

@@ -1093,6 +1093,42 @@ def _product_nodes(value, in_list: bool, in_product: bool):
             yield from _product_nodes(child, in_list, in_product)
 
 
+def faq_question_count(values) -> int:
+    """DECISIONS 363: the Question nodes inside the page's FAQPage nodes (their mainEntity)."""
+    n = 0
+    for value in values:
+        for node, _ in iter_typed_nodes(value):
+            if "FAQPage" in node_types(node):
+                entity = node.get("mainEntity")
+                entity = entity if isinstance(entity, list) else [entity] if entity else []
+                n += sum(1 for q in entity if isinstance(q, dict) and "Question" in node_types(q))
+    return n
+
+
+ORG_AUTHOR_TYPES = frozenset({"Organization", "Corporation", "NewsMediaOrganization", "LocalBusiness", "BankOrCreditUnion",
+                              "FinancialService", "OnlineBusiness", "OnlineStore", "EducationalOrganization", "GovernmentOrganization"})
+ORG_AUTHOR = "JSON-LD author (organization)"  # DECISIONS 363: the signal of an author that is only an organization
+
+
+def jsonld_author_kind(items) -> str | None:
+    """DECISIONS 363: "person" when a node of the page's structured data names a person as its author (a Person, or a
+    name with no type), "organization" when every author named is an organization, None when none is named."""
+    kinds = set()
+    for item in items:
+        for node, _ in iter_typed_nodes(item["data"]):
+            authors = node.get("author")
+            for a in (authors if isinstance(authors, list) else [authors] if authors else []):
+                if isinstance(a, str) and a.strip():
+                    kinds.add("person")
+                elif isinstance(a, dict):
+                    types = set(node_types(a))
+                    if types & ORG_AUTHOR_TYPES and "Person" not in types:
+                        kinds.add("organization")
+                    elif types or _text(a.get("name")):
+                        kinds.add("person")
+    return "person" if "person" in kinds else "organization" if kinds else None
+
+
 def jsonld_author(items) -> bool:
     """Whether any typed node of the page's structured data names an author (a Person or an Organization)."""
     return any(_text(node.get("author")) or (isinstance(node.get("author"), dict) and node["author"].get("@type"))
@@ -1404,7 +1440,8 @@ def analyze_html(html: str, page_url: str | None = None) -> dict:
         # SEO-046 (DECISIONS 304, schema 1.24): <link rel="next"> / <link rel="prev"> hrefs as written, when present.
         **({"pagination_links": parser.pagination_links} if parser.pagination_links else {}),
         # SEO-078: where the page names an author (byline element, rel/itemprop author, JSON-LD author, meta author).
-        "author_signals": sorted(parser.author_signals | ({"JSON-LD author"} if jsonld_author(items) else set())
+        "author_signals": sorted(parser.author_signals | ({"JSON-LD author" if jsonld_author_kind(items) != "organization" else ORG_AUTHOR}
+                                                          if jsonld_author(items) else set())
                                  | ({"meta author"} if any(m["name"] == "author" and m["content"] for m in parser.meta) else set())),
         "accessible_for_free": _accessible_for_free(parser.scripts),
         "html_lang": parser.html_lang,
@@ -1416,6 +1453,8 @@ def analyze_html(html: str, page_url: str | None = None) -> dict:
             "types": types,
             # The key Product fields (DECISIONS 304, schema 1.24): identifiers, brand and offers, per Product node.
             **({"products": products} if (products := product_fields([item["data"] for item in items])) else {}),
+            # DECISIONS 363: how many questions the page's FAQPage markup holds (compared with the questions shown)
+            **({"faq_questions": n} if (n := faq_question_count([item["data"] for item in items])) else {}),
         },
         "footer_text": _WS.sub(" ", " ".join(parser.footer_parts)).strip()[:1000],
         "logo_alts": parser.logo_alts,

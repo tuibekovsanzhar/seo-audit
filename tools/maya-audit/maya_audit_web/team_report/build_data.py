@@ -330,6 +330,9 @@ NOTE_TOPICS = {
                       "en": ("question headings", "questions show as headings")},
         "address": {"tr": ("adres yazımını", "adres sözcükleri sayfanın adıyla uyuşmalı"),
                     "en": ("address spelling", "address words match the page's name")},
+        # DECISIONS 363: an <h1> question with no section of its own
+        "h1": {"tr": ("H1 sorularının bölümlerini", "H1'in sorduğu her sorunun sayfada bir bölümü olmalı"),
+               "en": ("the H1 questions' sections", "each question the H1 asks has a section on the page")},
     },
     "share": {
         "share_image": {"tr": ("paylaşım görselini", "paylaşım önizlemesinde büyük görsel çıkmalı"),
@@ -910,6 +913,11 @@ class Builder:
         ("STR-10", "pages whose og:url names another address than their canonical"): "og:url differs from canonical",
         ("STR-10", "pages with an empty <meta name> tag"): "empty <meta> tags",
         ("IDX-6", "links to other sites that carry tracking or logged-in view parameters"): "parameters on links to other sites",
+        # DECISIONS 363 (the SEO team's gaps on enpara)
+        ("IDX-5", "sitemap files that give no address a <lastmod>"): "sitemap without lastmod",
+        ("ACC-8", "llms.txt files served without a charset, or starting with a byte-order mark"): "llms.txt encoding",
+        ("ACC-1", "robots.txt lines that write a directive inside a comment (no crawler reads it)"): "robots directive in a comment",
+        ("STR-3", "pages whose FAQPage markup holds fewer questions than the page shows"): "FAQPage with fewer questions",
     }
 
     def redirect_end(self, url):
@@ -973,6 +981,33 @@ class Builder:
                              + (f" ⇒ {path(to)}" if to else ""))
             t["sub"] = lines
 
+    NEW_HYGIENE = ("sitemap without lastmod", "llms.txt encoding", "robots directive in a comment", "FAQPage with fewer questions")
+
+    def new_hygiene(self, label, o):
+        """DECISIONS 363: (examples, addresses) of the four notes the SEO team's gaps added, with each address's line."""
+        L, examples = self.L, o.get("examples") or []
+        if label == "sitemap without lastmod":
+            urls = [u for u in examples if isinstance(u, str)]
+            for u in urls:
+                self.url_notes.setdefault(u, L["seen_no_lastmod"])
+            return [path_of(u) for u in urls[:3]], urls
+        if label == "llms.txt encoding":
+            urls = [e["url"] for e in examples if e.get("url")]
+            for e in examples:
+                why = [L["seen_llms_why"].get(w, w) for w in e.get("why") or []]
+                self.url_notes.setdefault(e["url"], fmt(L["seen_llms"], why=", ".join(why), type=e.get("content_type") or "—"))
+            return [path_of(u) for u in urls[:3]], urls
+        if label == "robots directive in a comment":
+            url = o.get("url")
+            if url:
+                self.url_notes.setdefault(url, "; ".join(fmt(L["seen_commented"], line=e.get("line"), text=e.get("text"))
+                                                        for e in examples[:3]))
+            return [e.get("text") for e in examples[:3]], [url] if url else []
+        urls = [e["url"] for e in examples if e.get("url")]
+        for e in examples:
+            self.url_notes.setdefault(e["url"], fmt(L["seen_faq_short"], shown=e.get("shown"), marked=e.get("marked")))
+        return [path_of(u) for u in urls[:3]], urls
+
     def hygiene_items(self):
         """Küçük düzeltmeler (Maya Audit P3): motorda gözlem ya da Info oldukları için yapılacaklara girmezler; burada
         tek kartta toplanır. Her satır: (konu, sayı, örnekler, adresler, kimlikler)."""
@@ -1027,6 +1062,8 @@ class Builder:
                 elif label.startswith("og:url"):
                     ex = [path_of(e["url"]) or "/" for e in (o.get("examples") or [])[:3]]
                     urls = [e["url"] for e in o.get("examples") or []]
+                elif label in self.NEW_HYGIENE:  # DECISIONS 363: each with what was seen at its address
+                    ex, urls = self.new_hygiene(label, o)
                 else:
                     ex, urls = [], list(o.get("examples") or [])
                 for u in urls:  # DECISIONS 339: what was seen on each address, for its row in the appendix
@@ -1069,6 +1106,7 @@ class Builder:
         ("STR-9", "pages whose header, menu or footer labels are in another language than the page"): "menu labels in another language",
         ("STR-2", "pages whose question-and-answer block writes its questions as plain text"): "questions not marked as headings",
         ("STR-14", "addresses whose words look misspelled against the page's own name"): "address words that look misspelled",
+        ("STR-2", "pages whose <h1> asks a question no section heading answers"): "h1 question without a section",  # DECISIONS 363
     }
 
     def draft_urls(self):
@@ -1096,6 +1134,12 @@ class Builder:
                                                                     labels=", ".join(e["labels"][:4])))
                 elif label.startswith("questions"):
                     ex = [path_of(e["url"]) or "/" for e in examples[:3]]
+                elif label.startswith("h1 question"):  # DECISIONS 363: the question no section answers, per page
+                    ex = [path_of(e["url"]) or "/" for e in examples[:3]]
+                    for e in examples:
+                        if e.get("url"):
+                            self.url_notes.setdefault(e["url"], fmt(self.L["seen_h1_promise"], h1=e.get("h1") or "",
+                                                                    left=", ".join(e.get("unanswered") or [])))
                 else:
                     ex = [f"{path_of(e['url'])} ({e['address_word']} → {e['page_name_word']})" for e in examples[:3]]
                 drafts = self.draft_urls()

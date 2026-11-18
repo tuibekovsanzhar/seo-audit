@@ -1111,6 +1111,10 @@
     "(?P<n>\\d+(?:\\.\\d+)?)\\ blog\\ or\\ article\\ page\\(s\\)\\ carry\\ Product\\ or\\ AggregateRating\\ markup"
    ],
    [
+    "str3.article_org_author",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ article\\ page\\(s\\)\\ name\\ only\\ an\\ organization\\ as\\ author"
+   ],
+   [
     "str3.article_no_author",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ article\\ page\\(s\\)\\ name\\ no\\ author\\ \\(no\\ byline\\ or\\ author\\ markup\\)"
    ],

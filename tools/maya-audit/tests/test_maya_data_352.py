@@ -231,7 +231,7 @@ def test_a_topic_with_few_prompts_is_only_an_indication(tmp_path):
     mevduat = next(r for r in rows if r[1] == "mevduat")
     assert "genel bir kelime" in mevduat[7] and mevduat[8] == ""  # "maid" is no competitor
     structure = texts(sheet(built, "Rakip - Sayfa yapısı")["rows"])
-    assert any(r[1] == "Rakip marka" and r[3] == "alınamadı" for r in structure)  # nothing fetched
+    assert any(r[1] == "Rakip marka" and r[3].startswith("alınamadı (") for r in structure)  # nothing fetched, and why (363)
 
 
 def test_personal_and_account_data_never_reach_the_sheets(tmp_path):

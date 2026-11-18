@@ -100,9 +100,9 @@ def _pages(pdf: Path):
 
 def appendix(report: dict, affected: dict | None, confirmations: dict | None, lang: str,
              business: str | None = None, todos: list[dict] | None = None, artifacts=None,
-             text_check=render.NOT_GIVEN) -> bytes:
+             text_check=render.NOT_GIVEN, previous: dict | None = None) -> bytes:
     """The XLSX appendix alone (the web app's "Ek (XLSX)" button): the skill writes the same file. `todos`: the team
     report's cards in this language (DECISIONS 322); `artifacts`: the audit's folder, for its Maya data (DECISIONS 352);
     `text_check`: the text check of the team report's data, None when it could not run (DECISIONS 353)."""
     return render.appendix_bytes(report, affected, confirmations, lang, business, todos=todos,
-                                 maya=render.maya_bundle(artifacts), text_check=text_check)[0]
+                                 maya=render.maya_bundle(artifacts), text_check=text_check, previous=previous)[0]

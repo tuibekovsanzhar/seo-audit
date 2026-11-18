@@ -187,6 +187,26 @@
    "step": "Boş <meta> etiketlerini kaldırın ya da doldurun",
    "summary": "Boş meta etiketleri"
   },
+  "sitemap without lastmod": {
+   "step": "Site haritasındaki adreslere gerçek güncelleme tarihini (lastmod) ekleyin",
+   "summary": "Site haritası lastmod"
+  },
+  "llms.txt encoding": {
+   "step": "llms.txt'yi charset=utf-8 ile ve BOM olmadan sunun",
+   "summary": "llms.txt kodlaması"
+  },
+  "robots directive in a comment": {
+   "step": "robots.txt'de yorum içine yazılmış kuralı yorum işareti olmadan yazın",
+   "summary": "Yorumdaki robots kuralı"
+  },
+  "FAQPage with fewer questions": {
+   "step": "FAQPage işaretlemesine sayfada görünen bütün soruları ekleyin",
+   "summary": "Eksik FAQPage soruları"
+  },
+  "h1 question without a section": {
+   "step": "H1'in sorduğu her soruya sayfada bir bölüm ve başlık ekleyin",
+   "summary": "H1 sorusunun bölümü"
+  },
   "parameters on links to other sites": {
    "step": "Dış bağlantılardaki izleme ve üye görünümü parametrelerini kaldırın",
    "summary": "Dış bağlantı parametreleri"
@@ -3310,6 +3330,18 @@
    ],
    "verify": "Rich Results Test'te her ilan sayfası hatasız bir JobPosting göstermeli.",
    "summary": "İş ilanı yapısal verisi"
+  },
+  "str3.article_org_author": {
+   "title": "Her makalenin arkasındaki kişiyi belirtin",
+   "finding": "Makalelerde yazar olarak yalnız kurum var",
+   "explanation": "Makaleyi yazan ya da gözden geçiren kişinin adını gösterin ve Article işaretlemesine author olarak ekleyin; kurum yayıncı olarak kalsın.",
+   "why": "Finans ve sağlık gibi konularda adı ve uzmanlığı belli bir kişi, motorların içeriğe ne kadar güveneceğini değerlendirdiği işaretlerden biridir.",
+   "steps": [
+    "Makaleyi yazan ya da gözden geçiren kişinin adını gösterin",
+    "Article işaretlemesine author olarak bir Person ekleyin"
+   ],
+   "verify": "Makalede bir kişi adı görünmeli; Rich Results Test'te Article'ın author'ı bir Person olmalı.",
+   "summary": "Makalede kişi yazar"
   },
   "str3.article_no_author": {
    "title": "Her makalenin yazarını belirtin",

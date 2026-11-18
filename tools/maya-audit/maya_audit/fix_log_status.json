@@ -1,0 +1,536 @@
+{
+ "rows": [
+  {
+   "no": 1,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-12",
+   "commit": "5a91953",
+   "decisions": "338, 339, 344"
+  },
+  {
+   "no": 2,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "4444527",
+   "decisions": "337"
+  },
+  {
+   "no": 3,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "fb4f070",
+   "decisions": "338"
+  },
+  {
+   "no": 4,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "ec46b7b",
+   "decisions": "338, 340"
+  },
+  {
+   "no": 5,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "fb4f070",
+   "decisions": "338"
+  },
+  {
+   "no": 6,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "fb4f070",
+   "decisions": "338"
+  },
+  {
+   "no": 7,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "fb4f070",
+   "decisions": "338"
+  },
+  {
+   "no": 8,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "ec46b7b",
+   "decisions": "338, 340"
+  },
+  {
+   "no": 9,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "fb4f070",
+   "decisions": "338"
+  },
+  {
+   "no": 10,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "ec46b7b",
+   "decisions": "340"
+  },
+  {
+   "no": 11,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "ec46b7b",
+   "decisions": "340"
+  },
+  {
+   "no": 12,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "ec46b7b",
+   "decisions": "340"
+  },
+  {
+   "no": 13,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "ec46b7b",
+   "decisions": "340"
+  },
+  {
+   "no": 14,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-11",
+   "commit": "ec46b7b",
+   "decisions": "340"
+  },
+  {
+   "no": 15,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-12",
+   "commit": "5a91953",
+   "decisions": "341, 344"
+  },
+  {
+   "no": 16,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-12",
+   "commit": "5a91953",
+   "decisions": "344"
+  },
+  {
+   "no": 17,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-13",
+   "commit": "3c5f9ea",
+   "decisions": "344, 345, 346"
+  },
+  {
+   "no": 18,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-17",
+   "commit": "b7b1f7c",
+   "decisions": "344, 347, 351"
+  },
+  {
+   "no": 19,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-12",
+   "commit": "5a91953",
+   "decisions": "344"
+  },
+  {
+   "no": 20,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-12",
+   "commit": "5687276",
+   "decisions": "343"
+  },
+  {
+   "no": 21,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-12",
+   "commit": "5a91953",
+   "decisions": "343, 344"
+  },
+  {
+   "no": 22,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-12",
+   "commit": "5687276",
+   "decisions": "343"
+  },
+  {
+   "no": 23,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-12",
+   "commit": "5687276",
+   "decisions": "343"
+  },
+  {
+   "no": 24,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-12",
+   "commit": "5687276",
+   "decisions": "343"
+  },
+  {
+   "no": 25,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "—",
+   "decisions": "363"
+  },
+  {
+   "no": 26,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-12",
+   "commit": "5a91953",
+   "decisions": "343, 344"
+  },
+  {
+   "no": 27,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-17",
+   "commit": "e21db34",
+   "decisions": "355"
+  },
+  {
+   "no": 28,
+   "durum": "Yeni tarama gerekli",
+   "tarih": "2026-11-09",
+   "commit": "c705e46",
+   "decisions": "327, 331"
+  },
+  {
+   "no": 29,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-03",
+   "commit": "5219b38",
+   "decisions": "304"
+  },
+  {
+   "no": 30,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "—",
+   "decisions": "363"
+  },
+  {
+   "no": 31,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-08",
+   "commit": "15eecb0",
+   "decisions": "327"
+  },
+  {
+   "no": 32,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "—",
+   "decisions": "363"
+  },
+  {
+   "no": 33,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "—",
+   "decisions": "363"
+  },
+  {
+   "no": 34,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "—",
+   "decisions": "363"
+  },
+  {
+   "no": 35,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "d1ef515",
+   "decisions": "352, 357, 362"
+  },
+  {
+   "no": 36,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "—",
+   "decisions": "363"
+  },
+  {
+   "no": 37,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "—",
+   "decisions": "363"
+  },
+  {
+   "no": 38,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-16",
+   "commit": "2af8d74",
+   "decisions": "347"
+  },
+  {
+   "no": 39,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-16",
+   "commit": "2af8d74",
+   "decisions": "347"
+  },
+  {
+   "no": 40,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-16",
+   "commit": "2af8d74",
+   "decisions": "347"
+  },
+  {
+   "no": 41,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "9c766e2",
+   "decisions": "347, 358"
+  },
+  {
+   "no": 42,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-16",
+   "commit": "2af8d74",
+   "decisions": "347"
+  },
+  {
+   "no": 43,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-16",
+   "commit": "417c3ec",
+   "decisions": "349"
+  },
+  {
+   "no": 44,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-16",
+   "commit": "417c3ec",
+   "decisions": "349"
+  },
+  {
+   "no": 45,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-16",
+   "commit": "f5d8066",
+   "decisions": "350"
+  },
+  {
+   "no": 46,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-16",
+   "commit": "f5d8066",
+   "decisions": "350"
+  },
+  {
+   "no": 47,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-17",
+   "commit": "8ca91d1",
+   "decisions": "351, 353"
+  },
+  {
+   "no": 48,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-17",
+   "commit": "b7b1f7c",
+   "decisions": "351"
+  },
+  {
+   "no": 49,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-17",
+   "commit": "20bfe15",
+   "decisions": "356"
+  },
+  {
+   "no": 50,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-17",
+   "commit": "90ecc55",
+   "decisions": "357"
+  },
+  {
+   "no": 51,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-17",
+   "commit": "90ecc55",
+   "decisions": "357"
+  },
+  {
+   "no": 52,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-17",
+   "commit": "90ecc55",
+   "decisions": "357"
+  },
+  {
+   "no": 53,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "9c766e2",
+   "decisions": "358, 363"
+  },
+  {
+   "no": 54,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "—",
+   "decisions": "363"
+  },
+  {
+   "no": 55,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "—",
+   "decisions": "363"
+  },
+  {
+   "no": 56,
+   "durum": "Yeni tarama gerekli",
+   "tarih": "2026-11-18",
+   "commit": "9c766e2",
+   "decisions": "358"
+  },
+  {
+   "no": 57,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "9c766e2",
+   "decisions": "358"
+  },
+  {
+   "no": 58,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "d1ef515",
+   "decisions": "358, 362"
+  },
+  {
+   "no": 59,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "d1ef515",
+   "decisions": "358, 362"
+  },
+  {
+   "no": 60,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "9c766e2",
+   "decisions": "358"
+  },
+  {
+   "no": 61,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "adf2478",
+   "decisions": "359"
+  },
+  {
+   "no": 62,
+   "durum": "Yeni tarama gerekli",
+   "tarih": "2026-11-18",
+   "commit": "adf2478",
+   "decisions": "359"
+  },
+  {
+   "no": 63,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "adf2478",
+   "decisions": "359"
+  },
+  {
+   "no": 64,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "adf2478",
+   "decisions": "359"
+  },
+  {
+   "no": 65,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "4d158c8",
+   "decisions": "360"
+  },
+  {
+   "no": 66,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "4d158c8",
+   "decisions": "360"
+  },
+  {
+   "no": 67,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "4d158c8",
+   "decisions": "360"
+  },
+  {
+   "no": 68,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "4d158c8",
+   "decisions": "360"
+  },
+  {
+   "no": 69,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "4d0307f",
+   "decisions": "360, 361"
+  },
+  {
+   "no": 70,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "4d0307f",
+   "decisions": "360, 361"
+  },
+  {
+   "no": 71,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "4d158c8",
+   "decisions": "360"
+  },
+  {
+   "no": 72,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "4d0307f",
+   "decisions": "361"
+  },
+  {
+   "no": 73,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "4d0307f",
+   "decisions": "361"
+  },
+  {
+   "no": 74,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "d1ef515",
+   "decisions": "362"
+  },
+  {
+   "no": 75,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "d1ef515",
+   "decisions": "362"
+  },
+  {
+   "no": 76,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "d1ef515",
+   "decisions": "362"
+  }
+ ]
+}

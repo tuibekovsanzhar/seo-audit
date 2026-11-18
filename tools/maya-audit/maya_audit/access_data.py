@@ -450,6 +450,7 @@ def collect_access_data(fetcher: Fetcher, result: CrawlResult, cfg: CrawlConfig)
             "error": response.error,
             "content_type": content_type,
             "bytes": len(response.body),
+            "bom": response.body.startswith(b"\xef\xbb\xbf"),  # DECISIONS 363: a UTF-8 byte-order mark first
             # Estimated: llms.txt files conventionally open with a Markdown H1.
             "looks_like_markdown": bool(readable and text.lstrip().startswith("# ")),
             # ACC-8 (DECISIONS 208): the first line that holds anything, and the Markdown links [text](url) of the file.

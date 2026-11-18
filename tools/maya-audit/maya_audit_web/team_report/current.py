@@ -188,7 +188,7 @@ def current(source: Path, affected_path: Path | None = None, *, folder: Path | N
         if _is_current(report, eng["fingerprint"]):
             # Written by an engine of the current schema: only what DECISIONS 309 reads from the saved data (the
             # platform a page reader's copies hide, the RND-6 label) can still change; without it, used as is.
-            new, changes = saved_data(report, affected, texts, business)
+            new, changes = saved_data(report, affected, texts, business, _saved_jsonld(source.parent))
             changes = crux_change + changes
             if not changes:
                 folder.mkdir(parents=True, exist_ok=True)

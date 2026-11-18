@@ -164,7 +164,8 @@ def test_appendix_xlsx_lists_every_finding_and_address_without_empty_columns():
     sheets = xlsx.read(data)
     assert list(sheets) == ["Nasıl okunur", "Özet", "Sayfa bazında", "Bulgu bazında",  # DECISIONS 322
                             "Kontrol listesi", "Kontrol listesi özeti",  # DECISIONS 342
-                            "Bulgular", "Etkilenen adresler", "Kilit sayfalar", "Şablonlar", "Kapsam", "Yöntem"]  # 315
+                            "Bulgular", "Etkilenen adresler", "Kilit sayfalar", "Şablonlar", "Kapsam", "Yöntem",  # 315
+                            "Düzeltme kaydı"]  # DECISIONS 363
     assert client_appendix.finding_ids(data) == {"A", "B"}
     assert len(sheets["Etkilenen adresler"]) == 1 + 3
     header = sheets["Bulgular"][0]

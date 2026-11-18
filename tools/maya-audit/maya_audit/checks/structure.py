@@ -736,6 +736,9 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
     # P4: a question-and-answer block whose questions are plain text (not headings, links, <summary> or <dt>).
     unmarked = [{"url": p.url, "questions": len(qs), "first_questions": qs[:3]}
                 for p in checked for qs in [questions_not_headings(p.analysis)] if qs and not narrative_questions(p.analysis)]
+    promised = [{"url": p.url, "h1": h, "unanswered": left} for p in checked for h, left in [h1_promise(p.analysis)] if left]
+    if promised:  # DECISIONS 363 (Efsa, enpara's dividend article): an <h1> question no section answers
+        observations.append({"metric": H1_PROMISE, "pages": len(promised), "examples": promised[:100]})
     if unmarked:
         observations.append({"metric": QUESTIONS_NOT_HEADINGS, "pages": len(unmarked), "examples": unmarked[:200],  # every page (338)
                              "note": "Mark each question as a heading (<h3>) or an accordion's <summary>, so a reader "
@@ -922,6 +925,30 @@ NO_SUBHEADINGS_NOTE = ("No <h2>-<h6> tag, and no element marked or styled as a s
                        "listing page (a category or index of links) is left out (DECISIONS 338).")
 LISTING_PAGE_TYPES = ("category",)
 QUESTIONS_NOT_HEADINGS = "pages whose question-and-answer block writes its questions as plain text"
+H1_PROMISE = "pages whose <h1> asks a question no section heading answers"
+# Question words left out when an <h1> question is matched to the section headings (Turkish and English).
+_QUESTION_WORDS = frozenset({"nedir", "nasil", "ne", "neden", "nicin", "hangi", "kim", "kac", "nerede", "mi", "mu", "midir",
+                             "mudur", "ve", "ile", "icin", "bir", "what", "how", "why", "which", "who", "is", "are", "do",
+                             "does", "can", "the", "a", "an", "to", "of", "and", "for", "in"})
+
+
+def h1_promise(analysis: dict) -> tuple[str | None, list[str]]:
+    """DECISIONS 363: (the <h1>, its questions no <h2>/<h3> answers) when the <h1> asks two questions or more
+    ("Temettü nedir? Nasıl alınır?"); a question is answered when a section heading holds the start (4 letters) of each
+    of its words that are not question words. ([], when it asks fewer than two.)"""
+    h1 = next((h.get("text") or "" for h in analysis.get("headings") or [] if h.get("level") == 1 and (h.get("text") or "").strip()), "")
+    parts = [q.strip() for q in re.split(r"\?", h1) if q.strip()]
+    if h1.count("?") < 2 or len(parts) < 2:
+        return h1 or None, []
+    sections = " ".join(fold(h.get("text") or "") for h in analysis.get("headings") or [] if h.get("level") in (2, 3))
+    words_of = lambda q: [w for w in re.findall(r"[^\W\d_]+", fold(q)) if w not in _QUESTION_WORDS and len(w) > 2]  # noqa: E731
+    first = set(words_of(parts[0]))
+    left = []
+    for q in parts[1:]:
+        own = [w for w in words_of(q) if w not in first] or words_of(q)  # the topic named once in the first question
+        if own and not all(re.search(r"(?<![a-z])" + re.escape(w[:4]), sections) for w in own):
+            left.append(q + "?")
+    return h1, left
 QA_MIN_PAIRS = 3
 QA_QUESTION_MAX_CHARS = 200
 QA_ANSWER_MIN_CHARS = 20
@@ -959,6 +986,7 @@ def _qa_run(analysis: dict) -> list[int]:
 FAQ_SECTION = re.compile(r"s[ıi]k(?:[çc]a)?\s+sorulan|\bs\.?\s?s\.?\s?s\b\.?|\bfaq|frequently\s+asked|merak\s+edil|"
                          r"soru(?:lar)?\s*(?:ve|&|-|/)\s*cevap|questions?\s*(?:and|&)\s*answers?|\bq\s*&\s*a\b|preguntas\s+frecuentes|"
                          r"h[äa]ufig\s+gestellte|questions\s+fr[ée]quentes", re.I)
+FAQ_SHORT = "pages whose FAQPage markup holds fewer questions than the page shows"
 QA_CONTAINER_NOTE = ("Suggested only for a real question-and-answer block: questions that open and close their answers (an "
                      "accordion) or a run under a heading that names an FAQ; question-shaped headings or paragraphs in an "
                      "ordinary section are not one (DECISIONS 340).")
@@ -1101,6 +1129,7 @@ def str3_structured_data(result: CrawlResult, cfg: CrawlConfig, pages: list, key
     home_page = next((p for p in pages if p.url == home), None)
     template = product_template(pages, home)
     maybe_products, videos, qa_pages, crumb_pages, invalid_values = [], [], [], [], []
+    faq_short: list[dict] = []
     started = getattr(result, "started_at", None)
     audit_day = datetime.fromisoformat(started).astimezone(timezone.utc).date() if started else None
     for p in pages:
@@ -1132,6 +1161,9 @@ def str3_structured_data(result: CrawlResult, cfg: CrawlConfig, pages: list, key
         if questions and container and not ({"FAQPage", "QAPage"} & (_types(a) | recovered)):
             qa_pages.append({"url": p.url, "questions": len(questions), "first_questions": questions[:3],
                              "qa_container": container, "types_found": sd["types"]})
+        elif questions and container and sd.get("faq_questions") and sd["faq_questions"] < len(questions):
+            # DECISIONS 363 (Efsa, enpara): the FAQPage holds fewer questions than the block shows
+            faq_short.append({"url": p.url, "shown": len(questions), "marked": sd["faq_questions"]})
         trail = (a.get("breadcrumbs") or [None])[0]
         if trail and "BreadcrumbList" not in _types(a) | recovered:
             crumb_pages.append({"url": p.url, "trail": trail["text"], "links": trail["links"], "types_found": sd["types"]})
@@ -1320,6 +1352,8 @@ def str3_structured_data(result: CrawlResult, cfg: CrawlConfig, pages: list, key
             {"items": graph["type_clash"][:40]}, "one @id, one kind of thing",
             "Use one @id per entity and give it the same type everywhere.", key_urls))
     summary = f"{len(findings)} finding(s)." if findings else "Structured data parses, the homepage has Organization, and required properties are present."
+    if faq_short:
+        observations = list(observations or []) + [{"metric": FAQ_SHORT, "pages": len(faq_short), "examples": faq_short[:20]}]
     return CheckResult("STR-3", title, _status(findings), summary, findings,
                        {"pages_checked": len(pages), "types_seen": dict(type_counts.most_common(40)),
                         "graph": {"dangling_references": len(graph["dangling"]), "type_clashes": len(graph["type_clash"]),

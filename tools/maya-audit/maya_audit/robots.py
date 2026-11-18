@@ -37,6 +37,12 @@ class RobotsTxt:
     # Rules (Allow, Disallow, Crawl-delay) written before any User-agent line: (line number, the line as written).
     # RFC 9309 ties a rule to the group above it, so these belong to no group and no crawler applies them (ACC-1).
     ungrouped: list[tuple[int, str]] = field(default_factory=list)
+    # DECISIONS 363: a directive written inside a comment ("# Content-Signal: search=yes"): no crawler reads it.
+    commented: list[tuple[int, str]] = field(default_factory=list)
+
+
+# DECISIONS 363: the directives a comment line may hold by mistake (Content-Signal is Cloudflare's proposed one)
+COMMENTED_DIRECTIVE = __import__("re").compile(r"^#+\s*(content-signal|user-agent|disallow|allow|sitemap|crawl-delay)\s*:", __import__("re").I)
 
 
 @dataclass(frozen=True)
@@ -69,9 +75,12 @@ def parse_robots(text: str) -> RobotsTxt:
     current: Group | None = None
     in_agent_run = False
 
+    commented: list[tuple[int, str]] = []
     for number, raw in enumerate(text.splitlines(), start=1):
         line = raw.split("#", 1)[0].strip()
         if not line:
+            if COMMENTED_DIRECTIVE.match(raw.strip()) and len(commented) < 20:
+                commented.append((number, raw.strip()[:200]))
             continue
         if ":" not in line:
             invalid.append(number)
@@ -109,7 +118,7 @@ def parse_robots(text: str) -> RobotsTxt:
             sitemaps.append((value, number))
         # Unknown keys are ignored and do not end an agent run.
 
-    return RobotsTxt(groups=groups, sitemaps=sitemaps, invalid_lines=invalid, ungrouped=ungrouped)
+    return RobotsTxt(groups=groups, sitemaps=sitemaps, invalid_lines=invalid, ungrouped=ungrouped, commented=commented)
 
 
 _PCT = re.compile(r"%([0-9A-Fa-f]{2})")

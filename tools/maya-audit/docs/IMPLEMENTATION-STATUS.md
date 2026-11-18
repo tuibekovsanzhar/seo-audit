@@ -2533,7 +2533,7 @@ VERIFIED; pushed as `4d158c8` (`adf2478..4d158c8`, full suite `3534 passed, 4 sk
 
 ## The MMI re-check: platform advice and the Ek as the PDF (DECISIONS 361, 2026-11-18)
 
-VERIFIED locally; not pushed.
+VERIFIED; pushed with `d1ef515` (`4d158c8..d1ef515`, full suite `3543 passed, 4 skipped` before the push), CI run 44314452104 success.
 
 | Saved audit (scratch copy) | Before (`4d158c8`) | After |
 |---|---|---|
@@ -2554,7 +2554,7 @@ VERIFIED locally; not pushed.
 
 ## The MMI Ek with Maya data: the brand's former name, unrelated uploads, prompt categories (DECISIONS 362, 2026-11-18)
 
-VERIFIED locally; not pushed. `maya_data.VERSION` 4.
+VERIFIED; pushed with `d1ef515` (`4d158c8..d1ef515`, full suite `3543 passed, 4 skipped` before the push), CI run 44314452104 success. `maya_data.VERSION` 4.
 
 | "Rakip - Konu" (scratch copies) | Before (`4d0307f`) | After |
 |---|---|---|
@@ -2570,4 +2570,29 @@ VERIFIED locally; not pushed. `maya_data.VERSION` 4.
 | fast suite | `3408 passed, 4 skipped, 135 deselected, 1 warning in 558.12s (0:09:18)` |
 | full suite | `3543 passed, 4 skipped, 1 warning in 982.35s (0:16:22)` |
 | `ruff --select E9,F821,F841` (source folders) | `All checks passed!` |
-| Push | NOT DONE (owner: don't push); `4d0307f` (DECISIONS 361) is not pushed either |
+| Push | done with `d1ef515` |
+
+## The review fix log and the SEO team's gaps (DECISIONS 363, 2026-11-18)
+
+VERIFIED locally; not pushed. `maya_audit/fix_log.json` (76 items), `fix_log_status.json`, `tools/fix_log.py`; every Turkish
+Ek gets "Düzeltme kaydı" (and "Önceki denetimden değişenler" when the site has a previous audit).
+
+| Newest audit per domain (rebuilt from copies, 2026-11-18) | Items | Düzeltildi | Yeni tarama gerekli |
+|---|---|---|---|
+| Enpara fee70191 (11 Nov) | 37 | 36 | 1 (a JavaScript page not in the sample) |
+| Atasun Optik f06a2129 (16 Nov) | 5 | 5 | 0 |
+| Nature's Garden 342a0b14 (16 Nov) | 2 | 2 | 0 |
+| İş Bankası 1b81bee4 (16 Nov) | 4 | 4 | 0 |
+| Ticimax c77ebf6d (17 Nov) | 7 | 7 | 0 |
+| Carpex 1fd871f0 (18 Nov) | 9 | 7 | 2 (pages read twice; the 32-page crawl) |
+| MMI 536b4b64 (16 Nov) | 12 | 12 | 0 |
+| Total | 76 | 73 | 3 (Hâlâ var 0, Kısmen 0) |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_fix_log_363.py` | `15 passed` |
+| `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt, text check PASS in all; 10 test files named by items passed |
+| fast suite | `3423 passed, 4 skipped, 135 deselected, 1 warning in 555.15s (0:09:15)` |
+| full suite | `3558 passed, 4 skipped, 1 warning in 979.41s (0:16:19)` |
+| `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

@@ -224,6 +224,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"pricing page\(s\) show prices with no Offer markup", "developer", "S", "Offer markup tells engines plainly what each plan costs and in which currency, so the price they show is the page's own."),  # DECISIONS 356
         (r"carry Product or AggregateRating markup", "developer", "S", "Product ratings on an article break Google's structured data rules, and the site's rich results can be lost."),  # DECISIONS 343
         # The checklist's quick checks (DECISIONS 304).
+        (r"name only an organization as author", "content", "S", "On finance and health topics a named, qualified person behind an article is one of the signals engines use to judge how far to trust it."),
         (r"name no author", "content", "S", "A named author with a page of their own is one of the signals engines use to judge who stands behind advice and how far to trust it."),
         (r"Product markup without a GTIN or MPN", "developer", "S", "A GTIN or MPN lets Google match the product to the same item elsewhere, which its shopping results and merchant listings rely on."),
         (r"Organization block does not parse", "developer", "S", "A block that does not parse is ignored whole, so the Organization it describes is not read at all."),
