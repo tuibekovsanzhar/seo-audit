@@ -95,6 +95,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         (r"canonical that redirects to another address", "seo", "S", "A canonical should name the final address; a redirecting one makes engines follow an extra step and weakens the signal."),
         (r"conflicting canonicals", "seo", "S", "Two different canonical signals leave the engine to choose, and it may choose neither."),
         (r"canonical on another site", "seo", "S", "A canonical pointing at another site tells engines to credit that site for this page's content."),
+        (r"answer with their content instead of redirecting", "developer", "S", "The same page opens at two addresses, so engines see two copies and may index the one the site does not prefer."),
         (r"http:// or www variant", "seo", "S", "A canonical on the http:// or www version of the site names an address the site does not serve the page at, so engines get a second, weaker address for it."),
         (r"noindex and declare a canonical", "seo", "S", "noindex says to leave the page out; a canonical to another page says to fold it into that one. Together they are mixed signals, and the engine chooses."),
     ),

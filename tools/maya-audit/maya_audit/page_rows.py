@@ -538,7 +538,14 @@ def page_kind_of(rec: dict) -> str | None:
     """DECISIONS 350: a page's type as the rows show it: the business profile's type when one applies (as the sampling
     and the key pages use it), the general page type for a page the profile did not match or with no profile."""
     biz = rec.get("business_page_type")
-    return biz if biz and biz != "other" else rec.get("page_type")
+    if biz and biz != "other":
+        return biz
+    # DECISIONS 359: a contact, about or references page the profile has no type for is named as one, not "diğer"
+    from .page_groups import BASIC_BASIS
+    basis = str(rec.get("page_type_basis") or "")
+    if rec.get("page_type") == "other" and basis.startswith(BASIC_BASIS + " ("):
+        return "basic_" + basis[len(BASIC_BASIS) + 2:].split(":")[0]
+    return rec.get("page_type")
 
 
 def type_word(kind: str | None, lang: str, profile_id: str | None, generic: dict) -> str:

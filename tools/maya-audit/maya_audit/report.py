@@ -2155,13 +2155,14 @@ def _fully_listed(same: list[Any]) -> bool:
 
 def group_pages(same: list[Any]) -> int | str:
     """How many pages a card's findings are on: "site-wide" for a site-wide one; the distinct pages when every finding
-    lists all of its own, else the larger of the pages named and the findings' counts added up."""
+    lists all of its own, else the larger of the pages named and the largest count (DECISIONS 359: never the counts
+    added up, which counts a page two findings share twice; at least that many)."""
     if any(f.scope.get("kind") == "sitewide" for f in same):
         return "site-wide"
     named = set(url for f in same for url in _urls(f))
     if _fully_listed(same):
         return len(named)
-    return max(len(named), sum(int(f.scope.get("count") or 0) for f in same))
+    return max([len(named)] + [int(f.scope.get("count") or 0) for f in same])
 
 
 def _pages_label(pages: int | str) -> str:

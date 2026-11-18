@@ -210,6 +210,12 @@ def engine_sentences():
 # A fix or an expected result the engine puts together at run time: (check id, kind, the source expression) -> the
 # sentences it can produce, as the engine writes them. A new place fails the test until it is listed here.
 BUILT = {
+    # DECISIONS 359: the twin address's copies name both hosts
+    ("IDX-4", "fix", "TWIN_SERVED_FIX.format(old=old_host, new=new_host)"): [
+        "Redirect every address on shop.test to the same address on www.shop.test with a permanent redirect (at the server, "
+        "the CDN or the platform's domain setting), so each page answers at one address only."],
+    ("IDX-4", "expected", "f'every address on {old_host} redirects permanently to the same address on {new_host}'"): [
+        "every address on shop.test redirects permanently to the same address on www.shop.test"],
     # DECISIONS 351: the alias-links fix is the general one, or Shopify's step on a Shopify site
     ("IDX-6", "fix", "alias_fix(platform, targets)"): [__import__("maya_audit.checks.quick_rules", fromlist=["x"]).ALIAS_LINKS_FIX,
                                                        __import__("maya_audit.checks.quick_rules", fromlist=["x"]).ALIAS_LINKS_FIX_SHOPIFY],

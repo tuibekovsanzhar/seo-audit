@@ -179,7 +179,7 @@ def test_the_grouping_is_written_per_page_in_report_json_under_schema_1_23():
                          "inlinks", "click_depth", "click_depth_basis", "importance", "importance_parts"}
     missing = pages[SHOP + "/nowhere"]["grouping"] if SHOP + "/nowhere" in pages else {"not_scored": "x"}
     assert "importance" not in missing
-    assert report["crawl"]["page_grouping"]["method_version"] == 6  # DECISIONS 347, 350, 351, 358
+    assert report["crawl"]["page_grouping"]["method_version"] == 7  # DECISIONS 347, 350, 351, 358, 359
     json.dumps(report)  # plain JSON
 
 

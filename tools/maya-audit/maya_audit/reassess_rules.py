@@ -850,6 +850,77 @@ def _decisions_356(report: dict, affected: dict, changes: list[str], saved_texts
                 changes.append(f"{record['id']}: {record['title']} ({record['severity']}; DECISIONS 356, {profile})")
 
 
+def _decisions_359(report: dict, affected: dict, changes: list[str]) -> None:
+    """DECISIONS 359: after a move to the twin address (`crawl.host_moves`), the pages the earlier address answered with
+    their content instead of redirecting are one card (`idx4.twin_served`), recorded as the move's copies, and no longer
+    told again as canonicals on the www variant. Offline, from the saved page records; the other findings keep their
+    counts until a new crawl reads each page once."""
+    from .checks.index import INDEX_ENGINES, TWIN_SERVED_FIX, twin_served
+    from .findings import Finding, Severity, scope_for
+    from .launch_gate import items_of
+    from .models import Confidence, to_jsonable
+    from .urls import origin_of
+    crawl = report.get("crawl") or {}
+    moves = [m for m in crawl.get("host_moves") or [] if isinstance(m, dict)]
+    if not moves:
+        return
+    pages = [p for p in crawl.get("pages") or [] if isinstance(p, dict)]
+    for move in moves:
+        if move.get("copies") is not None:
+            continue
+        old = str(move.get("from") or "")
+        copies = []
+        for p in pages:
+            status = p.get("status")
+            if (origin_of(p.get("url") or "") == old and p.get("discovered_via") != "start" and isinstance(status, int)
+                    and 200 <= status < 300 and "html" in str(p.get("content_type") or "").lower()):
+                path = (p["url"][len(old):] or "/")
+                copies.append({"url": p["url"], "status": status,
+                               "canonical": next(iter(((p.get("analysis") or {}).get("canonicals") or [])), None),
+                               "twin": str(move.get("to") or "") + path})
+        move["copies"] = copies
+    rows = twin_served(moves, pages)
+    checks = {c.get("check_id"): c for c in report.get("checks") or []}
+    check = checks.get("IDX-4")
+    if not rows or check is None or check.get("status") == "not_assessed":
+        return
+    served = {r["url"] for r in rows}
+    for f in list(check.get("findings") or []):
+        if f.get("rule_id") == "idx4.twin_served":
+            check["findings"].remove(f)
+            affected.pop(f.get("id"), None)
+        elif f.get("rule_id") == "idx4.variant":
+            left = [r for r in (f.get("evidence") or {}).get("pages") or [] if r.get("url") not in served]
+            urls = [u for u in affected.get(f.get("id")) or (f.get("scope") or {}).get("urls") or [] if u not in served]
+            if not urls:
+                check["findings"].remove(f)
+                affected.pop(f.get("id"), None)
+                changes.append(f"{f.get('id')}: removed, its pages are the twin address's copies (DECISIONS 359)")
+            else:
+                f["evidence"]["pages"] = left
+                f["scope"] = {**f.get("scope", {}), "urls": urls[:25], "count": len(urls)}
+                f["title"] = f"{len(urls)} page(s) declare a canonical on the http:// or www variant of this site"
+                affected[f["id"]] = urls
+    from urllib.parse import urlsplit
+    urls = [r["url"] for r in rows]
+    old_host, new_host = urlsplit(rows[0]["from"]).hostname, urlsplit(str(rows[0]["to"])).hostname
+    finding = Finding(
+        "IDX-4", f"{len(urls)} page(s) on {old_host} answer with their content instead of redirecting to {new_host}",
+        Severity.S3, Confidence.VERIFIED, "Documented (Google: one address per page; redirect duplicates)",
+        INDEX_ENGINES, scope_for(urls), {"pages": rows[:40], "from": rows[0]["from"], "to": rows[0]["to"]},
+        f"every address on {old_host} redirects permanently to the same address on {new_host}",
+        TWIN_SERVED_FIX.format(old=old_host, new=new_host),
+        notes=["Most addresses on this host redirect; these answered with the page instead, so the same page has two "
+               "addresses. In this saved audit both copies were read; a new crawl reads each page once."])
+    finding.launch_gated = items_of("IDX-4", finding)[0]
+    record = to_jsonable(finding)
+    check.setdefault("findings", []).append(record)
+    if check.get("status") == "pass":
+        check["status"] = "findings"
+    affected[record["id"]] = urls
+    changes.append(f"{record['id']}: {record['title']} (S3; DECISIONS 359)")
+
+
 def _decisions_351(report: dict, changes: list[str]) -> None:
     """DECISIONS 351: a saved `idx6.alias_links` finding gives Shopify's step only on a Shopify site."""
     from .checks.quick_rules import ALIAS_LINKS_FIX_SHOPIFY, alias_fix
@@ -1181,6 +1252,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_351(r, changes)  # DECISIONS 351: Shopify's step only on a Shopify site
     _decisions_343(r, aff, changes, quick_unassessed)  # DECISIONS 343, 344: replaces what _decisions_304 added
     _decisions_356(r, aff, changes, saved_texts, business, quick_unassessed)  # DECISIONS 356: the profile's checks
+    _decisions_359(r, aff, changes)  # DECISIONS 359: the twin address's copies are one card
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -1234,6 +1306,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_351(r, cert)  # DECISIONS 351: Shopify's step only on a Shopify site
         _decisions_343(r, affected, cert)
         _decisions_356(r, affected, cert, saved_texts, business)  # DECISIONS 356: the business profile's own checks
+        _decisions_359(r, affected, cert)  # DECISIONS 359: the twin address's copies are one card
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

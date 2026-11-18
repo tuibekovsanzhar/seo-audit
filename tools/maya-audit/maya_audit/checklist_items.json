@@ -849,6 +849,7 @@
    "rules": [
     "idx4.different",
     "idx4.same",
+    "idx4.twin_served",
     "idx4.variant",
     "idx8.self_canonical_copies",
     "idx8.form_step_copies"

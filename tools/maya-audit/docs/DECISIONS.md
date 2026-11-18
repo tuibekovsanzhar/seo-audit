@@ -5337,3 +5337,43 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Tests: `tests/test_carpex_review_358.py` (11; mock-transport shop, fake exports, the web app with a fake fetcher).
      *Tests changed:* the schema and grouping version pins (1.33, method 6; the frozen-shape list gains `host_moves`), and
      `test_crux_coverage_334` now expects "bulunan her adres istendi" for a Smart audit that left nothing known unread.
+
+359. **The review of the Carpex re-audit (Owner, 2026-11-18, reviewing 1fd871f0: Smart, E-ticaret, 149 of 150 read,
+     downloaded as a draft; the word lists and wording are agent defaults).** Global for every audit; Carpex was only
+     the test case.
+     1. *A merged card counts the union of its findings, never their counts added up.* Card 14 ("og:site_name değerini
+     yalnız site adı yapın" with "Marka adı 3 farklı biçimde") said "105 sayfa": `str5.names` counts 94 pages but lists
+     only 5 examples, so the card added the counts (11 + 94), a number in neither finding (not stale data from the
+     32-page crawl), and RG-18 blocked the download. Now a merged card's scope is the union of its findings' addresses
+     when each lists all of its own; otherwise the larger of that union and the biggest count, said as "en az 94 sayfa"
+     / "at least 94 pages" (`scope_at_least`). The engine's own card count (`report.group_pages`) takes the same lower
+     bound.
+     2. *The site's earlier address serving pages itself is one card, and each page is read once.* After the crawl moved
+     to www (DECISIONS 358), 75 bare addresses redirected but 20 answered 200 with their content (each naming its www
+     address as canonical): the bare host really serves pages, inconsistently. That is a site problem, now one card,
+     `idx4.twin_served` (IDX-4, S3, "N page(s) on <bare> answer with their content instead of redirecting to <www>",
+     with the start page when it was one of them; "Sitenin diğer adresini ana adrese yönlendirin"), and those pages are
+     no longer told again as "canonical on the www variant" (`idx4.variant`). In a new crawl such a page, met after the
+     move or read before it (the start page aside), keeps only its status and canonical (`crawl.host_moves[].copies`),
+     is not a page read nor counted against the limit, and the same address on www is read instead. A saved audit gets
+     the card offline from its page records (`reassess_rules._decisions_359`); its other findings keep counting both
+     copies until a new crawl.
+     3. *Contact, about and references pages are never categories.* /bize-ulasin- and /referanslarimiz link to 12 product
+     pages in a block of Ticimax's template, so the "links to item addresses" rule made them categories. A page whose
+     address's last segment names a contact or about page (STR-21's words) or a references or trust page (referans,
+     referanslarimiz, references, müşterilerimiz, sertifikalar, …) keeps the general type "other" and is never lent a
+     category by its template (`page_groups.basic_page`, `METHOD_VERSION` 7). A profile with such a type (SaaS's
+     references; Güvenlik, Ev hizmetleri and Restoran's contact) takes it; otherwise the rows name it "iletişim sayfası",
+     "hakkımızda sayfası" or "referans / güven sayfası", not "diğer" (`page_rows.page_kind_of`).
+     4. *Raw topic keys are shown readably.* A topic that is a slug ("makine-bakim-enerji") is shown as words with a
+     capital first letter, each word spelt as the topic's prompts (then all prompts) spell it, so "bakim" is "bakım";
+     a word no prompt spells keeps its letters ("koku secimi"); a Maya label with the same key is used as it is. The key
+     stays the topic's identity (Topic Pulse joins on it).
+     *Carpex 1fd871f0 before -> after* (scratch copies of the saved audit; 9c766e2 vs this build): text check
+     "Taslak" (RG-18: card 14 "105 sayfa") -> "Geçti", card 14 "en az 94 sayfa"; a new card 3 "Sitenin diğer adresini
+     ana adrese yönlendirin" (20 sayfa; the bare homepage and 19 pages), `idx4.variant` (the same 20) gone;
+     /referanslarimiz and /bize-ulasin- "kategori" -> "referans / güven sayfası" and "iletişim sayfası"; topics
+     "makine-bakim-enerji", "kartus-maliyet", "rakip-karsilastirma" -> "Makine bakım enerji", "Kartuş maliyet", "Rakip
+     karşılaştırma". Reading each page once needs a new crawl (NOT RUN).
+     Tests: `tests/test_carpex_rerun_359.py` (6; a mock-transport shop, made-up records); the grouping version pins
+     (method 7).

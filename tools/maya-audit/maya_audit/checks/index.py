@@ -765,6 +765,29 @@ def _resolve_target(target: str, result: CrawlResult, data: IndexData) -> tuple[
 CANONICAL_REDIRECT_DOC = ("Documented (Google: rel=canonical should name the preferred, final URL; a redirecting "
                           "target is a mixed signal)")
 VARIANT_CANONICAL_FIX = "Write the canonical with the address the page is served at: its https:// scheme and its own host."
+TWIN_SERVED_FIX = ("Redirect every address on {old} to the same address on {new} with a permanent redirect (at the server, "
+                   "the CDN or the platform's domain setting), so each page answers at one address only.")
+
+
+def twin_served(host_moves: list | None, pages: list) -> list[dict]:
+    """DECISIONS 359: the pages the site's earlier address answered with their content instead of redirecting to the
+    address the crawl moved to (`crawl.host_moves[].copies`), and the start page when it was one of them. `pages`: page
+    records (PageFetch or saved dicts) for the start page's answer."""
+    rows = []
+    for move in host_moves or []:
+        if not isinstance(move, dict):
+            continue
+        old = str(move.get("from") or "")
+        for p in pages:
+            get = (lambda k, p=p: p.get(k)) if isinstance(p, dict) else (lambda k, p=p: getattr(p, k, None))
+            status = get("status")
+            if (get("discovered_via") == "start" and isinstance(status, int) and 200 <= status < 300
+                    and (get("url") or "").startswith(old + "/")):
+                canon = next(iter(((get("analysis") or {}).get("canonicals") or [])), None)
+                if canon and same_origin(canon, str(move.get("to") or "")):
+                    rows.append({"url": get("url"), "status": status, "canonical": canon, "from": old, "to": move.get("to")})
+        rows += [{**c, "from": old, "to": move.get("to")} for c in move.get("copies") or [] if isinstance(c, dict)]
+    return rows
 MIXED_SIGNALS_FIX = ("Keep the canonical and remove noindex to fold the page into its target, or keep noindex and make "
                      "the page self-canonical.")
 
@@ -876,6 +899,9 @@ def idx4_canonicals(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
             "the canonical names the final address, not one that redirects",
             "Write the address the redirect ends at as the canonical.", importance_tier=_tier(urls, key_urls),
             notes=["The content of the address the redirect ends at is still compared below (same or different)."]))
+    copies = twin_served(getattr(result, "host_moves", None), result.pages)
+    served = {r["url"] for r in copies}
+    variant = [r for r in variant if r["url"] not in served]  # DECISIONS 359: said once, by the card below
     if variant:
         urls = [r["url"] for r in variant]
         findings.append(Finding(
@@ -886,6 +912,17 @@ def idx4_canonicals(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
             importance_tier=_tier(urls, key_urls),
             notes=["Each canonical was judged as the same address on the audited scheme and host (`judged_as`); a page "
                    "whose canonical is its own address on the variant counts as self-canonical in every other check."]))
+    if copies:  # DECISIONS 359: the site's other address serves pages itself instead of redirecting: one card
+        urls = [r["url"] for r in copies]
+        old_host, new_host = urlsplit(copies[0]["from"]).hostname, urlsplit(str(copies[0]["to"])).hostname
+        findings.append(Finding(
+            "IDX-4", f"{len(urls)} page(s) on {old_host} answer with their content instead of redirecting to {new_host}",
+            Severity.S3, Confidence.VERIFIED, "Documented (Google: one address per page; redirect duplicates)", INDEX_ENGINES,
+            scope_for(urls), {"pages": copies[:40], "from": copies[0]["from"], "to": copies[0]["to"]},
+            f"every address on {old_host} redirects permanently to the same address on {new_host}",
+            TWIN_SERVED_FIX.format(old=old_host, new=new_host), importance_tier=_tier(urls, key_urls),
+            notes=["Most addresses on this host redirect; these answered with the page instead, so the same page has two "
+                   "addresses. Each was read once, at the address the crawl moved to."]))
     if mixed:
         urls = [r["url"] for r in mixed]
         findings.append(Finding(

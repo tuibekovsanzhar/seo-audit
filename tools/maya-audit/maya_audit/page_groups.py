@@ -42,7 +42,13 @@ from .page_words import ARTICLE_FOLDERS, CATEGORY_WORDS, PRODUCT_FOLDERS, fold
 # markup, and no product, offer or service markup. 5 (DECISIONS 351): CMS edit and preview addresses are not pages.
 # 6 (DECISIONS 358): a page with its own Product markup (not inside a list) with an Offer, or with og:type=product and a buy
 # control of its own, is a product even when Product markup and og:type=product are on most pages (carpexonline.com).
-METHOD_VERSION = 6
+# 7 (DECISIONS 359): a contact, about or references page (by its address) is never a category, whatever product links a
+# shop's template puts beside it.
+METHOD_VERSION = 7
+# DECISIONS 359: the words of a references or trust page's address (agent default); contact and about words are STR-21's.
+TRUST_WORDS = ("referans", "referanslar", "referanslarimiz", "references", "referenzen", "musterilerimiz", "musteri-yorumlari",
+               "sertifikalar", "sertifikalarimiz", "belgelerimiz", "odullerimiz", "basinda-biz", "testimonials")
+BASIC_BASIS = "a contact, about or references page"
 PAGE_TYPES = ("home", "category", "product", "blog_article", "location", "policy", "utility", "other")
 
 # -- URL pattern ---------------------------------------------------------------------------------------------------
@@ -288,6 +294,23 @@ def og_default(read) -> str | None:
     return top if n >= OG_DEFAULT_MIN and n / len(read) >= OG_DEFAULT_SHARE else None
 
 
+def basic_page(url: str) -> str | None:
+    """DECISIONS 359: "contact", "about" or "references" when the address's last segment names such a page
+    (/bize-ulasin-, /iletisim, /hakkimizda, /referanslarimiz), else None."""
+    from .page_words import BASIC_PAGE_STEMS, BASIC_PAGES
+    segs = [fold(x) for x in _segments(url) if not is_locale(fold(x))]
+    if not segs:
+        return None
+    last = segs[-1].strip("-_")
+    for kind, words in (("contact", BASIC_PAGES["Contact"]), ("about", BASIC_PAGES["About"]), ("references", TRUST_WORDS)):
+        if last in words:
+            return kind
+    for kind, stems in (("contact", BASIC_PAGE_STEMS["Contact"]), ("about", BASIC_PAGE_STEMS["About"])):
+        if any(last.startswith(stem) and last[len(stem):].isalpha() for stem in stems if stem not in ("sube",)):
+            return kind
+    return None
+
+
 def own_item(page) -> str | None:
     """DECISIONS 358: why a page shows one product of its own, whatever the site puts on every page: Product markup that is
     not inside a list and carries an Offer, or og:type=product with a buy control of its own on a page that is not a
@@ -341,6 +364,9 @@ def page_type(page, home: str, homes: set[str], products: dict, site_og: str | N
     if nested:
         # Shopify's /collections/<c>/products/<p>: a product shown inside a collection (STR-3's rule, DECISIONS 298).
         return "product", nested
+    basic = basic_page(page.url)
+    if basic:  # DECISIONS 359: never a category for the product links its template carries
+        return "other", f"{BASIC_BASIS} ({basic}: /{body[-1] if body else ''})"
     if len(body) >= 2 and body[0] in ARTICLE_FOLDERS_GROUPING and not set(body) & CATEGORY_WORDS and (
             len(body) >= 3 or body[0] in ARTICLE_FOLDERS):
         return "blog_article", f"path /{body[0]}/…"
@@ -623,7 +649,9 @@ def refine_types(read, types: dict[str, tuple[str, str]], keys: dict[str, str], 
             by_key[keys[url]][kind] += 1
     pages_by_url = {p.url: p for p in read}
     site_items = any(_item_links(p) for p in read)  # the site's listings link to item addresses
-    for url, (kind, _) in list(types.items()):
+    for url, (kind, why) in list(types.items()):
+        if kind == "other" and why.startswith(BASIC_BASIS):  # DECISIONS 359: a contact, about or references page
+            continue
         if kind == "other" and by_key[keys[url]]:
             top, n = by_key[keys[url]].most_common(1)[0]
             total = sum(by_key[keys[url]].values())
@@ -639,8 +667,8 @@ def refine_types(read, types: dict[str, tuple[str, str]], keys: dict[str, str], 
         if kind in ("blog_article", "product"):
             pattern_type[patterns.get(url, "/")][kind] += 1
     by_url = {p.url: p for p in read}
-    for url, (kind, _) in list(types.items()):
-        if kind != "other":
+    for url, (kind, why) in list(types.items()):
+        if kind != "other" or why.startswith(BASIC_BASIS):
             continue
         page = by_url[url]
         listed = Counter()

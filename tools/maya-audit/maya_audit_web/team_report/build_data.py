@@ -1381,10 +1381,15 @@ class Builder:
         # The full address list when the report has one (affected-urls.json); a finding's own list is cut short.
         lists = [self.affected.get(m["id"]) or (m.get("scope") or {}).get("urls") or [] for m in members]
         complete = all(len(urls) >= ((m.get("scope") or {}).get("count") or 0) for m, urls in zip(members, lists))
-        n = (len({u for urls in lists for u in urls if isinstance(u, str)}) if complete
-             else sum((m.get("scope") or {}).get("count") or 0 for m in members))
+        union = len({u for urls in lists for u in urls if isinstance(u, str)})
+        # DECISIONS 359: the union of the findings' addresses; when a finding lists only examples, the larger of that
+        # union and its own count, said as "at least", never the counts added up (a page two findings share counted twice)
+        n = union if complete else max([union] + [(m.get("scope") or {}).get("count") or 0 for m in members])
         unit = self.L["scope_units"][self.unit_for(f, members)]
         word = lambda k: f"{fmt_int(k, self.lang)} {unit[0] if k == 1 else unit[1]}"  # noqa: E731
+        if not complete and n > union:
+            self.fact(n)
+            return fmt(self.L["scope_at_least"], scope=word(n))
         # DECISIONS 339: findings of different severities on one card: the worst severity's pages first, the others
         # named with their severity ("2 sayfa (+88 sayfa: Orta)"), never all of them at the card's severity.
         split = next((g.get("severity_pages") for g in (self.sel or {}).get("groups") or []

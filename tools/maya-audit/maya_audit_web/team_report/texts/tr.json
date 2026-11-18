@@ -1451,6 +1451,19 @@
    "verify": "Search Console adres Denetimi'nde Google'ın seçtiği kanonik adres, bildirilen adresle aynı olmalı.",
    "summary": "Aynı içerikli kanonik hedef"
   },
+  "idx4.twin_served": {
+   "title": "Sitenin diğer adresini tek adrese yönlendirin",
+   "finding": "Sitenin diğer adresi bazı sayfaları yönlendirmeden kendisi gösteriyor",
+   "explanation": "Sitenin diğer adresindeki (www'lu ya da www'suz) her adresi, ana adresteki aynı sayfaya kalıcı yönlendirmeyle gönderin.",
+   "why": "Aynı sayfa iki adreste açılınca motorlar iki kopya görür; sinyaller bölünür ve yanlış adres dizine girebilir.",
+   "steps": [
+    "Sunucuda, CDN'de ya da platformun alan adı ayarında diğer adresin yönlendirme kuralını bulun",
+    "Kuralı her adres için geçerli yapın: diğer adresteki her sayfa ana adresteki aynı sayfaya kalıcı yönlendirilsin",
+    "Listede kalan adresleri tarayıcıda açıp ana adrese gittiklerini kontrol edin"
+   ],
+   "verify": "Listedeki adresler açıldığında tarayıcının adres çubuğu ana adresi göstermeli.",
+   "summary": "Diğer adres yönlendirmesi"
+  },
   "idx4.variant": {
    "title": "Kanonik adresi sitenin kendi https adresiyle yazın",
    "finding": "Kanonik adres sitenin http ya da www sürümünü gösteriyor",

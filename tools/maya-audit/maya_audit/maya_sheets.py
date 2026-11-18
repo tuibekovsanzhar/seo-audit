@@ -659,11 +659,49 @@ def topic_rows(summary: dict, crawl: "Crawl | None" = None) -> list[dict]:
     # DECISIONS 358: the prompts with only labels that are not topics come after every real topic
     from .maya_data import OFF_TOPIC
     for t in out:
+        t["name"] = topic_name(t["topic"], summary, [info[p]["text"] for p in t["prompts"] if p in info])
         if t["topic"] == OFF_TOPIC:
             t["labels"] = sorted({x for p in t["prompts"] for x in (info.get(p, {}).get("labels") or [])
                                   + ([info[p]["topic"]] if info.get(p, {}).get("topic") else [])}, key=str.lower)
     out.sort(key=lambda t: (t["topic"] == OFF_TOPIC, -(t["gap"] if t["gap"] is not None else -999), -t["n"]))
     return out
+
+
+_RAW_KEY = re.compile(r"^[a-z0-9]+(?:[-_][a-z0-9]+)+$")
+
+
+def topic_name(topic: str, summary: dict, texts: list[str] | None = None) -> str:
+    """DECISIONS 359: a topic shown readably. A raw key ("makine-bakim-enerji") becomes words with a capital first letter,
+    each word spelt as the topic's own prompts spell it ("bakim" -> "bakım" when they write "bakım"); a Maya label whose
+    key is the same is used as it is. Any other name is kept."""
+    if not _RAW_KEY.match(topic or ""):
+        return topic
+    from .maya_data import name_key
+    key = name_key(topic)
+    labels = {name_key(x): x for p in ((summary.get("ai") or {}).get("prompts") or {}).values()
+              for x in [p.get("topic") or ""] if x and not _RAW_KEY.match(x)}
+    if key in labels:
+        return labels[key]
+    every = [p.get("text") or "" for p in ((summary.get("ai") or {}).get("prompts") or {}).values()]
+
+    def spelling(word: str) -> str:
+        # the topic's prompts first, then all: a word written as it is, else the start of a longer one ("bakımı");
+        # folding keeps the length, so the start has the slug word's letters
+        for pool in (texts or [], every):
+            seen: Counter = Counter()
+            for text in pool:
+                for w in re.findall(r"[^\W\d_]+", (text or "").replace("I", "ı").replace("İ", "i").lower()):
+                    if _fold(w) == word:
+                        seen[(0, w)] += 1
+                    elif len(word) >= 4 and _fold(w).startswith(word):
+                        seen[(1, w[:len(word)])] += 1
+            if seen:
+                return min(seen, key=lambda k: (k[0], -seen[k]))[1]
+        return word
+    words = [spelling(w) for w in re.split(r"[-_]+", topic)]
+    first = words[0]
+    head = ("İ" + first[1:]) if first.startswith("i") else first[:1].upper() + first[1:]
+    return " ".join([head] + words[1:])
 
 
 def _vis_words(v: dict | None, who: str) -> str:
@@ -705,7 +743,7 @@ def topic_sheet(summary: dict, rows: list[dict]) -> dict:
     body = []
     for i, t in enumerate(rows, 1):
         why, act = insight(t)
-        topic = (f"{t['topic']} ({', '.join(t['labels'][:8])})" if t.get("labels") else t["topic"])
+        topic = (f"{t['topic']} ({', '.join(t['labels'][:8])})" if t.get("labels") else t.get("name") or t["topic"])
         body.append([i, topic, t["n"], "Evet" if t["n"] < 10 else "", _pct(t["brand_share"]),
                      "; ".join(f"{_short(u)} ({round(100 * s)}%)" for u, s in t["brand_pages"]),
                      _vis_words(t["vis"], "brand"), _vis_words(t["vis"], "leader"), t["gap"] if t["gap"] is not None else "",
@@ -741,16 +779,17 @@ def structure_sheet(topics: list[dict], summary: dict, crawl: Crawl) -> dict:
         group = [(side, url) for t, side, url in structure_targets([topic], summary)]
         if not group:
             continue
+        shown = topic.get("name") or topic["topic"]
         measured = {side: (url, crawl.measure(url) if url else None) for side, url in group}
         mine = measured.get("Marka", (None, None))[1]
         for side, (url, m) in measured.items():
             if not url:
-                body.append([topic["topic"], side, "—", "", "", "", "", "", "", "", "", "", ""])
+                body.append([shown, side, "—", "", "", "", "", "", "", "", "", "", ""])
                 continue
             if m is None or m.get("error"):
-                body.append([topic["topic"], side, _link(url), "alınamadı" if side != "Marka" else "okunmadı"] + [""] * 9)
+                body.append([shown, side, _link(url), "alınamadı" if side != "Marka" else "okunmadı"] + [""] * 9)
                 continue
-            body.append([topic["topic"], side, _link(url), _words(m), len(m["h2"]), m["question_h2"], m["tables"],
+            body.append([shown, side, _link(url), _words(m), len(m["h2"]), m["question_h2"], m["tables"],
                          _blank(m["faq_questions"]), _blank(m["numbers"]), "Evet" if m["dated"] else "Hayır", ", ".join(m["types"]),
                          m["first"] or "", difference(mine, m) if side != "Marka" else ""])
     return {"name": SHEETS["structure"], "header": header, "rows": body,

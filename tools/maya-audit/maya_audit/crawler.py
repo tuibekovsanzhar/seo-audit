@@ -656,6 +656,18 @@ class Crawler:
             frontier.mark_status(url, FRONTIER_STATUS.get(classification.fetch_class, CRAWLED))
 
             is_redirect = response.status is not None and 300 <= response.status < 400
+            if (aliases and origin_of(url) in aliases and via != "start" and not is_redirect
+                    and classification.fetch_class == FetchClass.OK and response.status and 200 <= response.status < 300
+                    and is_html(content_type)):
+                # DECISIONS 359: after the move to the twin address, a page the earlier address answers with its content
+                # instead of redirecting is a copy of the twin's page: kept as evidence (status, canonical), not read as a
+                # page of its own nor counted against the page cap; the same address on the twin is read instead.
+                page.analysis = analyze_html(decode_body(response.body, content_type))
+                twin_url = self._make_twin_copy(page, origin)
+                frontier.set_meta("host_moves", self._host_moves)
+                frontier.add_urls([FrontierUrl(twin_url, depth, "redirect", url)])
+                progress(url)
+                continue
             if not is_redirect:
                 pages_counted += 1
             progress(url)
@@ -744,6 +756,16 @@ class Crawler:
                             if sampler is not None:
                                 sampler.add(urls, files=dict(self._sitemap_file_of))
                         frontier.add_urls([FrontierUrl(u, depth, "redirect", url) for u in twin_hits.pop(twin)])
+                        # DECISIONS 359: pages the earlier address answered itself before the move (the start page
+                        # aside) are copies too: read again at the twin address, not counted twice
+                        for earlier in pages:
+                            if (earlier.discovered_via != "start" and origin_of(earlier.url) in aliases and earlier.analysis
+                                    and earlier.status and 200 <= earlier.status < 300 and is_html(earlier.content_type)):
+                                twin_url = self._make_twin_copy(earlier, origin)
+                                frontier.save_page(page_record(earlier))
+                                pages_counted -= 1
+                                frontier.add_urls([FrontierUrl(twin_url, earlier.depth, "redirect", earlier.url)])
+                        frontier.set_meta("host_moves", self._host_moves)
                 if target and on_site(target):
                     # via="redirect" sorts ahead of everything queued, matching the appendleft it replaces.
                     frontier.add_urls([FrontierUrl(target, depth, "redirect", url)])
@@ -860,6 +882,26 @@ class Crawler:
             sampling=self._sampler.record() if getattr(self, "_sampler", None) is not None else None,
             host_moves=list(self._host_moves),
         )
+
+    def _make_twin_copy(self, page: PageFetch, origin: str) -> str:
+        """DECISIONS 359: make a page the earlier address answered itself a copy of the twin's page: its canonical kept
+        as evidence, its content not read as a page of its own; recorded in the last move's copies. Returns the same
+        address on the twin."""
+        parts = urlsplit(page.url)
+        twin_url = origin + (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
+        canonical = next(iter(((page.analysis or {}).get("canonicals") or [])), None)
+        page.analysis = None
+        page.outlinks, page.external_links, page.links_found = [], [], 0
+        page.content_checks_eligible = False
+        page.classification_evidence = [*page.classification_evidence,
+                                        f"twin copy: {origin_of(page.url)} answered with the page itself instead of "
+                                        f"redirecting to {origin}; read at {twin_url}"
+                                        + (f"; its canonical is {canonical}" if canonical else "")]
+        if self._host_moves:
+            copies = self._host_moves[-1].setdefault("copies", [])
+            if len(copies) < 500:
+                copies.append({"url": page.url, "status": page.status, "canonical": canonical, "twin": twin_url})
+        return twin_url
 
     def _start_sampling(self, frontier, page, origin: str, sitemap_urls: list[str]):
         """DECISIONS 327: the Akıllı plan from what is known after the first page: the sitemap and that page's links

@@ -427,6 +427,10 @@
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ declare\\ a\\ canonical\\ on\\ another\\ site"
    ],
    [
+    "idx4.twin_served",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ on\\ (?P<old>.+?)\\ answer\\ with\\ their\\ content\\ instead\\ of\\ redirecting\\ to\\ (?P<new>.+?)"
+   ],
+   [
     "idx4.variant",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ declare\\ a\\ canonical\\ on\\ the\\ http://\\ or\\ www\\ variant\\ of\\ this\\ site"
    ],

@@ -313,6 +313,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("idx4.same", "{n#} page(s) are canonicalized to a URL with the same content", "{n:page is|pages are} canonicalized to a URL with the same content"),
         ("idx4.other_site", "{n#} page(s) declare a canonical on another site", "{n:page declares|pages declare} a canonical on another site"),
         # Review B02 / B03.
+        # DECISIONS 359: the site's other address (apex or www) serves pages instead of redirecting.
+        ("idx4.twin_served", "{n#} page(s) on {old} answer with their content instead of redirecting to {new}",
+         "{n:page|pages} on {old} [n:answers|answer] with their content instead of redirecting to {new}"),
         ("idx4.variant", "{n#} page(s) declare a canonical on the http:// or www variant of this site",
          "{n:page declares|pages declare} a canonical on the http:// or www variant of this site"),
         ("idx4.mixed", "{n#} page(s) are noindex and declare a canonical to another URL",
@@ -918,6 +921,9 @@ FIX_PATTERNS = _frames((
     ("str10.add", "Add {tag:(?:og|twitter):[\\w:]+}."),
     ("str10.give", "Give {tag:(?:og|twitter):[\\w:]+} a value."),
     ("str18.example", "Put the brand name in the homepage <title>, for example “{name} | what you do”."),
+    # DECISIONS 359
+    ("idx4.twin_served", "Redirect every address on {old} to the same address on {new} with a permanent redirect (at the "
+                         "server, the CDN or the platform's domain setting), so each page answers at one address only."),
 ))
 EXPECTED_PATTERNS = _frames((
     ("acc2.declared", "robots.txt blocks {role~} bots, as declared"),
@@ -934,6 +940,7 @@ EXPECTED_PATTERNS = _frames((
     ("tseo1.title_concise", "A concise, page-specific title around {low#}–{high#} characters, where that fits."),
     ("tseo1.description", "A useful page summary around {low#}–{high#} characters, where practical."),
     ("tseo1.description_concise", "A concise page summary around {low#}–{high#} characters, where practical."),
+    ("idx4.twin_served", "every address on {old} redirects permanently to the same address on {new}"),  # DECISIONS 359
 ))
 NOTE_PATTERNS = _frames((
     ("source.firecrawl", "Source: Firecrawl"),

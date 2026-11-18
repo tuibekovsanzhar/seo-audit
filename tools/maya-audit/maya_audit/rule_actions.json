@@ -1143,6 +1143,20 @@
     ]
    }
   },
+  "idx4.twin_served": {
+   "en": "Redirect the site's other address to the main one",
+   "tr": "Sitenin diğer adresini ana adrese yönlendirin",
+   "steps": {
+    "tr": [
+     "Diğer adresin yönlendirme kuralını bulun (sunucu, CDN ya da platform)",
+     "Her sayfayı ana adresteki aynı sayfaya kalıcı yönlendirin"
+    ],
+    "en": [
+     "Find the other address's redirect rule (server, CDN or platform)",
+     "Redirect each page permanently to the same page on the main address"
+    ]
+   }
+  },
   "idx4.redirecting": {
    "en": "Point the canonical at the final address",
    "tr": "Canonical'ı son adrese yönlendirin",

@@ -404,7 +404,10 @@ Added for DECISIONS 358; nothing was removed or renamed, so 1.x readers keep wor
   www.carpexonline.com) three times, or once when robots.txt names its sitemap there, the crawl moves there as it does
   for a start redirect: that address's robots.txt and sitemaps are read and the redirect targets are queued.
   `crawl.origin` is the address moved to. Each move is a row {`from`, `to`, `redirects`, `after_pages`,
-  `sitemap_named`}.
+  `sitemap_named`}, and since DECISIONS 359 `copies`: the pages the earlier address answered with their content instead
+  of redirecting ({`url`, `status`, `canonical`, `twin`}); such a page record keeps no analysis and is not a page read
+  (`content_checks_eligible` false), its `twin` address is read instead. The rows' inner keys are not covered by the
+  version.
 
 ## 1.32 — which sitemap file lists each address (2026-11-11)
 

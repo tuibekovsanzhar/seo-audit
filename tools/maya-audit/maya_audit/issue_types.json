@@ -104,6 +104,7 @@
   "idx4.different": "issue",
   "idx4.same": "warning",
   "idx4.other_site": "issue",
+  "idx4.twin_served": "issue",
   "idx4.variant": "issue",
   "idx4.mixed": "issue",
   "idx5.no_image_sitemap": "opportunity",

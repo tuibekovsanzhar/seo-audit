@@ -254,6 +254,7 @@
   "idx1.5xx.once": "{n} adres, yapılan tek istekte sunucu hatası (5xx) döndürdü",
   "idx1.4xx.referenced.linked": "{n} adres istemci hatası (4xx) döndürüyor; bu adreslere site içinden bağlantı verilmiş veya site haritasında yer alıyorlar; {pages} sayfadan bağlantı veriliyor",
   "idx2.temporary": "{hosts} üzerinde http:// adresi https:// adresine geçici bir yönlendirmeyle gidiyor",
+  "idx4.twin_served": "{old} adresindeki {n} sayfa {new} adresine yönlendirmek yerine sayfanın kendisini gösteriyor",
   "idx4.variant": "{n} sayfanın canonical etiketi bu sitenin http:// ya da www varyantını gösteriyor",
   "idx4.mixed": "{n} sayfa noindex ve canonical etiketi başka bir adresi gösteriyor",
   "idx5.not_live.beside": "{n} site haritası adresinin {rest} tanesi erişilebilir, dizine eklenebilir bir sayfa değil; IDX-1'de bildirilen {same} boş veya hatalı sayfa bunlara dahil değil (onlarla birlikte {share})",
@@ -646,7 +647,8 @@
   "str10.add": "{tag} ekleyin.",
   "str10.give": "{tag} etiketine bir değer verin.",
   "str18.example": "Marka adını ana sayfanın <title> etiketine ekleyin; örneğin “{name} | ne yaptığınız”.",
-  "acc2.training_saved": "Bu, canlı yapay zekâ yanıtlarını değil model eğitimini etkiler. Politikanızla uyuşuyorsa beyan edilen bot politikasına kaydedin; uyuşmuyorsa {line}. satırı değiştirin."
+  "acc2.training_saved": "Bu, canlı yapay zekâ yanıtlarını değil model eğitimini etkiler. Politikanızla uyuşuyorsa beyan edilen bot politikasına kaydedin; uyuşmuyorsa {line}. satırı değiştirin.",
+  "idx4.twin_served": "{old} üzerindeki her adresi {new} üzerindeki aynı adrese kalıcı yönlendirmeyle gönderin (sunucuda, CDN'de ya da platformun alan adı ayarında); her sayfa tek bir adreste açılsın."
  },
  "expected": {
   "each place page says something only true of that place (opening hours, menu, address, people, reviews)": "her yer sayfası yalnız o yer için doğru olan bilgiyi verir (çalışma saatleri, menü, adres, ekip, yorumlar)",
@@ -891,7 +893,8 @@
   "tseo1.title": "Sayfaya uygun olduğu ölçüde, sayfaya özgü ve yaklaşık {low}–{high} karakterlik bir başlık.",
   "tseo1.title_concise": "Uygun olduğu ölçüde, kısa ve sayfaya özgü, yaklaşık {low}–{high} karakterlik bir başlık.",
   "tseo1.description": "Mümkün olduğu ölçüde, yaklaşık {low}–{high} karakterlik yararlı bir sayfa özeti.",
-  "tseo1.description_concise": "Mümkün olduğu ölçüde, yaklaşık {low}–{high} karakterlik kısa bir sayfa özeti."
+  "tseo1.description_concise": "Mümkün olduğu ölçüde, yaklaşık {low}–{high} karakterlik kısa bir sayfa özeti.",
+  "idx4.twin_served": "{old} üzerindeki her adres {new} üzerindeki aynı adrese kalıcı olarak yönlenir"
  },
  "notes": {
   "Low, a check: these pages were not opened in a browser, and the 'load more' button wording is matched in English only. Open one page in a browser to see whether content is really behind the button.": "Düşük, kontrol edilecek: bu sayfalar tarayıcıda açılmadı ve 'daha fazla yükle' düğmesi yalnız İngilizce sözcüklerle aranıyor. İçeriğin gerçekten düğmenin arkasında olup olmadığını görmek için bir sayfayı tarayıcıda açın.",
@@ -1157,7 +1160,9 @@
   "A sign-in, internet banking or application entry often passes through a redirect (a tracking or routing address, another host for the application); the link itself is needed in the menu.": "Giriş, internet bankacılığı ya da başvuru girişleri çoğu zaman bir yönlendirmeden geçer (izleme ya da yönlendirme adresi, başvuru için başka bir sunucu); bağlantının kendisi menüde gereklidir.",
   "Answer engines quote prices they can read as text; a price inside an image or drawn by a script after loading is invisible to most of them. Maya found no amount with a currency or period in the page's text.": "Yanıt motorları metin olarak okuyabildikleri fiyatları alıntılar; görselin içindeki ya da yüklendikten sonra betikle çizilen fiyatı çoğu göremez. Maya sayfanın metninde para birimli ya da dönemli bir tutar bulamadı.",
   "An answer engine quoting a feature takes the page's first lines; a slogan or a heading alone says too little. This is read from the text, so check it before changing the page.": "Bir özelliği alıntılayan yanıt motoru sayfanın ilk satırlarını alır; slogan ya da tek başına başlık çok az şey söyler. Bu metinden okunur; sayfayı değiştirmeden önce kontrol edin.",
-  "Stories with a named customer and a number are what answer engines cite as proof. Maya found no number with %, 'kat', a currency, growth or saving in this page's text; check it before changing the page.": "Müşterinin adını ve bir sayıyı veren hikâyeler, yanıt motorlarının kanıt olarak alıntıladığı içeriktir. Maya bu sayfanın metninde yüzde, 'kat', para birimi, artış ya da tasarruf içeren bir sayı bulamadı; sayfayı değiştirmeden önce kontrol edin."
+  "Stories with a named customer and a number are what answer engines cite as proof. Maya found no number with %, 'kat', a currency, growth or saving in this page's text; check it before changing the page.": "Müşterinin adını ve bir sayıyı veren hikâyeler, yanıt motorlarının kanıt olarak alıntıladığı içeriktir. Maya bu sayfanın metninde yüzde, 'kat', para birimi, artış ya da tasarruf içeren bir sayı bulamadı; sayfayı değiştirmeden önce kontrol edin.",
+  "Most addresses on this host redirect; these answered with the page instead, so the same page has two addresses. Each was read once, at the address the crawl moved to.": "Bu adresteki adreslerin çoğu yönleniyor; bunlar ise sayfanın kendisini gösterdi, yani aynı sayfanın iki adresi var. Her sayfa bir kez, taramanın geçtiği adreste okundu.",
+  "Most addresses on this host redirect; these answered with the page instead, so the same page has two addresses. In this saved audit both copies were read; a new crawl reads each page once.": "Bu adresteki adreslerin çoğu yönleniyor; bunlar ise sayfanın kendisini gösterdi, yani aynı sayfanın iki adresi var. Bu kayıtlı denetimde iki kopya da okundu; yeni bir tarama her sayfayı bir kez okur."
  },
  "note_patterns": {
   "source.firecrawl": "Kaynak: Firecrawl",

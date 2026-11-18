@@ -1451,6 +1451,19 @@
    "verify": "In Search Console URL Inspection, the canonical Google chose should match the declared one.",
    "summary": "Canonical to same content"
   },
+  "idx4.twin_served": {
+   "title": "Send the site's other address to one address",
+   "finding": "The site's other address serves pages itself instead of redirecting",
+   "explanation": "Send every address on the site's other host (with or without www) to the same page on the main address with a permanent redirect.",
+   "why": "When one page opens at two addresses, engines see two copies; signals split and the wrong address can be indexed.",
+   "steps": [
+    "Find the redirect rule for the other address at the server, the CDN or the platform's domain setting",
+    "Make the rule cover every address: each page on the other address redirects permanently to the same page on the main one",
+    "Open the listed addresses in a browser and check they end on the main address"
+   ],
+   "verify": "Opening a listed address should end with the main address in the browser's address bar.",
+   "summary": "Other address redirect"
+  },
   "idx4.variant": {
    "title": "Write canonicals with the site's own https address",
    "finding": "Canonical points at the http or www version of the site",

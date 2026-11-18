@@ -2468,7 +2468,8 @@ VERIFIED; pushed as `90ecc55` (`20bfe15..90ecc55`), CI run 44163567764 success.
 
 ## The carpexonline.com review (DECISIONS 358, 2026-11-18)
 
-VERIFIED locally; not pushed. Report schema 1.33 (`crawl.host_moves`), page grouping method 6, Maya summary version 3.
+VERIFIED; pushed as `9c766e2` (`90ecc55..9c766e2`, full suite `3520 passed, 4 skipped` before the push), CI run
+44263523587 success. Report schema 1.33 (`crawl.host_moves`), page grouping method 6, Maya summary version 3.
 
 | Carpex 5f049bf1 (saved data, with Maya data) | Before | After |
 |---|---|---|
@@ -2486,4 +2487,25 @@ VERIFIED locally; not pushed. Report schema 1.33 (`crawl.host_moves`), page grou
 | full suite | NOT RUN (before a push) |
 | `ruff --select E9,F821,F841` (source folders) | `All checks passed!` |
 | A new Carpex crawl (point 1 live) | NOT RUN (live request; owner's call) |
+| Push | NOT DONE (owner: don't push) |
+
+## The Carpex re-audit review (DECISIONS 359, 2026-11-18)
+
+VERIFIED locally; not pushed. Page grouping method 7; `crawl.host_moves[].copies` (inner keys of schema 1.33).
+
+| Carpex 1fd871f0 (saved data) | Before (`9c766e2`) | After |
+|---|---|---|
+| Text check | Taslak: RG-18, card 14 "105 sayfa" (11 + 94 added) | Geçti; card 14 "en az 94 sayfa" |
+| Bare host serving pages | 20 pages as `idx4.variant` (canonical on www) | one card "Sitenin diğer adresini ana adrese yönlendirin" (20 sayfa); `idx4.variant` gone |
+| /referanslarimiz, /bize-ulasin- | kategori, kategori | referans / güven sayfası, iletişim sayfası |
+| Topic names | makine-bakim-enerji, kartus-maliyet, rakip-karsilastirma | Makine bakım enerji, Kartuş maliyet, Rakip karşılaştırma |
+| Each page read once | — | needs a new crawl (NOT RUN) |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_carpex_rerun_359.py` | `6 passed` |
+| fast suite | `3390 passed, 4 skipped, 135 deselected, 1 warning in 571.28s (0:09:31)` |
+| full suite | `3525 passed, 4 skipped, 1 warning in 1003.27s (0:16:43)` |
+| `ruff --select E9,F821,F841` (source folders) | `All checks passed!` |
+| A new Carpex crawl | NOT RUN (live request; owner's call) |
 | Push | NOT DONE (owner: don't push) |
