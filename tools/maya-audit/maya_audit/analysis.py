@@ -112,6 +112,21 @@ def image_source(attr: dict[str, str]) -> tuple[str | None, bool]:
     return (src or None), lazy
 
 
+_STREAMING_BOUNDARY = re.compile(r"^[SB]:\d+$")
+
+
+def visual_hide(attr: dict[str, str]) -> str | None:
+    """DECISIONS 360: how an element's own markup hides it from everyone: an inline display:none or visibility:hidden, or
+    the hidden attribute (shown as display:none). Not aria-hidden (it hides from screen readers only), and not a React
+    streaming boundary (<div hidden id="S:0">: its script shows the content at once). None when it is not hidden so."""
+    found = _HIDDEN_STYLE.search(attr.get("style", ""))
+    if found:
+        return re.sub(r"\s+", "", found.group(0).lower())
+    if "hidden" in attr and not _STREAMING_BOUNDARY.match(attr.get("id", "").strip()):
+        return "the hidden attribute"
+    return None
+
+
 def hidden_by_markup(attr: dict[str, str]) -> bool:
     """Hidden by its own markup: the hidden attribute, aria-hidden="true", or an inline display:none/visibility:hidden.
     A class that hides it through a stylesheet is not seen here (only a rendered page can tell, `render.py`)."""
@@ -149,6 +164,13 @@ class _Analyzer(HTMLParser):
         self.title_seen = False
         self.in_other_title = False  # a second <title>, or one in the body: not the page's, and not text a visitor sees
         self.outside_title = 0
+        # DECISIONS 360: a <title>, <meta name> and <meta property> printed in the body after a <head> that closed
+        # normally (Next.js streams its metadata so): their text, so the page is not said to have none
+        self.body_title_parts: list[str] = []
+        self.in_body_title = False
+        self.body_title_done = False
+        self.body_meta: list[dict[str, str]] = []
+        self.body_props: list[dict[str, str]] = []
         self.outside_meta: list[str] = []
         self.outside_robots: list[str] = []
         # DECISIONS 338: section titles that are not <h2>-<h6> tags (role="heading", <summary>, <dt>, an accordion
@@ -280,6 +302,8 @@ class _Analyzer(HTMLParser):
             self.outside_hreflang += 1
         if not own and self.head_closed_by and tag == "meta" and attr.get("property") and len(self.outside_properties) < MAX_ITEMS:
             self.outside_properties.append(attr["property"].strip().lower())
+        if not own and not self.head_closed_by and tag == "meta" and attr.get("property") and len(self.body_props) < MAX_ITEMS:
+            self.body_props.append({"property": attr["property"].strip().lower(), "content": attr.get("content", "").strip()})
         if own and tag == "link" and "alternate" in rel and attrs_get(attrs, "hreflang") is not None and len(self.hreflang) < MAX_ITEMS:
             self.hreflang.append({"hreflang": attr["hreflang"].strip(), "href": attr.get("href", "").strip()})
         if own and tag == "meta" and attr.get("property"):
@@ -304,6 +328,8 @@ class _Analyzer(HTMLParser):
                 self.meta.append({"name": attr["name"].strip().lower(), "content": attr.get("content", "").strip()})
             elif len(self.outside_meta) < MAX_ITEMS:
                 self.outside_meta.append(attr["name"].strip().lower())
+                if not self.head_closed_by:
+                    self.body_meta.append({"name": attr["name"].strip().lower(), "content": attr.get("content", "").strip()})
                 # DECISIONS 338: what a robots tag after the break says decides whether losing it matters
                 if attr["name"].strip().lower() in ("robots", "googlebot", "bingbot") and len(self.outside_robots) < 5:
                     self.outside_robots.append(attr.get("content", "").strip()[:200])
@@ -313,6 +339,8 @@ class _Analyzer(HTMLParser):
             else:
                 self.in_other_title = True
                 self.outside_title += not own
+                if not own and not self.body_title_done:
+                    self.in_body_title = True
         if tag == "head":
             self.in_head = True
         if tag == "picture":
@@ -433,6 +461,12 @@ class _Analyzer(HTMLParser):
         collectors = list(self._pending_collectors)
         # Hidden by its own markup or by an element around it (H15): a heading nobody is shown.
         hidden_here = bool(self.stack and self.stack[-1][3]["hidden"]) or hidden_by_markup(attr)
+        # DECISIONS 360: what hides it from everyone, and on which element (it or one around it)
+        how = visual_hide(attr)
+        visually_hidden = (self.stack[-1][3].get("hidden_by") if self.stack else None) or (
+            {"how": how, "element": (tag + (f"#{attr['id'].strip()}" if attr.get("id", "").strip() else "")
+                                     + "".join(f".{c}" for c in attr.get("class", "").split()[:3]))[:SELECTOR_PART_MAX]}
+            if how else None)
         # P2: a visible breadcrumb trail, told by its class, id or aria-label (the word themes use in every language),
         # counted by the links inside it.
         if tag in ("a", "li"):
@@ -464,7 +498,7 @@ class _Analyzer(HTMLParser):
                     self.heading_level_skips.append(skip)
             self.heading_last_level = level
             collectors.append({"kind": "heading", "level": level, "parts": [], "skip": skip, "in_chrome": in_chrome,
-                               "hidden": hidden_here})
+                               "hidden": hidden_here, "hidden_by": visually_hidden})
         if attr.get("id") in MOUNT_IDS:
             collectors.append({"kind": "mount", "id": attr["id"], "chars": 0})
             self.mounts.append(collectors[-1])
@@ -518,7 +552,7 @@ class _Analyzer(HTMLParser):
                 "own_selector": own, "selector": " > ".join([frame[3]["own_selector"] for frame in self.stack[-2:]] + [own]),
                 "text": [], "tlen": 0, "in_chrome": in_chrome, "in_main": in_main, "role": attr.get("role") or None,
                 # Its own text (not its children's) and the images it holds directly: `_label_images`.
-                "own": 0, "imgs": [], "img_count": 0, "hidden": hidden_here,
+                "own": 0, "imgs": [], "img_count": 0, "hidden": hidden_here, "hidden_by": visually_hidden,
                 "consent_region": bool(re.search(r"(?:gdprmodal|cky-consent-container|cmplz-cookiebanner|cookie-law-info-bar)",
                                                         attr.get('id', '') + ' ' + attr.get('class', ''), re.I)),
                 # Inside something that opens and closes (an accordion, a collapsed panel): `_detect_grid`.
@@ -539,6 +573,8 @@ class _Analyzer(HTMLParser):
         if tag == "video":
             self._video = None
         if tag == "title":
+            if self.in_body_title:
+                self.in_body_title, self.body_title_done = False, True
             self.in_title = self.in_other_title = False
         if tag == "head":
             self.in_head = False
@@ -558,10 +594,12 @@ class _Analyzer(HTMLParser):
                                 collector["skip"]["text"] = text[:120]
                             if collector["level"] == 1:
                                 self.h1_elements.append({"text": text[:200], "empty_kind": ("whitespace_only" if collector.get("had_whitespace_data") else "empty") if not text else None,
-                                                         **({"hidden": True} if collector["hidden"] else {})})
+                                                         **({"hidden": True} if collector["hidden"] else {}),
+                                                         **({"hidden_by": collector["hidden_by"]} if collector.get("hidden_by") else {})})
                             if text and len(self.headings) < MAX_ITEMS:
                                 self.headings.append({"level": collector["level"], "text": text[:200],
-                                                      **({"hidden": True} if collector["hidden"] else {})})
+                                                      **({"hidden": True} if collector["hidden"] else {}),
+                                                      **({"hidden_by": collector["hidden_by"]} if collector.get("hidden_by") else {})})
                             if text and not collector.get("in_chrome"):
                                 self.last_heading = text[:HEADING_TEXT_MAX]
                         elif collector["kind"] == "time":
@@ -589,6 +627,8 @@ class _Analyzer(HTMLParser):
             self.title_parts.append(data)
             return
         if self.in_other_title:
+            if self.in_body_title:
+                self.body_title_parts.append(data)
             return
         if self.depth["script"]:
             if self.scripts:
@@ -1243,6 +1283,26 @@ def analyze_html(html: str, page_url: str | None = None) -> dict:
         pass
     parser.finish()
     title = _WS.sub(" ", "".join(parser.title_parts)).strip()
+    # DECISIONS 360: a <head> that closed normally and metadata printed after it in the body (Next.js streaming): the
+    # body's title, meta names (robots aside: a robots tag outside <head> stays ACC-3's note) and properties are the
+    # page's, said so in `metadata_in_body`; after a <head> broken early they stay "lost" (DECISIONS 338)
+    in_body: list[str] = []
+    if not parser.head_closed_by:
+        body_title = _WS.sub(" ", "".join(parser.body_title_parts)).strip()
+        if not title and body_title:
+            title, in_body = body_title, ["title"]
+        names = {m["name"] for m in parser.meta}
+        for m in parser.body_meta:
+            if m["name"] not in names and m["name"] not in ("robots", "googlebot", "bingbot") and len(parser.meta) < MAX_ITEMS:
+                parser.meta.append(m)
+                names.add(m["name"])
+                in_body.append(m["name"])
+        props = {m["property"] for m in parser.properties}
+        for m in parser.body_props:
+            if m["property"] not in props and len(parser.properties) < MAX_ITEMS:
+                parser.properties.append(m)
+                props.add(m["property"])
+                in_body.append(m["property"])
     visible_text = " ".join(parser.text_parts)
     words = visible_text.lower().split()
 
@@ -1276,6 +1336,7 @@ def analyze_html(html: str, page_url: str | None = None) -> dict:
         "text_sha256": hashlib.sha256(" ".join(words).encode()).hexdigest() if words else None,
         "text_sketch": text_sketch(words),
         "title": title or None,
+        "metadata_in_body": in_body[:MAX_ITEMS],
         "meta": parser.meta,
         # <meta property="..."> tags: og:*, article:* and the like (the "og" key below keeps only og:*).
         "meta_properties": parser.properties[:MAX_ITEMS],

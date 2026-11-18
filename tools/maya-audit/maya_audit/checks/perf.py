@@ -128,7 +128,9 @@ def prf1_response_time(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
             "PRF-1", f"{len(urls)} page(s) take more than {cfg.prf_slow_median_s:g} s (median) to return their HTML",
             Severity.S4, Confidence.ESTIMATED,
             "Hypothesis (live fetch budget) / Documented (slow responses reduce crawl rate, Google)", LIVE_FETCHERS,
-            scope_for(urls), {"pages": slow[:40], "threshold_s": cfg.prf_slow_median_s, "egress_region": _egress(cfg)},
+            # DECISIONS 360: how many pages the timing sample measured (others may be slow too)
+            scope_for(urls), {"pages": slow[:40], "threshold_s": cfg.prf_slow_median_s, "egress_region": _egress(cfg),
+                              "pages_measured": len(sample)},
             f"HTML returned in under {cfg.prf_slow_median_s:g} s", "Find what makes these responses slow (uncached "
             "rendering, slow queries, upstream calls) and cache or speed up the HTML response.",
             importance_tier=_tier(urls, key_urls),
@@ -161,7 +163,8 @@ def prf1_response_time(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
         findings.append(Finding(
             "PRF-1", f"{len(urls)} URL(s) time out on some attempts but not others", Severity.S4, Confidence.VERIFIED,
             Rationale.HYPOTHESIS.value + " (live fetch budget)", LIVE_FETCHERS, scope_for(urls),
-            {"pages": intermittent[:40], "egress_region": _egress(cfg)}, "every attempt answers within the timeout",
+            {"pages": intermittent[:40], "egress_region": _egress(cfg), "pages_measured": len(sample)},
+            "every attempt answers within the timeout",
             "Look for what makes these URLs occasionally hang (cold caches, locks, upstream timeouts).",
             importance_tier=_tier(urls, key_urls),
             notes=[CAPPED, f"A URL that times out on every attempt is an IDX-1 finding, not this one."]))

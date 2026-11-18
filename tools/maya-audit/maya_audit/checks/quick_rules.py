@@ -177,6 +177,15 @@ def alias_links(read, groups: dict, key_urls=frozenset(), platform: str | None =
             target = _bare(edge.get("target") or "")
             if target and target not in aliases and edit_preview(target):
                 aliases[target] = without_edit_preview(target)
+    # DECISIONS 360 (İlginay, MMI's /about-dxb canonical to the homepage): a page read whose canonical names a page read
+    # with different content is not an alias of it; its canonical is wrong (IDX-4's "different content" card), and
+    # pointing the links at that canonical would send readers elsewhere. Its links are not this card's.
+    from ..analysis import compare_content
+    by_url = {p.url: p for p in read}
+    for target, canonical in list(aliases.items()):
+        a, b = by_url.get(target), by_url.get(canonical)
+        if a is not None and b is not None and a.analysis and b.analysis and compare_content(a.analysis, b.analysis).get("same") is False:
+            del aliases[target]
     if not aliases:
         return []
     links, pages, targets = 0, [], defaultdict(set)
@@ -204,6 +213,8 @@ def alias_links(read, groups: dict, key_urls=frozenset(), platform: str | None =
          **({"template_link": shared} if shared else {}),
          "targets": [{"url": t, "canonical": aliases[t], "linked_from_pages": len(targets[t])} for t in top],
          "target_patterns": dict(patterns.most_common(10)),
+         # DECISIONS 360: each page's step names its links to an alias and the canonical to write instead
+         "page_fixes": __import__("maya_audit.link_fixes", fromlist=["alias_fixes"]).alias_fixes(read, aliases)[:500],
          "rule": "a link (menu, content or footer) to a page read whose canonical names another address (page grouping's aliases)"},
         ALIAS_LINKS_EXPECTED, alias_fix(platform, targets), importance_tier=_tier(pages, key_urls))]
 

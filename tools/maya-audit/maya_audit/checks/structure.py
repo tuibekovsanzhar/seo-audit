@@ -451,12 +451,25 @@ def site_name(result: CrawlResult) -> str | None:
 TITLE_SHOWN_CHARS = 50
 
 
+def title_elsewhere(result, url: str, analysis: dict | None) -> bool:
+    """DECISIONS 360: whether some copy of the page has a <title> the copy judged lacks: one printed in the body after a
+    <head> that closed normally (Next.js streams it so; a saved record has only its count), or the rendered copy's (a
+    title only after JavaScript is the RND-2 card's, never "no title")."""
+    out = (analysis or {}).get("outside_head") or {}
+    if out.get("title") and not out.get("closed_early_by"):
+        return True
+    render = getattr(result, "render", None) if not isinstance(result, dict) else result.get("render")
+    pages = (render.get("pages") if isinstance(render, dict) else getattr(render, "pages", None)) or {}
+    row = pages.get(url) if isinstance(pages, dict) else None
+    return bool(((row or {}).get("rendered") or {}).get("title")) if isinstance(row, dict) else False
+
+
 def str1_titles(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: set[str]) -> CheckResult:
     title = "Title present and distinctive"
     if not pages:
         return CheckResult("STR-1", title, "not_assessed", "No indexable HTML pages.")
     home, brand = homepage_url(result), _norm(site_name(result))
-    missing = [p.url for p in pages if not p.analysis["title"]]
+    missing = [p.url for p in pages if not p.analysis["title"] and not title_elsewhere(result, p.url, p.analysis)]
     generic = []
     for p in pages:
         t = _norm(p.analysis["title"])
@@ -545,8 +558,13 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
         levels = [h["level"] for h in a["headings"] if h["text"].strip()]
         h1s = [h["text"] for h in a["headings"] if h["level"] == 1 and h["text"].strip()]
         raw_h1s = list(h1s)
-        shown = [h["text"] for h in a["headings"] if h["level"] == 1 and h["text"].strip() and not h.get("hidden")]
-        hidden_by = "its markup: inline style, the hidden attribute or aria-hidden (on it or an element around it)"
+        # DECISIONS 360: from the raw markup, an <h1> is hidden only when its record says how and where (display:none,
+        # visibility:hidden or the hidden attribute on it or an element around it); aria-hidden, a streaming boundary
+        # and a record saved without the reason are not "hidden"
+        shown = [h["text"] for h in a["headings"] if h["level"] == 1 and h["text"].strip() and not h.get("hidden_by")]
+        why = next((h["hidden_by"] for h in a["headings"] if h["level"] == 1 and h.get("hidden_by")), None)
+        hidden_by = (f"{why['how']} on {why['element']} (the <h1> or an element around it, in the HTML)" if why else
+                     "its markup")
         entry = rendered.get(p.url) or {}
         seen = [v for v in entry.get("h1_visibility") or [] if v.get("text")] if entry.get("ok") else []
         if seen:
@@ -2224,8 +2242,10 @@ def str5_entity(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: se
     counted = {k: v for k, v in counted.items() if k not in branches}
     # A category title (DECISIONS 290): the main name and more words, given only by page titles ("Nihan Women's Coats"
     # on a collection page). The page's subject after the brand, not another name of the brand: listed, not counted.
+    # DECISIONS 360 (İlginay, MMI): the page's subject may come before the brand too ("Absolut MMI Home Delivery",
+    # "France MMI Home Delivery" on product titles): any title-only name holding the main name as whole words.
     categories = {k for k, given in counted.items()
-                  if main and k != main and k.startswith(main + " ") and all(x["source"] == "title suffix/prefix" for x in given)}
+                  if main and k != main and f" {main} " in f" {k} " and all(x["source"] == "title suffix/prefix" for x in given)}
     # A section's own name (DECISIONS 338): the main name and 1 to 4 more words given only by titles and og:site_name of
     # pages other than the homepage ("Enpara Şirketim" on /sirketim/): a sub-brand, listed, not counted.
     sub_brands = {k for k, given in counted.items()

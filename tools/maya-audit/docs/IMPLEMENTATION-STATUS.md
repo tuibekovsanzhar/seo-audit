@@ -2491,7 +2491,7 @@ VERIFIED; pushed as `9c766e2` (`90ecc55..9c766e2`, full suite `3520 passed, 4 sk
 
 ## The Carpex re-audit review (DECISIONS 359, 2026-11-18)
 
-VERIFIED locally; not pushed. Page grouping method 7; `crawl.host_moves[].copies` (inner keys of schema 1.33).
+VERIFIED; pushed as `adf2478` (`9c766e2..adf2478`), CI run 44276291855 success. Page grouping method 7; `crawl.host_moves[].copies` (inner keys of schema 1.33).
 
 | Carpex 1fd871f0 (saved data) | Before (`9c766e2`) | After |
 |---|---|---|
@@ -2508,4 +2508,24 @@ VERIFIED locally; not pushed. Page grouping method 7; `crawl.host_moves[].copies
 | full suite | `3525 passed, 4 skipped, 1 warning in 1003.27s (0:16:43)` |
 | `ruff --select E9,F821,F841` (source folders) | `All checks passed!` |
 | A new Carpex crawl | NOT RUN (live request; owner's call) |
+| Push | NOT DONE (owner: don't push) |
+
+## İlginay's review of the MMI Ek (DECISIONS 360, 2026-11-18)
+
+VERIFIED locally; not pushed. Source: İlginay (SEO team). No "Düzeltme kaydı" exists in the repository.
+
+| Saved audit (scratch copy) | Before (`adf2478`) | After |
+|---|---|---|
+| MMI 536b4b64 | 14 cards, incl. "İç bağlantıları kanonik adrese yönlendirin" (148), "Başlığı olmayan sayfalara başlık yazın" (13), "Gizli H1 etiketlerini görünür yapın" (5), "Marka için sitede tek bir ad kullanın" (52); "Bağlantı yerleri" 0 rows | 10 cards (those four gone); "Yavaş sayfaları hızlandırın" says "ölçülen 7 sayfadan"; link cards name their links; "Bağlantı yerleri" 53 rows |
+| İş Bankası 1b81bee4 | — | timeout card says its 7 measured pages; no-text card names its links |
+| Atasun f06a2129, Carpex 1fd871f0 | — | broken-link and redirect cards name their first links |
+| Enpara fee70191 | — | unchanged |
+| Text check | PASS in all five | PASS in all five |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_mmi_review_360.py` | `9 passed` |
+| fast suite | `3399 passed, 4 skipped, 135 deselected, 1 warning in 560.86s (0:09:20)` |
+| full suite | `1 failed, 3533 passed, 4 skipped, 1 warning in 984.00s (0:16:23)`: `test_fixture_matrix` (the generated `docs/FIXTURE-MATRIX.md` was not regenerated); regenerated with `scripts/fixture_matrix.py`, `tests/test_fixture_matrix.py` `3 passed` |
+| `ruff --select E9,F821,F841` (source folders) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |

@@ -921,6 +921,109 @@ def _decisions_359(report: dict, affected: dict, changes: list[str]) -> None:
     changes.append(f"{record['id']}: {record['title']} (S3; DECISIONS 359)")
 
 
+def _shrink(check: dict, f: dict, drop: set[str], affected: dict, changes: list[str], why: str) -> None:
+    """Take `drop` out of a page finding's addresses (scope, affected list, evidence page lists) and say so; the finding
+    goes when no address is left. The count in its title follows (its first number)."""
+    urls = [u for u in affected.get(f.get("id")) or (f.get("scope") or {}).get("urls") or [] if u not in drop]
+    if len(urls) == len(affected.get(f.get("id")) or (f.get("scope") or {}).get("urls") or []):
+        return
+    if not urls:
+        check["findings"].remove(f)
+        affected.pop(f.get("id"), None)
+        changes.append(f"{f.get('id')}: removed, {why} (DECISIONS 360)")
+        if not check["findings"] and check.get("status") == "findings":
+            check["status"] = "pass"
+        return
+    old = f.get("title") or ""
+    f["title"] = re.sub(r"^\d+", str(len(urls)), old, count=1)
+    f["scope"] = {**(f.get("scope") or {}), "urls": urls[:25], "count": len(urls)}
+    ev = f.get("evidence") or {}
+    for key in ("pages", "facts"):
+        if isinstance(ev.get(key), list):
+            ev[key] = [x for x in ev[key] if (x.get("url") if isinstance(x, dict) else x) not in drop]
+    affected[f["id"]] = urls
+    changes.append(f"{f.get('id')}: {old} -> {f['title']} ({why}; DECISIONS 360)")
+
+
+def _decisions_360(report: dict, affected: dict, changes: list[str]) -> None:
+    """DECISIONS 360 (İlginay's review of the MMI Ek), on a saved report's records: (1) no "no <title>" or "no meta
+    description" for a page whose own copy has one (the reader's copy may lack it) or prints it in the body after a
+    <head> that closed normally; (2) an only-hidden <h1> is reported only when the record says how it is hidden (from the
+    rendered page's computed style; saved raw records do not say, so they are not reported); (3) a brand name given only by
+    page titles that holds the main name with the page's subject is not another name; (4) a link target whose canonical
+    names a page with different content is not an alias (IDX-4's card says its canonical is wrong); (5) each page's step
+    in a link card names its links."""
+    from .link_fixes import alias_fixes, no_text_fixes
+    crawl = report.get("crawl") or {}
+    pages = {p.get("url"): p for p in crawl.get("pages") or [] if isinstance(p, dict)}
+    render = ((crawl.get("render") or {}).get("pages") or {}) if isinstance(crawl.get("render"), dict) else {}
+
+    def has(url: str, what: str) -> bool:
+        a = (pages.get(url) or {}).get("analysis") or {}
+        out = a.get("outside_head") or {}
+        normal = not out.get("closed_early_by")
+        if what == "title":
+            rendered = (((render.get(url) or {}).get("rendered") or {}) if isinstance(render.get(url), dict) else {}).get("title")
+            return bool(a.get("title") or (normal and out.get("title")) or rendered)
+        return bool(any(m.get("name") == "description" and m.get("content") for m in a.get("meta") or [])
+                    or (normal and "description" in (out.get("meta") or [])))
+    different = set()
+    for check in report.get("checks") or []:
+        for f in list(check.get("findings") or []):
+            rule, ev = f.get("rule_id"), f.get("evidence") or {}
+            urls = affected.get(f.get("id")) or (f.get("scope") or {}).get("urls") or []
+            if rule == "str1.no_title":
+                _shrink(check, f, {u for u in urls if has(u, "title")}, affected, changes, "the page has a <title>")
+            elif rule == "str10.no_description":
+                _shrink(check, f, {u for u in urls if has(u, "description")}, affected, changes, "the page has a meta description")
+            elif rule == "str2.hidden_h1":
+                said = [r for r in ev.get("pages") or [] if isinstance(r, dict) and "computed style" in str(r.get("hidden_by") or "")]
+                keep = {r["url"] for r in said}
+                _shrink(check, f, {u for u in urls if u not in keep}, affected, changes,
+                        "the record does not say how the <h1> is hidden (aria-hidden or a script's wrapper is not hidden)")
+            elif rule == "idx4.different":
+                different |= {(r.get("url"), r.get("canonical")) for r in ev.get("pages") or [] if isinstance(r, dict)}
+    for check in report.get("checks") or []:
+        for f in list(check.get("findings") or []):
+            rule, ev = f.get("rule_id"), f.get("evidence") or {}
+            if rule == "str5.names" and isinstance(ev.get("variants"), list) and ev["variants"]:
+                main = max(ev["variants"], key=lambda v: v.get("pages") or 0)
+                key = str(main.get("normalized") or "")
+                subjects = [v for v in ev["variants"] if v is not main and f" {key} " in f" {v.get('normalized') or ''} "
+                            and set((v.get("by_source") or {})) <= {"title suffix/prefix"}]
+                if key and subjects:
+                    ev["variants"] = [v for v in ev["variants"] if v not in subjects]
+                    ev["category_titles_not_counted"] = [*(ev.get("category_titles_not_counted") or []), *(v.get("name") for v in subjects)]
+                    if len(ev["variants"]) <= 2:
+                        check["findings"].remove(f)
+                        affected.pop(f.get("id"), None)
+                        changes.append(f"{f.get('id')}: removed, the other names were page subjects before the brand (DECISIONS 360)")
+                    else:
+                        old = f["title"]
+                        f["title"] = f"The brand is named {len(ev['variants'])} different ways"
+                        changes.append(f"{f.get('id')}: {old} -> {f['title']} (DECISIONS 360)")
+            elif rule == "idx6.alias_links":
+                targets = [t for t in ev.get("targets") or [] if isinstance(t, dict)]
+                wrong = [t for t in targets if (t.get("url"), t.get("canonical")) in different]
+                left = [t for t in targets if t not in wrong]
+                if wrong and not left:
+                    check["findings"].remove(f)
+                    affected.pop(f.get("id"), None)
+                    changes.append(f"{f.get('id')}: removed, its target's canonical names a page with other content "
+                                   "(IDX-4's card) (DECISIONS 360)")
+                    continue
+                ev["targets"] = left
+                aliases = {t["url"]: t["canonical"] for t in left if t.get("url") and t.get("canonical")}
+                if aliases and not ev.get("page_fixes"):
+                    ev["page_fixes"] = alias_fixes(pages.values(), aliases)[:500]
+            elif rule in ("prf1.slow", "prf1.timeouts") and "pages_measured" not in ev:
+                measured = len(((crawl.get("perf") or {}).get("sample")) or [])
+                if measured:  # DECISIONS 360 (6): the card says how many pages the timing sample measured
+                    ev["pages_measured"] = measured
+            elif rule == "str14.no_text" and not ev.get("page_fixes"):
+                ev["page_fixes"] = no_text_fixes([r for r in ev.get("links") or [] if isinstance(r, dict)])[:500]
+
+
 def _decisions_351(report: dict, changes: list[str]) -> None:
     """DECISIONS 351: a saved `idx6.alias_links` finding gives Shopify's step only on a Shopify site."""
     from .checks.quick_rules import ALIAS_LINKS_FIX_SHOPIFY, alias_fix
@@ -1253,6 +1356,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_343(r, aff, changes, quick_unassessed)  # DECISIONS 343, 344: replaces what _decisions_304 added
     _decisions_356(r, aff, changes, saved_texts, business, quick_unassessed)  # DECISIONS 356: the profile's checks
     _decisions_359(r, aff, changes)  # DECISIONS 359: the twin address's copies are one card
+    _decisions_360(r, aff, changes)  # DECISIONS 360: İlginay's review of the MMI Ek
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -1307,6 +1411,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_343(r, affected, cert)
         _decisions_356(r, affected, cert, saved_texts, business)  # DECISIONS 356: the business profile's own checks
         _decisions_359(r, affected, cert)  # DECISIONS 359: the twin address's copies are one card
+        _decisions_360(r, affected, cert)  # DECISIONS 360: İlginay's review of the MMI Ek
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

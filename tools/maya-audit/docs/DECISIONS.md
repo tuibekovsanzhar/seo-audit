@@ -5377,3 +5377,55 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      karşılaştırma". Reading each page once needs a new crawl (NOT RUN).
      Tests: `tests/test_carpex_rerun_359.py` (6; a mock-transport shop, made-up records); the grouping version pins
      (method 7).
+
+360. **İlginay's review of the MMI Ek (www.mmihomedelivery.ae, 536b4b64, 16 Nov; source: İlginay, SEO team, card by card,
+     passed on by the owner 2026-11-18; the detection rules and wording are agent defaults).** Global for every audit;
+     MMI was only the test case. She found cards 2, 4, 5, 7, 9, 11 and 14 correct and 12 correct but possibly wider. No
+     "Düzeltme kaydı" exists in the repository; the items are recorded here.
+     1. *"Başlığı olmayan sayfalara başlık yazın" (13 pages) was wrong.* MMI is a Next.js site that prints its <title>,
+     meta description and Open Graph tags in the body, after a <head> that closed normally (streamed metadata; Next.js
+     serves them in <head> to crawlers it knows, Googlebot among them). The analyser read a title only inside <head>, and
+     Firecrawl, MMI's main page reader, returned documents without a <title> at all, so the reader's copy replaced
+     Maya's own (/shop/beer-cider/beer/top-brands had its title in Maya's copy). Now (a) a <title>, <meta name> (robots
+     aside: ACC-3's note) and <meta property> printed in the body after a normally closed <head> are the page's own,
+     listed in `metadata_in_body` (after a <head> broken early they stay "lost", DECISIONS 338); (b) a reader's copy with
+     no <title> or meta description keeps Maya's (`firecrawl.reader._merged`); (c) STR-1 never says "no <title>" when any
+     copy has one: in the body, the rendered page's, or Maya's own (`structure.title_elsewhere`); a title only after
+     JavaScript stays RND-2's card. The same root cause made STR-10's "no meta description" false (13 pages).
+     2. *"Gizli H1 etiketlerini görünür yapın" (5 pages) was wrong.* The raw-markup rule counted aria-hidden (it hides from
+     screen readers only), sizes of 0 or 1 pixel and the hidden attribute anywhere above the <h1>, including React's
+     streaming wrapper (<div hidden id="S:0">, shown by its script at once), and its evidence said only "its markup".
+     Now an <h1> is hidden from the markup only by an inline display:none or visibility:hidden, or the hidden attribute
+     (not on a streaming boundary), on it or an element around it (`analysis.visual_hide`); the evidence names how and
+     on which element ("display:none on div.wrap"). The rendered page's computed style still decides when the page was
+     rendered. A page with a visible <h1> beside a hidden duplicate is not reported. A saved record that cannot say why
+     is not reported.
+     3. *"Marka için sitede tek bir ad kullanın" was wrong.* Product titles ending "Absolut MMI Home Delivery", "France MMI
+     Home Delivery" were read as brand names. A name given only by page titles that holds the main name as whole words,
+     with the page's subject before or after it, is the page's subject: listed, not counted (the rule of DECISIONS 290,
+     now both sides). The brand fields stay those of DECISIONS 221-338 (Organization and WebSite name, og:site_name, the
+     header logo's alt, the title's site-name part, the footer's legal name); Product brand is never one.
+     4. *"İç bağlantıları kanonik adrese yönlendirin" (148 pages) was a false positive.* It was one footer link, to
+     /about-dxb, whose canonical names the homepage although its content is different (5% alike, IDX-4's
+     "different content" finding): the canonical is wrong, and pointing 148 links at the homepage would mislead. A link
+     target whose canonical names a page read with different content is no longer an alias (`quick_rules.alias_links`).
+     The real alias links now give each page's step the link itself: «text» → /written-address (place) ⇒ /canonical.
+     5. *Link cards name their links.* "Bağlantı yerleri" also lists links with no text (STR-14: the page, "(metin
+     yok)", the address written, the place and block) and links to other sites with tracking parameters (the small-fixes
+     card: page, link text, address, place, "adresten parametreleri kaldırın: igsh") (`link_places.NO_TEXT`,
+     `parameter_rows`). The Özet links each card with such rows to its first one ("Bağlantılara git →"); the card names
+     its first three links under its status (`Builder.name_links`); each page's row in "Bulgu bazında" names that page's
+     links in "Ne yapılmalı" (`page_fixes`, `maya_audit.link_fixes`). The engine's "Broken links: what to edit" table
+     keeps only broken links.
+     6. *Sampled checks say their sample.* A card judged on the timing sample (`prf1.slow`, `prf1.timeouts`) says how many
+     pages were measured: "3 sayfa (ölçülen 7 sayfadan; diğerleri de etkilenebilir)" (`pages_measured` in the finding).
+     Saved audits get points 1-6 offline (`reassess_rules._decisions_360`).
+     *Before -> after* (scratch copies of the saved audits; adf2478 vs this build; text check PASS in every one):
+     MMI 14 -> 10 cards: gone "İç bağlantıları kanonik adrese yönlendirin" (148), "Başlığı olmayan sayfalara başlık
+     yazın" (13), "Gizli H1 etiketlerini görünür yapın" (5), "Marka için sitede tek bir ad kullanın" (52); "Yavaş sayfaları
+     hızlandırın" 3 sayfa -> "3 sayfa (ölçülen 7 sayfadan; …)"; "Metni olmayan bağlantılara ad verin" names
+     /blog/cosmo-and-tini-…: (metin yok) → /product/absolut-raspberri-1l-8536 (gövde); the small-fixes card lists the pages
+     with the instagram link and its igsh parameter; "Bağlantı yerleri" 0 -> 53 rows. İş Bankası: "Ara ara zaman aşımına
+     uğrayan sayfaları düzeltin" says its 7 measured pages; its no-text card names its links. Atasun, Carpex: the
+     broken-link and redirect cards name their first links. Enpara: unchanged.
+     Tests: `tests/test_mmi_review_360.py` (9; a mock-transport shop and made-up records).

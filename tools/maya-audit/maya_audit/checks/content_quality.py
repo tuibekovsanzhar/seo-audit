@@ -350,6 +350,8 @@ def str14_anchor_text(result: CrawlResult, cfg: CrawlConfig, pages: list, key_ur
             "STR-14", f"{sum(r['links'] for r in empty_rows)} link(s) on {len(urls)} page(s) have no text at all", Severity.S4,
             Confidence.VERIFIED, Rationale.SELF_EVIDENT.value, engines + ["screen readers"], scope_for(urls),
             {"links": empty_rows[:80], "count": len(empty_rows), "occurrences": sum(r["links"] for r in empty_rows), "count_unit": "source-target groups", "title_count_unit": "DOM occurrences",
+             # DECISIONS 360: each page's step names its nameless links (address, place, block)
+             "page_fixes": __import__("maya_audit.link_fixes", fromlist=["no_text_fixes"]).no_text_fixes(empty_rows)[:500],
              "rule": "no text, no image alt, no aria-label and no title on any link the page has to that target"},
             "every link has a name",
             "Give the link text, give the image inside it an alt text, or add an aria-label.",

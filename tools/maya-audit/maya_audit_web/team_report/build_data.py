@@ -936,6 +936,37 @@ class Builder:
             return f"{a} → {b}: " + fmt(L["redirect_link_to"], url=b)
         return f"{a} → {b}: " + fmt(L["redirect_link_to_unmeasured"], url=b)
 
+    def link_places(self):
+        """{finding id or "IDX-6": rows} of "Bağlantı yerleri" (maya_audit.link_places), worked out once."""
+        if getattr(self, "_places", None) is None:
+            try:
+                from maya_audit.link_places import places  # type: ignore
+                self._places = places(self.r)
+            except Exception:  # noqa: BLE001  the cards stay as they are
+                self._places = {}
+        return self._places
+
+    def name_links(self, todos):
+        """DECISIONS 360 (İlginay, MMI): a card whose findings have rows in "Bağlantı yerleri" names its first links under
+        its status: the page, the link's text (or none), the address written, where it sits and, when known, the address
+        to write instead. A card that already lists what was seen where keeps its lines."""
+        from maya_audit.link_fixes import NO_TEXT, PLACE, path  # type: ignore
+        rows_of = self.link_places()
+        for t in todos:
+            if t.get("sub"):
+                continue
+            rows = [r for fid in t.get("finding_ids") or [] for r in rows_of.get(fid) or [] if r.get("kind") == "link" and r.get("source")]
+            if not rows:
+                continue
+            lines = []
+            for r in rows[:3]:
+                text = f"«{r['link_text']}»" if r.get("link_text") else NO_TEXT[self.lang]
+                to = r.get("replacement_url") or (r.get("ends_at") if r.get("ends_at") not in (None, r.get("links_to")) else None)
+                lines.append(f"{path(r['source'])}: {text} → {path(r.get('href') or r.get('links_to'))} "
+                             f"({PLACE[self.lang].get(r.get('position') or 'body', r.get('position') or '')})"
+                             + (f" ⇒ {path(to)}" if to else ""))
+            t["sub"] = lines
+
     def hygiene_items(self):
         """Küçük düzeltmeler (Maya Audit P3): motorda gözlem ya da Info oldukları için yapılacaklara girmezler; burada
         tek kartta toplanır. Her satır: (konu, sayı, örnekler, adresler, kimlikler)."""
@@ -973,7 +1004,17 @@ class Builder:
                             self.url_notes[s["source"]] = f"«{s.get('anchor') or ''}» " + self.redirect_advice(s.get("target"), end)
                 elif label.startswith("parameters"):
                     ex = [f"{urlsplit(e['url']).netloc} ({', '.join(e['parameters'][:2])})" for e in (o.get("examples") or [])[:3]]
-                    urls = [e["url"] for e in o.get("examples") or [] if e.get("url")]  # DECISIONS 338
+                    # DECISIONS 360: the pages that carry these links, each with the link (text, address, place)
+                    from maya_audit.link_fixes import NO_TEXT, PLACE, path  # type: ignore
+                    prows = self.link_places().get("IDX-6") or []
+                    urls = list(dict.fromkeys(r["source"] for r in prows if r.get("source")))
+                    for r in prows:
+                        text = f"«{r['link_text']}»" if r.get("link_text") else NO_TEXT[self.lang]
+                        note = (f"{text} → {urlsplit(r['links_to']).netloc}{path(r['links_to']).split('?')[0]} "
+                                f"({PLACE[self.lang].get(r.get('position') or 'body')}): "
+                                + fmt(self.L["hygiene_params"], params=", ".join(x.split("=")[0] for x in r.get("parameters") or [])))
+                        self.url_notes[r["source"]] = (self.url_notes[r["source"]] + "; " + note) if r["source"] in self.url_notes else note
+                    urls = urls or [e["url"] for e in o.get("examples") or [] if e.get("url")]  # DECISIONS 338
                 elif label.startswith("empty"):
                     ex = [f"{k}: {v}" for k, v in (o.get("names") or {}).items()][:3]
                     urls = list(o.get("examples") or [])
@@ -1546,7 +1587,25 @@ class Builder:
             return "month"
         return "later"
 
+    # DECISIONS 360 (İlginay, MMI "Yavaş sayfaları hızlandırın"): rules judged on the timing sample, not every page read
+    SAMPLED_RULES = ("prf1.slow", "prf1.timeouts")
+
+    def sampled_of(self, f):
+        """How many pages the sample behind `f` measured, when its rule judges a sample (DECISIONS 360), else None."""
+        if self.rule_of(f) not in self.SAMPLED_RULES:
+            return None
+        n = (f.get("evidence") or {}).get("pages_measured")  # in the finding, so the text check finds the number
+        return n if isinstance(n, int) and n else None
+
     def scope_text(self, f):
+        measured = self.sampled_of(f)
+        text = self._scope_text(f)
+        if measured:
+            self.fact(measured)
+            return fmt(self.L["scope_sampled"], scope=text, n=fmt_int(measured, self.lang))
+        return text
+
+    def _scope_text(self, f):
         L, sc = self.L, f.get("scope") or {}
         ratio = self.sitemap_ratio()
         if ratio and ratio[3] is f:
@@ -2074,6 +2133,7 @@ class Builder:
                 todos.append(card)
                 notes_shown += 1
 
+        self.name_links(todos)  # DECISIONS 360: a link card names its first links
         extra = self.client_page(todos) if self.sel is not None else {}
 
         listed = ratio[2] if ratio else None

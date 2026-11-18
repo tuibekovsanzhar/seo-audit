@@ -87,13 +87,19 @@ def heading_findings(home_body):
 
 
 @pytest.mark.parametrize("h1", ['<h1 style="display:none">Örnekmağaza</h1>', '<h1 style="visibility: hidden">Ö</h1>',
-                                "<h1 hidden>Ö</h1>", '<h1 aria-hidden="true">Ö</h1>',
+                                "<h1 hidden>Ö</h1>",
                                 '<div style="display:none"><span><h1>Örnekmağaza</h1></span></div>'])
 def test_a_homepage_whose_only_h1_is_hidden_is_reported_as_hidden(h1):
     findings = heading_findings(f"<p>{TR}</p>{h1}")
     [hidden] = [f for f in findings if "hidden" in f.title]
     assert hidden.title == "The homepage's only <h1> is hidden" and path(hidden.scope["urls"][0]) == "/"
     assert not [f for f in findings if "no <h1>" in f.title]                      # one root cause, said once
+
+
+def test_an_aria_hidden_h1_is_not_hidden_from_readers():
+    """DECISIONS 360 (İlginay): aria-hidden hides from screen readers only; the page still shows its <h1>."""
+    findings = heading_findings(f'<p>{TR}</p><h1 aria-hidden="true">Ö</h1>')
+    assert not [f for f in findings if "hidden" in f.title or "no <h1>" in f.title]
 
 
 def test_a_hidden_h1_repeating_the_title_says_so():

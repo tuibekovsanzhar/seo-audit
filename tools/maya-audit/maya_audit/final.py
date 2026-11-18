@@ -198,7 +198,8 @@ def broken_link_cards(report: dict) -> dict[str, list[dict]]:
     by_id = {f.get("id"): f for c in report.get("checks") or [] for f in c.get("findings") or [] if isinstance(f, dict)}
     out: dict[str, list[dict]] = {}
     for fid, rows in places(report).items():
-        f = by_id[fid]
+        # DECISIONS 360: rows of an observation (links with tracking parameters) have no finding of their own
+        f = by_id.get(fid) or {"rule_id": (rows[0] if rows else {}).get("rule_id"), "severity": "Info"}
         base = {"finding_id": fid, "rule_id": f.get("rule_id"), "severity": f.get("severity"),
                 "verification": (f.get("verification") or {}).get("state")}
         cards = []
@@ -222,7 +223,9 @@ def target_line(card: dict) -> str:
 
 def cards_markdown(report: dict) -> str:
     """The "what to edit" table for broken internal links; empty when there is none."""
-    cards = [c for rows in broken_link_cards(report).values() for c in rows]
+    # DECISIONS 360: links with no text and links with tracking parameters are not broken links: the appendix lists them
+    cards = [c for rows in broken_link_cards(report).values() for c in rows
+             if c.get("rule_id") not in ("str14.no_text", "idx6.parameters")]
     if not cards:
         return ""
     lines = ["", "## Broken links: what to edit", "",

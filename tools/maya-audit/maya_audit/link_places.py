@@ -23,7 +23,10 @@ ALIAS = ("idx6.alias_links",)  # DECISIONS 351: each link to an address whose ca
 CHAINS = ("idx3.chain", "idx3.loop", "idx3.cookie", "idx3.intermittent", "idx3.self_once")
 CANONICAL = ("idx4.broken", "idx4.redirecting", "idx4.redirect_loop")
 HREFLANG = ("str9.status",)
-WHERE_RULES = LINK_4XX + SERVER + TO_REDIRECT + CHAINS + CANONICAL + HREFLANG + ALIAS
+NO_TEXT = ("str14.no_text",)  # DECISIONS 360: links with no name, each with its page, address and place
+WHERE_RULES = LINK_4XX + SERVER + TO_REDIRECT + CHAINS + CANONICAL + HREFLANG + ALIAS + NO_TEXT
+# DECISIONS 360: the links to other sites that carry tracking parameters (an IDX-6 observation, on the small-fixes card)
+PARAMETERS = "links to other sites that carry tracking or logged-in view parameters"
 MAX_ROWS = 500  # per finding; the appendix says when more were cut
 
 
@@ -171,6 +174,11 @@ def _rows_for(f: dict, c: _Crawl) -> list[dict]:
                              replacement_url=t.get("canonical"))
                     rows.append(r)
         return rows
+    if rule in NO_TEXT:
+        from .link_fixes import place_of
+        return [c.row(f, "link", r.get("target"), r.get("source"), text="", href=(r.get("hrefs") or [None])[0],
+                      position=place_of(r), suggested="name_link", block=r.get("block"))
+                for r in _dicts(ev.get("links")) if r.get("target") and r.get("source")]
     if rule in CHAINS:
         starts = [ch["hops"][0] for ch in _dicts(ev.get("chains")) if ch.get("hops")]
         starts += [loop[0] for key in ("loops", "loops_in_the_crawl") for loop in ev.get(key) or [] if isinstance(loop, list) and loop]
@@ -192,12 +200,40 @@ def places(report: dict) -> dict[str, list[dict]]:
     """{finding id: rows} for every finding of a rule in WHERE_RULES (DECISIONS 337)."""
     findings = [f for chk in report.get("checks") or [] for f in chk.get("findings") or []
                 if isinstance(f, dict) and f.get("rule_id") in WHERE_RULES]
-    if not findings:
-        return {}
-    c = _Crawl(report)
+    c = _Crawl(report) if findings else None
     out = {}
     for f in findings:
-        rows = _rows_for(f, c)
+        rows = _rows_for(f, c)  # c is set whenever there is a finding
         if rows:
             out[f["id"]] = rows[:MAX_ROWS]
+    rows = parameter_rows(report)
+    if rows:
+        out["IDX-6"] = rows[:MAX_ROWS]
     return out
+
+
+def parameter_rows(report: dict) -> list[dict]:
+    """DECISIONS 360: one row per page and link to another site that carries tracking or logged-in view parameters (the
+    IDX-6 observation the small-fixes card lists): the page, the link's text, the address as written, where it sits,
+    and the parameters to take off. The pages come from the crawl's recorded links to other sites, else the example."""
+    obs = next((o for chk in report.get("checks") or [] if chk.get("check_id") == "IDX-6"
+                for o in chk.get("observations") or [] if isinstance(o, dict) and o.get("metric") == PARAMETERS), None)
+    if not obs:
+        return []
+    from .link_fixes import place_of
+    pages = [p for p in (report.get("crawl") or {}).get("pages") or [] if isinstance(p, dict)]
+    rows = []
+    for e in _dicts(obs.get("examples")):
+        url = e.get("url")
+        if not url:
+            continue
+        found = [(p["url"], x) for p in pages for x in _dicts(p.get("external_links")) if (x.get("target") or "") == url]
+        if not found and e.get("example"):
+            found = [(e["example"], {})]
+        for source, edge in found[:50]:
+            rows.append({"finding_id": "IDX-6", "rule_id": "idx6.parameters", "kind": "link", "links_to": url, "status": None,
+                         "ends_at": url, "final_status": None, "loop": False, "source": source,
+                         "link_text": edge.get("anchor") or None, "href": edge.get("href") or url, "position": place_of(edge),
+                         "in_sitemap": False, "sitemap_file": None, "suggested": "drop_params",
+                         "parameters": list(e.get("parameters") or [])[:4]})
+    return rows

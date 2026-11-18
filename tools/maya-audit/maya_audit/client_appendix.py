@@ -25,8 +25,9 @@ READ = {
                      "«Öncelik (P0-P3)»: ekibin sektör yöntemine göre ne kadar acil olduğu: P0 hemen, P1 yakında, P2 planlanmalı, P3 sırası gelince. Kartların sırasını değiştirmez; hesap «Yöntem» sayfasında.",
                      "«Bağlantı yerleri»: hata veren, yönlenen ya da yanlış yazılmış her adres ve onu gösteren her sayfa bir satır: sayfa, bağlantı metni, href, konum, site haritası, önerilen hedef. Bağlantı veren sayfa yoksa «yalnızca site haritasında» yazar.",
                      "Bağlantılar Mac'in hızlı önizlemesinde çalışmaz; dosyayı Numbers, Excel veya Google Sheets ile açın."],
-           "summary_cols": ["Kart", "Başlık", "Önem", "Sorun türü", "Öncelik (P0-P3)", "Sorumlu", "Efor", "Etkilenen adres", "Satırlara git"],
-           "go": "Satırlara git →", "where": "Bağlantı yerleri",
+           "summary_cols": ["Kart", "Başlık", "Önem", "Sorun türü", "Öncelik (P0-P3)", "Sorumlu", "Efor", "Etkilenen adres", "Satırlara git",
+                            "Bağlantılar"],
+           "go": "Satırlara git →", "where": "Bağlantı yerleri", "go_links": "Bağlantılara git →",
            # DECISIONS 337: where each address with a problem is pointed at
            "where_cols": ["Kart", "Bozuk adres", "HTTP durumu", "Bağlantının bulunduğu sayfa", "Bağlantı metni", "Yazılan değer (href)",
                           "Konum", "Site haritasında mı?", "Site haritası dosyası", "Site haritasındaki <loc> metni", "<loc> satırı",
@@ -43,7 +44,11 @@ READ = {
                            "positions": {"menu": "menü", "footer": "altbilgi", "body": "gövde", "head": "<head>"},
                            "kinds": {"canonical": "kanonik etiketi", "hreflang": "hreflang etiketi"},
                            "suggest": {"remove": "kaldırın", "fix_nav": "bağlantıyı çalışan sayfaya verin (menü bağlantısı kalmalı)", "remove_or_redirect": "kaldırın veya yönlendirin",
-                                       "fix_generator": "site haritası oluşturucuyu düzeltin", "fix_loop": "döngüyü düzeltin"},
+                                       "fix_generator": "site haritası oluşturucuyu düzeltin", "fix_loop": "döngüyü düzeltin",
+                                       # DECISIONS 360
+                                       "name_link": "bağlantıya görünür metin ya da aria-label verin",
+                                       "drop_params": "adresten parametreleri kaldırın: {params}"},
+                           "no_text": "(metin yok)",
                            "cause": "çıkarım: {page} sayfasındaki «{heading}» başlığından üretilmiş görünüyor",
                            "mistyped": "yanlış yazılmış adres"},
            "page_cols": ["Sayfa", "Okundu mu?", "Sayfa türü", "Önem puanı (0-100)", "Sorun sayısı", "En yüksek önem", "Sorunlar", "Kartlar"],
@@ -63,7 +68,9 @@ READ = {
                      "\"Priority (P0-P3)\": how urgent a card is by the team's sector method: P0 now, P1 soon, P2 to plan, P3 when convenient. It does not change the card order; the formula is on the \"Method\" sheet.",
                      "\"Link locations\": one row per failing, redirecting or mistyped address and each page pointing to it: page, link text, href, place, sitemap, what to point to. With no linking page it says \"sitemap only\".",
                      "Links do not work in the Mac's Quick Look preview; open the file in Numbers, Excel or Google Sheets."],
-           "summary_cols": ["Card", "Title", "Severity", "Issue type", "Priority (P0-P3)", "Owner", "Effort", "Affected addresses", "Go to rows"],
+           "summary_cols": ["Card", "Title", "Severity", "Issue type", "Priority (P0-P3)", "Owner", "Effort", "Affected addresses", "Go to rows",
+                            "Links"],
+           "go_links": "Go to links →",
            "go": "Go to rows →", "where": "Link locations",
            "where_cols": ["Card", "Broken address", "HTTP status", "Page with the link", "Link text", "Written value (href)",
                           "Place", "In the sitemap?", "Sitemap file", "<loc> text in the sitemap", "<loc> line",
@@ -79,7 +86,10 @@ READ = {
                            "positions": {"menu": "menu", "footer": "footer", "body": "body", "head": "<head>"},
                            "kinds": {"canonical": "canonical tag", "hreflang": "hreflang tag"},
                            "suggest": {"remove": "remove", "fix_nav": "point the link at a working page (keep the menu link)", "remove_or_redirect": "remove or redirect",
-                                       "fix_generator": "fix the sitemap generator", "fix_loop": "fix the loop"},
+                                       "fix_generator": "fix the sitemap generator", "fix_loop": "fix the loop",
+                                       "name_link": "give the link visible text or an aria-label",
+                                       "drop_params": "take the parameters off the address: {params}"},
+                           "no_text": "(no text)",
                            "cause": "inference: seems made from the heading “{heading}” on {page}",
                            "mistyped": "mistyped address"},
            "page_cols": ["Page", "Read?", "Page type", "Importance (0-100)", "Problems", "Highest severity", "Problems found", "Cards"],
@@ -410,10 +420,12 @@ def where_rows(places: dict | None, todos: list[dict] | None, lang: str) -> list
             else:
                 page = shown(r.get("source"))
             text = Wd["kinds"].get(kind, "") + (f" ({r['link_text']})" if kind == "hreflang" and r.get("link_text") else "") \
-                if kind in ("canonical", "hreflang") else (r.get("link_text") or "")
+                if kind in ("canonical", "hreflang") else (r.get("link_text") or (Wd["no_text"] if r.get("rule_id") == "str14.no_text" else ""))
             href = r.get("href") or (Wd["not_recorded"] if kind == "link" else "")
             url = r.get("replacement_url")
             suggest = shown(url) if url else Wd["suggest"].get(r.get("suggested") or "remove", r.get("suggested") or "")
+            if r.get("suggested") == "drop_params":  # DECISIONS 360
+                suggest = Wd["suggest"]["drop_params"].format(params=", ".join(x.split("=")[0] for x in r.get("parameters") or []))
             if "target_basis" in r:  # DECISIONS 346: the 301 target the card gives this sitemap address, worded alike
                 from .checks.team_rules import target_words
                 # an address made from a heading also needs the generator fixed (DECISIONS 337)
@@ -484,25 +496,33 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
         if r["card"] is not None:
             addresses.setdefault(r["card"], set()).add(r["url"] or r["address"])
     where = "'" + R["by_finding"].replace("'", "''") + "'"
+    # DECISIONS 360: a card with links in "Bağlantı yerleri" points at its first row there
+    where_body = where_rows(places, todos, lang)
+    links_sheet = "'" + R["where"].replace("'", "''") + "'"
+    first_link: dict[int, int] = {}
+    for i, row in enumerate(where_body, 2):
+        if row[0] != "":
+            first_link.setdefault(row[0], i)
     summary = [[c["n"], c.get("title") or "", sev(c.get("severity")),
                 W["itype"].get(c.get("issue_type") or "", "") if c.get("severity") in ("S1", "S2", "S3", "S4") else "",
                 c.get("p_level") or "",  # DECISIONS 324
                 c.get("owner") or "", c.get("effort") or "", len(addresses[c["n"]]) if c["n"] in addresses else c.get("addresses") or 0,
-                {"text": R["go"], "location": f"{where}!A{first_row[c['n']]}"} if c["n"] in first_row else ""]
+                {"text": R["go"], "location": f"{where}!A{first_row[c['n']]}"} if c["n"] in first_row else "",
+                {"text": R["go_links"], "location": f"{links_sheet}!A{first_link[c['n']]}"} if c["n"] in first_link else ""]
                for c in cards]
     by_page = [[_link(p["url"], p["url"]), page_rows.read_word(p["read"], lang), ptype(p["page_type"]),
                 p["importance"] if isinstance(p["importance"], (int, float)) else "", p["problems"], sev(p["worst"]),
                 "; ".join(p["names"]), ", ".join(str(n) for n in p["cards"])] for p in page_rows.page_table(rows)]
     out = [{"name": R["how"], "header": [R["how"]], "rows": [[x] for x in R["lines"]], "widths": [140],
             "frozen": False, "filter": False}]
-    for key, header, body, widths in (("summary", R["summary_cols"], summary, [7, 60, 12, 14, 12, 22, 10, 12, 18]),
+    for key, header, body, widths in (("summary", R["summary_cols"], summary, [7, 60, 12, 14, 12, 22, 10, 12, 18, 20]),
                                       ("by_page", R["page_cols"], by_page, [70, 16, 22, 12, 10, 14, 80, 10]),
                                       ("by_finding", R["finding_cols"], found, [42, 12, 13, 60, 16, 48, 60, 7, 16, 20, 12, 18, 24, 10])):
         if body:
             out.append({"name": R[key], "header": header, "rows": body, "widths": widths})
         else:  # one line saying why, never an empty sheet (DECISIONS 321 (5))
             out.append({"name": R[key], "header": [W["note"]], "rows": [[R["empty"][key]]], "widths": [140]})
-    where = where_rows(places, todos, lang)
+    where = where_body
     if where:  # DECISIONS 337: only when the audit has an address pointed at from somewhere
         out.append({"name": R["where"], "header": R["where_cols"], "rows": where,
                     "widths": [7, 60, 14, 60, 30, 40, 11, 14, 40, 60, 12, 34, 50, 50, 18, 24]})

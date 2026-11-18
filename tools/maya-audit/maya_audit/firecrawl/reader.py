@@ -316,6 +316,18 @@ def _merged(own: PageFetch | None, read: PageFetch, disagreements: list[dict[str
         return read
     analysis, evidence = read.analysis, []
     if own.analysis is not None and analysis is not None:
+        # DECISIONS 360: a reader's document can come back without the <title> or meta description Maya's own copy has
+        # (a rendered Next.js page): the page has them, so Maya's are kept, never "no title"
+        filled = {}
+        if not analysis.get("title") and own.analysis.get("title"):
+            filled["title"] = own.analysis["title"]
+        names = {m.get("name") for m in analysis.get("meta") or []}
+        missing = [m for m in own.analysis.get("meta") or [] if m.get("name") == "description" and "description" not in names]
+        if filled or missing:
+            analysis = {**analysis, **filled, "meta": [*(analysis.get("meta") or []), *missing]}
+            evidence.append(f"the copy read through {read.user_agent} had no {' or '.join([*filled, *(['meta description'] if missing else [])])}; "
+                            "Maya's own copy's is used")
+    if own.analysis is not None and analysis is not None:
         mine, theirs = noindex_directives(own.analysis, own.headers), noindex_directives(analysis, read.headers)
         analysis = {**analysis, "meta": [m for m in analysis["meta"] if m["name"] not in META_NAMES]
                     + [m for m in own.analysis["meta"] if m["name"] in META_NAMES]}
