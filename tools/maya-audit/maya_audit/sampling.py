@@ -30,6 +30,33 @@ SLOTS = (("importance", 1 / 3), ("long_tail", 1 / 3), ("newest", 1 / 6), ("excep
 FILES = (".kml", ".md", ".xml", ".pdf", ".txt", ".json", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".gz", ".zip")
 ARTICLE_WORDS = 5
 RETYPE_MIN, RETYPE_SHARE = 3, 0.8
+# DECISIONS 358 (agent defaults): before reading, an address of three or more words ending in an item id
+# ("/big-boss-50ml-383", not "/kokular-55" nor a year) that the main menu does not link is the profile's product page,
+# and so is an address listed in a sitemap file of products ("/sitemap/products/0.xml"); one in a file of categories is
+# its category page. After the first wave, such an address linked from the body of a page read as a category is too.
+ITEM_ID = re.compile(r"^(?:[^\W_]+[-_]){3,}\d{2,7}$")
+YEAR_END = re.compile(r"[-_](?:19|20)\d\d$")
+ITEM_FILE = re.compile(r"(?<![a-z])(?:products?|urun|urunler|items?)(?![a-z])")
+LIST_FILE = re.compile(r"(?<![a-z])(?:categor(?:y|ies)|kategori|kategoriler|collections?)(?![a-z])")
+
+
+# The profile types that are one item each (a product, a car model, a travel listing's detail); a SaaS feature page is
+# typed product in the page grouping but is not one item, so the address rules leave it alone.
+ITEM_TYPE_IDS = ("product", "model", "detail")
+
+
+def _profile_type(prof: dict, generic: str) -> str | None:
+    for t in prof["page_types"]:
+        if generic in (t.get("generic") or []) and (generic != "product" or t["id"] in ITEM_TYPE_IDS):
+            return t["id"]
+    return None
+
+
+def item_address(segment: str) -> bool:
+    """DECISIONS 358: a slug of three or more words ending in an item id."""
+    from .page_words import fold
+    seg = fold(segment or "")
+    return bool(ITEM_ID.match(seg)) and not YEAR_END.search(seg)
 VERSION = 1
 SLOT_WORDS = {"tr": {"fixed": "ana sayfa / kilit sayfa", "all": "hepsi", "importance": "önem (menüde, sığ)",
                      "long_tail": "uzun kuyruk (derin, menüde yok)", "newest": "en yeni (sitemap tarihi)",
@@ -49,8 +76,9 @@ def is_file(url: str) -> bool:
 
 
 def pre_type(prof: dict, url: str, menu: Iterable[str] = (), folders: Iterable[str] = (), analysis: dict | None = None,
-             nav: bool = False) -> tuple[str, str]:
-    """(page type, why) of one address before (or, with `analysis`, after) it is read."""
+             nav: bool = False, sitemap_file: str | None = None) -> tuple[str, str]:
+    """(page type, why) of one address before (or, with `analysis`, after) it is read. `sitemap_file`: the sitemap file
+    that listed it (DECISIONS 358)."""
     from . import business_types as bt
     from . import page_groups
     if is_file(url):
@@ -64,6 +92,15 @@ def pre_type(prof: dict, url: str, menu: Iterable[str] = (), folders: Iterable[s
     generic = "policy" if segs[0].lower() in page_groups.POLICY_FOLDERS or (last & page_groups.POLICY_WORDS) else None
     facts = bt.page_facts(url, analysis, menu=list(menu), generic=generic, folders=folders, nav=nav)
     tid, basis, hits = bt.classify(prof, facts)
+    if analysis is None and generic is None and not any(h["kind"] == "url" for h in hits):  # the address names no type
+        product, category = _profile_type(prof, "product"), _profile_type(prof, "category")
+        file_path = (urlsplit(sitemap_file).path.lower() if sitemap_file else "")
+        if product and file_path and ITEM_FILE.search(file_path):
+            return product, f"listed in a sitemap file of products ({file_path})"
+        if category and file_path and LIST_FILE.search(file_path):
+            return category, f"listed in a sitemap file of categories ({file_path})"
+        if product and not nav and len(segs) == 1 and item_address(segs[-1]):
+            return product, "an address of three or more words ending in an item id"
     if analysis is None:
         url_hits = [h for h in hits if h["kind"] == "url"]
         top = len(facts["segments"]) - 1
@@ -174,10 +211,15 @@ class Sampler:
         self.planned: dict[str, list[tuple[str, str]]] = {}
         self.order: list[str] = []
         self.history: list[list[str]] = []  # each wave's order, for the page reader (DECISIONS 327)
+        self.files: dict[str, str] = {}  # the sitemap file that listed each address (DECISIONS 358)
 
     # -------------------------------------------------------------- the pool
-    def add(self, urls: Iterable[str], anchors: dict[str, list[str]] | None = None, menu: Iterable[str] = ()) -> None:
-        """Known addresses (one version per page: the main folder's, DECISIONS 316) with their menu texts."""
+    def add(self, urls: Iterable[str], anchors: dict[str, list[str]] | None = None, menu: Iterable[str] = (),
+            files: dict[str, str] | None = None) -> None:
+        """Known addresses (one version per page: the main folder's, DECISIONS 316) with their menu texts; `files`: the
+        sitemap file that listed each (DECISIONS 358)."""
+        if files:
+            self.files.update(files)
         from .locales import HOME_KEY, locale_of, page_key
         for u, texts in (anchors or {}).items():
             self.anchors.setdefault(u, []).extend(texts)
@@ -196,7 +238,8 @@ class Sampler:
                 else:
                     continue
             keep[key] = u
-            self.types[u] = pre_type(self.prof, u, self.anchors.get(u, ()), self.folders, nav=u in self.menu_linked)
+            self.types[u] = pre_type(self.prof, u, self.anchors.get(u, ()), self.folders, nav=u in self.menu_linked,
+                                     sitemap_file=self.files.get(u))
 
     def counts(self) -> dict[str, int]:
         return dict(Counter(t for t, _ in self.types.values() if t not in ("file", "home")))
@@ -263,7 +306,7 @@ class Sampler:
     def wave_one_size(self) -> int:
         return max(1, int(self.budget * WAVE_ONE))
 
-    def retype(self, read_pages: dict[str, dict | None]) -> dict[str, str]:
+    def retype(self, read_pages: dict[str, dict | None], links: dict[str, list[str]] | None = None) -> dict[str, str]:
         """After wave 1: the pages read typed with their content ({url: analysis}), and every unread address of a URL
         template taking the template's type when RETYPE_MIN or more of its pages read agree (RETYPE_SHARE). Returns
         {url: type after reading}."""
@@ -284,6 +327,18 @@ class Sampler:
                 if k >= RETYPE_MIN and k / sum(v.values()) >= RETYPE_SHARE and best != t:
                     self.types[u] = (best, f"its URL template {patterns.get(u)}: {k} pages read are {best}")
                     n += 1
+        # DECISIONS 358: an unread item-id address linked from the body of a page read as a category is a product page
+        product, category = _profile_type(self.prof, "product"), _profile_type(self.prof, "category")
+        if product and category:
+            for src, targets in (links or {}).items():
+                if real.get(src) != category:
+                    continue
+                for u in targets:
+                    segs = _segments(u, self.folders)
+                    if (u in self.types and u not in real and self.types[u][0] != product and segs
+                            and item_address(segs[-1]) and u not in self.menu_linked):
+                        self.types[u] = (product, f"an item-id address linked from the category page {src}")
+                        n += 1
         for u, t in real.items():
             if u in self.types:
                 self.types[u] = (t, "typed after reading")
@@ -363,13 +418,28 @@ SAMPLE = {"tr": {"line": "Örneklem: {read} sayfa okundu, {unread} bilinen adres
                  "error_status": "{n} adres hata döndü ({codes})", "files": "{n} adres dosyaydı, sayfa değil",
                  "blocked": "{n} adres engellendi ya da sınırlandı", "failed": "{n} isteğe yanıt alınamadı",
                  "empty": "{n} sayfa boş döndü", "plan_done": "örneklem planı bitti: sayfa türleri doldu, {left} sayfalık bütçe kaldı",
-                 "counts": "sayfa sınırı her sayfa isteğini sayar", "and": "; "},
+                 "counts": "sayfa sınırı her sayfa isteğini sayar", "and": "; ",
+                 # DECISIONS 358: why a crawl ended below its limit, from what it met
+                 "off_site_redirects": "{n} adres {host} adresine yönlendirdi ve bu adres sitenin kendi adresi sayılmadığı için "
+                                       "izlenmedi (bu denetim eski kuralla yapıldı; yeni taramada izlenir)",
+                 "sitemap_elsewhere": "robots.txt'nin gösterdiği site haritası başka bir adreste ({url}) olduğu için okunmadı",
+                 "moved_host": "site sayfalarını {to} adresine yönlendiriyor; tarama {after} sayfadan sonra oraya geçti ve "
+                               "oradaki site haritasını okudu",
+                 "found_all": "bulunan her adres istendi ({found} adres); sitede bağlantı ya da site haritasıyla bulunan "
+                              "sayfa sayısı sınırdan az"},
           "en": {"line": "Sample: {read} {read_pages} read, {unread} known {unread_addresses} not read.",
                  "fewer": " {read} of the {cap}-page limit read: {why}.",
                  "error_status": "{n} {addresses} answered an error ({codes})", "files": "{n} {addresses} {were} a file, not a page",
                  "blocked": "{n} {addresses} were blocked or rate-limited", "failed": "{n} {requests} got no answer",
                  "empty": "{n} {pages} came back empty", "plan_done": "the sample plan ran out: every page type filled, "
-                 "{left} pages of the budget left", "counts": "the page limit counts every page request", "and": "; "}}
+                 "{left} pages of the budget left", "counts": "the page limit counts every page request", "and": "; ",
+                 "off_site_redirects": "{n} {addresses} redirected to {host}, which was not taken as the site's own address "
+                                       "and was not followed (an audit made under the earlier rule; a new crawl follows it)",
+                 "sitemap_elsewhere": "the sitemap robots.txt names is on another address ({url}) and was not read",
+                 "moved_host": "the site redirects its pages to {to}; the crawl moved there after {after} pages and read "
+                               "the sitemap there",
+                 "found_all": "every address found was requested ({found}); the site's links and sitemap name fewer pages "
+                              "than the limit"}}
 
 
 def _plural(n: int, one: str, many: str) -> str:
@@ -414,11 +484,68 @@ def fewer_reasons(report: dict) -> list[tuple[str, dict]]:
     empty = sum(1 for p in pages if ((p.get("analysis") or {}).get("empty_response")))
     if empty:
         out.append(("empty", {"n": empty}))
-    if crawl.get("stop_reason") == "exhausted" and cap and len(pages) < cap:
-        out.append(("plan_done", {"left": cap - len(pages)}))
+    out += _discovery_reasons(crawl)
+    if crawl.get("stop_reason") == "exhausted" and cap and len(pages) < cap and not any(
+            k in ("off_site_redirects", "sitemap_elsewhere") for k, _ in out):
+        if sampled({"crawl": crawl}) and unread_count({"crawl": crawl}):
+            out.append(("plan_done", {"left": cap - len(pages)}))
+        else:
+            out.append(("found_all", {"found": len(crawl.get("discovered_urls") or []) or len(pages)}))
     elif out and crawl.get("stop_reason") == "page_cap":
         out.append(("counts", {}))
     return out
+
+
+_OTHER_ADDRESS_SITEMAP = re.compile(r"robots\.txt names \d+ sitemap file\(s\) on another address, which were not read: (\S+?)[,.]?(?:\s|$)")
+
+
+def _discovery_reasons(crawl: dict) -> list[tuple[str, dict]]:
+    """DECISIONS 358: what kept addresses from the crawl: redirects of the site's own pages to an address it did not take
+    as the site's (an audit made before the twin move), a sitemap named on another address, and a move to the twin."""
+    from urllib.parse import urlsplit
+    out: list[tuple[str, dict]] = []
+    origin = str(crawl.get("origin") or "")
+    moves = [m for m in crawl.get("host_moves") or [] if isinstance(m, dict)]
+    for m in moves:
+        out.append(("moved_host", {"to": urlsplit(str(m.get("to") or "")).hostname or m.get("to"), "after": m.get("after_pages")}))
+    own = {origin} | {str(m.get("from")) for m in moves}
+    hosts: Counter = Counter()
+    for r in crawl.get("redirects") or []:
+        if not isinstance(r, dict) or not r.get("final"):
+            continue
+        parts = urlsplit(str(r["final"]))
+        if f"{parts.scheme}://{parts.netloc}" not in own and (parts.hostname or "").removeprefix("www.") == (
+                urlsplit(origin).hostname or "").removeprefix("www."):
+            hosts[parts.hostname] += 1
+    if hosts:
+        host, n = hosts.most_common(1)[0]
+        out.append(("off_site_redirects", {"n": n, "host": host}))
+    for note in crawl.get("sitemap_notes") or []:
+        m = _OTHER_ADDRESS_SITEMAP.search(str(note))
+        if m:
+            out.append(("sitemap_elsewhere", {"url": m.group(1).rstrip(".,")}))
+            break
+    return out
+
+
+def below_limit_line(report: dict, lang: str = "tr") -> str | None:
+    """DECISIONS 358: for the Kapsam sheet, why a crawl that stopped on its own read fewer pages than its limit
+    ("150 sayfalık sınırdan 32 sayfa okundu: …"). None when it read its limit or stopped on the limit or the time."""
+    W = SAMPLE.get(lang, SAMPLE["tr"])
+    crawl = report.get("crawl") or {}
+    cap = int((crawl.get("config") or {}).get("max_pages") or 0)
+    if not cap or crawl.get("stop_reason") in ("page_cap", "time_limit", "stopped"):
+        return None
+    read = sum(1 for p in crawl.get("pages") or [] if isinstance(p, dict) and isinstance(p.get("status"), int)
+               and 200 <= p["status"] < 300)
+    if read >= cap:
+        return None
+    parts = []
+    for kind, values in fewer_reasons(report):
+        n = values.get("n", 0)
+        parts.append(W[kind].format(**values, addresses=_plural(n, "address", "addresses"), were=_plural(n, "was", "were each"),
+                                    requests=_plural(n, "request", "requests"), pages=_plural(n, "page", "pages")))
+    return W["fewer"].format(read=read, cap=cap, why=W["and"].join(parts) if parts else "—").strip()
 
 
 def sample_line(report: dict, lang: str = "tr") -> str | None:

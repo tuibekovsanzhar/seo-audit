@@ -40,7 +40,9 @@ from .page_words import ARTICLE_FOLDERS, CATEGORY_WORDS, PRODUCT_FOLDERS, fold
 # pages listing them categories; store and branch pages are "location"; account and sign-in pages are utility; the
 # homepage is the most important page. 4 (DECISIONS 350): a place page needs coordinates or opening hours, its own place
 # markup, and no product, offer or service markup. 5 (DECISIONS 351): CMS edit and preview addresses are not pages.
-METHOD_VERSION = 5
+# 6 (DECISIONS 358): a page with its own Product markup (not inside a list) with an Offer, or with og:type=product and a buy
+# control of its own, is a product even when Product markup and og:type=product are on most pages (carpexonline.com).
+METHOD_VERSION = 6
 PAGE_TYPES = ("home", "category", "product", "blog_article", "location", "policy", "utility", "other")
 
 # -- URL pattern ---------------------------------------------------------------------------------------------------
@@ -286,6 +288,26 @@ def og_default(read) -> str | None:
     return top if n >= OG_DEFAULT_MIN and n / len(read) >= OG_DEFAULT_SHARE else None
 
 
+def own_item(page) -> str | None:
+    """DECISIONS 358: why a page shows one product of its own, whatever the site puts on every page: Product markup that is
+    not inside a list and carries an Offer, or og:type=product with a buy control of its own on a page that is not a
+    listing. None otherwise."""
+    from .checks.structure import _buy_control, listing_reason
+    a = page.analysis or {}
+    for p in (a.get("structured_data") or {}).get("products") or []:
+        if isinstance(p, dict) and p.get("type") in ("Product", "ProductGroup") and not p.get("in_list") and p.get("offers"):
+            return "its own Product markup with an Offer (not inside a list)"
+    if _og(page) == "product":
+        try:
+            if listing_reason(page, frozenset()) is None:
+                control = _buy_control(page)
+                if control:
+                    return f"og:type=product and a buy control of its own ({control[:60]})"
+        except (KeyError, TypeError):  # a saved record without what the buy-control reader needs
+            return None
+    return None
+
+
 def _item_links(page) -> set[str]:
     return {t for t in _body_targets(page) if item_address(t)}
 
@@ -337,9 +359,15 @@ def page_type(page, home: str, homes: set[str], products: dict, site_og: str | N
             return "product", f"path /{body[0]}/…"
         if "Product" in own_types and own_types & {"Offer", "AggregateOffer"}:
             return "product", "its own Product markup with an Offer"
+        item = own_item(page)
+        if item:
+            return "product", item
         kind, why = None, None
     if kind == "product":
         return "product", why
+    item = own_item(page) if kind is None else None
+    if item and not _item_links(page):
+        return "product", item
     items = _item_links(page)
     if len(items) >= ITEM_LINKS_MIN:
         return "category", f"links to {len(items)} item addresses outside its menu and footer"

@@ -211,7 +211,8 @@ def test_the_sample_line_says_pages_read_known_unread_and_why_fewer():
     assert sampling.sample_line(report, "en").startswith("Sample: 128 pages read, 499 known addresses not read. 128 of the 150-page limit read: 21 addresses answered an error (404 ×21); 1 address was a file, not a page")
     assert sampling.unread_count(_sampled(reader_read=[f"{FINAL}/u0", f"{FINAL}/u1"])) == 497
     done = _sampled(read=120, errors=0, files=0, unread=0, stop="exhausted")
-    assert "örneklem planı bitti: sayfa türleri doldu, 30 sayfalık bütçe kaldı" in sampling.sample_line(done, "tr")
+    # DECISIONS 358: nothing known was left unread, so the line says every address found was asked for, not "plan done"
+    assert "bulunan her adres istendi" in sampling.sample_line(done, "tr") and "örneklem planı bitti" not in sampling.sample_line(done, "tr")
     assert sampling.sample_line(_sampled(read=150, errors=0, files=0), "tr") == "Örneklem: 150 sayfa okundu, 499 bilinen adres okunmadı."
     not_sampled = _sampled()
     not_sampled["crawl"]["sampling"] = None

@@ -226,6 +226,9 @@ class CrawlResult:
     sitemap_lastmods: dict[str, str | None] = field(default_factory=dict)
     # Disclosures about sitemap discovery, e.g. that it stopped on its time budget (INT-2, IDX-5).
     sitemap_notes: list[str] = field(default_factory=list)
+    # DECISIONS 358 (schema 1.33): moves to the site's twin address after the start, when its own pages redirect there:
+    # rows of {from, to, redirects, after_pages, sitemap_named}. Empty when the crawl stayed where the start led it.
+    host_moves: list[dict[str, Any]] = field(default_factory=list)
     robots_policy_by_origin: dict[str, Any] = field(default_factory=dict, repr=False)
     # Where each sitemap file was named: "robots.txt", "sitemap index <url>" or "guess" (maya_audit.sitemap). In
     # memory for IDX-5's failed-file finding, which writes what it needs into its own evidence.

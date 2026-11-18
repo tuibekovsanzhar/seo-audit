@@ -115,7 +115,7 @@ WORDS = {
                       "intent": "kasıtlı olabilir", "firecrawl_only": "yalnız Firecrawl kopyasında görüldü", "rendered_html": "işlenmiş HTML (Firecrawl), ham boyutla karşılaştırılamaz",
                       "spoofed_googlebot": "Googlebot kimliğiyle yapılan isteğe 403/429",
                       "names_in_markup": "diğer marka adları yalnız yapısal veride"},
-           "kind": {"page_cap": "Sayfa sınırı", "time_budget": "Süre sınırı", "reader": "Okuma yolu", "block_pages": "Engel sayfaları", "sampling": "Akıllı örneklem", "sources": "Kaynaklar", "edit_pages": "Düzenleme adresleri",
+           "kind": {"page_cap": "Sayfa sınırı", "below_limit": "Sınırın altında", "time_budget": "Süre sınırı", "reader": "Okuma yolu", "block_pages": "Engel sayfaları", "sampling": "Akıllı örneklem", "sources": "Kaynaklar", "edit_pages": "Düzenleme adresleri",
                     "not_assessed": "Değerlendirilmedi"},
            "page_type": {"home": "ana sayfa", "category": "kategori", "product": "ürün", "blog_article": "blog yazısı",
                          "location": "mağaza / konum sayfası", "policy": "politika sayfası", "utility": "yardımcı sayfa (arama, sepet, hesap)", "other": "diğer"},
@@ -163,7 +163,7 @@ WORDS = {
                       "intent": "may be intentional", "firecrawl_only": "seen only in Firecrawl's copy", "rendered_html": "rendered HTML (Firecrawl), not comparable with a raw size",
                       "spoofed_googlebot": "403/429 to a request with Googlebot's user agent",
                       "names_in_markup": "the other brand names are only in structured data"},
-           "kind": {"page_cap": "Page cap", "time_budget": "Time budget", "reader": "How pages were read", "block_pages": "Block pages", "sampling": "Smart sample", "sources": "Sources", "edit_pages": "Edit addresses",
+           "kind": {"page_cap": "Page cap", "below_limit": "Below the limit", "time_budget": "Time budget", "reader": "How pages were read", "block_pages": "Block pages", "sampling": "Smart sample", "sources": "Sources", "edit_pages": "Edit addresses",
                     "not_assessed": "Not assessed"},
            "page_type": {"home": "homepage", "category": "category", "product": "product", "blog_article": "blog article",
                          "location": "store / location page", "policy": "policy page", "utility": "utility page (search, cart, account)", "other": "other"},
@@ -248,6 +248,8 @@ def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = No
     if kind == "page_cap":
         return (f"Sayfa sınırı {line.get('pages')} sayfa; bilinen ama okunmayan adres: {line.get('not_read')}" if lang == "tr"
                 else f"Page cap {line.get('pages')} pages; addresses known but not read: {line.get('not_read')}")
+    if kind == "below_limit":  # DECISIONS 358
+        return line.get(lang) or line.get("tr") or ""
     if kind == "time_budget":
         return (f"Süre sınırı {line.get('seconds')} sn; süre yüzünden atlanan adım: {line.get('cut') or '—'}" if lang == "tr"
                 else f"Time budget {line.get('seconds')} s; steps cut by time: {line.get('cut') or '—'}")

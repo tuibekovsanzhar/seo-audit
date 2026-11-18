@@ -171,7 +171,7 @@ def test_a_made_up_shop_gets_templates_types_depths_and_importance_on_every_page
 def test_the_grouping_is_written_per_page_in_report_json_under_schema_1_23():
     outcome = _audit()
     report = build_report(outcome.result, outcome.gates, outcome.checks)
-    assert report["schema_version"] == "1.32"
+    assert report["schema_version"] == "1.33"
     pages = {p["url"]: p for p in report["crawl"]["pages"]}
     home = pages[SHOP + "/"]["grouping"]
     assert home["page_type"] == "home" and home["importance"] >= 80 and home["template_key"] == "/"
@@ -179,7 +179,7 @@ def test_the_grouping_is_written_per_page_in_report_json_under_schema_1_23():
                          "inlinks", "click_depth", "click_depth_basis", "importance", "importance_parts"}
     missing = pages[SHOP + "/nowhere"]["grouping"] if SHOP + "/nowhere" in pages else {"not_scored": "x"}
     assert "importance" not in missing
-    assert report["crawl"]["page_grouping"]["method_version"] == 5  # DECISIONS 347, 350, 351
+    assert report["crawl"]["page_grouping"]["method_version"] == 6  # DECISIONS 347, 350, 351, 358
     json.dumps(report)  # plain JSON
 
 

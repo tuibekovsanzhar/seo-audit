@@ -2449,7 +2449,7 @@ Push (owner: "push", 2026-11-17): `20bfe15` (DECISIONS 356) pushed; CI run 44142
 
 ## Maya sheets after the Ticimax review (DECISIONS 357, 2026-11-17)
 
-VERIFIED locally; not pushed.
+VERIFIED; pushed as `90ecc55` (`20bfe15..90ecc55`), CI run 44163567764 success.
 
 | Ticimax c77ebf6d (with Maya data) | Before | After |
 |---|---|---|
@@ -2464,4 +2464,26 @@ VERIFIED locally; not pushed.
 | fast suite | `3374 passed, 4 skipped, 135 deselected, 1 warning in 552.14s (0:09:12)` |
 | full suite, `pytest -q -rfE -p no:cacheprovider` | `3509 passed, 4 skipped, 1 warning in 994.91s (0:16:34)` |
 | `ruff --select E9,F821,F841` (source folders) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |
+
+## The carpexonline.com review (DECISIONS 358, 2026-11-18)
+
+VERIFIED locally; not pushed. Report schema 1.33 (`crawl.host_moves`), page grouping method 6, Maya summary version 3.
+
+| Carpex 5f049bf1 (saved data, with Maya data) | Before | After |
+|---|---|---|
+| 1. Pages read / why | 32 of 150; no reason given | Same 32 (needs a new crawl); Kapsam "Sınırın altında": 144 redirects to www.carpexonline.com not followed, sitemap on www not read |
+| 2. Product pages in "Sayfa bazında" | diğer 19 | ürün 19 |
+| 3. "Lider rakip" = carpex / carpex.com.tr in domains | 2 topics / 2 topics | 0 / 0; Kapsam names «carpex», 58 product names, carpex.com.tr, carpex.si, shop.carpex.si as the brand's own |
+| 4. Non-topic labels as topics | intent:discovery, intent:comparison, intent:branded, intent:evaluation | none (they join their cluster: topic) |
+| 5. Pages downloaded | the summary had no download step | choice read on every reading; live download NOT RUN (live requests) |
+| Text check | PASS | PASS |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_carpex_review_358.py` | `11 passed` |
+| fast suite | `3385 passed, 4 skipped, 135 deselected, 1 warning in 554.76s (0:09:14)` |
+| full suite | NOT RUN (before a push) |
+| `ruff --select E9,F821,F841` (source folders) | `All checks passed!` |
+| A new Carpex crawl (point 1 live) | NOT RUN (live request; owner's call) |
 | Push | NOT DONE (owner: don't push) |

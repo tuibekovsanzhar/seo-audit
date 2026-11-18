@@ -238,15 +238,21 @@ def measure_html(html: str) -> dict:
 
 
 def _topics(summary: dict) -> dict[str, str | None]:
-    """{prompt id: topic}: Maya's prompt label (meta.json), else the visibility topic whose name words the prompt
-    holds (most hits; one topic per prompt, the first on a tie), else None."""
+    """{prompt id: topic}: Maya's prompt label that is a topic (meta.json; a plain name or a "cluster:" value), else the
+    visibility topic whose name words the prompt holds (most hits; one topic per prompt, the first on a tie), else
+    "Konu dışı etiketler" when the prompt has only labels that are not topics (DECISIONS 358), else None."""
+    from .maya_data import OFF_TOPIC, topic_of
     info = (summary.get("ai") or {}).get("prompts") or {}
     vis = [t["topic"] for t in ((summary.get("visibility") or {}).get("topics") or [])]
     words = {t: [w for w in re.split(r"[_\-\s/]+", _fold(t)) if len(w) > 2] for t in vis}
     out = {}
     for pid, p in info.items():
-        if p.get("topic"):
-            out[pid] = p["topic"]
+        topic = topic_of(p["topic"]) if p.get("topic") else None  # a summary saved before 358 kept any first label
+        if topic:
+            out[pid] = topic
+            continue
+        if p.get("labels") or p.get("topic"):  # labelled, but with no topic among its labels
+            out[pid] = OFF_TOPIC
             continue
         text = _fold(p.get("text") or "")
         best = max(((sum(1 for w in ws if w in text), -i, t) for i, (t, ws) in enumerate(words.items())), default=None)
@@ -534,13 +540,19 @@ def _domain(url: str) -> str:
 
 def _key(name: str) -> str:
     """A brand name as a comparable key: folded, letters and digits only ("T-Soft" -> "tsoft", "İkas" -> "ikas")."""
-    return re.sub(r"[^a-z0-9]", "", _fold(name))
+    from .maya_data import name_key
+    return name_key(name)
 
 
 def _label(domain: str) -> str:
     """The registrable domain's own name: "help.shopify.com" -> "shopify", "ideasoft.com.tr" -> "ideasoft"."""
-    from .urls import registrable_domain
-    return re.sub(r"[^a-z0-9]", "", (registrable_domain(domain) or domain).split(".")[0])
+    from .maya_data import domain_label
+    return domain_label(domain)
+
+
+def _own_keys(summary: dict) -> set[str]:
+    from .maya_data import brand_keys
+    return brand_keys(summary.get("brand_names") or [], summary.get("brand_domains") or [])
 
 
 # DECISIONS 357: a third-party page lists several brands when its address or title says so (a comparison, a list, the
@@ -562,11 +574,14 @@ def competitor_keys(summary: dict) -> dict[str, str]:
         names.append(row[0] or "")
     for t in ((summary.get("visibility") or {}).get("topics") or []):
         names.append(t.get("leader") or "")
+    from .maya_data import own_name
     own = {_key(n) for n in summary.get("brand_names") or []} | {_label(d) for d in summary.get("brand_domains") or []}
+    keys = _own_keys(summary)
     out: dict[str, str] = {}
     for n in names:
         k = _key(n)
-        if len(k) >= 3 and k not in own and not is_generic(n) and not k.isdigit() and "." not in (n or "").strip("."):
+        if (len(k) >= 3 and k not in own and not own_name(n, keys) and not is_generic(n) and not k.isdigit()
+                and "." not in (n or "").strip(".")):
             out.setdefault(k, n)
     return out
 
@@ -575,9 +590,10 @@ def domain_kind(domain: str, summary: dict, keys: dict[str, str], explicit: set[
                 text: str | None = None) -> str:
     """brand, competitor (a competitor brand's own site), social, comparison (a third party listing several brands) or
     other (a third party that does not show it does)."""
+    from .maya_data import own_domain
     brand = set(summary.get("brand_domains") or [summary.get("domain") or ""]) - {""}
-    if any(domain == b or domain.endswith("." + b) for b in brand):
-        return "brand"
+    if any(domain == b or domain.endswith("." + b) for b in brand) or own_domain(domain, _own_keys(summary)):
+        return "brand"  # DECISIONS 358: a domain named after the brand (carpex.com.tr) is the brand's own site
     if any(domain == c or domain.endswith("." + c) for c in explicit) or _label(domain) in keys:
         return "competitor"
     if any(domain == s or domain.endswith("." + s) for s in SOCIAL):
@@ -640,7 +656,13 @@ def topic_rows(summary: dict, crawl: "Crawl | None" = None) -> list[dict]:
                     "competitor_page": (comp_page[0], comp_page[1], len(url_prompts[comp_page[0]])) if comp_page else None,
                     "comparison_page": (cmp_page[0], cmp_page[1], len(url_prompts[cmp_page[0]])) if cmp_page else None,
                     "samples": [info[p]["text"] for p in pids[:2] if p in info]})
-    out.sort(key=lambda t: (-(t["gap"] if t["gap"] is not None else -999), -t["n"]))
+    # DECISIONS 358: the prompts with only labels that are not topics come after every real topic
+    from .maya_data import OFF_TOPIC
+    for t in out:
+        if t["topic"] == OFF_TOPIC:
+            t["labels"] = sorted({x for p in t["prompts"] for x in (info.get(p, {}).get("labels") or [])
+                                  + ([info[p]["topic"]] if info.get(p, {}).get("topic") else [])}, key=str.lower)
+    out.sort(key=lambda t: (t["topic"] == OFF_TOPIC, -(t["gap"] if t["gap"] is not None else -999), -t["n"]))
     return out
 
 
@@ -650,6 +672,8 @@ def _vis_words(v: dict | None, who: str) -> str:
     if who == "brand":
         return f"{_tr(v['brand_first'])} → {_tr(v['brand_last'])}"
     if not v.get("leader"):
+        if v.get("leader_own"):  # DECISIONS 358
+            return f"— («{v['leader_own']}» markanın kendisi, rakip sayılmadı)"
         return "—" + (f" («{v['leader_ignored']}» genel bir kelime, rakip sayılmadı)" if v.get("leader_ignored") else "")
     return f"{v['leader']} {_tr(v['leader_first'])} → {_tr(v['leader_last'])}"
 
@@ -681,7 +705,8 @@ def topic_sheet(summary: dict, rows: list[dict]) -> dict:
     body = []
     for i, t in enumerate(rows, 1):
         why, act = insight(t)
-        body.append([i, t["topic"], t["n"], "Evet" if t["n"] < 10 else "", _pct(t["brand_share"]),
+        topic = (f"{t['topic']} ({', '.join(t['labels'][:8])})" if t.get("labels") else t["topic"])
+        body.append([i, topic, t["n"], "Evet" if t["n"] < 10 else "", _pct(t["brand_share"]),
                      "; ".join(f"{_short(u)} ({round(100 * s)}%)" for u, s in t["brand_pages"]),
                      _vis_words(t["vis"], "brand"), _vis_words(t["vis"], "leader"), t["gap"] if t["gap"] is not None else "",
                      "; ".join(f"{d} ({round(100 * s)}%)" for d, s in t["domains"]),
@@ -695,8 +720,11 @@ def topic_sheet(summary: dict, rows: list[dict]) -> dict:
 def structure_targets(topics: list[dict], summary: dict) -> list[tuple[str, str, str | None]]:
     """(topic, side, url) for each topic: the brand's most cited page, the most cited competitor-brand page and
     comparison page (at most MAX_EXTERNAL_PER_TOPIC external pages per topic)."""
+    from .maya_data import OFF_TOPIC
     out = []
     for t in topics:
+        if t["topic"] == OFF_TOPIC:  # not a topic: no page of it is compared (DECISIONS 358)
+            continue
         out.append((t["topic"], "Marka", t.get("brand_page")))
         ext = [("Rakip marka", t["competitor_page"][0] if t["competitor_page"] else None),
                ("Karşılaştırma sitesi", t["comparison_page"][0] if t["comparison_page"] else None)]
@@ -711,6 +739,8 @@ def structure_sheet(topics: list[dict], summary: dict, crawl: Crawl) -> dict:
     body = []
     for topic in topics:
         group = [(side, url) for t, side, url in structure_targets([topic], summary)]
+        if not group:
+            continue
         measured = {side: (url, crawl.measure(url) if url else None) for side, url in group}
         mine = measured.get("Marka", (None, None))[1]
         for side, (url, m) in measured.items():
@@ -805,8 +835,13 @@ def build(summary: dict | None, report: dict, evidence_dir: Path | None = None, 
             howto.append(f"«{SHEETS['detail']}»: önem puanına göre ilk {MAX_DETAIL} sayfa; sayfa yapısı ve aynı prompt'larda kaynak "
                          "gösterilen rakip sayfalar.")
             not_read = sum(1 for r in rows[:MAX_DETAIL] if crawl.measure(r["url"]) is None)
+            got = fetched_counts(summary)
+            if got["detail"]:
+                coverage.append(f"Sayfa detay: denetimde okunmayan {got['detail']} sayfa Maya verisi eklenirken ayrıca indirildi")
             if not_read:
-                coverage.append(f"Sayfa detay: {not_read} sayfa bu denetimde okunmadı ve ayrıca indirilmedi («okunmadı»)")
+                coverage.append(f"Sayfa detay: {not_read} sayfa bu denetimde okunmadı ve ayrıca indirilmedi («okunmadı»)"
+                                + ("" if (summary.get("fetch") or {}).get("wanted") else "; Maya verisi kartında «sayfaları da indir» "
+                                   "seçilip yeniden okunursa indirilir"))
     if not skipped("competitors", "Rakip"):
         topics = topic_rows(summary, crawl)
         if topics:
@@ -814,11 +849,25 @@ def build(summary: dict | None, report: dict, evidence_dir: Path | None = None, 
             sheets.append(structure_sheet(topics, summary, crawl))
             howto.append(f"«{SHEETS['topics']}»: konu bazında marka ve lider rakip, en büyük açık en üstte; n < 10 yalnız gösterge.")
             howto.append(f"«{SHEETS['structure']}»: marka sayfası, rakip ve karşılaştırma sayfası yan yana; farklar [HİPOTEZ].")
-            fetched = sum(1 for v in (summary.get("fetched") or {}).values() if not v.get("error"))
-            coverage.append(f"Rakip sayfaları: konu başına en çok {MAX_EXTERNAL_PER_TOPIC} dış sayfa; indirilen {fetched}; "
-                            "denetlenen sitenin sayfa sınırına sayılmadı; alınamayan sayfa «alınamadı»")
+            got = fetched_counts(summary)
+            asked = (summary.get("fetch") or {}).get("wanted")
+            coverage.append(f"Rakip sayfaları: konu başına en çok {MAX_EXTERNAL_PER_TOPIC} dış sayfa; indirilen {got['competitor']}"
+                            + (f", alınamayan {got['failed']}" if got["failed"] else "")
+                            + ("" if asked or got["pages"] else " («sayfaları da indir» seçilmedi)")
+                            + "; denetlenen sitenin sayfa sınırına sayılmadı; alınamayan sayfa «alınamadı»")
             method.append(["Rakip konuları", "prompt'lar Maya etiketiyle (meta.json) ya da konu adının kelimeleriyle tek konuya atandı; "
-                                             "«maid», «handyman», «urban» gibi tek başına genel kelimeler rakip sayılmadı"])
+                                             "«maid», «handyman», «urban» gibi tek başına genel kelimeler rakip sayılmadı; "
+                                             "«intent:», «register:», «brand:» gibi konu olmayan etiketler «Konu dışı etiketler» "
+                                             "satırında, gerçek konulardan sonra"])
+            own = summary.get("own") or {}
+            if own.get("names") or own.get("products"):
+                said = ", ".join("«" + n + "»" for n in (own.get("names") or [])[:8])
+                more = (f"{len(own['products'])} ürün adı (ör. «{own['products'][0]}»)" if own.get("products") else "")
+                coverage.append("Markanın kendisi: Maya'nın rakip verisindeki " + " ve rakip anma verisindeki ".join(x for x in (said, more) if x)
+                                + " markanın kendi adı ya da ürünü; hiçbir sayfada rakip sayılmadı")
+            if own.get("domains"):
+                coverage.append(f"Markanın kendi siteleri: {', '.join(own['domains'][:8])} markanın adını taşıdığı için markanın "
+                                "sitesi sayıldı (rakip değil); kaynak gösterilen sayfaları marka payına katıldı")
         else:
             coverage.append("Rakip sayfaları oluşturulmadı: prompt'lar hiçbir konuya atanamadı")
     method.append(["Maya verisi", "Search Console 28 günlük anlık satırları toplanmaz (son görüntü), günlük satırlar toplanır; "
@@ -835,28 +884,37 @@ def enrich(summary: dict, report: dict, fetch: Callable[[str], str | None], evid
     to MAX_EXTERNAL_PER_TOPIC external pages per topic. `fetch(url)` returns the HTML or None (the caller's polite
     fetcher; never counted toward the audited site's page limit). Stored in `summary["fetched"]`."""
     crawl = Crawl(report, evidence_dir, {})
-    wanted: list[str] = []
+    wanted: dict[str, str] = {}  # url -> what it is for: "detail" (Sayfa detay) or "competitor" (Rakip sayfaları)
     if not (summary.get("missing") or {}).get("page_detail"):
         rows, _ = pages(summary, crawl)
         # only pages the crawl never asked for: an address it answered (a redirect, a 404) is the site's own answer
-        wanted += [r["url"] for r in [r for r in rows if r["segment"] and r["segment"] != "0"][:MAX_DETAIL]
-                   if crawl.measure(r["url"]) is None and r["url"] not in crawl.pages]
+        for r in [r for r in rows if r["segment"] and r["segment"] != "0"][:MAX_DETAIL]:
+            if crawl.measure(r["url"]) is None and r["url"] not in crawl.pages:
+                wanted.setdefault(r["url"], "detail")
     if not (summary.get("missing") or {}).get("competitors"):
-        for _, _, url in structure_targets(topic_rows(summary), summary):
+        for _, side, url in structure_targets(topic_rows(summary), summary):
             if url and crawl.measure(url) is None and url not in crawl.pages:
-                wanted.append(url)
+                wanted.setdefault(url, "detail" if side == "Marka" else "competitor")
     fetched = dict(summary.get("fetched") or {})
-    for url in list(dict.fromkeys(wanted))[:limit]:
-        if url in fetched:
+    for url, purpose in list(wanted.items())[:limit]:
+        if url in fetched and not fetched[url].get("error"):
             continue
         try:
             html = fetch(url)
         except Exception as exc:  # noqa: BLE001  a page that cannot be fetched is "alınamadı"
-            fetched[url] = {"error": type(exc).__name__}
+            fetched[url] = {"error": type(exc).__name__, "for": purpose}
             continue
-        fetched[url] = measure_html(html) if html else {"error": "no page"}
+        fetched[url] = {**(measure_html(html) if html else {"error": "no page"}), "for": purpose}
     summary["fetched"] = fetched
     return summary
 
 
-__all__ = ["build", "enrich", "pages", "topic_rows", "is_generic", "measure_html"]
+def fetched_counts(summary: dict | None) -> dict[str, int]:
+    """DECISIONS 358: what the "also download pages" choice brought: pages per purpose and the ones that failed."""
+    rows = [v for v in ((summary or {}).get("fetched") or {}).values() if isinstance(v, dict)]
+    ok = [v for v in rows if not v.get("error")]
+    return {"pages": len(ok), "detail": sum(1 for v in ok if v.get("for") == "detail"),
+            "competitor": sum(1 for v in ok if v.get("for") != "detail"), "failed": len(rows) - len(ok)}
+
+
+__all__ = ["build", "enrich", "fetched_counts", "pages", "topic_rows", "is_generic", "measure_html"]

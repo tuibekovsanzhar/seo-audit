@@ -2149,6 +2149,10 @@ class Builder:
                 limits.append(fmt(L["own_page_cap"], pages=fmt_int(line.get("pages") or 0, lang),
                                                        not_read=fmt_int(line.get("not_read") or 0, lang)))
                 self.fact(line.get("pages"), line.get("not_read"))
+            elif line["kind"] == "below_limit":  # DECISIONS 358: why fewer pages than the limit were read
+                if not sample:
+                    limits.append(line.get(lang) or line.get("tr"))
+                    self.fact(*(line.get("numbers") or []))
             elif line["kind"] == "time_budget":
                 limits.append(fmt(L["own_time"], seconds=fmt_int(int(line.get("seconds") or 0), lang)))
                 self.fact(int(line.get("seconds") or 0))

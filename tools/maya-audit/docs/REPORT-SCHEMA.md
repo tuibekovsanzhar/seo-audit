@@ -1,6 +1,6 @@
 # The JSON report format
 
-Current version: `1.32`
+Current version: `1.33`
 
 Every JSON report the tool writes (`--json`, and one per brand from `batch`) starts with `schema_version`.
 Anything that reads a report, including the web interface, reads that number first.
@@ -166,6 +166,7 @@ A `pass` with anything in `coverage.not_assessed` is written as `partial`, never
 | `redirects` | Every requested address that redirected (1.26, DECISIONS 315), or null in an older report: `url`, `hops` ([{`url`, `status`, `target`}] in order), `final` (where the redirects end), `final_status` (its answer, null when not fetched), `loop` (the walk came back to an address already passed). Its inner keys are not covered by the version. |
 | `locales` | The site's country/language folders (1.27, DECISIONS 316), or null in an older report: `folders` (the locale folders, such as `global-en` or `tr`), `main` (the folder the homepage landed on, `""` for the root, null when unknown), `versions` (the folders, and the root when it holds a version), `root_is_version`, `basis` ({folder: why it counts}). Its inner keys are not covered by the version. |
 | `page_measures` | What was measured on each page whose content was read (1.29, DECISIONS 323), or null in an older report: {url: record}, Maya's pages and a page reader's (a page both read keeps Maya's). A record holds only what was measured: `status`, `html_bytes`, `main_offset_bytes`, `ttfb_ms`, `cache`, `title`, `description` (and their lengths), `canonical`, `h1_count`, `heading_jumps`, `html_lang`, `hreflang`, `words`, `main_chars`, `images`, `blocking_scripts`, `analytics`, `schema_types` and the link counts (see the 1.29 section). Its inner keys are not covered by the version. |
+| `host_moves` | Moves to the site's twin address after the start (1.33, DECISIONS 358): when the site's own pages redirect to it (apex and www, http to https), [{`from`, `to`, `redirects`, `after_pages`, `sitemap_named`}]; empty when the crawl stayed where the start led it. The earlier origin's addresses are still requested and their links count as internal. |
 | `sampling` | The plan of an Akıllı ~150 audit (1.30, DECISIONS 327), null for any other audit and in an older report: `mode` (`smart`), `version`, `budget`, `profile`, `folders`, `main`, `types` ({type: {`rank`, `label`, `known` (addresses typed as it before reading, corrected after the first wave), `planned`, `examples`}}), `waves` ([{`wave`, `after_pages`, `planned`}]), `retyped`, `known`, `files_left_out`, `planned_urls`, `method`. Pages read per type come from the page grouping (`business_page_type`). Its inner keys are not covered by the version. |
 | `access`, `index`, `render`, `structure`, `perf`, `citations`, `citation_domains` | Not covered by the version. |
 
@@ -394,6 +395,16 @@ page failures. Coverage stop reasons additionally distinguish `provider_timeout`
 credit/request limits. Existing 1.x reports remain readable; absent historical reasons are never invented.
 Keyword intent dimensions live inside open DataForSEO check evidence; originals and provider totals are preserved.
 
+
+## 1.33 — the crawl follows the site to its twin address (2026-11-18)
+
+Added for DECISIONS 358; nothing was removed or renamed, so 1.x readers keep working.
+
+- `crawl.host_moves`: when the site's own pages answer with a redirect to its twin address (carpexonline.com ->
+  www.carpexonline.com) three times, or once when robots.txt names its sitemap there, the crawl moves there as it does
+  for a start redirect: that address's robots.txt and sitemaps are read and the redirect targets are queued.
+  `crawl.origin` is the address moved to. Each move is a row {`from`, `to`, `redirects`, `after_pages`,
+  `sitemap_named`}.
 
 ## 1.32 — which sitemap file lists each address (2026-11-11)
 

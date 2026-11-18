@@ -5280,3 +5280,60 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      16 of 18 topics -> 0 (11 different pages: posts, /e-ticaret-paketleri …). (4) highest share 329% (20 above 100%) ->
      100% (none above); e.g. "E-Ticaret Satış": ticimax.com 163% -> 74%.
      Tests: `tests/test_maya_review_357.py` (6; fake exports).
+
+358. **The review of the carpexonline.com audit as global rules (Owner, 2026-11-18, reviewing the Smart E-ticaret audit
+     5f049bf1 with Maya data; the thresholds, word lists and wording are agent defaults).** Global for every audit;
+     Carpex was only the test case.
+     1. *The crawl follows the site to its twin address.* Carpex's bare host answered its homepage itself (200) but sent
+     144 of its other pages to www.carpexonline.com, and robots.txt named the sitemap only there. The crawl took www for
+     another site: no redirect target was queued and no sitemap was read, so it ended after 32 pages of a 150-page limit
+     ("exhausted"). Now, when the site's own pages answer with a redirect to its twin address (apex <-> www, http -> https;
+     never down to http) three times, or once when robots.txt names a sitemap there (`crawler.TWIN_MOVE_REDIRECTS`), the
+     crawl moves there as it does for a start redirect: that address's robots.txt and sitemaps are read and queued, and
+     the targets met so far are queued. The earlier address stays the site's own (still requested, its links internal,
+     each judged by its own robots.txt). Recorded as `crawl.host_moves` (schema 1.33). A crawl that stopped on its own
+     below its limit says why in Kapsam ("Sınırın altında") and on the team report's Kapsam page
+     (`sampling.below_limit_line`): error answers, files, blocks, a move to the twin, redirects to an address that was not
+     followed (an audit made before this rule), a sitemap named on another address, or every address found requested.
+     "Örneklem planı bitti" is said only when known addresses were left unread.
+     2. *Product pages from what they show.* Carpex's product pages carry their own Product markup with an Offer,
+     og:type=product and "Sepete Ekle", but category pages carry Product markup in their lists and og:type=product.group,
+     so Product, Offer and og:type=product all looked like site defaults (DECISIONS 347) and 19 product pages were typed
+     "diğer". Now a page is a product when its own Product markup is not inside a list and has an Offer, or it has
+     og:type=product and a buy control of its own and is not a listing (`page_groups.own_item`; `METHOD_VERSION` 6, so
+     saved audits are grouped again offline). Before reading (Akıllı), an address of three or more words ending in an
+     item id ("-550", not "/kokular-55" nor a year) that the main menu does not link, or one listed in a sitemap file of
+     products, is the profile's product page (one in a file of categories its category page); after the first wave, such
+     an address linked from the body of a page read as a category is too. Only item types (product, model, detail) take
+     these address rules, so a SaaS feature page does not. The Akıllı plan's first suggestion now includes the homepage's
+     platform, as the report's does (Carpex was planned as "Diğer" and reported as E-ticaret).
+     3. *The audited brand is never its own rival.* A competitor whose name, or its first word, is one of the brand's
+     keys (the meta's name and brand tags, the domain's own name; keys of four or more characters) is the brand itself:
+     dropped from the competitors, the competitor-mentions names (the brand's own products, "Carpex Maxx Tower 750 X") and
+     the Topic Pulse leaders (a topic led by the brand has no rival leader, no gap, and says "markanın kendisi"). A cited
+     domain whose own name is the brand's (carpex.com.tr) is the brand's own site: its pages count to the brand's share and
+     it is never a competitor or comparison site. Kapsam names what was taken for the brand and those domains.
+     4. *Only real topics are topics.* A prompt's topic is its first label that is one: a plain name or a "cluster:"
+     value. Labels with another prefix ("intent:", "register:", "brand_status:", "vertical:", "brand:") and bare words such
+     as "multiple" are not; a prompt with only such labels is grouped under "Konu dışı etiketler" (its labels listed),
+     after every real topic, and no page is compared for it in "Rakip - Sayfa yapısı". `maya_data.VERSION` 3, so saved
+     summaries are made again from their files (fetched pages and the download choice kept).
+     5. *"Also download pages" works when the files are added and later.* Carpex's summary was made without the download
+     step: the choice was read only by the "Add" button with files chosen, so ticking it afterwards did nothing, and reading
+     the files again dropped pages fetched before. Now the choice is saved with the summary and read on every reading;
+     ticking it once data is attached reads the attached files again and downloads (no new files needed); pages fetched
+     before are kept and only the missing ones asked; each page records what it is for (Sayfa detay, rival or comparison
+     page). The card says "İndirilen sayfalar: N (…), M alınamadı", and Kapsam says what was downloaded or that the choice
+     was not made. An address the crawl answered itself (a redirect, a 404) is still not downloaded (DECISIONS 352).
+     *Carpex 5f049bf1 before -> after* (scratch copies of the saved audit with its Maya files; previous commit vs this
+     build): (2) "Sayfa bazında" diğer 19 -> ürün 19 (/micro-koku-makinesi-siyah-50ml-ginger-flowers-550,
+     /leke-cikarici-sprey-500-ml "ürün"); (1) Kapsam gains "150 sayfalık sınırdan 32 sayfa okundu: … 144 adres
+     www.carpexonline.com adresine yönlendirdi … site haritası başka bir adreste … okunmadı" (a new crawl is needed to read
+     the ~150 pages); (3) "Lider rakip" carpex in 2 topics -> 0, carpex.com.tr in the domain column of 2 topics -> 0, Kapsam
+     names «carpex», 58 product names and carpex.com.tr, carpex.si, shop.carpex.si as the brand's own; (4) topics
+     "intent:discovery", "intent:comparison", "intent:branded", "intent:evaluation" -> gone (those prompts all carry a
+     "cluster:" label too, so they join their cluster; no prompt was left for "Konu dışı etiketler"); (5) the saved
+     summary had no download step at all; downloading needs live requests and was NOT RUN. Text check PASS before and after.
+     Tests: `tests/test_carpex_review_358.py` (11; mock-transport shop, fake exports, the web app with a fake fetcher).
+     *Tests changed:* the schema and grouping version pins (1.33, method 6; the frozen-shape list gains `host_moves`), and
+     `test_crux_coverage_334` now expects "bulunan her adres istendi" for a Smart audit that left nothing known unread.

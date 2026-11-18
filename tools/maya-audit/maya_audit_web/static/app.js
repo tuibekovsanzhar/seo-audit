@@ -1465,15 +1465,37 @@ function mayaDataCard(base) {
   const fetchBox = el("input", { type: "checkbox" });
   const status = el("p", { class: "muted small" });
   const button = el("button", { class: "button", type: "button" }, T("maya.add"));
+  // DECISIONS 358: the "also download pages" choice is read whenever the files are read (added now or earlier); the
+  // card says what was downloaded.
+  let attached = false;
+  const fetchedLine = (f) => f && (f.pages || f.failed) ? " " + T("maya.fetched", { n: f.pages, detail: f.detail, competitor: f.competitor })
+    + (f.failed ? " " + T("maya.fetch_failed", { n: f.failed }) : "") : "";
   const show = (body) => {
-    fill(status, body.attached ? T("maya.attached", { n: body.datasets.length }) + " " + body.datasets.map((d) => d.dataset).join(", ")
+    attached = !!body.attached;
+    if (body.attached && body.fetch) fetchBox.checked = true;
+    fill(status, body.attached ? T("maya.attached", { n: body.datasets.length }) + " " + body.datasets.map((d) => d.dataset).join(", ") + fetchedLine(body.fetched)
       : (body.files.length ? T("maya.files", { n: body.files.length }) : T("maya.none")));
   };
   api("GET", base).then(show).catch(() => {});
+  const readAgain = async () => {
+    fill(status, fetchBox.checked ? T("maya.downloading") : T("maya.reading"));
+    show(await api("POST", base, { fetch: fetchBox.checked }));
+  };
+  fetchBox.addEventListener("change", async () => {
+    if (!attached || !fetchBox.checked) return;
+    button.disabled = true;
+    try { await readAgain(); } catch (err) { fill(status, T("maya.error") + " " + err.message); }
+    button.disabled = false;
+  });
   button.addEventListener("click", async () => {
     const files = Array.from(input.files || []);
-    if (!files.length) { fill(status, T("maya.pick")); return; }
+    if (!files.length && !attached) { fill(status, T("maya.pick")); return; }
     button.disabled = true;
+    if (!files.length) {
+      try { await readAgain(); } catch (err) { fill(status, T("maya.error") + " " + err.message); }
+      button.disabled = false;
+      return;
+    }
     try {
       for (const [i, f] of files.entries()) {
         fill(status, T("maya.sending", { i: i + 1, n: files.length, name: f.name }));
@@ -1481,8 +1503,7 @@ function mayaDataCard(base) {
           headers: { "X-Maya-Token": state.token, "Content-Type": "application/octet-stream" }, body: f });
         if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error((e.error && e.error.message) || r.statusText); }
       }
-      fill(status, T("maya.reading"));
-      show(await api("POST", base, { fetch: fetchBox.checked }));
+      await readAgain();
     } catch (err) { fill(status, T("maya.error") + " " + err.message); }
     button.disabled = false;
   });

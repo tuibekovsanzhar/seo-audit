@@ -30,7 +30,9 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Iterator
 from urllib.parse import unquote, urlsplit, urlunsplit
 
-VERSION = 2  # DECISIONS 357: a page counted once per answer (run) in the per-prompt page counts
+# 2 (DECISIONS 357): a page counted once per answer (run) in the per-prompt page counts. 3 (DECISIONS 358): the audited
+# brand is never a competitor (its names and its other domains), and only real topics are topics.
+VERSION = 3
 SUMMARY_FILE = "maya-data-summary.json"
 FOLDER = "maya-data"
 
@@ -202,6 +204,61 @@ def _fold(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").translate(table).lower()).strip()
 
 
+# ---------------------------------------------------------------- the brand itself (DECISIONS 358)
+
+
+def name_key(name: str) -> str:
+    """A brand name as a comparable key: folded, letters and digits only ("T-Soft" -> "tsoft", "İkas" -> "ikas")."""
+    return re.sub(r"[^a-z0-9]", "", _fold(name))
+
+
+def domain_label(domain: str) -> str:
+    """The registrable domain's own name: "help.shopify.com" -> "shopify", "carpex.com.tr" -> "carpex"."""
+    from .urls import registrable_domain
+    domain = (domain or "").lower().removeprefix("www.")
+    return re.sub(r"[^a-z0-9]", "", (registrable_domain(domain) or domain).split(".")[0])
+
+
+BRAND_KEY_MIN = 4  # a shorter brand key ("ak", "ofb") is not matched inside other names (agent default)
+
+
+def brand_keys(names: Iterable[str], domains: Iterable[str]) -> set[str]:
+    """The audited brand's keys: its names (meta name, brand tags) and its domains' own names."""
+    keys = {name_key(n) for n in names if n} | {domain_label(d) for d in domains if d}
+    return {k for k in keys if len(k) >= BRAND_KEY_MIN}
+
+
+def own_name(name: str, keys: set[str]) -> bool:
+    """A competitor name that is the audited brand itself: its key is one of the brand's, or its first word is
+    ("Carpex Maxx Tower 750 X" is the brand's own product, not a rival)."""
+    words = _fold(name or "").split()
+    return bool(words) and (name_key(name) in keys or name_key(words[0]) in keys)
+
+
+def own_domain(domain: str, keys: set[str]) -> bool:
+    """A domain whose own name is the brand's (carpex.com.tr for Carpex): the brand's own site."""
+    return bool(domain) and domain_label(domain) in keys
+
+
+# Maya's prompt labels that sort prompts but are not topics ("intent:discovery", "register:ham", "brand:multi") and
+# bare words that say nothing of a topic. A "cluster:" label is a topic (its value names it).
+TOPIC_PREFIXES = ("cluster:", "topic:", "konu:")
+NOT_TOPICS = frozenset({"multiple", "multi", "mixed", "other", "others", "misc", "diger", "none", "n/a", "-"})
+OFF_TOPIC = "Konu dışı etiketler"
+
+
+def topic_of(label: str) -> str | None:
+    """A prompt label's topic, or None when the label is not a topic (DECISIONS 358)."""
+    text = (label or "").strip()
+    low = _fold(text)
+    for prefix in TOPIC_PREFIXES:
+        if low.startswith(prefix):
+            return text[len(prefix):].strip() or None
+    if re.match(r"^[a-z_]+:", low) or low in NOT_TOPICS:
+        return None
+    return text or None
+
+
 # ---------------------------------------------------------------- meta.json
 
 
@@ -258,18 +315,39 @@ def prepare(paths: Iterable[str | Path], audited_url: str) -> dict:
     origin = "https://" + (urlsplit(audited_url).hostname or site)
     brand_domains = sorted({site} | set(meta.get("domains") or []))
     brand_names = sorted({n for n in (meta.get("brand_names") or []) if n} | {site.split(".")[0]}, key=str.lower)
+    # DECISIONS 358: a competitor that is the audited brand (its name, its first word or its domain's name is the brand's)
+    # is not a rival; its domain is the brand's own site.
+    keys = brand_keys(brand_names, brand_domains)
+    competitors, own_names, own_domains = [], set(), set()
+    for c in meta.get("competitors") or []:
+        if own_name(c.get("name") or "", keys) or own_domain(c.get("domain") or "", keys):
+            own_names.add(c.get("name") or c.get("domain"))
+            if c.get("domain") and c["domain"] not in brand_domains:
+                own_domains.add(c["domain"])
+        else:
+            competitors.append(c)
+    aliases = [a for a in meta.get("aliases") or [] if not own_name(a, keys)]
     out: dict[str, Any] = {
         "version": VERSION, "domain": site, "origin": origin, "brand_domains": brand_domains, "brand_names": brand_names,
-        "competitors": meta.get("competitors") or [], "aliases": meta.get("aliases") or [],
+        "competitors": competitors, "aliases": aliases,
         "datasets": [], "other_files": sorted(other)}
     for ds, src in sorted(found.items()):
         out["datasets"].append({"dataset": ds, "file": src.name, "period": list(src.period) if src.period else None})
     out["missing"] = {sheet: [" / ".join(g) for g in groups if not any(d in found for d in g)]
                       for sheet, groups in NEEDS.items()}
     out["gsc"] = _gsc(found, origin, brand_names)
-    out["ai"] = _ai(found, origin, brand_domains, brand_names, meta.get("labels") or {})
-    out["visibility"] = _visibility(found, meta, brand_names)
-    out["mentions"] = _mentions(found, meta)
+    out["ai"] = _ai(found, origin, brand_domains, brand_names, meta.get("labels") or {}, keys)
+    out["visibility"] = _visibility(found, meta, brand_names, keys)
+    out["mentions"] = _mentions(found, meta, keys)
+    own_domains |= set(out["ai"].pop("own_domains", []) or [])
+    own_names |= set((out["visibility"] or {}).pop("own_leaders", []) or [])
+    own_names |= {a for a in meta.get("aliases") or [] if own_name(a, keys)}
+    products = [n for n in (out["mentions"] or {}).pop("own", []) or [] if _fold(n) not in {_fold(x) for x in own_names}]
+    # what was taken for the brand itself, for the sheets' Kapsam (DECISIONS 358): names from the meta and Topic Pulse,
+    # the brand's own names and products in the competitor mentions, its other domains
+    out["own"] = {"names": sorted({n for n in own_names if n}, key=str.lower), "products": products,
+                  "domains": sorted(own_domains - set(brand_domains))}
+    out["brand_domains"] = sorted(set(brand_domains) | own_domains)
     counts = {**(out["gsc"].get("rows") or {}), **(out["ai"].get("rows") or {})}
     if out["visibility"]:
         counts["topic-visibility-snapshots"] = out["visibility"]["rows"]
@@ -448,7 +526,7 @@ def _provider(name: str) -> str:
 
 
 def _ai(found: dict[str, Source], origin: str, brand_domains: list[str], brand_names: list[str],
-        labels: dict[str, str]) -> dict:
+        labels: dict[str, str], keys: set[str] | None = None) -> dict:
     out: dict[str, Any] = {"rows": {}}
     prompts = found.get("prompts")
     info: dict[str, dict] = {}
@@ -464,7 +542,10 @@ def _ai(found: dict[str, Source], origin: str, brand_domains: list[str], brand_n
             except ValueError:
                 ids = []
             names = [labels[i] for i in ids if i in labels]
-            info[pid] = {"text": (r.get("text") or "")[:300], "topic": names[0] if names else None,
+            # DECISIONS 358: the first label that is a topic; the other labels are kept for "Konu dışı etiketler"
+            topics = [t for t in (topic_of(x) for x in names) if t]
+            info[pid] = {"text": (r.get("text") or "")[:300], "topic": topics[0] if topics else None,
+                         "labels": [x for x in names if not topic_of(x)][:6],
                          "active": str(r.get("is_active") or "1") not in ("0", "false", "False")}
         out["rows"]["prompts"] = n
     out["prompts"] = info
@@ -472,9 +553,18 @@ def _ai(found: dict[str, Source], origin: str, brand_domains: list[str], brand_n
     if cites is None:
         return out
     brand_set = set(brand_domains)
+    own_found: set[str] = set()
+
+    def main_brand(domain: str) -> bool:
+        return any(domain == b or domain.endswith("." + b) for b in brand_set)
 
     def is_brand(domain: str) -> bool:
-        return any(domain == b or domain.endswith("." + b) for b in brand_set)
+        if main_brand(domain):
+            return True
+        if keys and own_domain(domain, keys):  # DECISIONS 358: carpex.com.tr is Carpex's own site
+            own_found.add(domain.removeprefix("www."))
+            return True
+        return False
     monthly_rows: Counter = Counter()
     monthly_brand: Counter = Counter()
     prov_rows: Counter = Counter()
@@ -510,7 +600,7 @@ def _ai(found: dict[str, Source], origin: str, brand_domains: list[str], brand_n
             monthly_brand[month] += 1
             prov_brand[model] += 1
             prompt_brand_runs[pid].add(run)
-            u = page_url(r.get("url") or domain, origin)
+            u = page_url(r.get("url") or domain, origin if main_brand(domain) else None)
             if u:
                 rec = pages.setdefault(u, {"prompts": set(), "runs": set(), "by_provider": Counter()})
                 rec["prompts"].add(pid)
@@ -537,6 +627,7 @@ def _ai(found: dict[str, Source], origin: str, brand_domains: list[str], brand_n
     out["prompt_runs"] = {pid: len(v) for pid, v in prompt_runs.items()}
     out["prompt_brand_runs"] = {pid: len(v) for pid, v in prompt_brand_runs.items()}
     out["sov"] = _sov(found.get("result-items"), brand_names, out["rows"])
+    out["own_domains"] = sorted(own_found)
     return out
 
 
@@ -573,7 +664,7 @@ def is_generic(name: str) -> bool:
     return not words or (len(words) == 1 and words[0] in GENERIC_COMPETITORS)
 
 
-def _visibility(found: dict[str, Source], meta: dict, brand_names: list[str]) -> dict | None:
+def _visibility(found: dict[str, Source], meta: dict, brand_names: list[str], keys: set[str] | None = None) -> dict | None:
     src = found.get("topic-visibility-snapshots")
     if src is None:
         return None
@@ -584,37 +675,48 @@ def _visibility(found: dict[str, Source], meta: dict, brand_names: list[str]) ->
         if r.get("topic"):
             by_topic[r["topic"]].append(r)
     topics = []
+    own_leaders: set[str] = set()
     for topic, rows in sorted(by_topic.items()):
         rows.sort(key=lambda r: r.get("week_start") or "")
         first, last = rows[0], rows[-1]
         leader = last.get("top_competitor_name") or ""
-        generic = is_generic(leader)
+        # DECISIONS 358: Topic Pulse naming the brand itself as the top "competitor" names no rival
+        own = bool(leader) and bool(keys) and own_name(leader, keys)
+        if own:
+            own_leaders.add(leader)
+        generic = is_generic(leader) or own
         lead_first = next((_num(r.get("top_competitor_rate")) for r in rows if r.get("top_competitor_name") == leader), None)
         topics.append({"topic": topic, "first_week": first.get("week_start"), "last_week": last.get("week_start"),
                        "brand_first": _num(first.get("brand_rate")), "brand_last": _num(last.get("brand_rate")),
-                       "leader": None if generic else leader, "leader_ignored": leader if generic else None,
+                       "leader": None if generic else leader, "leader_ignored": leader if generic and not own else None,
+                       "leader_own": leader if own else None,
                        "leader_first": None if generic else lead_first,
                        "leader_last": None if generic else _num(last.get("top_competitor_rate")),
                        "gap": None if generic else round(_num(last.get("top_competitor_rate")) - _num(last.get("brand_rate")), 1),
                        "answers": int(_num(last.get("total")))})
-    return {"rows": n, "topics": topics}
+    return {"rows": n, "topics": topics, "own_leaders": sorted(own_leaders)}
 
 
-def _mentions(found: dict[str, Source], meta: dict) -> dict | None:
+def _mentions(found: dict[str, Source], meta: dict, keys: set[str] | None = None) -> dict | None:
     src = found.get("competitor-mentions-daily")
     if src is None:
         return None
     total: Counter = Counter()
     domains: dict[str, str] = {}
+    own: Counter = Counter()
     n = 0
     for r in _rows(src):
         n += 1
         name = r.get("displayName") or r.get("competitorKey") or ""
+        if name and keys and (own_name(name, keys) or own_domain(r.get("domain") or "", keys)):
+            own[name] += int(_num(r.get("mentions")))  # DECISIONS 358: the brand's own name or product, not a rival
+            continue
         if name and not is_generic(name):
             total[name] += int(_num(r.get("mentions")))
             if r.get("domain"):
                 domains[name] = host_of(r["domain"])
-    return {"rows": n, "top": [[name, count, domains.get(name)] for name, count in total.most_common(15)]}
+    return {"rows": n, "top": [[name, count, domains.get(name)] for name, count in total.most_common(15)],
+            "own": [name for name, _ in own.most_common(200)]}  # most mentioned first
 
 
 # ---------------------------------------------------------------- the audit's folder
@@ -645,6 +747,7 @@ def load_for(folder: Path | str | None) -> dict | None:
         except (MayaDataError, OSError, ValueError):
             return None
         again["fetched"] = data.get("fetched") or {}
+        again["fetch"] = data.get("fetch") or {"wanted": bool(again["fetched"])}
         try:
             save(again, Path(folder))
         except OSError:

@@ -2333,9 +2333,12 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         folder = maya_folder(audit["id"])
         files = sorted(f.name for f in folder.iterdir() if f.is_file()) if folder.is_dir() else []
         summary = maya_data.load_for(artifact_folder(audit["id"]))
+        from maya_audit.maya_sheets import fetched_counts
         return {"files": files, "attached": summary is not None,
                 "datasets": [{k: d.get(k) for k in ("dataset", "file", "rows", "period")} for d in (summary or {}).get("datasets") or []],
-                "missing": (summary or {}).get("missing") or {}}
+                "missing": (summary or {}).get("missing") or {},
+                # DECISIONS 358: the "also download pages" choice as saved, and what it brought
+                "fetch": bool(((summary or {}).get("fetch") or {}).get("wanted")), "fetched": fetched_counts(summary)}
 
     @api.get("/audits/{audit_id}/maya-data", summary="The Maya export files attached to this audit and what they cover")
     def get_maya_data(audit_id: str) -> dict[str, Any]:
@@ -2364,11 +2367,17 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         folder = maya_folder(audit["id"])
         if not folder.is_dir() or not any(folder.iterdir()):
             raise ApiError(422, "maya_data_missing", "Önce Maya export dosyalarını ekleyin.")
+        earlier = maya_data.load_for(artifact_folder(audit["id"])) or {}
         try:
             summary = maya_data.prepare([folder], audit["url"])
         except maya_data.MayaDataError as exc:
             raise ApiError(422, "maya_domain_mismatch", str(exc)) from None
-        if (body or {}).get("fetch"):
+        # DECISIONS 358: pages fetched before are kept when the files are read again; the choice is read on every
+        # reading (files added now or earlier) and saved with the summary
+        summary["fetched"] = dict(earlier.get("fetched") or {})
+        wanted = bool((body or {}).get("fetch"))
+        summary["fetch"] = {"wanted": wanted or bool((earlier.get("fetch") or {}).get("wanted") and (body or {}).get("fetch") is None)}
+        if summary["fetch"]["wanted"]:
             # live, polite, only when the person asked for it: pages the sheets need and the crawl did not read
             report, _ = current_report(audit)[:2]
             evidence = artifact_folder(audit["id"]) / "evidence"

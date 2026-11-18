@@ -1199,6 +1199,12 @@ def coverage(report: dict, limits: list[dict], records: dict[str, dict] | None =
     if crawl.get("stop_reason") == "page_cap":
         lines.append({"kind": "page_cap", "pages": cfg.get("max_pages"),
                       "not_read": unread or len(crawl.get("not_fetched_urls") or [])})
+    from .sampling import below_limit_line, fewer_reasons
+    below = below_limit_line(report, "tr")
+    if below:  # DECISIONS 358: why a crawl that stopped on its own read fewer pages than its limit
+        numbers = [cfg.get("max_pages")] + [v for _, values in fewer_reasons(report) for v in values.values() if isinstance(v, int)]
+        lines.append({"kind": "below_limit", "tr": below, "en": below_limit_line(report, "en"),
+                      "numbers": [n for n in numbers if isinstance(n, int)] + [int(re.search(r"(\d+) sayfa okundu", below).group(1))]})
     if crawl.get("deadline_hit") or report.get("time_limit_cuts"):
         cuts = report.get("time_limit_cuts")
         lines.append({"kind": "time_budget", "seconds": cfg.get("time_limit_s"),

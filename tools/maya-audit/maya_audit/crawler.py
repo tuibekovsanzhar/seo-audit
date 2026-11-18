@@ -48,6 +48,9 @@ from . import clock as _clock
 
 MAX_ROBOTS_REDIRECTS = 5
 MAX_START_REDIRECTS = 5
+# DECISIONS 358: the site's own pages answering with a redirect to its twin address (apex <-> www, http -> https) this
+# many times move the crawl there, as a start redirect does; one is enough when robots.txt names its sitemap there.
+TWIN_MOVE_REDIRECTS = 3
 KEPT_HEADERS = (
     "server",
     "content-type",
@@ -419,6 +422,23 @@ class Crawler:
             origin = saved_origin
             fetcher.site_host = (urlsplit(origin).hostname or "").lower() or None
         policies: dict[str, RobotsPolicy] = {origin: self._load_robots(fetcher, origin)}
+        # DECISIONS 358: earlier origins of this site after a move to its twin address: still fetched (they are the site's
+        # own addresses, their redirects are measured) and their links are internal.
+        aliases: set[str] = set(frontier.get_meta("origin_aliases") or []) if frontier.resumed else set()
+        self._host_moves: list[dict] = list(frontier.get_meta("host_moves") or []) if frontier.resumed else []
+        twin_hits: dict[str, list[str]] = {}
+
+        def on_site(u: str) -> bool:
+            return same_origin(u, origin) or origin_of(u) in aliases
+
+        def twin_named(o: str) -> bool:
+            """robots.txt of an origin of this site names a sitemap on `o`."""
+            for pol in policies.values():
+                for value, _line in (pol.robots.sitemaps if pol.robots is not None else []):
+                    u = normalize_url(value, pol.url)
+                    if u and origin_of(u) == o:
+                        return True
+            return False
         carried_delay = self._scratchpad.get_meta("final_delay_s")
         if carried_delay and carried_delay > fetcher.delay_s:
             # A site that rate-limited the previous session is met at that session's final pace, not
@@ -525,11 +545,11 @@ class Crawler:
                 break
             url, depth, via = claimed.url, claimed.depth, claimed.via
 
-            if not same_origin(url, origin):
+            if not on_site(url):
                 frontier.mark_status(url, SKIPPED)
                 continue
 
-            decision = policies[origin].decide(token, url)
+            decision = policies.get(origin_of(url), policies[origin]).decide(token, url)
             if not decision.allowed:
                 skipped.append(SkippedUrl(url, via, decision.to_dict()))
                 frontier.mark_status(url, SKIPPED)
@@ -695,7 +715,36 @@ class Crawler:
                             sitemap_docs.extend(docs)
                             sitemap_urls.extend(u for u in urls if u not in sitemap_urls)
                             enqueue([FrontierUrl(u, None, "sitemap", None) for u in urls])
-                if target and same_origin(target, origin):
+                elif (target and not start_chain and not on_site(target) and on_site(url) and is_allowed_origin_move(url, target)
+                      and host_allowed(target, cfg.allowed_live_hosts)):
+                    # DECISIONS 358: the site sends its own pages to its twin address (carpexonline.com -> www.): after
+                    # TWIN_MOVE_REDIRECTS such answers (one when robots.txt names a sitemap there) the crawl moves there,
+                    # reads that address's robots.txt and sitemaps, and the targets met so far are queued.
+                    twin = origin_of(target)
+                    twin_hits.setdefault(twin, []).append(target)
+                    if len(twin_hits[twin]) >= TWIN_MOVE_REDIRECTS or twin_named(twin):
+                        aliases.add(origin)
+                        self._host_moves.append({"from": origin, "to": twin, "redirects": len(twin_hits[twin]),
+                                                 "after_pages": earlier_counted + pages_counted,
+                                                 "sitemap_named": twin_named(twin)})
+                        origin = twin
+                        aliases.discard(origin)
+                        frontier.set_meta("origin", origin)
+                        frontier.set_meta("origin_aliases", sorted(aliases))
+                        frontier.set_meta("host_moves", self._host_moves)
+                        fetcher.site_host = (urlsplit(origin).hostname or "").lower() or None
+                        if origin not in policies:
+                            policies[origin] = self._load_robots(fetcher, origin)
+                            self._apply_crawl_delay(fetcher, policies[origin])
+                        if not cfg.single_page:
+                            docs, urls = self._discover_sitemaps(fetcher, policies[origin], origin, skipped)
+                            sitemap_docs.extend(docs)
+                            sitemap_urls.extend(u for u in urls if u not in sitemap_urls)
+                            enqueue([FrontierUrl(u, None, "sitemap", None) for u in urls])
+                            if sampler is not None:
+                                sampler.add(urls, files=dict(self._sitemap_file_of))
+                        frontier.add_urls([FrontierUrl(u, depth, "redirect", url) for u in twin_hits.pop(twin)])
+                if target and on_site(target):
                     # via="redirect" sorts ahead of everything queued, matching the appendleft it replaces.
                     frontier.add_urls([FrontierUrl(target, depth, "redirect", url)])
                 continue
@@ -715,9 +764,9 @@ class Crawler:
                 edges = extract_link_edges(text, url, cfg.max_anchor_texts_per_target)
                 links = [e["target"] for e in edges]
                 page.links_found = len(links)
-                internal = [e for e in edges if same_origin(e["target"], origin)]
+                internal = [e for e in edges if on_site(e["target"])]
                 page.outlinks = internal[:cfg.max_outlinks_per_page]
-                page.external_links = [e for e in edges if not same_origin(e["target"], origin)][:cfg.max_external_links_per_page]
+                page.external_links = [e for e in edges if not on_site(e["target"])][:cfg.max_external_links_per_page]
                 # Every link is followed, whatever the cap on how many the report keeps. In a single-page audit none
                 # is: the page's links are recorded (they are part of the page) and nothing is queued.
                 if not cfg.single_page:
@@ -809,6 +858,7 @@ class Crawler:
             # with the pages' hreflang links when the audit settles (`final.locale_record`).
             locales=({**self._locale_info, "main": frontier.main_locale} if getattr(self, "_locale_info", None) else None),
             sampling=self._sampler.record() if getattr(self, "_sampler", None) is not None else None,
+            host_moves=list(self._host_moves),
         )
 
     def _start_sampling(self, frontier, page, origin: str, sitemap_urls: list[str]):
@@ -826,12 +876,18 @@ class Crawler:
         pid = cfg.business_type if cfg.business_type and cfg.business_type != bt.AUTO and bt.valid(cfg.business_type) else None
         if pid is None:
             try:
-                pid = bt.suggest(page.analysis, edges, None, known, frontier.locale_folders)["id"]
+                # DECISIONS 358: with the homepage's platform, as the report's own suggestion has (Ticimax -> E-ticaret)
+                from .site_platform import _platform_hits
+                platform = next(iter(_platform_hits(page)), None)
+            except Exception:  # noqa: BLE001  a hint only
+                platform = None
+            try:
+                pid = bt.suggest(page.analysis, edges, platform, known, frontier.locale_folders)["id"]
             except Exception:  # noqa: BLE001  "Diğer" plans by Stage 3's page types
                 pid = bt.DEFAULT
         sampler = Sampler(pid, budget=cfg.max_pages, folders=frontier.locale_folders, main=frontier.main_locale,
                           lastmods=dict(self._lastmods))
-        sampler.add(known, anchors, {e["target"] for e in edges if e.get("nav")})
+        sampler.add(known, anchors, {e["target"] for e in edges if e.get("nav")}, files=dict(self._sitemap_file_of))
         homes = [u for u, (t, _) in sampler.types.items() if t == "home"]
         self._sampling_fixed = list(dict.fromkeys([page.url, *homes[:HOME_COPIES], *sorted(self._key_urls)]))
         frontier.set_plan(sampler.plan(fixed=self._sampling_fixed, read={page.url: "home"}))
@@ -841,8 +897,9 @@ class Crawler:
         """DECISIONS 327: after the first wave, the pages read are typed with their content, unread addresses of their URL
         templates follow them, and the rest of the budget is planned again (with the addresses found meanwhile)."""
         sampler = self._sampler
-        sampler.add(frontier.urls_with_status(QUEUED))
-        real = sampler.retype({p.url: p.analysis for p in pages if p.analysis})
+        sampler.add(frontier.urls_with_status(QUEUED), files=dict(self._sitemap_file_of))
+        links = {p.url: [e["target"] for e in p.outlinks or [] if not e.get("nav") and not e.get("footer")] for p in pages if p.analysis}
+        real = sampler.retype({p.url: p.analysis for p in pages if p.analysis}, links)
         frontier.set_plan(sampler.plan(fixed=self._sampling_fixed, read=real))
 
     def _sampling_progress(self, fetched: set[str]) -> dict:
