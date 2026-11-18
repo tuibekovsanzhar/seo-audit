@@ -238,26 +238,69 @@ def measure_html(html: str) -> dict:
 
 
 def _topics(summary: dict) -> dict[str, str | None]:
-    """{prompt id: topic}: Maya's prompt label that is a topic (meta.json; a plain name or a "cluster:" value), else the
-    visibility topic whose name words the prompt holds (most hits; one topic per prompt, the first on a tie), else
-    "Konu dışı etiketler" when the prompt has only labels that are not topics (DECISIONS 358), else None."""
+    """{prompt id: topic} (`topic_assignment`)."""
+    return topic_assignment(summary)[0]
+
+
+_STOP = frozenset({"the", "and", "for", "with", "best", "what", "which", "how", "where", "can", "you", "your", "are", "near",
+                   "ile", "icin", "nedir", "nasil", "hangi", "en", "iyi", "mi", "mu", "ve", "bir"})
+
+
+def _words_of(text: str) -> set[str]:
+    return {w for w in re.split(r"[^a-z0-9]+", _fold(text or "")) if len(w) > 2 and w not in _STOP}
+
+
+def topic_assignment(summary: dict) -> tuple[dict[str, str | None], dict[str, int]]:
+    """({prompt id: topic}, counts). A prompt's topic: its Maya label that is a topic (a plain name or a "cluster:"
+    value). DECISIONS 362: a prompt without one goes to the nearest real topic, the one whose words its text and need
+    families share most: a topic's words are its name's, the need families of its labelled prompts' and, for a Topic
+    Pulse topic, its name's (most shared words, then the topic with more prompts, then the name). A prompt that shares no
+    word: "Konu dışı etiketler" when it has other labels (a prompt category such as "Buying intent"), else no topic.
+    counts: labelled, assigned (nearest topic), off_topic, unassigned."""
     from .maya_data import OFF_TOPIC, topic_of
     info = (summary.get("ai") or {}).get("prompts") or {}
     vis = [t["topic"] for t in ((summary.get("visibility") or {}).get("topics") or [])]
-    words = {t: [w for w in re.split(r"[_\-\s/]+", _fold(t)) if len(w) > 2] for t in vis}
-    out = {}
+    out: dict[str, str | None] = {}
+    words: dict[str, set[str]] = {t: _words_of(t.replace("-", " ").replace("_", " ")) for t in vis}
+    labelled: Counter = Counter()
     for pid, p in info.items():
         topic = topic_of(p["topic"]) if p.get("topic") else None  # a summary saved before 358 kept any first label
         if topic:
             out[pid] = topic
+            labelled[topic] += 1
+            words.setdefault(topic, _words_of(topic.replace("-", " ").replace("_", " ")))
+            for fam in p.get("families") or []:
+                words[topic] |= _words_of(fam.replace("_", " "))
+    # DECISIONS 362: one topic under two keys (the label "Kötü Koku Giderici" and the cluster "kotu-koku-giderici") is one
+    # topic, under its readable name
+    from .maya_data import name_key
+    readable: dict[str, str] = {}
+    for t in sorted(set(out.values()) | set(words), key=lambda t: (bool(_RAW_KEY.match(t)), t)):
+        readable.setdefault(name_key(t), t)
+    out = {pid: readable[name_key(t)] for pid, t in out.items()}
+    merged: dict[str, set[str]] = {}
+    for t, ws in words.items():
+        merged.setdefault(readable[name_key(t)], set()).update(ws)
+    words = merged
+    labelled = Counter({readable[name_key(t)]: 0 for t in labelled}) + Counter(out.values())
+    counts = {"labelled": len(out), "assigned": 0, "off_topic": 0, "unassigned": 0}
+    for pid, p in info.items():
+        if pid in out:
             continue
-        if p.get("labels") or p.get("topic"):  # labelled, but with no topic among its labels
+        mine = _words_of(p.get("text") or "") | {w for fam in p.get("families") or [] for w in _words_of(fam.replace("_", " "))}
+        def shared(ws):  # a word, or its start with a suffix after it ("makine" in "makinesi")
+            return sum(1 for w in ws if any(m == w or (len(w) >= 4 and m.startswith(w)) for m in mine))
+        scored = [(n, labelled[t], t) for t, ws in words.items() if (n := shared(ws))]
+        if scored:
+            out[pid] = max(scored, key=lambda x: (x[0], x[1], [-ord(c) for c in x[2]]))[2]
+            counts["assigned"] += 1
+        elif p.get("labels") or p.get("topic"):
             out[pid] = OFF_TOPIC
-            continue
-        text = _fold(p.get("text") or "")
-        best = max(((sum(1 for w in ws if w in text), -i, t) for i, (t, ws) in enumerate(words.items())), default=None)
-        out[pid] = best[2] if best and best[0] > 0 else None
-    return out
+            counts["off_topic"] += 1
+        else:
+            out[pid] = None
+            counts["unassigned"] += 1
+    return out, counts
 
 
 def _fold(text: str) -> str:
@@ -550,9 +593,12 @@ def _label(domain: str) -> str:
     return domain_label(domain)
 
 
-def _own_keys(summary: dict) -> set[str]:
+def _own_keys(summary: dict, domains: bool = False) -> set[str]:
+    """The keys the brand is matched by (DECISIONS 362: the summary's own, with the meta's alias group; a short key only
+    for names), else worked out from its names and domains."""
     from .maya_data import brand_keys
-    return brand_keys(summary.get("brand_names") or [], summary.get("brand_domains") or [])
+    saved = summary.get("own_domain_keys" if domains else "own_keys")
+    return set(saved) if saved else brand_keys(summary.get("brand_names") or [], summary.get("brand_domains") or [])
 
 
 # DECISIONS 357: a third-party page lists several brands when its address or title says so (a comparison, a list, the
@@ -583,6 +629,15 @@ def competitor_keys(summary: dict) -> dict[str, str]:
         if (len(k) >= 3 and k not in own and not own_name(n, keys) and not is_generic(n) and not k.isdigit()
                 and "." not in (n or "").strip(".")):
             out.setdefault(k, n)
+    # DECISIONS 362: every alias of a rival in the meta's alias groups is said under the rival's own name
+    for key, forms in (summary.get("rival_groups") or {}).items():
+        named = [out[_key(f)] for f in [key, *forms] if _key(f) in out]
+        display = next((c.get("name") for c in summary.get("competitors") or [] if _key(c.get("name") or "") in
+                        {_key(f) for f in [key, *forms]}), None) or (named[0] if named else None)
+        if display:
+            for f in [key, *forms]:
+                if len(_key(f)) >= 3:
+                    out[_key(f)] = display
     return out
 
 
@@ -592,7 +647,7 @@ def domain_kind(domain: str, summary: dict, keys: dict[str, str], explicit: set[
     other (a third party that does not show it does)."""
     from .maya_data import own_domain
     brand = set(summary.get("brand_domains") or [summary.get("domain") or ""]) - {""}
-    if any(domain == b or domain.endswith("." + b) for b in brand) or own_domain(domain, _own_keys(summary)):
+    if any(domain == b or domain.endswith("." + b) for b in brand) or own_domain(domain, _own_keys(summary, domains=True)):
         return "brand"  # DECISIONS 358: a domain named after the brand (carpex.com.tr) is the brand's own site
     if any(domain == c or domain.endswith("." + c) for c in explicit) or _label(domain) in keys:
         return "competitor"
@@ -610,7 +665,8 @@ def topic_rows(summary: dict, crawl: "Crawl | None" = None) -> list[dict]:
     ai = summary.get("ai") or {}
     info = ai.get("prompts") or {}
     topics = _topics(summary)
-    vis = {t["topic"]: t for t in ((summary.get("visibility") or {}).get("topics") or [])}
+    from .maya_data import name_key
+    vis = {name_key(t["topic"]): t for t in ((summary.get("visibility") or {}).get("topics") or [])}
     explicit = {c["domain"] for c in summary.get("competitors") or [] if c.get("domain")}
     explicit |= {d for _, _, d in ((summary.get("mentions") or {}).get("top") or []) if d}
     keys = competitor_keys(summary)
@@ -646,12 +702,29 @@ def topic_rows(summary: dict, crawl: "Crawl | None" = None) -> list[dict]:
         # DECISIONS 357: the brand page compared is the topic's most cited one other than the homepage, unless only the
         # homepage is cited
         own = next((u for u, _ in cited if u.rstrip("/") != home), cited[0][0] if cited else None)
-        v = vis.get(topic) or {}
+        v = vis.get(name_key(topic)) or {}
+        # DECISIONS 362: each rival brand's share of the topic's answers (answers citing its own site, each once), from the
+        # same citations as the brand's share; the leader and the gap when Topic Pulse names no rival (only the brand)
+        rivals: Counter = Counter()
+        for p in pids:
+            answers: dict[str, set] = defaultdict(set)  # a rival's answers in this prompt, each once over its sites
+            for d, runs_of in ((ai.get("prompt_domains") or {}).get(p) or {}).items():
+                if domain_kind(d, summary, keys, explicit, "https://" + d) == "competitor":
+                    answers[keys.get(_label(d)) or d] |= set(runs_of if isinstance(runs_of, list) else range(int(runs_of or 0)))
+            for name, got in answers.items():
+                rivals[name] += len(got)
+        rival = rivals.most_common(1)[0] if rivals else None
+        gap, rival_row = v.get("gap"), None
+        if rival and runs and not v.get("leader"):
+            share = min(1.0, rival[1] / runs)
+            rival_row = (rival[0], share)
+            gap = round(100 * (share - (brand_runs / runs)), 1)
         out.append({"topic": topic, "prompts": pids, "n": len(pids), "runs": runs, "brand_share": brand_runs / runs if runs else None,
+                    "rival": rival_row,
                     # a page's share: the answers in the topic that cite it (never above 100%)
                     "brand_pages": [(u, min(1.0, n / runs) if runs else 0) for u, n in cited[:3]],
                     "brand_page": own,
-                    "vis": v or None, "gap": v.get("gap"),
+                    "vis": v or None, "gap": gap,
                     "domains": [(d, len(ps) / len(pids)) for d, ps in sorted(dom_prompts.items(), key=lambda kv: -len(kv[1]))[:5]],
                     "competitor_page": (comp_page[0], comp_page[1], len(url_prompts[comp_page[0]])) if comp_page else None,
                     "comparison_page": (cmp_page[0], cmp_page[1], len(url_prompts[cmp_page[0]])) if cmp_page else None,
@@ -722,6 +795,10 @@ def _tr(x) -> str:
 
 def insight(t: dict) -> tuple[str, str]:
     v = t.get("vis") or {}
+    if t.get("rival") and t.get("gap") is not None and t["gap"] > 15:  # DECISIONS 362: shares of the topic's AI answers
+        return (f"Büyük açık: konunun AI cevaplarında marka %{_tr(100 * (t.get('brand_share') or 0))}, {t['rival'][0]} "
+                f"%{_tr(100 * t['rival'][1])} kaynak gösteriliyor.",
+                "Konunun en çok kaynak gösterilen sayfalarındaki soru-cevap, tablo ve sayısal bilgiyi kendi sayfanızda doğrudan verin.")
     if t["n"] < 10:
         return ("Panelde bu konuda az prompt var; sonuç yalnız gösterge.", "Önce Maya paneline bu konu için prompt ekleyin.")
     if t.get("gap") is not None and t["gap"] > 15:
@@ -746,7 +823,11 @@ def topic_sheet(summary: dict, rows: list[dict]) -> dict:
         topic = (f"{t['topic']} ({', '.join(t['labels'][:8])})" if t.get("labels") else t.get("name") or t["topic"])
         body.append([i, topic, t["n"], "Evet" if t["n"] < 10 else "", _pct(t["brand_share"]),
                      "; ".join(f"{_short(u)} ({round(100 * s)}%)" for u, s in t["brand_pages"]),
-                     _vis_words(t["vis"], "brand"), _vis_words(t["vis"], "leader"), t["gap"] if t["gap"] is not None else "",
+                     _vis_words(t["vis"], "brand"),
+                     (f"{t['rival'][0]} %{_tr(100 * t['rival'][1])} (AI kaynak payı; "
+                      + (f"Topic Pulse lideri «{t['vis']['leader_own']}» markanın kendisi)" if (t.get("vis") or {}).get("leader_own")
+                         else "Topic Pulse rakip adı vermedi)") if t.get("rival") else _vis_words(t["vis"], "leader")),
+                     t["gap"] if t["gap"] is not None else "",
                      "; ".join(f"{d} ({round(100 * s)}%)" for d, s in t["domains"]),
                      f"{_short(t['competitor_page'][0])} ({t['competitor_page'][1]} koşu, {t['competitor_page'][2]} prompt)" if t["competitor_page"] else "—",
                      f"{_short(t['comparison_page'][0])} ({t['comparison_page'][1]} koşu, {t['comparison_page'][2]} prompt)" if t["comparison_page"] else "—",
@@ -827,8 +908,10 @@ def build(summary: dict | None, report: dict, evidence_dir: Path | None = None, 
     datasets = ", ".join(f"{d['dataset']} ({(d.get('period') or ['', ''])[0]} – {(d.get('period') or ['', ''])[1]})"
                          if d.get("period") else d["dataset"] for d in summary.get("datasets") or [])
     coverage.append(f"Maya verisi: {summary['domain']}; kullanılan dosyalar: {datasets}")
-    if summary.get("other_files"):
-        coverage.append(f"Maya verisi: tanınmayan dosyalar kullanılmadı: {', '.join(summary['other_files'][:10])}")
+    other = summary.get("other_files")
+    other = len(other) if isinstance(other, list) else other  # DECISIONS 362: counted, never named
+    if other:
+        coverage.append(f"Maya verisi: {other} tanınmayan dosya kullanılmadı")
 
     def skipped(sheet_key: str, label: str) -> bool:
         if missing.get(sheet_key):
@@ -907,6 +990,19 @@ def build(summary: dict | None, report: dict, evidence_dir: Path | None = None, 
             if own.get("domains"):
                 coverage.append(f"Markanın kendi siteleri: {', '.join(own['domains'][:8])} markanın adını taşıdığı için markanın "
                                 "sitesi sayıldı (rakip değil); kaynak gösterilen sayfaları marka payına katıldı")
+            # DECISIONS 362: how each prompt got its topic, and where the leader came from
+            _, counts = topic_assignment(summary)
+            if counts["assigned"] or counts["off_topic"] or counts["unassigned"]:
+                coverage.append(f"Konular: {counts['labelled']} prompt Maya'nın konu etiketiyle; {counts['assigned']} prompt konu "
+                                "etiketi olmadığı için metni ve ihtiyaç ailesi en yakın konuya atandı"
+                                + (f"; {counts['off_topic']} prompt yalnız konu olmayan etiketlerle «Konu dışı etiketler» satırında"
+                                   if counts["off_topic"] else "")
+                                + (f"; {counts['unassigned']} prompt hiçbir konuya atanamadı" if counts["unassigned"] else ""))
+            by_rival = [t for t in topics if t.get("rival")]
+            if by_rival:
+                coverage.append(f"Lider rakip ve fark: {len(by_rival)} konuda Topic Pulse rakip adı vermediği ya da markanın kendisini "
+                                "lider gösterdiği için, konunun AI cevaplarında rakip markaların kendi sitelerinin kaynak payından "
+                                "(markanın payıyla aynı veriden) hesaplandı")
         else:
             coverage.append("Rakip sayfaları oluşturulmadı: prompt'lar hiçbir konuya atanamadı")
     method.append(["Maya verisi", "Search Console 28 günlük anlık satırları toplanmaz (son görüntü), günlük satırlar toplanır; "

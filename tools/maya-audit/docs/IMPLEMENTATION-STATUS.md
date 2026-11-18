@@ -2551,3 +2551,23 @@ VERIFIED locally; not pushed.
 | full suite | `3538 passed, 4 skipped, 1 warning in 976.12s (0:16:16)` |
 | `ruff --select E9,F821,F841` (source folders) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+## The MMI Ek with Maya data: the brand's former name, unrelated uploads, prompt categories (DECISIONS 362, 2026-11-18)
+
+VERIFIED locally; not pushed. `maya_data.VERSION` 4.
+
+| "Rakip - Konu" (scratch copies) | Before (`4d0307f`) | After |
+|---|---|---|
+| MMI 536b4b64 rows | 17 (six prompt categories as topics) | 12 |
+| MMI leader / gap | legalhomedelivery.com (the brand's former name) on 8 topics, gaps 23.7-83.9 | real rivals from the topic's AI answers (African + Eastern 7, CityDrinks 2, …), gaps -2.9 to -91.9 |
+| MMI Kapsam | names of the unrelated files | "2 tanınmayan dosya kullanılmadı"; the names taken for the brand; topic assignment counts (54 labelled, 369 nearest topic, 160 off-topic labels, 12 none) |
+| Carpex 1fd871f0 rows | 20 ("Kötü Koku Giderici" twice) | 19; leaders of 18 topics from the AI answers |
+| Text check | PASS | PASS |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_maya_brand_topics_362.py` | `5 passed` |
+| fast suite | `3408 passed, 4 skipped, 135 deselected, 1 warning in 558.12s (0:09:18)` |
+| full suite | `3543 passed, 4 skipped, 1 warning in 982.35s (0:16:22)` |
+| `ruff --select E9,F821,F841` (source folders) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push); `4d0307f` (DECISIONS 361) is not pushed either |

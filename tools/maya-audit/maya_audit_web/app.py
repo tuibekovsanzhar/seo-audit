@@ -2368,6 +2368,8 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         if not folder.is_dir() or not any(folder.iterdir()):
             raise ApiError(422, "maya_data_missing", "Önce Maya export dosyalarını ekleyin.")
         earlier = maya_data.load_for(artifact_folder(audit["id"])) or {}
+        for f in maya_data.unused_uploads(folder):  # DECISIONS 362: an upload that holds no Maya dataset is not kept
+            f.unlink(missing_ok=True)
         try:
             summary = maya_data.prepare([folder], audit["url"])
         except maya_data.MayaDataError as exc:

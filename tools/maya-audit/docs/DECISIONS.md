@@ -5457,3 +5457,39 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      "Yavaş sayfaları hızlandırın" Kapsam "3" -> "3 sayfa (ölçülen 7 sayfadan; diğerleri de etkilenebilir)" in "Bulgular" and
      the Özet. Text check PASS in all five, before and after.
      Tests: `tests/test_platform_advice_361.py` (4).
+
+362. **The MMI Ek with Maya data (Owner, 2026-11-18: the cards are right; three Maya-sheet points, global; the word lists
+     and the nearest-topic rule are agent defaults).**
+     1. *The brand's former name is the brand.* "Rakip - Konu" showed legalhomedelivery.com (MMI's former name) as the
+     leader of every topic, with gaps up to 84 points. The meta's `competitor_aliases` holds alias groups
+     (`competitor_key`, `alias_key`, `alias_label`), which were not read: the group "mmi" lists "mmihomedelivery" (the
+     brand's domain) and "legalhomedelivery". Now a group whose key or any alias is the brand's (its names, its domains'
+     own names, the domain stem) is the brand: every name in it is the brand's and its domains (legalhomedelivery.com)
+     are the brand's own sites; a name written as an address is matched by its domain's own name. A short key ("mmi")
+     matches names only, never a domain (mmi.io is another company). The other groups' aliases are said under the
+     rival's name ("Rival Co Online" -> "Rival Co"). Topic Pulse names only its top competitor each week, so when that is
+     the brand (or no rival is named) the topic's leader and gap come from the rivals' share of the topic's AI answers:
+     the answers citing a rival's own sites, each answer once over all its sites, beside the brand's share from the same
+     citations; the cell says so ("African + Eastern %76,8 (AI kaynak payı; Topic Pulse lideri «legalhomedelivery.com»
+     markanın kendisi)") and Kapsam counts those topics. Kapsam lists the names treated as the brand.
+     2. *Unrelated uploads are never named or kept.* Kapsam printed "tanınmayan dosyalar kullanılmadı: DL26_proposal.tex,
+     IEEEtran.cls" (files of a zip uploaded by mistake). The summary keeps only their count ("2 tanınmayan dosya
+     kullanılmadı"; a summary saved before is shown alike), and when the app reads the files it removes from the audit's
+     Maya folder every upload that holds no Maya dataset (`maya_data.unused_uploads`).
+     3. *Prompt categories are not topics; unlabelled prompts go to the nearest topic.* Maya's prompt categories
+     ("Buying intent", "Brand", "Discovery", "Problem", "Comparison", "Competitor comparison", …) were shown as topics.
+     They are now labels that are not topics. A prompt with no topic label (MMI: 541 of 595) goes to the real topic whose
+     words its text and need families share most (a topic's words: its name, its labelled prompts' need families, Topic
+     Pulse names; a word may take a suffix: "makine" in "makinesi"); one that shares none goes to "Konu dışı etiketler"
+     when it has other labels, else to no topic; Kapsam gives the four counts. One topic under two keys (the label "Kötü
+     Koku Giderici" and the cluster "kotu-koku-giderici") is one row. `maya_data.VERSION` 4 (alias groups, each cited
+     domain's answers per prompt, need families, the files count), so saved summaries are made again from their files.
+     *MMI 536b4b64 before -> after* ("Rakip - Konu", scratch copies; 4d0307f vs this build): 17 rows -> 12 (the six
+     category rows gone); leader legalhomedelivery.com on 8 topics with gaps 23.7-83.9 -> real rivals from the AI answers
+     (African + Eastern 7 topics, CityDrinks 2, uaespirits.com, licensedxb.com) with gaps -2.9 to -91.9 (MMI leads every
+     topic); Kapsam: the file names -> "2 tanınmayan dosya kullanılmadı"; brand names «legalhomedelivery», «mmi», …;
+     "54 prompt Maya'nın konu etiketiyle; 369 … en yakın konuya atandı; 160 … «Konu dışı etiketler» satırında (prompts in
+     Russian, Arabic and Turkish with only intent labels); 12 … atanamadı". *Carpex 1fd871f0*: 20 rows -> 19 (the two
+     "Kötü Koku Giderici" rows merged); the leader of 18 topics from the AI answers (Scentsan, Akscent, Atelier Rebul,
+     …) where Topic Pulse named only Carpex or no rival. Text check PASS for both, before and after.
+     Tests: `tests/test_maya_brand_topics_362.py` (5; fake exports, the web app).
