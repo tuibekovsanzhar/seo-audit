@@ -14,6 +14,7 @@ saved report offline (`maya_audit.reassess_rules`), where a rule whose data the 
 | SEO-093 | idx7.product_no_category | IDX-7 | product pages with no breadcrumb or link to a category in their content |
 | SEO-036 | idx5.no_image_sitemap, idx5.no_video_sitemap | IDX-5 | no image/video sitemap entries on a site with many |
 | SEO-067 | tseo1.url_slug_unclear | TSEO-1 | slugs that are only an id, over 100 characters, or hold spaces/symbols |
+| SEO-141 | tseo1.file_name_unsafe | TSEO-1 | image and file names with a space, a combining mark, brackets or commas |
 | SEO-078 | str3.article_no_author | STR-3 | article pages that name no author (byline, rel/itemprop, markup) |
 | SEO-097 | str3.product_no_identifier | STR-3 | product pages whose Product markup has no GTIN and no MPN |
 
@@ -85,6 +86,16 @@ DECOMPOSED_FIX = ("Change these address names (the handle: the name of a product
                   "to their composed or plain form (the evidence gives each one, for example etbi̇s -> etbis), redirect "
                   "each old address to the new one with a 301, and update the links and the sitemap. The combining dot "
                   "usually comes from lowercasing a capital İ in the tool that wrote the address name.")
+FILE_NAMES_EXPECTED = "image and file names use plain lower-case letters, digits and hyphens"
+FILE_NAMES_FIX = ("Rename these files to plain lower-case names with hyphens before uploading them (no spaces, accents, "
+                  "brackets or commas; the evidence gives a name for each, for example Banner(Espolòn,Día)-01.jpg -> "
+                  "banner-espolon-dia-01.jpg), upload them again and point the pages, the markup and og:image at the new "
+                  "files. Ask whoever uploads images and documents to name them this way from now on.")
+FILE_NAMES_NOTE = ("An accent written as a combining mark (stored as its own character after the letter, as macOS file "
+                   "names keep it) is valid UTF-8 and readers see the letter, but some tools draw it as empty boxes "
+                   "(Chrome's view-source on a very long line, for one), and the same name typed with the composed "
+                   "letter is another address. Brackets and commas break unquoted CSS url() values and srcset lists, "
+                   "and a space must be encoded in an address.")
 ROBOTS_NOINDEX_EXPECTED = "a page meant to leave the index can be crawled, so its noindex is seen"
 ROBOTS_NOINDEX_FIX = ("Choose one per page. To take it out of the index, allow it in robots.txt so crawlers can read the "
                       "noindex, and block it only after it has dropped out. To keep crawlers out, remove the noindex "
@@ -289,6 +300,72 @@ def decomposed_addresses(known: list[str], read_urls: set[str], sitemap: set[str
          "characters": dict(Counter(c for r in rows.values() for c in r["characters"]).most_common()),
          "rule": "the decoded path holds a combining character (Unicode category M), such as U+0307 after an i"},
         DECOMPOSED_EXPECTED, DECOMPOSED_FIX, importance_tier=_tier(urls, key_urls))]
+
+
+# -- SEO-141: image and file names (DECISIONS 364) ------------------------------------------------------------------
+
+FILE_NAME_WORDS = {"tr": {"space": "boşluk", "combining": "birleşik aksan işareti", "brackets_commas": "parantez/virgül",
+                          "row": "dosya adı «{f}» ({p}); önerilen ad: {s}", "more": "ve {n} dosya daha"},
+                   "en": {"space": "space", "combining": "combining accent mark", "brackets_commas": "brackets/commas",
+                          "row": "file name «{f}» ({p}); suggested name: {s}", "more": "and {n} more file(s)"}}
+
+
+def unsafe_file_names(pages, sample=(), product_refs: dict | None = None, key_urls=frozenset()) -> list[Finding]:
+    """`pages`: (page address, analysis) pairs; `sample`: the image sample's rows (`url`, `pages`); `product_refs`: {page:
+    Product image addresses} read from saved JSON-LD. One row per file (an image proxy's sizes are one file)."""
+    from .. import file_names as fn
+    refs: list[tuple[str, str, str]] = []  # (page, address as written, where)
+    for url, a in pages:
+        if not isinstance(a, dict):
+            continue
+        refs += [(url, r.get("url") or "", w) for r in a.get("file_names") or [] if isinstance(r, dict)
+                 for w in r.get("where") or ["img src"]]
+        refs += [(url, i.get("src") or "", "img src") for i in a.get("images") or [] if isinstance(i, dict)]
+        refs += [(url, u, "og:image") for u in (a.get("og") or {}).get("og:image") or [] if isinstance(u, str)]
+        refs += [(url, d.get("href") or "", "file link") for d in a.get("pdf_links") or [] if isinstance(d, dict)]
+        refs += [(url, d.get("href") or "", "img src") for d in a.get("image_preloads") or [] if isinstance(d, dict)]
+        refs += [(url, u, "Product image") for u in (product_refs or {}).get(url) or [] if isinstance(u, str)]
+    for row in sample:
+        if isinstance(row, dict) and isinstance(row.get("url"), str):
+            refs += [(p, row["url"], "img src") for p in row.get("pages") or [] if isinstance(p, str)] or [("", row["url"], "img src")]
+    files: dict[str, dict] = {}
+    for page, ref, where in refs:
+        bad = fn.problems(ref)
+        if not bad:
+            continue
+        outer = fn.absolute(ref, page) if page else ref.strip()
+        key = fn.absolute(fn.file_address(outer), outer)
+        name = fn.file_name(outer)
+        rec = files.setdefault(key, {"file": name, "address": outer[:400], "problems": bad, "characters": fn.marks(outer),
+                                     "plain_name": fn.plain_name(name), "where": [], "pages": []})
+        if where not in rec["where"]:
+            rec["where"].append(where)
+        if page and page not in rec["pages"]:
+            rec["pages"].append(page)
+    if not files:
+        return []
+    rows = sorted(files.values(), key=lambda r: (-len(r["problems"]), -len(r["pages"]), r["file"]))
+    urls = sorted({p for r in rows for p in r["pages"]})
+    page_rows = []
+    for page in urls:
+        mine = list({r["file"]: r for r in reversed(rows) if page in r["pages"]}.values())[::-1]  # a name once
+        line = {}
+        for lang, W in FILE_NAME_WORDS.items():
+            parts = [W["row"].format(f=r["file"], p=", ".join(W[k] for k in r["problems"]), s=r["plain_name"]) for r in mine[:2]]
+            line[lang] = "; ".join(parts + ([W["more"].format(n=len(mine) - 2)] if len(mine) > 2 else []))
+        page_rows.append({"url": page, "files": len(mine), "row": line})
+    for r in rows:
+        r["pages"] = r["pages"][:10]
+    return [Finding("TSEO-1", f"{len(rows)} image or file name(s) hold spaces, accents written as combining marks, brackets or commas",
+        Severity.S4, Confidence.VERIFIED, "Documented (RFC 3986 addresses; HTML srcset; Unicode NFC)",
+        [GOOGLE, COPILOT, "Google Images"], scope_for(urls),
+        {"files": rows[:40], "files_total": len(rows), "pages": page_rows[:200],
+         "problems": dict(Counter(p for r in rows for p in r["problems"]).most_common()),
+         "characters": dict(Counter(c for r in rows for c in r["characters"]).most_common()),
+         "rule": "the file name of an image or file address (img src/srcset, CSS background, file link, og:image, Product "
+                 "image; for an image proxy, the file in its url parameter) holds an unencoded space, a combining mark "
+                 "(Unicode category M), brackets or commas"},
+        FILE_NAMES_EXPECTED, FILE_NAMES_FIX, notes=[FILE_NAMES_NOTE], importance_tier=_tier(urls, key_urls))]
 
 
 # -- SEO-031: noindex behind robots.txt ------------------------------------------------------------------------------
@@ -604,6 +681,9 @@ def findings(result, *, key_urls=frozenset(), check_ids=None, saved: bool = Fals
     if "TSEO-1" in wanted:
         out["TSEO-1"] += decomposed_addresses(known, read_urls, set(sitemap), key_urls)
         out["TSEO-1"] += unclear_slugs(read, groups, indexable, key_urls)
+        from .stage8_rules import _images
+        out["TSEO-1"] += unsafe_file_names([(p.url, p.analysis) for p in read], _images(getattr(result, "structure", None)),
+                                           key_urls=key_urls)
     if "ACC-3" in wanted:
         policies = getattr(result, "robots_policy_by_origin", None)
         if policies is None:

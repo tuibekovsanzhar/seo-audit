@@ -864,6 +864,8 @@ def issue_type(g: dict) -> str:
     return kind
 
 
+# DECISIONS 364: rules about each page's own uploads (a file name), which one template fix does not cover
+NOT_TEMPLATE_RULES = frozenset({"tseo1.file_name_unsafe"})
 TEMPLATE_SHARE = 0.8   # a card names a template when this share of its pages read are in it (owner, Stage 8a)
 TEMPLATE_MIN_PAGES = 5  # ... and at least this many
 
@@ -893,6 +895,8 @@ def template_line(g: dict, importance: dict[str, dict]) -> dict | None:
     """{"template", "kind", "pages"} when one template holds most of a card's pages read (one template fix covers
     them), else None."""
     from collections import Counter
+    if g.get("members") and all(m.get("rule_id") in NOT_TEMPLATE_RULES for m in g["members"]):
+        return None
     read = [u for u in g.get("urls") or [] if u in importance and importance[u].get("read") is not False]
     if len(read) < TEMPLATE_MIN_PAGES:
         return None

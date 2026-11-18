@@ -1197,6 +1197,22 @@
      "regex": "^(Buying intent|Brand|Discovery|Problem|Comparison)$"
     }
    }
+  },
+  {
+   "kaynak": "Sahip — MMI ana sayfa, kaynak görünümünde kutular (DECISIONS 364)",
+   "brand_key": "mmi",
+   "sorun": "Görsel dosya adlarındaki ayrı yazılmış aksanlar, parantez, virgül ve boşluklar bulunmadı (MMI ana sayfa afişi: MMIBannerWebsite(Espolòn,…)-01.jpg)",
+   "genel": "Görsel ve dosya adlarındaki ayrı yazılmış aksanlar, parantez, virgül ve boşluklar bulunmadı",
+   "nasil": "Görsel ve dosya adresleri (img src/srcset, CSS arka planı, belge bağlantısı, og:image, Product görseli) taranıyor; sorunlu her dosya için önerilen düz ad veriliyor (Düşük, Kontrol edin).",
+   "decisions": [
+    364
+   ],
+   "check": {
+    "has_finding": [
+     "tseo1.file_name_unsafe"
+    ],
+    "test": "tests/test_file_names_364.py"
+   }
   }
  ]
 }

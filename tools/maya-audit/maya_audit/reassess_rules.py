@@ -1094,6 +1094,51 @@ def _decisions_363(report: dict, affected: dict, changes: list[str], jsonld_by_u
     changes.append(f"{record['id']}: {record['title']} (S4; DECISIONS 363)")
 
 
+def _decisions_364(report: dict, affected: dict, changes: list[str], jsonld_by_url: dict | None = None) -> None:
+    """DECISIONS 364: image and file names with a space, a combining mark, brackets or commas (tseo1.file_name_unsafe), on
+    a saved report: from each page's img src, og:image, file links and preloads, the image sample, and the Product images
+    of the saved JSON-LD. A finding already there is replaced when the saved JSON-LD adds Product images to it."""
+    import json as _json
+    from .checks.quick_rules import _read, unsafe_file_names
+    from .checks.stage8_rules import _images
+    from .file_names import product_images
+    from .launch_gate import items_of
+    from .models import page_from_record, to_jsonable
+    crawl = report.get("crawl") or {}
+    check = next((c for c in report.get("checks") or [] if c.get("check_id") == "TSEO-1"), None)
+    if check is None or check.get("status") == "not_assessed":
+        return
+    old = [f for f in check.get("findings") or [] if f.get("rule_id") == "tseo1.file_name_unsafe"]
+    products: dict[str, list[str]] = {}
+    for url, blocks in (jsonld_by_url or {}).items():
+        values = []
+        for block in blocks or []:
+            try:
+                values.append(_json.loads(block, strict=False))
+            except ValueError:
+                continue
+        if found := product_images(values):
+            products[url] = found
+    if old and not products:
+        return
+    read = _read([page_from_record(p) for p in crawl.get("pages") or [] if isinstance(p, dict)])
+    made = unsafe_file_names([(p.url, p.analysis) for p in read], _images(crawl.get("structure")), products)
+    if not made or (old and old[0].get("title") == to_jsonable(made[0]).get("title")
+                    and old[0].get("evidence", {}).get("files") == to_jsonable(made[0])["evidence"]["files"]):
+        return
+    for f in old:
+        check["findings"].remove(f)
+        affected.pop(f.get("id"), None)
+    finding = made[0]
+    finding.launch_gated = items_of("TSEO-1", finding)[0]
+    record = to_jsonable(finding)
+    check.setdefault("findings", []).append(record)
+    if check.get("status") == "pass":
+        check["status"] = "findings"
+    affected[record["id"]] = list(finding.scope.get("_all_urls") or finding.scope.get("urls") or [])
+    changes.append(f"{record['id']}: {record['title']} (S4; DECISIONS 364)")
+
+
 def _decisions_351(report: dict, changes: list[str]) -> None:
     """DECISIONS 351: a saved `idx6.alias_links` finding gives Shopify's step only on a Shopify site."""
     from .checks.quick_rules import ALIAS_LINKS_FIX_SHOPIFY, alias_fix
@@ -1428,6 +1473,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_359(r, aff, changes)  # DECISIONS 359: the twin address's copies are one card
     _decisions_360(r, aff, changes)  # DECISIONS 360: İlginay's review of the MMI Ek
     _decisions_363(r, aff, changes, jsonld_by_url)  # DECISIONS 363: the SEO team's gaps
+    _decisions_364(r, aff, changes, jsonld_by_url)  # DECISIONS 364: image and file names
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -1484,6 +1530,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_359(r, affected, cert)  # DECISIONS 359: the twin address's copies are one card
         _decisions_360(r, affected, cert)  # DECISIONS 360: İlginay's review of the MMI Ek
         _decisions_363(r, affected, cert, jsonld_by_url)  # DECISIONS 363: the SEO team's gaps
+        _decisions_364(r, affected, cert, jsonld_by_url)  # DECISIONS 364: image and file names
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

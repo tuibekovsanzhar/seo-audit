@@ -330,7 +330,8 @@
   "str15.saas_feature_intro": "{n} özellik sayfası ilk paragrafında özelliğin ne yaptığını ve kimin için olduğunu söylemiyor",
   "str15.saas_story_result": "{n} müşteri hikâyesi sayfasında ölçülebilir sonuç yok",
   "rnd4.saas_integrations_text": "{n} entegrasyon sayfası entegrasyonları adı metinde geçmeyen logolarla gösteriyor",
-  "acc3.saas_trial_blocked": "{n} demo ya da deneme sayfası noindex taşıyor ya da hata yanıtı veriyor"
+  "acc3.saas_trial_blocked": "{n} demo ya da deneme sayfası noindex taşıyor ya da hata yanıtı veriyor",
+  "tseo1.file_name_unsafe": "{n} görsel ya da dosya adında boşluk, birleşik aksan işareti, parantez ya da virgül var"
  },
  "saved_titles": {
   "saved.acc1.unreachable": "robots.txt, {samples} istekten {failed} tanesinde sunucu hatası döndürdü ya da ulaşılamadı",
@@ -632,7 +633,8 @@
   "Write each integration's name (and one line on what it connects) as text beside its logo, or as a list or table; give each logo an alt text with the name.": "Her entegrasyonun adını (ve neyi bağladığını anlatan bir satırı) logosunun yanına metin olarak, ya da bir liste veya tablo olarak yazın; her logoya adını taşıyan bir alt metni verin.",
   "Name the customer and give at least one measurable result in the text (a percentage, a multiple, time or money saved) with the period it covers.": "Müşterinin adını verin ve metinde en az bir ölçülebilir sonuç yazın (yüzde, kat, kazanılan zaman ya da para), kapsadığı dönemle birlikte.",
   "Remove the noindex (meta robots or X-Robots-Tag) from the demo or trial page and make it answer 200; if the form itself must stay out of search, keep a public page that describes the demo and links to it.": "Demo ya da deneme sayfasındaki noindex'i (meta robots ya da X-Robots-Tag) kaldırın ve sayfanın 200 yanıt vermesini sağlayın; form arama dışında kalmalıysa demoyu anlatan ve forma bağlantı veren herkese açık bir sayfa bırakın.",
-  "Name the person who wrote or reviewed each article on the page, and add them as a Person author in the article's markup; keep the organization as the publisher.": "Makaleyi yazan ya da gözden geçiren kişinin adını sayfada gösterin ve makalenin işaretlemesine Person olarak author ekleyin; kurum yayıncı olarak kalsın."
+  "Name the person who wrote or reviewed each article on the page, and add them as a Person author in the article's markup; keep the organization as the publisher.": "Makaleyi yazan ya da gözden geçiren kişinin adını sayfada gösterin ve makalenin işaretlemesine Person olarak author ekleyin; kurum yayıncı olarak kalsın.",
+  "Rename these files to plain lower-case names with hyphens before uploading them (no spaces, accents, brackets or commas; the evidence gives a name for each, for example Banner(Espolòn,Día)-01.jpg -> banner-espolon-dia-01.jpg), upload them again and point the pages, the markup and og:image at the new files. Ask whoever uploads images and documents to name them this way from now on.": "Bu dosyaları yüklemeden önce düz, küçük harfli ve kelimeleri tireyle ayrılmış adlarla yeniden adlandırın (boşluk, aksan, parantez ya da virgül olmadan; kanıt her biri için bir ad veriyor, örneğin Banner(Espolòn,Día)-01.jpg -> banner-espolon-dia-01.jpg), yeniden yükleyin ve sayfaları, işaretlemeyi ve og:image'ı yeni dosyalara bağlayın. Görsel ve belge yükleyenlerden dosyaları bundan sonra bu şekilde adlandırmalarını isteyin."
  },
  "fix_patterns": {
   "acc2.search": "{engines} bu sayfaları bulup atıf yapabilsin istiyorsanız, {line}. satırdaki kuralı bu kullanıcı aracıları için kaldırın veya daraltın. Engelleme bilinçli bir tercihse “kasıtlı” olarak işaretleyin.",
@@ -880,7 +882,8 @@
   "an integrations page names each integration in text, not only with its logo": "entegrasyon sayfası her entegrasyonu yalnız logosuyla değil, adıyla metin olarak da verir",
   "a customer story names the customer and gives a measurable result": "müşteri hikâyesi müşterinin adını ve ölçülebilir bir sonucu verir",
   "a demo or trial page answers 200 and can be indexed": "demo ya da deneme sayfası 200 yanıt verir ve dizine eklenebilir",
-  "each article names the person who wrote or reviewed it, not only the organization": "her makale onu yazan ya da gözden geçiren kişiyi belirtir, yalnız kurumu değil"
+  "each article names the person who wrote or reviewed it, not only the organization": "her makale onu yazan ya da gözden geçiren kişiyi belirtir, yalnız kurumu değil",
+  "image and file names use plain lower-case letters, digits and hyphens": "görsel ve dosya adları yalnızca küçük harf, rakam ve tireden oluşur"
  },
  "expected_patterns": {
   "acc2.declared": "robots.txt, beyan edildiği gibi {role} botlarını engeller",
@@ -1166,7 +1169,8 @@
   "Stories with a named customer and a number are what answer engines cite as proof. Maya found no number with %, 'kat', a currency, growth or saving in this page's text; check it before changing the page.": "Müşterinin adını ve bir sayıyı veren hikâyeler, yanıt motorlarının kanıt olarak alıntıladığı içeriktir. Maya bu sayfanın metninde yüzde, 'kat', para birimi, artış ya da tasarruf içeren bir sayı bulamadı; sayfayı değiştirmeden önce kontrol edin.",
   "Most addresses on this host redirect; these answered with the page instead, so the same page has two addresses. Each was read once, at the address the crawl moved to.": "Bu adresteki adreslerin çoğu yönleniyor; bunlar ise sayfanın kendisini gösterdi, yani aynı sayfanın iki adresi var. Her sayfa bir kez, taramanın geçtiği adreste okundu.",
   "Most addresses on this host redirect; these answered with the page instead, so the same page has two addresses. In this saved audit both copies were read; a new crawl reads each page once.": "Bu adresteki adreslerin çoğu yönleniyor; bunlar ise sayfanın kendisini gösterdi, yani aynı sayfanın iki adresi var. Bu kayıtlı denetimde iki kopya da okundu; yeni bir tarama her sayfayı bir kez okur.",
-  "Estimated: the article's structured data names an author, and every author it names is an organization. For finance and health topics a named, qualified person is a trust signal.": "Tahmini: makalenin yapısal verisi bir yazar belirtiyor ve belirttiği her yazar bir kurum. Finans ve sağlık konularında adı ve uzmanlığı belli bir kişi güven işaretidir."
+  "Estimated: the article's structured data names an author, and every author it names is an organization. For finance and health topics a named, qualified person is a trust signal.": "Tahmini: makalenin yapısal verisi bir yazar belirtiyor ve belirttiği her yazar bir kurum. Finans ve sağlık konularında adı ve uzmanlığı belli bir kişi güven işaretidir.",
+  "An accent written as a combining mark (stored as its own character after the letter, as macOS file names keep it) is valid UTF-8 and readers see the letter, but some tools draw it as empty boxes (Chrome's view-source on a very long line, for one), and the same name typed with the composed letter is another address. Brackets and commas break unquoted CSS url() values and srcset lists, and a space must be encoded in an address.": "Birleşik aksan işareti (macOS dosya adlarında olduğu gibi harften sonra ayrı bir karakter olarak saklanan aksan) geçerli UTF-8'dir ve okuyucular harfi görür; ama bazı araçlar onu boş kutu olarak çizer (örneğin Chrome'un kaynak görünümü çok uzun bir satırda) ve aynı adın birleşik harfle yazılışı başka bir adrestir. Parantez ve virgül tırnaksız CSS url() değerlerini ve srcset listelerini bozar; adresteki boşluk kodlanmalıdır."
  },
  "note_patterns": {
   "source.firecrawl": "Kaynak: Firecrawl",

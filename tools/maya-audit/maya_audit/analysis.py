@@ -1465,6 +1465,9 @@ def analyze_html(html: str, page_url: str | None = None) -> dict:
         "numbered_paragraph_runs": parser.numbered_runs,
         # STR-13 (DECISIONS 210): zero-width and soft-hyphen characters in the main text, only when there are some.
         **({"invisible_chars": invisible} if invisible else {}),
+        # DECISIONS 364: image and file addresses whose file name holds a space, a combining mark, brackets or commas
+        # (img src/srcset, CSS backgrounds, file links, og:image, Product image), only when there are some.
+        **({"file_names": refs} if (refs := _file_names(html, og, items)) else {}),
         "html_chars": len(received),
         "main_offset_bytes": len(received[: anchor.start()].encode()) if anchor else None,
         "main_offset_basis": basis,
@@ -1491,3 +1494,12 @@ def analyze_html(html: str, page_url: str | None = None) -> dict:
     from .table_semantics import inspect_tables
     result["_table_semantics"] = inspect_tables(html)
     return result
+
+
+def _file_names(html: str, og: dict, items: list[dict]) -> list[dict]:
+    """DECISIONS 364: `file_names.scan` on the page, with its og:image and Product image values."""
+    from .file_names import product_images, scan
+    try:
+        return scan(html, og_images=og.get("og:image") or [], products=product_images([i["data"] for i in items]))
+    except Exception:  # noqa: BLE001  a hint only: never the page's analysis
+        return []

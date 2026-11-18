@@ -5541,3 +5541,38 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      and 39 articles named by an organization only; its pages read in both 9 and 11 Nov audits (127) show no title or
      description change.
      Tests: `tests/test_fix_log_363.py` (15); `test_maya_data_352` expects the reason after "alınamadı".
+364. **Image and file names with spaces, accents written as combining marks, brackets or commas (Owner, 2026-11-19,
+     from the MMI homepage; the sources read, the word lists and the sort order are agent defaults).** View-source of
+     the MMI homepage showed empty boxes after the banner "MMIBannerWebsite(Espolòn,CelebrateDíadeMuertos,DayoftheDead)
+     -01.jpg": the HTML is clean UTF-8, but the file name keeps macOS's decomposed accents (o + U+0300, i + U+0301) and
+     brackets and commas, on a 320,000-character line Chrome's view-source cannot draw. Global for every audit.
+     1. *The rule* (`tseo1.file_name_unsafe`, TSEO-1, S4 Düşük, issue type warning "Kontrol edin", VERIFIED; checklist
+     SEO-141 "Görsel dosya adı ve bağlam" becomes partial, whether a name describes the image staying review): an image
+     or file address whose file name holds a space the page did not encode, an accent written as a combining mark
+     (Unicode category M), brackets or commas. The address is tested as the page writes it (`%20` is fine, a "+" is not a
+     space, the query is not the file name); an image proxy (Next.js `/_next/image?url=…`, `?src=`, `?file=`) is tested
+     on the file in its parameter, so the proxy's sizes are one file. `maya_audit/file_names.py` holds the test
+     (`problems`), the plain name it suggests (lower-case letters, digits and hyphens, accents dropped, camel-case words
+     split, an acronym kept whole: banner-website-espolon-dia-01.jpg), and the scan of a page.
+     2. *Where it looks.* A new crawl records, per page, the addresses with a problem from img/source/video src and
+     srcset (read as browsers read a srcset), CSS backgrounds (style attributes and <style> blocks, an unquoted url()
+     with brackets read whole), links to documents (pdf, doc, xls, ppt, zip, csv…), og:image and the Product markup's
+     image (`analysis.file_names`, only when a page has one; no schema change). The rule also reads what every report
+     keeps: img src, og:image, PDF links, image preloads and the image sample (`crawl.structure.images`, with the pages
+     that show each image). A saved audit gets it offline (`reassess_rules._decisions_364`, in `apply` and
+     `saved_data`), with the Product images of its saved JSON-LD.
+     3. *What it says.* One row per file (the worst names first: a combining mark before brackets alone): the file name,
+     its problems, the marks' codes, where it is used and a suggested plain name; one line per page in "Bulgu bazında"
+     ("dosya adı «…» (birleşik aksan işareti, parantez/virgül); önerilen ad: …", two names and "ve N dosya daha"). The
+     advice: rename the files to plain lower-case names with hyphens before uploading, upload them again and point the
+     pages, markup and og:image at them; ask whoever uploads to name files this way. The note says a combining mark is
+     valid UTF-8 and why it still breaks (boxes in some viewers, a second spelling of the address), and why brackets,
+     commas and spaces do. Owner content, effort S, not a quick-win rename of page addresses. A card of this rule never
+     says "Tek şablon düzeltmesi" (`client_selection.NOT_TEMPLATE_RULES`): each page's own uploads are renamed one by
+     one, whatever template shows them.
+     *Result* (saved audits rebuilt 2026-11-19, no request): MMI 240 files on 40 pages (brackets or commas in all of
+     them, combining marks in the Espolòn banner only, which leads the homepage row), a new card 5 "Görsel ve dosya
+     adlarını düz, küçük harfli adlarla yükleyin" (Düşük, Kontrol edin; 10 cards before, 11 after; no other card
+     changed; text check PASS). Elsewhere: Ticimax 26 files (25 with spaces), İş Bankası 6, Enpara 2, Atasun 1 ("Ray-Ban
+     Kılıf.jpeg", written with a space in the page), Carpex and Nature's Garden none.
+     Tests: `tests/test_file_names_364.py` (7).

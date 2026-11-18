@@ -307,6 +307,7 @@
   "str9.cluster": "issue",
   "str9.wrong_language": "issue",
   "tseo1.url_decomposed": "issue",
+  "tseo1.file_name_unsafe": "warning",
   "tseo1.url_slug_unclear": "opportunity",
   "tseo1.no_viewport": "issue",
   "tseo1.head_closed_lost": "issue",

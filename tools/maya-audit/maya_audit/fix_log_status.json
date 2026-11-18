@@ -172,7 +172,7 @@
    "no": 25,
    "durum": "Düzeltildi",
    "tarih": "2026-11-18",
-   "commit": "—",
+   "commit": "d11ddd4",
    "decisions": "363"
   },
   {
@@ -207,7 +207,7 @@
    "no": 30,
    "durum": "Düzeltildi",
    "tarih": "2026-11-18",
-   "commit": "—",
+   "commit": "d11ddd4",
    "decisions": "363"
   },
   {
@@ -221,21 +221,21 @@
    "no": 32,
    "durum": "Düzeltildi",
    "tarih": "2026-11-18",
-   "commit": "—",
+   "commit": "d11ddd4",
    "decisions": "363"
   },
   {
    "no": 33,
    "durum": "Düzeltildi",
    "tarih": "2026-11-18",
-   "commit": "—",
+   "commit": "d11ddd4",
    "decisions": "363"
   },
   {
    "no": 34,
    "durum": "Düzeltildi",
    "tarih": "2026-11-18",
-   "commit": "—",
+   "commit": "d11ddd4",
    "decisions": "363"
   },
   {
@@ -249,14 +249,14 @@
    "no": 36,
    "durum": "Düzeltildi",
    "tarih": "2026-11-18",
-   "commit": "—",
+   "commit": "d11ddd4",
    "decisions": "363"
   },
   {
    "no": 37,
    "durum": "Düzeltildi",
    "tarih": "2026-11-18",
-   "commit": "—",
+   "commit": "d11ddd4",
    "decisions": "363"
   },
   {
@@ -368,21 +368,21 @@
    "no": 53,
    "durum": "Düzeltildi",
    "tarih": "2026-11-18",
-   "commit": "9c766e2",
+   "commit": "d11ddd4",
    "decisions": "358, 363"
   },
   {
    "no": 54,
    "durum": "Düzeltildi",
    "tarih": "2026-11-18",
-   "commit": "—",
+   "commit": "d11ddd4",
    "decisions": "363"
   },
   {
    "no": 55,
    "durum": "Düzeltildi",
    "tarih": "2026-11-18",
-   "commit": "—",
+   "commit": "d11ddd4",
    "decisions": "363"
   },
   {
@@ -531,6 +531,13 @@
    "tarih": "2026-11-18",
    "commit": "d1ef515",
    "decisions": "362"
+  },
+  {
+   "no": 77,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-18",
+   "commit": "—",
+   "decisions": "364"
   }
  ]
 }

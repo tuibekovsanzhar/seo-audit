@@ -2574,7 +2574,7 @@ VERIFIED; pushed with `d1ef515` (`4d158c8..d1ef515`, full suite `3543 passed, 4 
 
 ## The review fix log and the SEO team's gaps (DECISIONS 363, 2026-11-18)
 
-VERIFIED locally; not pushed. `maya_audit/fix_log.json` (76 items), `fix_log_status.json`, `tools/fix_log.py`; every Turkish
+VERIFIED; pushed as `d11ddd4` (`d1ef515..d11ddd4`), CI run 44338300398 success. `maya_audit/fix_log.json` (76 items), `fix_log_status.json`, `tools/fix_log.py`; every Turkish
 Ek gets "Düzeltme kaydı" (and "Önceki denetimden değişenler" when the site has a previous audit).
 
 | Newest audit per domain (rebuilt from copies, 2026-11-18) | Items | Düzeltildi | Yeni tarama gerekli |
@@ -2594,5 +2594,28 @@ Ek gets "Düzeltme kaydı" (and "Önceki denetimden değişenler" when the site 
 | `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt, text check PASS in all; 10 test files named by items passed |
 | fast suite | `3423 passed, 4 skipped, 135 deselected, 1 warning in 555.15s (0:09:15)` |
 | full suite | `3558 passed, 4 skipped, 1 warning in 979.41s (0:16:19)` |
+| `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
+| Push | done with `d11ddd4` |
+
+## Image and file names (DECISIONS 364, 2026-11-19)
+
+VERIFIED locally; not pushed. New rule `tseo1.file_name_unsafe` (TSEO-1, S4 Düşük, Kontrol edin; checklist SEO-141
+partial): image and file names with an unencoded space, an accent written as a combining mark, brackets or commas
+(`maya_audit/file_names.py`; `analysis.file_names` in new crawls; saved audits offline via `_decisions_364`). A card of
+this rule never names a template fix. Fix log item 77.
+
+| Saved audit (rebuilt from copies, no request) | Before (`d11ddd4`) | After |
+|---|---|---|
+| MMI 536b4b64 | 10 cards | 11: card 5 "Görsel ve dosya adlarını düz, küçük harfli adlarla yükleyin", 240 files on 40 pages (combining marks: the Espolòn banner, first on the homepage row); no other card changed |
+| Ticimax / İş Bankası / Enpara / Atasun | — | 26 / 6 / 2 / 1 file(s) |
+| Carpex / Nature's Garden | — | none |
+| Text check | PASS | PASS (all 7) |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_file_names_364.py` | `7 passed` |
+| fast suite | `1 failed, 3429 passed, 4 skipped, 135 deselected, 1 warning in 558.43s (0:09:18)`: the TR "why" text was 175 characters (limit 170); shortened, `tests/test_team_report.py` + `tests/test_file_names_364.py` then `29 passed` |
+| full suite | `3565 passed, 4 skipped, 1 warning in 985.74s (0:16:25)` |
+| `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 77 items: Düzeltildi 74, Yeni tarama gerekli 3; 11 test files passed |
 | `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |

@@ -321,6 +321,7 @@ _BY_TITLE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
     "TSEO-1": (
         # The checklist's quick checks (DECISIONS 304).
         (r"decomposed character", "developer", "M", "A letter written as two code points makes a second address for the same word: links typed or copied with the normal letter lead elsewhere, and the address looks garbled when shared."),
+        (r"image or file name\(s\) hold spaces", "content", "S", "A file name with spaces, brackets, commas or accents written as separate marks looks broken in some tools, breaks srcset and unquoted CSS url() values, and gives the same file a second address."),
         (r"unclear slug", "developer", "M", "A short address made of words tells visitors and engines what the page is before they open it; ids and symbols say nothing."),
         (r"end <head> early: canonical", "developer", "S", "Google stops reading the head at the first element that cannot stand in it, so a canonical, robots or hreflang tag after it is ignored."),
         (r"end <head> early: meta", "developer", "S", "Tags after an element that ends the head early are read as body; previews and some crawlers then miss them."),

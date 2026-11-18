@@ -4237,6 +4237,19 @@
    "verify": "In the sitemap, every address should use composed characters (Unicode NFC) or plain letters.",
    "summary": "Decomposed characters in addresses"
   },
+  "tseo1.file_name_unsafe": {
+   "title": "Upload images and files with plain lower-case names",
+   "finding": "Image and file names hold spaces, accents, brackets or commas",
+   "explanation": "Upload these files again with names of lower-case letters, digits and hyphens, and point the pages at the new files.",
+   "why": "File names with accents written as separate marks, brackets, commas or spaces look broken in some tools, break in srcset and CSS, and give the same file a second address.",
+   "steps": [
+    "Rename each listed file with lower-case letters, digits and hyphens",
+    "Upload it again; point the pages, markup and og:image at it",
+    "Name new files this way before uploading them"
+   ],
+   "verify": "In the page source, image and file addresses should hold only lower-case letters, digits and hyphens.",
+   "summary": "Image and file names"
+  },
   "tseo1.url_slug_unclear": {
    "title": "Give pages short, readable addresses",
    "finding": "Address slugs are unclear",

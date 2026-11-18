@@ -2858,13 +2858,17 @@
    "group_en": "14 · Image, video and media SEO",
    "item_en": "Image file names and context",
    "applies_to": "Tüm siteler",
-   "method": "review",
-   "checks": [],
-   "rules": [],
+   "method": "partial",
+   "checks": [
+    "TSEO-1"
+   ],
+   "rules": [
+    "tseo1.file_name_unsafe"
+   ],
    "needs": [],
-   "rest": null,
+   "rest": "review",
    "when": null,
-   "maya_note": ""
+   "maya_note": "Image and file names with a space, a combining mark, brackets or commas (img src/srcset, CSS backgrounds, file links, og:image, Product image; DECISIONS 364); whether a name describes the image needs review."
   },
   {
    "id": "SEO-142",

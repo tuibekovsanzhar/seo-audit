@@ -801,6 +801,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         # The checklist's quick checks (DECISIONS 304).
         ("tseo1.url_decomposed", "{n#} address(es) contain a decomposed character (a letter followed by a combining mark)",
          "{n:address contains|addresses contain} a decomposed character (a letter followed by a combining mark)"),
+        # DECISIONS 364: image and file names (SEO-141).
+        ("tseo1.file_name_unsafe", "{n#} image or file name(s) hold spaces, accents written as combining marks, brackets or commas",
+         "{n:image or file name holds|image or file names hold} spaces, accents written as combining marks, brackets or commas"),
         ("tseo1.url_slug_unclear", "{n#} page address(es) have an unclear slug (an id only, over 100 characters, or spaces and symbols)",
          "{n:page address has|page addresses have} an unclear slug (an id only, over 100 characters, or spaces and symbols)"),
         # H30, H32 (maya_audit.checks.page_markup).

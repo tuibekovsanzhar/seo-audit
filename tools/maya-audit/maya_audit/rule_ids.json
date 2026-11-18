@@ -1373,6 +1373,10 @@
     "(?P<n>\\d+(?:\\.\\d+)?)\\ address\\(es\\)\\ contain\\ a\\ decomposed\\ character\\ \\(a\\ letter\\ followed\\ by\\ a\\ combining\\ mark\\)"
    ],
    [
+    "tseo1.file_name_unsafe",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ image\\ or\\ file\\ name\\(s\\)\\ hold\\ spaces,\\ accents\\ written\\ as\\ combining\\ marks,\\ brackets\\ or\\ commas"
+   ],
+   [
     "tseo1.url_slug_unclear",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\ address\\(es\\)\\ have\\ an\\ unclear\\ slug\\ \\(an\\ id\\ only,\\ over\\ 100\\ characters,\\ or\\ spaces\\ and\\ symbols\\)"
    ],

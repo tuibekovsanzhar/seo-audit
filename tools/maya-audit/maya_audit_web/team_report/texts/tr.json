@@ -4237,6 +4237,19 @@
    "verify": "Site haritasında her adres birleşik karakterlerle (Unicode NFC) ya da düz harflerle yazılmış olmalı.",
    "summary": "Ayrışık karakterli adresler"
   },
+  "tseo1.file_name_unsafe": {
+   "title": "Görsel ve dosya adlarını düz, küçük harfli adlarla yükleyin",
+   "finding": "Görsel ve dosya adlarında boşluk, aksan, parantez ya da virgül var",
+   "explanation": "Bu dosyaları küçük harf, rakam ve tireden oluşan adlarla yeniden yükleyin ve sayfaları yeni dosyalara bağlayın.",
+   "why": "Ayrı işaretli aksan, parantez, virgül ya da boşluk içeren dosya adları bazı araçlarda bozuk görünür, srcset ve CSS'te kırılır, aynı dosyaya ikinci adres verir.",
+   "steps": [
+    "Listelenen her dosyayı küçük harf, rakam ve tireyle yeniden adlandırın",
+    "Yeniden yükleyip sayfaları, işaretlemeyi ve og:image'ı ona bağlayın",
+    "Yeni dosyaları yüklemeden önce bu şekilde adlandırın"
+   ],
+   "verify": "Sayfa kaynağında görsel ve dosya adresleri yalnızca küçük harf, rakam ve tire içermeli.",
+   "summary": "Görsel ve dosya adları"
+  },
   "tseo1.url_slug_unclear": {
    "title": "Sayfalara kısa, okunabilir adresler verin",
    "finding": "Adreslerin kısa adı anlaşılır değil",

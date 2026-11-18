@@ -1660,6 +1660,22 @@
      "If everyone is redirected, link to the final address"
     ]
    }
+  },
+  "tseo1.file_name_unsafe": {
+   "en": "Rename image and file names to plain lower-case names",
+   "tr": "Görsel ve dosya adlarını düz, küçük harfli adlarla yükleyin",
+   "steps": {
+    "tr": [
+     "Listelenen her dosyayı küçük harf, rakam ve tireyle yeniden adlandırın",
+     "Yeniden yükleyip sayfaları, işaretlemeyi ve og:image'ı ona bağlayın",
+     "Yeni dosyaları yüklemeden önce bu şekilde adlandırın"
+    ],
+    "en": [
+     "Rename each listed file with lower-case letters, digits and hyphens",
+     "Upload it again; point the pages, markup and og:image at it",
+     "Name new files this way before uploading them"
+    ]
+   }
   }
  }
 }
