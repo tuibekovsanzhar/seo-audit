@@ -5429,3 +5429,31 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      uğrayan sayfaları düzeltin" says its 7 measured pages; its no-text card names its links. Atasun, Carpex: the
      broken-link and redirect cards name their first links. Enpara: unchanged.
      Tests: `tests/test_mmi_review_360.py` (9; a mock-transport shop and made-up records).
+
+361. **The MMI re-check after 4d158c8 (Owner, 2026-11-18: İlginay's six points fixed; two leftovers, global; the filter's
+     rules are agent defaults).**
+     1. *Advice for one platform only on that platform.* MMI's Ek (www.mmihomedelivery.ae, not Shopify) said "Shopify'da
+     her varyantın barkod alanını doldurun": the engine's fix sentence for `str3.product_no_identifier` names Shopify, and
+     the appendix's "Ne yapılmalı" columns show fix sentences as written (Carpex, on Ticimax, had the same). The card itself
+     was right (its Shopify step is a `steps_by_platform` line). Now one filter (`maya_audit.platform_text.for_platform`)
+     leaves out every sentence, ";" clause or step line that names a platform the audit did not recognise for the site
+     (Shopify, WordPress, WooCommerce, Magento, Shopware, PrestaShop, OpenCart, Squarespace, Webflow, Wix, ikas, Ticimax,
+     IdeaSoft, T-Soft, Drupal, Joomla, BigCommerce, HubSpot; WooCommerce runs on WordPress): every card text field
+     (`Builder.slot`), each row's "Ne yapılmalı" in "Bulgu bazında" and "Bulgular". The text library and the rule
+     catalogue already keep platform steps under `steps_by_platform`; the web catalogue and the brief's texts name no
+     platform. RG-19 (hard) now (a) judges a card against the site's own data only: a finding's advice texts
+     (how_to_fix, expected, notes, judgment, page_fixes) no longer count as "the site names this platform" (the loophole
+     MMI's card went through), and (b) reads the appendix's own "Ne yapılmalı" cells (`with_platform_advice`), so such a
+     file is marked a draft in "Kontrol raporu". *Found on the way:* the text check read a Turkish suffix apostrophe as a
+     quote ("GTIN'i … Shopify'da"), so the words between two were taken for quoted site text and not checked; a single
+     quote now opens and closes only next to a non-letter.
+     2. *The Ek says what the PDF says.* The technical "Bulgular" sheet showed the engine's own fix and a bare count. A
+     finding on a card now shows the card's steps and the links the card names ("Ne yapılmalı"), and the card's scope in
+     "Kapsam (sayı)" when it says more than a count ("3 sayfa (ölçülen 7 sayfadan; diğerleri de etkilenebilir)", "en az
+     94 sayfa"); the Özet's "Etkilenen adres" shows that scope too. "Bulgu bazında" already named each page's links.
+     *MMI 536b4b64 before -> after* (scratch copies; 4d158c8 vs this build): "Ne yapılmalı" cells naming another platform
+     1 -> 0 (Carpex 1 -> 0, Enpara, Atasun, İş Bankası 0); "Bulgular" for "Metni olmayan bağlantılara ad verin": the generic
+     fix -> the card's two steps and "/blog/cosmo-and-tini-…: (metin yok) → /product/absolut-raspberri-1l-8536 (gövde)";
+     "Yavaş sayfaları hızlandırın" Kapsam "3" -> "3 sayfa (ölçülen 7 sayfadan; diğerleri de etkilenebilir)" in "Bulgular" and
+     the Özet. Text check PASS in all five, before and after.
+     Tests: `tests/test_platform_advice_361.py` (4).

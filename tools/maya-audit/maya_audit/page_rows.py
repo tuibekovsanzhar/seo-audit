@@ -427,7 +427,7 @@ def card_of(selection: dict, todos: list[dict] | None = None, lang: str = "tr",
             cards.append({"n": t.get("n"), "title": t.get("title"), "addresses": len(t.get("all_urls") or []), "severity": t.get("severity"),
                           "severity_label": t.get("severity_label"), "issue_type": t.get("issue_type"),
                           "issue_type_label": t.get("issue_type_label"), "owner": t.get("owner"), "effort": t.get("effort"),
-                          "p_level": t.get("p_level"),
+                          "p_level": t.get("p_level"), "scope": t.get("scope"),  # DECISIONS 361: the PDF's scope
                           "finding_ids": list(t.get("finding_ids") or [])})
             for fid in t.get("finding_ids") or []:
                 by_id.setdefault(fid, t.get("n"))
@@ -581,6 +581,8 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
             short = (entry or {}).get("summary") or name
             todo = (entry or {}).get("explanation") or ((fix(m.get("how_to_fix")) if fix and m.get("how_to_fix") else None)
                                                          or m.get("how_to_fix") or "")
+            from .platform_text import for_platform  # DECISIONS 361: another platform's advice is not shown
+            todo = for_platform(todo, selection.get("platform")) or ""
             hosts = host_level(m)
             urls = affected(m, lists) or [None]
             sev = severity(m)
@@ -595,7 +597,7 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
                 rows.append({
                     "finding_id": m.get("id"), "check_id": m.get("check_id"), "rule_id": m.get("rule_id"),
                     "title": head["title"] if head else name, "short": short,
-                    "fix": head["fix"] if head else own_fix or todo,
+                    "fix": head["fix"] if head else for_platform(own_fix, selection.get("platform")) or todo,
                     "severity": sev, "issue_type": g.get("issue_type") or "issue",
                     "placement": g.get("placement"), "card": by_id.get(m.get("id")),
                     "url": url, "address": display_address(url, hosts) if url else W["site"],

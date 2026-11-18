@@ -457,6 +457,12 @@ class Builder:
         library's (`fallback`, DECISIONS 307). The skill may still polish either; `⟪YAZ⟫` is left only when neither
         exists (`finish` then gives the library's generic words, so no report has an empty field)."""
         self.slots.append({"path": path, "hint": hint, "src": src, "max": maxlen, **({"lines": lines} if lines else {})})
+        try:  # DECISIONS 361: advice for another platform is not shown (a sentence, a clause or a step line)
+            from maya_audit.platform_text import for_platform  # type: ignore
+            platform = (self.sel or {}).get("platform")
+            prefill, fallback = for_platform(prefill, platform), for_platform(fallback, platform)
+        except ImportError:
+            pass
         for text in (prefill, fallback):
             if text and self.fits(text, maxlen, lines):
                 return text

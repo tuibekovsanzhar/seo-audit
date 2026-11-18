@@ -7,6 +7,7 @@ the caller (`title`, `fix`: callables taking (check_id, text) and (text,), retur
 """
 from __future__ import annotations
 
+import re
 from typing import Callable
 
 from . import xlsx
@@ -346,7 +347,7 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
     # DECISIONS 342: the SEO team's 165-item checklist, after the reader sheets
     listed = checklist.sheets(selection, lang, todos, title) if selection.get("_checklist_facts") else []
     reader = reader_sheets(selection, lang, lists, title=title, fix=fix, todos=todos, words=words, places=places)
-    technical = technical_sheets(selection, lang, lists, title, fix, label, line)
+    technical = technical_sheets(selection, lang, lists, title, fix, label, line, todos=todos)
     if maya is None or lang != "tr":
         return reader + listed + technical
     from . import maya_sheets
@@ -506,7 +507,10 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
     summary = [[c["n"], c.get("title") or "", sev(c.get("severity")),
                 W["itype"].get(c.get("issue_type") or "", "") if c.get("severity") in ("S1", "S2", "S3", "S4") else "",
                 c.get("p_level") or "",  # DECISIONS 324
-                c.get("owner") or "", c.get("effort") or "", len(addresses[c["n"]]) if c["n"] in addresses else c.get("addresses") or 0,
+                c.get("owner") or "", c.get("effort") or "",
+                # DECISIONS 361: the PDF's scope when it says more than a count ("en az 94 sayfa", "ölçülen 7 sayfadan")
+                c["scope"] if c.get("scope") and not re.fullmatch(r"[\d.,]+ \w+", str(c["scope"])) else
+                len(addresses[c["n"]]) if c["n"] in addresses else c.get("addresses") or 0,
                 {"text": R["go"], "location": f"{where}!A{first_row[c['n']]}"} if c["n"] in first_row else "",
                 {"text": R["go_links"], "location": f"{links_sheet}!A{first_link[c['n']]}"} if c["n"] in first_link else ""]
                for c in cards]
@@ -535,20 +539,32 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
 
 def technical_sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
                      title: Callable[[str, str], str] | None = None, fix: Callable[[str], str] | None = None,
-                     label: Callable[[str], str] | None = None, line: Callable[[str], str] | None = None) -> list[dict]:
+                     label: Callable[[str], str] | None = None, line: Callable[[str], str] | None = None,
+                     todos: list[dict] | None = None) -> list[dict]:
     from .client_selection import host_level
     from .page_rows import display_address
+    from .platform_text import for_platform
     W = WORDS[lang]
     rows, urls = [], []
+    # DECISIONS 361: a finding on a card says what the card says: its steps and the links it names, and its scope (with
+    # how many pages a sampled check measured), as the PDF does
+    card_of = {fid: t for t in todos or [] if t.get("n") for fid in t.get("finding_ids") or []}
     for r in appendix_rows(selection, lists):
         t = (title(r["check_id"], r["title"]) if title else None) or r["title"]
         x = (fix(r["how_to_fix"]) if fix and r["how_to_fix"] else None) or r["how_to_fix"]
+        card = card_of.get(r["finding_id"])
+        if card and card.get("steps"):
+            x = "\n".join([card["steps"], *(card.get("sub") or [])])
+        x = for_platform(x, selection.get("platform"))
+        scope = r["scope_count"]
+        if card and card.get("scope") and not re.fullmatch(r"[\d.,]+ \w+", str(card["scope"])):
+            scope = card["scope"]
         placement = W["placement"].get(r["placement"], r["placement"])
         rows.append([r["finding_id"], r["check_id"], r["rule_id"], W["severity"].get(r["severity"], r["severity"]),
                      W["itype"].get(r.get("issue_type") or "issue", ""), r["confidence"], W["class"].get(r["confidence_class"], r["confidence_class"]), r["priority"], r.get("p_level") or "",
                      placement, r["card"], r["group_lead"] if r["group_lead"] != r["finding_id"] else "",
                      W["reason"].get(r["confirm_reason"], r["confirm_reason"]) if r["confirm_reason"] else "",
-                     t, x, r["scope_count"], len(r["urls"]), r.get("pages_read"), r.get("not_read"),
+                     t, x, scope, len(r["urls"]), r.get("pages_read"), r.get("not_read"),
                      r.get("merge_group") or "", _manual(r.get("manual") or "", W)])
         hosts = host_level(r["finding"]) if r.get("finding") else None
         for u in r["urls"]:  # DECISIONS 322 (7): a host-level finding's host roots as plain host names
@@ -605,8 +621,27 @@ def build(selection: dict, lang: str = "tr", lists: dict | None = None, text_che
     made = sheets(selection, lang, lists, **wording)
     if text_check is not None:
         from . import text_gate
-        made.append(text_gate.sheet(text_check() if callable(text_check) else text_check, lang))
+        record = text_check() if callable(text_check) else text_check
+        # DECISIONS 361: RG-19 on the file's own "Ne yapılmalı" cells too: advice for another platform blocks
+        record = text_gate.with_platform_advice(record, advice_cells(made), selection.get("platform"), lang)
+        made.append(text_gate.sheet(record, lang))
     return xlsx.workbook(made)
+
+
+ADVICE_COLUMNS = ("Ne yapılmalı", "What to do")
+
+
+def advice_cells(made: list[dict]) -> list[tuple[str, str]]:
+    """(sheet name, text) of every "Ne yapılmalı" cell the file holds (DECISIONS 361)."""
+    out = []
+    for sheet in made:
+        header = sheet.get("header") or []
+        cols = [i for i, h in enumerate(header) if h in ADVICE_COLUMNS]
+        for row in sheet.get("rows") or []:
+            for i in cols:
+                if i < len(row) and isinstance(row[i], str) and row[i]:
+                    out.append((sheet.get("name") or "", row[i]))
+    return out
 
 
 def finding_ids(data: bytes, lang: str = "tr") -> set[str]:

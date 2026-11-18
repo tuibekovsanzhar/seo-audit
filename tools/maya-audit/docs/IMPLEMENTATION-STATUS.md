@@ -2512,7 +2512,8 @@ VERIFIED; pushed as `adf2478` (`9c766e2..adf2478`), CI run 44276291855 success. 
 
 ## İlginay's review of the MMI Ek (DECISIONS 360, 2026-11-18)
 
-VERIFIED locally; not pushed. Source: İlginay (SEO team). No "Düzeltme kaydı" exists in the repository.
+VERIFIED; pushed as `4d158c8` (`adf2478..4d158c8`, full suite `3534 passed, 4 skipped` before the push), CI run
+44297021030 success. Source: İlginay (SEO team). No "Düzeltme kaydı" exists in the repository.
 
 | Saved audit (scratch copy) | Before (`adf2478`) | After |
 |---|---|---|
@@ -2527,5 +2528,26 @@ VERIFIED locally; not pushed. Source: İlginay (SEO team). No "Düzeltme kaydı"
 | `pytest tests/test_mmi_review_360.py` | `9 passed` |
 | fast suite | `3399 passed, 4 skipped, 135 deselected, 1 warning in 560.86s (0:09:20)` |
 | full suite | `1 failed, 3533 passed, 4 skipped, 1 warning in 984.00s (0:16:23)`: `test_fixture_matrix` (the generated `docs/FIXTURE-MATRIX.md` was not regenerated); regenerated with `scripts/fixture_matrix.py`, `tests/test_fixture_matrix.py` `3 passed` |
+| `ruff --select E9,F821,F841` (source folders) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |
+
+## The MMI re-check: platform advice and the Ek as the PDF (DECISIONS 361, 2026-11-18)
+
+VERIFIED locally; not pushed.
+
+| Saved audit (scratch copy) | Before (`4d158c8`) | After |
+|---|---|---|
+| MMI 536b4b64 "Ne yapılmalı" naming another platform | 1 ("Shopify'da her varyantın barkod alanını doldurun") | 0 |
+| Carpex 1fd871f0 (Ticimax) | 1 | 0 |
+| Enpara, Atasun, İş Bankası | 0 | 0 |
+| MMI "Bulgular", no-text links | generic engine fix | the card's steps and its named link |
+| MMI "Yavaş sayfaları hızlandırın" Kapsam (Bulgular, Özet) | 3 | 3 sayfa (ölçülen 7 sayfadan; diğerleri de etkilenebilir) |
+| Text check | PASS in all five | PASS in all five |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_platform_advice_361.py` | `4 passed` |
+| fast suite | `3403 passed, 4 skipped, 135 deselected, 1 warning in 570.36s (0:09:30)` |
+| full suite | `3538 passed, 4 skipped, 1 warning in 976.12s (0:16:16)` |
 | `ruff --select E9,F821,F841` (source folders) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |

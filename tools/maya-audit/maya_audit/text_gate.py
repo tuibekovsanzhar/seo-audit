@@ -52,7 +52,9 @@ ENGLISH_MARK = re.compile(r"\((?:İngilizce|English)\)")
 EN_WORDS = re.compile(r"\b(the|and|with|of|to|is|are|this|that|from|for|not|page|pages|was|were|should|your|link|links|"
                       r"which|have|has|been|will|can|its|on|by|at)\b", re.IGNORECASE)
 # Quoted site text, markup, addresses and code names: never read as the report's own words or numbers.
-QUOTED = re.compile(r"«[^»]*»|\"[^\"]*\"|“[^”]*”|‘[^’]*’|'[^'\s][^']*'|`[^`]*`")
+# DECISIONS 361: a single quote opens only after a non-letter and closes before one: a Turkish suffix apostrophe
+# ("GTIN'i", "Shopify'da") is not a quote, so the text between two of them is the report's own words
+QUOTED = re.compile(r"«[^»]*»|\"[^\"]*\"|“[^”]*”|‘[^’]*’|(?<![\w])'[^'\s][^']*'(?![\w])|`[^`]*`")
 MARKUP = re.compile(r"<[^<>]{1,80}>|https?://\S+|(?<![\w])/[\w\-./%?=&#~+]*|\b[\w-]+\.(?:txt|xml|json|js|css|html?|php)\b")
 CODE_NUMBERS = re.compile(r"\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}[./]\d{1,2}[./]\d{4}\b|\b[Hh][1-6]\b|\b[1-5]xx\b|\bUTF-?8\b|\bISO-\d+(?:-\d+)?\b|\bWCAG\s?\d(?:\.\d)?\b|\bHTTP/\d(?:\.\d)?\b|"
                           r"\bIPv[46]\b|\bP[0-3]\b|\bS[1-4]\b|\b[A-Z]{2,5}-\d+\b|\bx-default\b|\b\d+(?:\.\d+)?\s?(?:KB|KiB|MB|ms|px)\b|"
@@ -247,8 +249,16 @@ def check(data: dict, report: dict | None = None, *, lang: str | None = None, pl
 
     # RG-19: platform-specific advice on another platform.
     own = {platform.lower(), BUILT_ON.get(platform, "").lower()} - {""}
+    # DECISIONS 361: the platform must be in the site's own data, never in an advice text of the findings (MMI's GTIN fix
+    # named Shopify, so "Shopify" was found "in the evidence" and the card's Shopify step passed)
+    advice_keys = ("how_to_fix", "expected", "notes", "judgment", "fix", "page_fixes", "rationale")
+
+    def site_data(f):
+        if not isinstance(f, dict):
+            return f
+        return {k: (site_data(v) if isinstance(v, dict) else v) for k, v in f.items() if k not in advice_keys}
     for key, n, card in _cards(data):
-        evidence = json.dumps([by_id.get(i) for i in card.get("finding_ids") or []], ensure_ascii=False, default=str).lower()
+        evidence = json.dumps([site_data(by_id.get(i)) for i in card.get("finding_ids") or []], ensure_ascii=False, default=str).lower()
         for field, line in _card_text(card):
             if field == "sub":
                 continue
@@ -361,6 +371,29 @@ RULE_NAMES = {
            "RG-20": "Advice to remove a menu or sign-in link", "RG-21": "English left in Turkish text",
            "RG-22": "Card repeated for the same pages", "RG-23": "Banned phrase", "LLM": "Second reader's suggestion"},
 }
+
+
+def with_platform_advice(record: dict | None, cells: Iterable[tuple[str, str]], platform: str | None,
+                         lang: str = "tr") -> dict | None:
+    """DECISIONS 361: RG-19 on the appendix's own advice ("Ne yapılmalı"): a cell naming another platform than the
+    site's is a hard violation, once per platform and sheet."""
+    if record is None:
+        return record
+    from .platform_text import other_platform
+    seen, extra = set(), []
+    for where, text in cells:
+        name = other_platform(_plain(text), platform)
+        if name and (where, name.lower()) not in seen:
+            seen.add((where, name.lower()))
+            said = f"sitenin platformu {platform}" if platform else "rapor sitenin platformunu belirlemedi"
+            extra.append(violation("RG-19", f"Ek ({where}): {name}'a özgü öneri; {said}", hard=True,
+                                   where=f"ek: {where}", text=text))
+    if not extra:
+        return record
+    violations = list(record["violations"]) + extra
+    counts = dict(record.get("counts") or {})
+    counts["RG-19"] = counts.get("RG-19", 0) + len(extra)
+    return {**record, "violations": violations, "counts": counts, "decision": decision(violations)}
 
 
 def with_untranslated(record: dict | None, sentences: Iterable[tuple[str, str]], lang: str = "tr") -> dict | None:
