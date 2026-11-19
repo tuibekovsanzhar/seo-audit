@@ -60,6 +60,7 @@ REACH_CAP = 10.0
 # not read (sitemap-only, found in a link) adds nothing and is listed as a count (`addresses_not_read`).
 BUSINESS_RELEVANCE = 1.0
 from .release_gate import CLIENT_MAX_CARDS as MAX_CARDS, CLIENT_MAX_PAGES as MAX_PAGES  # noqa: E402
+CONFIRM_CARD_LEVELS = ("P0", "P1")  # DECISIONS 367: a "Teyit edin" group of these levels takes a card slot
 KEY_PAGES = 10
 CONFIRM_LINES = 12  # "Teyit edin" lines a client report prints; the rest are counted and in the appendix
 HIGH = ("S1", "S2")
@@ -716,6 +717,15 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         else:
             g["placement"] = None
     candidates = _order([g for g in rows if g["placement"] is None])
+    # DECISIONS 367: a group waiting in "Teyit edin" that is High or Blocker, or P0/P1, takes a card slot like any
+    # problem (it stays "Kontrol edin" and its card says to confirm it first); Info note cards only fill what is left.
+    from .priority_levels import annotate as p_levels
+    p_levels(rows, importance, summary, pages_read(report), lists, confirmations)
+    urgent = [g for g in rows if g["placement"] == "confirm" and g["severity"] in PROBLEM
+              and (g["severity"] in HIGH or (g.get("p_level") or {}).get("level") in CONFIRM_CARD_LEVELS)]
+    for g in urgent:
+        g["placement"], g["confirm_card"] = None, True
+    candidates = _order(candidates + urgent)
     # Every Blocker and High group is a card, whatever it scores (nothing S1/S2 is ever cut, preamble 4); the rest by
     # score while there is room. More than 15 High groups make more than 15 cards: the gate then blocks (RG-16).
     must = [g for g in candidates if g["severity"] in HIGH]
@@ -727,7 +737,8 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
         g["placement"], g["card"] = "card", n
     for g in candidates:
         if id(g) not in chosen_ids:
-            g["placement"] = "appendix"
+            # DECISIONS 367: a confirm group with no room left goes back to "Teyit edin"
+            g["placement"] = "confirm" if g.pop("confirm_card", False) else "appendix"
     confirm = _order([g for g in rows if g["placement"] == "confirm"])
     notes = _order([g for g in rows if g["placement"] == "note"])
     limits = [g for g in rows if g["placement"] == "own_limit"]
@@ -858,7 +869,7 @@ def issue_type(g: dict) -> str:
     """A group's type beside its severity. Waiting in "Teyit edin": warning. Otherwise the most serious of its
     members' rule types (issue over warning over opportunity); a warning rule a person confirmed is an issue. Never
     changes severity, placement or order."""
-    if g.get("placement") == "confirm":
+    if g.get("placement") == "confirm" or g.get("confirm_card"):  # DECISIONS 367: a confirm group on a card
         return "warning"
     kinds = {rule_type(m.get("rule_id")) for m in g.get("members") or []} or {"issue"}
     kind = next(k for k in ISSUE_TYPES if k in kinds)

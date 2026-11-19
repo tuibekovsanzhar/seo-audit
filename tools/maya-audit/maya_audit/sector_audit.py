@@ -187,7 +187,7 @@ class _Audit:
                 urls = cs.affected(m, lists)
                 # DECISIONS 325: only a measured finding, or one a person confirmed, sets a Durum
                 conf = cs.confidence_class(m, confirmations)
-                self.items.append({"f": m, "sev": sev, "waiting": g.get("placement") == "confirm", "measured": conf == "measured",
+                self.items.append({"f": m, "sev": sev, "waiting": g.get("placement") == "confirm" or bool(g.get("confirm_card")), "measured": conf == "measured",
                                    "kind": cs.rule_type(m.get("rule_id")), "urls": urls, "host": _host_level(m),
                                    "read": [u for u in urls if u.rstrip("/") in read]})
         self.hosts = max(_hosts(list(read)), 1)

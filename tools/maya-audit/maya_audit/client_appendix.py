@@ -453,7 +453,7 @@ def where_rows(places: dict | None, todos: list[dict] | None, lang: str) -> list
     R = READ[lang]
     Wd, Rw = R["where_words"], R["redirect_words"]
     shown = lambda u: _link(u, unquote(u or ""))  # noqa: E731  readable letters, the real address behind the link
-    card = {fid: t["n"] for t in todos or [] for fid in t.get("finding_ids") or []}
+    card = {fid: t["n"] for t in todos or [] if t.get("n") is not None for fid in t.get("finding_ids") or []}
     out = []
     for fid, rows in (places or {}).items():
         for r in rows:
@@ -506,7 +506,7 @@ def redirect_rows(places: dict | None, todos: list[dict] | None, lang: str) -> l
     R = READ[lang]
     Wd, Rw = R["where_words"], R["redirect_words"]
     shown = lambda u: _link(u, unquote(u or ""))  # noqa: E731
-    card = {fid: t["n"] for t in todos or [] for fid in t.get("finding_ids") or []}
+    card = {fid: t["n"] for t in todos or [] if t.get("n") is not None for fid in t.get("finding_ids") or []}
     out = []
     for fid, rows in (places or {}).items():
         for r in rows:

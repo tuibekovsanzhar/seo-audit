@@ -2087,6 +2087,9 @@ class Builder:
                     if line:
                         sub = [line] + list(sub or [])
                         self.fact(line)
+                # DECISIONS 367: a "Teyit edin" group that took a card slot says so first ("Doğrulama bekliyor: …")
+                if (group or {}).get("confirm_card") and (group or {}).get("confirm_reason") in L["confirm_reasons"]:
+                    sub = [L["confirm_reasons"][group["confirm_reason"]]] + list(sub or [])
                 if merged and not found:
                     action = merged["title"].get(self.lang) or merged["title"]["en"]
                 if pre_steps:
@@ -2785,7 +2788,9 @@ def build_from_files(report_path, lang, *, rev=None, audit_id=None, source=None,
                        "confidence": g.get("confidence"), "placement": g.get("placement"), "issue_type": g.get("issue_type"),
                        "severity": g.get("severity"), "rule_id": g.get("rule_id"), "template_line": g.get("template_line")}
                       for g in selection["groups"] if g.get("placement") == "card"]
-    data["_confirm_ids"] = sorted({i for g in selection["confirm"] for i in g["finding_ids"]})
+    # DECISIONS 367: a "Teyit edin" group that took a card slot is still waiting
+    data["_confirm_ids"] = sorted({i for g in selection["confirm"] + [g for g in selection["cards"] if g.get("confirm_card")]
+                                   for i in g["finding_ids"]})
     # The engine that re-evaluated this saved audit (DECISIONS 308), None when the report was used as written.
     data["_engine"] = ((report.get("generation") or {}).get("analysis") or {}).get("engine")
     data["_reassess_failed"] = reassess_failed

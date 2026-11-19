@@ -5645,3 +5645,28 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      *Result* (saved audits rebuilt 2026-11-19, no request): cards identical in all 7; "Diğer bulgular" MMI 13,
      Carpex 14, Enpara 14, Atasun 12, İş Bankası 21, Ticimax 18, Nature's Garden 15; text check PASS in all.
      Tests: `tests/test_summary_others_366.py` (2); the Özet tests read the cards from the fourth row.
+367. **A finding waiting for a check takes a card slot before Info cards (Owner, 2026-11-19, from the MMI Ek; the P0/P1
+     line and the card's first line are agent defaults).** Global for every audit.
+     *The rule until now* (DECISIONS 300, 309): a finding with a reason to confirm it first (a new check, an estimated
+     measure, a finding seen only in another reading path, possible intent…) went to "Teyit edin" and never to a card,
+     whatever its severity or priority; the cards were the other problems (every High and Blocker, the rest by
+     priority score while there was room, at most 15), and the PDF's free slots then took up to 2 Info note cards. So
+     on MMI "Ana içerik ham HTML'de yok" (High, P1) and "Yapısal veri sayfadaki bilgiyle çelişiyor" (Medium, P1)
+     stayed in "Teyit edin" while cards 10 and 11 were Info.
+     *Now* (`client_selection.select`): after the placements the P-levels are worked out, and a "Teyit edin" group
+     that is High or Blocker, or P0/P1, joins the candidates: High and Blocker always take a card (as every High
+     problem does), P0/P1 while there is room, ordered with the other cards by severity band and priority score. One
+     that finds no room goes back to "Teyit edin". It stays "Kontrol edin" (`issue_type`), gets no automatic P0 (it is
+     not established), its PDF card opens with the confirm reason ("Doğrulama bekliyor: kontrol yeni"), the client
+     brief still leaves it out (`_confirm_ids`) and the sector sheet still says "Teyit bekliyor". Info note cards only
+     take the slots the problem cards leave (unchanged). The Ek's "Özet" is made from the PDF's cards, so both match;
+     a group taken out of the cards is listed under "Diğer bulgular" (DECISIONS 366).
+     *Fixed on the way:* "Bağlantı yerleri" failed to sort when a note card with link rows had no PDF number (Ticimax,
+     once a promoted card took the note card's slot): such rows have no card number.
+     *Result* (saved audits rebuilt 2026-11-19, no request): MMI 11 -> 13 cards (+1 "Ana içeriği sunucuda oluşturun",
+     +4 "Yapısal veriyi sayfadaki bilgiyle eşleyin"; the 2 Info cards are now 12 and 13); Atasun +3 "Ana içeriği
+     data-nosnippet dışına çıkarın" (High), "Ayrıştırılamayan JSON-LD'yi düzeltin" (Low, P3) leaves the cards; Ticimax
+     +2 "Ağır görselleri küçültüp sıkıştırın" (Medium, P1), the Info card "Küçük bağlantı ve etiket tutarsızlıklarını
+     temizleyin" goes to the appendix; Carpex, Enpara, İş Bankası and Nature's Garden unchanged. PDF and Özet match in
+     all 7; text check PASS in all.
+     Tests: `tests/test_confirm_cards_367.py` (5).

@@ -2651,7 +2651,7 @@ Cards and the text check unchanged in all 7 (PASS).
 
 ## Every problem in the Ek's Özet (DECISIONS 366, 2026-11-19)
 
-VERIFIED locally; not pushed. "Özet": the platform and "İlk N kart PDF raporundadır; diğer bulgular aşağıdadır." on top,
+VERIFIED; pushed as `9a3e474` (`2262e81..9a3e474`), CI run 44497027858 success. "Özet": the platform and "İlk N kart PDF raporundadır; diğer bulgular aşağıdadır." on top,
 the PDF's cards as before, then "Diğer bulgular": every other problem group (S1-S4, Sorun / Kontrol edin / Fırsat; no
 Info, no rejected finding, no Maya limit) with the cards' columns, by severity then priority. The PDF is unchanged.
 Fix log item 80.
@@ -2672,5 +2672,30 @@ Fix log item 80.
 | fast suite | `3438 passed, 4 skipped, 135 deselected, 1 warning in 569.97s (0:09:29)` |
 | full suite | `3573 passed, 4 skipped, 1 warning in 1009.30s (0:16:49)` |
 | `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 80 items: Düzeltildi 77, Yeni tarama gerekli 3 |
+| `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
+| Push | done with `9a3e474` |
+
+## Findings waiting for a check take card slots before Info cards (DECISIONS 367, 2026-11-19)
+
+VERIFIED locally; not pushed. A "Teyit edin" group that is High/Blocker (always) or P0/P1 (while there is room) is a card,
+"Kontrol edin", its PDF card opening with "Doğrulama bekliyor: …"; Info note cards fill only the slots left. PDF and
+Özet match. Also fixed: "Bağlantı yerleri" failed when a note card with link rows had no PDF number. Fix log item 81.
+
+| Saved audit (rebuilt from copies, no request) | Cards | Added | Left the cards | PDF = Özet | Text check |
+|---|---|---|---|---|---|
+| MMI 536b4b64 | 11 -> 13 | 1 "Ana içeriği sunucuda oluşturun" (Yüksek, P1), 4 "Yapısal veriyi sayfadaki bilgiyle eşleyin" (Orta, P1) | — (the 2 Info cards move to 12-13) | yes | PASS |
+| Carpex 1fd871f0 | 15 -> 15 | — | — | yes | PASS |
+| Enpara fee70191 | 15 -> 15 | — | — | yes | PASS |
+| Atasun f06a2129 | 15 -> 15 | 3 "Ana içeriği data-nosnippet dışına çıkarın" (Yüksek) | "Ayrıştırılamayan JSON-LD'yi düzeltin" (Düşük, P3; now under "Diğer bulgular") | yes | PASS |
+| İş Bankası 1b81bee4 | 15 -> 15 | — | — | yes | PASS |
+| Ticimax c77ebf6d | 15 -> 15 | 2 "Ağır görselleri küçültüp sıkıştırın" (Orta, P1) | Info card "Küçük bağlantı ve etiket tutarsızlıklarını temizleyin" (appendix only) | yes | PASS |
+| Nature's Garden 342a0b14 | 6 -> 6 | — | — | yes | PASS |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_confirm_cards_367.py` | `5 passed` |
+| fast suite | `3443 passed, 4 skipped, 135 deselected, 1 warning in 560.23s (0:09:20)` |
+| full suite | `3578 passed, 4 skipped, 1 warning in 1192.73s (0:19:52)` |
+| `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 81 items: Düzeltildi 78, Yeni tarama gerekli 3 |
 | `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |

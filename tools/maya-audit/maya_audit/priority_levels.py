@@ -156,7 +156,7 @@ def label(group: dict, ctx: Context, lists: dict | None, confirmations: dict | N
     if group.get("severity") in HIGH_FLOOR and computed in (None, "P3"):
         # DECISIONS 329 (owner): a High (or Blocker) card is never P3; at least P2. The card order does not change.
         computed, floor = HIGH_FLOOR[group["severity"]], words["floor"]
-    if group.get("placement") == "confirm":
+    if group.get("placement") == "confirm" or group.get("confirm_card"):
         auto = None  # not established yet: no automatic P0 for a finding waiting in "Teyit edin"
     mark = None
     for fid in group.get("finding_ids") or []:

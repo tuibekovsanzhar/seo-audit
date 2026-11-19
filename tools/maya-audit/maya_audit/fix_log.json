@@ -1266,6 +1266,25 @@
     },
     "test": "tests/test_summary_others_366.py"
    }
+  },
+  {
+   "kaynak": "Sahip — MMI Ek: Yüksek ve P1 bulgular 'Diğer bulgular'da kalırken Bilgi kartları PDF'teydi (DECISIONS 367)",
+   "brand_key": "mmi",
+   "sorun": "Teyit bekleyen Yüksek ya da P0/P1 bulgular kart olamıyordu; boş yerleri Bilgi kartları dolduruyordu (MMI: 'Ana içerik ham HTML'de yok', 'Yapısal veri sayfadaki bilgiyle çelişiyor')",
+   "genel": "Teyit bekleyen Yüksek ya da P0/P1 bulgular kart olamıyordu; boş yerleri Bilgi kartları dolduruyordu",
+   "nasil": "Teyit bekleyen Yüksek bulgu her zaman, P0/P1 bulgu yer varken kart olur; 'Kontrol edin' kalır ve kartın ilk satırı 'Doğrulama bekliyor' der; Bilgi kartları yalnız kalan yerleri doldurur; PDF ve Özet aynı.",
+   "decisions": [
+    367
+   ],
+   "check": {
+    "title_text": {
+     "title": "^Ana içeriği sunucuda oluşturun$",
+     "field": "sub",
+     "regex": "Doğrulama bekliyor",
+     "need": true
+    },
+    "test": "tests/test_confirm_cards_367.py"
+   }
   }
  ]
 }
