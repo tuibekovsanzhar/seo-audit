@@ -249,6 +249,18 @@ def _why(why: str, lang: str) -> str:
     return text or ("adres yok" if lang == "tr" else "no address")
 
 
+def dead_link_row(text, why: str, component: str | None) -> dict:
+    """DECISIONS 371: what is wrong with a link a crawler cannot follow: its text, its element and href, where it sits."""
+    def make(lang):
+        href = str(why or "").replace('href=', '').strip() or ('' if lang == "tr" else '')
+        element = f'<a href={href}>' if href.startswith('"') else "<a>"
+        place = f" ({component})" if component else ""
+        if lang == "tr":
+            return f"{quote(text, 50)} {element}{place}: bağlantı gibi görünüyor, gidecek adresi yok ({_why(why, lang)})"
+        return f"{quote(text, 50)} {element}{place}: looks like a link, has no address to go to ({_why(why, lang)})"
+    return row(make)
+
+
 def link_no_address_row(text: str, why: str, component: str | None) -> dict:
     def make(lang):
         place = (f"; her sayfada tekrarlanan alanda ({component})" if lang == "tr" else f"; in the block repeated on every page ({component})") if component else ""
@@ -479,7 +491,17 @@ def attach(report: dict) -> list[str]:
                     seen.add(at)
                     made.append({"url": at, "row": line})
         lines(f, made)
-    for f in _findings(report, "shared.heading_jump"):
+    for f in [*_findings(report, "str19."), *_findings(report, "shared.links_no_address")]:
+        ev = f.get("evidence") or {}
+        made, seen_pages = [], set()
+        for x in ev.get("links") or []:
+            page = isinstance(x, dict) and (x.get("example") or x.get("source"))
+            if page and page not in seen_pages and x.get("why"):
+                seen_pages.add(page)
+                made.append({"url": page, "row": dead_link_row(x.get("text") if x.get("text") is not None else "",
+                                                                x.get("why"), x.get("component"))})
+        lines(f, made)
+    for f in [*_findings(report, "shared.heading_jump"), *_findings(report, "shared.heading_jump_varied")]:
         ev = f.get("evidence") or {}
         el = ev.get("shared_element") or {}
         if el.get("text"):
@@ -637,7 +659,7 @@ def site_example(finding: dict, lang: str = "tr") -> str | None:
         for doc in ev.get("documents") or []:
             if isinstance(doc, dict) and isinstance(doc.get("same_lastmod"), int) and doc.get("urls"):
                 name = file_name(doc.get("sitemap") or doc.get("url") or "") or "sitemap"
-                return (f"{name}: {doc['urls']} adresin {doc['same_lastmod']} tanesinde lastmod aynı ({str(doc.get('value'))[:10]})" if tr else
+                return (f"{name}: {doc['urls']} adresin {tr_count(doc['same_lastmod'])} aynı lastmod'u taşıyor ({str(doc.get('value'))[:10]})" if tr else
                         f"{name}: {doc['same_lastmod']} of {doc['urls']} addresses carry the same lastmod ({str(doc.get('value'))[:10]})")
         if isinstance(ev.get("lastmod"), dict) and ev["lastmod"]:
             days = {}
@@ -665,6 +687,27 @@ def site_example(finding: dict, lang: str = "tr") -> str | None:
             unit = "sn" if tr else "s"
             return (f"{_path(first['url'])}: yanıt {_num(mid / 1000, lang)} {unit} ({len(samples)} ölçümün ortancası){cap}" if tr else
                     f"{_path(first['url'])}: response {_num(mid / 1000, lang)} {unit} (median of {len(samples)}){cap}")
+    if rule.startswith("prf1.") and first.get("url") and isinstance(first.get("ttfb_ms"), (int, float)):
+        cache = first.get("cf-cache-status") or first.get("cache-status") or first.get("x-cache")
+        control = first.get("cache-control")
+        parts = [f"CDN önbelleği {cache}" if tr else f"CDN cache {cache}"] if cache else []
+        if control:
+            parts.append(f"cache-control: {control}")
+        parts.append(f"ilk yanıt {round(first['ttfb_ms'])} ms" if tr else f"first response {round(first['ttfb_ms'])} ms")
+        return f"{_path(first['url'])}: " + "; ".join(parts)
+    if rule == "str7.unsized" and first.get("url") and isinstance(first.get("images"), int):
+        example = next((file_name(x) for x in first.get("examples") or [] if isinstance(x, str)), None)
+        return (f"{_path(first['url'])}: {first['images']} görselde width/height yok" + (f" (ör. {quote(example, 60)})" if example else "")
+                if tr else f"{_path(first['url'])}: {first['images']} images without width/height" + (f" (e.g. {quote(example, 60)})" if example else ""))
+    if rule == "str7.format_references" and isinstance(ev.get("format_assessment"), dict):
+        fa = ev["format_assessment"]
+        old_formats = {k: v for k, v in (fa.get("markup_format_occurrences") or {}).items() if k in ("jpg", "jpeg", "png", "gif")}
+        if fa.get("occurrences"):
+            shown = ", ".join(f"{k.upper()} {v}" for k, v in old_formats.items())
+            return (f"site geneli: {fa['occurrences']} görsel kullanımının {fa.get('markup_modern_occurrences', 0)} tanesi WebP/AVIF"
+                    + (f"; {shown}" if shown else "") if tr else
+                    f"whole site: {fa.get('markup_modern_occurrences', 0)} of {fa['occurrences']} image uses WebP/AVIF"
+                    + (f"; {shown}" if shown else ""))
     if rule.startswith("rnd6.") and isinstance(first.get("bytes"), int):
         cap = ev.get("threshold_bytes")
         size = f"HTML {_num(first['bytes'] / 1000, lang, 0)} KB"
@@ -698,6 +741,27 @@ def site_example(finding: dict, lang: str = "tr") -> str | None:
     if rule.startswith("str9.") and first.get("declared") and first.get("detected"):
         return (f"{_path(first.get('url'))}: <html lang> {first['declared']}, metin {_lang(first['detected'], lang)} ({first.get('main_words')} kelime)" if tr else
                 f"{_path(first.get('url'))}: <html lang> {first['declared']}, text in {_lang(first['detected'], lang)} ({first.get('main_words')} words)")
+    if rule.startswith("rnd2.") and first.get("url") and (first.get("headings_only_after_render") or first.get("prices_only_after_render")):
+        heads = [h.get("text") if isinstance(h, dict) else h for h in first.get("headings_only_after_render") or []]
+        prices = list(first.get("prices_only_after_render") or [])
+        parts = []
+        if heads:
+            parts.append(("yalnız JavaScript'le gelen başlıklar: " if tr else "headings only after JavaScript: ")
+                         + ", ".join(quote(h, 40) for h in heads[:3]))
+        if prices:
+            parts.append(("yalnız JavaScript'le gelen fiyatlar: " if tr else "prices only after JavaScript: ")
+                         + ", ".join(quote(x, 30) for x in prices[:3]))
+        return f"{_path(first['url'])}: " + "; ".join(parts)
+    if rule == "str1.no_title":
+        url = next((u for u in ev.get("pages") or [] if isinstance(u, str)), None) or first.get("url")
+        if url:
+            return f"{_path(url)}: " + ("<title> etiketi yok ya da boş" if tr else "no <title> or an empty one")
+    if rule.startswith("str20.") and first.get("url") and (first.get("players") or first.get("video_embeds")):
+        players = ", ".join([f"<{x}>" if x in ("video", "audio", "iframe") else str(x) for x in (first.get("players") or [])[:3]]
+                            + [f"{urlsplit(str(e)).hostname} video" for e in (first.get("video_embeds") or [])[:2]])
+        words = first.get("words_of_its_own")
+        return (f"{_path(first['url'])}: {players} oynatıcı" + (f"; sayfanın kendi metni {words} kelime" if isinstance(words, int) else "")
+                if tr else f"{_path(first['url'])}: {players} player" + (f"; the page's own text {words} words" if isinstance(words, int) else ""))
     if rule == "str5.names":
         names = [v.get("name") for v in sorted((v for v in ev.get("variants") or [] if isinstance(v, dict) and v.get("name")),
                                                 key=lambda v: -(v.get("pages") or 0))]

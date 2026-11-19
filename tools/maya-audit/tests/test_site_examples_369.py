@@ -17,7 +17,7 @@ def _f(rule, title, evidence, check="X"):
 def test_each_site_level_finding_says_what_was_measured_where():
     stamped = _f("idx5.stamped", "x", {"documents": [{"sitemap": SITE + "/sitemap.xml", "urls": 412, "same_lastmod": 398,
                                                        "value": "2026-11-16T14:51:13+03:00"}]})
-    assert site_example(stamped) == "sitemap.xml: 412 adresin 398 tanesinde lastmod aynı (2026-11-16)"
+    assert site_example(stamped) == "sitemap.xml: 412 adresin 398'i aynı lastmod'u taşıyor (2026-11-16)"
     slow = _f("prf1.slow", "1 page(s) take more than 2 s (median) to return their HTML",
               {"pages": [{"url": SITE + "/kategori/x", "samples": [{"ttfb_ms": 4800}, {"ttfb_ms": 4700}, {"ttfb_ms": 5100}]}]})
     assert site_example(slow) == "/kategori/x: yanıt 4,8 sn (3 ölçümün ortancası), eşik 2,0 sn"

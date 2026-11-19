@@ -335,6 +335,13 @@ def _item_links(page) -> set[str]:
     return {t for t in _body_targets(page) if item_address(t)}
 
 
+def is_utility_address(url: str) -> bool:
+    """DECISIONS 371: an account, sign-in, cart, checkout, search or order address, by its address alone: its content
+    is a form or a list for one visitor, so content findings (RND-1, RND-3) leave it out."""
+    segs = [fold(s) for s in _segments(url)]
+    return any(s in UTILITY_SEGMENTS or account_segment(s) for s in segs)
+
+
 def page_type(page, home: str, homes: set[str], products: dict, site_og: str | None = None,
               sitewide_types: frozenset = frozenset()) -> tuple[str, str]:
     """(type, basis). The order: home, utility (an account or sign-in address too), policy, an item address with an id,

@@ -132,10 +132,11 @@ def test_empty_and_near_empty_collections_are_found_and_a_hub_or_a_full_one_is_n
     _, found = shop
     f = found["str15.empty_collections"]
     assert f.check_id == "STR-15" and f.confidence.value == "estimated" and "LG-102" in f.launch_gated
-    assert _paths(f) == ["/collections/az", "/collections/bos"]
-    rows = {r["url"].removeprefix(SHOP): r for r in f.evidence["pages"]}
-    assert rows["/collections/bos"] == {"url": SHOP + "/collections/bos", "products_listed": 0, "empty": True}
-    assert rows["/collections/az"]["products_listed"] == 1 and f.evidence["near_empty"] == 1
+    # DECISIONS 371: only a collection with no product at all; /collections/az (1 product) is no finding
+    assert _paths(f) == ["/collections/bos"]
+    [row] = f.evidence["pages"]
+    assert row["url"] == SHOP + "/collections/bos" and row["products_listed"] == 0 and row["empty"] is True
+    assert row["row"]["tr"].startswith("HTML'de 0 ürün") and f.evidence["near_empty"] == 0
     assert f.notes == [quick_rules.EMPTY_COLLECTIONS_NOTE]
 
 

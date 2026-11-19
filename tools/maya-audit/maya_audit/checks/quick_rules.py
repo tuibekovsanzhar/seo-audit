@@ -237,7 +237,24 @@ def _is_category_url(url: str) -> bool:
     return bool(set(segs) & CATEGORY_WORDS)
 
 
-def empty_collections(read, groups: dict, indexable: set[str], key_urls=frozenset()) -> list[Finding]:
+def empty_row(after_js: int | None) -> dict:
+    tr = "HTML'de 0 ürün" + ("; işlenmiş sayfada da 0 ürün" if after_js == 0 else "; sayfa tarayıcıda işlenmedi")
+    en = "0 products in the HTML" + ("; 0 in the rendered page too" if after_js == 0 else "; the page was not rendered")
+    return {"tr": tr, "en": en}
+
+
+def rendered_products(entry: dict | None, types: dict) -> int | None:
+    """DECISIONS 371: how many product pages the rendered page links to (products a script loads), or None when the
+    page was not rendered."""
+    if not isinstance(entry, dict) or not isinstance(entry.get("rendered_links"), list):
+        return None
+    targets = {_bare(e.get("target") or "") for e in entry["rendered_links"] if isinstance(e, dict)}
+    return sum(1 for t in targets if t and (types.get(t) == "product" or _is_product_in_list(t) or "/products/" in t))
+
+
+def empty_collections(read, groups: dict, indexable: set[str], key_urls=frozenset(), rendered: dict | None = None) -> list[Finding]:
+    """DECISIONS 371: an indexable collection that lists no product at all: none in its HTML and none in the rendered
+    page when it was rendered (products a script loads are products). A low count is not "no products"."""
     types = {u: g.get("page_type") for u, g in groups.items()}
     if sum(1 for t in types.values() if t == "product") < MIN_PRODUCT_PAGES:
         return []
@@ -250,7 +267,10 @@ def empty_collections(read, groups: dict, indexable: set[str], key_urls=frozense
                 or (body and body[0] in ARTICLE_FOLDERS | {"blogs"}) or (body and body[-1] in CATEGORY_WORDS)):
             continue  # a blog's list, or the index of all collections (/collections): not a product list
         listed = int((g.get("tie_break") or {}).get("products_listed") or 0)
-        if listed > NEAR_EMPTY_MAX:
+        if listed > 0:
+            continue
+        after_js = rendered_products((rendered or {}).get(p.url), types)
+        if after_js:
             continue
         # A parent category that lists its subcategories (2+ in its content) is a hub, not an empty list.
         own = _path(p.url)
@@ -259,16 +279,16 @@ def empty_collections(read, groups: dict, indexable: set[str], key_urls=frozense
                 and (types.get(t) == "category" or _is_category_url(t))}
         if len(subs) >= 2:
             continue
-        rows.append({"url": p.url, "products_listed": listed, "empty": listed == 0})
+        rows.append({"url": p.url, "products_listed": listed, "empty": True, "rendered_products": after_js,
+                     "row": empty_row(after_js)})
     if not rows:
         return []
     urls = [r["url"] for r in rows]
-    empty = sum(1 for r in rows if r["empty"])
     return [Finding("STR-15", f"{len(urls)} indexable collection or category page(s) list no product or almost none",
         Severity.S4, Confidence.ESTIMATED, "Documented (Google: soft 404s, thin pages)", [GOOGLE, COPILOT], scope_for(urls),
-        {"pages": rows[:40], "empty": empty, "near_empty": len(rows) - empty, "near_empty_max": NEAR_EMPTY_MAX,
-         "rule": f"an indexable category page (page grouping) listing {NEAR_EMPTY_MAX} products or fewer in its content, "
-                 "and not a hub listing 2+ subcategories"},
+        {"pages": rows[:40], "empty": len(rows), "near_empty": 0,
+         "rule": "an indexable category page (page grouping) listing no product in its HTML, nor in the rendered page when "
+                 "it was rendered, and not a hub listing 2+ subcategories"},
         EMPTY_COLLECTIONS_EXPECTED, EMPTY_COLLECTIONS_FIX, notes=[EMPTY_COLLECTIONS_NOTE],
         importance_tier=_tier(urls, key_urls))]
 
@@ -677,7 +697,9 @@ def findings(result, *, key_urls=frozenset(), check_ids=None, saved: bool = Fals
             platform = None
         out["IDX-6"] += alias_links(read, groups, key_urls, platform)
     if "STR-15" in wanted:
-        out["STR-15"] += empty_collections(read, groups, indexable, key_urls)
+        render = getattr(result, "render", None)
+        shown = (render.get("pages") if isinstance(render, dict) else getattr(render, "pages", None)) or {}
+        out["STR-15"] += empty_collections(read, groups, indexable, key_urls, shown)
     if "TSEO-1" in wanted:
         out["TSEO-1"] += decomposed_addresses(known, read_urls, set(sitemap), key_urls)
         out["TSEO-1"] += unclear_slugs(read, groups, indexable, key_urls)

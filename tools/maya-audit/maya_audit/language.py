@@ -223,7 +223,22 @@ def heading_language(text: str, among_names: bool = False, declared: str | None 
             hits[lang] += 1
     hits["tr"] += sum(1 for w in words if _TURKISH_LETTERS.search(w))
     ranked = sorted(hits.items(), key=lambda kv: kv[1], reverse=True)
+    if declared:
+        # DECISIONS 371: against the page's own language a heading is called foreign only with enough words
+        # (MIN_FOREIGN_HEADING_WORDS) and evidence (MIN_FOREIGN_HEADING_HITS common words of that language), and never
+        # when it holds a common word of the page's language, wherever it stands ("Non-Candy Halloween Treats to Hand
+        # Out This Year": "to" is English, "non" alone made it Italian). A theme's "Information for new patient" on a
+        # Turkish page (4 words, no Turkish word) is still called.
+        own_words = STOPWORD_SETS.get(declared, frozenset()) | HEADING_WORDS.get(declared, frozenset())
+        if any(lower(w) in own_words for w in words):
+            return declared
+        if ranked[0][0] != declared and (len(words) < MIN_FOREIGN_HEADING_WORDS or ranked[0][1] < MIN_FOREIGN_HEADING_HITS):
+            return None
     return ranked[0][0] if ranked[0][1] >= 1 and ranked[1][1] == 0 else None
+
+
+MIN_FOREIGN_HEADING_WORDS = 4
+MIN_FOREIGN_HEADING_HITS = 1
 
 
 def block_language(text: str) -> str | None:

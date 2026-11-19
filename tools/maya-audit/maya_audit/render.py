@@ -55,14 +55,21 @@ INTERACT_JS = """
 
 # Each <h1> of the rendered page with whether it is shown: computed display and visibility of it and every element
 # around it, and a box of some size (H15).
+# DECISIONS 371: `accessible` says whether a screen reader reads the <h1> (not display:none, visibility:hidden or
+# aria-hidden on it or around it); `pattern` names a visually-hidden one ("visually-hidden": clipped, 1px or off-screen;
+# "transparent": opacity 0), which is read.
 H1_VISIBILITY_JS = """() => Array.from(document.querySelectorAll('h1')).slice(0, 20).map(h => {
   const box = h.getBoundingClientRect();
-  let shown = box.width > 0 && box.height > 0;
-  for (let e = h; e && shown; e = e.parentElement) {
+  let shown = box.width > 0 && box.height > 0, accessible = true, pattern = null;
+  for (let e = h; e; e = e.parentElement) {
     const s = getComputedStyle(e);
-    if (s.display === 'none' || s.visibility === 'hidden' || s.visibility === 'collapse' || Number(s.opacity) === 0) shown = false;
+    if (s.display === 'none' || s.visibility === 'hidden' || s.visibility === 'collapse' || e.getAttribute('aria-hidden') === 'true') { shown = false; accessible = false; }
+    if (Number(s.opacity) === 0) { shown = false; pattern = pattern || 'transparent'; }
   }
-  return {text: (h.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 200), visible: shown};
+  const s = getComputedStyle(h);
+  const clipped = (s.clip && s.clip !== 'auto') || (s.clipPath && s.clipPath !== 'none');
+  if (accessible && (clipped || box.width <= 1 || box.height <= 1 || box.right < 0 || box.bottom < 0)) { shown = false; pattern = 'visually-hidden'; }
+  return {text: (h.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 200), visible: shown, accessible: accessible, pattern: pattern};
 })"""
 
 

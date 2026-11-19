@@ -1059,6 +1059,14 @@ class Builder:
                 elif label.startswith("empty"):
                     ex = [f"{k}: {v}" for k, v in (o.get("names") or {}).items()][:3]
                     urls = list(o.get("examples") or [])
+                    # DECISIONS 371: each address says which tag is empty and on how many pages
+                    names = o.get("names") or {}
+                    tags = ", ".join(f'<meta name="{k}">' for k in list(names)[:3])
+                    if tags:
+                        line = fmt(self.L["hygiene_empty_meta"], tags=tags, n=o.get("pages") or max(names.values(), default=0))
+                        for u in urls:
+                            if isinstance(u, str):
+                                self.url_notes.setdefault(u, line)
                 elif label.startswith("og:url"):
                     ex = [path_of(e["url"]) or "/" for e in (o.get("examples") or [])[:3]]
                     urls = [e["url"] for e in o.get("examples") or []]

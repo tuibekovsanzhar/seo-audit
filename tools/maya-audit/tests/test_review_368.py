@@ -86,15 +86,15 @@ def test_english_question_headings_are_english_on_an_english_page():
 
 def test_headings_in_another_language_than_the_page_are_kept_with_examples():
     row = {"url": SITE + "/a", "declared": "en", "headings_language": "de", "headings_count": 3,
-           "headings": ["Antworten auf häufige Fragen", "Unterschied zu den anderen Angeboten",
-                        "Fragen und Antworten auf einen Blick"]}
+           "headings": ["Antworten auf die häufigsten Fragen", "Unterschied zu den anderen Angeboten",
+                        "Alles zu den Kosten auf einen Blick", "Antworten auf die häufigsten Fragen"]}
     f = _finding("STR-12-h", "STR-12", "str12.headings",
                  "1 page(s) have section headings in another language than they declare (declared English, headings in German)",
                  [SITE + "/a"], {"pages": [row]})
     r = _report([_check("STR-12", f)])
     reassess_rules._decisions_368(r, {"STR-12-h": [SITE + "/a"]}, [], [])
     kept = r["checks"][0]["findings"][0]["evidence"]["pages"][0]
-    assert kept["row"]["tr"].startswith("sayfanın dili İngilizce (<html lang>); başlıklar Almanca: «Antworten auf häufige")
+    assert kept["row"]["tr"].startswith("sayfanın dili İngilizce (<html lang>); başlıklar Almanca: «Antworten auf die häufigsten")
 
 
 # ---------------------------------------------------------------------------------------------- (3) canonical readings

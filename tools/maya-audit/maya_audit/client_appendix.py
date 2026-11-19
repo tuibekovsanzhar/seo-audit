@@ -609,6 +609,32 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
     profile_id = (selection.get("business_type") or {}).get("id")  # DECISIONS 350: the profile's own type words
     ptype = lambda t: page_rows.type_word(t, lang, profile_id, W["page_type"])  # noqa: E731
     examples = examples_of(rows)  # DECISIONS 368
+    from .example_rows import evidence_example, measured_value, site_example
+    measured = examples_of(rows, measured_value)
+    lead_of = {f: g.get("lead") for g in selection.get("groups") or [] for f in g.get("finding_ids") or [] if g.get("lead")}
+    sub_of = {t.get("n"): t.get("sub") for t in todos or [] if t.get("n") is not None}
+
+    def card_example(c) -> str:
+        """DECISIONS 371: every card's "Örnek": a robots line of its own, a concrete row value, a concrete thing in the
+        evidence, the file or address measured and its value, a measured row value, else the card's own first line."""
+        ids = list(c.get("finding_ids") or [])
+        leads = [lead_of[f] for f in ids if f in lead_of]
+        for lead in leads:
+            own = ((lead.get("evidence") or {}).get("site_row") or {}).get(lang)
+            if own:
+                return own
+        hit = next((examples[f] for f in ids if f in examples), None)
+        if hit:
+            return hit
+        for lead in leads:
+            found = evidence_example(lead, lang) or site_example(lead, lang)
+            if found:
+                return found
+        hit = next((measured[f] for f in ids if f in measured), None)
+        if hit:
+            return hit
+        sub = sub_of.get(c.get("n")) or []
+        return str(sub[0]) if sub else ""
     found = [[r["title"], sev(r["severity"]), W["itype"].get(r["issue_type"], ""),
               _link(r["url"], r["address"]), page_rows.read_word(r["read"], lang), r["value"], r["fix"], r["card"] if r["card"] is not None else "",
               W["placement"].get(r["placement"], r["placement"] or ""), ptype(r["page_type"]),
@@ -639,13 +665,12 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
                 len(addresses[c["n"]]) if c["n"] in addresses else c.get("addresses") or 0,
                 {"text": R["go"], "location": f"{where}!A{first_row[c['n']]}"} if c["n"] in first_row else "",
                 {"text": R["go_links"], "location": f"{links_sheet}!A{first_link[c['n']]}"} if c["n"] in first_link else "",
-                next((examples[f] for f in c.get("finding_ids") or [] if f in examples), "")]  # DECISIONS 368
+                card_example(c)]  # DECISIONS 368, 371
                for c in cards]
+    empty_cards = [f"{c['n']}: {c.get('title') or ''}" for c, row in zip(cards, summary) if c.get("n") is not None and not row[-1]]
     # DECISIONS 366: every other problem below the cards ("Diğer bulgular"), and a line on top saying where the cards are
     without: list[str] = []
-    from .example_rows import measured_value
-    others = other_findings(selection, rows, card_of_finding, todos, lang, where, examples, without,
-                            examples_of(rows, measured_value))
+    others = other_findings(selection, rows, card_of_finding, todos, lang, where, examples, without, measured)
     pdf_cards = sum(1 for c in cards if c.get("n") is not None)
     top = [["", platform_line(selection, lang, short=True)], ["", R["pdf_line"].format(n=pdf_cards)]]
     if others or without:
@@ -661,7 +686,8 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
                                       ("by_finding", R["finding_cols"], found, [42, 12, 13, 60, 16, 48, 60, 7, 16, 20, 12, 18, 24, 10])):
         if body and key == "summary":  # DECISIONS 365, 366: the platform and where the cards are, above the cards
             out.append({"name": R[key], "header": header, "rows": [t + [""] * (len(header) - 2) for t in top] + body,
-                        "widths": widths, "title_rows": len(top), "_without_example": without})
+                        "widths": widths, "title_rows": len(top), "_without_example": without,
+                        "_empty_cards": empty_cards})
         elif body:
             out.append({"name": R[key], "header": header, "rows": body, "widths": widths})
         else:  # one line saying why, never an empty sheet (DECISIONS 321 (5))
@@ -843,9 +869,12 @@ def build(selection: dict, lang: str = "tr", lists: dict | None = None, text_che
         record = text_gate.with_platform_advice(record, advice_cells(made), selection.get("platform"), lang)
         # DECISIONS 368: RG-24 names each problem the Özet leaves out because it has no concrete example
         record = text_gate.with_no_example(record, [n for m in made for n in m.get("_without_example") or []], lang)
+        # DECISIONS 371: a card whose "Örnek" is empty
+        record = text_gate.with_no_example(record, [n for m in made for n in m.get("_empty_cards") or []], lang, cards=True)
         made.append(text_gate.sheet(record, lang))
     for m in made:
         m.pop("_without_example", None)
+        m.pop("_empty_cards", None)
     return xlsx.workbook(made)
 
 

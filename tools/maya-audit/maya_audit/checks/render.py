@@ -216,7 +216,10 @@ def rnd1_rendering_gap(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     noindexed = [p.url for p in readable if not citable(p)]
     missing, partial, suspected, compared = [], [], [], []
 
+    from ..page_groups import is_utility_address
     for page in pages:
+        if is_utility_address(page.url):  # DECISIONS 371: an account, sign-in or cart page is not content
+            continue
         raw = page.analysis
         entry = rendered.get(page.url)
         if entry:
@@ -426,8 +429,11 @@ def rnd3_interaction(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     key_urls = set(key_page_urls(result, cfg))
     rendered = _rendered_ok(result)
     revealed, suspected, text_not_assessed, late_loading, another_article, chrome_expanded = [], [], [], [], [], []
+    from ..page_groups import is_utility_address
     for page in result.pages:
         if not (_readable_html(page) and page.content_checks_eligible and citable(page)):
+            continue
+        if is_utility_address(page.url):  # DECISIONS 371: an account, sign-in or cart page is not content
             continue
         entry = rendered.get(page.url)
         if entry and entry.get("interaction"):

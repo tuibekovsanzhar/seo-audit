@@ -1223,7 +1223,7 @@ def _decisions_368(report: dict, affected: dict, changes: list[str], saved_texts
             text = next((r.get("main_text") for r in saved.get(row.get("url"), []) if r.get("main_text")), None)
             detected = detect_language(text, declared=declared).get("language") if text else row.get("detected")
             by_language: dict[str, list[str]] = defaultdict(list)
-            for heading in row.get("headings") or []:
+            for heading in dict.fromkeys(row.get("headings") or []):  # DECISIONS 371: a repeated heading counts once
                 language = heading_language(heading, declared=declared)
                 if language and language not in (declared, detected):
                     by_language[language].append(heading)
@@ -1321,6 +1321,55 @@ def _decisions_370(report: dict, affected: dict, changes: list[str]) -> None:
             affected[f["id"]] = urls
             changes.append(f"{f['id']}: {before} -> {len(urls)} address(es), only where robots.txt blocks "
                            f"{', '.join(tokens)} (DECISIONS 370)")
+
+
+def _decisions_371(report: dict, affected: dict, changes: list[str]) -> None:
+    """DECISIONS 371: İlginay's review of the Nature's Garden Ek, on a saved report. An <h1> said hidden by the rendered
+    page's computed style is kept only when the saved reading says no screen reader reads it either (older readings do
+    not say: not established); a collection is "no products" only with 0 in its HTML and 0 in the rendered page; account,
+    sign-in and cart pages leave the content findings (RND-1, RND-3)."""
+    from .checks.quick_rules import empty_row, rendered_products
+    from .page_groups import is_utility_address
+    crawl = report.get("crawl") or {}
+    render = (crawl.get("render") or {}).get("pages") or {}
+    types = {p.get("url"): (p.get("grouping") or {}).get("page_type") for p in crawl.get("pages") or [] if isinstance(p, dict)}
+    for check in report.get("checks") or []:
+        for f in list(check.get("findings") or []):
+            rule, ev = f.get("rule_id"), f.get("evidence") or {}
+            urls = affected.get(f.get("id")) or (f.get("scope") or {}).get("urls") or []
+            if rule in ("str2.hidden_h1", "str2.home_hidden_h1"):
+                drop = set()
+                for row in ev.get("pages") or []:
+                    if not isinstance(row, dict) or "computed style" not in str(row.get("hidden_by") or ""):
+                        continue
+                    seen = (render.get(row.get("url")) or {}).get("h1_visibility") or []
+                    if not any(isinstance(v, dict) and v.get("accessible") is False for v in seen):
+                        drop.add(row.get("url"))
+                if drop:
+                    _shrink(check, f, drop, affected, changes,
+                            "the saved reading does not say whether a screen reader reads the <h1>", "DECISIONS 371")
+            elif rule == "str15.empty_collections":
+                drop = set()
+                for row in ev.get("pages") or []:
+                    if not isinstance(row, dict):
+                        continue
+                    after_js = rendered_products(render.get(row.get("url")), types)
+                    if int(row.get("products_listed") or 0) > 0 or after_js:
+                        drop.add(row.get("url"))
+                    else:
+                        row.update(empty=True, rendered_products=after_js, row=empty_row(after_js))
+                if drop:
+                    _shrink(check, f, drop, affected, changes,
+                            "the page lists products (in its HTML or after its scripts run)", "DECISIONS 371")
+                if f in check.get("findings", []):
+                    ev.update(empty=len(ev.get("pages") or []), near_empty=0)
+            elif str(rule or "").startswith(("rnd1.", "rnd3.")):
+                drop = {u for u in urls if isinstance(u, str) and is_utility_address(u)}
+                if drop:
+                    _shrink(check, f, drop, affected, changes, "an account, sign-in or cart page is not content",
+                            "DECISIONS 371")
+        if not check.get("findings") and check.get("status") == "findings":
+            check["status"] = "pass"
 
 
 def _decisions_365(report: dict, changes: list[str]) -> None:
@@ -1684,6 +1733,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_364(r, aff, changes, jsonld_by_url)  # DECISIONS 364: image and file names
     _decisions_368(r, aff, changes, saved_texts)  # DECISIONS 368: İlginay's review of "Diğer bulgular"
     _decisions_370(r, aff, changes)  # DECISIONS 370: crawler findings only where robots.txt blocks
+    _decisions_371(r, aff, changes)  # DECISIONS 371: İlginay's review of the Nature's Garden Ek
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -1744,6 +1794,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_364(r, affected, cert, jsonld_by_url)  # DECISIONS 364: image and file names
         _decisions_368(r, affected, cert, saved_texts)  # DECISIONS 368: İlginay's review of "Diğer bulgular"
         _decisions_370(r, affected, cert)  # DECISIONS 370: crawler findings only where robots.txt blocks
+        _decisions_371(r, affected, cert)  # DECISIONS 371: İlginay's review of the Nature's Garden Ek
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

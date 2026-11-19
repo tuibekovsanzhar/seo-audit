@@ -569,8 +569,11 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
         seen = [v for v in entry.get("h1_visibility") or [] if v.get("text")] if entry.get("ok") else []
         if seen:
             # The browser's computed style on a rendered page wins over the markup: it also sees a stylesheet class.
+            # DECISIONS 371: an <h1> a screen reader reads (visually hidden: clipped, 1px, off-screen, transparent) is
+            # the page's heading; only one read by no one is hidden. A reading that does not say (older engine) is
+            # not taken as hidden.
             computed += 1
-            shown = [v["text"] for v in seen if v.get("visible")]
+            shown = [v["text"] for v in seen if v.get("visible") or v.get("accessible", True)]
             h1s = h1s or [v["text"] for v in seen]
             hidden_by = "the rendered page's computed style (display, visibility or opacity of it or an element around it)"
         looked = entry.get("ok") and isinstance(entry.get("h1_visibility"), list)
@@ -3629,7 +3632,7 @@ def str12_content_language(result: CrawlResult, cfg: CrawlConfig, pages: list, k
         # DECISIONS 368: compared with the page's own language: its declared one and the language its text is written
         # in, never the report's; a heading in the language of the page's own text is not foreign
         detected = detect_language("\n".join(blocks), declared=declared).get("language")
-        for heading in headings:
+        for heading in dict.fromkeys(headings):  # DECISIONS 371: a repeated heading counts once
             language = heading_language(heading, among_names=bool(names), declared=declared)
             if language and language not in (declared, detected):
                 by_language[language].append(heading[:120])

@@ -1451,6 +1451,132 @@
     },
     "test": "tests/test_robots_rows_370.py"
    }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek, ikinci inceleme (DECISIONS 371)",
+   "brand_key": "naturesgarden",
+   "sorun": "Özet'te 'Site haritası lastmod…' ve 'Sayfa yüklemesini ve etiketleri toparlayın' kartlarının 'Örnek' hücresi boştu",
+   "genel": "Bazı kartların 'Örnek' hücresi boş kalıyordu",
+   "nasil": "Her kartın 'Örnek'i doldurulur: ölçülen dosya ya da adres ve değeri (ör. 'sitemap_products_1.xml: 19 adresin 18'i aynı lastmod'u taşıyor'), yoksa kartın ilk satırı; boş kalan kartı RG-24 bildirir.",
+   "decisions": [
+    371
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Özet",
+     "column": "Örnek",
+     "regex": "sitemap_products_1\\.xml: 19 adresin 18'i"
+    },
+    "test": "tests/test_ng_review_371.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek, ikinci inceleme (DECISIONS 371)",
+   "brand_key": "naturesgarden",
+   "sorun": "'H1 etiketi gizli' (/blogs/recipes «Recipes») yanlıştı",
+   "genel": "Ekran okuyucunun okuduğu (görsel olarak gizlenmiş) H1 'gizli' sayılıyordu",
+   "nasil": "Görsel olarak gizlenmiş (clip, 1px, ekran dışı, saydam) ya da ekran okuyucunun okuduğu H1 gizli sayılmaz; yalnız işlenmiş sayfada ne görünen ne okunan H1 varsa raporlanır. Bunu söylemeyen eski okumalar raporlanmaz.",
+   "decisions": [
+    371
+   ],
+   "check": {
+    "no_problem": [
+     "str2.hidden_h1"
+    ],
+    "test": "tests/test_ng_review_371.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek, ikinci inceleme (DECISIONS 371)",
+   "brand_key": "naturesgarden",
+   "sorun": "'Bölüm başlıkları başka bir dilde': «Non-Candy Halloween Treats to Hand Out This Year» İngilizce sayfada İtalyanca sayıldı; aynı başlık üç kez listelendi",
+   "genel": "Kısa başlıklar tek başına başka dil sayılıyor, tekrarlanan başlıklar örnekte yineleniyordu",
+   "nasil": "Sayfanın dilinin sık sözcüğünü taşıyan başlık o dildedir; başka dil için en az 4 kelime ve o dilin bir sık sözcüğü gerekir; tekrarlanan başlık bir kez sayılır.",
+   "decisions": [
+    371
+   ],
+   "check": {
+    "no_problem": [
+     "str12.headings"
+    ],
+    "test": "tests/test_ng_review_371.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek, ikinci inceleme (DECISIONS 371)",
+   "brand_key": "naturesgarden",
+   "sorun": "'Koleksiyon sayfalarında ürün yok' satırları '1 ürün listeleniyor' diyordu",
+   "genel": "Az ürünlü koleksiyonlar 'ürün yok' diye raporlanıyordu",
+   "nasil": "Yalnız HTML'de 0 ürün olan ve işlenmiş sayfada da ürün bağlantısı olmayan koleksiyon raporlanır; az ürünlü sayfa bu bulgu değildir.",
+   "decisions": [
+    371
+   ],
+   "check": {
+    "row_not": {
+     "sheet": "Bulgu bazında",
+     "key": "Kural",
+     "match": "^str15\\.empty_collections$",
+     "column": "Ölçülen değer",
+     "regex": "^[1-9]\\d* ürün"
+    },
+    "test": "tests/test_ng_review_371.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek, ikinci inceleme (DECISIONS 371)",
+   "brand_key": "naturesgarden",
+   "sorun": "'İçeriğin bir kısmı ham HTML'de eksik' /account/login sayfasında raporlanıyordu ve hangi metnin eksik olduğunu göstermiyordu",
+   "genel": "Hesap, giriş ve sepet sayfaları içerik bulgularına giriyordu",
+   "nasil": "Hesap, giriş, sepet, ödeme ve arama sayfaları RND-1 ve RND-3 bulgularından çıkarılır; diğer sayfalarda eksik metin, öğesi ve bölümüyle yazılır (DECISIONS 368).",
+   "decisions": [
+    371
+   ],
+   "check": {
+    "row_not": {
+     "sheet": "Bulgu bazında",
+     "key": "Kural",
+     "match": "^rnd[13]\\.",
+     "column": "Sayfa",
+     "regex": "/account/"
+    },
+    "test": "tests/test_ng_review_371.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek, ikinci inceleme (DECISIONS 371)",
+   "brand_key": "naturesgarden",
+   "sorun": "'Bağlantıların izlenebilir adresi yok' (örnek «1») ve 'Ortak alanda başlık düzeyleri atlanıyor' (örnek «SHOP») neyin yanlış olduğunu söylemiyordu",
+   "genel": "Adressiz bağlantı ve başlık atlama örnekleri yalnız metni gösteriyordu",
+   "nasil": "Örnek öğeyi, metnini ve eksik href'i ('«1» <a href=\"#\">: bağlantı gibi görünüyor, gidecek adresi yok') ve başlık düzeylerini ('«SHOP» başlığı H4, sayfadaki H2 başlığından sonra') söyler.",
+   "decisions": [
+    371
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bulgu bazında",
+     "column": "Ölçülen değer",
+     "regex": "bağlantı gibi görünüyor, gidecek adresi yok"
+    },
+    "test": "tests/test_ng_review_371.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek, ikinci inceleme (DECISIONS 371)",
+   "brand_key": "naturesgarden",
+   "sorun": "'Küçük bağlantı ve etiket tutarsızlıkları' kartının örneği hangi etiketin sorunlu olduğunu söylemiyordu ('boş <meta name> etiketi')",
+   "genel": "Küçük düzeltmeler kartı etiketin adını ve değerini göstermiyordu",
+   "nasil": "Her adres boş etiketin adını ve kaç sayfada olduğunu söyler ('<meta name=\"theme-color\"> etiketi boş (content değeri yok; 130 sayfada)'); kartın Örnek'i bu satırdır.",
+   "decisions": [
+    371
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Özet",
+     "column": "Örnek",
+     "regex": "<meta name=\"theme-color\"> etiketi boş"
+    },
+    "test": "tests/test_ng_review_371.py"
+   }
   }
  ]
 }

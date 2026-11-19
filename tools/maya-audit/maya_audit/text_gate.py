@@ -17,7 +17,7 @@ Rules (hard = the download is a draft, soft = listed in "Kontrol raporu"):
                 "block": true is hard
     RG-24 soft  a problem the appendix's Özet does not list under "Diğer bulgular" because it holds no example: no
                 concrete page text, address or element (DECISIONS 368) and no measured value, site-level or per page
-                (DECISIONS 369)
+                (DECISIONS 369); and a card whose "Örnek" is empty (DECISIONS 371)
 
 Global for every site: no brand, no address and no fixed title is named here; the phrase list is data.
 """
@@ -401,13 +401,18 @@ def with_platform_advice(record: dict | None, cells: Iterable[tuple[str, str]], 
     return {**record, "violations": violations, "counts": counts, "decision": decision(violations)}
 
 
-def with_no_example(record: dict | None, names: Iterable[str], lang: str = "tr") -> dict | None:
+def with_no_example(record: dict | None, names: Iterable[str], lang: str = "tr", cards: bool = False) -> dict | None:
     """DECISIONS 368: RG-24 (soft) for each problem the Özet leaves out of "Diğer bulgular" because none of its pages
     shows a concrete example; it stays in "Bulgular"."""
     if record is None:
         return record
     extra = []
     for name in dict.fromkeys(n for n in names if n):
+        if cards:  # DECISIONS 371: a card is listed whatever; its empty "Örnek" is said
+            message = (f"Özet: kart {name}: «Örnek» boş (örnek ya da ölçülen değer yok)" if lang == "tr" else
+                       f"Summary: card {name}: empty \"Example\" (no example or measured value)")
+            extra.append(violation("RG-24", message, hard=False, where="ek: Özet", text=name))
+            continue
         message = (f"Özet: «{name}» için örnek ya da ölçülen değer yok; «Diğer bulgular»da listelenmedi, «Bulgular»da duruyor"
                    if lang == "tr" else f"Summary: «{name}» has no example or measured value; left out of "
                    "\"Other findings\", kept in \"Findings\"")

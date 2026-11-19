@@ -2774,3 +2774,31 @@ ACC-2's blocked addresses carry the same line. Fix log item 90.
 | `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 90 items: Düzeltildi 87, Yeni tarama gerekli 3 |
 | `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+Pushed `f37e100` after the full suite (`3595 passed, 4 skipped, 1 warning in 1005.43s (0:16:45)`); CI run 44589238029
+started, its result not read yet. `bf259c2`'s CI run 44562213151: success.
+
+## İlginay's second review: Nature's Garden Ek (DECISIONS 371, 2026-11-19)
+
+VERIFIED locally; not pushed. Every card has an "Örnek" (RG-24 names an empty one); an <h1> a screen reader reads is not
+"hidden"; a heading with a common word of the page's language is in it, another needs 4+ words, repeats count once;
+"no products" only with 0 in the HTML and the rendered page; account, sign-in and cart pages leave RND-1/RND-3; dead
+links and shared heading jumps say what is wrong; the small-fixes card names the empty tag. Fix log items 91-97.
+
+| Saved audit (rebuilt from copies, no request) | Cards | Cards with empty Örnek | Diğer bulgular | Text check |
+|---|---|---|---|---|
+| MMI 536b4b64 | 14 | 8 -> 0 | 8 -> 8 | PASS |
+| Carpex 1fd871f0 | 15 | 7 -> 0 | 14 -> 14 | PASS |
+| Enpara fee70191 | 15 | 4 -> 0 | 14 -> 14 | PASS |
+| Atasun f06a2129 | 15 | 9 -> 0 | 12 -> 11 (no empty collection) | PASS |
+| İş Bankası 1b81bee4 | 15 | 5 -> 0 | 21 -> 21 | PASS |
+| Ticimax c77ebf6d | 15 | 7 -> 0 | 17 -> 17 | PASS |
+| Nature's Garden 342a0b14 | 6 | 2 -> 0 | 15 -> 12 (hidden H1, heading language, /account/login gone; collections 4 -> 1) | PASS |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_ng_review_371.py` | `8 passed` |
+| fast suite | `3468 passed, 4 skipped, 135 deselected, 1 warning in 560.05s (0:09:20)` |
+| `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 97 items: Düzeltildi 94, Yeni tarama gerekli 3 |
+| `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

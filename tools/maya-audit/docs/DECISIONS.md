@@ -5750,3 +5750,28 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      report is rewritten from its ACC-2 decisions (address, bot, rule) (`reassess_rules._decisions_370`); when those
      do not name the addresses, the finding is said once, on robots.txt, with the count from its title.
      Tests: `tests/test_robots_rows_370.py` (5); `test_sector_method_324` updated (the page's value is "—").
+
+371. **İlginay's second review (Nature's Garden Ek), as global rules (İlginay, 2026-11-19; the thresholds and the
+     wording of the lines are agent defaults).** Global for every audit.
+     *(1) Every card's "Örnek"* (`client_appendix.reader_sheets card_example`): a robots line of its own (370), a
+     concrete row value, a concrete thing in the evidence, the file or address measured and its value (369; now also a
+     page's CDN cache status and first response, images without width/height, the share of WebP/AVIF), a measured row
+     value, else the card's own first line (the note cards); an empty one is named by RG-24. Sitemap dates read
+     "sitemap_products_1.xml: 19 adresin 18'i aynı lastmod'u taşıyor (2026-11-16)". The small-fixes card names the
+     empty tag and its pages ('<meta name="theme-color"> etiketi boş (content değeri yok; 130 sayfada)').
+     *(2) Hidden <h1>* (`render.H1_VISIBILITY_JS`, `str2`): a reading says whether a screen reader reads the <h1>
+     (not display:none, visibility:hidden or aria-hidden) and names a visually-hidden pattern (clipped, 1px, off-screen,
+     opacity 0); an <h1> read by a screen reader is the page's heading. Only a page whose <h1> no one reads is
+     reported; a saved reading that does not say is not established, so not reported.
+     *(3) Heading language* (`language.heading_language`): against the page's language a heading with a common word of
+     that language is in it, wherever the word stands; another language needs at least 4 words and one of its common
+     words (a theme's "Information for new patient" on a Turkish page is still called). Repeated headings count once. "Non-Candy Halloween Treats to Hand Out This Year" ("non" alone) is English.
+     *(4) "No products"* (`quick_rules.empty_collections`): 0 products in the HTML and none linked from the rendered
+     page when it was rendered; a low count is no finding.
+     *(5) Account, sign-in, cart, checkout, search and order pages* (`page_groups.is_utility_address`) leave RND-1 and
+     RND-3.
+     *(6) Dead links and shared heading jumps* say what is wrong: '«1» <a href="#"> (li.yotpo-pagination-number-
+     container): bağlantı gibi görünüyor, gidecek adresi yok (href yalnızca «#»)'; '«SHOP» başlığı H4, sayfadaki H2
+     başlığından sonra geliyor; alt bilgide (footer)'.
+     Saved reports: `reassess_rules._decisions_371` (hidden <h1>, collections, utility pages); the headings through 368's
+     step with the new rule. Tests: `tests/test_ng_review_371.py` (7); `test_site_examples_369` updated.
