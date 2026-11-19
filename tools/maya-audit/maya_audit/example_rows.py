@@ -553,6 +553,7 @@ def attach(report: dict) -> list[str]:
                 reasons = list(dict.fromkeys(r for b in blocked for r in b["reasons"]))
                 ev["site_row"] = robots_site_row(reasons, len(blocked), max(sample_n, len(blocked)),
                                                  [t for b in blocked for t in b["blocked"]])
+    done += [fid for fid in attach_373(report) if fid not in done]
     for rule in ("rnd1.partial", "rnd1.missing"):
         for f in _findings(report, rule):
             for rec in (f.get("evidence") or {}).get("pages") or []:
@@ -860,3 +861,47 @@ def robots_pages(decisions: list[dict], tokens: list[str] | None = None) -> list
     for rec in by_url.values():
         rec["row"] = robots_page_row(rec["reasons"], rec["blocked"])
     return list(by_url.values())
+
+
+# ------------------------------------------------------------------------------------------------ DECISIONS 373
+
+def no_text_link_row(target: str, block: str | None) -> dict:
+    """A link with nothing a reader or engine can name it by: the element, where it sits and where it goes."""
+    def make(lang):
+        place = f" ({block})" if block else ""
+        if lang == "tr":
+            return (f"<a>{place}: görünür metni, içindeki görselin alt metni, aria-label ve title yok → {_path(target)}")
+        return f"<a>{place}: no visible text, no alt on an image inside, no aria-label or title → {_path(target)}"
+    return row(make)
+
+
+def table_row(element: str, rows_n, cols_n, first_row: list) -> dict:
+    def make(lang):
+        first = ", ".join(quote(c, 30) for c in first_row[:3] if str(c).strip())
+        size = (f"{rows_n} satır, {cols_n} sütun" if lang == "tr" else f"{rows_n} rows, {cols_n} columns") if rows_n else ""
+        if lang == "tr":
+            return (f"tablo {quote(element, 40)}" + (f" ({size})" if size else "") + ": başlık hücresi (<th>) yok"
+                    + (f"; ilk satır: {first}" if first else ""))
+        return (f"table {quote(element, 40)}" + (f" ({size})" if size else "") + ": no header cell (<th>)"
+                + (f"; first row: {first}" if first else ""))
+    return row(make)
+
+
+def attach_373(report: dict) -> list[str]:
+    """DECISIONS 373 (İlginay, NG): each text-less link names its element and target; each data table its element, size
+    and first row."""
+    done: list[str] = []
+    for f in _findings(report, "str14.no_text"):
+        for x in (f.get("evidence") or {}).get("links") or []:
+            if isinstance(x, dict) and x.get("source") and x.get("target") and not isinstance(x.get("row"), dict):
+                x["row"] = no_text_link_row(x["target"], x.get("block"))
+                if f["id"] not in done:
+                    done.append(f["id"])
+    for f in _findings(report, "str8.headers"):
+        for t in (f.get("evidence") or {}).get("tables") or []:
+            if isinstance(t, dict) and t.get("url") and not isinstance(t.get("row"), dict):
+                first = (t.get("sample_rows") or [[]])[0]
+                t["row"] = table_row(str(t.get("element") or "table"), t.get("rows"), t.get("columns"), first)
+                if f["id"] not in done:
+                    done.append(f["id"])
+    return done

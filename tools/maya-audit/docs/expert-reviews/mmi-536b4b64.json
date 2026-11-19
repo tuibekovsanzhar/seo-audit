@@ -1,0 +1,492 @@
+{
+ "_about": "Expert review of Maya Audit cards, imported from the reviewed Ek by tools/import_notes.py (DECISIONS 373). verdict: correct, wrong, incomplete, wording; labels: what the expert lock checks.",
+ "audit": "mmi 536b4b64",
+ "audit_id": "536b4b64",
+ "reviewer": "İlginay (SEO)",
+ "reviewed_on": "2026-11-16",
+ "source_file": "maya-audit-www.mmihomedelivery.ae-2026-11-16-ek-tr (1).xlsx, Özet, column \"İLGİNAY'S NOT\"",
+ "cards": [
+  {
+   "card": 2,
+   "title": "Ana sayfanın ilk yanıt süresini kısaltın",
+   "rule_ids": [
+    "prf1.home_ttfb"
+   ],
+   "expert_note": "DOĞRU",
+   "verdict": "correct",
+   "cell": "J3",
+   "labels": [
+    {
+     "id": "mmi-J3-home-ttfb",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "prf1.home_ttfb"
+     ]
+    }
+   ]
+  },
+  {
+   "card": 3,
+   "title": "İç bağlantıları kanonik adrese yönlendirin",
+   "rule_ids": [
+    "idx6.alias_links"
+   ],
+   "expert_note": "hangi iç bağlantılar? her zaman iç bağlantıi 404, 301 linkler hangi link olduğu verilmeli",
+   "verdict": "incomplete",
+   "cell": "J4",
+   "labels": [
+    {
+     "id": "mmi-J4-alias-links",
+     "kind": "must_not_find",
+     "on": "card",
+     "rules": [
+      "idx6.alias_links"
+     ]
+    }
+   ]
+  },
+  {
+   "card": 4,
+   "title": "Product işaretlemesine GTIN ya da MPN ekleyin",
+   "rule_ids": [
+    "str3.product_no_identifier"
+   ],
+   "expert_note": "DOĞRU",
+   "verdict": "correct",
+   "cell": "J5",
+   "labels": [
+    {
+     "id": "mmi-J5-gtin",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str3.product_no_identifier"
+     ]
+    }
+   ]
+  },
+  {
+   "card": 5,
+   "title": "Atlanan başlık seviyelerini düzeltin",
+   "rule_ids": [
+    "tseo1.heading_jumps"
+   ],
+   "expert_note": "DOĞRU",
+   "verdict": "correct",
+   "cell": "J6",
+   "labels": [
+    {
+     "id": "mmi-J6-heading-jumps",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "tseo1.heading_jumps"
+     ]
+    }
+   ]
+  },
+  {
+   "card": 6,
+   "title": "Başlığı olmayan sayfalara başlık yazın",
+   "rule_ids": [
+    "str1.no_title"
+   ],
+   "expert_note": "YANLIŞ, SAYFALARDA BAŞLIK VAR",
+   "verdict": "wrong",
+   "cell": "J7",
+   "labels": [
+    {
+     "id": "mmi-J7-no-title",
+     "kind": "must_not_find",
+     "on": "finding",
+     "rules": [
+      "str1.no_title"
+     ]
+    }
+   ]
+  },
+  {
+   "card": 7,
+   "title": "Ortak başlık ve açıklamaları ayırın",
+   "rule_ids": [
+    "str16.shared",
+    "str1.shared"
+   ],
+   "expert_note": "DOĞRU",
+   "verdict": "correct",
+   "cell": "J8",
+   "labels": [
+    {
+     "id": "mmi-J8-shared",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str16.shared",
+      "str1.shared"
+     ]
+    }
+   ]
+  },
+  {
+   "card": 8,
+   "title": "Gizli H1 etiketlerini görünür yapın",
+   "rule_ids": [
+    "str2.hidden_h1"
+   ],
+   "expert_note": "YANLIŞ",
+   "verdict": "wrong",
+   "cell": "J9",
+   "labels": [
+    {
+     "id": "mmi-J9-hidden-h1",
+     "kind": "must_not_find",
+     "on": "finding",
+     "rules": [
+      "str2.hidden_h1",
+      "str2.home_hidden_h1"
+     ]
+    }
+   ]
+  },
+  {
+   "card": 9,
+   "title": "Sayfa HTML'ini hafifletin",
+   "rule_ids": [
+    "rnd6.large",
+    "rnd6.late"
+   ],
+   "expert_note": "DOĞRU",
+   "verdict": "correct",
+   "cell": "J10",
+   "labels": [
+    {
+     "id": "mmi-J10-html-size",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "rnd6.large",
+      "rnd6.late"
+     ]
+    }
+   ]
+  },
+  {
+   "card": 10,
+   "title": "Marka için sitede tek bir ad kullanın",
+   "rule_ids": [
+    "str5.names"
+   ],
+   "expert_note": "YANLIŞ ÖNERİ, MARKA ADI DEĞİL ÜRÜN İSMİ",
+   "verdict": "wrong",
+   "cell": "J11",
+   "labels": [
+    {
+     "id": "mmi-J11-brand-product",
+     "kind": "must_not_find",
+     "on": "finding",
+     "rules": [
+      "str5.names"
+     ]
+    }
+   ]
+  },
+  {
+   "card": 11,
+   "title": "Büyük görselleri hafifletin",
+   "rule_ids": [
+    "str7.over_100kb"
+   ],
+   "expert_note": "DOĞRU",
+   "verdict": "correct",
+   "cell": "J12",
+   "labels": [
+    {
+     "id": "mmi-J12-big-images",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str7.over_100kb"
+     ]
+    }
+   ]
+  },
+  {
+   "card": 12,
+   "title": "Yavaş sayfaları hızlandırın",
+   "rule_ids": [
+    "prf1.slow"
+   ],
+   "expert_note": "DOĞRU AMA FARKLI SAYFALARDA DA BU HATA OLABİLİR",
+   "verdict": "incomplete",
+   "cell": "J13",
+   "answered": true,
+   "labels": [
+    {
+     "id": "mmi-J13-slow-scope",
+     "kind": "must_find",
+     "on": "card_text",
+     "rules": [
+      "prf1.slow"
+     ],
+     "field": "scope",
+     "regex": "diğerleri de etkilenebilir"
+    }
+   ]
+  },
+  {
+   "card": 13,
+   "title": "Metni olmayan bağlantılara ad verin",
+   "rule_ids": [
+    "str14.no_text"
+   ],
+   "expert_note": "HANGİ BAĞLANTILARDA METİN YOK BU BELİRTİLMELİ ÖNERİDE",
+   "verdict": "incomplete",
+   "cell": "J14",
+   "labels": [
+    {
+     "id": "mmi-J14-no-text-links",
+     "kind": "must_find",
+     "on": "card_text",
+     "rules": [
+      "str14.no_text"
+     ],
+     "field": "sub",
+     "regex": "→"
+    }
+   ]
+  },
+  {
+   "card": 14,
+   "title": "Sayfaların gösterdiği bilgiyi yapısal veriyle işaretleyin",
+   "rule_ids": [
+    "str3.crumb_no_list",
+    "str3.expected_type"
+   ],
+   "expert_note": "DOĞRU",
+   "verdict": "correct",
+   "cell": "J15",
+   "labels": [
+    {
+     "id": "mmi-J15-markup",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str3.crumb_no_list",
+      "str3.expected_type"
+     ],
+     "any_severity": true
+    }
+   ]
+  },
+  {
+   "card": 15,
+   "title": "Küçük bağlantı ve etiket tutarsızlıklarını temizleyin",
+   "rule_ids": [],
+   "expert_note": "HANGİ BAĞLANTILARDA OLDUĞU EKLENMELİ",
+   "verdict": "incomplete",
+   "cell": "J16",
+   "labels": [
+    {
+     "id": "mmi-J16-hygiene-links",
+     "kind": "must_find",
+     "on": "card_text",
+     "title": "Küçük bağlantı",
+     "field": "sub",
+     "regex": "→"
+    }
+   ]
+  },
+  {
+   "card": "R-365",
+   "title": "Kontrol listesi",
+   "rule_ids": [],
+   "expert_note": "Her madde nasıl kontrol ediliyor: otomatik, veri gerekir, uzman incelemesi?",
+   "verdict": "incomplete",
+   "cell": "18 Kasım, soru 1",
+   "labels": [
+    {
+     "id": "mmi-R365-checklist-how",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Kontrol listesi",
+     "column": "Nasıl kontrol edilir",
+     "regex": "Otomatik|Veri gerekir|Uzman incelemesi"
+    }
+   ]
+  },
+  {
+   "card": "R-366",
+   "title": "Özet",
+   "rule_ids": [],
+   "expert_note": "Özet'te yalnız ilk 15 kart değil, tüm sorunlar olmalı",
+   "verdict": "incomplete",
+   "cell": "18 Kasım",
+   "labels": [
+    {
+     "id": "mmi-R366-other-findings",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Özet",
+     "column": "Başlık",
+     "regex": "^Diğer bulgular \\("
+    }
+   ]
+  },
+  {
+   "card": "R-368-1",
+   "title": "Ana sayfada bölüm başlıkları az",
+   "rule_ids": [
+    "str2.home_outline"
+   ],
+   "expert_note": "Yanlış: ana sayfada 147 H2 var, ürün adları H2",
+   "verdict": "wrong",
+   "cell": "19 Kasım, A1",
+   "labels": [
+    {
+     "id": "mmi-R368-1-home-outline",
+     "kind": "must_not_find",
+     "on": "finding",
+     "rules": [
+      "str2.home_outline"
+     ]
+    },
+    {
+     "id": "mmi-R368-1-card-headings",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str2.card_headings"
+     ]
+    }
+   ]
+  },
+  {
+   "card": "R-368-2",
+   "title": "Bölüm başlıkları başka bir dilde",
+   "rule_ids": [
+    "str12.headings"
+   ],
+   "expert_note": "Yanlış: site ve başlıklar İngilizce",
+   "verdict": "wrong",
+   "cell": "19 Kasım, A2",
+   "labels": [
+    {
+     "id": "mmi-R368-2-heading-language",
+     "kind": "must_not_find",
+     "on": "finding",
+     "rules": [
+      "str12.headings"
+     ]
+    }
+   ]
+  },
+  {
+   "card": "R-368-3",
+   "title": "Kanonik adres farklı içerikli bir sayfayı gösteriyor",
+   "rule_ids": [
+    "idx4.different"
+   ],
+   "expert_note": "Yanlış: /about-dxb kendini gösteriyor",
+   "verdict": "wrong",
+   "cell": "19 Kasım, A3",
+   "labels": [
+    {
+     "id": "mmi-R368-3-canonical",
+     "kind": "must_not_find",
+     "on": "finding",
+     "rules": [
+      "idx4.different"
+     ]
+    }
+   ]
+  },
+  {
+   "card": "R-368-4",
+   "title": "İçerik tıklama/kaydırmayla görünüyor; içeriğin bir kısmı ham HTML'de eksik",
+   "rule_ids": [
+    "rnd1.partial",
+    "rnd3.revealed"
+   ],
+   "expert_note": "Hangi içerik? İlk 80 karakter, öğe, bölüm",
+   "verdict": "incomplete",
+   "cell": "19 Kasım, B4",
+   "labels": [
+    {
+     "id": "mmi-R368-4-missing-text",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "rules": [
+      "rnd1."
+     ],
+     "column": "Ölçülen değer",
+     "regex": "JavaScript'le gelen metin: «"
+    },
+    {
+     "id": "mmi-R368-4-revealed",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "rules": [
+      "rnd3."
+     ],
+     "column": "Ölçülen değer",
+     "regex": "tıklanan: «|sayfa kaydırılınca"
+    }
+   ]
+  },
+  {
+   "card": "R-368-5",
+   "title": "Ortak alandaki bağlantının adresi yok; kısa ad; genel bağlantı metinleri",
+   "rule_ids": [
+    "shared.link_no_address",
+    "tseo1.url_slug_unclear",
+    "judgment.generic.identity"
+   ],
+   "expert_note": "Sade Türkçe yazılmalı ve örnek gösterilmeli",
+   "verdict": "incomplete",
+   "cell": "19 Kasım, B5",
+   "labels": [
+    {
+     "id": "mmi-R368-5-plain-names",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "column": "Sorun",
+     "regex": "^(Ortak alandaki bağlantının adresi yok|Adreslerin kısa adı anlaşılır değil|Bazı bağlantılarda genel metinler kullanılıyor)$"
+    },
+    {
+     "id": "mmi-R368-5-slug-suggestion",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "rules": [
+      "tseo1.url_slug_unclear"
+     ],
+     "column": "Ölçülen değer",
+     "regex": "öneri: «"
+    }
+   ]
+  },
+  {
+   "card": "R-368-6",
+   "title": "Özet 'Diğer bulgular' Örnek",
+   "rule_ids": [],
+   "expert_note": "Her satırda somut örnek (sayfa + öğe/metin)",
+   "verdict": "incomplete",
+   "cell": "19 Kasım, B6",
+   "labels": [
+    {
+     "id": "mmi-R368-6-example",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Özet",
+     "column": "Örnek",
+     "regex": "«"
+    }
+   ]
+  }
+ ],
+ "later_reviews": "R-365..R-368: İlginay's later requests on the MMI Ek (18-19 Nov, DECISIONS 365, 366, 368), sent through the owner; added by hand."
+}

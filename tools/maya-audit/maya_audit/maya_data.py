@@ -208,10 +208,22 @@ def page_url(raw: str, origin: str | None = None) -> str | None:
 
 
 def _num(value) -> float:
+    """A count to add up: a missing or unreadable cell adds nothing (0)."""
     try:
         return float(str(value).replace(",", "."))
     except (TypeError, ValueError):
         return 0.0
+
+
+def _value(value) -> float | None:
+    """DECISIONS 372: a measured value (a rate, a CTR, a position): None when the cell is missing or unreadable, never 0
+    ("veri yok" in the sheets)."""
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return None
+    try:
+        return float(str(value).replace(",", "."))
+    except (TypeError, ValueError):
+        return None
 
 
 def _day(value) -> str | None:
@@ -416,8 +428,17 @@ def prepare(paths: Iterable[str | Path], audited_url: str) -> dict:
 
 
 def _is_brand(query: str, brand_names: list[str]) -> bool:
+    """A query naming the brand: the name at a word start; a name shorter than BRAND_KEY_MIN letters ("ing", "ak") only
+    as a whole word, so "ingilizce" is not a query for "ING" (DECISIONS 372)."""
     q = _fold(query)
-    return any(_fold(n) and re.search(rf"(?<![a-z0-9]){re.escape(_fold(n))}", q) for n in brand_names)
+    for n in brand_names:
+        name = _fold(n)
+        if not name:
+            continue
+        end = r"(?![a-z0-9])" if len(re.sub(r"[^a-z0-9]", "", name)) < BRAND_KEY_MIN else ""
+        if re.search(rf"(?<![a-z0-9]){re.escape(name)}{end}", q):
+            return True
+    return False
 
 
 def _gsc(found: dict[str, Source], origin: str, brand_names: list[str]) -> dict:
@@ -433,6 +454,7 @@ def _gsc(found: dict[str, Source], origin: str, brand_names: list[str]) -> dict:
     if perf is not None:
         n = 0
         pos_w: dict[str, float] = defaultdict(float)
+        pos_impr: dict[str, float] = defaultdict(float)  # DECISIONS 372: impressions of the rows that give a position
         for r in _rows(perf):
             n += 1
             d = _day(r.get("date"))
@@ -443,7 +465,9 @@ def _gsc(found: dict[str, Source], origin: str, brand_names: list[str]) -> dict:
                     rec = pages.setdefault(u, {"clicks": 0.0, "impressions": 0.0})
                     rec["clicks"] += clicks
                     rec["impressions"] += impr
-                    pos_w[u] += _num(r.get("position")) * impr
+                    if (position := _value(r.get("position"))) is not None:
+                        pos_w[u] += position * impr
+                        pos_impr[u] += impr
             if r.get("query"):
                 brand["brand" if _is_brand(r["query"], brand_names) else "non_brand"].update(clicks=clicks, impressions=impr)
             if r.get("device"):
@@ -456,7 +480,7 @@ def _gsc(found: dict[str, Source], origin: str, brand_names: list[str]) -> dict:
                 rec["impressions"] += impr
                 rec["pos_w"] += _num(r.get("position")) * impr
         for u, rec in pages.items():
-            rec["position"] = round(pos_w[u] / rec["impressions"], 1) if rec["impressions"] else None
+            rec["position"] = round(pos_w[u] / pos_impr[u], 1) if pos_impr[u] else None
             rec["ctr"] = round(rec["clicks"] / rec["impressions"], 4) if rec["impressions"] else None
         out["rows"]["gsc-search-performance"] = n
         if pages:
@@ -471,8 +495,10 @@ def _gsc(found: dict[str, Source], origin: str, brand_names: list[str]) -> dict:
             n += 1
             u = page_url(r.get("page") or "", origin)
             if u:
+                ctr, position = _value(r.get("ctr")), _value(r.get("position"))  # DECISIONS 372: missing is None
                 pages[u] = {"clicks": _num(r.get("clicks")), "impressions": _num(r.get("impressions")),
-                            "ctr": round(_num(r.get("ctr")), 4), "position": round(_num(r.get("position")), 1)}
+                            "ctr": round(ctr, 4) if ctr is not None else None,
+                            "position": round(position, 1) if position is not None else None}
         out["rows"]["gsc-page-scores"] = n
         page_source = "gsc-page-scores"
     daily = found.get("gsc-daily-stats")
@@ -750,15 +776,18 @@ def _visibility(found: dict[str, Source], meta: dict, brand_names: list[str], ke
         if own:
             own_leaders.add(leader)
         generic = is_generic(leader) or own
-        lead_first = next((_num(r.get("top_competitor_rate")) for r in rows if r.get("top_competitor_name") == leader), None)
+        # DECISIONS 372: a rate the file does not give is None ("veri yok"), never 0; the gap needs both
+        lead_first = next((_value(r.get("top_competitor_rate")) for r in rows if r.get("top_competitor_name") == leader), None)
+        brand_last, lead_last = _value(last.get("brand_rate")), _value(last.get("top_competitor_rate"))
+        total = _value(last.get("total"))
         topics.append({"topic": topic, "first_week": first.get("week_start"), "last_week": last.get("week_start"),
-                       "brand_first": _num(first.get("brand_rate")), "brand_last": _num(last.get("brand_rate")),
+                       "brand_first": _value(first.get("brand_rate")), "brand_last": brand_last,
                        "leader": None if generic else leader, "leader_ignored": leader if generic and not own else None,
                        "leader_own": leader if own else None,
                        "leader_first": None if generic else lead_first,
-                       "leader_last": None if generic else _num(last.get("top_competitor_rate")),
-                       "gap": None if generic else round(_num(last.get("top_competitor_rate")) - _num(last.get("brand_rate")), 1),
-                       "answers": int(_num(last.get("total")))})
+                       "leader_last": None if generic else lead_last,
+                       "gap": None if generic or brand_last is None or lead_last is None else round(lead_last - brand_last, 1),
+                       "answers": int(total) if total is not None else None})
     return {"rows": n, "topics": topics, "own_leaders": sorted(own_leaders)}
 
 

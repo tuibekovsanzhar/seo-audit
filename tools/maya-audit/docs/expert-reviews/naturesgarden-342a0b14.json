@@ -1,0 +1,344 @@
+{
+ "_about": "Expert review of Maya Audit cards (DECISIONS 373). Written from Efsa's revision-compliance review (19 Nov), which quotes İlginay's notes J5-J8 on the Nature's Garden 16 Nov Ek, and from İlginay's second review of the same Ek (19 Nov, DECISIONS 371): the noted file itself is not on this machine. verdict: correct, wrong, incomplete, wording; labels: what the expert lock checks.",
+ "audit": "naturesgarden 342a0b14",
+ "audit_id": "342a0b14",
+ "reviewer": "İlginay (SEO)",
+ "reviewed_on": "2026-11-16",
+ "source_file": "maya-audit-naturesgarden.net-2026-11-16-ek-tr (1).xlsx, Özet, column J (J5-J8, as quoted by Maya_Audit_Revision_Compliance_and_Architecture_2026-11-19_EN.md); second review 2026-11-19 (DECISIONS 371); third review 2026-11-19 (DECISIONS 373)",
+ "cards": [
+  {
+   "card": "J5",
+   "title": "Ayrıştırılamayan JSON-LD'yi düzeltin",
+   "rule_ids": [
+    "str3.unparsed"
+   ],
+   "expert_note": "JSON-LD hatası nerede?",
+   "verdict": "incomplete",
+   "cell": "J5",
+   "labels": [
+    {
+     "id": "ng-J5-jsonld-where",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "rules": [
+      "str3.unparsed"
+     ],
+     "column": "Ölçülen değer",
+     "regex": "JSON-LD blok \\d+, satır \\d+"
+    }
+   ]
+  },
+  {
+   "card": "J6",
+   "title": "Site haritası lastmod tarihlerini gerçek düzenleme tarihinden alın",
+   "rule_ids": [
+    "idx5.stamped"
+   ],
+   "expert_note": "lastmod hatası nasıl tespit ediliyor?",
+   "verdict": "incomplete",
+   "cell": "J6",
+   "labels": [
+    {
+     "id": "ng-J6-lastmod-how",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Özet",
+     "column": "Örnek",
+     "regex": "adresin \\d+'\\w+ aynı lastmod"
+    }
+   ]
+  },
+  {
+   "card": "J7",
+   "title": "Gizli H1 etiketlerini görünür yapın",
+   "rule_ids": [
+    "str2.hidden_h1"
+   ],
+   "expert_note": "Gizli H1 yanlış",
+   "verdict": "wrong",
+   "cell": "J7",
+   "labels": [
+    {
+     "id": "ng-J7-hidden-h1",
+     "kind": "must_not_find",
+     "on": "finding",
+     "rules": [
+      "str2.hidden_h1",
+      "str2.home_hidden_h1"
+     ]
+    }
+   ]
+  },
+  {
+   "card": "J8",
+   "title": "Küçük bağlantı ve etiket tutarsızlıklarını temizleyin",
+   "rule_ids": [],
+   "expert_note": "Hangi bağlantılar?",
+   "verdict": "incomplete",
+   "cell": "J8",
+   "labels": [
+    {
+     "id": "ng-J8-hygiene-which",
+     "kind": "must_find",
+     "on": "card_text",
+     "title": "Küçük bağlantı",
+     "field": "sub",
+     "regex": "<meta name=|→"
+    }
+   ]
+  },
+  {
+   "card": "R2-1",
+   "title": "Özet «Örnek» (kartlar)",
+   "rule_ids": [],
+   "expert_note": "Özet 'Örnek' her kartta dolu olmalı (Site haritası lastmod…, Sayfa yüklemesini…)",
+   "verdict": "incomplete",
+   "cell": "2. inceleme 1",
+   "labels": [
+    {
+     "id": "ng-R2-1-card-example",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Kontrol raporu",
+     "column": "Kural",
+     "regex": "^RG-24$"
+    }
+   ]
+  },
+  {
+   "card": "R2-2",
+   "title": "H1 etiketi gizli",
+   "rule_ids": [
+    "str2.hidden_h1"
+   ],
+   "expert_note": "/blogs/recipes «Recipes»: yanlış",
+   "verdict": "wrong",
+   "cell": "2. inceleme 2",
+   "labels": [
+    {
+     "id": "ng-R2-2-hidden-h1",
+     "kind": "must_not_find",
+     "on": "finding",
+     "rules": [
+      "str2.hidden_h1"
+     ]
+    }
+   ]
+  },
+  {
+   "card": "R2-3",
+   "title": "Bölüm başlıkları başka bir dilde",
+   "rule_ids": [
+    "str12.headings"
+   ],
+   "expert_note": "«Non-Candy Halloween Treats to Hand Out This Year» İngilizce sayfada İtalyanca sayıldı",
+   "verdict": "wrong",
+   "cell": "2. inceleme 3",
+   "labels": [
+    {
+     "id": "ng-R2-3-heading-language",
+     "kind": "must_not_find",
+     "on": "finding",
+     "rules": [
+      "str12.headings"
+     ]
+    }
+   ]
+  },
+  {
+   "card": "R2-4",
+   "title": "Koleksiyon sayfalarında ürün yok",
+   "rule_ids": [
+    "str15.empty_collections"
+   ],
+   "expert_note": "satırlar '1 ürün listeleniyor' diyor",
+   "verdict": "wrong",
+   "cell": "2. inceleme 4",
+   "labels": [
+    {
+     "id": "ng-R2-4-empty-collection",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "rules": [
+      "str15.empty_collections"
+     ],
+     "column": "Ölçülen değer",
+     "regex": "^[1-9]\\d* ürün"
+    }
+   ]
+  },
+  {
+   "card": "R2-5",
+   "title": "İçeriğin bir kısmı ham HTML'de eksik",
+   "rule_ids": [
+    "rnd1.partial"
+   ],
+   "expert_note": "hangi metin? hesap/giriş/sepet sayfaları içerik bulgusu olmamalı",
+   "verdict": "incomplete",
+   "cell": "2. inceleme 5",
+   "labels": [
+    {
+     "id": "ng-R2-5-account-page",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "rules": [
+      "rnd1.",
+      "rnd3."
+     ],
+     "column": "Sayfa",
+     "regex": "/account/"
+    }
+   ]
+  },
+  {
+   "card": "R2-6",
+   "title": "Bağlantıların izlenebilir adresi yok / Ortak alanda başlık düzeyleri atlanıyor",
+   "rule_ids": [
+    "str19.no_target",
+    "shared.heading_jump_varied"
+   ],
+   "expert_note": "örnek neyin yanlış olduğunu söylemeli (öğe, metin, href; başlık düzeyleri)",
+   "verdict": "incomplete",
+   "cell": "2. inceleme 6",
+   "labels": [
+    {
+     "id": "ng-R2-6-dead-link",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "rules": [
+      "str19."
+     ],
+     "column": "Ölçülen değer",
+     "regex": "bağlantı gibi görünüyor"
+    },
+    {
+     "id": "ng-R2-6-heading-jump",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "rules": [
+      "shared.heading_jump_varied"
+     ],
+     "column": "Ölçülen değer",
+     "regex": "başlığı H\\d, sayfadaki H\\d"
+    }
+   ]
+  },
+  {
+   "card": "R2-7",
+   "title": "Küçük bağlantı ve etiket tutarsızlıkları",
+   "rule_ids": [],
+   "expert_note": "Örnek gerçek bağlantıyı ya da etiketi sayfa ve değeriyle göstermeli",
+   "verdict": "incomplete",
+   "cell": "2. inceleme 7",
+   "labels": [
+    {
+     "id": "ng-R2-7-hygiene-example",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Özet",
+     "column": "Örnek",
+     "regex": "<meta name=\"theme-color\">"
+    }
+   ]
+  },
+  {
+   "card": "R3-1",
+   "title": "Bağlantıların metni yok",
+   "rule_ids": [
+    "str14.no_text"
+   ],
+   "expert_note": "Örnek öğeyi göstermeli (ör. alt metni boş görsel bağlantısı → hedef)",
+   "verdict": "incomplete",
+   "cell": "3. inceleme 8a",
+   "labels": [
+    {
+     "id": "ng-R3-1-textless-element",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "rules": [
+      "str14.no_text"
+     ],
+     "column": "Ölçülen değer",
+     "regex": "görünür metni, içindeki görselin alt metni"
+    }
+   ]
+  },
+  {
+   "card": "R3-2",
+   "title": "Koleksiyon sayfalarında ürün yok",
+   "rule_ids": [
+    "str15.empty_collections"
+   ],
+   "expert_note": "İşlenmemiş sayfa Kapsam'a: değerlendirilmedi",
+   "verdict": "wrong",
+   "cell": "3. inceleme 8b",
+   "labels": [
+    {
+     "id": "ng-R3-2-collection-finding",
+     "kind": "must_not_find",
+     "on": "finding",
+     "rules": [
+      "str15.empty_collections"
+     ]
+    },
+    {
+     "id": "ng-R3-2-collection-coverage",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Kapsam",
+     "column": "Açıklama",
+     "regex": "ürünlerin betikle yüklenip yüklenmediği bilinmiyor"
+    }
+   ]
+  },
+  {
+   "card": "R3-3",
+   "title": "Veri tablolarında başlık hücresi ilişkisi yok",
+   "rule_ids": [
+    "str8.headers"
+   ],
+   "expert_note": "Sade Türkçe; hangi tablo ve ilk başlık metni",
+   "verdict": "incomplete",
+   "cell": "3. inceleme 8c",
+   "labels": [
+    {
+     "id": "ng-R3-3-table-row",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "rules": [
+      "str8.headers"
+     ],
+     "column": "Ölçülen değer",
+     "regex": "başlık hücresi \\(<th>\\) yok; ilk satır: «"
+    }
+   ]
+  },
+  {
+   "card": "R3-4",
+   "title": "Sayfa istekleri sitenin hız sınırına takılıyor",
+   "rule_ids": [
+    "acc9.rate_limited_429"
+   ],
+   "expert_note": "Maya'nın kendi tarayıcısına birkaç 429: Kapsam'a, müşteri bulgusuna değil",
+   "verdict": "wrong",
+   "cell": "3. inceleme 8d",
+   "labels": [
+    {
+     "id": "ng-R3-4-429-not-client",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Özet",
+     "column": "Başlık",
+     "regex": "hız sınırına takılıyor"
+    }
+   ]
+  }
+ ]
+}

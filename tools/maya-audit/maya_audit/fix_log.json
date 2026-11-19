@@ -20,7 +20,16 @@
      ],
      "field": "why",
      "regex": "öğe|<"
-    }
+    },
+    "test": [
+     "tests/test_head_card_339.py",
+     "tests/test_expert_review_344.py"
+    ],
+    "labels": [
+     "enp1-J2-head-element",
+     "enp2-J2-head-element",
+     "enp3-head-element"
+    ]
    }
   },
   {
@@ -37,7 +46,11 @@
      "sheet": "Bağlantı yerleri",
      "column": "Kural",
      "regex": "^idx1\\."
-    }
+    },
+    "test": "tests/test_link_places_337.py",
+    "labels": [
+     "enp1-J3-link-sources"
+    ]
    }
   },
   {
@@ -52,6 +65,10 @@
    "check": {
     "no_card": [
      "acc2.blocks.sample"
+    ],
+    "test": "tests/test_expert_review_338.py",
+    "labels": [
+     "enp1-J4-robots-param"
     ]
    }
   },
@@ -68,6 +85,13 @@
    "check": {
     "no_card": [
      "str5.names"
+    ],
+    "test": [
+     "tests/test_expert_review_340.py",
+     "tests/test_mmi_review_360.py"
+    ],
+    "labels": [
+     "enp1-J6-brand-name"
     ]
    }
   },
@@ -81,7 +105,11 @@
     338
    ],
    "check": {
-    "no_text": "ana başlık"
+    "no_text": "ana başlık",
+    "test": "tests/test_expert_review_338.py",
+    "labels": [
+     "enp1-J7-h1-wording"
+    ]
    }
   },
   {
@@ -101,7 +129,12 @@
      ],
      "field": "title",
      "regex": "H2|H3"
-    }
+    },
+    "test": "tests/test_expert_review_338.py",
+    "labels": [
+     "enp1-J10-no-subheadings",
+     "enp2-styled-subheadings"
+    ]
    }
   },
   {
@@ -116,6 +149,10 @@
    "check": {
     "severity_info": [
      "idx2.temporary"
+    ],
+    "test": "tests/test_expert_review_338.py",
+    "labels": [
+     "enp1-J12-http-https"
     ]
    }
   },
@@ -134,7 +171,11 @@
      "title": "Küçük bağlantı",
      "field": "sub",
      "regex": "."
-    }
+    },
+    "test": "tests/test_expert_review_340.py",
+    "labels": [
+     "enp1-J13-hygiene-redirects"
+    ]
    }
   },
   {
@@ -151,7 +192,11 @@
      "title": "Soru başlık",
      "field": "sub",
      "regex": "."
-    }
+    },
+    "test": "tests/test_expert_review_340.py",
+    "labels": [
+     "enp1-J14-question-page"
+    ]
    }
   },
   {
@@ -168,7 +213,11 @@
      "sheet": "Bağlantı yerleri",
      "column": "Site haritasındaki <loc> metni",
      "regex": "."
-    }
+    },
+    "test": "tests/test_expert_review_340.py",
+    "labels": [
+     "enp2-J3-sitemap-loc"
+    ]
    }
   },
   {
@@ -184,7 +233,11 @@
     "sheet_has": {
      "sheet": "Yönlendiren bağlantılar",
      "regex": "."
-    }
+    },
+    "test": "tests/test_expert_review_340.py",
+    "labels": [
+     "enp2-J9-links-redirect-card"
+    ]
    }
   },
   {
@@ -199,6 +252,10 @@
    "check": {
     "no_card": [
      "str5.names"
+    ],
+    "test": "tests/test_expert_review_340.py",
+    "labels": [
+     "enp2-J13-brand-title"
     ]
    }
   },
@@ -214,6 +271,10 @@
    "check": {
     "no_card": [
      "str3.qa_no_faqpage"
+    ],
+    "test": "tests/test_expert_review_340.py",
+    "labels": [
+     "enp2-J15-faq"
     ]
    }
   },
@@ -231,7 +292,11 @@
      "title": "Küçük bağlantı",
      "field": "sub",
      "regex": "adrese|kaldırın|→"
-    }
+    },
+    "test": "tests/test_expert_review_340.py",
+    "labels": [
+     "enp2-J16-llms-targets"
+    ]
    }
   },
   {
@@ -249,7 +314,11 @@
      "sheet": "Bulgu bazında",
      "column": "Ölçülen değer",
      "regex": "satır|line"
-    }
+    },
+    "test": [
+     "tests/test_expert_review_344.py",
+     "tests/test_head_rows_341.py"
+    ]
    }
   },
   {
@@ -265,10 +334,7 @@
     "has_finding": [
      "str1.sections_as_pages"
     ],
-    "no_problem": [
-     "str2.h1_parent_name",
-     "str1.subpage_copies_parent"
-    ]
+    "test": "tests/test_expert_review_344.py"
    }
   },
   {
@@ -287,7 +353,12 @@
      "sheet": "Bağlantı yerleri",
      "column": "Önerilen hedef",
      "regex": "/|410"
-    }
+    },
+    "test": [
+     "tests/test_expert_review_344.py",
+     "tests/test_redirect_targets_345.py",
+     "tests/test_where_targets_346.py"
+    ]
    }
   },
   {
@@ -306,6 +377,11 @@
      "idx6.links_to_flow_redirect",
      "idx6.links_to_login_redirect",
      "idx6.links_to_entry_redirect"
+    ],
+    "test": [
+     "tests/test_bank_followup_351.py",
+     "tests/test_expert_review_344.py",
+     "tests/test_shop_review_347.py"
     ]
    }
   },
@@ -335,7 +411,8 @@
     "has_finding": [
      "idx1.error_redirect",
      "idx1.4xx.sitemap_only"
-    ]
+    ],
+    "test": "tests/test_team_rules_343.py"
    }
   },
   {
@@ -352,6 +429,10 @@
     "has_finding": [
      "idx8.self_canonical_copies",
      "idx8.form_step_copies"
+    ],
+    "test": [
+     "tests/test_expert_review_344.py",
+     "tests/test_team_rules_343.py"
     ]
    }
   },
@@ -367,7 +448,8 @@
    "check": {
     "has_finding": [
      "str3.product_on_article"
-    ]
+    ],
+    "test": "tests/test_team_rules_343.py"
    }
   },
   {
@@ -384,7 +466,8 @@
      "str13.markers",
      "str13.markers_data",
      "str3.unparsed"
-    ]
+    ],
+    "test": "tests/test_team_rules_343.py"
    }
   },
   {
@@ -434,6 +517,10 @@
      "idx5.not_live.idx1",
      "idx5.bad_share",
      "idx1.4xx.sitemap_only"
+    ],
+    "test": [
+     "tests/test_expert_review_344.py",
+     "tests/test_team_rules_343.py"
     ]
    }
   },
@@ -450,7 +537,8 @@
     "has_finding": [
      "str16.shared",
      "str1.shared"
-    ]
+    ],
+    "test": "tests/test_same_card_355.py"
    }
   },
   {
@@ -465,7 +553,8 @@
    ],
    "check": {
     "crawl": true,
-    "why": "Sayfa en yeni denetimin örnekleminde yok; yeni tarama gerekli"
+    "why": "Sayfa en yeni denetimin örnekleminde yok; yeni tarama gerekli",
+    "test": "tests/test_sampling_327.py"
    }
   },
   {
@@ -509,7 +598,8 @@
    "check": {
     "has_finding": [
      "str10.no_tag"
-    ]
+    ],
+    "test": "tests/test_sampling_327.py"
    }
   },
   {
@@ -612,7 +702,8 @@
    "check": {
     "severity_info": [
      "idx6.links_to_login_redirect"
-    ]
+    ],
+    "test": "tests/test_shop_review_347.py"
    }
   },
   {
@@ -642,7 +733,8 @@
      "sheet": "Sayfa bazında",
      "column": "Sayfa",
      "regex": "\\.xml(\\.gz)?$"
-    }
+    },
+    "test": "tests/test_shop_review_347.py"
    }
   },
   {
@@ -671,7 +763,8 @@
    "check": {
     "has_finding": [
      "idx8.typo_copies"
-    ]
+    ],
+    "test": "tests/test_shop_review_347.py"
    }
   },
   {
@@ -737,7 +830,11 @@
     353
    ],
    "check": {
-    "gate": "PASS"
+    "gate": "PASS",
+    "test": [
+     "tests/test_bank_followup_351.py",
+     "tests/test_text_check_353.py"
+    ]
    }
   },
   {
@@ -754,7 +851,8 @@
      "sheet": "Sayfa bazında",
      "column": "Sayfa",
      "regex": "efl--edit|preview_theme_id|[?&](edit|preview)="
-    }
+    },
+    "test": "tests/test_bank_followup_351.py"
    }
   },
   {
@@ -870,7 +968,8 @@
    ],
    "check": {
     "crawl": true,
-    "why": "En yeni denetim bazı sayfaları iki adreste saydı; yeni tarama gerekli"
+    "why": "En yeni denetim bazı sayfaları iki adreste saydı; yeni tarama gerekli",
+    "test": "tests/test_carpex_review_358.py"
    }
   },
   {
@@ -901,7 +1000,11 @@
      "sheet": "Rakip - Konu",
      "column": "Lider rakip (ilk → son hafta)",
      "regex": "^carpex"
-    }
+    },
+    "test": [
+     "tests/test_carpex_review_358.py",
+     "tests/test_maya_brand_topics_362.py"
+    ]
    }
   },
   {
@@ -919,7 +1022,11 @@
      "sheet": "Rakip - Konu",
      "column": "Konu",
      "regex": "^intent:"
-    }
+    },
+    "test": [
+     "tests/test_carpex_review_358.py",
+     "tests/test_maya_brand_topics_362.py"
+    ]
    }
   },
   {
@@ -945,7 +1052,8 @@
     359
    ],
    "check": {
-    "gate": "PASS"
+    "gate": "PASS",
+    "test": "tests/test_carpex_rerun_359.py"
    }
   },
   {
@@ -959,7 +1067,8 @@
    ],
    "check": {
     "crawl": true,
-    "why": "Kayıtlı denetim iki kopyayı da okudu; yeni tarama gerekli"
+    "why": "Kayıtlı denetim iki kopyayı da okudu; yeni tarama gerekli",
+    "test": "tests/test_carpex_rerun_359.py"
    }
   },
   {
@@ -978,7 +1087,8 @@
      "match": "/(referanslarimiz|bize-ulasin-?)$",
      "column": "Sayfa türü",
      "regex": "kategori"
-    }
+    },
+    "test": "tests/test_carpex_rerun_359.py"
    }
   },
   {
@@ -995,7 +1105,8 @@
      "sheet": "Rakip - Konu",
      "column": "Konu",
      "regex": "^[a-z0-9]+(-[a-z0-9]+)+$"
-    }
+    },
+    "test": "tests/test_carpex_rerun_359.py"
    }
   },
   {
@@ -1010,6 +1121,10 @@
    "check": {
     "no_card": [
      "idx6.alias_links"
+    ],
+    "test": "tests/test_mmi_review_360.py",
+    "labels": [
+     "mmi-J4-alias-links"
     ]
    }
   },
@@ -1025,6 +1140,10 @@
    "check": {
     "no_card": [
      "str1.no_title"
+    ],
+    "test": "tests/test_mmi_review_360.py",
+    "labels": [
+     "mmi-J7-no-title"
     ]
    }
   },
@@ -1040,6 +1159,10 @@
    "check": {
     "no_card": [
      "str2.hidden_h1"
+    ],
+    "test": "tests/test_mmi_review_360.py",
+    "labels": [
+     "mmi-J9-hidden-h1"
     ]
    }
   },
@@ -1055,6 +1178,10 @@
    "check": {
     "no_card": [
      "str5.names"
+    ],
+    "test": "tests/test_mmi_review_360.py",
+    "labels": [
+     "mmi-J11-brand-product"
     ]
    }
   },
@@ -1073,7 +1200,14 @@
      "sheet": "Özet",
      "column": "Etkilenen adres",
      "regex": "ölçülen"
-    }
+    },
+    "test": [
+     "tests/test_mmi_review_360.py",
+     "tests/test_platform_advice_361.py"
+    ],
+    "labels": [
+     "mmi-J13-slow-scope"
+    ]
    }
   },
   {
@@ -1094,7 +1228,11 @@
      "field": "sub",
      "regex": "metin yok",
      "need": true
-    }
+    },
+    "test": "tests/test_mmi_review_360.py",
+    "labels": [
+     "mmi-J14-no-text-links"
+    ]
    }
   },
   {
@@ -1111,7 +1249,11 @@
      "sheet": "Bağlantı yerleri",
      "column": "Kural",
      "regex": "idx6.parameters"
-    }
+    },
+    "test": "tests/test_mmi_review_360.py",
+    "labels": [
+     "mmi-J16-hygiene-links"
+    ]
    }
   },
   {
@@ -1128,7 +1270,8 @@
      "sheet": "Bulgular",
      "column": "Ne yapılmalı",
      "regex": "shopify"
-    }
+    },
+    "test": "tests/test_platform_advice_361.py"
    }
   },
   {
@@ -1145,7 +1288,8 @@
      "sheet": "Bulgular",
      "column": "Ne yapılmalı",
      "regex": "metin yok"
-    }
+    },
+    "test": "tests/test_platform_advice_361.py"
    }
   },
   {
@@ -1162,7 +1306,8 @@
      "sheet": "Rakip - Konu",
      "column": "Lider rakip (ilk → son hafta)",
      "regex": "^legalhomedelivery"
-    }
+    },
+    "test": "tests/test_maya_brand_topics_362.py"
    }
   },
   {
@@ -1178,7 +1323,8 @@
     "sheet_not": {
      "sheet": "Kapsam",
      "regex": "\\.(tex|cls)\\b"
-    }
+    },
+    "test": "tests/test_maya_brand_topics_362.py"
    }
   },
   {
@@ -1195,7 +1341,8 @@
      "sheet": "Rakip - Konu",
      "column": "Konu",
      "regex": "^(Buying intent|Brand|Discovery|Problem|Comparison)$"
-    }
+    },
+    "test": "tests/test_maya_brand_topics_362.py"
    }
   },
   {
@@ -1229,7 +1376,10 @@
      "column": "Gereken veri / neden uzman",
      "regex": "Maya verisiyle ölçüldü"
     },
-    "test": "tests/test_checklist_platform_365.py"
+    "test": "tests/test_checklist_platform_365.py",
+    "labels": [
+     "mmi-R365-checklist-how"
+    ]
    }
   },
   {
@@ -1264,7 +1414,10 @@
      "column": "Başlık",
      "regex": "^Diğer bulgular \\("
     },
-    "test": "tests/test_summary_others_366.py"
+    "test": "tests/test_summary_others_366.py",
+    "labels": [
+     "mmi-R366-other-findings"
+    ]
    }
   },
   {
@@ -1302,7 +1455,11 @@
     "has_finding": [
      "str2.card_headings"
     ],
-    "test": "tests/test_review_368.py"
+    "test": "tests/test_review_368.py",
+    "labels": [
+     "mmi-R368-1-home-outline",
+     "mmi-R368-1-card-headings"
+    ]
    }
   },
   {
@@ -1318,7 +1475,10 @@
     "no_problem": [
      "str12.headings"
     ],
-    "test": "tests/test_review_368.py"
+    "test": "tests/test_review_368.py",
+    "labels": [
+     "mmi-R368-2-heading-language"
+    ]
    }
   },
   {
@@ -1334,7 +1494,10 @@
     "no_problem": [
      "idx4.different"
     ],
-    "test": "tests/test_review_368.py"
+    "test": "tests/test_review_368.py",
+    "labels": [
+     "mmi-R368-3-canonical"
+    ]
    }
   },
   {
@@ -1352,7 +1515,10 @@
      "column": "Ölçülen değer",
      "regex": "JavaScript'le gelen metin: «"
     },
-    "test": "tests/test_review_368.py"
+    "test": "tests/test_review_368.py",
+    "labels": [
+     "mmi-R368-4-missing-text"
+    ]
    }
   },
   {
@@ -1370,7 +1536,10 @@
      "column": "Ölçülen değer",
      "regex": "tıklanan: «|sayfa kaydırılınca yüklenen içerik"
     },
-    "test": "tests/test_review_368.py"
+    "test": "tests/test_review_368.py",
+    "labels": [
+     "mmi-R368-4-revealed"
+    ]
    }
   },
   {
@@ -1388,7 +1557,11 @@
      "column": "Sorun",
      "regex": "^(Ortak alandaki bağlantının adresi yok|Adreslerin kısa adı anlaşılır değil|Bazı bağlantılarda genel metinler kullanılıyor)$"
     },
-    "test": "tests/test_review_368.py"
+    "test": "tests/test_review_368.py",
+    "labels": [
+     "mmi-R368-5-plain-names",
+     "mmi-R368-5-slug-suggestion"
+    ]
    }
   },
   {
@@ -1406,7 +1579,10 @@
      "column": "Örnek",
      "regex": "«"
     },
-    "test": "tests/test_review_368.py"
+    "test": "tests/test_review_368.py",
+    "labels": [
+     "mmi-R368-6-example"
+    ]
    }
   },
   {
@@ -1467,7 +1643,10 @@
      "column": "Örnek",
      "regex": "sitemap_products_1\\.xml: 19 adresin 18'i"
     },
-    "test": "tests/test_ng_review_371.py"
+    "test": "tests/test_ng_review_371.py",
+    "labels": [
+     "ng-R2-1-card-example"
+    ]
    }
   },
   {
@@ -1483,7 +1662,10 @@
     "no_problem": [
      "str2.hidden_h1"
     ],
-    "test": "tests/test_ng_review_371.py"
+    "test": "tests/test_ng_review_371.py",
+    "labels": [
+     "ng-R2-2-hidden-h1"
+    ]
    }
   },
   {
@@ -1499,7 +1681,10 @@
     "no_problem": [
      "str12.headings"
     ],
-    "test": "tests/test_ng_review_371.py"
+    "test": "tests/test_ng_review_371.py",
+    "labels": [
+     "ng-R2-3-heading-language"
+    ]
    }
   },
   {
@@ -1517,9 +1702,15 @@
      "key": "Kural",
      "match": "^str15\\.empty_collections$",
      "column": "Ölçülen değer",
-     "regex": "^[1-9]\\d* ürün"
+     "regex": "^[1-9]\\d* ürün",
+     "rules": [
+      "str15.empty_collections"
+     ]
     },
-    "test": "tests/test_ng_review_371.py"
+    "test": "tests/test_ng_review_371.py",
+    "labels": [
+     "ng-R2-4-empty-collection"
+    ]
    }
   },
   {
@@ -1537,9 +1728,17 @@
      "key": "Kural",
      "match": "^rnd[13]\\.",
      "column": "Sayfa",
-     "regex": "/account/"
+     "regex": "/account/",
+     "rules": [
+      "rnd1.partial",
+      "rnd1.missing",
+      "rnd3.revealed"
+     ]
     },
-    "test": "tests/test_ng_review_371.py"
+    "test": "tests/test_ng_review_371.py",
+    "labels": [
+     "ng-R2-5-account-page"
+    ]
    }
   },
   {
@@ -1557,7 +1756,11 @@
      "column": "Ölçülen değer",
      "regex": "bağlantı gibi görünüyor, gidecek adresi yok"
     },
-    "test": "tests/test_ng_review_371.py"
+    "test": "tests/test_ng_review_371.py",
+    "labels": [
+     "ng-R2-6-dead-link",
+     "ng-R2-6-heading-jump"
+    ]
    }
   },
   {
@@ -1575,7 +1778,296 @@
      "column": "Örnek",
      "regex": "<meta name=\"theme-color\"> etiketi boş"
     },
-    "test": "tests/test_ng_review_371.py"
+    "test": "tests/test_ng_review_371.py",
+    "labels": [
+     "ng-R2-7-hygiene-example"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek (16 Kasım), Özet sütun J; Efsa'nın uyum incelemesinden (DECISIONS 373)",
+   "brand_key": "naturesgarden",
+   "sorun": "J5: Ayrıştırılamayan JSON-LD kartı hatanın nerede olduğunu söylemiyordu",
+   "genel": "Ayrıştırılamayan JSON-LD'nin yeri (blok, satır, karakter) söylenmiyordu",
+   "nasil": "Her sayfanın satırı JSON-LD bloğunu, satırı, bozuk karakteri ve çevresindeki metni yazar ('JSON-LD blok 3, satır 11: newline (U+000A); «…»').",
+   "decisions": [
+    368,
+    373
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bulgu bazında",
+     "column": "Ölçülen değer",
+     "regex": "JSON-LD blok \\d+, satır \\d+"
+    },
+    "test": "tests/test_review_368.py",
+    "labels": [
+     "ng-J5-jsonld-where"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek (16 Kasım), Özet sütun J; Efsa'nın uyum incelemesinden (DECISIONS 373)",
+   "brand_key": "naturesgarden",
+   "sorun": "J6: lastmod hatasının nasıl tespit edildiği söylenmiyordu; bozuk bir lastmod kontrolü durduruyordu",
+   "genel": "Site haritası lastmod bulgusunun nasıl ölçüldüğü söylenmiyordu; bozuk tarih kontrolü durduruyordu",
+   "nasil": "Örnek ölçülen dosyayı ve değeri söyler ('sitemap_products_1.xml: 19 adresin 18'i aynı lastmod'u taşıyor'); tarih olmayan lastmod sayılır, karşılaştırılmaz (F01); kural SEO ekibinin onayına kadar 'Kontrol edin'.",
+   "decisions": [
+    369,
+    371,
+    372,
+    373
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Özet",
+     "column": "Örnek",
+     "regex": "adresin \\d+'\\w+ aynı lastmod"
+    },
+    "test": [
+     "tests/test_ng_review_371.py",
+     "tests/test_bugs_372.py"
+    ],
+    "labels": [
+     "ng-J6-lastmod-how"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek (16 Kasım), Özet sütun J; Efsa'nın uyum incelemesinden (DECISIONS 373)",
+   "brand_key": "naturesgarden",
+   "sorun": "J7: Gizli H1 bulgusu yanlıştı",
+   "genel": "Ekran okuyucunun okuduğu H1 gizli sayılıyordu",
+   "nasil": "Yalnız işlenmiş sayfada ne görünen ne ekran okuyucunun okuduğu H1 varsa raporlanır; okumada bilgi yoksa raporlanmaz.",
+   "decisions": [
+    360,
+    371
+   ],
+   "check": {
+    "no_problem": [
+     "str2.hidden_h1"
+    ],
+    "test": [
+     "tests/test_ng_review_371.py",
+     "tests/test_mmi_review_360.py"
+    ],
+    "labels": [
+     "ng-J7-hidden-h1"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek (16 Kasım), Özet sütun J; Efsa'nın uyum incelemesinden (DECISIONS 373)",
+   "brand_key": "naturesgarden",
+   "sorun": "J8: Küçük düzeltmeler kartı hangi bağlantı ya da etiket olduğunu söylemiyordu",
+   "genel": "Küçük düzeltmeler kartı hangi bağlantı ya da etiket olduğunu söylemiyordu",
+   "nasil": "Kart ve Ek her adreste bağlantıyı (metin, href, konum) ya da etiketi (adı ve değeri) yazar.",
+   "decisions": [
+    360,
+    371
+   ],
+   "check": {
+    "title_text": {
+     "title": "^Küçük bağlantı",
+     "field": "sub",
+     "regex": "<meta name=|→",
+     "need": true
+    },
+    "test": [
+     "tests/test_mmi_review_360.py",
+     "tests/test_ng_review_371.py"
+    ],
+    "labels": [
+     "ng-J8-hygiene-which"
+    ]
+   }
+  },
+  {
+   "kaynak": "Efsa — Maya Audit uyum ve mimari incelemesi, 19 Kasım (DECISIONS 372, 373)",
+   "brand_key": "naturesgarden",
+   "sorun": "F01: tarih olmayan bir sitemap lastmod değeri site haritası kontrolünü durduruyordu",
+   "genel": "Tarih olmayan bir sitemap lastmod değeri site haritası kontrolünü durduruyordu",
+   "nasil": "Tarih olmayan lastmod değerleri sayılır ve örneklenir, karşılaştırılmaz; kontrol ve gelecekteki tarih bulgusu çalışmaya devam eder.",
+   "decisions": [
+    372
+   ],
+   "check": {
+    "test": "tests/test_bugs_372.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — Maya Audit uyum ve mimari incelemesi, 19 Kasım (DECISIONS 372, 373)",
+   "brand_key": null,
+   "sorun": "Eksik ölçümler (CTR, sıra, konu oranları) 0 yazılıyordu; kısa marka adları başka kelimelerle eşleşiyordu",
+   "genel": "Eksik ölçümler 0 yazılıyor, kısa marka adları başka kelimelerle eşleşiyordu",
+   "nasil": "Verilmeyen değer None ve Ek'te 'veri yok'; sıra yalnız sıra veren satırlardan ortalanır; kısa marka adı (4 harften kısa) yalnız tam kelime olarak eşleşir.",
+   "decisions": [
+    372
+   ],
+   "check": {
+    "test": "tests/test_bugs_372.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — Maya Audit uyum ve mimari incelemesi, 19 Kasım (DECISIONS 372, 373)",
+   "brand_key": null,
+   "sorun": "F10: düzeltme kaydı kanıt yokken 'Düzeltildi' diyebiliyordu; not maddeleri testlerine bağlı değildi",
+   "genel": "Düzeltme kaydı kanıtsız 'Düzeltildi' diyebiliyordu",
+   "nasil": "Üç durum: Düzeltildi (bağlı test geçti, kontrol kanıtla tuttu, uzman etiketleri tutuyor), Hâlâ var, Doğrulanmadı. Her maddeye test bağlandı; başka markanın maddesi Ek'te 'bu denetimde doğrulanmadı' der.",
+   "decisions": [
+    373
+   ],
+   "check": {
+    "test": [
+     "tests/test_review_compliance_373.py",
+     "tests/test_expert_lock.py"
+    ]
+   }
+  },
+  {
+   "kaynak": "Efsa — Maya Audit uyum ve mimari incelemesi, 19 Kasım (DECISIONS 372, 373)",
+   "brand_key": "naturesgarden",
+   "sorun": "Ek hangi motor sürümüyle yapıldığını söylemiyordu",
+   "genel": "Ek ve PDF hangi motor sürümüyle yapıldığını söylemiyordu",
+   "nasil": "Kapsam'ın ilk satırı ve PDF motorun sürümünü, değişikliğin kimliğini ve dosyanın oluşturulma saatini (UTC) yazar.",
+   "decisions": [
+    373
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Kapsam",
+     "column": "Açıklama",
+     "regex": "^Maya Audit .+ · commit .+ · oluşturuldu"
+    },
+    "test": "tests/test_review_compliance_373.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — Maya Audit uyum ve mimari incelemesi, 19 Kasım (DECISIONS 372, 373)",
+   "brand_key": "naturesgarden",
+   "sorun": "Onaylanmamış kurallar (sorgulanan lastmod, taslak sektör kontrolleri) 'Sorun' gösteriliyordu",
+   "genel": "Onaylanmamış kurallar kesin 'Sorun' gösteriliyordu",
+   "nasil": "Sorgulanan kural ve taslak sektörün kontrolleri onaylanana kadar 'Kontrol edin'; kart 'Onay bekliyor' diye başlar.",
+   "decisions": [
+    373
+   ],
+   "check": {
+    "title_text": {
+     "title": "^Site haritası lastmod",
+     "field": "sub",
+     "regex": "Onay bekliyor",
+     "need": true
+    },
+    "test": "tests/test_review_compliance_373.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — Maya Audit uyum ve mimari incelemesi, 19 Kasım (DECISIONS 372, 373)",
+   "brand_key": null,
+   "sorun": "Kararların testleri yalnız görülen biçimi deniyordu, hata ailesini değil",
+   "genel": "Karar testleri hata ailesinin başka biçimlerini denemiyordu",
+   "nasil": "Marka adı, bağlantı listeleri, gizli H1 (tarayıcıda) ve başlık dili için başka biçimler ve sağlıklı bir karşı örnek test edilir.",
+   "decisions": [
+    373
+   ],
+   "check": {
+    "test": "tests/test_error_families_373.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — Maya Audit uyum ve mimari incelemesi, 19 Kasım (DECISIONS 372, 373)",
+   "brand_key": null,
+   "sorun": "Notlar elle aktarılıyordu ve kaybolabiliyordu; uzman doğruluk kaydı yalnız Enpara'yı kapsıyordu",
+   "genel": "Uzman notları elle aktarılıyordu, kaybolabiliyordu",
+   "nasil": "tools/import_notes.py incelenmiş Ek'in Özet not sütununu docs/expert-reviews'e aktarır (Doğru/Hatalı/Yanlış/hangi…; emin olunamayan sorulur); iki markanın incelemesi eklendi.",
+   "decisions": [
+    373
+   ],
+   "check": {
+    "test": "tests/test_review_compliance_373.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek, üçüncü inceleme (DECISIONS 373)",
+   "brand_key": "naturesgarden",
+   "sorun": "'Bağlantıların metni yok' örneği öğeyi göstermiyordu",
+   "genel": "Metinsiz bağlantı örneği öğeyi göstermiyordu",
+   "nasil": "Her sayfada: <a> (konumu): görünür metni, içindeki görselin alt metni, aria-label ve title yok → hedef.",
+   "decisions": [
+    373
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bulgu bazında",
+     "column": "Ölçülen değer",
+     "regex": "görünür metni, içindeki görselin alt metni"
+    },
+    "test": "tests/test_review_compliance_373.py",
+    "labels": [
+     "ng-R3-1-textless-element"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek, üçüncü inceleme (DECISIONS 373)",
+   "brand_key": "naturesgarden",
+   "sorun": "İşlenmemiş koleksiyon sayfası 'ürün yok' bulgusu oldu",
+   "genel": "İşlenmemiş boş koleksiyon 'ürün yok' bulgusu sayılıyordu",
+   "nasil": "Tarayıcıda açılmamış ve HTML'inde ürün olmayan koleksiyon Kapsam'da 'değerlendirilmedi' olarak yazılır.",
+   "decisions": [
+    373
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Kapsam",
+     "column": "Açıklama",
+     "regex": "ürünlerin betikle yüklenip yüklenmediği bilinmiyor"
+    },
+    "test": "tests/test_review_compliance_373.py",
+    "labels": [
+     "ng-R3-2-collection-finding",
+     "ng-R3-2-collection-coverage"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek, üçüncü inceleme (DECISIONS 373)",
+   "brand_key": "naturesgarden",
+   "sorun": "'Veri tablolarında başlık hücresi ilişkisi yok' anlaşılmıyordu; hangi tablo olduğu yoktu",
+   "genel": "Tablo başlık hücresi bulgusu teknik dilde ve tablosuz yazılmıştı",
+   "nasil": "Sade Türkçe ('Tablolarda başlık hücresi (<th>) yok'); her sayfada tablonun öğesi, boyutu ve ilk satırı.",
+   "decisions": [
+    373
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bulgu bazında",
+     "column": "Ölçülen değer",
+     "regex": "başlık hücresi \\(<th>\\) yok; ilk satır"
+    },
+    "test": "tests/test_review_compliance_373.py",
+    "labels": [
+     "ng-R3-3-table-row"
+    ]
+   }
+  },
+  {
+   "kaynak": "İlginay — Nature's Garden Ek, üçüncü inceleme (DECISIONS 373)",
+   "brand_key": "naturesgarden",
+   "sorun": "Maya'nın tarayıcısına gelen birkaç 429 müşteri bulgusu olarak gösterildi",
+   "genel": "Maya'nın tarayıcısına gelen birkaç 429 müşteri bulgusu sayılıyordu",
+   "nasil": "En çok 5 ve isteklerin yarısından az 429 Maya'nın kendi sınırıdır: Kapsam'da yazılır, Özet'te ve kartlarda yoktur.",
+   "decisions": [
+    373
+   ],
+   "check": {
+    "no_card": [
+     "acc9.rate_limited_429"
+    ],
+    "test": "tests/test_review_compliance_373.py",
+    "labels": [
+     "ng-R3-4-429-not-client"
+    ]
    }
   }
  ]

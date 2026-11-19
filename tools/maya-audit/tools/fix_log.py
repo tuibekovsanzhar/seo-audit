@@ -72,13 +72,28 @@ def run_tests(files: list[str]) -> dict[str, bool]:
     """{test file: passed} for the test files the items name (pytest, quietly, provider-free as the suite is)."""
     out = {}
     for f in files:
-        if not (ROOT / f).is_file():
+        if not (ROOT / f.split("::")[0]).is_file():
             out[f] = False
             continue
         r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", f], cwd=ROOT, capture_output=True, text=True)
         out[f] = r.returncode == 0
         print(f"test {f}: {'passed' if out[f] else 'FAILED'}")
     return out
+
+
+def expert_labels(work: Path, built: dict[str, dict]) -> dict[str, bool | None]:
+    """DECISIONS 373: {label id: holds} of every expert label, checked on the frozen noted audits (the benchmark's
+    `expert` set, MAYA_AUDIT_BENCHMARK_DIR); the audits this run already rebuilt are reused. {} when the frozen set is
+    not on this machine: every item with labels is then "Doğrulanmadı"."""
+    from scripts import real_sites_benchmark as bench
+    if not (bench.expert_dir() / "manifest.json").exists():
+        print("expert labels: the frozen set is not on this machine (MAYA_AUDIT_BENCHMARK_DIR); labels not checked")
+        return {}
+    reuse = {ctx["audit"]["id"]: ctx for ctx in built.values() if ctx.get("audit")}
+    rows = bench.run_expert(work / "expert", built=reuse)
+    red = [r["id"] for r in rows if r["ok"] is False]
+    print(f"expert labels: {len(rows)} checked, {len(red)} red" + (f": {', '.join(red)}" if red else ""))
+    return {r["id"]: r["ok"] for r in rows}
 
 
 def commits() -> dict[int, tuple[str, str]]:
@@ -120,8 +135,9 @@ def main(argv=None) -> int:
         built[brand] = ctx
         print(f"{brand}: {found['id'][:8]} {found['finished_at'][:10]} rebuilt ({len(ctx['cards'])} cards, {ctx['gate']})")
     done = commits()
-    tests = run_tests(sorted({i["check"]["test"] for i in items if (i.get("check") or {}).get("test")}))
-    rows = fix_log.evaluate(items, built, done, datetime.now(timezone.utc).date().isoformat(), tests)
+    tests = run_tests(sorted({t for i in items for t in fix_log.tests_of(i.get("check") or {})}))
+    labels = expert_labels(args.work, built)
+    rows = fix_log.evaluate(items, built, done, datetime.now(timezone.utc).date().isoformat(), tests, labels)
     for r in rows:
         print(f"{r['no']:>3} {r['durum']:<20} {r['marka']:<12} {r['sorun'][:70]}")
     if args.out:

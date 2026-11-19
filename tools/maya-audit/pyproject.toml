@@ -34,7 +34,7 @@ include = ["maya_audit*"]
 [tool.setuptools.package-data]
 # Read at run time by rules.rule_id and facts.contract; tests/test_distribution_contract.py checks the wheel.
 maya_audit = ["rule_ids.json", "rule_actions.json", "issue_types.json", "sector_method.json", "checklist_items.json",
-              "merge_group_texts.json", "banned_phrases.json", "fix_log.json", "fix_log_status.json", "checklist_how.json"]
+              "merge_group_texts.json", "banned_phrases.json", "fix_log.json", "fix_log_status.json", "checklist_how.json", "rule_approval.json"]
 "maya_audit.client_reporting" = ["references/*", "assets/*"]
 # The business-type profiles (DECISIONS 311).
 "maya_audit.business_types" = ["profiles/*.json"]

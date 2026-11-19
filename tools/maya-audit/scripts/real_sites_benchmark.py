@@ -3,6 +3,8 @@
     .venv/bin/python -m scripts.real_sites_benchmark collect --live
     .venv/bin/python -m scripts.real_sites_benchmark score RUN_DIRECTORY
     .venv/bin/python -m scripts.real_sites_benchmark replay RUN_DIRECTORY
+    .venv/bin/python -m scripts.real_sites_benchmark freeze-expert   # the noted audits, copied from the web app
+    .venv/bin/python -m scripts.real_sites_benchmark expert           # every expert note checked on them (DECISIONS 373)
 
 expected.yaml files use JSON syntax, a YAML 1.2 subset, so no parser dependency is needed.
 """
@@ -410,15 +412,103 @@ def child_environment(folder):
     return env
 
 
+# ---------------------------------------------------------------- the expert lock (DECISIONS 373)
+
+EXPERT = "expert"  # the frozen noted audits: <corpus>/expert/<audit id>/artifacts, with expert/manifest.json
+WEB = Path.home() / ".maya-audit" / "web"
+DERIVED = ("current-engine",)  # the web app's derived copies are not part of a frozen audit
+
+
+def expert_dir(corpus=None) -> Path:
+    return Path(corpus or CORPUS) / EXPERT
+
+
+def freeze_expert(audit_ids, corpus=None, web=WEB) -> dict:
+    """Copy the saved pages and report of each noted audit (read only from the web app's folder) into the frozen set,
+    outside the repository, with a manifest of each report's digest. An audit already frozen is kept as it is."""
+    import shutil
+    folder = expert_dir(corpus)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / "manifest.json"
+    manifest = read(path) if path.exists() else {"audits": {}}
+    for aid in audit_ids:
+        source = web / "audits" / aid / "artifacts"
+        target = folder / aid / "artifacts"
+        if not target.exists():
+            shutil.copytree(source, target, ignore=shutil.ignore_patterns(*DERIVED))
+        report = target / "report.json"
+        manifest["audits"][aid] = {"frozen_at": manifest["audits"].get(aid, {}).get("frozen_at") or stamp(),
+                                   "report_sha256": hashlib.sha256(report.read_bytes()).hexdigest()}
+    write(path, manifest)
+    return manifest
+
+
+def rebuild_expert(aid: str, work: Path, corpus=None) -> dict:
+    """One frozen audit rebuilt with the current engine, as the web app rebuilds a saved one (offline): {report, data,
+    book, cards}. The frozen copy is never written: the rebuild works on a copy in `work`."""
+    import shutil
+    from maya_audit import xlsx
+    from maya_audit_web.team_report import build_data, render
+    source = expert_dir(corpus) / aid / "artifacts"
+    manifest = read(expert_dir(corpus) / "manifest.json")
+    expected = (manifest.get("audits") or {}).get(aid, {}).get("report_sha256")
+    if expected and hashlib.sha256((source / "report.json").read_bytes()).hexdigest() != expected:
+        raise ValueError(f"frozen audit {aid} changed since it was frozen")
+    folder = work / aid
+    if folder.exists():
+        shutil.rmtree(folder)
+    shutil.copytree(source, folder / "artifacts")
+    a = folder / "artifacts"
+    data, _ = build_data.build_from_files(a / "report.json", "tr", audit_id=aid[:8], affected_path=a / "affected-urls.json")
+    report = read(data["_report_path"])
+    affected = read(data["_affected_path"])
+    content, _ = render.appendix_bytes(report, affected, data.get("_confirmations") or {}, "tr", data.get("_business"),
+                                       todos=build_data.cards_for_appendix(data), maya=render.maya_bundle(a),
+                                       text_check=render.text_record(data, report))
+    return {"report": report, "data": data, "book": xlsx.read(content), "cards": data.get("todos") or []}
+
+
+def run_expert(work: Path, corpus=None, built: dict | None = None) -> list[dict]:
+    """Every expert label checked on its rebuilt frozen audit (`built` reuses rebuilds already made)."""
+    from maya_audit import expert_labels
+    items = expert_labels.labels()
+    errors = expert_labels.validate(items)
+    if errors:
+        raise ValueError("bad expert labels: " + "; ".join(errors))
+    built = dict(built or {})
+    frozen = (read(expert_dir(corpus) / "manifest.json").get("audits") or {})
+    for aid in sorted({x["audit_id"] for x in items}):
+        full = next((k for k in frozen if k.startswith(aid[:8])), None)
+        if full and not any(k.startswith(aid[:8]) for k in built):
+            built[full] = rebuild_expert(full, work, corpus)
+    return expert_labels.run(items, built)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("collect", "replay", "score", "compare", "worker"))
+    parser.add_argument("command", choices=("collect", "replay", "score", "compare", "worker", "freeze-expert", "expert"))
     parser.add_argument("run", nargs="?")
     parser.add_argument("--live", action="store_true", help="Explicitly permit public-site native HTTP/browser requests; never paid providers")
     parser.add_argument("--site", help="Site ID (omit to audit all ten sequentially)")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--after", type=Path)
+    parser.add_argument("--audit", action="append", help="freeze-expert: a saved audit id (repeatable)")
     args = parser.parse_args(argv)
+    if args.command == "freeze-expert":
+        from maya_audit import expert_labels
+        ids = args.audit or sorted({x["audit_id"] for x in expert_labels.labels()})
+        full = [next((p.name for p in (WEB / "audits").iterdir() if p.name.startswith(i[:8])), i) for i in ids]
+        print(json.dumps(freeze_expert(full), indent=1))
+        return 0
+    if args.command == "expert":
+        work = Path(tempfile.mkdtemp(prefix="maya-expert-"))
+        rows = run_expert(work)
+        for r in rows:
+            mark = "ok " if r["ok"] else "RED" if r["ok"] is False else "n/a"
+            print(f"{mark} {r['id']:<28} {r['kind']:<14} {r['seen'][:70]}")
+        red = [r for r in rows if r["ok"] is False]
+        print(f"{len(rows)} labels: {len(rows) - len(red)} hold, {len(red)} red")
+        return int(bool(red) or any(r["ok"] is None for r in rows))
     # Refused before anything is read: the opt-in does not depend on the corpus, which a release leaves out.
     if args.command == "collect" and not args.live:
         parser.error("Collection makes public requests. Add --live explicitly. Tests must never use it.")

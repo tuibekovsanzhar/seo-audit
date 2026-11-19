@@ -415,6 +415,13 @@ def _str8(ev, obs):
                    "saved HTML does not establish table purpose or complete header associations")
 
 
+def _str15(ev, obs):
+    # DECISIONS 373: a collection with no product in its HTML that was not rendered: whether a script loads its products
+    # is unknown, so it is not evaluated (not "no products")
+    return _listed(ev, "collections_not_rendered", None, "collection pages with no product in their HTML",
+                   "the page was not opened in a browser, so whether its products load by script is unknown")
+
+
 def _rnd4(ev,obs):
     return _listed(ev,'iframe_names_unassessed',None,'iframe accessible names',
                    'saved evidence does not include a complete accessible-name assessment')
@@ -426,7 +433,7 @@ RULES: dict[str, Callable[[dict, list], list[Part]]] = {
     "IDX-10": _idx10,
     "RND-1": _rnd1, "RND-2": _rnd2, "RND-3": _rnd3, "RND-4": _rnd4, "RND-5": _rnd5,
     "STR-2": _str2, "STR-4": _str4, "STR-5": _str5, "STR-6": _str6, "STR-7": _str7, "STR-8": _str8, "STR-9": _str9,
-    "STR-10": _str10, "STR-11": _str11, "STR-12": _str12, "STR-16": _str16, "STR-17": _str17, "STR-20": _str20,
+    "STR-10": _str10, "STR-11": _str11, "STR-12": _str12, "STR-15": _str15, "STR-16": _str16, "STR-17": _str17, "STR-20": _str20,
     "TSEO-1": _tseo1,
     "PRF-1": _prf1,
     "ANS-1": _ans1, "ANS-2": _ans2,

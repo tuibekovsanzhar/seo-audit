@@ -129,15 +129,13 @@ def test_links_to_an_alias_are_counted_and_a_canonical_that_differs_only_in_perc
 
 
 def test_empty_and_near_empty_collections_are_found_and_a_hub_or_a_full_one_is_not(shop):
-    _, found = shop
-    f = found["str15.empty_collections"]
-    assert f.check_id == "STR-15" and f.confidence.value == "estimated" and "LG-102" in f.launch_gated
-    # DECISIONS 371: only a collection with no product at all; /collections/az (1 product) is no finding
-    assert _paths(f) == ["/collections/bos"]
-    [row] = f.evidence["pages"]
-    assert row["url"] == SHOP + "/collections/bos" and row["products_listed"] == 0 and row["empty"] is True
-    assert row["row"]["tr"].startswith("HTML'de 0 ürün") and f.evidence["near_empty"] == 0
-    assert f.notes == [quick_rules.EMPTY_COLLECTIONS_NOTE]
+    outcome, found = shop
+    # DECISIONS 371: only a collection with no product at all (/collections/az, 1 product, is no finding); DECISIONS
+    # 373: this site was not rendered, so /collections/bos is not evaluated: a coverage gap, not "no products"
+    assert "str15.empty_collections" not in found
+    check = next(c for c in outcome.checks if c.check_id == "STR-15")
+    assert check.evidence["collections_not_rendered"] == [SHOP + "/collections/bos"]
+    assert [p["part"] for p in check.coverage["not_assessed"]] == ["collection pages with no product in their HTML"]
 
 
 def test_an_address_with_a_combining_dot_is_reported_with_its_composed_form(shop):
@@ -311,9 +309,9 @@ def test_a_saved_report_gets_the_quick_checks_offline_with_product_fields_from_i
     assert json.dumps(report, sort_keys=True) == saved  # the source is never changed
     added = {f["rule_id"]: f for c in new["checks"] for f in c["findings"] if f.get("rule_id") in rules}
     # robots.txt's text is not in a saved report: SEO-031 is said to be not assessed, never "no finding".
-    assert set(added) == rules - {"acc3.robots_noindex"}
+    # DECISIONS 373: the empty collection was not rendered, so it is a coverage gap, not a finding
+    assert set(added) == rules - {"acc3.robots_noindex", "str15.empty_collections"}
     assert [u.removeprefix(SHOP) for u in affected[added["str3.product_no_identifier"]["id"]]] == ["/products/mavi-elbise"]
-    assert added["str15.empty_collections"]["launch_gated"] == ["LG-44", "LG-102"]
     assert "Read from a saved report" in added["str3.article_no_author"]["notes"][-1]
     missing = {row["rule"].split(" ")[0] for row in record["not_assessed_offline"]}
     assert {"SEO-031", "SEO-036"} <= missing and "SEO-097" not in missing

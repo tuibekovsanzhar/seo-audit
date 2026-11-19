@@ -445,8 +445,16 @@ def pages(summary: dict, crawl: Crawl) -> tuple[list[dict], dict]:
 # ---------------------------------------------------------------- sheets
 
 
+NO_DATA = "veri yok"  # DECISIONS 372: a value the data does not give, never 0
+
+
 def _pct(x):
     return round(x, 4) if isinstance(x, (int, float)) else ""
+
+
+def _or_none(x):
+    """A measured value, or "veri yok" when the data does not give it."""
+    return NO_DATA if x is None else x
 
 
 def _short(url: str) -> str:
@@ -497,12 +505,13 @@ def overview_rows(summary: dict) -> list[list]:
         rows += [[], ["Konu bazında marka anılma oranı (%) — marka ve lider rakip (topic-visibility-snapshots); büyük fark = öncelikli konu"],
                  ["Konu", "Marka (ilk hafta)", "Marka (son hafta)", "Lider rakip", "Rakip (ilk hafta)", "Rakip (son hafta)", "Fark (son)"]]
         for t in sorted(vis, key=lambda t: -(t["gap"] if t["gap"] is not None else -999)):
-            rows.append([t["topic"], t["brand_first"], t["brand_last"], t["leader"] or "—", t["leader_first"] if t["leader"] else "",
-                         t["leader_last"] if t["leader"] else "", t["gap"] if t["gap"] is not None else ""])
+            rows.append([t["topic"], _or_none(t["brand_first"]), _or_none(t["brand_last"]), t["leader"] or "—",
+                         _or_none(t["leader_first"]) if t["leader"] else "", _or_none(t["leader_last"]) if t["leader"] else "",
+                         t["gap"] if t["gap"] is not None else (NO_DATA if t["leader"] else "")])
     if ai.get("top_domains"):
-        total = len(ai.get("prompts") or {}) or ai.get("prompts_cited") or 0
+        total = len(ai.get("prompts") or {}) or ai.get("prompts_cited") or None  # DECISIONS 372: unknown is not 0
         rows += [[], ["AI cevaplarında en çok kaynak gösterilen diğer alan adları (citation = AI cevabındaki kaynak; backlink değildir)"],
-                 ["Alan adı", f"Kaynak gösterildiği prompt ({total} içinde)"]]
+                 ["Alan adı", f"Kaynak gösterildiği prompt ({total if total else NO_DATA} içinde)"]]
         rows += [[d, n] for d, n in ai["top_domains"][:15]]
     rows += [[], [CORRELATION]]
     return rows
@@ -557,8 +566,8 @@ def segment_sheets(summary: dict, crawl: Crawl) -> tuple[dict, dict, list[dict],
         first_row.setdefault(r["segment"], i)
         body.append([r["importance"], _link(r["url"]), SEGMENTS[r["segment"]][0], crawl.type_word(r["url"]), r["topic"] or "—",
                      "Evet" if r["gsc"] else "Hayır (ölçülmedi)", round(g["clicks"]) if g else "", round(g["impressions"]) if g else "",
-                     _pct(g.get("ctr")) if g else "", _ctr_words(low_ctr.get(r["url"]), g),
-                     g.get("position") if g else "", round(r["weekly"]) if r["weekly"] else "",
+                     (_pct(g["ctr"]) if g.get("ctr") is not None else NO_DATA) if g else "", _ctr_words(low_ctr.get(r["url"]), g),
+                     _or_none(g.get("position")) if g else "", round(r["weekly"]) if r["weekly"] else "",
                      r["n_prompts"], r["runs"]] + [r["by_provider"].get(p, 0) for p in providers] + [
                      r["topic_prompts"] or "", "; ".join(_short(d) for d in r["duplicates"]),
                      _status_words(r["status"], r["location"]), SEGMENT_ACTION[r["segment"]], r["segment"]])
@@ -621,8 +630,8 @@ def detail_sheet(summary: dict, crawl: Crawl, rows: list[dict]) -> dict:
                      " | ".join(m["h2"][:8]), _words(m), m["tables"], _blank(m["faq_questions"]), _blank(m["numbers"]),
                      "Evet" if m["dated"] else "Hayır", ", ".join(m["types"]), crawl.first(r["url"], m)]
         body.append([r["importance"], _link(r["url"]), SEGMENTS[r["segment"]][0], crawl.type_word(r["url"]), r["topic"] or "—",
-                     round(g["impressions"]) if g else "", round(g["clicks"]) if g else "", _pct(g.get("ctr")) if g else "",
-                     g.get("position") if g else "", r["n_prompts"], r["topic_prompts"] or ""] + cells + [
+                     round(g["impressions"]) if g else "", round(g["clicks"]) if g else "", (_pct(g["ctr"]) if g.get("ctr") is not None else NO_DATA) if g else "",
+                     _or_none(g.get("position")) if g else "", r["n_prompts"], r["topic_prompts"] or ""] + cells + [
                      competitors, "\n".join(findings(m)) if m and not m.get("error") else "", SEGMENT_ACTION[r["segment"]]])
     return {"name": SHEETS["detail"], "header": header, "rows": body,
             "widths": [10, 50, 30, 12, 20, 12, 10, 8, 8, 9, 12, 40, 10, 30, 9, 60, 14, 10, 10, 10, 10, 40, 60, 60, 50, 60]}

@@ -58,19 +58,27 @@ INTERACT_JS = """
 # DECISIONS 371: `accessible` says whether a screen reader reads the <h1> (not display:none, visibility:hidden or
 # aria-hidden on it or around it); `pattern` names a visually-hidden one ("visually-hidden": clipped, 1px or off-screen;
 # "transparent": opacity 0), which is read.
-H1_VISIBILITY_JS = """() => Array.from(document.querySelectorAll('h1')).slice(0, 20).map(h => {
+H1_VISIBILITY_JS = """() => {
+ const open = Array.from(document.querySelectorAll('[aria-modal="true"], dialog[open], [role="dialog"]')).find(d => {
+   const b = d.getBoundingClientRect(), s = getComputedStyle(d); return b.width > 0 && b.height > 0 && s.display !== 'none' && s.visibility !== 'hidden'; });
+ return Array.from(document.querySelectorAll('h1')).slice(0, 20).map(h => {
   const box = h.getBoundingClientRect();
   let shown = box.width > 0 && box.height > 0, accessible = true, pattern = null;
+  const behindDialog = !!open && !open.contains(h);  // DECISIONS 373: a pop-up open over the page
   for (let e = h; e; e = e.parentElement) {
     const s = getComputedStyle(e);
-    if (s.display === 'none' || s.visibility === 'hidden' || s.visibility === 'collapse' || e.getAttribute('aria-hidden') === 'true') { shown = false; accessible = false; }
+    if (s.display === 'none' || s.visibility === 'hidden' || s.visibility === 'collapse') { shown = false; accessible = false; }
+    if (e.getAttribute('aria-hidden') === 'true') {
+      if (behindDialog) { pattern = 'behind-dialog'; } else { shown = false; accessible = false; }
+    }
     if (Number(s.opacity) === 0) { shown = false; pattern = pattern || 'transparent'; }
   }
   const s = getComputedStyle(h);
   const clipped = (s.clip && s.clip !== 'auto') || (s.clipPath && s.clipPath !== 'none');
   if (accessible && (clipped || box.width <= 1 || box.height <= 1 || box.right < 0 || box.bottom < 0)) { shown = false; pattern = 'visually-hidden'; }
   return {text: (h.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 200), visible: shown, accessible: accessible, pattern: pattern};
-})"""
+ });
+}"""
 
 
 def chromium_safety_args() -> list[str]:

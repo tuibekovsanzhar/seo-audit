@@ -244,7 +244,8 @@ def test_an_empty_sheet_says_why_in_one_line(monkeypatch, lang, reason):
     monkeypatch.setattr(client_appendix, "appendix_rows", lambda selection, lists: [])
     out = {s["name"]: s for s in client_appendix.sheets(_selection(templates_reason=reason), lang)}
     W = client_appendix.WORDS[lang]
-    assert out[W["coverage"]]["rows"][0][0] == "Platform"  # DECISIONS 365: Kapsam always names the platform
+    assert out[W["coverage"]]["rows"][0][0] in ("Sürüm", "Version")  # DECISIONS 373: the engine, commit and build time
+    assert out[W["coverage"]]["rows"][1][0] == "Platform"  # DECISIONS 365: Kapsam always names the platform
     for name in (W["findings"], W["urls"], W["templates"], W["key_pages"]):
         assert out[name]["rows"] and len(out[name]["rows"]) == 1 and out[name]["header"] == [W["note"]], name
     assert out[W["templates"]]["rows"][0][0] == W["empty"]["templates"][reason]

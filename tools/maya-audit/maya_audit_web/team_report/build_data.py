@@ -306,6 +306,14 @@ class Wording:
         return (text, False) if self.lang == "en" else (None, False)
 
 
+# DECISIONS 373: the first line of a card whose rule the SEO team has not approved yet
+UNAPPROVED_LINE = {
+    "questioned": {"tr": "Onay bekliyor: bu kuralın sonucu SEO ekibinin onayını bekliyor; kontrol edin",
+                   "en": "Awaiting approval: the SEO team has not approved this rule's verdict yet; check it"},
+    "draft_sector": {"tr": "Onay bekliyor: taslak sektör kontrolü (SEO ekibinin onayını bekliyor); kontrol edin",
+                     "en": "Awaiting approval: a draft sector check (not yet approved by the SEO team); check it"},
+}
+
 # Not kartlarının sabit başlık ve doğrulama cümleleri (DECISIONS 270); adımlar siteye özgü kalır (model yazar).
 NOTE_TEXT = {
     "schema": {"tr": ("Sayfaların gösterdiği bilgiyi yapısal veriyle işaretleyin",
@@ -2098,6 +2106,9 @@ class Builder:
                 # DECISIONS 367: a "Teyit edin" group that took a card slot says so first ("Doğrulama bekliyor: …")
                 if (group or {}).get("confirm_card") and (group or {}).get("confirm_reason") in L["confirm_reasons"]:
                     sub = [L["confirm_reasons"][group["confirm_reason"]]] + list(sub or [])
+                # DECISIONS 373: a rule the SEO team has not approved says so (its card is "Kontrol edin")
+                if (group or {}).get("unapproved") in UNAPPROVED_LINE:
+                    sub = [UNAPPROVED_LINE[group["unapproved"]][self.lang if self.lang in ("tr", "en") else "en"]] + list(sub or [])
                 if merged and not found:
                     action = merged["title"].get(self.lang) or merged["title"]["en"]
                 if pre_steps:
@@ -2206,6 +2217,13 @@ class Builder:
         # says it under Maya's own limits, `client_page`)
         locales_line = self.locales_line()
         prov.append({"k": L["prov_engine"], "v": fmt(L["prov_engine_line"], version=version, audit_id=audit_id)})
+        # DECISIONS 373: the engine, commit and build time of this file (the same line as the Ek's "Kapsam")
+        try:
+            from maya_audit.version_stamp import line as version_line  # type: ignore
+            label, text = version_line(lang)
+            prov.append({"k": label + ":", "v": text})
+        except Exception:  # noqa: BLE001  an engine without the stamp: the file is still made
+            pass
         # DECISIONS 308: a saved audit re-evaluated with the current engine says so, with that engine and its date.
         from maya_audit_web.team_report.current import line_of
         reassessed = (line_of((gen.get("analysis") or {}).get("engine"), lang) if not gen.get("_reassess_failed")

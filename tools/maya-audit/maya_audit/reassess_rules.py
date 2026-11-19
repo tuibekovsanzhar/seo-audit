@@ -1372,6 +1372,35 @@ def _decisions_371(report: dict, affected: dict, changes: list[str]) -> None:
             check["status"] = "pass"
 
 
+def _decisions_373(report: dict, affected: dict, changes: list[str]) -> None:
+    """DECISIONS 373 (Efsa's review, İlginay's notes): on a saved report, "long pages have no subheadings" is kept only for
+    pages whose reading counted styled section titles (an older reading did not: it cannot tell "no titles" from "titles
+    styled as text", the Enpara note's case); a collection with no product in its HTML that was not rendered is a coverage
+    gap of STR-15, not "no products"."""
+    from .coverage import part
+    for check in report.get("checks") or []:
+        for f in list(check.get("findings") or []):
+            rule, ev = f.get("rule_id"), f.get("evidence") or {}
+            if rule == "str2.no_subheadings":
+                drop = {r.get("url") for r in ev.get("pages") or [] if isinstance(r, dict) and "styled_headings" not in r}
+                if drop:
+                    _shrink(check, f, drop, affected, changes,
+                            "the saved reading did not count styled section titles, so 'no subheadings' is not established",
+                            "DECISIONS 373")
+            elif rule == "str15.empty_collections":
+                drop = [r.get("url") for r in ev.get("pages") or [] if isinstance(r, dict) and r.get("rendered_products") is None]
+                if drop:
+                    check.setdefault("evidence", {})["collections_not_rendered"] = drop
+                    gap = part("collection pages with no product in their HTML",
+                               "the page was not opened in a browser, so whether its products load by script is unknown",
+                               len(drop), False)
+                    check.setdefault("coverage", {}).setdefault("not_assessed", []).append(gap)
+                    _shrink(check, f, set(drop), affected, changes,
+                            "not rendered: whether its products load by script is unknown (coverage)", "DECISIONS 373")
+        if not check.get("findings") and check.get("status") == "findings":
+            check["status"] = "pass"
+
+
 def _decisions_365(report: dict, changes: list[str]) -> None:
     """DECISIONS 365: the platform worked out again from the saved pages with the current signals (images, the generator
     tag, X-Powered-By, footer credits) and its confidence; a report whose pages show none keeps what it had (DECISIONS
@@ -1734,6 +1763,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_368(r, aff, changes, saved_texts)  # DECISIONS 368: İlginay's review of "Diğer bulgular"
     _decisions_370(r, aff, changes)  # DECISIONS 370: crawler findings only where robots.txt blocks
     _decisions_371(r, aff, changes)  # DECISIONS 371: İlginay's review of the Nature's Garden Ek
+    _decisions_373(r, aff, changes)  # DECISIONS 373: Efsa's review (no subheadings, unrendered collections)
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -1795,6 +1825,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_368(r, affected, cert, saved_texts)  # DECISIONS 368: İlginay's review of "Diğer bulgular"
         _decisions_370(r, affected, cert)  # DECISIONS 370: crawler findings only where robots.txt blocks
         _decisions_371(r, affected, cert)  # DECISIONS 371: İlginay's review of the Nature's Garden Ek
+        _decisions_373(r, affected, cert)  # DECISIONS 373: Efsa's review (no subheadings, unrendered collections)
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

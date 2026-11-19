@@ -17,7 +17,21 @@
    "verdict": "wrong",
    "assessment": "partly_right",
    "finding": "Each page's record names the element (div#blueLightOverlay) and its raw HTML line (1, 21, 39, 61, 440 or 478 by template), but the card and the rows did not say where, and the report keeps no count of <head>/</head>.",
-   "fix": "DECISIONS 344 (1): rows give the element (tag#id.class), its line, the <head>/</head> count (recorded from the next audit) and what comes after; the card says once that one template element closes the head on every page and lists its lines."
+   "fix": "DECISIONS 344 (1): rows give the element (tag#id.class), its line, the <head>/</head> count (recorded from the next audit) and what comes after; the card says once that one template element closes the head on every page and lists its lines.",
+   "labels": [
+    {
+     "id": "enp3-head-element",
+     "kind": "must_find",
+     "on": "card_text",
+     "rules": [
+      "tseo1.head_closed_lost",
+      "tseo1.head_closed_later"
+     ],
+     "field": "sub",
+     "regex": "<div#|Head içinde",
+     "why": "The note said the advice was wrong; the fix rewrote the advice from the evidence, so the label checks the corrected detail the card now gives."
+    }
+   ]
   },
   {
    "card": 2,
@@ -29,7 +43,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "21 sitemap addresses end at a 4xx.",
-   "fix": "Kept; DECISIONS 344 (4) adds the redirect chain and a 301 target or 410 per address."
+   "fix": "Kept; DECISIONS 344 (4) adds the redirect chain and a 301 target or 410 per address.",
+   "labels": [
+    {
+     "id": "enp3-sitemap-only",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "idx1.4xx.sitemap_only"
+     ]
+    }
+   ]
   },
   {
    "card": 3,
@@ -41,7 +65,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "39 blog pages with Product and AggregateRating.",
-   "fix": "Correct as written."
+   "fix": "Correct as written.",
+   "labels": [
+    {
+     "id": "enp3-product-on-article",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str3.product_on_article"
+     ]
+    }
+   ]
   },
   {
    "card": 4,
@@ -53,7 +87,17 @@
    "verdict": "incomplete",
    "assessment": "right",
    "finding": "The /sss sub-pages carry the parent's title, H1 and hreflang; the same structure shows in the H1 card (/odemeler/*, /transferler/*).",
-   "fix": "DECISIONS 344 (2): one site-wide card str1.sections_as_pages, type Kontrol edin, the recommendation a decision (real pages, or anchors/canonical to the parent); every URL with its parent in the Ek."
+   "fix": "DECISIONS 344 (2): one site-wide card str1.sections_as_pages, type Kontrol edin, the recommendation a decision (real pages, or anchors/canonical to the parent); every URL with its parent in the Ek.",
+   "labels": [
+    {
+     "id": "enp3-sections-as-pages",
+     "kind": "must_find",
+     "on": "card",
+     "rules": [
+      "str1.sections_as_pages"
+     ]
+    }
+   ]
   },
   {
    "card": 5,
@@ -65,7 +109,17 @@
    "verdict": "incomplete",
    "assessment": "right",
    "finding": "The 21 addresses are the sitemap card's; only Maya's made-up address is not in another card.",
-   "fix": "DECISIONS 344 (4): the sitemap card takes the chain, the server advice and a 301 target (or 410) per address; the 302 card keeps only Maya's made-up address."
+   "fix": "DECISIONS 344 (4): the sitemap card takes the chain, the server advice and a 301 target (or 410) per address; the 302 card keeps only Maya's made-up address.",
+   "labels": [
+    {
+     "id": "enp3-error-redirect",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "idx1.error_redirect"
+     ]
+    }
+   ]
   },
   {
    "card": 6,
@@ -77,7 +131,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "41 pages.",
-   "fix": "Correct as written."
+   "fix": "Correct as written.",
+   "labels": [
+    {
+     "id": "enp3-no-text",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str14.no_text"
+     ]
+    }
+   ]
   },
   {
    "card": 7,
@@ -89,7 +153,17 @@
    "verdict": "incomplete",
    "assessment": "mostly_right",
    "finding": "Of the 20 pages, 10 have their own title as H1 (/iletisim/*, /ucretler/*, /yatirim-hesabi/hisse-senedi ...); 10 carry the section's name.",
-   "fix": "DECISIONS 344 (2): merged into str1.sections_as_pages; a page whose H1 is its own title is left out unless its hreflang names the parent (22 pages: the 12 /sss sub-pages and 10)."
+   "fix": "DECISIONS 344 (2): merged into str1.sections_as_pages; a page whose H1 is its own title is left out unless its hreflang names the parent (22 pages: the 12 /sss sub-pages and 10).",
+   "labels": [
+    {
+     "id": "enp3-h1-parent-name",
+     "kind": "must_not_find",
+     "on": "card",
+     "rules": [
+      "str2.h1_parent_name"
+     ]
+    }
+   ]
   },
   {
    "card": 8,
@@ -101,7 +175,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "14 pages.",
-   "fix": "Correct as written."
+   "fix": "Correct as written.",
+   "labels": [
+    {
+     "id": "enp3-hreflang-return",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str9.no_return"
+     ]
+    }
+   ]
   },
   {
    "card": 9,
@@ -113,7 +197,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "9 pages.",
-   "fix": "Correct as written."
+   "fix": "Correct as written.",
+   "labels": [
+    {
+     "id": "enp3-big-images",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str7.over_100kb"
+     ]
+    }
+   ]
   },
   {
    "card": 10,
@@ -125,7 +219,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "6 pages.",
-   "fix": "Correct as written."
+   "fix": "Correct as written.",
+   "labels": [
+    {
+     "id": "enp3-no-h1",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str2.no_h1"
+     ]
+    }
+   ]
   },
   {
    "card": 11,
@@ -137,7 +241,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "3 pages.",
-   "fix": "Correct as written."
+   "fix": "Correct as written.",
+   "labels": [
+    {
+     "id": "enp3-shared-desc",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str16.shared"
+     ]
+    }
+   ]
   },
   {
    "card": 12,
@@ -149,7 +263,17 @@
    "verdict": "wrong",
    "assessment": "partly_right",
    "finding": "Maya asked /kredi-musteri/kredi-basvuru as a new visitor with no cookie and got 302 -> /kredi-musteri/ihtiyac-kredisi-hesaplama (200); an application step whose redirect a visitor in the flow may not see.",
-   "fix": "DECISIONS 344 (5): a temporary redirect of an application, sign-in or session step is a note (Bilgi), idx6.links_to_flow_redirect, with the chain and how to check it (DevTools > Network with Preserve log, httpstatus.io)."
+   "fix": "DECISIONS 344 (5): a temporary redirect of an application, sign-in or session step is a note (Bilgi), idx6.links_to_flow_redirect, with the chain and how to check it (DevTools > Network with Preserve log, httpstatus.io).",
+   "labels": [
+    {
+     "id": "enp3-links-redirect",
+     "kind": "must_not_find",
+     "on": "card",
+     "rules": [
+      "idx6.links_to_redirect"
+     ]
+    }
+   ]
   },
   {
    "card": 13,
@@ -161,7 +285,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "2 pages.",
-   "fix": "Correct as written."
+   "fix": "Correct as written.",
+   "labels": [
+    {
+     "id": "enp3-jsonld",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str3.unparsed"
+     ]
+    }
+   ]
   },
   {
    "card": 14,
@@ -173,7 +307,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "2 pages.",
-   "fix": "Correct as written."
+   "fix": "Correct as written.",
+   "labels": [
+    {
+     "id": "enp3-hreflang-status",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str9.status"
+     ]
+    }
+   ]
   },
   {
    "card": 15,
@@ -185,7 +329,17 @@
    "verdict": "wrong",
    "assessment": "partly_right",
    "finding": "The pair is /bireysel-basvuru/kimlik-bilgileriniz and its ?sw=1 copy: an application step, where a 301 would break the flow.",
-   "fix": "DECISIONS 344 (3): a second address of an application or form step (başvuru, -kk, ?sw=, a page with a form) is idx8.form_step_copies: canonical to the main step or noindex, never a 301; the 301 stays for /anasayfa, default.aspx, index.html."
+   "fix": "DECISIONS 344 (3): a second address of an application or form step (başvuru, -kk, ?sw=, a page with a form) is idx8.form_step_copies: canonical to the main step or noindex, never a 301; the 301 stays for /anasayfa, default.aspx, index.html.",
+   "labels": [
+    {
+     "id": "enp3-form-step-301",
+     "kind": "must_not_find",
+     "on": "card",
+     "rules": [
+      "idx8.self_canonical_copies"
+     ]
+    }
+   ]
   }
  ],
  "summary": {
@@ -237,5 +391,6 @@
    "verdict": "wrong",
    "fix": "DECISIONS 344 (3): a second address of an application or form step (başvuru, -kk, ?sw=, a page with a form) is idx8.form_step_copies: canonical to the main step or noindex, never a 301; the 301 stays for /anasayfa, default.aspx, index.html."
   }
- ]
+ ],
+ "audit_id": "fee70191"
 }

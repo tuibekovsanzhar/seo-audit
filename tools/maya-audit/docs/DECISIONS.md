@@ -5775,3 +5775,63 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      başlığından sonra geliyor; alt bilgide (footer)'.
      Saved reports: `reassess_rules._decisions_371` (hidden <h1>, collections, utility pages); the headings through 368's
      step with the new rule. Tests: `tests/test_ng_review_371.py` (7); `test_site_examples_369` updated.
+
+372. **Bugs from Efsa's revision-compliance review, each reproduced by a test first (Efsa, 2026-11-19; the details file
+     with F01-F10 was not on this machine, so the bugs were found from the review text and by searching for the same
+     kinds).** Global for every audit. Missing values are "veri yok", never 0.
+     *F01*: a `<lastmod>` that is not a date ("16/11/2026", "{lastmod}", "2026-13-45") left None among the parsed dates;
+     "All N values are identical" then called `.isoformat()` on None and the future-date test compared None with a
+     date: the sitemap check stopped. Now such values are counted and sampled (`lastmod_unparsed`) and never compared.
+     *Missing as 0*: Search Console page scores without a CTR or position wrote 0; a page's average position counted
+     rows without a position as position 0 (halving it); topic-visibility rates missing from the file were 0 and a gap
+     was computed from them; the "top domains" heading said "(0 içinde)" when the number of prompts was unknown. Now a
+     missing value is None (`maya_data._value`) and the sheets write "veri yok"; the position is averaged only over the
+     rows that give one. *Brand matching*: a brand name shorter than 4 letters ("ING") matched the start of other
+     words ("ingilizce"); it now matches only as a whole word (a longer name keeps Turkish suffixes: "enparalı").
+     *Open, waiting for the details file*: URL merging without evidence (`maya_data.page_url` joins http/https,
+     www and a trailing slash into one key) and the AI citation denominator (brand share per citation row, not per
+     answer) were found but not changed: their intended form is in Efsa's proposals file.
+     Tests: `tests/test_bugs_372.py` (8), each failing on 9a922d5 (two crashes, four zeros/values).
+
+373. **Efsa's revision-compliance review: the expert lock and what it needs (Efsa, 2026-11-19; storage outside the
+     repository, the label shapes, the "few 429s" threshold and the wording are agent defaults; İlginay's NG notes
+     are hers).** Global for every audit; Enpara, MMI and Nature's Garden are only where the notes were made.
+     *(1) The expert lock* (`maya_audit/expert_labels.py`, `scripts/real_sites_benchmark.py freeze-expert|expert`,
+     `tests/test_expert_lock.py`): every note in `docs/expert-reviews/` carries labels: "wrong" -> `must_not_find`,
+     "correct" and "show this detail" -> `must_find` (a "wrong" note fixed by rewriting the advice checks the
+     corrected detail and says why; a note the same expert overturned later is kept, `superseded_by`, not checked).
+     A label tests a finding, a card, a card's text or an Ek row. The noted audits (Enpara 2e5829fb and fee70191, MMI
+     536b4b64, Nature's Garden 342a0b14) are frozen from the web app's saved pages into MAYA_AUDIT_BENCHMARK_DIR
+     (outside the repository, with each report's digest), rebuilt with the current engine and every label checked.
+     The test fails when the frozen set is missing unless the run says so on purpose (MAYA_AUDIT_BENCHMARK_OPTIONAL=1);
+     CI downloads the set from the secret MAYA_AUDIT_BENCHMARK_URL and, until it is set, prints a warning that the
+     lock did not run. 83 labels from 80 reviewed cards. Proof: with DECISIONS 368's English question words reverted
+     in a scratch copy, `expert` printed "79 labels: 78 hold, 1 red" (mmi-R368-2-heading-language) and exited 1.
+     *(2) Error families* (`tests/test_error_families_373.py`): the brand name (product name, section name, language
+     version's title, sub-brand; a real second name still reported), link lists (broken, redirecting, text-less,
+     parameterised each name their link; a clean page has none), the hidden <h1> in a real headless browser
+     (visually hidden, responsive duplicate, behind an open pop-up, transparent are read; display:none is not), the
+     heading language (short English headings on a Turkish page are not foreign; a real one still is). Found and
+     fixed on the way: an open pop-up marks the rest of the page aria-hidden, which made its <h1> "hidden"
+     (`render.H1_VISIBILITY_JS` ignores aria-hidden behind an open dialog).
+     *(3) The fix log* (`fix_log.status_of`): three states. "Düzeltildi" only when every linked test passed, every
+     check on the rebuilt audit held on evidence (an empty sheet, no matching card or row, a check not assessed is
+     "no evidence", never a pass: F10) and the item's labels hold; "Hâlâ var" when one failed; "Doğrulanmadı"
+     otherwise (no test, no evidence, a new crawl needed, labels not run). Every item has a test; the note items name
+     their labels. An Ek's "Düzeltme kaydı" says "bu denetimde doğrulanmadı (genel durum: …)" for an item measured on
+     another brand. Nature's Garden J5-J8 logged.
+     *(4) Note import* (`tools/import_notes.py`): reads the reviewer's column of a reviewed Ek's Özet ("Doğru" ->
+     correct, "Hatalı/Yanlış" -> wrong, "hangi/nerede/eksik/anlaşılmıyor…" -> incomplete) with each card's rules from
+     the Ek's own rows; a note the words do not settle is asked (MMI J13 "DOĞRU AMA …": the owner said incomplete).
+     MMI imported; Nature's Garden written from the review texts (its noted file is not on this machine).
+     *(5) Version stamp* (`maya_audit/version_stamp.py`): the first row of every Ek's "Kapsam" and a PDF provenance
+     line: "Maya Audit {version} · commit {commit} · oluşturuldu {UTC}".
+     *(7) Unapproved rules* (`maya_audit/rule_approval.json`, `rule_approval.py`): a questioned rule (idx5.stamped,
+     NG J6) and the checks of a draft sector profile (airline, restaurant: the 33 "taslak" checks) on an audit of that
+     profile are "Kontrol edin", the card opening with "Onay bekliyor: …", until moved to "approved".
+     *(8) İlginay's NG follow-ups*: a text-less link names its element and target; a collection not rendered and with
+     no product in its HTML is a coverage gap in "Kapsam" (STR-15 coverage), not "no products"; tables in plain
+     Turkish with the table, its size and first row; at most 5 429s to Maya's own crawler, under half its requests,
+     are Maya's own limit ("Kapsam"), not a client finding. On a saved report, "long pages have no subheadings" is kept
+     only where the reading counted styled titles (the older Enpara audit did not: İlginay's J10 note).
+     Tests: `tests/test_expert_lock.py` (4), `tests/test_error_families_373.py` (18), `tests/test_review_compliance_373.py` (10).

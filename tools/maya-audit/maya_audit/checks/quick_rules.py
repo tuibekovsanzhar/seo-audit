@@ -252,7 +252,8 @@ def rendered_products(entry: dict | None, types: dict) -> int | None:
     return sum(1 for t in targets if t and (types.get(t) == "product" or _is_product_in_list(t) or "/products/" in t))
 
 
-def empty_collections(read, groups: dict, indexable: set[str], key_urls=frozenset(), rendered: dict | None = None) -> list[Finding]:
+def empty_collections(read, groups: dict, indexable: set[str], key_urls=frozenset(), rendered: dict | None = None,
+                      not_rendered: list | None = None) -> list[Finding]:
     """DECISIONS 371: an indexable collection that lists no product at all: none in its HTML and none in the rendered
     page when it was rendered (products a script loads are products). A low count is not "no products"."""
     types = {u: g.get("page_type") for u, g in groups.items()}
@@ -271,6 +272,12 @@ def empty_collections(read, groups: dict, indexable: set[str], key_urls=frozense
             continue
         after_js = rendered_products((rendered or {}).get(p.url), types)
         if after_js:
+            continue
+        if after_js is None:
+            # DECISIONS 373 (İlginay, NG): not rendered, so whether its products load by script is unknown: said in
+            # the coverage ("Kapsam") as not evaluated, never as a client finding
+            if not_rendered is not None:
+                not_rendered.append(p.url)
             continue
         # A parent category that lists its subcategories (2+ in its content) is a hub, not an empty list.
         own = _path(p.url)
@@ -699,7 +706,11 @@ def findings(result, *, key_urls=frozenset(), check_ids=None, saved: bool = Fals
     if "STR-15" in wanted:
         render = getattr(result, "render", None)
         shown = (render.get("pages") if isinstance(render, dict) else getattr(render, "pages", None)) or {}
-        out["STR-15"] += empty_collections(read, groups, indexable, key_urls, shown)
+        hidden: list[str] = []
+        out["STR-15"] += empty_collections(read, groups, indexable, key_urls, shown, hidden)
+        if hidden:
+            unassessed.append({"rule": "str15.empty_collections", "collections_not_rendered": hidden,
+                               "why": "collection pages with no product in their HTML were not rendered"})
     if "TSEO-1" in wanted:
         out["TSEO-1"] += decomposed_addresses(known, read_urls, set(sitemap), key_urls)
         out["TSEO-1"] += unclear_slugs(read, groups, indexable, key_urls)
@@ -762,7 +773,10 @@ def extend(checks, result, cfg) -> None:
         key_urls = set(key_page_urls(result, cfg))
     except Exception:  # a result without an origin (a made-up frame in a test)
         key_urls = set()
-    made, _ = findings(result, key_urls=key_urls, check_ids=set(by_id))
+    made, gaps = findings(result, key_urls=key_urls, check_ids=set(by_id))
+    for gap in gaps:  # DECISIONS 373: collections not rendered are a coverage gap of STR-15 ("Kapsam")
+        if gap.get("collections_not_rendered") and "STR-15" in by_id:
+            by_id["STR-15"].evidence["collections_not_rendered"] = gap["collections_not_rendered"]
     for check_id, new in made.items():
         check = by_id.get(check_id)
         if check is None or not new:

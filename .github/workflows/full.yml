@@ -47,6 +47,20 @@ jobs:
         run: |
           python -m compileall -q maya_audit maya_audit_web maya_audit_web_lite.py tests
           python -m ruff check --select E9,F821,F841 maya_audit maya_audit_web maya_audit_web_lite.py
+      # DECISIONS 373: the expert lock. The frozen noted audits are client data, kept out of the repository; with the
+      # secret MAYA_AUDIT_BENCHMARK_URL (a private archive of `scripts/real_sites_benchmark.py freeze-expert`'s folder)
+      # they are downloaded and every expert label must hold. Without it the run says so, on purpose, never silently.
+      - name: Expert lock data
+        env:
+          BENCHMARK_URL: ${{ secrets.MAYA_AUDIT_BENCHMARK_URL }}
+        run: |
+          if [ -n "$BENCHMARK_URL" ]; then
+            mkdir -p "$RUNNER_TEMP/benchmark" && curl -fsSL "$BENCHMARK_URL" | tar -xz -C "$RUNNER_TEMP/benchmark"
+            echo "MAYA_AUDIT_BENCHMARK_DIR=$RUNNER_TEMP/benchmark" >> "$GITHUB_ENV"
+          else
+            echo "::warning title=Expert lock not run::the frozen noted audits are not wired to CI (secret MAYA_AUDIT_BENCHMARK_URL); the expert labels were not checked on this run"
+            echo "MAYA_AUDIT_BENCHMARK_OPTIONAL=1" >> "$GITHUB_ENV"
+          fi
       - name: Full test suite
         run: python -m pytest -q
       # Build the wheel, install it outside the checkout, resolve a rule and an action.

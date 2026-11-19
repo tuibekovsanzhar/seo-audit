@@ -3905,10 +3905,10 @@
    "summary": "Boş tablolar"
   },
   "str8.headers": {
-   "title": "Veri tablolarının başlık hücrelerini işaretleyin",
-   "finding": "Veri tablolarında başlık hücresi ilişkisi yok",
-   "explanation": "Veri tablolarının başlık hücrelerini <th> olarak işaretleyin, gerekirse scope ekleyin.",
-   "why": "Başlık hücreleri her değerin hangi satıra ve sütuna ait olduğunu söyler. Bunlar olmadan motorlar ve ekran okuyucular tabloyu bir sayı dizisi olarak okur.",
+   "title": "Tablolardaki başlık satırını <th> ile işaretleyin",
+   "finding": "Tablolarda başlık hücresi (<th>) yok",
+   "explanation": "Tablonun başlık satırı ya da sütunu düz hücre (<td>); hangi değerin hangi başlığa ait olduğu kodda yazmıyor. Başlık hücrelerini <th> yapın.",
+   "why": "Başlık hücresi olmayınca motorlar ve ekran okuyucular tabloyu bir sayı listesi gibi okur; bir değerin hangi satıra ait olduğunu bilemez.",
    "steps": [
     "Tablonun başlık hücrelerini <th> yapın",
     "Gerekirse scope ekleyin"

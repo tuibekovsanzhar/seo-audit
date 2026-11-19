@@ -1361,8 +1361,13 @@ def idx5_sitemap(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     findings += _draft_pages(result, set(key_page_urls(result, cfg)))
 
     lastmods = {u: result.sitemap_lastmods.get(u) for u in listed}
-    parsed = {u: _parse_lastmod(v) for u, v in lastmods.items() if v}
-    evidence.update(lastmod_present=len(parsed), lastmod_missing=sum(1 for v in lastmods.values() if not v))
+    # DECISIONS 372 (F01): a <lastmod> that is not a date is counted and listed, never compared: it once left None among
+    # the dates and the check stopped ("All N values are identical (None)", a None compared with now)
+    read = {u: (v, _parse_lastmod(v) if isinstance(v, str) else None) for u, v in lastmods.items() if v}
+    parsed = {u: when for u, (_, when) in read.items() if when is not None}
+    unparsed = {u: v for u, (v, when) in read.items() if when is None}
+    evidence.update(lastmod_present=len(parsed), lastmod_missing=sum(1 for v in lastmods.values() if not v),
+                    lastmod_unparsed=len(unparsed), lastmod_unparsed_sample=dict(list(unparsed.items())[:20]))
     if len(parsed) >= 2 and len({v for v in parsed.values()}) == 1:
         findings.append(Finding(
             "IDX-5", f"All {len(parsed)} sitemap <lastmod> values are identical ({next(iter(parsed.values())).isoformat()})",

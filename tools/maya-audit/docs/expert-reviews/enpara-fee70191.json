@@ -17,7 +17,21 @@
    "verdict": "wrong",
    "assessment": "right",
    "finding": "Her file predates fffddad: one High card for 90 pages. The evidence: 2 pages carry robots noindex only after div#blueLightOverlay (High); on 88 canonical, hreflang and title stay in the head (Medium).",
-   "fix": "Already fixed by DECISIONS 339 (fffddad): \"2 sayfa (+88 sayfa: Orta)\", why and steps from the evidence."
+   "fix": "Already fixed by DECISIONS 339 (fffddad): \"2 sayfa (+88 sayfa: Orta)\", why and steps from the evidence.",
+   "labels": [
+    {
+     "id": "enp2-J2-head-element",
+     "kind": "must_find",
+     "on": "card_text",
+     "rules": [
+      "tseo1.head_closed_lost",
+      "tseo1.head_closed_later"
+     ],
+     "field": "sub",
+     "regex": "Head içinde",
+     "why": "The note said the advice was wrong; the fix rewrote the advice from the evidence, so the label checks the corrected detail the card now gives."
+    }
+   ]
   },
   {
    "card": 2,
@@ -29,7 +43,22 @@
    "verdict": "wrong",
    "assessment": "not_supported",
    "finding": "All 21 are in crawl.sitemap_urls and each page record says discovered_via sitemap: 12 from /sitemap.xml, 9 from /sirketim/sitemap.xml, read at 12:07:49-12:07:52 UTC on 11 Nov. All https://www., none with a trailing slash. 10 hold Turkish letters the file wrote percent-encoded (Maya keeps letters as written), but the Ek showed them decoded, so Cmd+F in the file finds nothing. The raw <loc> text was not saved; today's sitemap cannot be re-checked offline.",
-   "fix": "New audits keep each <loc> as written, its line and when the file was read; the Ek shows them (\"Site haritasındaki <loc> metni\", \"<loc> satırı\", \"Site haritası okuma zamanı\"); a saved audit shows the address as Maya kept it (percent-encoded) and the sitemap step's start, marked approximate."
+   "fix": "New audits keep each <loc> as written, its line and when the file was read; the Ek shows them (\"Site haritasındaki <loc> metni\", \"<loc> satırı\", \"Site haritası okuma zamanı\"); a saved audit shows the address as Maya kept it (percent-encoded) and the sitemap step's start, marked approximate.",
+   "labels": [
+    {
+     "id": "enp2-J3-sitemap-loc",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Bağlantı yerleri",
+     "rules": [
+      "idx1.4xx.sitemap_only"
+     ],
+     "column": "Site haritasındaki <loc> metni",
+     "regex": "^https?://",
+     "rule_column": "Kural",
+     "why": "The note said the advice was wrong; the fix rewrote the advice from the evidence, so the label checks the corrected detail the card now gives."
+    }
+   ]
   },
   {
    "card": 3,
@@ -41,7 +70,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp2-no-text",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str14.no_text"
+     ]
+    }
+   ]
   },
   {
    "card": 4,
@@ -53,7 +92,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp2-hreflang-return",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str9.no_return"
+     ]
+    }
+   ]
   },
   {
    "card": 5,
@@ -65,7 +114,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp2-big-images",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str7.over_100kb"
+     ]
+    }
+   ]
   },
   {
    "card": 6,
@@ -77,7 +136,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp2-no-h1",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str2.no_h1"
+     ]
+    }
+   ]
   },
   {
    "card": 7,
@@ -89,7 +158,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp2-shared-desc",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str16.shared"
+     ]
+    }
+   ]
   },
   {
    "card": 8,
@@ -101,7 +180,17 @@
    "verdict": "wording",
    "assessment": "right",
    "finding": "The finding is right: \"Hesap aç\" in the menu of 3 pages links /kredi-musteri/kredi-basvuru, which 302s to /kredi-musteri/ihtiyac-kredisi-hesaplama (200). The Ek put the old address under \"Bozuk adres\" and the measured value said only \"A → B\"; on /kredi-musteri/ihtiyac-kredisi-hesaplama itself the redirect ends on the linking page.",
-   "fix": "Links to an address that redirects to a working page have their own sheet \"Yönlendiren bağlantılar\": Bağlantının bulunduğu sayfa, Bağlantı verilen (eski) adres, Yönlendirme, Doğrudan verilmesi gereken son adres, and a note when it ends on the linking page; the per-page value says which link goes where."
+   "fix": "Links to an address that redirects to a working page have their own sheet \"Yönlendiren bağlantılar\": Bağlantının bulunduğu sayfa, Bağlantı verilen (eski) adres, Yönlendirme, Doğrudan verilmesi gereken son adres, and a note when it ends on the linking page; the per-page value says which link goes where.",
+   "labels": [
+    {
+     "id": "enp2-J9-links-redirect-card",
+     "kind": "must_not_find",
+     "on": "card",
+     "rules": [
+      "idx6.links_to_redirect"
+     ]
+    }
+   ]
   },
   {
    "card": 9,
@@ -113,7 +202,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp2-jsonld",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str3.unparsed"
+     ]
+    }
+   ]
   },
   {
    "card": 10,
@@ -125,7 +224,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp2-hreflang-status",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str9.status"
+     ]
+    }
+   ]
   },
   {
    "card": 11,
@@ -137,7 +246,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp2-styled-subheadings",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str2.styled_subheadings"
+     ]
+    }
+   ]
   },
   {
    "card": 12,
@@ -149,7 +268,17 @@
    "verdict": "wrong",
    "assessment": "right",
    "finding": "Her file predates 1db0ddf. The two other names are page titles copied into structured data: \"Homepage\" is /en/homepage's <title> (Organization name), \"Bankanın güzeli | Enpara\" the homepage's <title> (Organization and WebSite name).",
-   "fix": "1db0ddf moved it under \"Teyit edin\"; DECISIONS 340: an Organization/WebSite name equal to its page's own <title> (and given by no other source) is not a brand name. enpara: one name left, no brand finding."
+   "fix": "1db0ddf moved it under \"Teyit edin\"; DECISIONS 340: an Organization/WebSite name equal to its page's own <title> (and given by no other source) is not a brand name. enpara: one name left, no brand finding.",
+   "labels": [
+    {
+     "id": "enp2-J13-brand-title",
+     "kind": "must_not_find",
+     "on": "card",
+     "rules": [
+      "str5.names"
+     ]
+    }
+   ]
   },
   {
    "card": 13,
@@ -161,7 +290,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp2-table-headers",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str8.headers"
+     ]
+    }
+   ]
   },
   {
    "card": 14,
@@ -173,7 +312,17 @@
    "verdict": "wrong",
    "assessment": "right",
    "finding": "Re-checked the 16 pages from Maya's own records: no question opens and closes its answer (no accordion) and none sits under a heading naming an FAQ; they are paragraphs under ordinary section titles (\"Ödeme İste\", \"ATM'ye Transfer\"), question-shaped article headings, and on /bilgi-bankasi 51 article links. The rule needed punctuation alone.",
-   "fix": "FAQPage only for an accordion (<summary>, <dt>, aria-expanded, a collapse class) or a run under an FAQ heading (\"Sıkça Sorulan Sorular\", \"SSS\", \"FAQ\" ...); a saved audit keeps only pages with an FAQ heading. enpara: 16 → 0, no card."
+   "fix": "FAQPage only for an accordion (<summary>, <dt>, aria-expanded, a collapse class) or a run under an FAQ heading (\"Sıkça Sorulan Sorular\", \"SSS\", \"FAQ\" ...); a saved audit keeps only pages with an FAQ heading. enpara: 16 → 0, no card.",
+   "labels": [
+    {
+     "id": "enp2-J15-faq",
+     "kind": "must_not_find",
+     "on": "card",
+     "rules": [
+      "str3.qa_no_faqpage"
+     ]
+    }
+   ]
   },
   {
    "card": 15,
@@ -185,7 +334,17 @@
    "verdict": "incomplete",
    "assessment": "right",
    "finding": "The card named each llms.txt link and where it redirects but not what to do; /sikca-sorulan-sorular ends on /404?aspxerrorpath=... (an error page: the same path answered 404 in the crawl), /enparacom-nedir on /hakkimizda (not measured).",
-   "fix": "Each redirecting item says what to do: \"bağlantıyı şu adrese verin: …\" when the end answered, \"hata sayfasına gidiyor (404): bağlantıyı kaldırın ya da doğru sayfanın adresini yazın\" for an error page, and that the answer was not measured when it was not."
+   "fix": "Each redirecting item says what to do: \"bağlantıyı şu adrese verin: …\" when the end answered, \"hata sayfasına gidiyor (404): bağlantıyı kaldırın ya da doğru sayfanın adresini yazın\" for an error page, and that the answer was not measured when it was not.",
+   "labels": [
+    {
+     "id": "enp2-J16-llms-targets",
+     "kind": "must_find",
+     "on": "card_text",
+     "title": "Küçük bağlantı",
+     "field": "sub",
+     "regex": "→"
+    }
+   ]
   }
  ],
  "summary": {
@@ -200,5 +359,6 @@
   "str5.names",
   "tseo1.head_closed_later",
   "tseo1.head_closed_lost"
- ]
+ ],
+ "audit_id": "fee70191"
 }

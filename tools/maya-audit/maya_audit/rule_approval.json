@@ -1,0 +1,7 @@
+{
+ "_about": "DECISIONS 373 (Efsa, A8): rules not yet approved by the SEO team. A finding of a questioned rule, or of a draft sector check on an audit of that sector's profile, is shown as \"Kontrol edin\" (warning), never as a definite \"Sorun\", until the team approves it here (move it to \"approved\" with who and when). Severity and order do not change.",
+ "questioned": {
+  "idx5.stamped": {"by": "İlginay", "on": "2026-11-16", "note": "Nature's Garden J6: how is the lastmod error detected? The verdict (the file's generation time, not real edits) is an inference from every address sharing one timestamp."}
+ },
+ "approved": {}
+}

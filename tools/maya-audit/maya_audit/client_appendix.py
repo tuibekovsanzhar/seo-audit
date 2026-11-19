@@ -752,6 +752,8 @@ def technical_sheets(selection: dict, lang: str = "tr", lists: dict | None = Non
     cov = [[W["kind"].get(row["kind"], row["kind"]), coverage_text(row, lang, label, line, title),
             ", ".join(row.get("checks") or [])] for row in selection["coverage"]["lines"]]
     cov.insert(0, [PLATFORM_WORDS[lang]["label"], platform_line(selection, lang), ""])  # DECISIONS 365
+    from .version_stamp import line as version_line
+    cov.insert(0, [*version_line(lang), ""])  # DECISIONS 373: the engine, commit and build time of this file
     out = []
     for name, header, body, widths in ((W["findings"], W["cols"], rows, [16, 8, 22, 11, 13, 11, 16, 9, 10, 16, 6, 16, 26, 70, 70, 9, 9, 10, 10, 20, 60]),
                                        (W["urls"], W["url_cols"], urls, [16, 16, 11, 90]),
@@ -859,7 +861,10 @@ def build(selection: dict, lang: str = "tr", lists: dict | None = None, text_che
     if changed:
         made.append(changed)
     from .fix_log import ek_sheet  # DECISIONS 363: the SEO team's notes and how each was fixed, newest first
-    log = ek_sheet(lang) if lang == "tr" else None  # its texts are Turkish, as the team's notes are
+    # DECISIONS 373: an item measured on another brand's audit says "bu denetimde doğrulanmadı" here
+    start = ((report or {}).get("crawl") or {}).get("start_url") or ""
+    host = urlsplit(start).hostname if start else None
+    log = ek_sheet(lang, host) if lang == "tr" else None  # its texts are Turkish, as the team's notes are
     if log:
         made.append(log)
     if text_check is not None:

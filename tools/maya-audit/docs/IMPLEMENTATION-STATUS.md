@@ -2802,3 +2802,33 @@ links and shared heading jumps say what is wrong; the small-fixes card names the
 | `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 97 items: Düzeltildi 94, Yeni tarama gerekli 3 |
 | `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+Pushed `9a922d5` after the full suite (`3603 passed, 4 skipped, 1 warning in 979.59s (0:16:19)`); CI 44599690850:
+success. `f37e100`'s CI 44589238029: success.
+
+## Efsa's revision-compliance review: expert lock, error families, fix log, bugs (DECISIONS 372, 373, 2026-11-19)
+
+VERIFIED locally; not pushed. The expert lock (83 active labels from 80 reviewed cards, frozen noted audits outside the
+repository), error-family tests, the fix log's three states with a test linked to every item, note import, version
+stamp, unapproved rules as "Kontrol edin", İlginay's NG follow-ups, and bugs F01 / missing-as-0 / short brand names.
+CI wiring of the frozen set waits for the secret MAYA_AUDIT_BENCHMARK_URL (until then CI warns that the lock did not run).
+
+| Saved audit (rebuilt from copies, no request) | Cards | Diğer bulgular | Now "Kontrol edin" | Other | Text check |
+|---|---|---|---|---|---|
+| MMI 536b4b64 | 14 | 8 -> 8 | — | — | PASS |
+| Carpex 1fd871f0 | 15 | 14 -> 14 | lastmod card (questioned rule) | — | PASS |
+| Enpara fee70191 | 15 | 14 -> 14 | — | table row renamed | PASS |
+| Atasun f06a2129 | 15 | 11 -> 11 | lastmod card | — | PASS |
+| İş Bankası 1b81bee4 | 15 | 21 -> 21 | — | table row renamed | PASS |
+| Ticimax c77ebf6d | 15 | 17 -> 17 | lastmod card | — | PASS |
+| Nature's Garden 342a0b14 | 6 | 12 -> 10 | lastmod card | unrendered collection and 1 of 7 429s to "Kapsam" | PASS |
+
+| Command | Result |
+|---|---|
+| `scripts/real_sites_benchmark.py expert` (frozen 2e5829fb, fee70191, 536b4b64, 342a0b14) | all labels hold |
+| Proof: DECISIONS 368's English question words reverted in a scratch copy | `79 labels: 78 hold, 1 red` (mmi-R368-2-heading-language), exit 1 |
+| new tests | test_bugs_372 8, test_expert_lock 4, test_error_families_373 18, test_review_compliance_373 10 |
+| fast suite (with the frozen set) | `3509 passed, 4 skipped, 135 deselected, 1 warning in 577.64s (0:09:37)` |
+| `tools/fix_log.py --work <tmp> --write-status` | 112 items: Düzeltildi 109, Hâlâ var 0, Doğrulanmadı 3 (new crawl needed); 84 labels checked, 0 red |
+| `ruff --select E9,F821,F841` | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

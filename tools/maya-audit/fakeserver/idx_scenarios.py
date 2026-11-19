@@ -142,6 +142,31 @@ def _sitemap_future() -> Site:
     })
 
 
+def _sitemap_bad_lastmod() -> Site:
+    """DECISIONS 372 (F01): <lastmod> values that are not dates (a typo, a day/month form, a placeholder) beside real
+    ones, and a future date: the check counts the bad ones and still reports the future one."""
+    entries = [("/", "2026-08-01"), ("/a", "16/11/2026"), ("/b", "2099-01-01"), ("/c", "{lastmod}"), ("/d", "2026-13-45")]
+    body = "".join(f"<url><loc>{{base}}{u}</loc><lastmod>{d}</lastmod></url>" for u, d in entries)
+    return Site({
+        "/robots.txt": robots("User-agent: *\nAllow: /\n"),
+        "/sitemap.xml": Response(body=f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>',
+                                 content_type="application/xml"),
+        "/": page("Home", "/a", "/b", "/c", "/d"), "/a": page("A"), "/b": page("B"), "/c": page("C"), "/d": page("D"),
+    })
+
+
+def _sitemap_only_bad_lastmod() -> Site:
+    """Every <lastmod> is the same malformed value: no "identical" finding about a value that is not a date."""
+    entries = [("/", "not-a-date"), ("/a", "not-a-date"), ("/b", "not-a-date")]
+    body = "".join(f"<url><loc>{{base}}{u}</loc><lastmod>{d}</lastmod></url>" for u, d in entries)
+    return Site({
+        "/robots.txt": robots("User-agent: *\nAllow: /\n"),
+        "/sitemap.xml": Response(body=f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>',
+                                 content_type="application/xml"),
+        "/": page("Home", "/a", "/b"), "/a": page("A"), "/b": page("B"),
+    })
+
+
 def _sitemap_stamped_docs() -> Site:
     """A sitemap index of two documents: one gives all six URLs the same timestamp to the second (the file's
     generation time, as on a real client), the other gives each URL its own date."""
@@ -288,6 +313,9 @@ IDX_SCENARIOS: dict[str, Scenario] = {s.name: s for s in [
     Scenario("idx_sitemap_health", "Sitemap with 3 of 11 URLs broken or noindex and identical lastmod values.",
              _sitemap_health, FAST_IDX),
     Scenario("idx_sitemap_future", "One sitemap lastmod in 2099.", _sitemap_future, FAST_IDX),
+    Scenario("idx_sitemap_bad_lastmod", "Malformed <lastmod> values beside real and future ones (F01).", _sitemap_bad_lastmod,
+             FAST_IDX),
+    Scenario("idx_sitemap_only_bad_lastmod", "Every <lastmod> the same malformed value.", _sitemap_only_bad_lastmod, FAST_IDX),
     Scenario("idx_canonical_latest_posts", "The same article at /x and /x/ differing only in a 'latest posts' list, "
              "and a page canonicalized to a different article on the same template.", _canonical_latest_posts, FAST_IDX),
     Scenario("idx_sitemap_stamped_docs", "A sitemap document whose six URLs share one lastmod to the second, beside "

@@ -66,7 +66,8 @@ CONFIRM_LINES = 12  # "Teyit edin" lines a client report prints; the rest are co
 HIGH = ("S1", "S2")
 PROBLEM = ("S1", "S2", "S3", "S4")
 # How Maya read the pages: the reader's own note, not a problem of the site (DECISIONS 288 keeps acc9.blocked_429 and
-# acc9.rate_limited_429, which warn that AI crawlers may be refused too, as the site's).
+# acc9.rate_limited_429, which warn that AI crawlers may be refused too, as the site's; DECISIONS 373: only when more
+# than a few of Maya's own requests were refused, `rate_limited_maya`).
 OWN_LIMIT_RULES = frozenset({"acc9.reader", "acc9.reader.counted", "acc9.reader.site", "acc9.reader.site.counted"})
 # DECISIONS 301 (4): rule ids -> one root cause -> one fix. Findings of these rules are one card (still split by what
 # a card states: confirm first, intent, re-test state, Info), with the worst pages as examples (`worst_by`: the
@@ -196,8 +197,22 @@ def names_in_markup(f: dict) -> bool:
     return len(shown) == 1 and bool(rest) and all(v.get("by_source") for v in rest)
 
 
+# DECISIONS 373 (İlginay, NG): a few 429 answers to Maya's own crawler (at most this many, and under half of its page
+# requests, the start address answered) are how Maya's reading went, said in the coverage ("Kapsam"), not a client problem
+FEW_RATE_LIMITS = 5
+
+
+def rate_limited_maya(f: dict) -> bool:
+    if not str(f.get("rule_id") or "").startswith("acc9.rate_limited"):
+        return False
+    ev = f.get("evidence") or {}
+    hit, asked = ev.get("pages_blocked_or_challenged"), ev.get("pages_requested")
+    return (isinstance(hit, int) and isinstance(asked, int) and asked > 0 and hit <= FEW_RATE_LIMITS
+            and hit * 2 < asked and not ev.get("start_url_blocked"))
+
+
 def own_limit(f: dict) -> bool:
-    return f.get("rule_id") in OWN_LIMIT_RULES
+    return f.get("rule_id") in OWN_LIMIT_RULES or rate_limited_maya(f)
 
 
 # ---------------------------------------------------------------- page importance
@@ -745,7 +760,12 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
     appendix_only = _order([g for g in rows if g["placement"] == "appendix"])
     for g in rows:
         g.pop("_index", None)
+    from .rule_approval import unapproved
+    profile = (summary.get("business_type") or {}).get("id")
     for g in rows:
+        # DECISIONS 373: a rule the team has not approved (questioned, or a draft sector's check) is "Kontrol edin"
+        g["unapproved"] = next((why for m in g.get("members") or []
+                                if (why := unapproved(m.get("rule_id"), m.get("check_id"), profile))), None)
         g["issue_type"] = issue_type(g)
         g["template_line"] = template_line(g, importance)
     # DECISIONS 324: P0-P3 of the team's sector method beside the severity; it changes no order, placement or score.
@@ -870,6 +890,8 @@ def issue_type(g: dict) -> str:
     members' rule types (issue over warning over opportunity); a warning rule a person confirmed is an issue. Never
     changes severity, placement or order."""
     if g.get("placement") == "confirm" or g.get("confirm_card"):  # DECISIONS 367: a confirm group on a card
+        return "warning"
+    if g.get("unapproved") and (g.get("manual") or {}).get("result") != "confirmed":  # DECISIONS 373
         return "warning"
     kinds = {rule_type(m.get("rule_id")) for m in g.get("members") or []} or {"issue"}
     kind = next(k for k in ISSUE_TYPES if k in kinds)

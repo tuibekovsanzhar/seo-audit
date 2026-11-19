@@ -16,7 +16,21 @@
    "verdict": "wrong",
    "assessment": "partly_right",
    "finding": "The break is real and in the site's own HTML (div#blueLightOverlay inside <head>, 121 of 128 pages); canonical, hreflang and title stay before it. High came from a robots tag after the break whose value was never recorded.",
-   "fix": "High only when a canonical, hreflang or title (with no copy before the break) or a restricting robots value is lost; the robots value is recorded; the card says what stays in the head and what comes after."
+   "fix": "High only when a canonical, hreflang or title (with no copy before the break) or a restricting robots value is lost; the robots value is recorded; the card says what stays in the head and what comes after.",
+   "labels": [
+    {
+     "id": "enp1-J2-head-element",
+     "kind": "must_find",
+     "on": "card_text",
+     "rules": [
+      "tseo1.head_closed_lost",
+      "tseo1.head_closed_later"
+     ],
+     "field": "sub",
+     "regex": "Head içinde",
+     "why": "The note said the advice was wrong; the fix rewrote the advice from the evidence, so the label checks the corrected detail the card now gives."
+    }
+   ]
   },
   {
    "card": 2,
@@ -28,7 +42,17 @@
    "verdict": "incomplete",
    "assessment": "right",
    "finding": "No page read links to the 21 addresses: all are sitemap entries (302 → 404).",
-   "fix": "DECISIONS 337: own sitemap card, file per address, Bağlantı yerleri."
+   "fix": "DECISIONS 337: own sitemap card, file per address, Bağlantı yerleri.",
+   "labels": [
+    {
+     "id": "enp1-J3-link-sources",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Bağlantı yerleri",
+     "column": "Bağlantının bulunduğu sayfa",
+     "regex": "^https?://"
+    }
+   ]
   },
   {
    "card": 3,
@@ -40,7 +64,18 @@
    "verdict": "wrong",
    "assessment": "right",
    "finding": "The rules block ?ref= parameters, legacy *.aspx and a form path; no page the site puts forward is blocked.",
-   "fix": "Parameter, old-script and form-path rules that reach no homepage, key page or sitemap address are Info, \"bilinçli görünüyor, teyit edin\"."
+   "fix": "Parameter, old-script and form-path rules that reach no homepage, key page or sitemap address are Info, \"bilinçli görünüyor, teyit edin\".",
+   "labels": [
+    {
+     "id": "enp1-J4-robots-param",
+     "kind": "must_not_find",
+     "on": "card",
+     "rules": [
+      "acc2.blocks.sample",
+      "acc2.blocks."
+     ]
+    }
+   ]
   },
   {
    "card": 4,
@@ -52,7 +87,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp1-J5-no-text",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str14.no_text"
+     ]
+    }
+   ]
   },
   {
    "card": 5,
@@ -64,7 +109,17 @@
    "verdict": "wrong",
    "assessment": "mostly_right",
    "finding": "Of five names, \"Enpara.com\" (domain form) and \"Enpara Şirketim\" (sub-brand) are normal; \"Bankanın güzeli | Enpara\" and \"Homepage\" as Organization names are real, on 2 pages; the card listed all 111 pages naming the brand.",
-   "fix": "Domain form folded into the brand, section sub-brands not counted, only pages with another name listed."
+   "fix": "Domain form folded into the brand, section sub-brands not counted, only pages with another name listed.",
+   "labels": [
+    {
+     "id": "enp1-J6-brand-name",
+     "kind": "must_not_find",
+     "on": "card",
+     "rules": [
+      "str5.names"
+     ]
+    }
+   ]
   },
   {
    "card": 6,
@@ -76,7 +131,20 @@
    "verdict": "wording",
    "assessment": "right",
    "finding": "Wording: the team report said \"ana başlık\" for <h1>.",
-   "fix": "Every H1 rule's Turkish team-report text says \"H1 etiketi\"."
+   "fix": "Every H1 rule's Turkish team-report text says \"H1 etiketi\".",
+   "labels": [
+    {
+     "id": "enp1-J7-h1-wording",
+     "kind": "must_not_find",
+     "on": "card_text",
+     "rules": [
+      "str2.no_h1",
+      "str2.home_no_h1"
+     ],
+     "field": "title",
+     "regex": "ana başlı"
+    }
+   ]
   },
   {
    "card": 7,
@@ -88,7 +156,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp1-J8-shared-desc",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str16.shared"
+     ]
+    }
+   ]
   },
   {
    "card": 8,
@@ -100,7 +178,20 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp1-J9-links-redirect",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "idx6.links_to_redirect"
+     ],
+     "any_severity": true,
+     "superseded_by": "enp3-links-redirect",
+     "why_superseded": "The same expert's later review of the same site (11 Nov, review 3, card 12) found this card wrong: the links open the final page directly. The later verdict is the label."
+    }
+   ]
   },
   {
    "card": 9,
@@ -112,7 +203,17 @@
    "verdict": "wrong",
    "assessment": "partly_right",
    "finding": "Neither copy of the 4 pages has <h2>/<h3>; /bilgi-bankasi is a listing page; visible titles are styled text (raw HTML not saved to confirm).",
-   "fix": "Listing pages left out; styled section titles counted (new audits) and said as \"mark them H2/H3\"; card wording names H2/H3."
+   "fix": "Listing pages left out; styled section titles counted (new audits) and said as \"mark them H2/H3\"; card wording names H2/H3.",
+   "labels": [
+    {
+     "id": "enp1-J10-no-subheadings",
+     "kind": "must_not_find",
+     "on": "card",
+     "rules": [
+      "str2.no_subheadings"
+     ]
+    }
+   ]
   },
   {
    "card": 10,
@@ -124,7 +225,17 @@
    "verdict": "correct",
    "assessment": "agree",
    "finding": "",
-   "fix": ""
+   "fix": "",
+   "labels": [
+    {
+     "id": "enp1-J11-jsonld",
+     "kind": "must_find",
+     "on": "finding",
+     "rules": [
+      "str3.unparsed"
+     ]
+    }
+   ]
   },
   {
    "card": 11,
@@ -136,7 +247,17 @@
    "verdict": "wrong",
    "assessment": "partly_right",
    "finding": "The 302 is real (4 requests, one hop) but the https pages send HSTS for 1825 days.",
-   "fix": "Info under HSTS of a year or more."
+   "fix": "Info under HSTS of a year or more.",
+   "labels": [
+    {
+     "id": "enp1-J12-http-https",
+     "kind": "must_not_find",
+     "on": "finding",
+     "rules": [
+      "idx2.temporary"
+     ]
+    }
+   ]
   },
   {
    "card": 12,
@@ -148,7 +269,17 @@
    "verdict": "incomplete",
    "assessment": "right",
    "finding": "The redirect items carried no addresses; the internal-link item repeated card 8.",
-   "fix": "Every item lists its addresses and what redirects where; the repeat dropped; the Ek has a row per address."
+   "fix": "Every item lists its addresses and what redirects where; the repeat dropped; the Ek has a row per address.",
+   "labels": [
+    {
+     "id": "enp1-J13-hygiene-redirects",
+     "kind": "must_find",
+     "on": "card_text",
+     "title": "Küçük bağlantı",
+     "field": "sub",
+     "regex": "→"
+    }
+   ]
   },
   {
    "card": 13,
@@ -158,7 +289,17 @@
    "verdict": "incomplete",
    "assessment": "right",
    "finding": "The card showed 5 of 24 pages and had no rows in the Ek (its id named a check, not a finding).",
-   "fix": "Every page kept (new audits) with its questions; rows in the Ek; unlisted pages counted."
+   "fix": "Every page kept (new audits) with its questions; rows in the Ek; unlisted pages counted.",
+   "labels": [
+    {
+     "id": "enp1-J14-question-page",
+     "kind": "must_find",
+     "on": "card_text",
+     "title": "Soru başlık",
+     "field": "sub",
+     "regex": "^/\\S*: "
+    }
+   ]
   }
  ],
  "follow_up": [
@@ -174,5 +315,6 @@
   "wrong": 5,
   "wording": 1,
   "incomplete": 3
- }
+ },
+ "audit_id": "2e5829fb"
 }

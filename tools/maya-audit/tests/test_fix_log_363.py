@@ -145,17 +145,17 @@ def test_titles_and_descriptions_changed_since_the_previous_audit_are_listed():
 
 def test_every_logged_item_is_complete_and_checked_by_a_known_check():
     known = {"no_card", "no_problem", "has_finding", "card_text", "no_text", "title_text", "sheet_has", "sheet_not",
-             "severity_info", "gate", "has_observation", "row_not", "test", "crawl", "why"}
+             "severity_info", "gate", "has_observation", "row_not", "test", "crawl", "why", "labels"}
     decisions = set(re.findall(r"^(\d{3})\. ", (ROOT / "docs" / "DECISIONS.md").read_text(encoding="utf-8"), re.M))
     items = fix_log.items()
     assert len(items) >= 70
     for item in items:
         assert item["kaynak"] and item["sorun"] and item["nasil"] and item.get("genel"), item
-        assert item["brand_key"] in fix_log.BRANDS
+        assert item["brand_key"] in fix_log.BRANDS or item["brand_key"] is None  # None: a rule of every audit (DECISIONS 373)
         assert set(item["check"]) <= known, item["check"]
         assert {str(n) for n in item["decisions"]} <= decisions | {"363"}, item["decisions"]
-        if item["check"].get("test"):
-            assert (ROOT / item["check"]["test"]).is_file(), item["check"]["test"]
+        for test in fix_log.tests_of(item["check"]):  # DECISIONS 373: one test or several
+            assert (ROOT / test.split("::")[0]).is_file(), test
         assert not re.search(r"\b(def|import|rule_id|json)\b|\w+\.\w+\(", item["nasil"]), item["nasil"]  # plain words
 
 

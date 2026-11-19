@@ -235,7 +235,7 @@
   "idx5.query_unassessed": "{n} sitemap adresi sözcük benzeri sorgu kullanıyor; amaçlanan yol değerlendirilmedi",
   "idx5.corrupt": "{n} sitemap adresinde kaçış uygulanmamış boşluk veya bozuk kodlama var",
   "str19.control_review": "{n} kontrol grubu anchor kullanıyor; etkileşim ve erişilebilirlik incelenmeli",
-  "str8.headers": "{n} sayfadaki {tables} veri tablosunda desteklenen başlık ilişkileri yok",
+  "str8.headers": "{n} sayfada {tables} tabloda başlık hücresi (<th>) yok: değerlerin hangi başlığa ait olduğu kodda yazmıyor",
   "idx6.external_cycle": "Kayıtlı istemci için {n} dış hedefte GET yönlendirme döngüsü gözlendi",
   "judgment.head": "{n} dış hedef için HEAD hatası kaydedildi; GET ile normal gezinme doğrulanmadı",
   "judgment.empty.repeated": "{n} adres, test edilen istemciye tekrarlanan boş GET yanıtı verdi",
@@ -1800,7 +1800,8 @@
   "source pages missing retained image markup": "Görsel işaretlemesi saklanmamış kaynak sayfalar",
   "hreflang target pages (title, description, noindex, canonical)": "hreflang hedef sayfaları (başlık, açıklama, noindex, canonical)",
   "localized entity names": "Varlığın farklı dillerdeki adları",
-  "grids not checked for a form control beside them": "yanında form denetimi olup olmadığı kontrol edilmeyen tablolar"
+  "grids not checked for a form control beside them": "yanında form denetimi olup olmadığı kontrol edilmeyen tablolar",
+  "collection pages with no product in their HTML": "HTML'inde ürün olmayan koleksiyon sayfaları"
  },
  "label_patterns": {
   "dfs.top_domains": "İlk {n} yönlendiren alan adı",
@@ -2059,7 +2060,8 @@
   "the target answered but was not crawled, so its page was not read": "hedef yanıt verdi ama taranmadı, bu yüzden sayfası okunmadı",
   "Different-language names of the same declared entity require owner confirmation; translation or alias meaning is not established.": "Aynı tanımlanmış varlığın farklı dillerdeki adları içerik sahibince doğrulanmalı; çeviri veya alternatif ad ilişkisi kanıtlanmadı.",
   "a form control beside a grid (a calculator's input column next to its result column): the report does not keep the page's structure around a grid": "tablonun yanındaki form denetimi (bir hesaplayıcının giriş sütunu ile sonuç sütunu): rapor, tablonun çevresindeki sayfa yapısını saklamıyor",
-  "on another site; external link checks are off (--check-external-links)": "başka bir sitede; dış bağlantı kontrolleri kapalı (--check-external-links)"
+  "on another site; external link checks are off (--check-external-links)": "başka bir sitede; dış bağlantı kontrolleri kapalı (--check-external-links)",
+  "the page was not opened in a browser, so whether its products load by script is unknown": "sayfa tarayıcıda açılmadı; ürünlerin betikle yüklenip yüklenmediği bilinmiyor, bu yüzden değerlendirilmedi"
  },
  "line_patterns": {
   "gap.probe_cap": "her çift sınanmadan önce {cap} isteklik sınama sınırına ulaşıldı",
