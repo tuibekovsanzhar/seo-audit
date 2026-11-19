@@ -15,8 +15,9 @@ Rules (hard = the download is a draft, soft = listed in "Kontrol raporu"):
     RG-22 hard  two cards that say the same thing (one rule or one title) about the same pages
     RG-23 soft  a phrase from the banned list (`banned_phrases.json`, the SEO team's file); a phrase marked
                 "block": true is hard
-    RG-24 soft  a problem the appendix's Özet does not list under "Diğer bulgular" because none of its pages shows a
-                concrete example (quoted page text, an address or an element) (DECISIONS 368)
+    RG-24 soft  a problem the appendix's Özet does not list under "Diğer bulgular" because it holds no example: no
+                concrete page text, address or element (DECISIONS 368) and no measured value, site-level or per page
+                (DECISIONS 369)
 
 Global for every site: no brand, no address and no fixed title is named here; the phrase list is data.
 """
@@ -369,11 +370,11 @@ RULE_NAMES = {
     "tr": {"RG-18": "Yer tutucu ya da kanıtta olmayan sayı", "RG-19": "Başka platforma özgü öneri",
            "RG-20": "Menü ya da giriş bağlantısını kaldırma önerisi", "RG-21": "Türkçe metinde İngilizce",
            "RG-22": "Aynı sayfalar için tekrarlanan kart", "RG-23": "Yasaklı ifade",
-           "RG-24": "Somut örneği olmayan bulgu", "LLM": "İkinci okuyucu önerisi"},
+           "RG-24": "Örneği ve ölçülen değeri olmayan bulgu", "LLM": "İkinci okuyucu önerisi"},
     "en": {"RG-18": "Placeholder or a number not in the evidence", "RG-19": "Advice for another platform",
            "RG-20": "Advice to remove a menu or sign-in link", "RG-21": "English left in Turkish text",
            "RG-22": "Card repeated for the same pages", "RG-23": "Banned phrase",
-           "RG-24": "Finding with no concrete example", "LLM": "Second reader's suggestion"},
+           "RG-24": "Finding with no example or measured value", "LLM": "Second reader's suggestion"},
 }
 
 
@@ -407,8 +408,8 @@ def with_no_example(record: dict | None, names: Iterable[str], lang: str = "tr")
         return record
     extra = []
     for name in dict.fromkeys(n for n in names if n):
-        message = (f"Özet: «{name}» için somut örnek (sayfa ve metin/öğe) yok; «Diğer bulgular»da listelenmedi, «Bulgular»da duruyor"
-                   if lang == "tr" else f"Summary: «{name}» has no concrete example (page and text/element); left out of "
+        message = (f"Özet: «{name}» için örnek ya da ölçülen değer yok; «Diğer bulgular»da listelenmedi, «Bulgular»da duruyor"
+                   if lang == "tr" else f"Summary: «{name}» has no example or measured value; left out of "
                    "\"Other findings\", kept in \"Findings\"")
         extra.append(violation("RG-24", message, hard=False, where="ek: Özet", text=name))
     if not extra:

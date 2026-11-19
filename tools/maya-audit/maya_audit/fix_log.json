@@ -1408,6 +1408,24 @@
     },
     "test": "tests/test_review_368.py"
    }
+  },
+  {
+   "kaynak": "Sahip — Özet'ten düşen site geneli bulgular (DECISIONS 369)",
+   "brand_key": "isbank",
+   "sorun": "Site geneli bulgular (site haritası tarihleri, yavaş yanıtlar, site haritasında görsel/video yok, engellenen istekler) somut sayfa metni olmadığı için Özet'ten düşüyordu",
+   "genel": "Somut sayfa metni olmayan site geneli bulgular Özet'te gösterilmiyordu",
+   "nasil": "Bu bulgular için 'Örnek' ölçülen dosya ya da adres ve gerçek değerdir (ör. 'sitemap.xml: 412 adresin 398 tanesinde lastmod aynı', '/kategori/x: yanıt 4,8 sn, eşik 2,0 sn'); yoksa satırlarındaki ilk ölçülen değer. Yalnız hiç ölçülen değeri olmayan bulgu Özet dışında kalır (RG-24).",
+   "decisions": [
+    369
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Özet",
+     "column": "Örnek",
+     "regex": "site haritası \\(\\d+ dosya\\)|eşik [\\d,]+ sn"
+    },
+    "test": "tests/test_site_examples_369.py"
+   }
   }
  ]
 }

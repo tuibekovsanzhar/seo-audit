@@ -32,7 +32,7 @@ READ = {
            "go": "Satırlara git →", "where": "Bağlantı yerleri", "go_links": "Bağlantılara git →",
            "pdf_line": "İlk {n} kart PDF raporundadır; diğer bulgular aşağıdadır.",
            "others": "Diğer bulgular ({n}): PDF'te kart olmayan her sorun, önem ve önceliğe göre",
-           "others_without": "; somut örneği olmayan {n} bulgu yalnız «Bulgular» sayfasında",
+           "others_without": "; ölçülen değeri olmayan {n} bulgu yalnız «Bulgular» sayfasında",
            # DECISIONS 337: where each address with a problem is pointed at
            "where_cols": ["Kart", "Bozuk adres", "HTTP durumu", "Bağlantının bulunduğu sayfa", "Bağlantı metni", "Yazılan değer (href)",
                           "Konum", "Site haritasında mı?", "Site haritası dosyası", "Site haritasındaki <loc> metni", "<loc> satırı",
@@ -78,7 +78,7 @@ READ = {
            "go_links": "Go to links →",
            "pdf_line": "The first {n} cards are in the PDF report; the other findings are below.",
            "others": "Other findings ({n}): every problem that is not a PDF card, by severity and priority",
-           "others_without": "; {n} finding(s) with no concrete example only on the \"Findings\" sheet",
+           "others_without": "; {n} finding(s) with no measured value only on the \"Findings\" sheet",
            "go": "Go to rows →", "where": "Link locations",
            "where_cols": ["Card", "Broken address", "HTTP status", "Page with the link", "Link text", "Written value (href)",
                           "Place", "In the sitemap?", "Sitemap file", "<loc> text in the sitemap", "<loc> line",
@@ -532,14 +532,16 @@ EFFORT_WORDS = {"tr": {"S": "Küçük", "M": "Orta", "L": "Büyük"}, "en": {"S"
 SEV_RANK = {"S1": 0, "S2": 1, "S3": 2, "S4": 3}
 
 
-def examples_of(rows: list[dict]) -> dict[str, str]:
+def examples_of(rows: list[dict], test=None) -> dict[str, str]:
     """DECISIONS 368: {finding id: one concrete example}: the first "Bulgu bazında" row of the finding whose measured
-    value shows a concrete thing (quoted page text, an address or an element), as "page: value"."""
+    value shows a concrete thing (quoted page text, an address or an element), as "page: value". `test`: another test
+    of the value (DECISIONS 369: any measured value)."""
     from .example_rows import concrete
+    test = test or concrete
     out: dict[str, str] = {}
     for r in rows:
         fid, value = r.get("finding_id"), r.get("value")
-        if fid in out or not concrete(value):
+        if fid in out or not test(value):
             continue
         parts = urlsplit(str(r.get("url") or r.get("address") or ""))
         page = (parts.path or "/") + (f"?{parts.query}" if parts.query else "") if parts.netloc else str(r.get("address") or "")
@@ -549,11 +551,12 @@ def examples_of(rows: list[dict]) -> dict[str, str]:
 
 
 def other_findings(selection: dict, rows: list[dict], card_of_finding: dict, todos, lang: str, where: str,
-                   examples: dict[str, str] | None = None, without: list[str] | None = None) -> list[list]:
+                   examples: dict[str, str] | None = None, without: list[str] | None = None,
+                   measured: dict[str, str] | None = None) -> list[list]:
     """DECISIONS 366: the Özet rows for every problem group on no card shown (the PDF's cards and the appendix's note
     cards; a group the selection made a card that the PDF has no room for is listed): never a rejected one or Maya's
     own limit, severities S1-S4 (no Info notes), with the cards' columns, the first "Bulgu bazında" row of the group, by severity, then priority (P0-P3), then title."""
-    from .example_rows import evidence_example
+    from .example_rows import evidence_example, site_example
     from .recommendation_catalog import note
     W, R = WORDS[lang], READ[lang]
     on_cards = set(card_of_finding) | {f for t in todos or [] for f in t.get("finding_ids") or []}
@@ -575,8 +578,11 @@ def other_findings(selection: dict, rows: list[dict], card_of_finding: dict, tod
         level = (g.get("p_level") or {}).get("level") if isinstance(g.get("p_level"), dict) else g.get("p_level")
         name = next((title_of[f] for f in ids if f in title_of), None) or lead.get("title") or g.get("title") or ""
         # DECISIONS 368: a finding listed here shows one concrete example; one without stays in "Bulgular" only
-        example = (next((examples[f] for f in ids if f in examples), None)
-                   or evidence_example(lead, lang)) if examples is not None else None
+        # DECISIONS 369: else a site-level example (the file or address measured and its value), else the first
+        # measured value of its rows; only a finding with no measured value at all is left out
+        example = (next((examples[f] for f in ids if f in examples), None) or evidence_example(lead, lang)
+                   or site_example(lead, lang) or next((measured[f] for f in ids if f in (measured or {})), None)
+                   ) if examples is not None else None
         if examples is not None and example is None:
             if without is not None:
                 without.append(name.get("text", "") if isinstance(name, dict) else str(name))
@@ -636,7 +642,9 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
                for c in cards]
     # DECISIONS 366: every other problem below the cards ("Diğer bulgular"), and a line on top saying where the cards are
     without: list[str] = []
-    others = other_findings(selection, rows, card_of_finding, todos, lang, where, examples, without)
+    from .example_rows import measured_value
+    others = other_findings(selection, rows, card_of_finding, todos, lang, where, examples, without,
+                            examples_of(rows, measured_value))
     pdf_cards = sum(1 for c in cards if c.get("n") is not None)
     top = [["", platform_line(selection, lang, short=True)], ["", R["pdf_line"].format(n=pdf_cards)]]
     if others or without:

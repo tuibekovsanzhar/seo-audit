@@ -185,9 +185,9 @@ def test_the_summary_lists_a_problem_only_with_a_concrete_example_and_rg24_names
     summary = book["Özet"]
     assert summary[0][-1] == "Örnek"
     others = next(i for i, r in enumerate(summary) if str(r[1]).startswith("Diğer bulgular"))
-    assert summary[others][1].endswith("; somut örneği olmayan 1 bulgu yalnız «Bulgular» sayfasında")
+    assert summary[others][1].endswith("; ölçülen değeri olmayan 1 bulgu yalnız «Bulgular» sayfasında")
     listed = summary[others + 1:]
     assert len(listed) == 1 and listed[0][-1] == "/a: «Gift Cards» bağlantısı: <a> href boş"
     rg = [r for r in book["Kontrol raporu"] if r[0] == "RG-24"]
-    assert len(rg) == 1 and rg[0][2] == "Hayır" and "somut örnek (sayfa ve metin/öğe) yok" in rg[0][5]
+    assert len(rg) == 1 and rg[0][2] == "Hayır" and "örnek ya da ölçülen değer yok" in rg[0][5]
     assert text_gate.with_no_example(record, [], "tr") is record

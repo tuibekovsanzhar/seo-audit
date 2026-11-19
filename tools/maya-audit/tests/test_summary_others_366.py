@@ -40,19 +40,16 @@ def test_every_problem_that_is_no_card_is_listed_by_severity_then_priority():
 def test_the_cards_stay_first_and_the_line_on_top_says_where_they_are():
     todos = [{"n": 1, "title": "Renew the TLS certificate", "severity": "S2", "issue_type": "issue", "finding_ids": ["IDX-2-c"],
               "all_urls": []}]
-    r = _report()
-    heavy = next(f for c in r["checks"] for f in c["findings"] if f["id"] == "RND-6-a")
-    heavy["evidence"]["pages"][0]["row"] = {"tr": "HTML 1.460 KB, «<script>» blokları büyük", "en": "x"}
-    book = xlsx.read(client_appendix.build(cs.select(r), "tr", todos=todos))
+    book = xlsx.read(client_appendix.build(cs.select(_report()), "tr", todos=todos))
     rows = book["Özet"]
     assert rows[2][1] == "İlk 1 kart PDF raporundadır; diğer bulgular aşağıdadır."
     assert rows[3][:2] == ["1", "Renew the TLS certificate"]
     others = rows[4]
-    assert others[0] == "" and others[1].startswith("Diğer bulgular (")
-    # DECISIONS 368: of the two cards the PDF has no room for, only the one with a concrete example is listed
-    assert others[1].endswith("; somut örneği olmayan 1 bulgu yalnız «Bulgular» sayfasında")
+    assert others[0] == "" and others[1] == "Diğer bulgular (2): PDF'te kart olmayan her sorun, önem ve önceliğe göre"
     listed = rows[5:]
-    assert len(listed) == 1 and listed[0][-1] == "/a: HTML 1.460 KB, «<script>» blokları büyük"  # the Info note is left out
+    # the two cards the PDF (one card here) has no room for, each with its measured value (DECISIONS 368, 369);
+    # the Info note is left out
+    assert sorted(r[-1] for r in listed) == ["/a: 2 başlık düzeyi atlaması", "/a: HTML 1.460 KB, sınır 1.000 KB"]
     assert all(r[0] == "" and r[2] in ("Kritik", "Yüksek", "Orta", "Düşük") for r in listed)
     order = {"Kritik": 0, "Yüksek": 1, "Orta": 2, "Düşük": 3}
     assert [order[r[2]] for r in listed] == sorted(order[r[2]] for r in listed)

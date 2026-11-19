@@ -5720,3 +5720,19 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Tests: `tests/test_review_368.py` (9); `test_summary_others_366`, `test_counts_and_shared_elements` updated.
      *Environment:* the local Playwright browser cache was missing (the PDF tests failed with "Executable doesn't
      exist"); `python -m playwright install chromium` restored it (a browser download, no audit request).
+
+369. **Site-wide findings keep their place in the Özet with a site-level example (Owner, 2026-11-19; the wording of
+     each example and the order of the fallbacks are agent defaults).** Global for every audit. 368 left a problem out
+     of "Diğer bulgular" when none of its rows quoted page text, an address or an element, which dropped site-wide and
+     once-measured findings (sitemap dates, slow responses, sitemaps without images or videos, blocked requests...).
+     *Now* (`example_rows.site_example`, `client_appendix.other_findings`) the "Örnek" is, in this order: a concrete
+     row value (368); a concrete thing in the evidence (368); the file or address measured and its value, with the
+     limit when the finding has one ("sitemap.xml: 412 adresin 398 tanesinde lastmod aynı (2026-11-16)",
+     "/kategori/x: yanıt 4,8 sn (3 ölçümün ortancası), eşik 2,0 sn", "site haritası (6 dosya): <image:image> yok;
+     sayfalarda 505 farklı görsel", "/: HTML 1.323 KB, sınır 1.000 KB", "/all: HTTP 429 (Cloudflare), 7 istekten 1
+     tanesi", sameAs status, template markers, raw vs rendered words, words without <h2>/<h3>, the html lang vs the
+     text's language, two structured-data values, brand name variants); else the first measured value of its "Bulgu
+     bazında" rows (anything but "—", "not kept", "not read", "seen"). Only a finding with no measured value at all
+     stays out, said on the "Diğer bulgular" line ("ölçülen değeri olmayan N bulgu…") and by RG-24, now "Örneği ve
+     ölçülen değeri olmayan bulgu".
+     Tests: `tests/test_site_examples_369.py` (3); `test_summary_others_366`, `test_review_368` updated.

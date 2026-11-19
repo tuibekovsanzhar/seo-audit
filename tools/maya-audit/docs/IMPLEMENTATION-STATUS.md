@@ -2726,3 +2726,27 @@ bulgular" and named by RG-24. Fix log items 82-88 (source İlginay).
 | `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
 | Environment | Playwright's browser cache was missing; `playwright install chromium` restored it |
 | Push | NOT DONE (owner: don't push) |
+
+## Site-wide findings keep their place in the Özet (DECISIONS 369, 2026-11-19)
+
+VERIFIED locally; not pushed. A site-wide or once-measured finding gets a site-level "Örnek" (the file or address
+measured and its value, with the limit), else the first measured value of its rows; only a finding with no measured
+value at all stays out (RG-24). Fix log item 89.
+
+| Saved audit (rebuilt from copies, no request) | Diğer bulgular (368 -> 369) | Left out (RG-24) | Text check |
+|---|---|---|---|
+| MMI 536b4b64 | 8 -> 8 | 0 | PASS |
+| Carpex 1fd871f0 | 8 -> 14 | 0 | PASS |
+| Enpara fee70191 | 12 -> 14 | 0 | PASS |
+| Atasun f06a2129 | 10 -> 12 | 0 | PASS |
+| İş Bankası 1b81bee4 | 15 -> 21 | 0 | PASS |
+| Ticimax c77ebf6d | 9 -> 17 | 0 | PASS |
+| Nature's Garden 342a0b14 | 11 -> 15 | 0 | PASS |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_site_examples_369.py` | `3 passed` |
+| fast suite | `3455 passed, 4 skipped, 135 deselected, 1 warning in 607.94s (0:10:07)` |
+| `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 89 items: Düzeltildi 86, Yeni tarama gerekli 3 |
+| `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

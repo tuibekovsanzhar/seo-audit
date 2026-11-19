@@ -586,3 +586,125 @@ def evidence_example(finding: dict, lang: str = "tr") -> str | None:
                 where = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
                 return f"{where}: {tr if lang == 'tr' else en} {quote(found, 90)}"
     return None
+
+
+# ------------------------------------------------------------------------------------------------ site-level examples
+
+def _path(url) -> str:
+    parts = urlsplit(str(url or ""))
+    if not parts.netloc:
+        return str(url or "")
+    return (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
+
+
+def _num(value: float, lang: str, digits: int = 1) -> str:
+    text = f"{value:,.{digits}f}" if digits else f"{round(value):,}"
+    return text.replace(",", "\0").replace(".", "," if lang == "tr" else ".").replace("\0", "." if lang == "tr" else ",")
+
+
+def _median(values: list[float]) -> float | None:
+    values = sorted(v for v in values if isinstance(v, (int, float)))
+    if not values:
+        return None
+    mid = len(values) // 2
+    return values[mid] if len(values) % 2 else (values[mid - 1] + values[mid]) / 2
+
+
+def site_example(finding: dict, lang: str = "tr") -> str | None:
+    """DECISIONS 369: 'where: measured value' for a finding about the whole site or measured once (sitemap dates,
+    response times, HTML size, blocks, missing sitemap entries...): the file or address measured and the value, with the
+    limit when the finding has one. None when the finding holds no measured value."""
+    tr = lang == "tr"
+    ev = finding.get("evidence") or {}
+    rule = str(finding.get("rule_id") or "")
+    title = str(finding.get("title") or "")
+    pages = [p for p in ev.get("pages") or [] if isinstance(p, dict)]
+    first = pages[0] if pages else {}
+    if rule.startswith("idx5."):
+        for doc in ev.get("documents") or []:
+            if isinstance(doc, dict) and isinstance(doc.get("same_lastmod"), int) and doc.get("urls"):
+                name = file_name(doc.get("sitemap") or doc.get("url") or "") or "sitemap"
+                return (f"{name}: {doc['urls']} adresin {doc['same_lastmod']} tanesinde lastmod aynı ({str(doc.get('value'))[:10]})" if tr else
+                        f"{name}: {doc['same_lastmod']} of {doc['urls']} addresses carry the same lastmod ({str(doc.get('value'))[:10]})")
+        if isinstance(ev.get("lastmod"), dict) and ev["lastmod"]:
+            days = {}
+            for value in ev["lastmod"].values():
+                days[str(value)[:10]] = days.get(str(value)[:10], 0) + 1
+            day, n = max(days.items(), key=lambda kv: kv[1])
+            return (f"site haritası: {len(ev['lastmod'])} adresin {n} tanesinde lastmod {day}" if tr else
+                    f"sitemap: {n} of {len(ev['lastmod'])} addresses carry lastmod {day}")
+        files = ev.get("sitemap_files")
+        if isinstance(ev.get("images"), int) and files is not None:
+            return (f"site haritası ({files} dosya): <image:image> yok; sayfalarda {ev['images']} farklı görsel" if tr else
+                    f"sitemap ({files} file(s)): no <image:image>; {ev['images']} different images on the pages")
+        if isinstance(ev.get("video_pages"), int) and files is not None:
+            return (f"site haritası ({files} dosya): <video:video> yok; {ev['video_pages']} sayfada video var" if tr else
+                    f"sitemap ({files} file(s)): no <video:video>; {ev['video_pages']} pages show a video")
+    if rule.startswith("prf1.") and first.get("url"):
+        samples = [s for s in first.get("samples") or [] if isinstance(s, dict)]
+        limit = re.search(r"more than ([\d.]+) ?s", title)
+        if first.get("timeouts") and first.get("attempts"):
+            return (f"{_path(first['url'])}: {first['attempts']} denemenin {first['timeouts']} tanesinde zaman aşımı" if tr else
+                    f"{_path(first['url'])}: timed out on {first['timeouts']} of {first['attempts']} attempts")
+        mid = _median([s.get("ttfb_ms") for s in samples])
+        if mid is not None:
+            cap = f", eşik {_num(float(limit.group(1)), lang)} sn" if limit and tr else (f", limit {limit.group(1)} s" if limit else "")
+            unit = "sn" if tr else "s"
+            return (f"{_path(first['url'])}: yanıt {_num(mid / 1000, lang)} {unit} ({len(samples)} ölçümün ortancası){cap}" if tr else
+                    f"{_path(first['url'])}: response {_num(mid / 1000, lang)} {unit} (median of {len(samples)}){cap}")
+    if rule.startswith("rnd6.") and isinstance(first.get("bytes"), int):
+        cap = ev.get("threshold_bytes")
+        size = f"HTML {_num(first['bytes'] / 1000, lang, 0)} KB"
+        return f"{_path(first.get('url'))}: {size}" + (f", {'sınır' if tr else 'limit'} {_num(cap / 1000, lang, 0)} KB" if cap else "")
+    if rule.startswith("acc9.") and first.get("url"):
+        by = next((b for b in ev.get("blocked_by") or [] if isinstance(b, dict)), {})
+        who = f" ({by['name']})" if by.get("name") else ""
+        share = (f", {ev.get('pages_requested')} istekten {ev.get('pages_blocked_or_challenged')} tanesi" if tr else
+                 f", {ev.get('pages_blocked_or_challenged')} of {ev.get('pages_requested')} requests") if ev.get("pages_requested") else ""
+        return f"{_path(first['url'])}: HTTP {first.get('status') or by.get('status')}{who}{share}"
+    if rule == "str5.same_as":
+        link = next((x for x in ev.get("links") or [] if isinstance(x, dict) and x.get("sameAs")), None)
+        if link:
+            return f"sameAs {link['sameAs']}: HTTP {link.get('status') or link.get('error')}"
+    if rule.startswith("str13.") and ev.get("found"):
+        hit = next((x for x in ev["found"] if isinstance(x, dict) and x.get("url")), None)
+        if hit:
+            return f"{_path(hit['url'])}: {hit.get('field') or ''} {quote(unquote(str(hit.get('marker') or '')), 60)}".replace("  ", " ")
+    if rule.startswith("rnd1.") and isinstance(first.get("raw_words"), int) and isinstance(first.get("rendered_words"), int):
+        return (f"{_path(first.get('url'))}: ham HTML {first['raw_words']} kelime, işlenmiş sayfa {first['rendered_words']} kelime" if tr else
+                f"{_path(first.get('url'))}: raw HTML {first['raw_words']} words, rendered {first['rendered_words']} words")
+    if rule in ("str2.no_subheadings", "str2.styled_subheadings") and isinstance(first.get("content_words"), int):
+        styled = first.get("styled_headings") or 0
+        return (f"{_path(first.get('url'))}: {first['content_words']} kelime, H2/H3 yok" + (f"; {styled} başlık yalnız stille" if styled else "") if tr else
+                f"{_path(first.get('url'))}: {first['content_words']} words, no <h2>/<h3>" + (f"; {styled} titles styled only" if styled else ""))
+    if rule == "str3.article_org_author":
+        url = next((u for u in ev.get("pages") or [] if isinstance(u, str)), None)
+        if url:
+            return (f"{_path(url)}: yapısal veride yazar yalnız kurum (Organization)" if tr else
+                    f"{_path(url)}: the structured data names only an Organization as author")
+    if rule.startswith("str9.") and first.get("declared") and first.get("detected"):
+        return (f"{_path(first.get('url'))}: <html lang> {first['declared']}, metin {_lang(first['detected'], lang)} ({first.get('main_words')} kelime)" if tr else
+                f"{_path(first.get('url'))}: <html lang> {first['declared']}, text in {_lang(first['detected'], lang)} ({first.get('main_words')} words)")
+    if rule == "str5.names":
+        names = [v.get("name") for v in sorted((v for v in ev.get("variants") or [] if isinstance(v, dict) and v.get("name")),
+                                                key=lambda v: -(v.get("pages") or 0))]
+        if len(names) > 1:
+            shown = ", ".join(quote(n, 50) for n in names[:3])
+            return (f"site geneli: marka adı {len(names)} biçimde yazılmış: {shown}" if tr else
+                    f"whole site: the brand is written {len(names)} ways: {shown}")
+    if rule.startswith("str11.") and ev.get("contradictions"):
+        c = next((x for x in ev["contradictions"] if isinstance(x, dict) and x.get("url")), None)
+        if c:
+            vals = " / ".join(f"{', '.join(map(str, d.get('value') or []))} ({d.get('format')})" for d in c.get("descriptions") or [] if isinstance(d, dict))
+            return f"{_path(c['url'])}: {c.get('field')} {vals}"
+    return None
+
+
+
+def measured_value(value) -> bool:
+    """A "Bulgu bazında" value that says something measured on the page (not "—", "not kept", "not read", "seen")."""
+    from .page_rows import WORDS
+    if not isinstance(value, str) or not value.strip():
+        return False
+    empty = {w[k] for w in WORDS.values() for k in ("na", "not_kept", "not_read", "seen")}
+    return value.strip() not in empty
