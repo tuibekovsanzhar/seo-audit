@@ -1287,6 +1287,42 @@ def _decisions_368(report: dict, affected: dict, changes: list[str], saved_texts
         changes.append(f"{fid}: each page's own line added (which text, element and place; DECISIONS 368)")
 
 
+def _decisions_370(report: dict, affected: dict, changes: list[str]) -> None:
+    """DECISIONS 370: an ACC-6 finding (a vendor's bots blocked on some sampled addresses) is attached only to the
+    addresses its robots.txt rule blocks, read from the saved ACC-2 decisions (address, bot, rule), each with its line,
+    and carries one site-wide line; when the saved decisions do not name the addresses, once, to robots.txt itself."""
+    from .example_rows import robots_pages, robots_site_row
+    from .findings import scope_for
+    decisions = [d for c in report.get("checks") or [] if c.get("check_id") == "ACC-2"
+                 for f in c.get("findings") or [] for d in (f.get("evidence") or {}).get("decisions") or []]
+    robots_url = next((r.get("url") for r in (report.get("crawl") or {}).get("robots") or [] if isinstance(r, dict)), None)
+    for check in report.get("checks") or []:
+        if check.get("check_id") != "ACC-6":
+            continue
+        for f in check.get("findings") or []:
+            ev = f.setdefault("evidence", {})
+            if f.get("rule_id") != "acc6.scope" or ev.get("site_row"):
+                continue
+            tokens = list(ev.get("blocked_tokens") or [])
+            sample = int(ev.get("sample_size") or 0)
+            pages = robots_pages(decisions, tokens)
+            if pages:
+                reasons = list(dict.fromkeys(r for p in pages for r in p["reasons"]))
+                urls = [p["url"] for p in pages]
+                ev.update(pages=pages, blocked_urls=len(pages),
+                          site_row=robots_site_row(reasons, len(pages), max(sample, len(pages)), tokens))
+            else:
+                counts = re.search(r"\((\d+)/(\d+) sampled URLs\)", f.get("title") or "")
+                blocked = int(counts.group(1)) if counts else sample
+                urls = [robots_url] if robots_url else []
+                ev.update(blocked_urls=blocked, site_row=robots_site_row([], blocked, max(sample, blocked), tokens))
+            before = len(affected.get(f.get("id")) or (f.get("scope") or {}).get("urls") or [])
+            f["scope"] = scope_for(urls, sitewide=bool(sample) and len(urls) == sample)
+            affected[f["id"]] = urls
+            changes.append(f"{f['id']}: {before} -> {len(urls)} address(es), only where robots.txt blocks "
+                           f"{', '.join(tokens)} (DECISIONS 370)")
+
+
 def _decisions_365(report: dict, changes: list[str]) -> None:
     """DECISIONS 365: the platform worked out again from the saved pages with the current signals (images, the generator
     tag, X-Powered-By, footer credits) and its confidence; a report whose pages show none keeps what it had (DECISIONS
@@ -1647,6 +1683,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_363(r, aff, changes, jsonld_by_url)  # DECISIONS 363: the SEO team's gaps
     _decisions_364(r, aff, changes, jsonld_by_url)  # DECISIONS 364: image and file names
     _decisions_368(r, aff, changes, saved_texts)  # DECISIONS 368: İlginay's review of "Diğer bulgular"
+    _decisions_370(r, aff, changes)  # DECISIONS 370: crawler findings only where robots.txt blocks
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -1706,6 +1743,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_363(r, affected, cert, jsonld_by_url)  # DECISIONS 363: the SEO team's gaps
         _decisions_364(r, affected, cert, jsonld_by_url)  # DECISIONS 364: image and file names
         _decisions_368(r, affected, cert, saved_texts)  # DECISIONS 368: İlginay's review of "Diğer bulgular"
+        _decisions_370(r, affected, cert)  # DECISIONS 370: crawler findings only where robots.txt blocks
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

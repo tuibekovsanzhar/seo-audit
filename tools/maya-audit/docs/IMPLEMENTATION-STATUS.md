@@ -2750,3 +2750,27 @@ value at all stays out (RG-24). Fix log item 89.
 | `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 89 items: Düzeltildi 86, Yeni tarama gerekli 3 |
 | `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+Pushed `cb2779b`, `21e816d` and `bf259c2` after the full suite (`3590 passed, 4 skipped, 1 warning in 995.15s
+(0:16:35)`); CI run 44562213151 started, its result not read yet (GitHub unreachable from this machine at the time).
+
+## A robots.txt finding only where its rule blocks (DECISIONS 370, 2026-11-19)
+
+VERIFIED locally; not pushed. ACC-6 is attached only to the addresses its bots are blocked on, each with the rule and
+the bots, plus one site-wide line (its Özet example); no address says "engellenen botlar" for a bot that can fetch it;
+ACC-2's blocked addresses carry the same line. Fix log item 90.
+
+| Saved audit (rebuilt from copies, no request) | ACC-6 rows | "engellenen botlar" rows | "Bulgu bazında" rows | Text check |
+|---|---|---|---|---|
+| MMI 536b4b64 | 150 -> 5 (/profile/gift-cards) | 150 -> 0 | 1764 -> 1619 | PASS |
+| Enpara fee70191 | 150 -> 15 | 150 -> 0 | 1365 -> 1230 | PASS |
+| Nature's Garden 342a0b14 | 125 -> 10 | 125 -> 0 | 1026 -> 911 | PASS |
+| Carpex, Atasun, İş Bankası, Ticimax | no ACC-6 finding | 0 | unchanged | PASS |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_robots_rows_370.py` | `5 passed` |
+| fast suite | `3460 passed, 4 skipped, 135 deselected, 1 warning in 565.12s (0:09:25)` |
+| `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 90 items: Düzeltildi 87, Yeni tarama gerekli 3 |
+| `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

@@ -294,7 +294,8 @@ def test_sector_xlsx_web_download(finished):  # noqa: F811
 
 @pytest.mark.parametrize("rule,check,evidence,want", [
     ("idx7.product_no_category", "IDX-7", {"products": 3}, "breadcrumb yok; içerikte kategori bağlantısı yok"),
-    ("acc6.scope", "ACC-6", {"blocked_tokens": ["GPTBot", "OAI-SearchBot"]}, "engellenen botlar: GPTBot, OAI-SearchBot"),
+    # DECISIONS 370: the bots blocked somewhere on the site are not this page's value
+    ("acc6.scope", "ACC-6", {"blocked_tokens": ["GPTBot", "OAI-SearchBot"]}, "—"),
     ("acc4.ua_check.status", "ACC-4", {"pairs": [{"url": SITE + "/a", "browser": {"status": 200}, "googlebot": {"status": 429}}]},
      "tarayıcı 200, Googlebot 429"),
     ("str11.two_values", "STR-11", {"contradictions": [{"url": SITE + "/a", "field": "dateModified",

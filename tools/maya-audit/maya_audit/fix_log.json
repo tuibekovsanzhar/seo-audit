@@ -1426,6 +1426,31 @@
     },
     "test": "tests/test_site_examples_369.py"
    }
+  },
+  {
+   "kaynak": "Sahip — MMI Ek, 'Bulgu bazında' ACC-6 satırları (DECISIONS 370)",
+   "brand_key": "mmi",
+   "sorun": "'Yapay zekâ tarayıcı erişimi role göre farklı' 150 satırda, ana sayfa dahil her örnek sayfada 'engellenen botlar: GPTBot, OAI-SearchBot, ChatGPT-User' yazıyordu; robots.txt yalnız /profile/ yolunu engelliyor (30 örnek adresten 1'i)",
+   "genel": "robots.txt bulguları, kuralın engellemediği sayfalarda da 'engellenen botlar' diye yazılıyordu",
+   "nasil": "Bulgu yalnız kuralın engellediği adreslere bağlanır; değer kural, yol ve botlardır ('robots.txt 5. satır Disallow: /profile/ → bu adreste engelli: …'); site geneli satırı '30 örnek adresten 1'i engelli (…); diğer sayfalar açık' der. Bir bot, açabildiği sayfada asla engelli yazılmaz.",
+   "decisions": [
+    370
+   ],
+   "check": {
+    "row_not": {
+     "sheet": "Bulgu bazında",
+     "key": "Kontrol",
+     "match": "^ACC-6$",
+     "column": "Ölçülen değer",
+     "regex": "^engellenen botlar"
+    },
+    "sheet_has": {
+     "sheet": "Bulgu bazında",
+     "column": "Ölçülen değer",
+     "regex": "robots\\.txt \\d+\\. satır Disallow: /profile/"
+    },
+    "test": "tests/test_robots_rows_370.py"
+   }
   }
  ]
 }

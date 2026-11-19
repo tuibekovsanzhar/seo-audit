@@ -14,11 +14,11 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | INT-3 | 3 | 7 |  |
 | INT-4 | 30 | 11 |  |
 | ACC-1 | 16 | 12 |  |
-| ACC-2 | 16 | 9 |  |
+| ACC-2 | 17 | 9 |  |
 | ACC-3 | 20 | 11 |  |
 | ACC-4 | 15 | 9 |  |
 | ACC-5 | 5 | 1 |  |
-| ACC-6 | 4 | 2 |  |
+| ACC-6 | 5 | 4 |  |
 | ACC-7 | 3 | 3 |  |
 | ACC-8 | 8 | 11 |  |
 | ACC-9 | 26 | 19 |  |
@@ -118,7 +118,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### ACC-2
 
-- Finds the problem: `test_acc_scenarios.py::test_robots_rules_per_role`, `test_acc_scenarios.py::test_declared_policy_and_intent_marking_move_findings_to_info`, `test_acc_scenarios.py::test_policy_mismatch_both_directions`, `test_acc_scenarios.py::test_robots_unavailable_everywhere`, `test_acc_units.py::test_intent_marking_rules`, `test_expert_review_338.py::test_a_saved_report_gets_the_four_rule_fixes`, `test_review_fixes.py::test_acc2_is_still_s1_when_the_blocked_path_holds_pages_meant_to_be_found`, `test_review_fixes.py::test_acc2_a_private_looking_path_listed_in_the_sitemap_or_a_sitewide_rule_stays_s1`, `test_sector_prefill_326.py::test_effort_is_the_rules_default_else_three`, `test_shop_review_347.py::test_the_policy_cap_keeps_a_high_score_at_p2_and_search_blocks_stay_p0`, `test_shop_review_347.py::test_the_role_decides_the_rule`, `test_status_and_identity.py::test_check_ids_sort_naturally_and_priority_order_is_a_separate_list`, `test_turkish_report.py::test_every_check_and_gate_summary_the_engine_can_write_has_a_turkish_wording`, `test_w4a_report.py::test_one_robots_line_is_one_card_at_its_worst_severity_and_provider_notes_are_one_table`, `test_web_app.py::test_comparison_matching_and_verdicts_on_small_reports`, `test_wording.py::test_every_fix_and_expected_sentence_in_the_engines_source_has_a_turkish_entry`
+- Finds the problem: `test_acc_scenarios.py::test_robots_rules_per_role`, `test_acc_scenarios.py::test_declared_policy_and_intent_marking_move_findings_to_info`, `test_acc_scenarios.py::test_policy_mismatch_both_directions`, `test_acc_scenarios.py::test_robots_unavailable_everywhere`, `test_acc_units.py::test_intent_marking_rules`, `test_expert_review_338.py::test_a_saved_report_gets_the_four_rule_fixes`, `test_review_fixes.py::test_acc2_is_still_s1_when_the_blocked_path_holds_pages_meant_to_be_found`, `test_review_fixes.py::test_acc2_a_private_looking_path_listed_in_the_sitemap_or_a_sitewide_rule_stays_s1`, `test_robots_rows_370.py::test_acc2_blocked_addresses_carry_their_rule_line`, `test_sector_prefill_326.py::test_effort_is_the_rules_default_else_three`, `test_shop_review_347.py::test_the_policy_cap_keeps_a_high_score_at_p2_and_search_blocks_stay_p0`, `test_shop_review_347.py::test_the_role_decides_the_rule`, `test_status_and_identity.py::test_check_ids_sort_naturally_and_priority_order_is_a_separate_list`, `test_turkish_report.py::test_every_check_and_gate_summary_the_engine_can_write_has_a_turkish_wording`, `test_w4a_report.py::test_one_robots_line_is_one_card_at_its_worst_severity_and_provider_notes_are_one_table`, `test_web_app.py::test_comparison_matching_and_verdicts_on_small_reports`, `test_wording.py::test_every_fix_and_expected_sentence_in_the_engines_source_has_a_turkish_entry`
 - Must not flag: `test_acc_scenarios.py::test_ai_friendly_site_passes_everything`, `test_client_brief_319.py::test_good_things_need_a_clean_pass_and_no_contradicting_finding`, `test_firecrawl.py::test_firecrawl_reads_a_blocked_sites_content_and_never_touches_access_results`, `test_live_fixes_329.py::test_already_good_never_contradicts_a_robots_card`, `test_live_review_fixes.py::test_acc2_treats_app_api_and_dashboard_paths_as_private_unless_the_site_puts_them_forward`, `test_network_and_dns.py::test_a_local_dns_failure_is_not_a_finding_not_a_blocker_and_not_a_statement_about_the_site`, `test_review_fixes.py::test_acc2_blocking_private_or_technical_paths_is_info_not_s1`, `test_sector_precision_325.py::test_rule_ids_match_exactly_never_by_a_shared_start`, `test_w1_crawler.py::test_ans4_links_an_engine_only_to_findings_that_block_its_search_or_live_tokens`
 
 ### ACC-3
@@ -138,8 +138,8 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### ACC-6
 
-- Finds the problem: `test_acc_scenarios.py::test_robots_rules_per_role`, `test_acc_scenarios.py::test_robots_unavailable_everywhere`, `test_w4a_report.py::test_one_robots_line_is_one_card_at_its_worst_severity_and_provider_notes_are_one_table`, `test_wording.py::test_every_fix_and_expected_sentence_in_the_engines_source_has_a_turkish_entry`
-- Must not flag: `test_acc_scenarios.py::test_ai_friendly_site_passes_everything`, `test_network_and_dns.py::test_a_local_dns_failure_is_not_a_finding_not_a_blocker_and_not_a_statement_about_the_site`
+- Finds the problem: `test_acc_scenarios.py::test_robots_rules_per_role`, `test_acc_scenarios.py::test_robots_unavailable_everywhere`, `test_robots_rows_370.py::test_a_saved_audit_is_rewritten_to_the_blocked_addresses_only`, `test_w4a_report.py::test_one_robots_line_is_one_card_at_its_worst_severity_and_provider_notes_are_one_table`, `test_wording.py::test_every_fix_and_expected_sentence_in_the_engines_source_has_a_turkish_entry`
+- Must not flag: `test_acc_scenarios.py::test_ai_friendly_site_passes_everything`, `test_network_and_dns.py::test_a_local_dns_failure_is_not_a_finding_not_a_blocker_and_not_a_statement_about_the_site`, `test_robots_rows_370.py::test_the_live_check_attaches_a_vendor_only_where_its_bots_are_blocked`, `test_robots_rows_370.py::test_without_the_saved_decisions_the_finding_is_said_once_on_robots_txt`
 
 ### ACC-7
 

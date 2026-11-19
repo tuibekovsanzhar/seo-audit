@@ -5736,3 +5736,17 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      stays out, said on the "Diğer bulgular" line ("ölçülen değeri olmayan N bulgu…") and by RG-24, now "Örneği ve
      ölçülen değeri olmayan bulgu".
      Tests: `tests/test_site_examples_369.py` (3); `test_summary_others_366`, `test_review_368` updated.
+
+370. **A robots.txt finding only where its rule blocks (Owner, 2026-11-19, from the MMI Ek; the wording of the lines
+     is an agent default).** Global for every audit. ACC-6 ("Yapay zekâ tarayıcı erişimi role göre farklı") was
+     scoped to every sampled address whenever a vendor's bot was blocked on any of them, and "Ölçülen değer" read
+     "engellenen botlar: GPTBot, OAI-SearchBot, ChatGPT-User" on each: on MMI 5 vendors × 30 addresses = 150 rows,
+     the homepage included, while robots.txt blocks only /profile/ (1 of 30). *Now* (`checks/access.py`,
+     `example_rows.robots_pages`, `robots_site_row`): an ACC-6 finding is attached only to the addresses its bots are
+     blocked on, each with the rule and the bots ("robots.txt 5. satır Disallow: /profile/ → bu adreste engelli:
+     GPTBot, OAI-SearchBot, ChatGPT-User"), and carries one site-wide line ("robots.txt 5. satır Disallow: /profile/ →
+     30 örnek adresten 1'i engelli (…); diğer sayfalar açık"), which is its Özet example. `page_rows.about` no longer
+     prints the blocked bots on any address. ACC-2's blocked addresses get the same line (they said "okunmadı"). A saved
+     report is rewritten from its ACC-2 decisions (address, bot, rule) (`reassess_rules._decisions_370`); when those
+     do not name the addresses, the finding is said once, on robots.txt, with the count from its title.
+     Tests: `tests/test_robots_rows_370.py` (5); `test_sector_method_324` updated (the page's value is "—").

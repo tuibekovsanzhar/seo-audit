@@ -319,8 +319,8 @@ def about(finding: dict, url: str, lang: str = "tr") -> list[str]:
     rule, check = str(finding.get("rule_id") or ""), str(finding.get("check_id") or "")
     if rule == "idx7.product_no_category":
         return [W["no_crumb"]]
-    if check == "ACC-6" and ev.get("blocked_tokens"):
-        return [W["bots_blocked"].format(v=", ".join(map(str, ev["blocked_tokens"][:6])))]
+    # DECISIONS 370: never "blocked bots" on an address: a bot is said blocked only where its rule blocks it (the
+    # finding's own page lines, `pages[].row`), not on every sampled page
     if check == "ACC-4":
         for pair in ev.get("pairs") or []:
             if isinstance(pair, dict) and _same(pair.get("url"), url):

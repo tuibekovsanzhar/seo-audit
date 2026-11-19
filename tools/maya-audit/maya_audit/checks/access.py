@@ -1095,11 +1095,21 @@ def acc6_training_scope(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
                 notes.append(f"{search} is also blocked. That is reported once, as an ACC-2 finding, not repeated here.")
             intent = ({"kind": "declared_policy", "policy": "training_bots=block", "severity_otherwise": Severity.INFO.value}
                       if cfg.policy.training_bots == "block" else None)
+            # DECISIONS 370: only the addresses a rule blocks, each with the rule and the bots blocked there, and one
+            # site-wide line (the rule, how many sampled addresses it blocks, the rest open)
+            from ..example_rows import robots_pages, robots_site_row
+            blocked_tokens = [t for t, n in ((training, tb), (search, sb), (live, _lb)) if t and n]
+            decisions = [{"url": u, "token": t, "reason": d.reason} for t in blocked_tokens for u in sample
+                         if not (d := policy.decide(t, u)).allowed]
+            pages = robots_pages(decisions)
+            reasons = list(dict.fromkeys(r for page in pages for r in page["reasons"]))
             findings.append(Finding(
                 "ACC-6", line, Severity.INFO, Confidence.INFERRED, Rationale.DOCUMENTED.value,
-                [e.engine for e in REGISTRY if e.vendor == vendor], scope_for(sample, sitewide=True),
+                [e.engine for e in REGISTRY if e.vendor == vendor],
+                scope_for([page["url"] for page in pages], sitewide=len(pages) == len(sample)),
                 {"training_token": training, "search_token": search, "live_token": live, "sample_size": len(sample),
-                 "blocked_tokens": [t for t, n in ((training, tb), (search, sb), (live, _lb)) if t and n]},
+                 "blocked_tokens": blocked_tokens, "pages": pages, "blocked_urls": len(pages),
+                 "site_row": robots_site_row(reasons, len(pages), len(sample), blocked_tokens)},
                 "training and search access set independently, as intended",
                 "No action needed if this matches your policy. Each token is controlled separately in robots.txt.",
                 intent=intent, launch_gated=_gates([t for t in (training, search, live) if t]), notes=notes,

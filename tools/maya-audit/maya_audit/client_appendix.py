@@ -580,7 +580,8 @@ def other_findings(selection: dict, rows: list[dict], card_of_finding: dict, tod
         # DECISIONS 368: a finding listed here shows one concrete example; one without stays in "Bulgular" only
         # DECISIONS 369: else a site-level example (the file or address measured and its value), else the first
         # measured value of its rows; only a finding with no measured value at all is left out
-        example = (next((examples[f] for f in ids if f in examples), None) or evidence_example(lead, lang)
+        own = ((lead.get("evidence") or {}).get("site_row") or {}).get(lang)  # DECISIONS 370: a robots.txt rule's line
+        example = (own or next((examples[f] for f in ids if f in examples), None) or evidence_example(lead, lang)
                    or site_example(lead, lang) or next((measured[f] for f in ids if f in (measured or {})), None)
                    ) if examples is not None else None
         if examples is not None and example is None:

@@ -520,6 +520,17 @@ def attach(report: dict) -> list[str]:
     for f in _findings(report, "str3.article_no_author"):
         urls = (f.get("scope") or {}).get("urls") or []
         lines(f, [{"url": u, "row": no_author_row(titles.get(u))} for u in urls])
+    # DECISIONS 370: a robots.txt block on the addresses it blocks, with the rule and the bots, and one site-wide line
+    sample_n = len(((crawl.get("access") or {}).get("url_sample")) or [])
+    for f in _findings(report, "acc2."):
+        ev = f.get("evidence") or {}
+        blocked = robots_pages(ev.get("decisions") or [])
+        if blocked:
+            lines(f, [{"url": b["url"], "row": b["row"]} for b in blocked])
+            if sample_n and not ev.get("site_row"):
+                reasons = list(dict.fromkeys(r for b in blocked for r in b["reasons"]))
+                ev["site_row"] = robots_site_row(reasons, len(blocked), max(sample_n, len(blocked)),
+                                                 [t for b in blocked for t in b["blocked"]])
     for rule in ("rnd1.partial", "rnd1.missing"):
         for f in _findings(report, rule):
             for rec in (f.get("evidence") or {}).get("pages") or []:
@@ -616,6 +627,8 @@ def site_example(finding: dict, lang: str = "tr") -> str | None:
     limit when the finding has one. None when the finding holds no measured value."""
     tr = lang == "tr"
     ev = finding.get("evidence") or {}
+    if isinstance(ev.get("site_row"), dict) and ev["site_row"].get(lang):  # DECISIONS 370: the finding's own site line
+        return ev["site_row"][lang]
     rule = str(finding.get("rule_id") or "")
     title = str(finding.get("title") or "")
     pages = [p for p in ev.get("pages") or [] if isinstance(p, dict)]
@@ -708,3 +721,78 @@ def measured_value(value) -> bool:
         return False
     empty = {w[k] for w in WORDS.values() for k in ("na", "not_kept", "not_read", "seen")}
     return value.strip() not in empty
+
+
+# ------------------------------------------------------------------------------------------------ robots.txt rules
+
+_RULE = re.compile(r"line (\d+): (\w+): ?(\S*)")
+
+
+def robots_rule(reason: str, lang: str = "tr") -> str:
+    """'robots.txt 5. satır Disallow: /profile/' from a decision's reason ('disallowed by line 5: Disallow: /profile/')."""
+    m = _RULE.search(str(reason or ""))
+    if not m:
+        return str(reason or "robots.txt")
+    line, directive, pattern = m.groups()
+    return (f"robots.txt {line}. satır {directive}: {pattern}" if lang == "tr" else
+            f"robots.txt line {line} {directive}: {pattern}")
+
+
+def tr_count(n: int) -> str:
+    """'1'i', '2'si', '30'u': a number with the Turkish third-person possessive suffix."""
+    by_digit = {1: "i", 2: "si", 3: "ü", 4: "ü", 5: "i", 6: "sı", 7: "si", 8: "i", 9: "u"}
+    by_tens = {1: "u", 2: "si", 3: "u", 4: "ı", 5: "si", 6: "ı", 7: "i", 8: "i", 9: "ı"}
+    if n % 10:
+        suffix = by_digit[n % 10]
+    elif n % 100:
+        suffix = by_tens[(n // 10) % 10]
+    elif n % 1000:
+        suffix = "ü"
+    else:
+        suffix = "i"
+    return f"{n}'{suffix}"
+
+
+def _bots(tokens: list[str], limit: int = 6) -> str:
+    tokens = list(dict.fromkeys(tokens))
+    return ", ".join(tokens[:limit]) + ("…" if len(tokens) > limit else "")
+
+
+def robots_page_row(reasons: list[str], tokens: list[str]) -> dict:
+    """The line of one address a robots.txt rule blocks for some bots: the rule and the bots blocked there."""
+    def make(lang):
+        rules = "; ".join(dict.fromkeys(robots_rule(r, lang) for r in reasons)) or "robots.txt"
+        return (f"{rules} → bu adreste engelli: {_bots(tokens)}" if lang == "tr" else
+                f"{rules} → blocked at this address for: {_bots(tokens)}")
+    return row(make)
+
+
+def robots_site_row(reasons: list[str], blocked: int, sample: int, tokens: list[str]) -> dict:
+    """The site-wide line: the rule, how many sampled addresses it blocks and for which bots, and that the rest are open."""
+    def make(lang):
+        rules = "; ".join(dict.fromkeys(robots_rule(r, lang) for r in reasons)) or "robots.txt"
+        if lang == "tr":
+            rest = "; diğer sayfalar açık" if blocked < sample else "; örnek adreslerin hepsi engelli"
+            return f"{rules} → {sample} örnek adresten {tr_count(blocked)} engelli ({_bots(tokens)}){rest}"
+        rest = "; the other pages are open" if blocked < sample else "; every sampled address is blocked"
+        return f"{rules} → {blocked} of {sample} sampled addresses blocked ({_bots(tokens)}){rest}"
+    return row(make)
+
+
+def robots_pages(decisions: list[dict], tokens: list[str] | None = None) -> list[dict]:
+    """[{url, blocked, reasons, row}] from (url, token, reason) decisions: each address with the bots blocked there."""
+    keep = set(tokens) if tokens is not None else None
+    by_url: dict[str, dict] = {}
+    for d in decisions or []:
+        if not isinstance(d, dict) or not d.get("url") or (keep is not None and d.get("token") not in keep):
+            continue
+        if "disallowed" not in str(d.get("reason") or "") and "line" in str(d.get("reason") or ""):
+            continue
+        rec = by_url.setdefault(d["url"], {"url": d["url"], "blocked": [], "reasons": []})
+        if d.get("token") and d["token"] not in rec["blocked"]:
+            rec["blocked"].append(d["token"])
+        if d.get("reason") and d["reason"] not in rec["reasons"]:
+            rec["reasons"].append(d["reason"])
+    for rec in by_url.values():
+        rec["row"] = robots_page_row(rec["reasons"], rec["blocked"])
+    return list(by_url.values())
