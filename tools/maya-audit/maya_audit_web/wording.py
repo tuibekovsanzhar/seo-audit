@@ -309,6 +309,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("idx4.chain", "{n#} page(s) declare a canonical to a page whose own canonical is another address",
          "{n:page declares|pages declare} a canonical to a page whose own canonical is another address"),
         ("idx4.conflict", "{n#} page(s) declare conflicting canonicals", "{n:page declares|pages declare} conflicting canonicals"),
+        # DECISIONS 368: the raw HTML and the rendered page name different canonicals
+        ("idx4.versions_differ", "{n#} page(s) declare a different canonical in the raw HTML and in the rendered page",
+         "{n:page declares|pages declare} a different canonical in the raw HTML and in the rendered page"),
         ("idx4.different", "{n#} page(s) are canonicalized to a URL with different content", "{n:page is|pages are} canonicalized to a URL with different content"),
         ("idx4.same", "{n#} page(s) are canonicalized to a URL with the same content", "{n:page is|pages are} canonicalized to a URL with the same content"),
         ("idx4.other_site", "{n#} page(s) declare a canonical on another site", "{n:page declares|pages declare} a canonical on another site"),
@@ -553,6 +556,9 @@ _TITLES: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("str2.home_hidden_h1", "The homepage's only <h1> is hidden", "The homepage's only <h1> is hidden"),
         ("str2.home_outline", "The homepage has {n#} visible section heading(s) for {words#} words",
          "The homepage has {n:visible section heading|visible section headings} for {words} words"),
+        # DECISIONS 368: most of the homepage's <h2> headings are product card names
+        ("str2.card_headings", "The homepage marks {n#} product names as <h2> headings",
+         "The homepage marks {n:product name|product names} as <h2> headings"),
         ("str2.hidden_h1", "{n#} page(s) have only a hidden <h1>", "{n:page has|pages have} only a hidden <h1>"),
         ("str2.no_h1", "{n#} page(s) have no <h1>", "{n:page has|pages have} no <h1>"),
         ("str2.empty_h1", "{n#} page(s) have an empty <h1>", "{n:page has|pages have} an empty <h1>"),

@@ -1285,6 +1285,129 @@
     },
     "test": "tests/test_confirm_cards_367.py"
    }
+  },
+  {
+   "kaynak": "İlginay — MMI Ek, 'Diğer bulgular' incelemesi (DECISIONS 368)",
+   "brand_key": "mmi",
+   "sorun": "'Ana sayfada bölüm başlıkları az' yanlıştı: ana sayfada 147 H2 var, çoğu ürün adı (yalnız görünür başlıklar sayılıyordu; Firecrawl kopyasında açık bir pencere sayfayı gizli işaretlemişti)",
+   "genel": "Başlıkları çok olan ana sayfa 'başlıkları az' deniyordu; ürün adlarının H2 olması söylenmiyordu",
+   "nasil": "Gizli olanlar dahil tüm H2/H3 sayılır; çoksa 'az' denmez. H2'lerin çoğu ürün kartı adıysa (ardından fiyat gelen başlık) 'Ürün adları başlık (H2) olarak işaretlenmiş' yazılır: sayı, örnekler ve bölüm başlıklarıyla (str2.card_headings, Düşük, Kontrol edin).",
+   "decisions": [
+    368
+   ],
+   "check": {
+    "no_problem": [
+     "str2.home_outline"
+    ],
+    "has_finding": [
+     "str2.card_headings"
+    ],
+    "test": "tests/test_review_368.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — MMI Ek, 'Diğer bulgular' incelemesi (DECISIONS 368)",
+   "brand_key": "mmi",
+   "sorun": "'Bölüm başlıkları başka bir dilde' yanlıştı: MMI'ın İngilizce SSS başlıkları ('How do I move up a tier?') Portekizce sayıldı; ölçülen değer 'atlanan başlık düzeyi yok' diyordu",
+   "genel": "İngilizce soru başlıkları başka dil sayılıyordu ve ölçülen değer ilgisiz bir sayıydı",
+   "nasil": "Başlık, sayfanın kendi diliyle (html lang ve metnin dili) karşılaştırılır; İngilizce soru sözcükleri (how, do, my…) tanınır; yalnız farklıysa örnek başlıklarla raporlanır. 'Atlanan başlık düzeyi' yalnız başlık atlama kurallarında yazılır.",
+   "decisions": [
+    368
+   ],
+   "check": {
+    "no_problem": [
+     "str12.headings"
+    ],
+    "test": "tests/test_review_368.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — MMI Ek, 'Diğer bulgular' incelemesi (DECISIONS 368)",
+   "brand_key": "mmi",
+   "sorun": "'Kanonik adres farklı içerikli bir sayfayı gösteriyor' (/about-dxb): İlginay sayfada kendini gösteren canonical görüyor; tarayıcı okuması sayfa yüklenmesi bitmeden alınmıştı",
+   "genel": "Kanonik adres tek okumayla söyleniyordu; ham, işlenmiş ve Firecrawl okumaları karşılaştırılmıyordu",
+   "nasil": "Her okuma (ham HTML, tarayıcı, Firecrawl, tarih) kaydedilir; bulgu yalnız okumalar aynıysa ve biri son haliyse yazılır; okumalar farklıysa iki değerle 'Ham HTML'deki ve işlenmiş sayfadaki kanonik adres farklı' yazılır; yükleme bitmeden alınan tek okuma değerlendirilmez.",
+   "decisions": [
+    368
+   ],
+   "check": {
+    "no_problem": [
+     "idx4.different"
+    ],
+    "test": "tests/test_review_368.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — MMI Ek, 'Diğer bulgular' incelemesi (DECISIONS 368)",
+   "brand_key": "mmi",
+   "sorun": "'İçeriğin bir kısmı ham HTML'de eksik' hangi içeriğin eksik olduğunu göstermiyordu",
+   "genel": "Ham HTML'de eksik içerik yalnız sayıyla söyleniyordu",
+   "nasil": "Her sayfa için eksik metin bloklarının ilk 80 karakteri, öğesi (başlık H2, düğme, bağlantı, metin) ve bölümü (üstündeki başlık) 'Ölçülen değer'de yazılır.",
+   "decisions": [
+    368
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bulgu bazında",
+     "column": "Ölçülen değer",
+     "regex": "JavaScript'le gelen metin: «"
+    },
+    "test": "tests/test_review_368.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — MMI Ek, 'Diğer bulgular' incelemesi (DECISIONS 368)",
+   "brand_key": "mmi",
+   "sorun": "'İçerik yalnızca tıklama ya da kaydırmayla görünüyor' hangi içeriğin açıldığını göstermiyordu ('312 → 587 kelime')",
+   "genel": "Tıklama ya da kaydırmayla açılan içerik yalnız kelime sayısıyla söyleniyordu",
+   "nasil": "Her sayfa için tıklanan öğeler (metni ve etiketi) ya da kaydırma, ardından görünen başlıklar ve metin 'Ölçülen değer'de yazılır.",
+   "decisions": [
+    368
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bulgu bazında",
+     "column": "Ölçülen değer",
+     "regex": "tıklanan: «|sayfa kaydırılınca yüklenen içerik"
+    },
+    "test": "tests/test_review_368.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — MMI Ek, 'Diğer bulgular' incelemesi (DECISIONS 368)",
+   "brand_key": "mmi",
+   "sorun": "'Ortak alandaki bağlantının adresi yok', 'Adreslerin kısa adı anlaşılır değil', 'Bazı bağlantılarda genel metinler kullanılıyor' anlaşılır değildi ve örnek yoktu",
+   "genel": "Adressiz bağlantı, uzun adres ve genel bağlantı metni bulguları teknik dille yazılmıştı, örnek göstermiyordu",
+   "nasil": "Başlık ve 'Ne yapılmalı' sade Türkçeyle yeniden yazıldı (sorun, neden önemli, ne yapılacak). Her sayfada örnek: bağlantı metni, href ve yeri; uzun kısa ad ve önerilen kısa ad; «See all» gibi genel metin ve hedefi.",
+   "decisions": [
+    368
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Bulgu bazında",
+     "column": "Sorun",
+     "regex": "^(Ortak alandaki bağlantının adresi yok|Adreslerin kısa adı anlaşılır değil|Bazı bağlantılarda genel metinler kullanılıyor)$"
+    },
+    "test": "tests/test_review_368.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — MMI Ek, 'Diğer bulgular' incelemesi (DECISIONS 368)",
+   "brand_key": "mmi",
+   "sorun": "Özet'teki 'Diğer bulgular' satırlarında somut örnek yoktu",
+   "genel": "Özet'te bulguların somut örneği (sayfa ve metin/öğe) gösterilmiyordu",
+   "nasil": "Özet'e 'Örnek' sütunu eklendi: sayfa ve o sayfadaki metin, adres ya da öğe. Somut örneği olmayan bulgu 'Diğer bulgular'da listelenmez ('Bulgular'da kalır) ve kontrol raporu RG-24 ile adını yazar.",
+   "decisions": [
+    368
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Özet",
+     "column": "Örnek",
+     "regex": "«"
+    },
+    "test": "tests/test_review_368.py"
+   }
   }
  ]
 }

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from typing import Callable
+from urllib.parse import urlsplit
 
 from . import xlsx
 from .client_selection import CONFIDENCE_WEIGHT, SEVERITY_NAME, SEVERITY_WEIGHT, appendix_rows
@@ -27,10 +28,11 @@ READ = {
                      "«Bağlantı yerleri»: hata veren, yönlenen ya da yanlış yazılmış her adres ve onu gösteren her sayfa bir satır: sayfa, bağlantı metni, href, konum, site haritası, önerilen hedef. Bağlantı veren sayfa yoksa «yalnızca site haritasında» yazar.",
                      "Bağlantılar Mac'in hızlı önizlemesinde çalışmaz; dosyayı Numbers, Excel veya Google Sheets ile açın."],
            "summary_cols": ["Kart", "Başlık", "Önem", "Sorun türü", "Öncelik (P0-P3)", "Sorumlu", "Efor", "Etkilenen adres", "Satırlara git",
-                            "Bağlantılar"],
+                            "Bağlantılar", "Örnek"],
            "go": "Satırlara git →", "where": "Bağlantı yerleri", "go_links": "Bağlantılara git →",
            "pdf_line": "İlk {n} kart PDF raporundadır; diğer bulgular aşağıdadır.",
            "others": "Diğer bulgular ({n}): PDF'te kart olmayan her sorun, önem ve önceliğe göre",
+           "others_without": "; somut örneği olmayan {n} bulgu yalnız «Bulgular» sayfasında",
            # DECISIONS 337: where each address with a problem is pointed at
            "where_cols": ["Kart", "Bozuk adres", "HTTP durumu", "Bağlantının bulunduğu sayfa", "Bağlantı metni", "Yazılan değer (href)",
                           "Konum", "Site haritasında mı?", "Site haritası dosyası", "Site haritasındaki <loc> metni", "<loc> satırı",
@@ -72,10 +74,11 @@ READ = {
                      "\"Link locations\": one row per failing, redirecting or mistyped address and each page pointing to it: page, link text, href, place, sitemap, what to point to. With no linking page it says \"sitemap only\".",
                      "Links do not work in the Mac's Quick Look preview; open the file in Numbers, Excel or Google Sheets."],
            "summary_cols": ["Card", "Title", "Severity", "Issue type", "Priority (P0-P3)", "Owner", "Effort", "Affected addresses", "Go to rows",
-                            "Links"],
+                            "Links", "Example"],
            "go_links": "Go to links →",
            "pdf_line": "The first {n} cards are in the PDF report; the other findings are below.",
            "others": "Other findings ({n}): every problem that is not a PDF card, by severity and priority",
+           "others_without": "; {n} finding(s) with no concrete example only on the \"Findings\" sheet",
            "go": "Go to rows →", "where": "Link locations",
            "where_cols": ["Card", "Broken address", "HTTP status", "Page with the link", "Link text", "Written value (href)",
                           "Place", "In the sitemap?", "Sitemap file", "<loc> text in the sitemap", "<loc> line",
@@ -529,10 +532,28 @@ EFFORT_WORDS = {"tr": {"S": "Küçük", "M": "Orta", "L": "Büyük"}, "en": {"S"
 SEV_RANK = {"S1": 0, "S2": 1, "S3": 2, "S4": 3}
 
 
-def other_findings(selection: dict, rows: list[dict], card_of_finding: dict, todos, lang: str, where: str) -> list[list]:
+def examples_of(rows: list[dict]) -> dict[str, str]:
+    """DECISIONS 368: {finding id: one concrete example}: the first "Bulgu bazında" row of the finding whose measured
+    value shows a concrete thing (quoted page text, an address or an element), as "page: value"."""
+    from .example_rows import concrete
+    out: dict[str, str] = {}
+    for r in rows:
+        fid, value = r.get("finding_id"), r.get("value")
+        if fid in out or not concrete(value):
+            continue
+        parts = urlsplit(str(r.get("url") or r.get("address") or ""))
+        page = (parts.path or "/") + (f"?{parts.query}" if parts.query else "") if parts.netloc else str(r.get("address") or "")
+        text = " ".join(str(value).split())
+        out[fid] = f"{page}: {text if len(text) <= 220 else text[:219].rstrip() + '…'}"
+    return out
+
+
+def other_findings(selection: dict, rows: list[dict], card_of_finding: dict, todos, lang: str, where: str,
+                   examples: dict[str, str] | None = None, without: list[str] | None = None) -> list[list]:
     """DECISIONS 366: the Özet rows for every problem group on no card shown (the PDF's cards and the appendix's note
     cards; a group the selection made a card that the PDF has no room for is listed): never a rejected one or Maya's
     own limit, severities S1-S4 (no Info notes), with the cards' columns, the first "Bulgu bazında" row of the group, by severity, then priority (P0-P3), then title."""
+    from .example_rows import evidence_example
     from .recommendation_catalog import note
     W, R = WORDS[lang], READ[lang]
     on_cards = set(card_of_finding) | {f for t in todos or [] for f in t.get("finding_ids") or []}
@@ -553,11 +574,19 @@ def other_findings(selection: dict, rows: list[dict], card_of_finding: dict, tod
         row_at = next((first[f] for f in ids if f in first), None)
         level = (g.get("p_level") or {}).get("level") if isinstance(g.get("p_level"), dict) else g.get("p_level")
         name = next((title_of[f] for f in ids if f in title_of), None) or lead.get("title") or g.get("title") or ""
+        # DECISIONS 368: a finding listed here shows one concrete example; one without stays in "Bulgular" only
+        example = (next((examples[f] for f in ids if f in examples), None)
+                   or evidence_example(lead, lang)) if examples is not None else None
+        if examples is not None and example is None:
+            if without is not None:
+                without.append(name.get("text", "") if isinstance(name, dict) else str(name))
+            continue
         out.append((SEV_RANK[g["severity"]], level or "P9", name.get("text", "") if isinstance(name, dict) else str(name),
                     ["", name, W["severity"].get(g["severity"], g["severity"]), W["itype"].get(g.get("issue_type") or "", ""),
                      level or "", OWNER_WORDS[lang].get(n.get("owner") or "", n.get("owner") or ""),
                      EFFORT_WORDS[lang].get(effort, effort), len(g.get("urls") or []),
-                     {"text": R["go"], "location": f"{where}!A{row_at}"} if row_at else ""]))
+                     {"text": R["go"], "location": f"{where}!A{row_at}"} if row_at else ""]
+                    + (["", example] if examples is not None else [])))
     return [r for *_, r in sorted(out, key=lambda x: x[:3])]
 
 
@@ -572,6 +601,7 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
     sev = lambda s: W["severity"].get(s, s or "")  # noqa: E731
     profile_id = (selection.get("business_type") or {}).get("id")  # DECISIONS 350: the profile's own type words
     ptype = lambda t: page_rows.type_word(t, lang, profile_id, W["page_type"])  # noqa: E731
+    examples = examples_of(rows)  # DECISIONS 368
     found = [[r["title"], sev(r["severity"]), W["itype"].get(r["issue_type"], ""),
               _link(r["url"], r["address"]), page_rows.read_word(r["read"], lang), r["value"], r["fix"], r["card"] if r["card"] is not None else "",
               W["placement"].get(r["placement"], r["placement"] or ""), ptype(r["page_type"]),
@@ -601,25 +631,28 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
                 c["scope"] if c.get("scope") and not re.fullmatch(r"[\d.,]+ \w+", str(c["scope"])) else
                 len(addresses[c["n"]]) if c["n"] in addresses else c.get("addresses") or 0,
                 {"text": R["go"], "location": f"{where}!A{first_row[c['n']]}"} if c["n"] in first_row else "",
-                {"text": R["go_links"], "location": f"{links_sheet}!A{first_link[c['n']]}"} if c["n"] in first_link else ""]
+                {"text": R["go_links"], "location": f"{links_sheet}!A{first_link[c['n']]}"} if c["n"] in first_link else "",
+                next((examples[f] for f in c.get("finding_ids") or [] if f in examples), "")]  # DECISIONS 368
                for c in cards]
     # DECISIONS 366: every other problem below the cards ("Diğer bulgular"), and a line on top saying where the cards are
-    others = other_findings(selection, rows, card_of_finding, todos, lang, where)
+    without: list[str] = []
+    others = other_findings(selection, rows, card_of_finding, todos, lang, where, examples, without)
     pdf_cards = sum(1 for c in cards if c.get("n") is not None)
     top = [["", platform_line(selection, lang, short=True)], ["", R["pdf_line"].format(n=pdf_cards)]]
-    if others:
-        summary = summary + [["", R["others"].format(n=len(others))]] + others
+    if others or without:
+        summary = summary + [["", R["others"].format(n=len(others))
+                              + (R["others_without"].format(n=len(without)) if without else "")]] + others
     by_page = [[_link(p["url"], p["url"]), page_rows.read_word(p["read"], lang), ptype(p["page_type"]),
                 p["importance"] if isinstance(p["importance"], (int, float)) else "", p["problems"], sev(p["worst"]),
                 "; ".join(p["names"]), ", ".join(str(n) for n in p["cards"])] for p in page_rows.page_table(rows)]
     out = [{"name": R["how"], "header": [R["how"]], "rows": [[x] for x in R["lines"]], "widths": [140],
             "frozen": False, "filter": False}]
-    for key, header, body, widths in (("summary", R["summary_cols"], summary, [7, 60, 12, 14, 12, 22, 10, 12, 18, 20]),
+    for key, header, body, widths in (("summary", R["summary_cols"], summary, [7, 60, 12, 14, 12, 22, 10, 12, 18, 20, 70]),
                                       ("by_page", R["page_cols"], by_page, [70, 16, 22, 12, 10, 14, 80, 10]),
                                       ("by_finding", R["finding_cols"], found, [42, 12, 13, 60, 16, 48, 60, 7, 16, 20, 12, 18, 24, 10])):
         if body and key == "summary":  # DECISIONS 365, 366: the platform and where the cards are, above the cards
             out.append({"name": R[key], "header": header, "rows": [t + [""] * (len(header) - 2) for t in top] + body,
-                        "widths": widths, "title_rows": len(top)})
+                        "widths": widths, "title_rows": len(top), "_without_example": without})
         elif body:
             out.append({"name": R[key], "header": header, "rows": body, "widths": widths})
         else:  # one line saying why, never an empty sheet (DECISIONS 321 (5))
@@ -799,7 +832,11 @@ def build(selection: dict, lang: str = "tr", lists: dict | None = None, text_che
         record = text_check() if callable(text_check) else text_check
         # DECISIONS 361: RG-19 on the file's own "Ne yapılmalı" cells too: advice for another platform blocks
         record = text_gate.with_platform_advice(record, advice_cells(made), selection.get("platform"), lang)
+        # DECISIONS 368: RG-24 names each problem the Özet leaves out because it has no concrete example
+        record = text_gate.with_no_example(record, [n for m in made for n in m.get("_without_example") or []], lang)
         made.append(text_gate.sheet(record, lang))
+    for m in made:
+        m.pop("_without_example", None)
     return xlsx.workbook(made)
 
 

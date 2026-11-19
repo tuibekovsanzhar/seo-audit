@@ -172,14 +172,26 @@ def content_delta(raw: dict, entry: dict, limit: int = 10) -> dict:
         missing.append({"text": block.strip()[:200], "chars": len(block.strip()), "in_raw_response": also})
     requests = [{"url": r["url"], "type": r["type"], "status": r.get("status")}
                 for r in entry.get("requests", []) if r["type"] in DATA_REQUEST_TYPES and r["action"] == "allowed"]
+    # DECISIONS 368: each missing block's element and the section it sits in (the heading above it in the page)
+    from ..example_rows import locate_blocks
+    rendered = entry["rendered"]
+    located = locate_blocks([m["text"] for m in missing[:limit]], rendered.get("headings"), rendered.get("buttons"),
+                            [x.get("anchor") for x in entry.get("rendered_links") or [] if isinstance(x, dict)],
+                            rendered.get("_text_blocks"))
     return {"statement": DELTA_STATEMENT,
-            "missing_text_blocks": missing[:limit], "missing_text_block_count": len(missing),
+            "missing_text_blocks": missing[:limit], "missing_text_block_count": len(missing), "located": located,
             "missing_chars": sum(m["chars"] for m in missing),
             "data_requests_during_render": requests[:limit],
             "iframes_in_rendered_dom": len(entry["rendered"].get("iframes", [])),
             "attribution": "Requests made while the page rendered are listed; which one supplied which text is "
                            "not determined. Text hidden by CSS in either view is counted as text (styles are "
                            "not read)."}
+
+
+def _missing_line(delta: dict) -> dict:
+    """{"row": ...}: the page's line naming the text that arrives with JavaScript (DECISIONS 368), or {}."""
+    from ..example_rows import missing_row
+    return {"row": missing_row(delta["located"])} if delta.get("located") else {}
 
 
 def t0_shell_signals(analysis: dict) -> list[str]:
@@ -219,9 +231,11 @@ def rnd1_rendering_gap(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
             if ratio is None:
                 continue
             if ratio < cfg.raw_missing_ratio or (raw_words < cfg.raw_min_words and rendered_words > cfg.rendered_min_words):
-                missing.append({**row, "content_delta": content_delta(raw, entry)})
+                delta = content_delta(raw, entry)
+                missing.append({**row, "content_delta": delta, **_missing_line(delta)})
             elif ratio < cfg.raw_partial_ratio:
-                partial.append({**row, "content_delta": content_delta(raw, entry)})
+                delta = content_delta(raw, entry)
+                partial.append({**row, "content_delta": delta, **_missing_line(delta)})
         else:
             signals = t0_shell_signals(raw)
             if signals and (len(signals) >= 2 or raw["visible_words"] < cfg.raw_min_words):
@@ -451,8 +465,18 @@ def rnd3_interaction(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
                     before["visible_words"] and new_words / before["visible_words"] >= cfg.interaction_min_growth and new_words > 0):
                 before_text = set(_norm(before.get("_visible_text", "")).split())
                 added = [w for w in _norm(after.get("_visible_text", "")).split() if w not in before_text][:30]
+                # DECISIONS 368: which content: the headings and text blocks that appeared, as the page writes them
+                from ..example_rows import revealed_row
+                had = {_norm(h["text"]) for h in before["headings"]}
+                new_headings = [h["text"][:120] for h in after["headings"] if _norm(h["text"]) not in had][:10]
+                had_blocks = {_norm(b) for b in before.get("_text_blocks") or []}
+                new_blocks = [b.strip()[:200] for b in after.get("_text_blocks") or [] if _norm(b) not in had_blocks
+                              and len(b.split()) >= 3][:5]
+                clicked = entry["interaction"]["clicked"]
                 revealed.append({"url": page.url, "words_before": before["visible_words"],
-                                 "words_after": after["visible_words"], "clicked": entry["interaction"]["clicked"],
+                                 "words_after": after["visible_words"], "clicked": clicked,
+                                 "new_headings": new_headings, "new_text_blocks": new_blocks,
+                                 "row": revealed_row(clicked, new_headings, new_blocks[0] if new_blocks else " ".join(added)),
                                  "new_text_sample": " ".join(added),
                                  "compared_against": "control snapshot (same wait, no click)"
                                  if entry["interaction"].get("control") else "first rendered snapshot (no control)"})

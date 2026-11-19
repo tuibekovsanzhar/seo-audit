@@ -176,13 +176,18 @@ def looks_like_name(text: str) -> bool:
 
 
 # Words that are evidence of a language in a heading only (a heading is often a question: "Staking nedir?").
-HEADING_WORDS = {"tr": frozenset("nedir nasıl nasil neden niçin kimdir nelerdir nerede hangi kaç mi mı mu mü".split())}
+HEADING_WORDS = {"tr": frozenset("nedir nasıl nasil neden niçin kimdir nelerdir nerede hangi kaç mi mı mu mü".split()),
+                 # DECISIONS 368: an English question heading ("How do I move up a tier?", "Do my points expire?") has
+                 # these words, not the article and preposition the stopword list holds
+                 "en": frozenset("how what why when where who which do does did my i me".split())}
 # A stopword of another language that is an ordinary word in the declared one says nothing: "et" is French for "and"
 # and Turkish for "do" ("Bizi Takip Et"). By declared language. An agent default, not a full list. The second line
 # (DECISIONS 194) is short words and letters a Turkish page carries without being in another language: a table marker
 # ("o"), a suffix written apart, a brand or a unit.
 NOT_FOREIGN_IN = {"tr": frozenset(("et de da o en on an son al in ne se su si "
-                                   "a e no na il van at as can para es un sus der den dem hat sur te er u").split())}
+                                   "a e no na il van at as can para es un sus der den dem hat sur te er u").split()),
+                  # DECISIONS 368: English words other lists hold ("a", "do", "as": Portuguese; "is", "in": Dutch; "no")
+                  "en": frozenset("a do is in no as".split())}
 _PARENTHESES = re.compile(r"\([^()]*\)")
 HEADING_METHOD = ("word lists (Estimated): a heading is called by one common word of a language when no other language "
                   "has any. Not counted: words in parentheses, a common word between two capitalised words (a term or a "

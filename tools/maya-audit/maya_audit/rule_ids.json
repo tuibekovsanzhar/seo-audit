@@ -415,6 +415,10 @@
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ declare\\ conflicting\\ canonicals"
    ],
    [
+    "idx4.versions_differ",
+    "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ declare\\ a\\ different\\ canonical\\ in\\ the\\ raw\\ HTML\\ and\\ in\\ the\\ rendered\\ page"
+   ],
+   [
     "idx4.different",
     "(?P<n>\\d+(?:\\.\\d+)?)\\ page\\(s\\)\\ are\\ canonicalized\\ to\\ a\\ URL\\ with\\ different\\ content"
    ],
@@ -1043,6 +1047,10 @@
    [
     "str2.home_outline",
     "The\\ homepage\\ has\\ (?P<n>\\d+(?:\\.\\d+)?)\\ visible\\ section\\ heading\\(s\\)\\ for\\ (?P<words>\\d+(?:\\.\\d+)?)\\ words"
+   ],
+   [
+    "str2.card_headings",
+    "The\\ homepage\\ marks\\ (?P<n>\\d+(?:\\.\\d+)?)\\ product\\ names\\ as\\ <h2>\\ headings"
    ],
    [
     "str2.hidden_h1",

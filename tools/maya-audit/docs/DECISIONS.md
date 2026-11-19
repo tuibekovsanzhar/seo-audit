@@ -5670,3 +5670,53 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      temizleyin" goes to the appendix; Carpex, Enpara, İş Bankası and Nature's Garden unchanged. PDF and Özet match in
      all 7; text check PASS in all.
      Tests: `tests/test_confirm_cards_367.py` (5).
+
+368. **İlginay's review of "Diğer bulgular" in the MMI Ek, as global rules (İlginay, 2026-11-19; the thresholds, the
+     wording of the new lines and the evidence fallback are agent defaults).** Global for every audit.
+     *(1) Homepage outline* (`checks/structure.py`): "The homepage has N visible section headings" counted only visible
+     <h2>/<h3>; in Firecrawl's copy of MMI's homepage an open sign-in dialog had marked the whole page aria-hidden, so
+     147 <h2> counted as 0. Now every <h2>/<h3> with text counts, hidden or not, and a homepage with enough of them is
+     never "too few". When at least 6 <h2> are product card names (a heading followed, within 4 text lines and before
+     the next heading, by a price) and they are at least half of the <h2>, `str2.card_headings` says so instead:
+     "Ürün adları başlık (H2) olarak işaretlenmiş" (Low, "Kontrol edin"), with the count, examples and the section
+     headings (SEO-066).
+     *(2) Headings in another language* (`language.py`, `str12_content_language`): a heading is compared with the
+     page's own language, its declared one and the language its text is written in (never the report's); English
+     question words (how, what, do, does, my, I...) are English evidence, and "a", "do", "as", "is", "in", "no" are not
+     foreign on an English page. MMI's "How do I move up a tier?" was called Portuguese ("a", "do"). Each page's line
+     names the page's language and quotes the headings. "Atlanan başlık düzeyi yok" is written only for the heading-jump
+     rules (`page_rows.from_page` gave it to every rule with "heading" in its name).
+     *(3) Canonical to a page with different content* (`checks/index.py canonical_readings`): every reading of the
+     canonical is kept with its date (raw HTML; Maya's browser, and whether the page had finished loading; Firecrawl's
+     copy). The finding is said only when the readings agree and one is final (no browser reading: the raw HTML, as
+     before); readings that differ are `idx4.versions_differ` ("Ham HTML'deki ve işlenmiş sayfadaki kanonik adres
+     farklı", Medium, "Kontrol edin", SEO-041) with both values; a page whose only browser reading was taken before
+     the network went quiet is not assessed (said in the check's `not_assessed`). MMI's /about-dxb: raw and browser
+     both said "/", but the browser read it at 3 s with the network still busy, so the final canonical is not known.
+     *(4) Which content* (`example_rows.py`): each page's line (`row`) names the text, the element and the place:
+     RND-1 the missing text blocks (first 80 characters, heading level / button / link / text, the section heading
+     above), RND-3 the clicked controls or the scroll and the headings and text that appeared, the shared link with no
+     address (its text, href and block), unclear slugs (the slug, why, a suggested slug of 3-6 words from the address
+     or the page title), generic link texts (the text and target), heavy images and videos, footer heading jumps,
+     articles without an author, missing or empty <h1>, copies, structured data that differs from the page, unparsed
+     JSON-LD, heading jumps. Written live (`report.py`) and for saved reports (`reassess_rules._decisions_368`).
+     *(5) Plain Turkish* for "Ortak alandaki bağlantının adresi yok", "Adreslerin kısa adı anlaşılır değil" and "Bazı
+     bağlantılarda genel metinler kullanılıyor": the name, title, "Ne yapılmalı" (problem, why it matters, what to do)
+     and steps rewritten.
+     *(6) "Örnek" in the Özet* (`client_appendix.examples_of`, `other_findings`): one concrete example per row, "page:
+     value", from the first "Bulgu bazında" value that quotes page text or shows an address or an element, else the
+     first evidence record naming a page and a concrete thing seen there (`example_rows.evidence_example`). A problem
+     with neither is not listed under "Diğer bulgular" (it stays in "Bulgular"; the line says how many) and the text
+     check names it: RG-24 (soft) "Somut örneği olmayan bulgu". The cards keep their place and get the column too.
+     *Result* (saved audits rebuilt 2026-11-19 from copies, no request): MMI 13 -> 14 cards (+12 "H2'yi ürün adlarına
+     değil bölüm başlıklarına verin": 140 of 147 <h2> are product names); "Ana sayfada bölüm başlıkları az", "Bölüm
+     başlıkları başka bir dilde" and the /about-dxb canonical are gone; "Diğer bulgular" 11 -> 8, every row with an
+     example, RG-24 none. İş Bankası: one page's raw and rendered canonicals differ (new card, "Ara ara zaman aşımına
+     uğrayan sayfaları düzeltin" leaves the cards), one "different content" canonical read before the page finished
+     loading is not assessed. "Diğer bulgular" (before -> after; left out for no example, RG-24): Carpex 14 -> 8 (6),
+     Enpara 14 -> 12 (2), Atasun 12 -> 10 (2), İş Bankası 21 -> 15 (6), Ticimax 17 -> 9 (8), Nature's Garden 15 -> 11
+     (4); those left out are mostly site-wide or timing findings (sitemap dates, slow responses, rate limits) with no
+     single page text. Text check PASS in all 7.
+     Tests: `tests/test_review_368.py` (9); `test_summary_others_366`, `test_counts_and_shared_elements` updated.
+     *Environment:* the local Playwright browser cache was missing (the PDF tests failed with "Executable doesn't
+     exist"); `python -m playwright install chromium` restored it (a browser download, no audit request).

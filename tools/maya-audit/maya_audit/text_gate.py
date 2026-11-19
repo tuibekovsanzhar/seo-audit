@@ -15,6 +15,8 @@ Rules (hard = the download is a draft, soft = listed in "Kontrol raporu"):
     RG-22 hard  two cards that say the same thing (one rule or one title) about the same pages
     RG-23 soft  a phrase from the banned list (`banned_phrases.json`, the SEO team's file); a phrase marked
                 "block": true is hard
+    RG-24 soft  a problem the appendix's Özet does not list under "Diğer bulgular" because none of its pages shows a
+                concrete example (quoted page text, an address or an element) (DECISIONS 368)
 
 Global for every site: no brand, no address and no fixed title is named here; the phrase list is data.
 """
@@ -366,10 +368,12 @@ def run(data: dict, report: dict | None = None, **kwargs) -> dict:
 RULE_NAMES = {
     "tr": {"RG-18": "Yer tutucu ya da kanıtta olmayan sayı", "RG-19": "Başka platforma özgü öneri",
            "RG-20": "Menü ya da giriş bağlantısını kaldırma önerisi", "RG-21": "Türkçe metinde İngilizce",
-           "RG-22": "Aynı sayfalar için tekrarlanan kart", "RG-23": "Yasaklı ifade", "LLM": "İkinci okuyucu önerisi"},
+           "RG-22": "Aynı sayfalar için tekrarlanan kart", "RG-23": "Yasaklı ifade",
+           "RG-24": "Somut örneği olmayan bulgu", "LLM": "İkinci okuyucu önerisi"},
     "en": {"RG-18": "Placeholder or a number not in the evidence", "RG-19": "Advice for another platform",
            "RG-20": "Advice to remove a menu or sign-in link", "RG-21": "English left in Turkish text",
-           "RG-22": "Card repeated for the same pages", "RG-23": "Banned phrase", "LLM": "Second reader's suggestion"},
+           "RG-22": "Card repeated for the same pages", "RG-23": "Banned phrase",
+           "RG-24": "Finding with no concrete example", "LLM": "Second reader's suggestion"},
 }
 
 
@@ -393,6 +397,25 @@ def with_platform_advice(record: dict | None, cells: Iterable[tuple[str, str]], 
     violations = list(record["violations"]) + extra
     counts = dict(record.get("counts") or {})
     counts["RG-19"] = counts.get("RG-19", 0) + len(extra)
+    return {**record, "violations": violations, "counts": counts, "decision": decision(violations)}
+
+
+def with_no_example(record: dict | None, names: Iterable[str], lang: str = "tr") -> dict | None:
+    """DECISIONS 368: RG-24 (soft) for each problem the Özet leaves out of "Diğer bulgular" because none of its pages
+    shows a concrete example; it stays in "Bulgular"."""
+    if record is None:
+        return record
+    extra = []
+    for name in dict.fromkeys(n for n in names if n):
+        message = (f"Özet: «{name}» için somut örnek (sayfa ve metin/öğe) yok; «Diğer bulgular»da listelenmedi, «Bulgular»da duruyor"
+                   if lang == "tr" else f"Summary: «{name}» has no concrete example (page and text/element); left out of "
+                   "\"Other findings\", kept in \"Findings\"")
+        extra.append(violation("RG-24", message, hard=False, where="ek: Özet", text=name))
+    if not extra:
+        return record
+    violations = list(record["violations"]) + extra
+    counts = dict(record.get("counts") or {})
+    counts["RG-24"] = counts.get("RG-24", 0) + len(extra)
     return {**record, "violations": violations, "counts": counts, "decision": decision(violations)}
 
 

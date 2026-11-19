@@ -646,9 +646,15 @@ def str2_headings(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: 
     if home_page is not None:
         a = home_page.analysis
         visible_sub = [h for h in a["headings"] if h["level"] in (2, 3) and h["text"].strip() and not h.get("hidden")]
+        # DECISIONS 368: every <h2>/<h3> with text counts, hidden or not (a sign-in or age dialog marks the rest of
+        # the page aria-hidden while it is open): a homepage with many headings is never said to have too few
+        all_sub = [h for h in a["headings"] if h["level"] in (2, 3) and h["text"].strip()]
         plain_questions = questions_not_headings(a)
-        short = len(visible_sub) < cfg.homepage_min_subheadings and (a["visible_words"] >= cfg.homepage_outline_min_words
-                                                                     or plain_questions)
+        short = len(all_sub) < cfg.homepage_min_subheadings and (a["visible_words"] >= cfg.homepage_outline_min_words
+                                                                 or plain_questions)
+        cards = card_headings_finding(home, a["headings"], a.get("_content_blocks") or a.get("_text_blocks"), key_urls)
+        if cards is not None:
+            findings.append(cards)
         if short and getattr(home_page, "body_truncated", False):
             # Counted on the part of the HTML read before the fetch-size limit: the rest may hold the headings
             # (DECISIONS 283 (8)). Not assessed, not "N visible section headings".
@@ -3570,6 +3576,30 @@ def placeholder_hits(blocks: list[str]) -> list[dict]:
     return hits
 
 
+CARD_HEADINGS_FIX = ("Mark the product names in the listing cards as plain text or links (or one level below the section "
+                     "heading), and keep <h2> for the titles of the page's sections; the look stays the same with CSS.")
+
+
+def card_headings_finding(home: str, headings: list[dict], lines: list[str] | None, key_urls: set[str]) -> "Finding | None":
+    """DECISIONS 368: most of the homepage's <h2> headings are product card names (each followed by its price in the
+    page's text): the outline is a product list, not the page's sections. Low; to check (issue type "warning")."""
+    from ..example_rows import CARD_MIN, card_headings, card_headings_row
+    h2 = [h for h in headings or [] if isinstance(h, dict) and h.get("level") == 2 and str(h.get("text") or "").strip()]
+    cards = [h for h in card_headings(headings or [], lines) if h.get("level") == 2]
+    if len(cards) < CARD_MIN or len(cards) * 2 < len(h2):
+        return None
+    named = {id(h) for h in cards}
+    sections = [str(h["text"]).strip() for h in h2 if id(h) not in named][:5]
+    page = {"url": home, "h2": len(h2), "card_headings": len(cards), "examples": [str(h["text"])[:120] for h in cards[:8]],
+            "section_headings": sections, "row": card_headings_row(len(h2), cards, sections)}
+    return _finding("STR-2", f"The homepage marks {len(cards)} product names as <h2> headings", Severity.S4, Confidence.ESTIMATED,
+                    HEADINGS_DOCUMENTED, PASSAGE_ENGINES, [home],
+                    {"pages": [page], "rule": "an <h2> followed within 4 text lines, before the next heading, by a price"},
+                    "<h2> headings name the page's sections; product names in cards are not section headings",
+                    CARD_HEADINGS_FIX, key_urls,
+                    ["Estimated from the page's text: a heading counts as a product name when a price follows it."])
+
+
 def str12_content_language(result: CrawlResult, cfg: CrawlConfig, pages: list, key_urls: set[str]) -> CheckResult:
     title = "Content language mismatch and placeholder text"
     if not pages:
@@ -3596,15 +3626,20 @@ def str12_content_language(result: CrawlResult, cfg: CrawlConfig, pages: list, k
         # letters in a name are not Turkish text.
         headings = heading_blocks(p.analysis, repeated)
         names = [h for h in headings if has_personal_title(h)]
+        # DECISIONS 368: compared with the page's own language: its declared one and the language its text is written
+        # in, never the report's; a heading in the language of the page's own text is not foreign
+        detected = detect_language("\n".join(blocks), declared=declared).get("language")
         for heading in headings:
             language = heading_language(heading, among_names=bool(names), declared=declared)
-            if language and language != declared:
+            if language and language not in (declared, detected):
                 by_language[language].append(heading[:120])
         odd = max(by_language.items(), key=lambda kv: len(kv[1]), default=(None, []))
         if len(odd[1]) >= MIN_FOREIGN_HEADINGS:
-            foreign_headings.append({"url": p.url, "declared": declared, "declared_by": signals,
+            from ..example_rows import headings_language as headings_row
+            foreign_headings.append({"url": p.url, "declared": declared, "declared_by": signals, "detected": detected,
                                      "headings_language": odd[0], "headings": odd[1][:12], "headings_count": len(odd[1]),
-                                     "name_headings_left_out": len(names)})
+                                     "name_headings_left_out": len(names),
+                                     "row": headings_row(declared, detected, odd[0], odd[1])})
         measured = language_share(blocks, declared)
         if measured["classified_words"] < MIN_WORDS_FOR_LANGUAGE_SHARE:
             not_assessed.append({"url": p.url, "declared": declared, "reason":

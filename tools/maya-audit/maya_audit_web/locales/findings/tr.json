@@ -181,7 +181,7 @@
   "str19.no_target": "{n} bağlantının arama motoru tarayıcılarının izleyebileceği bir adresi yok (ziyaretçiler için JavaScript ile yine de çalışıyor olabilir)",
   "str19.footer": "{pages} sayfanın alt bilgisindeki {links} öğe bağlantı gibi görünüyor ancak adresi yok",
   "str19.controls": "{n} kontrol bağlantı olarak kodlanmış (href=\"#\"); ekran okuyucular için <button> kullanın.",
-  "shared.link_no_address": "{label}: “{text}” bağlantısının adresi yok ({n} sayfada{section})",
+  "shared.link_no_address": "{label}: “{text}” bağlantısı hiçbir adrese gitmiyor ({n} sayfada{section})",
   "str20.media": "{n} sayfa mesajını video veya animasyonla veriyor; sayfadaki metin {words} kelimeden az",
   "str21.missing": "Sitenin {n} sayfası arasında şu sayfa bulunamadı: {missing}",
   "str22.link_lists": "{n} haber veya basın sayfası başka sitelere verilen bağlantılardan oluşuyor; kendi metni çok az",
@@ -241,12 +241,12 @@
   "judgment.empty.repeated": "{n} adres, test edilen istemciye tekrarlanan boş GET yanıtı verdi",
   "judgment.empty.single": "{n} adres boş yanıt verdi; sorunun kalıcılığı doğrulanmadı",
   "judgment.sitemap": "{n} sitemap adres gözlemi duruma göre inceleme gerektiriyor ({checked} kontrol edildi)",
-  "judgment.generic": "{n} genel metinli bağlantı oluşumu kaydedildi; amaç bağlamda incelenmeli",
+  "judgment.generic": "{n} bağlantının metni gittiği sayfayı söylemiyor",
   "judgment.heading.home": "Ana sayfada anlamlı <h1> metni yok",
   "judgment.heading.pages": "{n} sayfada anlamlı <h1> metni yok",
   "judgment.sitemap.overlap": "{n} sitemap adres gözlemi duruma göre inceleme gerektiriyor ({checked} kontrol edildi); {same} adres için IDX-1 erişim kanıtı zaten var",
   "judgment.external.mixed": "{n} dış hedef için karışık HEAD/GET kanıtı var; istek bağlamı incelenmeli",
-  "judgment.generic.identity": "{n} genel metinli bağlantı oluşumu kaydedildi; amaç bağlamda incelenmeli — {identity}",
+  "judgment.generic.identity": "{n} bağlantının metni gittiği sayfayı söylemiyor — {identity}",
   "str7.placeholder": "{pages} sayfadaki {n} görselin alt metni yer tutucu olabilir",
   "rnd4.unnamed": "{pages} sayfada {n} iframe için erişilebilir ad yok",
   "str7.format_references": "İşaretlemedeki {images} görsel kullanımının {modern} tanesinde WebP veya AVIF referansı var; sunulan biçimler ayrıca değerlendirilir",
@@ -305,7 +305,7 @@
   "str3.product_no_identifier": "{n} ürün sayfasının Product işaretlemesinde GTIN ya da MPN yok",
   "str15.empty_collections": "{n} dizine eklenebilir koleksiyon veya kategori sayfasında hiç ya da neredeyse hiç ürün yok",
   "tseo1.url_decomposed": "{n} adreste ayrışık bir karakter var (bir harf ve ardından gelen birleşik bir işaret)",
-  "tseo1.url_slug_unclear": "{n} sayfa adresinin kısa adı (slug) anlaşılır değil (yalnızca bir kimlik, 100 karakterden uzun ya da boşluk ve simge içeriyor)",
+  "tseo1.url_slug_unclear": "{n} sayfa adresi çok uzun ya da okunmuyor (yalnızca numara, 100 karakterden uzun ya da boşluk/simge içeriyor)",
   "idx4.chain": "{n} sayfa, kendi kanonik adresi başka bir adres olan bir sayfayı kanonik gösteriyor",
   "idx6.links_to_redirect": "{pages} sayfadaki {links} iç bağlantı, yönlendiren bir adrese gidiyor",
   "str7.over_100kb": "Örneklenen {n} görsel dosyası 100 ile 500 KB arasında",
@@ -331,7 +331,9 @@
   "str15.saas_story_result": "{n} müşteri hikâyesi sayfasında ölçülebilir sonuç yok",
   "rnd4.saas_integrations_text": "{n} entegrasyon sayfası entegrasyonları adı metinde geçmeyen logolarla gösteriyor",
   "acc3.saas_trial_blocked": "{n} demo ya da deneme sayfası noindex taşıyor ya da hata yanıtı veriyor",
-  "tseo1.file_name_unsafe": "{n} görsel ya da dosya adında boşluk, birleşik aksan işareti, parantez ya da virgül var"
+  "tseo1.file_name_unsafe": "{n} görsel ya da dosya adında boşluk, birleşik aksan işareti, parantez ya da virgül var",
+  "str2.card_headings": "Ana sayfada {n} ürün adı bölüm başlığı (H2) olarak işaretlenmiş",
+  "idx4.versions_differ": "{n} sayfada ham HTML'deki ve işlenmiş sayfadaki kanonik adres farklı"
  },
  "saved_titles": {
   "saved.acc1.unreachable": "robots.txt, {samples} istekten {failed} tanesinde sunucu hatası döndürdü ya da ulaşılamadı",
@@ -487,7 +489,7 @@
   "Add lang to the <html> element.": "<html> öğesine lang ekleyin.",
   "Use a BCP 47 code such as en or tr-TR.": "en veya tr-TR gibi bir BCP 47 kodu kullanın.",
   "Use fully-qualified URLs; Google's docs require the scheme and host.": "Tam adresler kullanın; Google'ın belgeleri şemayı ve alan adını zorunlu tutar.",
-  "Give each link the address of the page it should open. If it only triggers a script, make it a <button>.": "Her bağlantıya açması gereken sayfanın adresini verin. Yalnızca bir betiği tetikliyorsa onu <button> yapın.",
+  "Give each link the address of the page it should open. If it only triggers a script, make it a <button>.": "Bağlantı bir sayfa açıyorsa href'e o sayfanın adresini yazın; yalnızca bir pencere ya da menü açıyorsa <a> yerine <button> kullanın.",
   "Link each footer entry to its page, or remove the entries whose pages do not exist yet.": "Alt bilgideki her öğeyi kendi sayfasına bağlayın veya sayfası henüz olmayan öğeleri kaldırın.",
   "Expand the title with the page topic so readers can distinguish it in search results and shared links.": "Başlığı sayfanın konusuyla genişletin; böylece okurlar onu arama sonuçlarında ve paylaşılan bağlantılarda ayırt edebilir.",
   "Move the page topic toward the start and remove words that do not help identify this page.": "Sayfanın konusunu başa doğru alın ve bu sayfayı tanımlamaya yardımcı olmayan kelimeleri çıkarın.",
@@ -541,7 +543,7 @@
   "Corroborate the recorded HEAD response with a bounded, guarded GET using the same URL and client. Update or remove a link only if destination failure is corroborated.": "Kayıtlı HEAD yanıtını aynı adres ve istemciyle, sınırlı ve korumalı GET kullanarak doğrulayın. Bağlantıyı ancak hedefteki başarısızlık desteklenirse güncelleyin veya kaldırın.",
   "Review the per-URL sitemap decisions. Corroborate single empty responses before changing URLs. Reuse IDX-1 retrieval evidence for repeated failures. Confirm intended indexing with the owner before changing noindex or sitemap inclusion; follow redirects to assess their destinations.": "Adres bazındaki sitemap kararlarını inceleyin. Tek boş yanıtı adres değiştirmeden önce doğrulayın. Tekrarlanan başarısızlıkta IDX-1 kayıtlarını kullanın. Noindex veya sitemap kapsamını değiştirmeden önce dizine alınma amacını sahibiyle kararlaştırın; yönlendirmelerin hedefini inceleyin.",
   "Reproduce the recorded GET response for the same URL and client, then establish intended content and affected users. Choose a repair only after corroboration; do not remove a URL or change indexability on a single empty response.": "Aynı adres ve istemci için kayıtlı GET yanıtını tekrar değerlendirin, beklenen içeriği ve etkilenen kullanıcıları belirleyin. Tek boş yanıta dayanarak adres kaldırmayın veya dizine alınma ayarını değiştirmeyin.",
-  "Inspect each recorded generic link with its accessible name and surrounding text. Change wording only where the destination or purpose is unclear in context; retain useful distinct destinations.": "Her genel metinli bağlantıyı erişilebilir adı ve çevresindeki metinle inceleyin. Hedef veya amaç bağlamda belirsizse metni değiştirin; yararlı farklı hedefleri koruyun.",
+  "Inspect each recorded generic link with its accessible name and surrounding text. Change wording only where the destination or purpose is unclear in context; retain useful distinct destinations.": "«Tümünü gör», «buraya tıklayın» gibi metinleri hedef sayfanın adıyla değiştirin; metin değişemiyorsa hedefi söyleyen bir aria-label ekleyin.",
   "Review whether each page answers its intended purpose. A short form, branch or utility page may be complete. Add missing information only when established; consolidation or noindex requires a separate purpose/content and owner decision.": "Her sayfanın amacını karşılayıp karşılamadığını inceleyin. Kısa bir form, şube veya yardımcı sayfa yeterli olabilir. Eksikliği desteklenen bilgiyi ekleyin; birleştirme veya noindex için ayrı amaç/içerik değerlendirmesi ve sahip kararı gereklidir.",
   "Compare purpose, substantive content, audiences and destinations of each group. Keep distinct useful pages. Consolidate or change canonical/indexing only after equivalent purpose and content are established and the owner approves.": "Her grubun amacını, gerçek içeriğini, kitlesini ve hedeflerini karşılaştırın. Farklı yararlı sayfaları koruyun. Birleştirme, canonical veya dizine alınma değişikliğini ancak eşdeğer amaç/içerik ve sahip onayıyla yapın.",
   "Check the same affected URLs, client and property; record method, status/content, observation time and evidence. A report export or owner approval is not verification.": "Aynı adres, istemci ve özelliği kontrol edin; yöntem, durum/içerik, gözlem zamanı ve kanıtı kaydedin. Rapor indirme veya sahip onayı doğrulama değildir.",
@@ -604,7 +606,7 @@
   "Add a breadcrumb trail with links (Home > Category > Product), or a link to the product's main category, to the product template, and mark the trail up with BreadcrumbList.": "Ürün şablonuna bağlantılı bir içerik yolu (Ana Sayfa > Kategori > Ürün) ya da ürünün ana kategorisine bir bağlantı ekleyin ve içerik yolunu BreadcrumbList ile işaretleyin.",
   "Add image entries (<image:image> with the image address) for each page's main images to the sitemap, or a separate image sitemap named in robots.txt.": "Her sayfanın ana görselleri için site haritasına görsel kayıtları (görsel adresiyle <image:image>) ekleyin ya da robots.txt'de adı geçen ayrı bir görsel site haritası kullanın.",
   "Add video entries (<video:video> with a title, description, thumbnail and the video's address) to the sitemap, or a separate video sitemap named in robots.txt.": "Site haritasına video kayıtları (başlık, açıklama, küçük resim ve video adresiyle <video:video>) ekleyin ya da robots.txt'de adı geçen ayrı bir video site haritası kullanın.",
-  "Give these pages short slugs made of words (for example /products/linen-shirt-white), redirect each old address to the new one with a 301 and update the links.": "Bu sayfalara kelimelerden oluşan kısa adlar verin (örneğin /products/keten-gomlek-beyaz), her eski adresi 301 ile yenisine yönlendirin ve bağlantıları güncelleyin.",
+  "Give these pages short slugs made of words (for example /products/linen-shirt-white), redirect each old address to the new one with a 301 and update the links.": "Adresin son bölümünü birkaç anlamlı kelimeyle yazın (örneğin /urunler/keten-gomlek-beyaz), eskisini 301 ile yönlendirin, iç bağlantıları güncelleyin.",
   "Show the author's name on each article, linked to an author page, and add author (a Person with name and url) to the article's Article or BlogPosting markup.": "Her makalede yazarın adını, bir yazar sayfasına bağlantıyla gösterin ve makalenin Article ya da BlogPosting işaretlemesine author (name ve url taşıyan bir Person) ekleyin.",
   "Add the product's GTIN (its barcode: gtin13 for an EAN) or, when it has none, its MPN, and the brand, to the Product markup. On Shopify, fill each variant's barcode field so the theme writes it.": "Ürünün GTIN'ini (barkodu: EAN için gtin13) ya da yoksa MPN'ini ve markasını Product işaretlemesine ekleyin. Shopify'da her varyantın barkod alanını doldurun; tema bunu yazar.",
   "Change each link to the final address its redirect ends at (the evidence gives it for every target); when a template writes the link, change it there.": "Her bağlantıyı, yönlendirmesinin bittiği son adresle değiştirin (kanıt her hedef için son adresi verir); bağlantıyı bir şablon yazıyorsa orada değiştirin.",
@@ -634,7 +636,9 @@
   "Name the customer and give at least one measurable result in the text (a percentage, a multiple, time or money saved) with the period it covers.": "Müşterinin adını verin ve metinde en az bir ölçülebilir sonuç yazın (yüzde, kat, kazanılan zaman ya da para), kapsadığı dönemle birlikte.",
   "Remove the noindex (meta robots or X-Robots-Tag) from the demo or trial page and make it answer 200; if the form itself must stay out of search, keep a public page that describes the demo and links to it.": "Demo ya da deneme sayfasındaki noindex'i (meta robots ya da X-Robots-Tag) kaldırın ve sayfanın 200 yanıt vermesini sağlayın; form arama dışında kalmalıysa demoyu anlatan ve forma bağlantı veren herkese açık bir sayfa bırakın.",
   "Name the person who wrote or reviewed each article on the page, and add them as a Person author in the article's markup; keep the organization as the publisher.": "Makaleyi yazan ya da gözden geçiren kişinin adını sayfada gösterin ve makalenin işaretlemesine Person olarak author ekleyin; kurum yayıncı olarak kalsın.",
-  "Rename these files to plain lower-case names with hyphens before uploading them (no spaces, accents, brackets or commas; the evidence gives a name for each, for example Banner(Espolòn,Día)-01.jpg -> banner-espolon-dia-01.jpg), upload them again and point the pages, the markup and og:image at the new files. Ask whoever uploads images and documents to name them this way from now on.": "Bu dosyaları yüklemeden önce düz, küçük harfli ve kelimeleri tireyle ayrılmış adlarla yeniden adlandırın (boşluk, aksan, parantez ya da virgül olmadan; kanıt her biri için bir ad veriyor, örneğin Banner(Espolòn,Día)-01.jpg -> banner-espolon-dia-01.jpg), yeniden yükleyin ve sayfaları, işaretlemeyi ve og:image'ı yeni dosyalara bağlayın. Görsel ve belge yükleyenlerden dosyaları bundan sonra bu şekilde adlandırmalarını isteyin."
+  "Rename these files to plain lower-case names with hyphens before uploading them (no spaces, accents, brackets or commas; the evidence gives a name for each, for example Banner(Espolòn,Día)-01.jpg -> banner-espolon-dia-01.jpg), upload them again and point the pages, the markup and og:image at the new files. Ask whoever uploads images and documents to name them this way from now on.": "Bu dosyaları yüklemeden önce düz, küçük harfli ve kelimeleri tireyle ayrılmış adlarla yeniden adlandırın (boşluk, aksan, parantez ya da virgül olmadan; kanıt her biri için bir ad veriyor, örneğin Banner(Espolòn,Día)-01.jpg -> banner-espolon-dia-01.jpg), yeniden yükleyin ve sayfaları, işaretlemeyi ve og:image'ı yeni dosyalara bağlayın. Görsel ve belge yükleyenlerden dosyaları bundan sonra bu şekilde adlandırmalarını isteyin.",
+  "Mark the product names in the listing cards as plain text or links (or one level below the section heading), and keep <h2> for the titles of the page's sections; the look stays the same with CSS.": "Liste kartlarındaki ürün adlarını H2 yerine düz metin ya da bağlantı yapın; H2'yi bölüm başlıklarına bırakın. Görünüm CSS ile aynı kalır.",
+  "Write the same canonical in the HTML the server sends and in the page after its scripts run (the page's own address when its content should be indexed); a script that changes it after load leaves engines two answers.": "Sunucunun HTML'inde ve betikler çalıştıktan sonra aynı canonical'ı yazın; yüklemeden sonra onu değiştiren betik motorlara iki yanıt verir."
  },
  "fix_patterns": {
   "acc2.search": "{engines} bu sayfaları bulup atıf yapabilsin istiyorsanız, {line}. satırdaki kuralı bu kullanıcı aracıları için kaldırın veya daraltın. Engelleme bilinçli bir tercihse “kasıtlı” olarak işaretleyin.",
@@ -883,7 +887,9 @@
   "a customer story names the customer and gives a measurable result": "müşteri hikâyesi müşterinin adını ve ölçülebilir bir sonucu verir",
   "a demo or trial page answers 200 and can be indexed": "demo ya da deneme sayfası 200 yanıt verir ve dizine eklenebilir",
   "each article names the person who wrote or reviewed it, not only the organization": "her makale onu yazan ya da gözden geçiren kişiyi belirtir, yalnız kurumu değil",
-  "image and file names use plain lower-case letters, digits and hyphens": "görsel ve dosya adları yalnızca küçük harf, rakam ve tireden oluşur"
+  "image and file names use plain lower-case letters, digits and hyphens": "görsel ve dosya adları yalnızca küçük harf, rakam ve tireden oluşur",
+  "<h2> headings name the page's sections; product names in cards are not section headings": "H2 başlıkları sayfanın bölümlerini adlandırır; kartlardaki ürün adları bölüm başlığı değildir",
+  "the same canonical in the raw HTML and in the rendered page": "ham HTML'de ve işlenmiş sayfada aynı kanonik adres"
  },
  "expected_patterns": {
   "acc2.declared": "robots.txt, beyan edildiği gibi {role} botlarını engeller",
@@ -1170,7 +1176,9 @@
   "Most addresses on this host redirect; these answered with the page instead, so the same page has two addresses. Each was read once, at the address the crawl moved to.": "Bu adresteki adreslerin çoğu yönleniyor; bunlar ise sayfanın kendisini gösterdi, yani aynı sayfanın iki adresi var. Her sayfa bir kez, taramanın geçtiği adreste okundu.",
   "Most addresses on this host redirect; these answered with the page instead, so the same page has two addresses. In this saved audit both copies were read; a new crawl reads each page once.": "Bu adresteki adreslerin çoğu yönleniyor; bunlar ise sayfanın kendisini gösterdi, yani aynı sayfanın iki adresi var. Bu kayıtlı denetimde iki kopya da okundu; yeni bir tarama her sayfayı bir kez okur.",
   "Estimated: the article's structured data names an author, and every author it names is an organization. For finance and health topics a named, qualified person is a trust signal.": "Tahmini: makalenin yapısal verisi bir yazar belirtiyor ve belirttiği her yazar bir kurum. Finans ve sağlık konularında adı ve uzmanlığı belli bir kişi güven işaretidir.",
-  "An accent written as a combining mark (stored as its own character after the letter, as macOS file names keep it) is valid UTF-8 and readers see the letter, but some tools draw it as empty boxes (Chrome's view-source on a very long line, for one), and the same name typed with the composed letter is another address. Brackets and commas break unquoted CSS url() values and srcset lists, and a space must be encoded in an address.": "Birleşik aksan işareti (macOS dosya adlarında olduğu gibi harften sonra ayrı bir karakter olarak saklanan aksan) geçerli UTF-8'dir ve okuyucular harfi görür; ama bazı araçlar onu boş kutu olarak çizer (örneğin Chrome'un kaynak görünümü çok uzun bir satırda) ve aynı adın birleşik harfle yazılışı başka bir adrestir. Parantez ve virgül tırnaksız CSS url() değerlerini ve srcset listelerini bozar; adresteki boşluk kodlanmalıdır."
+  "An accent written as a combining mark (stored as its own character after the letter, as macOS file names keep it) is valid UTF-8 and readers see the letter, but some tools draw it as empty boxes (Chrome's view-source on a very long line, for one), and the same name typed with the composed letter is another address. Brackets and commas break unquoted CSS url() values and srcset lists, and a space must be encoded in an address.": "Birleşik aksan işareti (macOS dosya adlarında olduğu gibi harften sonra ayrı bir karakter olarak saklanan aksan) geçerli UTF-8'dir ve okuyucular harfi görür; ama bazı araçlar onu boş kutu olarak çizer (örneğin Chrome'un kaynak görünümü çok uzun bir satırda) ve aynı adın birleşik harfle yazılışı başka bir adrestir. Parantez ve virgül tırnaksız CSS url() değerlerini ve srcset listelerini bozar; adresteki boşluk kodlanmalıdır.",
+  "Estimated from the page's text: a heading counts as a product name when a price follows it.": "Sayfanın metninden tahmin: arkasından bir fiyat gelen başlık ürün adı sayılır.",
+  "Each reading is listed with its date; a browser reading taken before the page finished loading is marked so.": "Her okuma tarihiyle listelenir; sayfa yüklenmesi bitmeden alınmış tarayıcı okuması böyle işaretlenir."
  },
  "note_patterns": {
   "source.firecrawl": "Kaynak: Firecrawl",

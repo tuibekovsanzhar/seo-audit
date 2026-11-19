@@ -340,6 +340,8 @@
   "str15.saas_feature_intro": "warning",
   "str15.saas_story_result": "warning",
   "rnd4.saas_integrations_text": "warning",
-  "acc3.saas_trial_blocked": "issue"
+  "acc3.saas_trial_blocked": "issue",
+  "str2.card_headings": "warning",
+  "idx4.versions_differ": "warning"
  }
 }

@@ -420,16 +420,16 @@
    }
   },
   "judgment.generic.identity": {
-   "en": "Review generic link texts such as 'click here'",
-   "tr": "'Tıklayınız' gibi genel bağlantı metinlerini gözden geçirin",
+   "en": "Replace generic link texts with text naming the target",
+   "tr": "Genel bağlantı metinlerini hedefi söyleyen metinle değiştirin",
    "steps": {
     "tr": [
-     "'Devamı' gibi bağlantıları bağlamıyla okuyun",
-     "Gerekirse hedefi söyleyen bir metin yazın"
+     "«Tümünü gör» gibi metinleri hedef sayfanın adıyla yazın",
+     "Metin değişemiyorsa hedefi söyleyen bir aria-label ekleyin"
     ],
     "en": [
-     "Read links such as 'read more' in their context",
-     "Where needed, write text that names the target"
+     "Write texts such as 'see all' with the target page's name",
+     "If the text cannot change, add an aria-label naming the target"
     ]
    }
   },
@@ -1014,16 +1014,16 @@
    }
   },
   "shared.link_no_address": {
-   "en": "Give the shared link an address",
-   "tr": "Ortak alandaki bağlantıya adres verin",
+   "en": "Give the link with no address the page it opens",
+   "tr": "Adressiz bağlantıya gideceği sayfanın adresini yazın",
    "steps": {
     "tr": [
-     "Ortak alandaki bağlantıya adres verin",
-     "Yalnız pencere açıyorsa <button> yapın"
+     "Bağlantı bir sayfa açıyorsa href'e o sayfanın adresini yazın",
+     "Yalnızca pencere ya da menü açıyorsa <a> yerine <button> kullanın"
     ],
     "en": [
-     "Give the shared link an address",
-     "If it only opens a panel, make it a <button>"
+     "If the link opens a page, write that page's address in href",
+     "If it only opens a panel or menu, use a <button>, not an <a>"
     ]
    }
   },
@@ -1418,18 +1418,18 @@
    }
   },
   "tseo1.url_slug_unclear": {
-   "en": "Give pages short, readable addresses",
-   "tr": "Sayfalara kısa, okunabilir adresler verin",
+   "en": "Rewrite long or unreadable addresses as short words",
+   "tr": "Uzun ya da okunmayan adresleri kısa kelimelerle yazın",
    "steps": {
     "tr": [
-     "Ürün/sayfa adresindeki kısa adı (handle) birkaç kelimeyle yazın",
-     "Her eski adresi kalıcı olarak yenisine yönlendirin",
-     "Bağlantıları güncelleyin"
+     "Adresin son bölümünü birkaç anlamlı kelimeyle yeniden yazın",
+     "Eski adresi kalıcı (301) yönlendirmeyle yeni adrese gönderin",
+     "Menü, site haritası ve iç bağlantılarda yeni adresi kullanın"
     ],
     "en": [
-     "Write each slug as a few words",
-     "Redirect each old address permanently to the new one",
-     "Update the links"
+     "Rewrite the address's last part as a few meaningful words",
+     "Redirect the old address permanently (301) to the new one",
+     "Use the new address in menus, the sitemap and internal links"
     ]
    }
   },
@@ -1674,6 +1674,38 @@
      "Rename each listed file with lower-case letters, digits and hyphens",
      "Upload it again; point the pages, markup and og:image at it",
      "Name new files this way before uploading them"
+    ]
+   }
+  },
+  "str2.card_headings": {
+   "en": "Keep <h2> for section titles, not product names",
+   "tr": "H2'yi ürün adlarına değil bölüm başlıklarına verin",
+   "steps": {
+    "tr": [
+     "Ürün kartlarındaki adları H2 yerine düz metin ya da bağlantı yapın",
+     "Her bölümün başlığını H2 olarak bırakın",
+     "Görünümü CSS ile koruyun; yalnız etiketi değiştirin"
+    ],
+    "en": [
+     "Make product names in cards plain text or links, not <h2>",
+     "Keep each section's title as an <h2>",
+     "Keep the look with CSS; change only the tag"
+    ]
+   }
+  },
+  "idx4.versions_differ": {
+   "en": "Make the raw and rendered canonical the same",
+   "tr": "Ham ve işlenmiş sayfadaki kanonik adresi aynı yapın",
+   "steps": {
+    "tr": [
+     "Sayfa kaynağındaki ve işlenmiş sayfadaki canonical'ı karşılaştırın",
+     "Sunucunun gönderdiği HTML'e doğru canonical'ı yazın",
+     "Yüklemeden sonra canonical'ı değiştiren betiği kaldırın"
+    ],
+    "en": [
+     "Compare the canonical in the page source and after rendering",
+     "Write the right canonical in the HTML the server sends",
+     "Remove the script that changes the canonical after load"
     ]
    }
   }

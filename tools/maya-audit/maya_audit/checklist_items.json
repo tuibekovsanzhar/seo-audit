@@ -852,7 +852,8 @@
     "idx4.twin_served",
     "idx4.variant",
     "idx8.self_canonical_copies",
-    "idx8.form_step_copies"
+    "idx8.form_step_copies",
+    "idx4.versions_differ"
    ],
    "needs": [],
    "rest": null,
@@ -1370,7 +1371,8 @@
    "rules": [
     "str2.no_subheadings",
     "str2.styled",
-    "tseo1.heading"
+    "tseo1.heading",
+    "str2.card_headings"
    ],
    "needs": [],
    "rest": "review",

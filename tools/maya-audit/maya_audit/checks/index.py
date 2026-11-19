@@ -792,6 +792,57 @@ MIXED_SIGNALS_FIX = ("Keep the canonical and remove noindex to fold the page int
                      "the page self-canonical.")
 
 
+VERSIONS_DIFFER_TITLE = "{n} page(s) declare a different canonical in the raw HTML and in the rendered page"
+VERSIONS_DIFFER_FIX = ("Write the same canonical in the HTML the server sends and in the page after its scripts run (the "
+                       "page's own address when its content should be indexed); a script that changes it after load "
+                       "leaves engines two answers.")
+
+
+def _render_record(result, url: str) -> dict | None:
+    render = getattr(result, "render", None)
+    pages = (render.get("pages") if isinstance(render, dict) else getattr(render, "pages", None)) or {}
+    record = pages.get(url) if isinstance(pages, dict) else None
+    if record is not None and not isinstance(record, dict):
+        record = getattr(record, "__dict__", None)
+    return record if isinstance(record, dict) else None
+
+
+def rendered_reading(record: dict | None) -> dict | None:
+    """{"canonicals", "settled", "read_at"} of a saved or live browser reading of one page, or None."""
+    rendered = (record or {}).get("rendered")
+    if not isinstance(rendered, dict) or not (record or {}).get("ok", True):
+        return None
+    return {"canonicals": rendered.get("canonicals") or [], "settled": bool(record.get("network_idle")),
+            "read_at": record.get("started_at")}
+
+
+def canonical_readings(different: list[dict], result, unassessed: list[dict], firecrawl: dict | None = None,
+                       raw: dict | None = None) -> tuple[list[dict], list[dict]]:
+    """(kept, differ): each "different content" row with every reading of its canonical (`versions`) and its own line.
+    A row whose readings name different canonicals moves to `differ`; one whose only browser reading was taken before
+    the page finished loading goes to `unassessed` (the final canonical is not known); the rest are kept.
+    `firecrawl`: {url: {"canonicals", "read_at"}} of the page reader's copies; `raw`: {url: raw canonicals}."""
+    from ..example_rows import canonical_row, canonical_versions
+    pages = {p.url: p for p in getattr(result, "pages", None) or []}
+    kept, differ = [], []
+    for row in different:
+        url = row["url"]
+        page = pages.get(url)
+        own = (raw or {}).get(url)
+        if own is None:
+            own = list(((getattr(page, "analysis", None) or {}).get("canonicals")) or []) or [row.get("canonical")]
+        found = canonical_versions(own, rendered_reading(_render_record(result, url)), (firecrawl or {}).get(url))
+        row = {**row, "versions": found["versions"], "versions_verdict": found["verdict"], "row": canonical_row(found)}
+        if found["verdict"] == "differ":
+            differ.append(row)
+        elif found["verdict"] == "not_final":
+            unassessed.append({**row, "reason": "the only browser reading was taken before the page finished loading, "
+                                                "so the canonical engines index after rendering is not known"})
+        else:
+            kept.append(row)
+    return kept, differ
+
+
 def idx4_canonicals(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     title = "Canonical signals"
     data = _index(result)
@@ -873,8 +924,21 @@ def idx4_canonicals(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
                 same.append(row)
             else:
                 different.append(row)
+    # DECISIONS 368: every reading of the canonical (raw HTML, the browser's, the page reader's) before saying it names
+    # another page: said only when the readings agree and one is final; readings that differ are their own finding
+    different, versions_differ = canonical_readings(different, result, unassessed)
 
     findings: list[Finding] = []
+    if versions_differ:
+        urls = [r["url"] for r in versions_differ]
+        findings.append(Finding(
+            "IDX-4", f"{len(urls)} page(s) declare a different canonical in the raw HTML and in the rendered page",
+            Severity.S3, Confidence.VERIFIED,
+            "Documented (Google: rel=canonical is read from the rendered page too)", INDEX_ENGINES, scope_for(urls),
+            {"pages": versions_differ[:40]}, "the same canonical in the raw HTML and in the rendered page",
+            VERSIONS_DIFFER_FIX, importance_tier=_tier(urls, key_urls),
+            notes=["Each reading is listed with its date; a browser reading taken before the page finished loading is "
+                   "marked so."]))
     if broken:
         urls = [r["url"] for r in broken]
         findings.append(Finding(

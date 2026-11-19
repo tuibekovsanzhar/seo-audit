@@ -2122,25 +2122,25 @@
    "summary": "Uncertain external links"
   },
   "judgment.generic": {
-   "title": "Review generic link texts such as 'click here'",
-   "finding": "Some links use generic text",
-   "explanation": "Read links such as 'read more' in their context, and where needed replace them with text that names the target.",
-   "why": "Link text tells crawlers and assistive technology what the target is. Generic text does not say that without its context.",
+   "title": "Replace generic link texts with text naming the target",
+   "finding": "Link text does not say where the link goes",
+   "explanation": "Texts such as 'see all' or 'here' do not name the target; engines and screen readers read it from the text. Name the target page.",
+   "why": "Engines and screen readers learn where a link goes from its text. 'See all' or 'here' does not say what the target is.",
    "steps": [
-    "Read links such as 'read more' in their context",
-    "Where needed, write text that names the target"
+    "Write texts such as 'see all' with the target page's name",
+    "If the text cannot change, add an aria-label naming the target"
    ],
    "verify": "In the page source, link texts or accessible names should name the target page.",
    "summary": "Generic link texts"
   },
   "judgment.generic.identity": {
-   "title": "Review generic link texts such as 'click here'",
-   "finding": "Some links use generic text",
-   "explanation": "Read links such as 'read more' in their context, and where needed replace them with text that names the target.",
-   "why": "Link text tells crawlers and assistive technology what the target is. Generic text does not say that without its context.",
+   "title": "Replace generic link texts with text naming the target",
+   "finding": "Link text does not say where the link goes",
+   "explanation": "Texts such as 'see all' or 'here' do not name the target; engines and screen readers read it from the text. Name the target page.",
+   "why": "Engines and screen readers learn where a link goes from its text. 'See all' or 'here' does not say what the target is.",
    "steps": [
-    "Read links such as 'read more' in their context",
-    "Where needed, write text that names the target"
+    "Write texts such as 'see all' with the target page's name",
+    "If the text cannot change, add an aria-label naming the target"
    ],
    "verify": "In the page source, link texts or accessible names should name the target page.",
    "summary": "Generic link texts"
@@ -2706,13 +2706,13 @@
    "summary": "Generic link text"
   },
   "shared.link_no_address": {
-   "title": "Give the shared link an address",
-   "finding": "Shared link has no address",
-   "explanation": "Give the shared link the address of the page it opens, or make it a button if it only opens a panel.",
+   "title": "Give the link with no address the page it opens",
+   "finding": "A link repeated on every page goes nowhere",
+   "explanation": "The link's href is empty or '#'; crawlers follow addresses, not clicks. Write the page's address, or use a <button> if it only opens a panel.",
    "why": "A crawler follows addresses, not clicks. A link with '#' or a script in place of an address gives it nothing to follow, even when it works for a visitor.",
    "steps": [
-    "Give the shared link an address",
-    "If it only opens a panel, make it a <button>"
+    "If the link opens a page, write that page's address in href",
+    "If it only opens a panel or menu, use a <button>, not an <a>"
    ],
    "verify": "In the page source, the link's href should be a real page address, or the element should be a <button>.",
    "summary": "Shared link without address"
@@ -4251,14 +4251,14 @@
    "summary": "Image and file names"
   },
   "tseo1.url_slug_unclear": {
-   "title": "Give pages short, readable addresses",
-   "finding": "Address slugs are unclear",
-   "explanation": "Rewrite unclear slugs as a few words, and redirect each old address permanently to the new one.",
+   "title": "Rewrite long or unreadable addresses as short words",
+   "finding": "Some page addresses are too long or unreadable",
+   "explanation": "The address's last part is too long, only a number or symbols. Rewrite it as a few meaningful words and redirect the old one with a 301.",
    "why": "A short address made of words tells visitors and engines what the page is before they open it; ids and symbols say nothing.",
    "steps": [
-    "Write each slug as a few words",
-    "Redirect each old address permanently to the new one",
-    "Update the links"
+    "Rewrite the address's last part as a few meaningful words",
+    "Redirect the old address permanently (301) to the new one",
+    "Use the new address in menus, the sitemap and internal links"
    ],
    "verify": "In the sitemap, addresses should be made of words, and an old address should redirect to the new one.",
    "summary": "Readable addresses"
@@ -4543,6 +4543,32 @@
    ],
    "verify": "In Search Console › URL Inspection the page shows as indexable.",
    "summary": "Demo page access"
+  },
+  "str2.card_headings": {
+   "title": "Keep <h2> for section titles, not product names",
+   "finding": "Product names are marked as <h2> headings",
+   "explanation": "Most <h2> headings are product card names, so engines read a product list, not sections. Make them plain text; keep <h2> for section titles.",
+   "why": "Headings are the page's outline. With hundreds of product names as <h2>, engines and screen readers see a long product list, not the sections.",
+   "steps": [
+    "Make product names in cards plain text or links, not <h2>",
+    "Keep each section's title as an <h2>",
+    "Keep the look with CSS; change only the tag"
+   ],
+   "verify": "In the homepage source, <h2> tags should be on section titles only, not in product cards.",
+   "summary": "Product names as <h2>"
+  },
+  "idx4.versions_differ": {
+   "title": "Make the raw and rendered canonical the same",
+   "finding": "The raw and rendered page name different canonicals",
+   "explanation": "The server's HTML and the rendered page name different canonicals, so engines choose. Write the same, right address in both.",
+   "why": "When the server's HTML and the rendered page name different canonicals, engines get two answers and choose which page to index themselves.",
+   "steps": [
+    "Compare the canonical in the page source and after rendering",
+    "Write the right canonical in the HTML the server sends",
+    "Remove the script that changes the canonical after load"
+   ],
+   "verify": "The page source and the rendered page in a browser should show the same canonical.",
+   "summary": "Raw and rendered canonical differ"
   }
  }
 }

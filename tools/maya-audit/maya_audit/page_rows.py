@@ -263,7 +263,7 @@ def from_page(finding: dict, rec: dict, lang: str = "tr") -> list[str]:
         (start if "late" in rule else size)()
         if out and isinstance(ev.get("threshold_bytes"), (int, float)):
             out.append(W["threshold"].format(n=_kb(ev["threshold_bytes"], lang)))
-    elif "heading" in rule:
+    elif "jump" in rule:  # DECISIONS 368: only the heading-jump rules (not every rule with "heading" in its name)
         jumps()
     elif rule.startswith("tseo1.title") or check == "STR-1":
         title_()

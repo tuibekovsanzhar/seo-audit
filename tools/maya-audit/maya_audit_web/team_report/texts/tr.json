@@ -2122,25 +2122,25 @@
    "summary": "Belirsiz dış bağlantılar"
   },
   "judgment.generic": {
-   "title": "'Tıklayınız' gibi genel bağlantı metinlerini gözden geçirin",
-   "finding": "Bazı bağlantılarda genel metinler kullanılıyor",
-   "explanation": "'Devamı' gibi bağlantı metinlerini bağlamıyla okuyun, gerekirse hedefi söyleyen bir metinle değiştirin.",
-   "why": "Bağlantı metni, tarayıcılara ve yardımcı teknolojilere hedefin ne olduğunu söyler. Genel bir metin bağlamı olmadan bunu söylemez.",
+   "title": "Genel bağlantı metinlerini hedefi söyleyen metinle değiştirin",
+   "finding": "Bağlantı metni gittiği sayfayı söylemiyor",
+   "explanation": "«Tümünü gör», «buraya» gibi metinler gidilen sayfayı söylemez; motorlar ve ekran okuyucular hedefi metinden anlar. Metni hedef sayfanın adıyla yazın.",
+   "why": "Motorlar ve ekran okuyucular bağlantının nereye gittiğini metninden anlar. «Tümünü gör» ya da «buraya» hedefin ne olduğunu söylemez.",
    "steps": [
-    "'Devamı' gibi bağlantıları bağlamıyla okuyun",
-    "Gerekirse hedefi söyleyen bir metin yazın"
+    "«Tümünü gör» gibi metinleri hedef sayfanın adıyla yazın",
+    "Metin değişemiyorsa hedefi söyleyen bir aria-label ekleyin"
    ],
    "verify": "Sayfa kaynağında bağlantı metinlerinin ya da erişilebilir adlarının hedef sayfayı adlandırdığı görülmeli.",
    "summary": "Genel bağlantı metinleri"
   },
   "judgment.generic.identity": {
-   "title": "'Tıklayınız' gibi genel bağlantı metinlerini gözden geçirin",
-   "finding": "Bazı bağlantılarda genel metinler kullanılıyor",
-   "explanation": "'Devamı' gibi bağlantı metinlerini bağlamıyla okuyun, gerekirse hedefi söyleyen bir metinle değiştirin.",
-   "why": "Bağlantı metni, tarayıcılara ve yardımcı teknolojilere hedefin ne olduğunu söyler. Genel bir metin bağlamı olmadan bunu söylemez.",
+   "title": "Genel bağlantı metinlerini hedefi söyleyen metinle değiştirin",
+   "finding": "Bağlantı metni gittiği sayfayı söylemiyor",
+   "explanation": "«Tümünü gör», «buraya» gibi metinler gidilen sayfayı söylemez; motorlar ve ekran okuyucular hedefi metinden anlar. Metni hedef sayfanın adıyla yazın.",
+   "why": "Motorlar ve ekran okuyucular bağlantının nereye gittiğini metninden anlar. «Tümünü gör» ya da «buraya» hedefin ne olduğunu söylemez.",
    "steps": [
-    "'Devamı' gibi bağlantıları bağlamıyla okuyun",
-    "Gerekirse hedefi söyleyen bir metin yazın"
+    "«Tümünü gör» gibi metinleri hedef sayfanın adıyla yazın",
+    "Metin değişemiyorsa hedefi söyleyen bir aria-label ekleyin"
    ],
    "verify": "Sayfa kaynağında bağlantı metinlerinin ya da erişilebilir adlarının hedef sayfayı adlandırdığı görülmeli.",
    "summary": "Genel bağlantı metinleri"
@@ -2706,13 +2706,13 @@
    "summary": "Genel bağlantı metni"
   },
   "shared.link_no_address": {
-   "title": "Ortak alandaki bağlantıya adres verin",
-   "finding": "Ortak alandaki bağlantının adresi yok",
-   "explanation": "Sayfa açan ortak bağlantıya o sayfanın adresini verin, yalnız pencere açıyorsa onu düğmeye çevirin.",
-   "why": "Bir tarayıcı tıklamaları değil, adresleri izler. Adres yerine '#' veya betik olan bir bağlantı, ziyaretçi için çalışsa bile izlenemez.",
+   "title": "Adressiz bağlantıya gideceği sayfanın adresini yazın",
+   "finding": "Her sayfadaki bir bağlantının gideceği adres yok",
+   "explanation": "Bağlantının href'i boş ya da «#»; botlar tıklamaz, adresi izler. Sayfa açıyorsa href'e onun adresini yazın, yalnız pencere açıyorsa <button> kullanın.",
+   "why": "Botlar tıklamaz, yalnızca href'teki adresi izler. Adresi olmayan bağlantı ziyaretçide çalışsa da bot o sayfaya bu yoldan ulaşamaz.",
    "steps": [
-    "Ortak alandaki bağlantıya adres verin",
-    "Yalnız pencere açıyorsa <button> yapın"
+    "Bağlantı bir sayfa açıyorsa href'e o sayfanın adresini yazın",
+    "Yalnızca pencere ya da menü açıyorsa <a> yerine <button> kullanın"
    ],
    "verify": "Sayfa kaynağında bağlantının href değeri gerçek bir sayfa adresi olmalı ya da öğe bir <button> olmalı.",
    "summary": "Adressiz ortak bağlantı"
@@ -4251,14 +4251,14 @@
    "summary": "Görsel ve dosya adları"
   },
   "tseo1.url_slug_unclear": {
-   "title": "Sayfalara kısa, okunabilir adresler verin",
-   "finding": "Adreslerin kısa adı anlaşılır değil",
-   "explanation": "Anlaşılmayan kısa adları birkaç kelimeyle yeniden yazın, eski adresi kalıcı olarak yenisine yönlendirin.",
+   "title": "Uzun ya da okunmayan adresleri kısa kelimelerle yazın",
+   "finding": "Bazı sayfa adresleri çok uzun ya da okunmuyor",
+   "explanation": "Adresin son bölümü çok uzun, yalnız numara ya da simge; konusunu söylemiyor. Birkaç anlamlı kelimeyle yeniden yazın, eskisini 301 ile yönlendirin.",
    "why": "Kelimelerden oluşan kısa bir adres, ziyaretçilere ve motorlara sayfayı açmadan neyle ilgili olduğunu söyler; kimlikler ve simgeler bir şey söylemez.",
    "steps": [
-    "Ürün/sayfa adresindeki kısa adı (handle) birkaç kelimeyle yazın",
-    "Her eski adresi kalıcı olarak yenisine yönlendirin",
-    "Bağlantıları güncelleyin"
+    "Adresin son bölümünü birkaç anlamlı kelimeyle yeniden yazın",
+    "Eski adresi kalıcı (301) yönlendirmeyle yeni adrese gönderin",
+    "Menü, site haritası ve iç bağlantılarda yeni adresi kullanın"
    ],
    "verify": "Site haritasında adresler kelimelerden oluşmalı; eski adres açıldığında yeni adrese yönlenmeli.",
    "summary": "Okunabilir adresler"
@@ -4543,6 +4543,32 @@
    ],
    "verify": "Search Console › URL Denetimi'nde sayfa dizine eklenebilir görünmeli.",
    "summary": "Demo sayfası erişimi"
+  },
+  "str2.card_headings": {
+   "title": "H2'yi ürün adlarına değil bölüm başlıklarına verin",
+   "finding": "Ürün adları başlık (H2) olarak işaretlenmiş",
+   "explanation": "H2'lerin çoğu ürün kartı adı; motorlar bölümleri değil bir ürün listesi görür. Ürün adlarını düz metin yapın, H2'yi bölüm başlıklarına bırakın.",
+   "why": "Başlıklar sayfanın ana hatlarıdır. Yüzlerce ürün adı H2 olunca motorlar ve ekran okuyucular bölümleri değil uzun bir ürün listesi görür.",
+   "steps": [
+    "Ürün kartlarındaki adları H2 yerine düz metin ya da bağlantı yapın",
+    "Her bölümün başlığını H2 olarak bırakın",
+    "Görünümü CSS ile koruyun; yalnız etiketi değiştirin"
+   ],
+   "verify": "Ana sayfanın kaynağında H2 etiketleri yalnız bölüm başlıklarında olmalı; ürün kartlarında H2 kalmamalı.",
+   "summary": "Ürün adı H2 başlıkları"
+  },
+  "idx4.versions_differ": {
+   "title": "Ham ve işlenmiş sayfadaki kanonik adresi aynı yapın",
+   "finding": "Ham HTML'deki ve işlenmiş sayfadaki kanonik adres farklı",
+   "explanation": "Sunucunun HTML'i ile işlenmiş sayfa farklı canonical söylüyor; motorlar hangisini kullanacağını kendisi seçer. İkisine de aynı doğru adresi yazın.",
+   "why": "Sunucunun HTML'i ve işlenmiş sayfa farklı canonical söyleyince motorlar iki yanıt görür; hangi sayfanın dizine gireceğini kendileri seçer.",
+   "steps": [
+    "Sayfa kaynağındaki ve işlenmiş sayfadaki canonical'ı karşılaştırın",
+    "Sunucunun gönderdiği HTML'e doğru canonical'ı yazın",
+    "Yüklemeden sonra canonical'ı değiştiren betiği kaldırın"
+   ],
+   "verify": "Sayfa kaynağında ve tarayıcıdaki işlenmiş sayfada aynı canonical görünmeli.",
+   "summary": "Ham ve işlenmiş canonical farkı"
   }
  }
 }

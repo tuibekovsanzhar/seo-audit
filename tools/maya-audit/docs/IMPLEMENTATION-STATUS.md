@@ -2699,3 +2699,30 @@ VERIFIED locally; not pushed. A "Teyit edin" group that is High/Blocker (always)
 | `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 81 items: Düzeltildi 78, Yeni tarama gerekli 3 |
 | `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+## İlginay's review of "Diğer bulgular" (DECISIONS 368, 2026-11-19)
+
+VERIFIED locally; not pushed. A homepage with many headings is never "too few" (product names as <h2> said instead);
+headings compared with the page's own language; a canonical said only when every reading agrees and one is final
+(raw vs rendered difference is its own finding); each page's line names the text, element and place; three link/address
+findings in plain Turkish; the Özet's "Örnek" column, a problem without a concrete example left out of "Diğer
+bulgular" and named by RG-24. Fix log items 82-88 (source İlginay).
+
+| Saved audit (rebuilt from copies, no request) | Cards | Diğer bulgular | Left out, no example (RG-24) | Text check |
+|---|---|---|---|---|
+| MMI 536b4b64 | 13 -> 14 (+ "H2'yi ürün adlarına değil bölüm başlıklarına verin") | 11 -> 8 | 0 | PASS |
+| Carpex 1fd871f0 | 15 | 14 -> 8 | 6 | PASS |
+| Enpara fee70191 | 15 | 14 -> 12 | 2 | PASS |
+| Atasun f06a2129 | 15 | 12 -> 10 | 2 | PASS |
+| İş Bankası 1b81bee4 | 15 (+ raw/rendered canonical card, - "Ara ara zaman aşımına uğrayan sayfaları düzeltin") | 21 -> 15 | 6 | PASS |
+| Ticimax c77ebf6d | 15 | 17 -> 9 | 8 | PASS |
+| Nature's Garden 342a0b14 | 6 | 15 -> 11 | 4 | PASS |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_review_368.py` | `9 passed` |
+| fast suite | `3452 passed, 4 skipped, 135 deselected, 1 warning in 589.89s (0:09:49)` |
+| `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 88 items: Düzeltildi 85, Yeni tarama gerekli 3 |
+| `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
+| Environment | Playwright's browser cache was missing; `playwright install chromium` restored it |
+| Push | NOT DONE (owner: don't push) |

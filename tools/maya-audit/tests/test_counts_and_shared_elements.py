@@ -500,7 +500,7 @@ def test_a_footer_link_with_no_address_on_most_pages_is_one_whole_site_line_that
     pytest.importorskip("fastapi")
     from maya_audit_web import wording
 
-    assert wording.title("STR-19", shared.title, "tr") == ("Ortak üst/alt bölüm: “Mağazalarımız” bağlantısının adresi yok (47 sayfada)", True)
+    assert wording.title("STR-19", shared.title, "tr") == ("Ortak üst/alt bölüm: “Mağazalarımız” bağlantısı hiçbir adrese gitmiyor (47 sayfada)", True)
     assert wording.title("STR-19", shared.title, "en")[0] == "Shared header/footer: link “Mağazalarımız” has no address (on 47 pages)"
 
 

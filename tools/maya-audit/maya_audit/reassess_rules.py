@@ -925,7 +925,8 @@ def _decisions_359(report: dict, affected: dict, changes: list[str]) -> None:
     changes.append(f"{record['id']}: {record['title']} (S3; DECISIONS 359)")
 
 
-def _shrink(check: dict, f: dict, drop: set[str], affected: dict, changes: list[str], why: str) -> None:
+def _shrink(check: dict, f: dict, drop: set[str], affected: dict, changes: list[str], why: str,
+            ref: str = "DECISIONS 360") -> None:
     """Take `drop` out of a page finding's addresses (scope, affected list, evidence page lists) and say so; the finding
     goes when no address is left. The count in its title follows (its first number)."""
     urls = [u for u in affected.get(f.get("id")) or (f.get("scope") or {}).get("urls") or [] if u not in drop]
@@ -934,7 +935,7 @@ def _shrink(check: dict, f: dict, drop: set[str], affected: dict, changes: list[
     if not urls:
         check["findings"].remove(f)
         affected.pop(f.get("id"), None)
-        changes.append(f"{f.get('id')}: removed, {why} (DECISIONS 360)")
+        changes.append(f"{f.get('id')}: removed, {why} ({ref})")
         if not check["findings"] and check.get("status") == "findings":
             check["status"] = "pass"
         return
@@ -946,7 +947,7 @@ def _shrink(check: dict, f: dict, drop: set[str], affected: dict, changes: list[
         if isinstance(ev.get(key), list):
             ev[key] = [x for x in ev[key] if (x.get("url") if isinstance(x, dict) else x) not in drop]
     affected[f["id"]] = urls
-    changes.append(f"{f.get('id')}: {old} -> {f['title']} ({why}; DECISIONS 360)")
+    changes.append(f"{f.get('id')}: {old} -> {f['title']} ({why}; {ref})")
 
 
 def _decisions_360(report: dict, affected: dict, changes: list[str]) -> None:
@@ -1137,6 +1138,153 @@ def _decisions_364(report: dict, affected: dict, changes: list[str], jsonld_by_u
         check["status"] = "findings"
     affected[record["id"]] = list(finding.scope.get("_all_urls") or finding.scope.get("urls") or [])
     changes.append(f"{record['id']}: {record['title']} (S4; DECISIONS 364)")
+
+
+def _add_finding(report: dict, affected: dict, check_id: str, finding, urls: list[str], changes: list[str], why: str) -> None:
+    from .launch_gate import items_of
+    from .models import to_jsonable
+    check = next((c for c in report.get("checks") or [] if c.get("check_id") == check_id), None)
+    if check is None:
+        return
+    finding.launch_gated = items_of(check_id, finding)[0]
+    record = to_jsonable(finding)
+    check.setdefault("findings", []).append(record)
+    if check.get("status") == "pass":
+        check["status"] = "findings"
+    affected[record["id"]] = list(urls)
+    changes.append(f"{record['id']}: {record['title']} ({why}; DECISIONS 368)")
+
+
+def _decisions_368(report: dict, affected: dict, changes: list[str], saved_texts: list[str] | None = None) -> None:
+    """DECISIONS 368: İlginay's review of the MMI Ek's "Diğer bulgular", on a saved report.
+
+    (1) "The homepage has N visible section headings" goes when the homepage has as many <h2>/<h3> as the rule asks,
+    hidden ones counted, in any saved reading; when most of its <h2> are product card names, that is said instead
+    (str2.card_headings). (2) Section headings in another language are judged again against the page's own language
+    (declared, and its text's) with the English question words. (3) A canonical to a page with different content is
+    kept only when every saved reading (raw HTML, the browser's, the page reader's) agrees and one is final; readings
+    that differ become idx4.versions_differ. (4) Each page's own line on the findings that said only a count."""
+    import json as _json
+    from collections import defaultdict
+    from types import SimpleNamespace
+    from urllib.parse import urlsplit
+    from .checks.index import VERSIONS_DIFFER_FIX, VERSIONS_DIFFER_TITLE, canonical_readings
+    from .checks.structure import card_headings_finding
+    from .config import MIN_FOREIGN_HEADINGS
+    from .example_rows import attach, headings_language
+    from .findings import Finding, Severity, scope_for
+    from .language import NAMES, detect_language, heading_language
+    from .models import Confidence
+    saved: dict[str, list[dict]] = {}
+    for raw in saved_texts or []:
+        try:
+            rec = _json.loads(raw)
+        except ValueError:
+            continue
+        if isinstance(rec, dict) and isinstance(rec.get("url"), str):
+            saved.setdefault(rec["url"], []).append(rec)
+    crawl = report.get("crawl") or {}
+    pages = {p.get("url"): p for p in crawl.get("pages") or [] if isinstance(p, dict)}
+    checks = {c.get("check_id"): c for c in report.get("checks") or [] if isinstance(c, dict)}
+
+    def count(headings) -> int:
+        return sum(1 for h in headings or [] if isinstance(h, dict) and h.get("level") in (2, 3) and str(h.get("text") or "").strip())
+
+    # (1) the homepage's outline
+    check = checks.get("STR-2")
+    home = next((p["url"] for p in pages.values() if p.get("depth") == 0 and 200 <= (p.get("status") or 0) < 300), None)
+    if check is not None and check.get("status") != "not_assessed":
+        for f in [f for f in check.get("findings") or [] if f.get("rule_id") == "str2.home_outline"]:
+            ev = f.get("evidence") or {}
+            url = ((ev.get("pages") or [{}])[0] or {}).get("url") or home
+            readings = [((pages.get(url) or {}).get("analysis") or {}).get("headings")] + [r.get("headings") for r in saved.get(url, [])]
+            most = max(count(h) for h in readings)
+            if most >= (ev.get("minimum_subheadings") or 3):
+                check["findings"].remove(f)
+                affected.pop(f.get("id"), None)
+                changes.append(f"{f.get('id')}: removed, the homepage has {most} <h2>/<h3> headings, hidden ones counted (DECISIONS 368)")
+        if home and not any(f.get("rule_id") == "str2.card_headings" for f in check.get("findings") or []):
+            rec = next((r for r in saved.get(home, []) if r.get("headings") and r.get("main_text")), None)
+            made = card_headings_finding(home, rec["headings"], rec["main_text"].split("\n"), set()) if rec else None
+            if made is not None:
+                _add_finding(report, affected, "STR-2", made, [home], changes, "product card names as <h2>")
+        if not check.get("findings") and check.get("status") == "findings":
+            check["status"] = "pass"
+
+    # (2) headings in another language than the page's own
+    check = checks.get("STR-12")
+    for f in [f for f in (check or {}).get("findings") or [] if f.get("rule_id") == "str12.headings"]:
+        ev = f.get("evidence") or {}
+        kept, drop = [], set()
+        for row in ev.get("pages") or []:
+            if not isinstance(row, dict):
+                continue
+            declared = row.get("declared")
+            text = next((r.get("main_text") for r in saved.get(row.get("url"), []) if r.get("main_text")), None)
+            detected = detect_language(text, declared=declared).get("language") if text else row.get("detected")
+            by_language: dict[str, list[str]] = defaultdict(list)
+            for heading in row.get("headings") or []:
+                language = heading_language(heading, declared=declared)
+                if language and language not in (declared, detected):
+                    by_language[language].append(heading)
+            odd = max(by_language.items(), key=lambda kv: len(kv[1]), default=(None, []))
+            if len(odd[1]) >= MIN_FOREIGN_HEADINGS:
+                row.update(headings_language=odd[0], headings=odd[1], headings_count=len(odd[1]), detected=detected,
+                           row=headings_language(declared, detected, odd[0], odd[1]))
+                kept.append(row)
+            else:
+                drop.add(row.get("url"))
+        if drop:
+            _shrink(check, f, drop, affected, changes, "the headings are in the page's own language", "DECISIONS 368")
+        if kept and f in check.get("findings", []):
+            pairs = sorted({(r["declared"], r["headings_language"]) for r in kept})
+            label = "; ".join(f"declared {NAMES.get(d, d)}, headings in {NAMES.get(m, m)}" for d, m in pairs)
+            f["title"] = f"{len(kept)} page(s) have section headings in another language than they declare ({label})"
+            ev["pages"] = kept
+    if check is not None and not check.get("findings") and check.get("status") == "findings":
+        check["status"] = "pass"
+
+    # (3) a canonical to a page with different content, from every saved reading
+    check = checks.get("IDX-4")
+    read_by_reader = {p.get("url") for p in (report.get("firecrawl") or {}).get("pages") or []
+                      if isinstance(p, dict) and p.get("outcome") == "read"}
+    firecrawl = {}
+    for url, recs in saved.items():
+        own_at = (pages.get(url) or {}).get("requested_at")
+        other = [r for r in recs if r.get("requested_at") != own_at]
+        if url in read_by_reader and other:
+            firecrawl[url] = {"canonicals": other[0].get("canonicals") or [], "read_at": other[0].get("requested_at")}
+    for f in [f for f in (check or {}).get("findings") or [] if f.get("rule_id") == "idx4.different"]:
+        ev = f.get("evidence") or {}
+        rows = [r for r in ev.get("pages") or [] if isinstance(r, dict) and r.get("url")]
+        unassessed: list[dict] = []
+        raw = {r["url"]: list(((pages.get(r["url"]) or {}).get("analysis") or {}).get("canonicals") or []) or [r.get("canonical")]
+               for r in rows}
+        kept, differ = canonical_readings(rows, SimpleNamespace(pages=[], render=crawl.get("render") or {}), unassessed,
+                                          firecrawl, raw)
+        ev["pages"] = kept + [r for r in rows if r["url"] not in {x["url"] for x in kept + differ + unassessed}]
+        drop = {r["url"] for r in differ + unassessed}
+        if unassessed:
+            (check.setdefault("evidence", {}).setdefault("not_assessed", [])).extend(
+                {k: v for k, v in r.items() if k in ("url", "canonical", "versions", "reason")} for r in unassessed)
+        if drop:
+            _shrink(check, f, drop, affected, changes, "the saved readings of the canonical disagree or none is final",
+                    "DECISIONS 368")
+        if differ:
+            urls = [r["url"] for r in differ]
+            made = Finding("IDX-4", VERSIONS_DIFFER_TITLE.format(n=len(urls)), Severity.S3, Confidence.VERIFIED,
+                           "Documented (Google: rel=canonical is read from the rendered page too)",
+                           f.get("engines") or [], scope_for(urls), {"pages": differ[:40]},
+                           "the same canonical in the raw HTML and in the rendered page", VERSIONS_DIFFER_FIX,
+                           notes=["Each reading is listed with its date; a browser reading taken before the page "
+                                  "finished loading is marked so."])
+            _add_finding(report, affected, "IDX-4", made, urls, changes, "raw and rendered canonicals differ")
+    if check is not None and not check.get("findings") and check.get("status") == "findings":
+        check["status"] = "pass"
+
+    # (4) each page's own line
+    for fid in attach(report):
+        changes.append(f"{fid}: each page's own line added (which text, element and place; DECISIONS 368)")
 
 
 def _decisions_365(report: dict, changes: list[str]) -> None:
@@ -1498,6 +1646,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_360(r, aff, changes)  # DECISIONS 360: İlginay's review of the MMI Ek
     _decisions_363(r, aff, changes, jsonld_by_url)  # DECISIONS 363: the SEO team's gaps
     _decisions_364(r, aff, changes, jsonld_by_url)  # DECISIONS 364: image and file names
+    _decisions_368(r, aff, changes, saved_texts)  # DECISIONS 368: İlginay's review of "Diğer bulgular"
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -1556,6 +1705,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_360(r, affected, cert)  # DECISIONS 360: İlginay's review of the MMI Ek
         _decisions_363(r, affected, cert, jsonld_by_url)  # DECISIONS 363: the SEO team's gaps
         _decisions_364(r, affected, cert, jsonld_by_url)  # DECISIONS 364: image and file names
+        _decisions_368(r, affected, cert, saved_texts)  # DECISIONS 368: İlginay's review of "Diğer bulgular"
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity
