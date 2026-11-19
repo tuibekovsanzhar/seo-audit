@@ -2622,7 +2622,7 @@ this rule never names a template fix. Fix log item 77.
 
 ## Checklist ways of checking and the platform (DECISIONS 365, 2026-11-19)
 
-VERIFIED locally; not pushed. Every checklist item says how it is checked (Otomatik 55 / Veri gerekir 37 / Uzman incelemesi
+VERIFIED; pushed as `2262e81` (`593be24..2262e81`); CI run 44489447004 success. Every checklist item says how it is checked (Otomatik 55 / Veri gerekir 37 / Uzman incelemesi
 73), what data or why an expert, and how it could become automatic (64 could: S 21, M 37, L 6); 11 data items measured
 from Maya's Search Console export (`maya_audit/checklist_maya.py`); the platform recognised from more signals, with a
 confidence, in Kapsam and Özet (`site_platform`, `platform_text.advice_by_platform`). Fix log items 78 and 79.
@@ -2646,5 +2646,31 @@ Cards and the text check unchanged in all 7 (PASS).
 | fast suite | `3436 passed, 4 skipped, 135 deselected, 1 warning in 614.31s (0:10:14)` |
 | full suite | `3571 passed, 4 skipped, 1 warning in 998.44s (0:16:38)` |
 | `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 79 items: Düzeltildi 76, Yeni tarama gerekli 3 |
+| `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
+| Push | done with `2262e81` |
+
+## Every problem in the Ek's Özet (DECISIONS 366, 2026-11-19)
+
+VERIFIED locally; not pushed. "Özet": the platform and "İlk N kart PDF raporundadır; diğer bulgular aşağıdadır." on top,
+the PDF's cards as before, then "Diğer bulgular": every other problem group (S1-S4, Sorun / Kontrol edin / Fırsat; no
+Info, no rejected finding, no Maya limit) with the cards' columns, by severity then priority. The PDF is unchanged.
+Fix log item 80.
+
+| Saved audit (rebuilt from copies, no request) | Cards (unchanged) | "Diğer bulgular" | Types | Text check |
+|---|---|---|---|---|
+| MMI 536b4b64 | 11 | 13 | Kontrol edin 13 | PASS |
+| Carpex 1fd871f0 | 15 | 14 | Kontrol edin 9, Fırsat 3, Sorun 2 | PASS |
+| Enpara fee70191 | 15 | 14 | Kontrol edin 14 | PASS |
+| Atasun f06a2129 | 15 | 12 | Kontrol edin 12 | PASS |
+| İş Bankası 1b81bee4 | 15 | 21 | Kontrol edin 18, Sorun 3 | PASS |
+| Ticimax c77ebf6d | 15 | 18 | Kontrol edin 18 | PASS |
+| Nature's Garden 342a0b14 | 6 | 15 | Kontrol edin 15 | PASS |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_summary_others_366.py` | `2 passed` |
+| fast suite | `3438 passed, 4 skipped, 135 deselected, 1 warning in 569.97s (0:09:29)` |
+| full suite | `3573 passed, 4 skipped, 1 warning in 1009.30s (0:16:49)` |
+| `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 80 items: Düzeltildi 77, Yeni tarama gerekli 3 |
 | `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |

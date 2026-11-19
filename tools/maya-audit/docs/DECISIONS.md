@@ -5631,3 +5631,17 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      (high, X-Powered-By on 20/20), Nature's Garden Shopify -> Shopify (high, 6/6). "Veri eksik" rows: MMI 26 -> 19,
      Carpex 27 -> 20, Ticimax 21 -> 16 (Maya data: 11, 11 and 8 items measured); the others unchanged.
      Tests: `tests/test_checklist_platform_365.py` (6); the checklist, Özet and P-level tests read the new rows.
+366. **Every problem in the Ek's "Özet", the PDF's cards first (İlginay; Owner, 2026-11-19; the section's wording and its
+     order beyond severity and priority are agent defaults).** Global for every audit. The PDF keeps its cards (at most
+     15); the XLSX "Özet" keeps them first, exactly as before, and adds below them "Diğer bulgular (N): PDF'te kart
+     olmayan her sorun, önem ve önceliğe göre": one row per problem group on no card shown (the PDF's cards and the
+     appendix's note cards), so a group the selection made a card that the PDF has no room for is listed too; never
+     an Info note, a finding a person rejected or Maya's own limit. Same columns as the cards: Başlık (the plain problem
+     name of "Bulgu bazında"), Önem, Sorun türü, Öncelik (P0-P3), Sorumlu and Efor (the recommendation catalogue's, with
+     the cards' words), Etkilenen adres (the group's addresses) and Satırlara git (its first row in "Bulgu bazında"); the
+     Kart cell is empty. Order: severity, then priority, then title (`client_appendix.other_findings`). A line under
+     the platform says "İlk N kart PDF raporundadır; diğer bulgular aşağıdadır.", N being the PDF's own number of
+     cards (11 on MMI, 6 on Nature's Garden), not a fixed 15, so the line is never wrong.
+     *Result* (saved audits rebuilt 2026-11-19, no request): cards identical in all 7; "Diğer bulgular" MMI 13,
+     Carpex 14, Enpara 14, Atasun 12, İş Bankası 21, Ticimax 18, Nature's Garden 15; text check PASS in all.
+     Tests: `tests/test_summary_others_366.py` (2); the Özet tests read the cards from the fourth row.

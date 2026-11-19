@@ -109,24 +109,26 @@ def test_summary_has_the_pdf_cards_each_linked_to_its_first_row():
     book, links = xlsx.read(data), xlsx.links(data)
     summary = book["Summary"]
     assert summary[1][1].startswith("Platform:")  # DECISIONS 365: the platform on the first row
-    assert [r[:3] for r in summary[2:]] == [["1", "Renew the TLS certificate", "High"], ["2", "Make heavy pages lighter", "Medium"],
+    assert summary[2][1] == "The first 3 cards are in the PDF report; the other findings are below."  # DECISIONS 366
+    cards = [r for r in summary[3:] if r[0]]
+    assert [r[:3] for r in cards] == [["1", "Renew the TLS certificate", "High"], ["2", "Make heavy pages lighter", "Medium"],
                                            ["3", "Small fixes", "Info"]]
-    assert [r[7] for r in summary[2:]] == ["2", "2", "0"]  # addresses (after "Priority (P0-P3)", DECISIONS 324)
+    assert [r[7] for r in cards] == ["2", "2", "0"]  # addresses (after "Priority (P0-P3)", DECISIONS 324)
     found = book["By finding"]
     card = found[0].index("Card")
-    for n, ref in ((1, "I3"), (2, "I4")):
+    for n, ref in ((1, "I4"), (2, "I5")):
         target = links["Summary"][ref]
         m = re.fullmatch(r"#'By finding'!A(\d+)", target)
         assert m, target
         row = int(m.group(1))
         assert found[row - 1][card] == str(n) and all(r[card] != str(n) for r in found[1:row - 1])
-    assert "I5" not in links["Summary"]  # card 3 names checks' observations, no finding row: no link
+    assert "I6" not in links["Summary"]  # card 3 names checks' observations, no finding row: no link
     assert all(r[card] != "3" for r in found[1:])  # a check id on a note card never takes a finding
 
 
 def test_summary_without_the_team_report_uses_the_selection_cards_in_the_file_language():
     sel = cs.select(_report())
-    names = [r[1] for r in xlsx.read(client_appendix.build(sel, "tr", title=lambda c, t: "TR:" + t))["Özet"][2:]]
+    names = [r[1] for r in xlsx.read(client_appendix.build(sel, "tr", title=lambda c, t: "TR:" + t))["Özet"][3:] if r[0]]
     assert names and all(n.startswith("TR:") or n in {g["title"]["tr"] for g in cs.MERGE_GROUPS} for n in names)
 
 
@@ -283,7 +285,7 @@ def test_the_web_appendix_has_the_reader_sheets_and_the_pdf_cards(finished):
     book = xlsx.read(client.get(f"{API}/audits/{audit['id']}/downloads/xlsx", params={"lang": "tr"}).content)
     assert list(book)[:4] == TR_SHEETS[:4]
     overview = client.get(f"{API}/audits/{audit['id']}/overview", params={"lang": "tr"}).json()
-    titles = [row[1] for row in book["Özet"][2:]]
+    titles = [row[1] for row in book["Özet"][3:]]
     assert [f["title"] for f in overview["fixes"]] == titles[:len(overview["fixes"])]
 
 

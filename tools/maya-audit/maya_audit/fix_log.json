@@ -1248,6 +1248,24 @@
     },
     "test": "tests/test_checklist_platform_365.py"
    }
+  },
+  {
+   "kaynak": "İlginay — Ek'in Özet sayfası yalnız ilk 15 kartı gösteriyordu (DECISIONS 366)",
+   "brand_key": "mmi",
+   "sorun": "Özet sayfası yalnız PDF'teki kartları gösteriyordu; kart olmayan sorunlar Özet'te yoktu",
+   "genel": "Özet sayfası yalnız PDF'teki kartları gösteriyordu; kart olmayan sorunlar Özet'te yoktu",
+   "nasil": "Kartlar PDF'teki gibi önce geliyor; altında 'Diğer bulgular' kart olmayan her sorunu (Sorun, Kontrol edin, Fırsat) aynı sütunlarla önem ve önceliğe göre listeliyor; üstte 'İlk N kart PDF raporundadır' satırı var.",
+   "decisions": [
+    366
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Özet",
+     "column": "Başlık",
+     "regex": "^Diğer bulgular \\("
+    },
+    "test": "tests/test_summary_others_366.py"
+   }
   }
  ]
 }

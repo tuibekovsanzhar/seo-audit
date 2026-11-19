@@ -29,6 +29,8 @@ READ = {
            "summary_cols": ["Kart", "Başlık", "Önem", "Sorun türü", "Öncelik (P0-P3)", "Sorumlu", "Efor", "Etkilenen adres", "Satırlara git",
                             "Bağlantılar"],
            "go": "Satırlara git →", "where": "Bağlantı yerleri", "go_links": "Bağlantılara git →",
+           "pdf_line": "İlk {n} kart PDF raporundadır; diğer bulgular aşağıdadır.",
+           "others": "Diğer bulgular ({n}): PDF'te kart olmayan her sorun, önem ve önceliğe göre",
            # DECISIONS 337: where each address with a problem is pointed at
            "where_cols": ["Kart", "Bozuk adres", "HTTP durumu", "Bağlantının bulunduğu sayfa", "Bağlantı metni", "Yazılan değer (href)",
                           "Konum", "Site haritasında mı?", "Site haritası dosyası", "Site haritasındaki <loc> metni", "<loc> satırı",
@@ -72,6 +74,8 @@ READ = {
            "summary_cols": ["Card", "Title", "Severity", "Issue type", "Priority (P0-P3)", "Owner", "Effort", "Affected addresses", "Go to rows",
                             "Links"],
            "go_links": "Go to links →",
+           "pdf_line": "The first {n} cards are in the PDF report; the other findings are below.",
+           "others": "Other findings ({n}): every problem that is not a PDF card, by severity and priority",
            "go": "Go to rows →", "where": "Link locations",
            "where_cols": ["Card", "Broken address", "HTTP status", "Page with the link", "Link text", "Written value (href)",
                           "Place", "In the sitemap?", "Sitemap file", "<loc> text in the sitemap", "<loc> line",
@@ -519,6 +523,44 @@ def redirect_rows(places: dict | None, todos: list[dict] | None, lang: str) -> l
     return sorted(out, key=lambda row: (row[0] == "", row[0] if row[0] != "" else 0))
 
 
+OWNER_WORDS = {"tr": {"developer": "Geliştirici", "content": "İçerik", "seo": "SEO"},
+               "en": {"developer": "Developer", "content": "Content", "seo": "SEO"}}
+EFFORT_WORDS = {"tr": {"S": "Küçük", "M": "Orta", "L": "Büyük"}, "en": {"S": "Small", "M": "Medium", "L": "Large"}}
+SEV_RANK = {"S1": 0, "S2": 1, "S3": 2, "S4": 3}
+
+
+def other_findings(selection: dict, rows: list[dict], card_of_finding: dict, todos, lang: str, where: str) -> list[list]:
+    """DECISIONS 366: the Özet rows for every problem group on no card shown (the PDF's cards and the appendix's note
+    cards; a group the selection made a card that the PDF has no room for is listed): never a rejected one or Maya's
+    own limit, severities S1-S4 (no Info notes), with the cards' columns, the first "Bulgu bazında" row of the group, by severity, then priority (P0-P3), then title."""
+    from .recommendation_catalog import note
+    W, R = WORDS[lang], READ[lang]
+    on_cards = set(card_of_finding) | {f for t in todos or [] for f in t.get("finding_ids") or []}
+    first: dict[str, int] = {}
+    title_of: dict[str, str] = {}
+    for i, r in enumerate(rows, 2):
+        first.setdefault(r["finding_id"], i)
+        title_of.setdefault(r["finding_id"], r["title"])
+    out = []
+    for g in selection.get("groups") or []:
+        ids = list(g.get("finding_ids") or [])
+        if (g.get("placement") in ("rejected", "own_limit") or g.get("severity") not in SEV_RANK
+                or set(ids) & on_cards):
+            continue
+        lead = g.get("lead") or {}
+        n = note(lead.get("check_id") or g.get("check_id") or "", lead.get("title") or g.get("title") or "")
+        effort = n.get("effort") or "M"  # note() makes a rename of addresses at least "M" (DECISIONS 306)
+        row_at = next((first[f] for f in ids if f in first), None)
+        level = (g.get("p_level") or {}).get("level") if isinstance(g.get("p_level"), dict) else g.get("p_level")
+        name = next((title_of[f] for f in ids if f in title_of), None) or lead.get("title") or g.get("title") or ""
+        out.append((SEV_RANK[g["severity"]], level or "P9", name.get("text", "") if isinstance(name, dict) else str(name),
+                    ["", name, W["severity"].get(g["severity"], g["severity"]), W["itype"].get(g.get("issue_type") or "", ""),
+                     level or "", OWNER_WORDS[lang].get(n.get("owner") or "", n.get("owner") or ""),
+                     EFFORT_WORDS[lang].get(effort, effort), len(g.get("urls") or []),
+                     {"text": R["go"], "location": f"{where}!A{row_at}"} if row_at else ""]))
+    return [r for *_, r in sorted(out, key=lambda x: x[:3])]
+
+
 def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, *, title=None, fix=None,
                   todos: list[dict] | None = None, words=None, places: dict | None = None) -> list[dict]:
     """DECISIONS 322: "Nasıl okunur", "Özet" (the PDF's cards, each linked to its first row), "Sayfa bazında" (one row
@@ -526,7 +568,7 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
     from . import page_rows
     W, R = WORDS[lang], READ[lang]
     rows = page_rows.finding_rows(selection, lists, lang, todos=todos, words=words, title=title, fix=fix)
-    _, cards = page_rows.card_of(selection, todos, lang, title)
+    card_of_finding, cards = page_rows.card_of(selection, todos, lang, title)
     sev = lambda s: W["severity"].get(s, s or "")  # noqa: E731
     profile_id = (selection.get("business_type") or {}).get("id")  # DECISIONS 350: the profile's own type words
     ptype = lambda t: page_rows.type_word(t, lang, profile_id, W["page_type"])  # noqa: E731
@@ -561,6 +603,12 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
                 {"text": R["go"], "location": f"{where}!A{first_row[c['n']]}"} if c["n"] in first_row else "",
                 {"text": R["go_links"], "location": f"{links_sheet}!A{first_link[c['n']]}"} if c["n"] in first_link else ""]
                for c in cards]
+    # DECISIONS 366: every other problem below the cards ("Diğer bulgular"), and a line on top saying where the cards are
+    others = other_findings(selection, rows, card_of_finding, todos, lang, where)
+    pdf_cards = sum(1 for c in cards if c.get("n") is not None)
+    top = [["", platform_line(selection, lang, short=True)], ["", R["pdf_line"].format(n=pdf_cards)]]
+    if others:
+        summary = summary + [["", R["others"].format(n=len(others))]] + others
     by_page = [[_link(p["url"], p["url"]), page_rows.read_word(p["read"], lang), ptype(p["page_type"]),
                 p["importance"] if isinstance(p["importance"], (int, float)) else "", p["problems"], sev(p["worst"]),
                 "; ".join(p["names"]), ", ".join(str(n) for n in p["cards"])] for p in page_rows.page_table(rows)]
@@ -569,10 +617,9 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
     for key, header, body, widths in (("summary", R["summary_cols"], summary, [7, 60, 12, 14, 12, 22, 10, 12, 18, 20]),
                                       ("by_page", R["page_cols"], by_page, [70, 16, 22, 12, 10, 14, 80, 10]),
                                       ("by_finding", R["finding_cols"], found, [42, 12, 13, 60, 16, 48, 60, 7, 16, 20, 12, 18, 24, 10])):
-        if body and key == "summary":  # DECISIONS 365: the platform on the first row, above the cards
-            out.append({"name": R[key], "header": header, "rows": [["", platform_line(selection, lang, short=True)]
-                                                                  + [""] * (len(header) - 2)] + body,
-                        "widths": widths, "title_rows": 1})
+        if body and key == "summary":  # DECISIONS 365, 366: the platform and where the cards are, above the cards
+            out.append({"name": R[key], "header": header, "rows": [t + [""] * (len(header) - 2) for t in top] + body,
+                        "widths": widths, "title_rows": len(top)})
         elif body:
             out.append({"name": R[key], "header": header, "rows": body, "widths": widths})
         else:  # one line saying why, never an empty sheet (DECISIONS 321 (5))

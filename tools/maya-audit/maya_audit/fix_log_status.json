@@ -543,15 +543,22 @@
    "no": 78,
    "durum": "Düzeltildi",
    "tarih": "2026-11-19",
-   "commit": "—",
+   "commit": "2262e81",
    "decisions": "365"
   },
   {
    "no": 79,
    "durum": "Düzeltildi",
    "tarih": "2026-11-19",
-   "commit": "—",
+   "commit": "2262e81",
    "decisions": "365"
+  },
+  {
+   "no": 80,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-19",
+   "commit": "—",
+   "decisions": "366"
   }
  ]
 }
