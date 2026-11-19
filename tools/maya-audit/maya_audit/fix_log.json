@@ -1213,6 +1213,41 @@
     ],
     "test": "tests/test_file_names_364.py"
    }
+  },
+  {
+   "kaynak": "İlginay — 165 maddelik kontrol listesi: her madde her denetimde kontrol ediliyor mu? (DECISIONS 365)",
+   "brand_key": "mmi",
+   "sorun": "Kontrol listesinde hangi maddenin otomatik ölçüldüğü, hangisinin veri ya da uzman incelemesi gerektirdiği yazmıyordu; Maya verisi eklenince ölçülebilecek maddeler ölçülmüyordu",
+   "genel": "Kontrol listesinde hangi maddenin otomatik ölçüldüğü, hangisinin veri ya da uzman incelemesi gerektirdiği yazmıyordu",
+   "nasil": "Her maddeye 'Nasıl kontrol edilir' (Otomatik / Veri gerekir / Uzman incelemesi), gereken veri ya da uzman nedeni ve otomatikleştirme önerisi eklendi; sayılar sayfanın başında; Maya'nın Search Console verisi eklenince 11 madde ölçülüyor.",
+   "decisions": [
+    365
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Kontrol listesi",
+     "column": "Gereken veri / neden uzman",
+     "regex": "Maya verisiyle ölçüldü"
+    },
+    "test": "tests/test_checklist_platform_365.py"
+   }
+  },
+  {
+   "kaynak": "İlginay — platform tespiti kontrolleri değiştiriyor mu? (DECISIONS 365)",
+   "brand_key": "ticimax",
+   "sorun": "Platform raporda görünmüyordu ve birkaç platform (ticimax.com'un kendi sitesi dahil) tanınmıyordu",
+   "genel": "Tespit edilen platform ve güven düzeyi raporda görünmüyordu; bazı platformlar tanınmıyordu",
+   "nasil": "Platform görsel adreslerinden, generator etiketinden, X-Powered-By'dan ve alt bilgi notundan da tanınıyor; güveniyle Kapsam ve Özet'te yazıyor; platforma özel öneri yalnız o platformda gösteriliyor.",
+   "decisions": [
+    365
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Kapsam",
+     "regex": "Ticimax \\(güven: yüksek"
+    },
+    "test": "tests/test_checklist_platform_365.py"
+   }
   }
  ]
 }

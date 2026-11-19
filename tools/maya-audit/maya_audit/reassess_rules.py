@@ -1139,6 +1139,29 @@ def _decisions_364(report: dict, affected: dict, changes: list[str], jsonld_by_u
     changes.append(f"{record['id']}: {record['title']} (S4; DECISIONS 364)")
 
 
+def _decisions_365(report: dict, changes: list[str]) -> None:
+    """DECISIONS 365: the platform worked out again from the saved pages with the current signals (images, the generator
+    tag, X-Powered-By, footer credits) and its confidence; a report whose pages show none keeps what it had (DECISIONS
+    309's saved-data signals, "medium")."""
+    from types import SimpleNamespace
+    from .models import page_from_record
+    from .site_platform import recognise
+    old = report.get("platform") if isinstance(report.get("platform"), dict) else {}
+    pages = [page_from_record(p) for p in (report.get("crawl") or {}).get("pages") or []
+             if isinstance(p, dict) and isinstance(p.get("analysis"), dict)]
+    try:
+        found = recognise(SimpleNamespace(pages=pages)) if pages else None
+    except Exception:  # noqa: BLE001  a hint only: keep the saved one
+        found = None
+    if found and found.get("name"):
+        new = {**found, "cdn": found.get("cdn") or old.get("cdn")}
+        if new.get("cdn") and not found.get("cdn"):
+            new["signals"] = list(found.get("signals") or []) + [s for s in old.get("signals") or [] if s.startswith(new["cdn"])]
+        if (old.get("name"), old.get("confidence")) != (new["name"], new["confidence"]):
+            report["platform"] = new
+            changes.append(f"platform: {old.get('name') or 'none'} -> {new['name']} ({new['confidence']}; DECISIONS 365)")
+
+
 def _decisions_351(report: dict, changes: list[str]) -> None:
     """DECISIONS 351: a saved `idx6.alias_links` finding gives Shopify's step only on a Shopify site."""
     from .checks.quick_rules import ALIAS_LINKS_FIX_SHOPIFY, alias_fix
@@ -1454,6 +1477,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
         n = saved_jsonld(r, jsonld_by_url)
         changes.append(f"Product fields read from the saved JSON-LD of {n} page(s) (DECISIONS 304)")
     _decisions_304(r, aff, changes, quick_unassessed)
+    _decisions_365(r, changes)  # DECISIONS 365: the platform from the saved pages with the current signals
     _decisions_309(r, changes, saved_texts or [])
     _decisions_315(r, changes)
     _decisions_316(r, aff, changes)
@@ -1509,6 +1533,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
     is empty when nothing applies."""
     r = deepcopy(report)
     changes: list[str] = []
+    _decisions_365(r, changes)  # DECISIONS 365: the platform from the saved pages with the current signals
     _decisions_309(r, changes, saved_texts or [])
     # DECISIONS 321: a certificate's expiry severity is read from the saved evidence, so a report of the current schema
     # written before it gets it too; the order and the problem summary follow.

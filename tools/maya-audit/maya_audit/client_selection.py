@@ -781,6 +781,9 @@ def select(report: dict, lists: dict | None = None, confirmations: dict | None =
                    "not_assessed": sum(1 for line in coverage_box["lines"] if line["kind"] == "not_assessed")},
         "grouping_summary": {k: summary.get(k) for k in ("method_version", "pages_scored", "page_types") if k in summary},
         "platform": (report.get("platform") or {}).get("name"),
+        # DECISIONS 365: the platform, how sure, and the signal, for "Kapsam" and "Özet"
+        "platform_info": {k: (report.get("platform") or {}).get(k) for k in ("name", "cdn", "confidence", "pages_seen", "pages_looked")}
+        | {"signal": ((report.get("platform") or {}).get("signals") or [""])[0]},
         "_confirmations": confirmations or {},
         # DECISIONS 322: every scored page's type and importance, for the appendix's page sheets and the web page list.
         "_importance": importance,

@@ -181,7 +181,10 @@ def test_the_ek_has_every_item_and_the_totals(site):
     assert names.index("Kontrol listesi") == names.index("Bulgu bazında") + 1 + sum(
         n in names for n in ("Bağlantı yerleri", "Yönlendiren bağlantılar"))
     rows = book["Kontrol listesi"]
-    assert rows[0] == ["ID", "Grup", "Kontrol maddesi", "Öncelik", "Sonuç", "Kanıt", "Maya kuralı / kart", "Eksik veri kaynağı"]
+    assert rows[0] == ["ID", "Grup", "Kontrol maddesi", "Öncelik", "Sonuç", "Kanıt", "Maya kuralı / kart", "Eksik veri kaynağı",
+                       "Nasıl kontrol edilir", "Gereken veri / neden uzman", "Otomatikleştirme önerisi"]  # DECISIONS 365
+    assert rows[1][0] == "Nasıl kontrol edilir"  # the counts of each way on the first three rows
+    rows = [rows[0]] + rows[4:]
     assert [r[0] for r in rows[1:]] == [f"SEO-{n:03d}" for n in range(1, 166)]
     labels = set(checklist.WORDS["tr"]["result"].values())
     assert all(r[4] in labels and r[5] for r in rows[1:])
@@ -190,8 +193,9 @@ def test_the_ek_has_every_item_and_the_totals(site):
     card = next(t for t in data["todos"] if t.get("rule_id", "").startswith("tseo1.head_closed"))
     assert head[4] == "Sorun" and head[6].startswith(f"Kart {card['n']} · tseo1.head_closed")
     totals = book["Kontrol listesi özeti"]
-    assert totals[0] == ["Grup", "Madde", "Geçti", "Sorun", "Veri eksik", "İnceleme gerekli", "Uygulanmaz"]
-    assert totals[1][:2] == ["Toplam", "165"] and sum(int(x) for x in totals[1][2:]) == 165
+    assert totals[0] == ["Grup", "Madde", "Geçti", "Sorun", "Veri eksik", "İnceleme gerekli", "Uygulanmaz",
+                         "Otomatik", "Veri gerekir", "Uzman incelemesi"]
+    assert totals[1][:2] == ["Toplam", "165"] and sum(int(x) for x in totals[1][2:7]) == 165 == sum(int(x) for x in totals[1][7:])
     assert len(totals) == 22 and sum(int(r[1]) for r in totals[2:]) == 165
     assert client_appendix.finding_ids(content)  # the findings sheet is still found
 

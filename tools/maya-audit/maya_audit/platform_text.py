@@ -45,3 +45,31 @@ def for_platform(text: str | None, platform: str | None) -> str | None:
 
 def lines_for(lines, platform: str | None) -> list[str]:
     return [line for line in lines or [] if not other_platform(line, platform)]
+
+
+def advice_by_platform() -> dict[str, list[str]]:
+    """DECISIONS 365: {platform: the rules (and note topics) whose advice has a line for it}, read from the advice texts
+    themselves (the cards' steps and texts, the rule actions), so the list never goes stale. A line naming a platform is
+    shown only on that platform (`for_platform`); every other site gets the rule's general advice."""
+    import json
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    found: dict[str, set[str]] = {}
+
+    def scan(key: str, value) -> None:
+        for hit in _PLATFORM.finditer(json.dumps(value, ensure_ascii=False)):
+            name = next((p for p in PLATFORM_NAMES if p.lower() == hit.group(1).lower()), hit.group(1))
+            found.setdefault(name, set()).add(key)
+    actions = json.loads((root / "maya_audit" / "rule_actions.json").read_text(encoding="utf-8"))
+    for rule, entry in (actions.get("actions") or actions).items():
+        scan(rule, entry)
+    for lang in ("tr", "en"):
+        texts = json.loads((root / "maya_audit_web" / "team_report" / "texts" / f"{lang}.json").read_text(encoding="utf-8"))
+        for rule, entry in (texts.get("rules") or {}).items():
+            scan(rule, entry)
+        for topic, entry in (texts.get("notes") or {}).items():
+            scan(f"not: {topic}", entry)
+    return {p: sorted(v) for p, v in sorted(found.items())}
+
+
+from .text_gate import PLATFORMS as PLATFORM_NAMES  # noqa: E402

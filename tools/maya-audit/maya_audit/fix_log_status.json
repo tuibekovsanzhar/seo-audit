@@ -535,9 +535,23 @@
   {
    "no": 77,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-18",
-   "commit": "—",
+   "tarih": "2026-11-19",
+   "commit": "593be24",
    "decisions": "364"
+  },
+  {
+   "no": 78,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-19",
+   "commit": "—",
+   "decisions": "365"
+  },
+  {
+   "no": 79,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-19",
+   "commit": "—",
+   "decisions": "365"
   }
  ]
 }

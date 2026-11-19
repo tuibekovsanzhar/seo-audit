@@ -5576,3 +5576,58 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      changed; text check PASS). Elsewhere: Ticimax 26 files (25 with spaces), İş Bankası 6, Enpara 2, Atasun 1 ("Ray-Ban
      Kılıf.jpeg", written with a space in the page), Carpex and Nature's Garden none.
      Tests: `tests/test_file_names_364.py` (7).
+365. **How each of the 165 checklist items is checked, and the platform (İlginay's questions; Owner, 2026-11-19; each
+     item's way, reason, automation idea and effort, the Maya measures and the platform signals are agent defaults).**
+     Global for every audit; the brands are only test cases.
+     1. *Every item says how it is checked* (`checklist.how`): "Otomatik" when the crawl measures it; "Veri gerekir" when
+     a source outside the crawl is needed (Search Console, GA4, Bing, PageSpeed, Merchant Center, Google Business
+     Profile, DataForSEO, logs, IndexNow, CRM), with those sources; "Uzman incelemesi" when the decision, or the part
+     Maya does not measure, needs a person (a judgement, a business decision, a real session, or a rule not built yet),
+     with why (`maya_audit/checklist_how.json`, Turkish; an English Ek gives the item's mapping note). Totals: Otomatik
+     55, Veri gerekir 37, Uzman incelemesi 73. The Ek's "Kontrol listesi" gains three columns (Nasıl kontrol edilir;
+     Gereken veri / neden uzman; Otomatikleştirme önerisi) and three bold rows at the top with the counts; "Kontrol
+     listesi özeti" counts the three ways per group. SEO-064 (meta description missing or shared) becomes automatic: the
+     rule `str10.no_description` existed and was not mapped.
+     2. *Maya data.* Maya's export holds Search Console performance per day, page, query, country and device (never a
+     query and a page together) and no GA4, coverage, URL inspection, crawl stats, enhancement or security report
+     (`ga4-traffic` is not read by the summary). So 11 of the 37 data items are measured when it is attached
+     (`maya_audit/checklist_maya.py`), each with the crawl's own addresses: SEO-004 date range (13 months needed for
+     seasonality), SEO-005 URL inventory (Search Console pages the crawl and sitemaps do not hold), SEO-007 property
+     scope (hosts; a test or internal host with impressions is an issue: MMI's backoffice-uat), SEO-008 baselines,
+     SEO-025 and SEO-054 pages with impressions or clicks the crawl did not find (review, not issue, when the crawl
+     stopped at its cap), SEO-028 pages read with and without impressions, SEO-057 the most clicked product and category
+     pages with fewer than 2 links from pages read, SEO-071 CTR under half of the site's own pages at the same position,
+     SEO-074 performance per page, SEO-165 the weekly trend. SEO-004, -008 and -165 need the daily file (an export of
+     page scores only measures the other 8). A finding of the item's own rules still comes first. Not measurable from
+     the export: SEO-013, -022, -023, -024, -101, -130, -160 (Search Console reports and URL inspection), SEO-069
+     (cannibalization needs query and page together), SEO-083 (history and backlinks); GA4 parts stay "Veri eksik".
+     3. *Could become automatic* (64 of the 73 expert items; effort S up to a day, M 2-4 days, L a week or more; 9
+     cannot: business decisions, real sessions, no API): S 21 (e.g. SEO-027 indexable internal search, SEO-105 variant
+     markup, SEO-118 third-party scripts, SEO-109 identical JSON-LD blocks, SEO-117 render-blocking CSS, SEO-119
+     compression and cache headers, SEO-132 raw vs rendered canonical, SEO-136 metadata per template, SEO-140 image
+     paths blocked by robots.txt, SEO-142 video sitemap, SEO-017 test hosts from Search Console), M 37 (rendered-page
+     measures, AI judgements, a second mobile request, PDFs), L 6 (filter clicking, mobile menus, other countries,
+     search intent, factual accuracy, originality). Each is in the Ek's column; none is built here.
+     4. *The platform* (`site_platform.recognise`): besides script addresses, the generator tag and X-Powered-By, now
+     the image and preloaded-image addresses (/wp-content/uploads/, cdn.shopify.com and /cdn/shop/, cdn.myikas.com,
+     static.wixstatic.com, /_next/image, static.ticimax.cloud), a platform the generator tag or X-Powered-By names
+     (Ticimax, Shopify, ikas, IdeaSoft, T-Soft, Wix, Sitefinity, WordPress, Next.js) and the footer's credit line
+     ("… ile hazırlanmıştır", "altyapısıyla", "Powered by …"; the platform named in a text without a credit is no
+     signal). IdeaSoft and T-Soft are recognised only from what they declare or credit: their file hosts are not
+     confirmed, and no live site was read to confirm them. Confidence: "high" when the signals are on 2 pages or more
+     and the pages state the platform or are half of those looked at; "medium" on 2 pages or more or one page stating
+     it (and DECISIONS 309's saved-data signals); "low" one page only. Saved audits get it again offline from their
+     pages (`reassess_rules._decisions_365`, in `apply` and `saved_data`). Kapsam's first row and Özet's first row give
+     the platform, its confidence, the first signal, the CDN and the rules whose advice has a line for it.
+     5. *What changes per platform* (`platform_text.advice_by_platform`, read from the advice texts so it never goes
+     stale): Shopify: acc3.utility_indexable, idx5.identical, idx5.stamped, idx6.alias_links, str12.headings,
+     str12.language, str3.product_no_identifier and the note "HTML not cached at the CDN"; WordPress: idx1.error_text,
+     str12.language. A line naming a platform is shown only on that platform (DECISIONS 361) and RG-19 blocks one left
+     in; every other site, and every other platform (Ticimax, ikas, IdeaSoft, T-Soft, Wix, Next.js, Sitefinity), gets the
+     general advice. The platform also feeds the business-type suggestion; no check's measure depends on it.
+     *Result* (saved audits rebuilt 2026-11-19, no request; cards and text check unchanged in all 7): platform before ->
+     after: MMI Next.js -> Next.js (high, 20/20), Carpex Ticimax -> Ticimax (high, X-Powered-By), Enpara none ->
+     Sitefinity (medium, generator on 1 of 20), Atasun none -> none, İş Bankası none -> none, Ticimax none -> Ticimax
+     (high, X-Powered-By on 20/20), Nature's Garden Shopify -> Shopify (high, 6/6). "Veri eksik" rows: MMI 26 -> 19,
+     Carpex 27 -> 20, Ticimax 21 -> 16 (Maya data: 11, 11 and 8 items measured); the others unchanged.
+     Tests: `tests/test_checklist_platform_365.py` (6); the checklist, Özet and P-level tests read the new rows.

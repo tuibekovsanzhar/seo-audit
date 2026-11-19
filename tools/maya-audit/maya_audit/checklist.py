@@ -39,8 +39,18 @@ WORDS = {
                    "logs": "Sunucu logları", "dataforseo": "DataForSEO", "crm": "CRM", "indexnow": "IndexNow anahtarı",
                    "render": "JS render"},
         "sheet": "Kontrol listesi", "totals_sheet": "Kontrol listesi özeti",
-        "cols": ["ID", "Grup", "Kontrol maddesi", "Öncelik", "Sonuç", "Kanıt", "Maya kuralı / kart", "Eksik veri kaynağı"],
-        "total_cols": ["Grup", "Madde", "Geçti", "Sorun", "Veri eksik", "İnceleme gerekli", "Uygulanmaz"],
+        "cols": ["ID", "Grup", "Kontrol maddesi", "Öncelik", "Sonuç", "Kanıt", "Maya kuralı / kart", "Eksik veri kaynağı",
+                 "Nasıl kontrol edilir", "Gereken veri / neden uzman", "Otomatikleştirme önerisi"],
+        "total_cols": ["Grup", "Madde", "Geçti", "Sorun", "Veri eksik", "İnceleme gerekli", "Uygulanmaz",
+                       "Otomatik", "Veri gerekir", "Uzman incelemesi"],
+        "how": {"auto": "Otomatik", "data": "Veri gerekir", "expert": "Uzman incelemesi"},
+        "how_lines": {"auto": "Otomatik: {n} madde (tarama ölçer)",
+                      "data": "Veri gerekir: {n} madde ({maya} tanesi Maya'nın Search Console verisi eklenince ölçülür; bu denetimde ölçülen: {done})",
+                      "expert": "Uzman incelemesi: {n} madde ({could} tanesi otomatikleştirilebilir: küçük {s}, orta {m}, büyük {l} iş)"},
+        "how_title": "Nasıl kontrol edilir",
+        "maya_can": "Maya'nın Search Console verisi eklenince ölçülür", "maya_done": "bu denetimde Maya verisiyle ölçüldü",
+        "maya_cannot": "Maya'nın Search Console verisi bu raporu içermez",
+        "effort": {"S": "küçük", "M": "orta", "L": "büyük"},
         "all": "Toplam", "card": "Kart {n}", "more": " (+{n} bulgu daha)",
         "issue": "{title}", "issue_scope": "{title} ({scope})", "confirm": "Teyit edin listesinde: {title}",
         "manual": "Crawl ile görülemez; ekip elle doldurmalı.",
@@ -96,8 +106,18 @@ WORDS = {
                    "logs": "Server logs", "dataforseo": "DataForSEO", "crm": "CRM", "indexnow": "IndexNow key",
                    "render": "JS rendering"},
         "sheet": "Checklist", "totals_sheet": "Checklist totals",
-        "cols": ["ID", "Group", "Item", "Priority", "Result", "Evidence", "Maya rule / card", "Missing data source"],
-        "total_cols": ["Group", "Items", "Pass", "Issue", "Data missing", "Needs review", "Not applicable"],
+        "cols": ["ID", "Group", "Item", "Priority", "Result", "Evidence", "Maya rule / card", "Missing data source",
+                 "How it is checked", "Data needed / why an expert", "How it could be automated"],
+        "total_cols": ["Group", "Items", "Pass", "Issue", "Data missing", "Needs review", "Not applicable",
+                       "Automatic", "Needs data", "Expert review"],
+        "how": {"auto": "Automatic", "data": "Needs data", "expert": "Expert review"},
+        "how_lines": {"auto": "Automatic: {n} items (the crawl measures them)",
+                      "data": "Needs data: {n} items ({maya} measured once Maya's Search Console data is attached; measured in this audit: {done})",
+                      "expert": "Expert review: {n} items ({could} could be automated: small {s}, medium {m}, large {l})"},
+        "how_title": "How it is checked",
+        "maya_can": "measured once Maya's Search Console data is attached", "maya_done": "measured with Maya data in this audit",
+        "maya_cannot": "Maya's Search Console data does not hold this report",
+        "effort": {"S": "small", "M": "medium", "L": "large"},
         "all": "Total", "card": "Card {n}", "more": " (+{n} more)",
         "issue": "{title}", "issue_scope": "{title} ({scope})", "confirm": "Waiting under Confirm first: {title}",
         "manual": "A crawl cannot see this; the team fills it in by hand.",
@@ -191,6 +211,10 @@ def facts(report: dict) -> dict:
     locales = crawl.get("locales") or {}
     return {
         "checks": checks,
+        # DECISIONS 365: every address the crawl knows (pages, links, sitemaps), as one key per page, for the items Maya's
+        # Search Console data measures (checklist_maya)
+        "known": sorted({_key(u) for u in discovered + [str(u) for u in crawl.get("sitemap_urls") or []]
+                         + [str(p.get("url")) for p in crawl.get("pages") or [] if isinstance(p, dict) and p.get("url")]}),
         "connected": {
             "gsc": status("IDX-9") not in (None, "not_assessed"),
             "bing": status("IDX-10") not in (None, "not_assessed") and bool(cfg.get("bing_api_key")),
@@ -226,6 +250,36 @@ def facts(report: dict) -> dict:
             "verification": bool((crawl.get("verification") or {}).get("enabled")) if isinstance(crawl.get("verification"), dict) else False,
         },
     }
+
+
+def _key(url: str) -> str:
+    from .checklist_maya import key
+    return key(url)
+
+
+@lru_cache(maxsize=1)
+def _how_notes() -> dict:
+    return json.loads((Path(__file__).parent / "checklist_how.json").read_text(encoding="utf-8"))["items"]
+
+
+def how(item: dict) -> dict:
+    """DECISIONS 365: how an item is checked. "data" when a data source it needs is outside the crawl (Search Console,
+    GA4, Bing, PageSpeed, logs...), with those sources; else "expert" when its decision, or the part Maya does not
+    measure, needs a person (a judgement, a manual item, a rule not built yet), with why and how it could become
+    automatic (`checklist_how.json`); else "auto": the crawl measures it. `maya`: Maya's Search Console data measures it."""
+    from .checklist_maya import ITEMS
+    sources = [s for s in item.get("needs") or [] if s != "manual"]
+    if isinstance(item.get("rest"), list):
+        sources += [s for s in item["rest"] if s not in sources]
+    if sources:
+        kind = "data"
+    elif item["method"] in ("review", "manual", "missing", "data") or item.get("rest") == "review":
+        kind = "expert"
+    else:
+        kind = "auto"
+    note = _how_notes().get(item["id"]) or {} if kind == "expert" else {}
+    return {"kind": kind, "sources": sources, "maya": item["id"] in ITEMS, "why": note.get("why") or "",
+            "effort": note.get("effort") or "", "automate": note.get("automate") or ""}
 
 
 # ---------------------------------------------------------------------------------------------------- the decisions
@@ -347,16 +401,21 @@ def _group_title(g: dict, cards: dict[str, int], todos_by_n: dict, title: Callab
 
 
 def judge(item: dict, selection: dict, lang: str = "tr", cards: dict[str, int] | None = None,
-          todos_by_n: dict | None = None, title: Callable | None = None) -> dict:
-    """One item's row; in English with the item's and group's English names (the checklist is Turkish)."""
-    row = _judge(item, selection, lang, cards, todos_by_n, title)
+          todos_by_n: dict | None = None, title: Callable | None = None, maya: dict | None = None) -> dict:
+    """One item's row; in English with the item's and group's English names (the checklist is Turkish). `maya`: the
+    summary of the Maya data attached to the audit (DECISIONS 365: the items its Search Console data measures)."""
+    row = _judge(item, selection, lang, cards, todos_by_n, title, maya)
+    row["how"] = how(item)
+    if lang == "en":  # the reasons are written in Turkish; an English row gives the item's English mapping note
+        row["how"] = {**row["how"], "why": item.get("maya_note") or "" if row["how"]["kind"] == "expert" else "",
+                      "automate": ""}
     if lang == "en":
         row.update(group=item.get("group_en") or item["group"], item=item.get("item_en") or item["item"])
     return row
 
 
 def _judge(item: dict, selection: dict, lang: str, cards: dict[str, int] | None, todos_by_n: dict | None,
-           title: Callable | None) -> dict:
+           title: Callable | None, maya: dict | None = None) -> dict:
     W = WORDS[lang]
     F = selection.get("_checklist_facts") or {"checks": {}, "connected": {}, "site": {}}
     site, conn, statuses = F["site"], F["connected"], F["checks"]
@@ -367,6 +426,12 @@ def _judge(item: dict, selection: dict, lang: str, cards: dict[str, int] | None,
     elif not _site_holds(item.get("when"), site):
         business = ((site.get("business") or {}).get("label") or {}).get(lang) or (site.get("business") or {}).get("id") or "—"
         return _row(item, "na", W["when"][item["when"]].format(business=business, n=site.get("found") or 0), checks)
+    from .checklist_maya import row as maya_row
+    measured = maya_row(item["id"], maya, selection, lang) if maya else None
+    if measured and not _group_hits(item, selection)[0]:
+        # DECISIONS 365: measured with Maya's Search Console data; GA4 and other sources it does not hold stay missing
+        rest = [s for s in how(item)["sources"] if s != "gsc" and not conn.get(s)]
+        return {**_row(item, measured[0], measured[1], measured[2], rest), "maya": True}
     special = _special(item, F, W, lang)
     if special:
         return special
@@ -412,13 +477,42 @@ def _judge(item: dict, selection: dict, lang: str, cards: dict[str, int] | None,
                 checks)
 
 
-def rows(selection: dict, lang: str = "tr", todos: list[dict] | None = None, title: Callable | None = None) -> list[dict]:
+def rows(selection: dict, lang: str = "tr", todos: list[dict] | None = None, title: Callable | None = None,
+         maya: dict | None = None) -> list[dict]:
     """All 165 items, in the checklist's order, judged on this audit. `todos`: the team report's cards, so an issue
-    names the PDF's card number and title."""
+    names the PDF's card number and title; `maya`: the attached Maya data's summary."""
     from .page_rows import card_of
     cards, shown = card_of(selection, todos, lang, title)
     todos_by_n = {c["n"]: c.get("title") for c in shown if c.get("n") is not None}
-    return [judge(it, selection, lang, cards, todos_by_n, title) for it in items()]
+    return [judge(it, selection, lang, cards, todos_by_n, title, maya) for it in items()]
+
+
+def how_counts(table: list[dict]) -> dict:
+    """DECISIONS 365: items per way of checking, the data items Maya's data measures (and did in this audit), and the
+    expert items that could become automatic by effort."""
+    hows = [r["how"] for r in table]
+    expert = [h for h in hows if h["kind"] == "expert"]
+    return {"auto": sum(h["kind"] == "auto" for h in hows), "data": sum(h["kind"] == "data" for h in hows),
+            "expert": len(expert), "maya": sum(h["kind"] == "data" and h["maya"] for h in hows),
+            "done": sum(1 for r in table if r.get("maya")),
+            "could": sum(1 for h in expert if h["effort"] in ("S", "M", "L")),
+            "effort": {e: sum(1 for h in expert if h["effort"] == e) for e in ("S", "M", "L")}}
+
+
+def how_detail(r: dict, lang: str) -> tuple[str, str]:
+    """(data needed or why an expert, how it could be automated) for a row's item."""
+    W, h = WORDS[lang], r["how"]
+    if h["kind"] == "data":
+        text = _join([W["source"].get(s, s) for s in h["sources"]], lang)
+        if h["maya"]:
+            text += "; " + (W["maya_done"] if r.get("maya") else W["maya_can"])
+        elif "gsc" in h["sources"]:
+            text += "; " + W["maya_cannot"]
+        return text, ""
+    if h["kind"] == "expert":
+        plan = f"{W['effort'][h['effort']]}: {h['automate']}" if h["effort"] in W["effort"] else h["automate"]
+        return h["why"], plan if lang == "tr" else (W["effort"].get(h["effort"], "") if h["effort"] in W["effort"] else "—")
+    return "", ""
 
 
 def totals(table: list[dict]) -> dict:
@@ -430,14 +524,31 @@ def totals(table: list[dict]) -> dict:
     return {"all": count(table), "n": len(table), "groups": by_group}
 
 
-def sheets(selection: dict, lang: str = "tr", todos: list[dict] | None = None, title: Callable | None = None) -> list[dict]:
-    """The appendix's two checklist sheets: every item, then the totals per result and per group."""
+def sheets(selection: dict, lang: str = "tr", todos: list[dict] | None = None, title: Callable | None = None,
+           maya: dict | None = None) -> list[dict]:
+    """The appendix's two checklist sheets: every item, then the totals per result and per group. DECISIONS 365: each
+    item says how it is checked (Otomatik / Veri gerekir / Uzman incelemesi), the data it needs or why an expert, and how
+    it could become automatic; the first rows of "Kontrol listesi" count the items of each way, and the totals count
+    them per group."""
     W = WORDS[lang]
-    table = rows(selection, lang, todos, title)
-    body = [[r["id"], r["group"], r["item"], r["priority"], W["result"][r["result"]], r["evidence"], r["ref"],
-             ", ".join(W["source"][s] for s in r["missing_sources"])] for r in table]
+    table = rows(selection, lang, todos, title, maya)
+    body = []
+    for r in table:
+        detail, plan = how_detail(r, lang)
+        body.append([r["id"], r["group"], r["item"], r["priority"], W["result"][r["result"]], r["evidence"], r["ref"],
+                     ", ".join(W["source"].get(s, s) for s in r["missing_sources"]), W["how"][r["how"]["kind"]], detail, plan])
+    c = how_counts(table)
+    lines = [W["how_lines"]["auto"].format(n=c["auto"]),
+             W["how_lines"]["data"].format(n=c["data"], maya=c["maya"], done=c["done"]),
+             W["how_lines"]["expert"].format(n=c["expert"], could=c["could"], s=c["effort"]["S"], m=c["effort"]["M"],
+                                             l=c["effort"]["L"])]
+    top = [[W["how_title"] if i == 0 else "", line] + [""] * (len(W["cols"]) - 2) for i, line in enumerate(lines)]
     t = totals(table)
-    total_rows = [[W["all"], t["n"], *(t["all"][r] for r in RESULTS)]]
-    total_rows += [[g["group"], g["n"], *(g["counts"][r] for r in RESULTS)] for g in t["groups"]]
-    return [{"name": W["sheet"], "header": W["cols"], "rows": body, "widths": [9, 34, 34, 8, 16, 80, 30, 26]},
-            {"name": W["totals_sheet"], "header": W["total_cols"], "rows": total_rows, "widths": [46, 8, 9, 9, 11, 16, 12]}]
+    kinds = ("auto", "data", "expert")
+    per = {g: [sum(1 for r in table if r["group"] == g and r["how"]["kind"] == k) for k in kinds] for g in {r["group"] for r in table}}
+    total_rows = [[W["all"], t["n"], *(t["all"][r] for r in RESULTS), c["auto"], c["data"], c["expert"]]]
+    total_rows += [[g["group"], g["n"], *(g["counts"][r] for r in RESULTS), *per[g["group"]]] for g in t["groups"]]
+    return [{"name": W["sheet"], "header": W["cols"], "rows": top + body, "title_rows": len(top),
+             "widths": [9, 34, 34, 8, 16, 80, 30, 26, 18, 60, 60]},
+            {"name": W["totals_sheet"], "header": W["total_cols"], "rows": total_rows,
+             "widths": [46, 8, 9, 9, 11, 16, 12, 11, 13, 16]}]

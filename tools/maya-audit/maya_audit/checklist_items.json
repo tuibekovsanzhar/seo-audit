@@ -1311,20 +1311,22 @@
    "group_en": "07 · On-page and SERP appearance",
    "item_en": "Missing or duplicate meta descriptions",
    "applies_to": "Tüm siteler",
-   "method": "partial",
+   "method": "full",
    "checks": [
+    "STR-10",
     "STR-16",
     "TSEO-1"
    ],
    "rules": [
+    "str10.no_description",
     "str16.",
     "tseo1.description",
     "str1.sections_as_pages"
    ],
    "needs": [],
-   "rest": "review",
+   "rest": null,
    "when": null,
-   "maya_note": "Shared and too short/long descriptions; a missing description is not raised."
+   "maya_note": "Missing (str10.no_description), shared and too short/long descriptions (DECISIONS 365: the missing-description rule mapped)."
   },
   {
    "id": "SEO-065",

@@ -2599,7 +2599,7 @@ Ek gets "Düzeltme kaydı" (and "Önceki denetimden değişenler" when the site 
 
 ## Image and file names (DECISIONS 364, 2026-11-19)
 
-VERIFIED locally; not pushed. New rule `tseo1.file_name_unsafe` (TSEO-1, S4 Düşük, Kontrol edin; checklist SEO-141
+VERIFIED; pushed as `593be24` (`d11ddd4..593be24`), CI run 44473495261 success. New rule `tseo1.file_name_unsafe` (TSEO-1, S4 Düşük, Kontrol edin; checklist SEO-141
 partial): image and file names with an unencoded space, an accent written as a combining mark, brackets or commas
 (`maya_audit/file_names.py`; `analysis.file_names` in new crawls; saved audits offline via `_decisions_364`). A card of
 this rule never names a template fix. Fix log item 77.
@@ -2617,5 +2617,34 @@ this rule never names a template fix. Fix log item 77.
 | fast suite | `1 failed, 3429 passed, 4 skipped, 135 deselected, 1 warning in 558.43s (0:09:18)`: the TR "why" text was 175 characters (limit 170); shortened, `tests/test_team_report.py` + `tests/test_file_names_364.py` then `29 passed` |
 | full suite | `3565 passed, 4 skipped, 1 warning in 985.74s (0:16:25)` |
 | `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 77 items: Düzeltildi 74, Yeni tarama gerekli 3; 11 test files passed |
+| `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
+| Push | done with `593be24` |
+
+## Checklist ways of checking and the platform (DECISIONS 365, 2026-11-19)
+
+VERIFIED locally; not pushed. Every checklist item says how it is checked (Otomatik 55 / Veri gerekir 37 / Uzman incelemesi
+73), what data or why an expert, and how it could become automatic (64 could: S 21, M 37, L 6); 11 data items measured
+from Maya's Search Console export (`maya_audit/checklist_maya.py`); the platform recognised from more signals, with a
+confidence, in Kapsam and Özet (`site_platform`, `platform_text.advice_by_platform`). Fix log items 78 and 79.
+
+| Saved audit (rebuilt from copies, no request) | Platform before (`593be24`) | Platform after | Otomatik / Veri gerekir / Uzman | Measured with Maya data | "Veri eksik" rows before -> after |
+|---|---|---|---|---|---|
+| MMI 536b4b64 | Next.js | Next.js (high, 20/20) | 55 / 37 / 73 | 11 | 26 -> 19 |
+| Carpex 1fd871f0 | Ticimax | Ticimax (high) | 55 / 37 / 73 | 11 | 27 -> 20 |
+| Enpara fee70191 | — | Sitefinity (medium, 1/20) | 55 / 37 / 73 | — (no Maya data) | 21 -> 21 |
+| Atasun f06a2129 | — | — | 55 / 37 / 73 | — | 30 -> 30 |
+| İş Bankası 1b81bee4 | — | — | 55 / 37 / 73 | — | 23 -> 23 |
+| Ticimax c77ebf6d | — | Ticimax (high, X-Powered-By) | 55 / 37 / 73 | 8 (page scores only) | 21 -> 16 |
+| Nature's Garden 342a0b14 | Shopify | Shopify (high, 6/6) | 55 / 37 / 73 | — | 25 -> 25 |
+
+Cards and the text check unchanged in all 7 (PASS).
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_checklist_platform_365.py` | `6 passed` |
+| fast suite, first run | `11 failed, 3425 passed`: Kapsam is never empty now (the platform row), the package data lacked `checklist_how.json`, the WordPress result's new keys, and a saved platform the pages do not confirm was given a confidence (counted as a change); fixed |
+| fast suite | `3436 passed, 4 skipped, 135 deselected, 1 warning in 614.31s (0:10:14)` |
+| full suite | `3571 passed, 4 skipped, 1 warning in 998.44s (0:16:38)` |
+| `tools/fix_log.py --work <tmp> --write-status` (provider-free) | 7 audits rebuilt; 79 items: Düzeltildi 76, Yeni tarama gerekli 3 |
 | `ruff --select E9,F821,F841` (source folders, `tools/fix_log.py`) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |

@@ -252,6 +252,52 @@ def edit_pages_text(line: dict, lang: str) -> str:
             + (f" ({ex})" if ex else "") + "; left out of the pages read and the page types, their clean addresses counted.")
 
 
+PLATFORM_WORDS = {
+    "tr": {"conf": {"high": "yüksek", "medium": "orta", "low": "düşük"}, "label": "Platform",
+           "found": "{name} (güven: {conf}{pages}){signal}.", "pages": "; {seen}/{looked} sayfada",
+           "cdn": " CDN: {cdn}.", "own": " Bu platforma özel öneri içeren kurallar: {rules}; diğer öneriler geneldir.",
+           "general": " Bu platforma özel öneri yok; öneriler geneldir.",
+           "none": "Platform tanınmadı; öneriler geneldir (tanınan platformlar: {names}).",
+           "short": "Platform: {name} (güven: {conf})", "short_none": "Platform: tanınmadı (öneriler genel)"},
+    "en": {"conf": {"high": "high", "medium": "medium", "low": "low"}, "label": "Platform",
+           "found": "{name} (confidence: {conf}{pages}){signal}.", "pages": "; on {seen} of {looked} pages",
+           "cdn": " CDN: {cdn}.", "own": " Rules with advice for this platform: {rules}; all other advice is general.",
+           "general": " No advice specific to this platform; the advice is general.",
+           "none": "Platform not recognised; the advice is general (platforms recognised: {names}).",
+           "short": "Platform: {name} (confidence: {conf})", "short_none": "Platform: not recognised (general advice)"},
+}
+
+
+def platform_line(selection: dict, lang: str = "tr", short: bool = False) -> str:
+    """DECISIONS 365: the platform the audit recognised, how sure, the first signal, the CDN and the rules whose advice
+    has a line for it; "not recognised" says the advice is general."""
+    from .platform_text import advice_by_platform
+    from .site_platform import EXTRA, SIGNATURES
+    P = PLATFORM_WORDS[lang]
+    info = selection.get("platform_info") or {"name": selection.get("platform")}
+    name, conf = info.get("name"), P["conf"].get(info.get("confidence") or "", info.get("confidence") or "—")
+    if short:
+        return P["short"].format(name=name, conf=conf) if name else P["short_none"]
+    if not name:
+        names = list(dict.fromkeys([n for n, _ in SIGNATURES] + list(EXTRA)))
+        return P["none"].format(names=", ".join(names)) + (P["cdn"].format(cdn=info["cdn"]) if info.get("cdn") else "")
+    pages = P["pages"].format(seen=info["pages_seen"], looked=info["pages_looked"]) if info.get("pages_looked") else ""
+    signal = info.get("signal") or ""
+    signal = signal.split(": ", 1)[-1].split(" on http")[0][:90] if signal else ""
+    if lang == "tr":  # the signal's kind, as the engine records it in English
+        for en, tr in (("preloaded image ", "ön yüklenen görsel "), ("footer credit ", "alt bilgi notu "), ("script ", "betik "),
+                       ("image ", "görsel "), ("generator ", "generator etiketi "), ("sitemap ", "site haritası ")):
+            if signal.startswith(en):
+                signal = tr + signal[len(en):]
+                break
+    signal = f": {signal.rstrip('.')}" if signal else ""
+    from .text_gate import BUILT_ON
+    rules = sorted(set(advice_by_platform().get(name, [])) | set(advice_by_platform().get(BUILT_ON.get(name, ""), [])))
+    return (P["found"].format(name=name, conf=conf, pages=pages, signal=signal)
+            + (P["cdn"].format(cdn=info["cdn"]) if info.get("cdn") else "")
+            + (P["own"].format(rules=", ".join(rules)) if rules else P["general"]))
+
+
 def coverage_text(line: dict, lang: str, label: Callable[[str], str] | None = None,
                   sentence: Callable[[str], str] | None = None, title: Callable[[str, str], str] | None = None) -> str:
     """A coverage line in the report's language (DECISIONS 306): the engine's part and reason through the reader's
@@ -345,7 +391,8 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
     the audit (DECISIONS 352), whose sheets come after the reader sheets; without it Kapsam says none was attached."""
     from . import checklist
     # DECISIONS 342: the SEO team's 165-item checklist, after the reader sheets
-    listed = checklist.sheets(selection, lang, todos, title) if selection.get("_checklist_facts") else []
+    listed = (checklist.sheets(selection, lang, todos, title, maya=(maya or {}).get("summary"))  # DECISIONS 365
+              if selection.get("_checklist_facts") else [])
     reader = reader_sheets(selection, lang, lists, title=title, fix=fix, todos=todos, words=words, places=places)
     technical = technical_sheets(selection, lang, lists, title, fix, label, line, todos=todos)
     if maya is None or lang != "tr":
@@ -522,7 +569,11 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
     for key, header, body, widths in (("summary", R["summary_cols"], summary, [7, 60, 12, 14, 12, 22, 10, 12, 18, 20]),
                                       ("by_page", R["page_cols"], by_page, [70, 16, 22, 12, 10, 14, 80, 10]),
                                       ("by_finding", R["finding_cols"], found, [42, 12, 13, 60, 16, 48, 60, 7, 16, 20, 12, 18, 24, 10])):
-        if body:
+        if body and key == "summary":  # DECISIONS 365: the platform on the first row, above the cards
+            out.append({"name": R[key], "header": header, "rows": [["", platform_line(selection, lang, short=True)]
+                                                                  + [""] * (len(header) - 2)] + body,
+                        "widths": widths, "title_rows": 1})
+        elif body:
             out.append({"name": R[key], "header": header, "rows": body, "widths": widths})
         else:  # one line saying why, never an empty sheet (DECISIONS 321 (5))
             out.append({"name": R[key], "header": [W["note"]], "rows": [[R["empty"][key]]], "widths": [140]})
@@ -585,6 +636,7 @@ def technical_sheets(selection: dict, lang: str = "tr", lists: dict | None = Non
              ", ".join(t["finding_ids"])] for t in selection.get("templates") or []]
     cov = [[W["kind"].get(row["kind"], row["kind"]), coverage_text(row, lang, label, line, title),
             ", ".join(row.get("checks") or [])] for row in selection["coverage"]["lines"]]
+    cov.insert(0, [PLATFORM_WORDS[lang]["label"], platform_line(selection, lang), ""])  # DECISIONS 365
     out = []
     for name, header, body, widths in ((W["findings"], W["cols"], rows, [16, 8, 22, 11, 13, 11, 16, 9, 10, 16, 6, 16, 26, 70, 70, 9, 9, 10, 10, 20, 60]),
                                        (W["urls"], W["url_cols"], urls, [16, 16, 11, 90]),

@@ -191,7 +191,9 @@ def test_woocommerce_is_told_apart_from_wordpress_and_a_generator_counts():
     woo = html("<p>x</p>", head='<script src="/wp-content/plugins/woocommerce/assets/js/cart.js"></script>')
     assert platform_of({"/": woo})["name"] == "WooCommerce"
     wp = html("<p>x</p>", head='<meta name="generator" content="WordPress 6.6">')
-    assert platform_of({"/": wp}) == {"name": "WordPress", "cdn": None, "signals": [platform_of({"/": wp})["signals"][0]]}
+    assert platform_of({"/": wp}) == {"name": "WordPress", "cdn": None, "signals": [platform_of({"/": wp})["signals"][0]],
+                                      # DECISIONS 365: one page stating it
+                                      "confidence": "medium", "pages_seen": 1, "pages_looked": 1}
 
 
 def test_an_unknown_site_has_no_platform_and_headers_may_be_missing():

@@ -1,0 +1,370 @@
+{
+ "_about": "DECISIONS 365: why each checklist item needs an expert (Uzman incelemesi), and how it could become automatic (effort S: up to a day, M: 2-4 days, L: a week or more; '—': it cannot). Written by the agent from each item's mapping note.",
+ "items": {
+  "SEO-001": {
+   "why": "Erişim ve yetki listesi siteden görünmez; hesapları ekip listeler.",
+   "effort": "—",
+   "automate": "Otomatikleştirilemez: hesap bilgisi tarama dışında."
+  },
+  "SEO-002": {
+   "why": "Hedef ve dönüşüm tanımı bir iş kararıdır.",
+   "effort": "—",
+   "automate": "Otomatikleştirilemez: iş kararı."
+  },
+  "SEO-015": {
+   "why": "Yönlendirme hedefinin eski sayfayla aynı konuda olup olmadığı anlam değerlendirmesi ister.",
+   "effort": "M",
+   "automate": "Eski ve yeni sayfanın başlık ve metin benzerliğinden bir uygunluk puanı."
+  },
+  "SEO-017": {
+   "why": "Test ve staging adresleri taramaya verilmez; sahipten öğrenilmeli.",
+   "effort": "S",
+   "automate": "Search Console sayfalarında uat/staging/test/dev alt alan adlarını aramak (Maya verisiyle)."
+  },
+  "SEO-027": {
+   "why": "Bu madde için kural henüz yok.",
+   "effort": "S",
+   "automate": "Site içi arama adresinin 200, noindex'siz, kendine kanonik ve robots.txt'nin izin verdiği durumu (ACC-3 verisi hazır)."
+  },
+  "SEO-031": {
+   "why": "Maya'nın okumadığı engelli sayfalardaki noindex görülemez; hangisinin dizinden çıkacağı karardır.",
+   "effort": "M",
+   "automate": "robots.txt'nin engellediği adreslerden örnek okuyup noindex aramak."
+  },
+  "SEO-034": {
+   "why": "Site haritasında olmayan dizine eklenebilir sayfalar raporlanmıyor.",
+   "effort": "S",
+   "automate": "Okunan dizine eklenebilir sayfalardan site haritasında olmayanları saymak."
+  },
+  "SEO-036": {
+   "why": "Görsel/video site haritasının gerekip gerekmediği sitenin medyaya ne kadar dayandığına bağlıdır.",
+   "effort": "S",
+   "automate": "Eşiği iş türüne göre seçmek (e-ticaret ve medya siteleri)."
+  },
+  "SEO-044": {
+   "why": "Hangi filtre adresinin dizinde kalacağı anahtar kelime ve iş kararıdır.",
+   "effort": "M",
+   "automate": "Search Console sorgularını filtre kombinasyonlarıyla eşlemek (sorgu-sayfa eşli veri gerekir)."
+  },
+  "SEO-045": {
+   "why": "Bu madde için kural henüz yok.",
+   "effort": "M",
+   "automate": "Şablon ve parametre başına adres sayısını sayıp büyüyen kombinasyonları raporlamak."
+  },
+  "SEO-046": {
+   "why": "Sayfalamanın listenin sonuna kadar ulaşıp ulaşmadığı birkaç sayfa izlenerek anlaşılır.",
+   "effort": "S",
+   "automate": "2. ve sonraki sayfa bağlantılarını izleyip son sayfaya erişimi ölçmek."
+  },
+  "SEO-047": {
+   "why": "Sonsuz kaydırmanın taranabilir sayfalı bir karşılığı olup olmadığı denenmiyor.",
+   "effort": "M",
+   "automate": "Kaydırmayla gelen ürünlerin sayfalı adreslerde de olup olmadığını render örnekleminde karşılaştırmak."
+  },
+  "SEO-049": {
+   "why": "Sondaki eğik çizgi ve büyük/küçük harf varyantları istenmiyor.",
+   "effort": "S",
+   "automate": "Her şablondan bir adresin varyantlarını isteyip yönlendirme ve kanonik kontrolü."
+  },
+  "SEO-050": {
+   "why": "Varyant kanonik politikası bir iş kararıdır; Maya mevcut kanonikleri gösterir.",
+   "effort": "—",
+   "automate": "Otomatikleştirilemez: iş kararı."
+  },
+  "SEO-051": {
+   "why": "Menüde hangi hedeflerin bulunması gerektiği iş önceliğidir.",
+   "effort": "M",
+   "automate": "Search Console'da en çok tıklanan kategorilerin menüde olup olmadığını karşılaştırmak (Maya verisiyle)."
+  },
+  "SEO-052": {
+   "why": "Breadcrumb yolunun gerçek hiyerarşiye uyması site yapısını bilmeyi ister.",
+   "effort": "S",
+   "automate": "Breadcrumb yolunu adres klasörleri ve kategori bağlantılarıyla karşılaştırmak."
+  },
+  "SEO-053": {
+   "why": "Görünen yol ile BreadcrumbList öğe öğe karşılaştırılmıyor.",
+   "effort": "S",
+   "automate": "Görünen yolun adlarını ve adreslerini BreadcrumbList öğeleriyle eşlemek."
+  },
+  "SEO-056": {
+   "why": "Bağlantı metinlerinin çeşitliliği ve niyeti anlam değerlendirmesi ister.",
+   "effort": "M",
+   "automate": "Aynı hedefe giden metinleri gruplayıp tekrar oranını ölçmek; niyet için yapay zekâ."
+  },
+  "SEO-058": {
+   "why": "Konu kümeleri ve hub sayfaları anahtar kelime ve içerik kararıdır.",
+   "effort": "M",
+   "automate": "Maya konu verisi ve iç bağlantı grafiğinden hub adaylarını önermek."
+  },
+  "SEO-059": {
+   "why": "Kart hedefleri render edilip tıklanarak denenmiyor.",
+   "effort": "M",
+   "automate": "Render örnekleminde kartları tıklayıp gidilen adresi kaydetmek."
+  },
+  "SEO-060": {
+   "why": "Yararlı gezinme bir yargıdır; bağlantı sayıları ölçülüyor.",
+   "effort": "S",
+   "automate": "Sayfa başına bağlantı sayısı için eşik tabanlı uyarı."
+  },
+  "SEO-066": {
+   "why": "Başlıkların içerikle uyumu anlam değerlendirmesi ister; başlık yapısı ölçülüyor.",
+   "effort": "M",
+   "automate": "Yapay zekâ ile bölüm başlığı-metin uyumu."
+  },
+  "SEO-070": {
+   "why": "Arama sonucu özellikleri için SERP verisi gerekir; Maya SERP isteği göndermez.",
+   "effort": "M",
+   "automate": "DataForSEO SERP verisiyle (ücretli) özellik fırsatlarını listelemek."
+  },
+  "SEO-073": {
+   "why": "Arama niyeti uyumu arama sonuçları ve yargı ister.",
+   "effort": "L",
+   "automate": "SERP verisiyle (ücretli) sayfa tipi-niyet eşlemesi."
+  },
+  "SEO-075": {
+   "why": "İçeriğin zayıf olup olmadığı yargıdır; kelime sayısı ve kalıp oranı ölçülüyor.",
+   "effort": "M",
+   "automate": "Yapay zekâ ile içerik yeterliliği puanı."
+  },
+  "SEO-076": {
+   "why": "Yapay zekâ kalıplı metin tespiti yok; birebir ve yakın kopyalar ölçülüyor.",
+   "effort": "M",
+   "automate": "Kalıp ifade listesiyle tarama; ileri düzeyi için yapay zekâ."
+  },
+  "SEO-077": {
+   "why": "Doğruluk için bir doğruluk kaynağı gerekir.",
+   "effort": "L",
+   "automate": "Marka bilgi kaynağıyla (ör. ürün veritabanı) iddiaları karşılaştırmak."
+  },
+  "SEO-079": {
+   "why": "Özgün fayda ve karşılaştırma içerik uzmanı ister.",
+   "effort": "L",
+   "automate": "Maya rakip sayfa verisiyle içerik farkını çıkarmak."
+  },
+  "SEO-081": {
+   "why": "SSS'nin yararlı ve özgün olması yargıdır; SSS blokları ölçülüyor.",
+   "effort": "M",
+   "automate": "Yapay zekâ ile soru-cevap yararlılık puanı."
+  },
+  "SEO-082": {
+   "why": "Konu boşluğu anahtar kelime ve rakip verisi ister.",
+   "effort": "M",
+   "automate": "Maya konu ve rakip verisinden eksik konuları çıkarmak ('Rakip - Konu' bir başlangıç)."
+  },
+  "SEO-084": {
+   "why": "Terminoloji ve yerelleştirme kalitesi dil uzmanı ister; yanlış dil ölçülüyor.",
+   "effort": "M",
+   "automate": "Yapay zekâ ile terim tutarlılığı."
+  },
+  "SEO-085": {
+   "why": "Kategori adının aranan kelimeyle eşleşmesi anahtar kelime verisi ister.",
+   "effort": "M",
+   "automate": "Search Console sorgularıyla kategori adlarını eşlemek (sorgu-sayfa eşli veri gerekir)."
+  },
+  "SEO-086": {
+   "why": "Koleksiyon metninin bağlama uygunluğu yargıdır.",
+   "effort": "M",
+   "automate": "Yapay zekâ ile kategori metni-ürünler uyumu."
+  },
+  "SEO-087": {
+   "why": "Ürün başlığının doğruluğu ürün bilgisini bilmeyi ister.",
+   "effort": "S",
+   "automate": "Başlığı Product işaretlemesinin adı, markası ve kimlikleriyle karşılaştırmak."
+  },
+  "SEO-088": {
+   "why": "Açıklamanın özgünlüğü yargıdır; neredeyse kopya açıklamalar ölçülüyor.",
+   "effort": "M",
+   "automate": "Üretici metinleriyle ortak cümle oranı."
+  },
+  "SEO-090": {
+   "why": "Varyant dizin kararı bir iş kararıdır.",
+   "effort": "—",
+   "automate": "Otomatikleştirilemez: iş kararı."
+  },
+  "SEO-091": {
+   "why": "Stok dışı ürün politikası bir iş kararıdır.",
+   "effort": "—",
+   "automate": "Otomatikleştirilemez: iş kararı."
+  },
+  "SEO-092": {
+   "why": "Filtrelerin çalışması tarayıcıda tıklama ister; kural yok.",
+   "effort": "L",
+   "automate": "Render ile filtre tıklama, adres değişimi ve sonuç yüklenmesini denemek."
+  },
+  "SEO-093": {
+   "why": "Kategori bağlantısının yeterliliği ve az ürünlü kategoriler karar ister.",
+   "effort": "S",
+   "automate": "Az ürünlü kategoriler için eşik ve üst kategoriye bağlantı kontrolü."
+  },
+  "SEO-098": {
+   "why": "Kargo ve iade metinlerinin yeterliliği yargıdır; sayfaların ve işaretlemenin varlığı ölçülüyor.",
+   "effort": "M",
+   "automate": "Yapay zekâ ile politika metni kontrol listesi."
+  },
+  "SEO-102": {
+   "why": "Kurum bilgilerinin gerçek şirketle uyumu dış kaynak ister.",
+   "effort": "M",
+   "automate": "Google İşletme Profili ya da sicil verisiyle karşılaştırmak (dış veri)."
+  },
+  "SEO-105": {
+   "why": "Bu madde için kural henüz yok.",
+   "effort": "S",
+   "automate": "Varyantlı ürünlerde ProductGroup/hasVariant yokluğunu raporlamak."
+  },
+  "SEO-107": {
+   "why": "Doğru şema türünü seçmek içeriği anlamayı ister.",
+   "effort": "M",
+   "automate": "Sayfa tipine göre beklenen tür eşlemesini genişletmek (STR-23)."
+  },
+  "SEO-109": {
+   "why": "Aynı JSON-LD bloğunun tekrarı sayılmıyor; çelişen değerler ölçülüyor.",
+   "effort": "S",
+   "automate": "Sayfada birebir aynı JSON-LD bloklarını saymak."
+  },
+  "SEO-115": {
+   "why": "Gerçek LCP öğesi ölçülmüyor; ağır görseller ölçülüyor.",
+   "effort": "M",
+   "automate": "Render sırasında LargestContentfulPaint olayını kaydetmek."
+  },
+  "SEO-117": {
+   "why": "Engelleyen CSS ölçülmüyor; <head>'deki engelleyen betikler ölçülüyor.",
+   "effort": "S",
+   "automate": "<head>'deki stil dosyalarının sayısı ve boyutu."
+  },
+  "SEO-118": {
+   "why": "Bu madde için kural henüz yok.",
+   "effort": "S",
+   "automate": "Sayfa başına üçüncü taraf betik sayısı (kayıtlı betik listesiyle)."
+  },
+  "SEO-119": {
+   "why": "Sıkıştırma ve cache-control başlıkları değerlendirilmiyor; CDN önbelleği ölçülüyor.",
+   "effort": "S",
+   "automate": "Yanıt başlıklarından sıkıştırma ve önbellek süresi kontrolü."
+  },
+  "SEO-120": {
+   "why": "Yazı tipi yüklemesi kontrol edilmiyor; boyutsuz görseller ölçülüyor.",
+   "effort": "S",
+   "automate": "font-display ve yazı tipi preload kontrolü."
+  },
+  "SEO-121": {
+   "why": "Mobil ve masaüstü içerik eşitliği ikinci bir mobil istek ister; kural yok.",
+   "effort": "M",
+   "automate": "Her önemli sayfayı mobil kullanıcı aracısıyla da okuyup içerik farkını ölçmek."
+  },
+  "SEO-122": {
+   "why": "Mobil menünün alt kategorileri mobil görünümde render ister; kural yok.",
+   "effort": "L",
+   "automate": "Mobil görünümde menüyü açıp alt kategori bağlantılarını saymak."
+  },
+  "SEO-123": {
+   "why": "Ödeme ve form akışı gerçek oturum ister.",
+   "effort": "—",
+   "automate": "Otomatikleştirilemez: gerçek oturum ve ödeme."
+  },
+  "SEO-124": {
+   "why": "Yazı boyutu ve dokunma hedefleri render ister; viewport ve yakınlaştırma ölçülüyor.",
+   "effort": "M",
+   "automate": "Render ile yazı boyutu ve dokunma hedefi ölçümü."
+  },
+  "SEO-125": {
+   "why": "Zamanlı açılan pencereler render süresince izlenmiyor; giriş duvarları ölçülüyor.",
+   "effort": "M",
+   "automate": "Render'da birkaç saniye bekleyip ekranı kaplayan katmanları tespit etmek."
+  },
+  "SEO-126": {
+   "why": "Etkileşim testi gerçek kullanıcı akışı ister.",
+   "effort": "—",
+   "automate": "Otomatikleştirilemez: kullanıcı akışı testi."
+  },
+  "SEO-127": {
+   "why": "Tam erişilebilirlik denetimi (axe/Lighthouse) yapılmıyor; temel işaretler ölçülüyor.",
+   "effort": "M",
+   "automate": "Render örnekleminde axe-core çalıştırmak."
+  },
+  "SEO-128": {
+   "why": "Çağrı düğmesinin içerikle uyumu yargıdır.",
+   "effort": "M",
+   "automate": "Yapay zekâ ile CTA-içerik uyumu."
+  },
+  "SEO-131": {
+   "why": "İstemci tarafı rotaların HTTP durumu denenmiyor; 200 dönen hata sayfaları ölçülüyor.",
+   "effort": "M",
+   "automate": "Render'da rota değişimlerinde durum ve hata metni kontrolü."
+  },
+  "SEO-132": {
+   "why": "Ham ve render edilmiş kanonik/başlık farkı raporlanmıyor; bozuk <head> ölçülüyor.",
+   "effort": "S",
+   "automate": "Kayıtlı ham ve render verisinde kanonik ve başlığı karşılaştırmak."
+  },
+  "SEO-135": {
+   "why": "Render sırasında konsol ve API hataları kaydedilmiyor; kural yok.",
+   "effort": "M",
+   "automate": "Render'da konsol hatalarını ve başarısız istekleri kaydetmek."
+  },
+  "SEO-136": {
+   "why": "Şablon başına metadata kalıpları raporlanmıyor; sayfa başına metadata ölçülüyor.",
+   "effort": "S",
+   "automate": "Şablon gruplarında başlık ve açıklama kalıplarını çıkarmak."
+  },
+  "SEO-138": {
+   "why": "Alt metninin görseli anlatıp anlatmadığı yargıdır; dosya adı/yer tutucu alt metinler ölçülüyor.",
+   "effort": "M",
+   "automate": "Yapay zekâ ile görsel-alt metni uyumu."
+  },
+  "SEO-140": {
+   "why": "Görsel klasörlerinin robots.txt ile engellenmesi kontrol edilmiyor; yüklenmeyen görseller ölçülüyor.",
+   "effort": "S",
+   "automate": "Görsel adreslerini robots.txt kurallarıyla sınamak."
+  },
+  "SEO-141": {
+   "why": "Dosya adının görseli anlatıp anlatmadığı yargıdır; adların güvenliği ölçülüyor.",
+   "effort": "M",
+   "automate": "Yapay zekâ ile dosya adı-görsel uyumu."
+  },
+  "SEO-142": {
+   "why": "Video site haritası ve video dizinlemesi kontrol edilmiyor; video işaretlemesi ölçülüyor.",
+   "effort": "S",
+   "automate": "Video sayfalarının site haritasında <video:video> ile yer alıp almadığı."
+  },
+  "SEO-143": {
+   "why": "PDF ve indirilebilir dosyalar için kural yok.",
+   "effort": "M",
+   "automate": "PDF bağlantılarını isteyip metin, başlık ve noindex kontrolü."
+  },
+  "SEO-146": {
+   "why": "Dil ve IP yönlendirmeleri başka ülkeden denenmiyor; klasörler ve hreflang ölçülüyor.",
+   "effort": "L",
+   "automate": "Farklı ülke çıkışlarından istekle yönlendirme davranışını ölçmek."
+  },
+  "SEO-147": {
+   "why": "Çeviri kalitesi ve para birimi uygunluğu dil uzmanı ister; yanlış dil ölçülüyor.",
+   "effort": "M",
+   "automate": "Fiyat para birimini hreflang bölgesiyle karşılaştırmak; çeviri için yapay zekâ."
+  },
+  "SEO-150": {
+   "why": "Şube sayfalarının kalitesi yargıdır; şablon kopyaları ölçülüyor.",
+   "effort": "M",
+   "automate": "Şube sayfası başına özgün içerik oranı."
+  },
+  "SEO-158": {
+   "why": "Dış bağlantıların niteliği ve riski uzman değerlendirmesi ister.",
+   "effort": "M",
+   "automate": "DataForSEO spam puanıyla (ücretli) riskli alanları ayırmak."
+  },
+  "SEO-159": {
+   "why": "Search Console Manuel İşlemler raporunun API'si yok.",
+   "effort": "—",
+   "automate": "Otomatikleştirilemez: API yok."
+  },
+  "SEO-161": {
+   "why": "Etiketlerin tetiklenmesi ve olaylar tarayıcı oturumu ister; mükerrer etiketler ölçülüyor.",
+   "effort": "M",
+   "automate": "Render ağ isteklerinde GA4/GTM çağrılarını saymak."
+  },
+  "SEO-163": {
+   "why": "Alan adları arası ödeme dönüşü gerçek oturum ister.",
+   "effort": "—",
+   "automate": "Otomatikleştirilemez: gerçek oturum ve ödeme."
+  }
+ }
+}

@@ -35,8 +35,29 @@ SIGNATURES = (
     ("WordPress", ("/wp-content/", "/wp-includes/", "wordpress")),
     ("Next.js", ("/_next/static/", "next.js")),
 )  # IdeaSoft and T-Soft are not listed: their script hosts were not confirmed, and a loose word would misname sites.
+# DECISIONS 365: more signals, each one only that platform makes. "assets": a host or folder in the page's image and
+# preloaded-image addresses (a theme bundles its scripts, but uploads stay at the platform's file address); "declared":
+# a word the generator meta tag or X-Powered-By header writes (never looked for in a script address, where a short word
+# would misname sites); "credit": the platform named in the footer's credit line ("… ile hazırlanmıştır", "Powered by
+# …"). IdeaSoft, T-Soft and Sitefinity are recognised only from what they declare or credit (their file hosts are not
+# confirmed).
+EXTRA = {
+    "Ticimax": {"assets": ("static.ticimax.cloud", ".ticimax.cloud/"), "declared": ("ticimax",), "credit": r"ticimax"},
+    "Shopify": {"assets": ("cdn.shopify.com", "/cdn/shop/"), "declared": ("shopify",), "credit": r"shopify"},
+    "WooCommerce": {"assets": ("/plugins/woocommerce/",), "declared": ("woocommerce",), "credit": r"woocommerce"},
+    "ikas": {"assets": ("cdn.myikas.com",), "declared": ("ikas",), "credit": r"ikas"},
+    "IdeaSoft": {"assets": (), "declared": ("ideasoft",), "credit": r"idea ?soft"},
+    "T-Soft": {"assets": (), "declared": ("t-soft",), "credit": r"t-?soft"},
+    "Wix": {"assets": ("static.wixstatic.com",), "declared": ("wix.com",), "credit": r"wix(?:\.com)?"},
+    "Sitefinity": {"assets": (), "declared": ("sitefinity",), "credit": None},
+    "WordPress": {"assets": ("/wp-content/uploads/", "/wp-content/themes/"), "declared": ("wordpress",), "credit": r"wordpress"},
+    "Next.js": {"assets": ("/_next/image", "/_next/static/"), "declared": ("next.js",), "credit": None},
+}
+CREDIT = (r"(?:ile|tarafından) hazırlan|altyapısı(?:yla|dır)?|alt ?yapısıyla|sistemleriyle|paketleri ile|"
+          r"powered by|built with|made with")
 # A platform built on another: when both are seen, the specific one is the answer whatever the page counts.
 BUILT_ON = {"WooCommerce": "WordPress"}
+CONFIDENCE = ("high", "medium", "low")
 # (CDN, ((header, substring of its value, lower case; "" = the header being there is enough), ...)). Only headers the
 # crawler keeps on a page record are seen (crawler.KEPT_HEADERS); the others are listed so they count once kept.
 CDN_SIGNATURES = (
@@ -60,16 +81,42 @@ def _headers(page) -> dict[str, str]:
 
 
 def _platform_hits(page) -> dict[str, str]:
-    """Each platform this page shows, with the first signal of it ("script …", "generator …", "X-Powered-By …")."""
+    """Each platform this page shows, with the first signal of it ("script …", "generator …", "X-Powered-By …",
+    "image …", "footer credit …")."""
+    return {name: hit[0] for name, hit in _hits(page).items()}
+
+
+def _hits(page) -> dict[str, tuple[str, bool]]:
+    """{platform: (signal, declared)}: `declared` when the page states it (generator, X-Powered-By, a footer credit)."""
     analysis = page.analysis
     texts = [("script", s.get("src") or "") for s in analysis.get("external_scripts") or []]
-    texts += [("generator", m.get("content") or "") for m in analysis.get("meta") or [] if m.get("name") == "generator"]
-    texts.append(("X-Powered-By", _headers(page).get("x-powered-by", "")))
-    hits: dict[str, str] = {}
+    declared = [("generator", m.get("content") or "") for m in analysis.get("meta") or [] if m.get("name") == "generator"]
+    declared.append(("X-Powered-By", _headers(page).get("x-powered-by", "")))
+    assets = [("image", i.get("src") or "") for i in analysis.get("images") or [] if isinstance(i, dict)]
+    assets += [("preloaded image", i.get("href") or "") for i in analysis.get("image_preloads") or [] if isinstance(i, dict)]
+    footer = (analysis.get("footer_text") or "").lower()
+    hits: dict[str, tuple[str, bool]] = {}
     for name, needles in SIGNATURES:
-        hit = next(((kind, text) for kind, text in texts if text for needle in needles if needle in text.lower()), None)
+        hit = next(((kind, text) for kind, text in texts + declared if text for needle in needles if needle in text.lower()), None)
         if hit:
-            hits[name] = f"{name}: {hit[0]} {hit[1][:120]} on {page.url}"
+            hits[name] = (f"{name}: {hit[0]} {hit[1][:120]} on {page.url}", hit[0] != "script")
+    for name, sig in EXTRA.items():
+        if name in hits and hits[name][1]:
+            continue
+        said = next(((kind, text) for kind, text in declared if text for w in sig["declared"] if w in text.lower()), None)
+        credit = None
+        if sig["credit"] and footer:
+            credit = re.search(rf"(?<![\w-])(?:{sig['credit']})(?![\w-]).{{0,60}}?(?:{CREDIT})|(?:{CREDIT}).{{0,40}}?(?<![\w-])(?:{sig['credit']})(?![\w-])",
+                               footer)
+        if said or credit:
+            what = f"{said[0]} {said[1][:120]}" if said else f"footer credit «{credit.group(0)[:80]}»"
+            hits[name] = (f"{name}: {what} on {page.url}", True)
+            continue
+        if name in hits:
+            continue
+        asset = next(((kind, text) for kind, text in assets if text for a in sig["assets"] if a in text.lower()), None)
+        if asset:
+            hits[name] = (f"{name}: {asset[0]} {asset[1][:120]} on {page.url}", False)
     return hits
 
 
@@ -84,15 +131,21 @@ def _cdn(page) -> tuple[str, str] | None:
 
 
 def recognise(result) -> dict[str, Any] | None:
-    """{"name", "cdn", "signals"} for the platform and CDN the pages show, or None when neither is recognised."""
+    """{"name", "cdn", "signals", "confidence", "pages_seen", "pages_looked"} for the platform and CDN the pages show, or
+    None when neither is recognised. DECISIONS 365: `confidence` is "high" when its signals are on 2 pages or more and
+    either the pages state it (generator, X-Powered-By, a footer credit) or they are half the pages looked at or more;
+    "medium" on 2 pages or more, or one page stating it; "low" on one page only."""
     pages = [p for p in getattr(result, "pages", None) or [] if getattr(p, "analysis", None)][:PAGES_READ]
     votes: Counter = Counter()
     first: dict[str, str] = {}
+    stated: set[str] = set()
     cdn, cdn_signal = None, None
     for page in pages:
-        for name, signal in _platform_hits(page).items():
+        for name, (signal, said) in _hits(page).items():
             votes[name] += 1
             first.setdefault(name, signal)
+            if said:
+                stated.add(name)
         if cdn is None:
             found = _cdn(page)
             sources = [s.get("src") or "" for s in page.analysis.get("external_scripts") or []]
@@ -104,13 +157,18 @@ def recognise(result) -> dict[str, Any] | None:
     for child, parent in BUILT_ON.items():
         if child in votes:
             votes.pop(parent, None)
-    order = [name for name, _ in SIGNATURES]
+    order = [name for name, _ in SIGNATURES] + [n for n in EXTRA if n not in dict(SIGNATURES)]
     name = min(votes, key=lambda n: (-votes[n], order.index(n))) if votes else None
     if name is None and cdn is None:
         return None
     signals = ([first[name] + (f" ({votes[name]} of {len(pages)} pages read)" if votes[name] > 1 else "")]
                if name else []) + ([cdn_signal] if cdn_signal else [])
-    return {"name": name, "cdn": cdn, "signals": signals}
+    out = {"name": name, "cdn": cdn, "signals": signals}
+    if name:
+        seen = votes[name]
+        out.update(confidence="high" if seen >= 2 and (name in stated or seen * 2 >= len(pages)) else
+                   "medium" if seen >= 2 or name in stated else "low", pages_seen=seen, pages_looked=len(pages))
+    return out
 
 
 # ---------------------------------------------------------------- from saved data (DECISIONS 309)
@@ -160,7 +218,7 @@ def recognise_saved(report: dict, texts: Iterable[str] = ()) -> dict[str, Any] |
         if all(n >= PATHS_AT_LEAST for n in counts):
             signals.append(f"{name}: addresses under " + " and ".join(f"{f} ({n})" for f, n in zip(sig["paths"], counts)))
         if signals:
-            return {"name": name, "cdn": (report.get("platform") or {}).get("cdn"),
+            return {"name": name, "cdn": (report.get("platform") or {}).get("cdn"), "confidence": "medium",
                     "signals": [f"{s} (saved data, DECISIONS 309)" for s in signals]
                                + list((report.get("platform") or {}).get("signals") or [])}
     return None

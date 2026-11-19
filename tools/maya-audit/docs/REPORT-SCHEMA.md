@@ -618,7 +618,7 @@ that made it; nothing was removed or renamed, so 1.x readers keep working.
   news page, STR-23 with no job page); coverage still lists any part of the site not read. Neither a pass nor a gap; a run that read no page still says `not_assessed`.
 - `platform` (optional, H34): `{"name", "cdn", "signals"}` — the platform (Ticimax, Shopify, WooCommerce,
   WordPress, Wix, ikas) and CDN (Cloudflare) the pages read show, with the script, generator, header or /cdn-cgi/
-  address behind each; present only when one of them is recognised, either may be null. A hint, used by no check.
+  address behind each; present only when one of them is recognised, either may be null. A hint, used by no check. Since DECISIONS 365 (no version change) it may also hold `confidence` (high / medium / low), `pages_seen` and `pages_looked`, and the signals include image addresses and footer credits.
 
 ## 1.16 — processing and phase provenance
 

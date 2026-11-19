@@ -127,7 +127,7 @@ def test_xlsx_shows_the_p_level():
     book = xlsx.read(client_appendix.build(cs.select(r), "tr"))
     head = book["Özet"][0]
     assert head[:5] == ["Kart", "Başlık", "Önem", "Sorun türü", "Öncelik (P0-P3)"]
-    levels = {row[0]: row[head.index("Öncelik (P0-P3)")] for row in book["Özet"][1:]}
+    levels = {row[0]: row[head.index("Öncelik (P0-P3)")] for row in book["Özet"][2:]}
     assert "P0" in levels.values()
     fhead = book["Bulgular"][0]
     assert "Öncelik (P0-P3)" in fhead
