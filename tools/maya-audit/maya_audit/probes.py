@@ -43,12 +43,16 @@ def _observe(fetcher: Fetcher, url: str, label: str, user_agent: str, cfg: Crawl
     classification = classify_fetch(response.status, response.headers, response.body, response.error)
     content_type = response.headers.get("content-type")
     words, title, text_sha256, sketch, visible = None, None, None, [], ""
+    robots_head, robots_outside = None, None
     if response.body:
         text = decode_body(response.body, content_type)
         if is_html(content_type):
             facts = analyze_html(text)
             words, title, text_sha256 = facts["visible_words"], facts["title"], facts["text_sha256"]
             sketch, visible = facts["text_sketch"], facts["_visible_text"]
+            # DECISIONS 374: where the robots tag sits for this user agent (in <head>, or after it)
+            robots_head = [m.get("content") for m in facts.get("meta") or [] if str(m.get("name") or "").lower() == "robots"]
+            robots_outside = list((facts.get("outside_head") or {}).get("robots_content") or [])
         else:
             words = len(text.split())
             text_sha256 = hashlib.sha256(" ".join(text.lower().split()).encode()).hexdigest() if text.strip() else None
@@ -71,6 +75,8 @@ def _observe(fetcher: Fetcher, url: str, label: str, user_agent: str, cfg: Crawl
         "text_sha256": text_sha256,
         "visible_words": words,
         "title": title,
+        "robots_head": robots_head,
+        "robots_outside_head": robots_outside,
         "_text_sketch": sketch,
         "_visible_text": visible[:100_000],
         "fetch_class": classification.fetch_class.value,

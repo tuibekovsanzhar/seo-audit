@@ -101,7 +101,7 @@ def test_site_examples_for_sitemap_dates_and_an_uncached_page():
     assert site_example(stamped) == "sitemap_products_1.xml: 19 adresin 18'i aynı lastmod'u taşıyor (2026-11-16)"
     cache = {"rule_id": "prf1.not_cached", "title": "x", "evidence": {"pages": [
         {"url": SITE + "/", "ttfb_ms": 401.7, "cf-cache-status": "DYNAMIC", "cache-control": "private, max-age=0"}]}}
-    assert site_example(cache) == "/: CDN önbelleği DYNAMIC; cache-control: private, max-age=0; ilk yanıt 402 ms"
+    assert site_example(cache) == "/: CDN önbelleği DYNAMIC; cache-control: private, max-age=0; ilk yanıt (tek ölçüm) 402 ms"
 
 
 def test_every_card_has_an_example_and_rg24_names_a_card_without_one():

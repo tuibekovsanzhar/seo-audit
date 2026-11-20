@@ -5835,3 +5835,25 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      are Maya's own limit ("Kapsam"), not a client finding. On a saved report, "long pages have no subheadings" is kept
      only where the reading counted styled titles (the older Enpara audit did not: İlginay's J10 note).
      Tests: `tests/test_expert_lock.py` (4), `tests/test_error_families_373.py` (18), `tests/test_review_compliance_373.py` (10).
+
+374. **One value per page and metric, examples over their own threshold (Owner, 2026-11-20, from the MMI Ek; the
+     wording of the lines is an agent default).** Global for every audit.
+     *(1) Timing* (`example_rows.timing_row`, `site_example`, `page_rows`): a PRF-1 finding is judged on one value per
+     page, the median of its measurements: the full HTML for "slow pages" (`median_total_ms`), the first byte for the
+     homepage's first response (`median_ttfb_ms`). Every sheet now shows that value, how it was measured ("3 ölçümün
+     ortancası; ölçümler: …") and the threshold; the crawl's single first-byte time on a page row is named "ilk yanıt
+     (tek ölçüm, tarama sırasında)". Before: the Özet showed the median first byte rounded to seconds ("1,0 sn"), the
+     appendix rows the crawl's single first byte (567 ms), so card 10 ("Yavaş sayfaları hızlandırın") looked as if
+     its example were under the threshold: on its own metric the homepage's median is 1,714 ms over 1,500 ms.
+     *(2) Examples and rows over their threshold*: the example is the slowest page over the threshold on the judged
+     value (MMI: /shop/accessories/bar-accessories, 1,829 ms); a page whose judged median is not over it leaves the
+     finding (`reassess_rules._decisions_374`); the first-byte fallback is never shown against a full-HTML limit.
+     *(3) Text check*: RG-25 (hard) one page and timing metric shows one value across Özet, Bulgular and Bulgu bazında;
+     RG-26 (hard) a value beside its own "eşik" or "sınır" must exceed it (the bracketed single measurements are not
+     the value). *(4) A robots tag outside <head>* (`example_rows.robots_outside`): each page says the tag, where it
+     sits and why (the <head> closed early by an element, or the tag streamed into the body after a normal <head>, as
+     Next.js streams its metadata), and what Maya's Googlebot request got. The ACC-4 Googlebot probe now records the
+     robots tag's place and its sample takes one page with such a tag; a tag Googlebot gets in <head> is not reported,
+     nor then the same streamed tag on the other pages. Saved audits have no such request: "Googlebot isteğiyle
+     doğrulanmadı". *(5) GTIN*: "Product işaretlemesinde gtin (gtin8/12/13/14) ve mpn yok; var olanlar: sku, brand".
+     Tests: `tests/test_mmi_check_374.py` (6); four MMI labels (mmi-R374-*); fix log items 113-116.

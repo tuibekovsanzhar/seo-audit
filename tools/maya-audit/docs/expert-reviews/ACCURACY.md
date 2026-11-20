@@ -5,6 +5,7 @@ Made by `scripts/expert_accuracy.py` from `enpara-2e5829fb.json`, `enpara-fee701
 | Rule | Cards reviewed | Correct | Wrong | Wording | Incomplete | Share correct | Latest |
 |---|---|---|---|---|---|---|---|
 | `acc2.blocks.sample` | 1 | 0 | 1 | 0 | 0 | 0% | wrong (enpara-2e5829fb) |
+| `acc3.robots_outside_head` | 1 | 0 | 0 | 0 | 1 | 0% | incomplete (mmi-536b4b64) |
 | `acc8.redirecting` | 2 | 0 | 0 | 0 | 2 | 0% | incomplete (enpara-fee70191) |
 | `acc9.rate_limited_429` | 1 | 0 | 1 | 0 | 0 | 0% | wrong (naturesgarden-342a0b14) |
 | `idx1.4xx.referenced` | 1 | 0 | 0 | 0 | 1 | 0% | incomplete (enpara-2e5829fb) |
@@ -17,8 +18,8 @@ Made by `scripts/expert_accuracy.py` from `enpara-2e5829fb.json`, `enpara-fee701
 | `idx6.links_to_redirect` | 3 | 1 | 1 | 1 | 0 | 33% | wrong (enpara-fee70191-review3) |
 | `idx8.self_canonical_copies` | 1 | 0 | 1 | 0 | 0 | 0% | wrong (enpara-fee70191-review3) |
 | `judgment.generic.identity` | 1 | 0 | 0 | 0 | 1 | 0% | incomplete (mmi-536b4b64) |
-| `prf1.home_ttfb` | 1 | 1 | 0 | 0 | 0 | 100% | correct (mmi-536b4b64) |
-| `prf1.slow` | 1 | 0 | 0 | 0 | 1 | 0% | incomplete (mmi-536b4b64) |
+| `prf1.home_ttfb` | 2 | 1 | 1 | 0 | 0 | 50% | wrong (mmi-536b4b64) |
+| `prf1.slow` | 2 | 0 | 1 | 0 | 1 | 0% | wrong (mmi-536b4b64) |
 | `rnd1.partial` | 2 | 0 | 0 | 0 | 2 | 0% | incomplete (naturesgarden-342a0b14) |
 | `rnd3.revealed` | 1 | 0 | 0 | 0 | 1 | 0% | incomplete (mmi-536b4b64) |
 | `rnd6.large` | 1 | 1 | 0 | 0 | 0 | 100% | correct (mmi-536b4b64) |
@@ -41,7 +42,7 @@ Made by `scripts/expert_accuracy.py` from `enpara-2e5829fb.json`, `enpara-fee701
 | `str2.styled_subheadings` | 1 | 1 | 0 | 0 | 0 | 100% | correct (enpara-fee70191) |
 | `str3.crumb_no_list` | 1 | 1 | 0 | 0 | 0 | 100% | correct (mmi-536b4b64) |
 | `str3.expected_type` | 1 | 1 | 0 | 0 | 0 | 100% | correct (mmi-536b4b64) |
-| `str3.product_no_identifier` | 1 | 1 | 0 | 0 | 0 | 100% | correct (mmi-536b4b64) |
+| `str3.product_no_identifier` | 2 | 1 | 0 | 0 | 1 | 50% | incomplete (mmi-536b4b64) |
 | `str3.product_on_article` | 1 | 1 | 0 | 0 | 0 | 100% | correct (enpara-fee70191-review3) |
 | `str3.qa_no_faqpage` | 1 | 0 | 1 | 0 | 0 | 0% | wrong (enpara-fee70191) |
 | `str3.unparsed` | 4 | 3 | 0 | 0 | 1 | 75% | incomplete (naturesgarden-342a0b14) |
@@ -55,4 +56,4 @@ Made by `scripts/expert_accuracy.py` from `enpara-2e5829fb.json`, `enpara-fee701
 | `tseo1.heading_jumps` | 1 | 1 | 0 | 0 | 0 | 100% | correct (mmi-536b4b64) |
 | `tseo1.url_slug_unclear` | 1 | 0 | 0 | 0 | 1 | 0% | incomplete (mmi-536b4b64) |
 
-Cards reviewed: 80; correct 29, wrong 24, wording 2, incomplete 25 (36% correct).
+Cards reviewed: 84; correct 29, wrong 26, wording 2, incomplete 27 (35% correct).

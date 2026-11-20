@@ -15,6 +15,9 @@ Rules (hard = the download is a draft, soft = listed in "Kontrol raporu"):
     RG-22 hard  two cards that say the same thing (one rule or one title) about the same pages
     RG-23 soft  a phrase from the banned list (`banned_phrases.json`, the SEO team's file); a phrase marked
                 "block": true is hard
+    RG-25 hard  the same page and timing metric shows different values in the appendix's Özet, Bulgular and Bulgu
+                bazında (DECISIONS 374)
+    RG-26 hard  a value shown beside its own threshold ("eşik", "sınır") that does not exceed it (DECISIONS 374)
     RG-24 soft  a problem the appendix's Özet does not list under "Diğer bulgular" because it holds no example: no
                 concrete page text, address or element (DECISIONS 368) and no measured value, site-level or per page
                 (DECISIONS 369); and a card whose "Örnek" is empty (DECISIONS 371)
@@ -370,11 +373,13 @@ RULE_NAMES = {
     "tr": {"RG-18": "Yer tutucu ya da kanıtta olmayan sayı", "RG-19": "Başka platforma özgü öneri",
            "RG-20": "Menü ya da giriş bağlantısını kaldırma önerisi", "RG-21": "Türkçe metinde İngilizce",
            "RG-22": "Aynı sayfalar için tekrarlanan kart", "RG-23": "Yasaklı ifade",
-           "RG-24": "Örneği ve ölçülen değeri olmayan bulgu", "LLM": "İkinci okuyucu önerisi"},
+           "RG-24": "Örneği ve ölçülen değeri olmayan bulgu", "RG-25": "Aynı sayfa ve ölçüm için farklı değer",
+           "RG-26": "Eşiğini aşmayan örnek değer", "LLM": "İkinci okuyucu önerisi"},
     "en": {"RG-18": "Placeholder or a number not in the evidence", "RG-19": "Advice for another platform",
            "RG-20": "Advice to remove a menu or sign-in link", "RG-21": "English left in Turkish text",
            "RG-22": "Card repeated for the same pages", "RG-23": "Banned phrase",
-           "RG-24": "Finding with no example or measured value", "LLM": "Second reader's suggestion"},
+           "RG-24": "Finding with no example or measured value", "RG-25": "Different values for one page and metric",
+           "RG-26": "Example value not over its own threshold", "LLM": "Second reader's suggestion"},
 }
 
 
@@ -398,6 +403,89 @@ def with_platform_advice(record: dict | None, cells: Iterable[tuple[str, str]], 
     violations = list(record["violations"]) + extra
     counts = dict(record.get("counts") or {})
     counts["RG-19"] = counts.get("RG-19", 0) + len(extra)
+    return {**record, "violations": violations, "counts": counts, "decision": decision(violations)}
+
+
+TIMED = re.compile(r"(ilk yanıt|HTML'in tamamı|first response|full HTML) ([\d.,]+) ms")
+OVER = re.compile(r"([\d.,]+) ?(ms|KB)\b[^;]*?\b(?:eşik|sınır|limit) ([\d.,]+) ?(ms|KB)\b")
+HOME_TTFB = re.compile(r"yanıta ([\d.,]+) ms'de başlıyor|takes ([\d.,]+) ms \(median")
+
+
+def _number(text: str) -> float:
+    return float(text.replace(".", "").replace(",", ".")) if re.search(r"\.\d{3}\b", text) else float(text.replace(",", "."))
+
+
+def _path_of(url: str) -> str:
+    from urllib.parse import urlsplit
+    parts = urlsplit(str(url or ""))
+    return (parts.path or "/") if parts.netloc else str(url or "")
+
+
+def with_consistency(record: dict | None, made: list[dict], lang: str = "tr") -> dict | None:
+    """DECISIONS 374: RG-25 (one page and timing metric, one value in Özet, Bulgular and Bulgu bazında) and RG-26 (a
+    value shown beside its own threshold is over it), on the appendix's sheets."""
+    if record is None:
+        return record
+    sheets = {m.get("name"): m for m in made}
+    seen: dict[tuple, list[tuple[str, str]]] = {}
+    extra = []
+
+    def note(path, metric, value, where):
+        seen.setdefault((path, metric), []).append((where, value))
+
+    def over(text, where):
+        # the judged value only: the single measurements and notes in brackets beside it are not it
+        for m in OVER.finditer(re.sub(r"\([^()]*\)", "", text)):
+            if m.group(2) == m.group(4) and _number(m.group(1)) <= _number(m.group(3)):
+                extra.append(violation("RG-26", f"Ek ({where}): {m.group(1)} {m.group(2)} kendi eşiğini ({m.group(3)} "
+                                                f"{m.group(4)}) aşmıyor", hard=True, where=f"ek: {where}", text=text[:200]))
+    summary = sheets.get("Özet") or sheets.get("Summary")
+    if summary:
+        head = summary.get("header") or []
+        col = next((i for i, h in enumerate(head) if h in ("Örnek", "Example")), None)
+        for r in summary.get("rows") or []:
+            cell = str(r[col]) if col is not None and col < len(r) else ""
+            if ": " in cell:
+                path, rest = cell.split(": ", 1)
+                for m in TIMED.finditer(rest):
+                    note(path, m.group(1).replace("first response", "ilk yanıt").replace("full HTML", "HTML'in tamamı"),
+                         m.group(2), "Özet")
+            over(cell, "Özet")
+    by = sheets.get("Bulgu bazında") or sheets.get("By finding")
+    if by:
+        head = by.get("header") or []
+        page = head.index("Sayfa") if "Sayfa" in head else head.index("Page") if "Page" in head else None
+        val = next((head.index(h) for h in ("Ölçülen değer", "Measured value") if h in head), None)
+        for r in by.get("rows") or []:
+            if page is None or val is None or val >= len(r):
+                continue
+            url = r[page].get("text") if isinstance(r[page], dict) else r[page]
+            cell = str(r[val])
+            for m in TIMED.finditer(cell):
+                note(_path_of(url), m.group(1).replace("first response", "ilk yanıt").replace("full HTML", "HTML'in tamamı"),
+                     m.group(2), "Bulgu bazında")
+            over(cell, "Bulgu bazında")
+    found = sheets.get("Bulgular") or sheets.get("Findings")
+    if found:
+        head = found.get("header") or []
+        rule = head.index("Kural") if "Kural" in head else head.index("Rule") if "Rule" in head else None
+        text = next((head.index(h) for h in ("Bulgu", "Finding") if h in head), None)
+        for r in found.get("rows") or []:
+            if rule is not None and text is not None and len(r) > max(rule, text) and r[rule] == "prf1.home_ttfb":
+                m = HOME_TTFB.search(str(r[text]))
+                if m:
+                    note("/", "ilk yanıt", m.group(1) or m.group(2), "Bulgular")
+    for (path, metric), values in seen.items():
+        if len({_number(v) for _, v in values}) > 1:
+            shown = ", ".join(f"{w}: {v} ms" for w, v in dict.fromkeys(values))
+            extra.append(violation("RG-25", f"Ek: {path} için {metric} farklı değerlerle gösteriliyor ({shown})", hard=True,
+                                   where="ek: Özet, Bulgular, Bulgu bazında", text=shown))
+    if not extra:
+        return record
+    violations = list(record["violations"]) + extra
+    counts = dict(record.get("counts") or {})
+    for v in extra:
+        counts[v["rule"]] = counts.get(v["rule"], 0) + 1
     return {**record, "violations": violations, "counts": counts, "decision": decision(violations)}
 
 

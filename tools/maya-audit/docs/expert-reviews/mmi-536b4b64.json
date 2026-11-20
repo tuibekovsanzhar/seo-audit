@@ -486,6 +486,108 @@
      "regex": "«"
     }
    ]
+  },
+  {
+   "card": "R-374-1",
+   "title": "Ana sayfanın ilk yanıt süresini kısaltın",
+   "rule_ids": [
+    "prf1.home_ttfb"
+   ],
+   "expert_note": "Aynı sayfa için Özet 1,0 sn, Bulgular 962 ms, Bulgu bazında 567 ms: tek değer olmalı",
+   "verdict": "wrong",
+   "cell": "Sahip, 20 Kasım 1",
+   "labels": [
+    {
+     "id": "mmi-R374-1-one-value",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Kontrol raporu",
+     "column": "Kural",
+     "regex": "^RG-25$"
+    },
+    {
+     "id": "mmi-R374-1-judged-median",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Özet",
+     "column": "Örnek",
+     "regex": "^/: ilk yanıt [\\d.]+ ms \\(\\d+ ölçümün ortancası"
+    }
+   ]
+  },
+  {
+   "card": "R-374-2",
+   "title": "Yavaş sayfaları hızlandırın",
+   "rule_ids": [
+    "prf1.slow"
+   ],
+   "expert_note": "Örnek eşiğin altında bir sayfa olamaz",
+   "verdict": "wrong",
+   "cell": "Sahip, 20 Kasım 2",
+   "labels": [
+    {
+     "id": "mmi-R374-2-over-threshold",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Kontrol raporu",
+     "column": "Kural",
+     "regex": "^RG-26$"
+    },
+    {
+     "id": "mmi-R374-2-example-metric",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Özet",
+     "column": "Örnek",
+     "regex": "HTML'in tamamı [\\d.]+ ms \\(\\d+ ölçümün ortancası"
+    }
+   ]
+  },
+  {
+   "card": "R-374-3",
+   "title": "Bir robots meta etiketi <head> dışında",
+   "rule_ids": [
+    "acc3.robots_outside_head"
+   ],
+   "expert_note": "Ölçülen değer '—': etiketi, yerini ve nedenini göster",
+   "verdict": "incomplete",
+   "cell": "Sahip, 20 Kasım 3",
+   "labels": [
+    {
+     "id": "mmi-R374-3-robots-tag",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "rules": [
+      "acc3.robots_outside_head"
+     ],
+     "column": "Ölçülen değer",
+     "regex": "<meta name=\"robots\" content=\"[^\"]*\">: "
+    }
+   ]
+  },
+  {
+   "card": "R-374-4",
+   "title": "Product işaretlemesine GTIN ya da MPN ekleyin",
+   "rule_ids": [
+    "str3.product_no_identifier"
+   ],
+   "expert_note": "Örnek açıkça söylemeli: gtin ve mpn yok",
+   "verdict": "incomplete",
+   "cell": "Sahip, 20 Kasım 4",
+   "labels": [
+    {
+     "id": "mmi-R374-4-gtin-plain",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "rules": [
+      "str3.product_no_identifier"
+     ],
+     "column": "Ölçülen değer",
+     "regex": "gtin .*ve mpn yok"
+    }
+   ]
   }
  ],
  "later_reviews": "R-365..R-368: İlginay's later requests on the MMI Ek (18-19 Nov, DECISIONS 365, 366, 368), sent through the owner; added by hand."

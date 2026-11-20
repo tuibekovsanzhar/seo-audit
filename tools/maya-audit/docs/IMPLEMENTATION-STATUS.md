@@ -2832,3 +2832,39 @@ CI wiring of the frozen set waits for the secret MAYA_AUDIT_BENCHMARK_URL (until
 | `tools/fix_log.py --work <tmp> --write-status` | 112 items: Düzeltildi 109, Hâlâ var 0, Doğrulanmadı 3 (new crawl needed); 84 labels checked, 0 red |
 | `ruff --select E9,F821,F841` | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+Pushed `f778ba5` after the full suite (`3644 passed`); its CI 44619269286 failed once on
+`tests/test_preview16_measure.py::test_fast_check_sends_the_reduced_counts` (llms.txt link checks `0` instead of `20`
+in the fast mode). Not reproduced locally (25 runs under CPU load, 8 runs of the file, every forced thread order): an
+intermittent ordering between the steps that run beside each other on the shared fake clock. The failed job was rerun.
+
+## MMI Ek check: one timing per page, examples over their threshold, robots tag outside <head>, GTIN (DECISIONS 374, 2026-11-20)
+
+VERIFIED locally; not pushed. Every timing is the judged median with its method and measurements ("ilk yanıt 962 ms
+(3 ölçümün ortancası; ölçümler: …), eşik 800 ms"); a single crawl measurement says so ("ilk yanıt (tek ölçüm, tarama
+sırasında) …"). A slow-page card's example is the slowest page over the threshold on the metric it was judged on;
+pages at or under it leave the card. Text checks RG-25 (one page and metric, one value across Özet, Bulgular and Bulgu
+bazında) and RG-26 (a value beside its own threshold must exceed it), both hard. The robots meta tag outside <head>
+says the tag, where it is and why (head closed early, or streamed into the body), and is not reported where the
+Googlebot fetch has it in <head>. The GTIN/MPN example says which identifiers are missing.
+
+| Saved audit (rebuilt from copies, no request) | Cards | Timing example (Özet) | Robots rows with "—" | RG-25 / RG-26 | Text check |
+|---|---|---|---|---|---|
+| MMI 536b4b64 | 14 | homepage 1,0 sn -> `/: ilk yanıt 962 ms (3 ölçümün ortancası…), eşik 800 ms`; slow card -> bar-accessories, HTML'in tamamı 1.829 ms, eşik 1.500 ms | 11 -> 0 | none | PASS |
+| Carpex 1fd871f0 | 15 | — | 0 | none | PASS |
+| Enpara fee70191 | 15 | — | 0 | none | PASS |
+| Atasun f06a2129 | 15 | — | 0 | none | PASS |
+| İş Bankası 1b81bee4 | 15 | yanıt 3,8 sn -> HTML'in tamamı 3.859 ms (3 ölçümün ortancası…), eşik 1.500 ms | 0 | none | PASS |
+| Ticimax c77ebf6d | 15 | — | 0 | none | PASS |
+| Nature's Garden 342a0b14 | 6 | ilk yanıt 402 ms -> ilk yanıt (tek ölçüm) 402 ms | 0 | none | PASS |
+
+No slow-page row left any brand's card: every listed page was over its threshold on the judged median.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_mmi_check_374.py` | `6 passed` |
+| fast suite (with the frozen set) | `3515 passed, 4 skipped, 135 deselected, 1 warning in 586.90s (0:09:46)` |
+| `scripts/real_sites_benchmark.py expert` | `90 labels: 90 hold, 0 red` (6 new MMI labels R-374-1..4) |
+| `tools/fix_log.py --work <tmp> --write-status` | 116 items: Düzeltildi 113, Hâlâ var 0, Doğrulanmadı 3 (new crawl needed) |
+| `ruff --select E9,F821,F841` (maya_audit, scripts, tools) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

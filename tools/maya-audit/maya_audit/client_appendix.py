@@ -876,6 +876,7 @@ def build(selection: dict, lang: str = "tr", lists: dict | None = None, text_che
         record = text_gate.with_no_example(record, [n for m in made for n in m.get("_without_example") or []], lang)
         # DECISIONS 371: a card whose "Örnek" is empty
         record = text_gate.with_no_example(record, [n for m in made for n in m.get("_empty_cards") or []], lang, cards=True)
+        record = text_gate.with_consistency(record, made, lang)  # DECISIONS 374: RG-25, RG-26
         made.append(text_gate.sheet(record, lang))
     for m in made:
         m.pop("_without_example", None)

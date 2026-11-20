@@ -98,7 +98,7 @@ def test_the_value_matches_the_kind_of_finding():
     assert say("str16.shared", "STR-16") == 'description 13 characters: "A description"'
     assert say("str2.no_h1", "STR-2") == "1 main heading(s) (h1)"
     assert say("idx6.alias_links", "IDX-6") == f"canonical: {SITE}/a; HTTP 200"
-    assert say("prf1.not_cached", "PRF-1") == "first response 210 ms; cache: cf-cache-status: DYNAMIC"
+    assert say("prf1.not_cached", "PRF-1") == "first response (one measurement, during the crawl) 210 ms; cache: cf-cache-status: DYNAMIC"
     assert say("str9.lang_mismatch", "STR-9") == "<html lang> tr; 120 words"
     assert say("str3.expected_type", "STR-3") == "structured data: Product"
     assert say("str7.no_alt", "STR-7") == "4 image(s); 1 image(s) without alt text"

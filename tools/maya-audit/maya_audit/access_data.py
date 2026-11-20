@@ -110,6 +110,10 @@ def build_ua_check_sample(result: CrawlResult, cfg: CrawlConfig) -> list[str]:
                 and same_origin(p.url, result.origin) and not (p.analysis or {}).get("empty_response")]
     home = homepage_url(result)
     ordered: list[str] = [home]
+    # DECISIONS 374: one page whose robots tag sits outside <head>, so the Googlebot request shows where Googlebot gets it
+    stray = sorted(p.url for p in answered if p.url != home and ((p.analysis or {}).get("outside_head") or {}).get("robots_content"))
+    if stray and cfg.ua_check_urls > 1:
+        ordered.append(stray[0])
     templates = sorted(detect_templates([p.url for p in answered if p.url != home]).items(), key=lambda kv: (-len(kv[1]), kv[0]))
     for _, urls in templates:
         for url in sorted(urls):

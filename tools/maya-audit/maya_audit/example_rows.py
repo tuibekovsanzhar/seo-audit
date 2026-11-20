@@ -554,6 +554,7 @@ def attach(report: dict) -> list[str]:
                 ev["site_row"] = robots_site_row(reasons, len(blocked), max(sample_n, len(blocked)),
                                                  [t for b in blocked for t in b["blocked"]])
     done += [fid for fid in attach_373(report) if fid not in done]
+    done += [fid for fid in attach_374(report) if fid not in done]
     for rule in ("rnd1.partial", "rnd1.missing"):
         for f in _findings(report, rule):
             for rec in (f.get("evidence") or {}).get("pages") or []:
@@ -676,6 +677,17 @@ def site_example(finding: dict, lang: str = "tr") -> str | None:
         if isinstance(ev.get("video_pages"), int) and files is not None:
             return (f"site haritası ({files} dosya): <video:video> yok; {ev['video_pages']} sayfada video var" if tr else
                     f"sitemap ({files} file(s)): no <video:video>; {ev['video_pages']} pages show a video")
+    if rule.startswith("prf1.") and pages and any(p.get("samples") for p in pages):
+        # DECISIONS 374: the judged value (the median the finding was judged on) of the slowest page over the threshold
+        metric, threshold = timing_metric(finding), timing_threshold(finding)
+        over = [(timing_value(p, metric), p) for p in pages if p.get("url")]
+        over = sorted(((v, p) for v, p in over if v is not None and (threshold is None or v > threshold)),
+                      key=lambda x: -x[0])
+        timed_out = [p for p in pages if p.get("timeouts") and p.get("attempts")]
+        if over and not timed_out:
+            made = timing_row(over[0][1], metric, threshold)
+            if made:
+                return f"{_path(over[0][1]['url'])}: {made[lang if lang in made else 'en']}"
     if rule.startswith("prf1.") and first.get("url"):
         samples = [s for s in first.get("samples") or [] if isinstance(s, dict)]
         limit = re.search(r"more than ([\d.]+) ?s", title)
@@ -683,18 +695,19 @@ def site_example(finding: dict, lang: str = "tr") -> str | None:
             return (f"{_path(first['url'])}: {first['attempts']} denemenin {first['timeouts']} tanesinde zaman aşımı" if tr else
                     f"{_path(first['url'])}: timed out on {first['timeouts']} of {first['attempts']} attempts")
         mid = _median([s.get("ttfb_ms") for s in samples])
-        if mid is not None:
+        if mid is not None and timing_metric(finding) == "ttfb":  # DECISIONS 374: never a first byte against an HTML limit
             cap = f", eşik {_num(float(limit.group(1)), lang)} sn" if limit and tr else (f", limit {limit.group(1)} s" if limit else "")
             unit = "sn" if tr else "s"
-            return (f"{_path(first['url'])}: yanıt {_num(mid / 1000, lang)} {unit} ({len(samples)} ölçümün ortancası){cap}" if tr else
-                    f"{_path(first['url'])}: response {_num(mid / 1000, lang)} {unit} (median of {len(samples)}){cap}")
+            return (f"{_path(first['url'])}: ilk yanıt {_num(mid / 1000, lang)} {unit} ({len(samples)} ölçümün ortancası){cap}" if tr else
+                    f"{_path(first['url'])}: first response {_num(mid / 1000, lang)} {unit} (median of {len(samples)}){cap}")
     if rule.startswith("prf1.") and first.get("url") and isinstance(first.get("ttfb_ms"), (int, float)):
         cache = first.get("cf-cache-status") or first.get("cache-status") or first.get("x-cache")
         control = first.get("cache-control")
         parts = [f"CDN önbelleği {cache}" if tr else f"CDN cache {cache}"] if cache else []
         if control:
             parts.append(f"cache-control: {control}")
-        parts.append(f"ilk yanıt {round(first['ttfb_ms'])} ms" if tr else f"first response {round(first['ttfb_ms'])} ms")
+        parts.append(f"ilk yanıt (tek ölçüm) {round(first['ttfb_ms'])} ms" if tr else
+                     f"first response (one measurement) {round(first['ttfb_ms'])} ms")  # DECISIONS 374: named as one
         return f"{_path(first['url'])}: " + "; ".join(parts)
     if rule == "str7.unsized" and first.get("url") and isinstance(first.get("images"), int):
         example = next((file_name(x) for x in first.get("examples") or [] if isinstance(x, str)), None)
@@ -902,6 +915,132 @@ def attach_373(report: dict) -> list[str]:
             if isinstance(t, dict) and t.get("url") and not isinstance(t.get("row"), dict):
                 first = (t.get("sample_rows") or [[]])[0]
                 t["row"] = table_row(str(t.get("element") or "table"), t.get("rows"), t.get("columns"), first)
+                if f["id"] not in done:
+                    done.append(f["id"])
+    return done
+
+
+# ------------------------------------------------------------------------------------------------ DECISIONS 374
+
+def googlebot_heads(ua_check: dict | None) -> dict[str, dict]:
+    """{url: {"robots_head": [...], "robots_outside_head": [...]}} of the pages Maya fetched as Googlebot (ACC-4's
+    probe), when the probe recorded where the robots tag sits."""
+    out = {}
+    for pair in (ua_check or {}).get("pairs") or []:
+        bot = (pair or {}).get("googlebot") or {}
+        if isinstance(bot, dict) and ("robots_head" in bot or "robots_outside_head" in bot):
+            out[pair.get("url")] = {"robots_head": bot.get("robots_head") or [],
+                                    "robots_outside_head": bot.get("robots_outside_head") or []}
+    return out
+
+
+def robots_outside(url: str, analysis: dict, platform: str | None, googlebot: dict | None) -> dict:
+    """One page's robots tag outside <head>: the tag, where it sits, why (the <head> closed early by an element, or the
+    tag streamed into the body after a normally closed <head>), and what Googlebot got when Maya asked as Googlebot."""
+    oh = (analysis or {}).get("outside_head") or {}
+    contents = [c for c in oh.get("robots_content") or [] if c is not None]
+    tags = [f'<meta name="robots" content="{c}">' for c in contents] or ['<meta name="robots">']
+    early = oh.get("closed_early_by")
+    cause = "closed_early" if early else "streamed"
+    rec = {"url": url, "tags": tags, "cause": cause, "closed_early_by": early,
+           "googlebot_in_head": (googlebot or {}).get("robots_head") or None}
+
+    def make(lang):
+        tag = ", ".join(tags[:2])
+        if lang == "tr":
+            where = (f"<head>'i erken kapatan {early} öğesinden sonra, gövdede" if early else
+                     "<head> normal kapandıktan sonra gövdede" + (" (Next.js meta etiketlerini gövdeye akıtıyor)"
+                                                                  if (platform or "").lower().startswith("next") else ""))
+            bot = ("; Googlebot olarak istendiğinde <head> içinde" if rec["googlebot_in_head"] else
+                   "; Googlebot olarak istendiğinde de <head> dışında" if googlebot else "; Googlebot isteğiyle doğrulanmadı")
+            return f"{tag}: {where}{bot}"
+        where = (f"in the body, after {early} closed the <head> early" if early else
+                 "in the body after a normally closed <head>" + (" (Next.js streams its meta tags into the body)"
+                                                                if (platform or "").lower().startswith("next") else ""))
+        bot = ("; in the <head> when requested as Googlebot" if rec["googlebot_in_head"] else
+               "; outside the <head> for Googlebot too" if googlebot else "; not checked with a Googlebot request")
+        return f"{tag}: {where}{bot}"
+    rec["row"] = row(make)
+    return rec
+
+
+TIMING = {"ttfb": ("ilk yanıt", "first response", "median_ttfb_ms", "ttfb_ms"),
+          "total": ("HTML'in tamamı", "full HTML", "median_total_ms", "total_ms")}
+
+
+def _ms(value: float, lang: str) -> str:
+    text = f"{round(value):,}"
+    return (text.replace(",", ".") if lang == "tr" else text) + " ms"
+
+
+def timing_metric(finding: dict) -> str:
+    """Which time a PRF-1 finding is judged on: the full HTML ("to return their HTML") or the first byte."""
+    title = str(finding.get("title") or "")
+    return "total" if "to return their HTML" in title or str(finding.get("rule_id")) == "prf1.slow" else "ttfb"
+
+
+def timing_threshold(finding: dict) -> float | None:
+    ev = finding.get("evidence") or {}
+    if isinstance(ev.get("threshold_ms"), (int, float)):
+        return float(ev["threshold_ms"])
+    if isinstance(ev.get("threshold_s"), (int, float)):
+        return float(ev["threshold_s"]) * 1000
+    m = re.search(r"more than ([\d.]+) ?s", str(finding.get("title") or ""))
+    return float(m.group(1)) * 1000 if m else None
+
+
+def timing_value(rec: dict, metric: str) -> float | None:
+    key, sample_key = TIMING[metric][2], TIMING[metric][3]
+    if isinstance(rec.get(key), (int, float)):
+        return float(rec[key])
+    return _median([s.get(sample_key) for s in rec.get("samples") or [] if isinstance(s, dict)])
+
+
+def timing_row(rec: dict, metric: str, threshold: float | None) -> dict | None:
+    """DECISIONS 374: the one time a page is judged on (its median and how many measurements), the single
+    measurements beside it named as such, and the threshold."""
+    value = timing_value(rec, metric)
+    if value is None:
+        return None
+    samples = [s.get(TIMING[metric][3]) for s in rec.get("samples") or [] if isinstance(s, dict)
+               and isinstance(s.get(TIMING[metric][3]), (int, float))]
+
+    def make(lang):
+        label = TIMING[metric][0 if lang == "tr" else 1]
+        n = len(samples)
+        how = (f"{n} ölçümün ortancası" if lang == "tr" else f"median of {n}") if n > 1 else (
+            "tek ölçüm" if lang == "tr" else "one measurement")
+        each = ", ".join(_ms(s, lang) for s in samples)
+        line = f"{label} {_ms(value, lang)} ({how}" + (f"; ölçümler: {each}" if lang == "tr" and n > 1 else
+                                                     f"; measurements: {each}" if n > 1 else "") + ")"
+        if threshold:
+            line += f", {'eşik' if lang == 'tr' else 'limit'} {_ms(threshold, lang)}"
+        return line
+    return row(make)
+
+
+def attach_374(report: dict) -> list[str]:
+    """DECISIONS 374: PRF-1 rows and examples from the one judged median per page; GTIN in plain words; the robots tag
+    outside <head> with where it sits and what Googlebot got."""
+    done: list[str] = []
+    for f in _findings(report, "prf1."):
+        metric, threshold = timing_metric(f), timing_threshold(f)
+        for rec in (f.get("evidence") or {}).get("pages") or []:
+            if isinstance(rec, dict) and rec.get("url") and rec.get("samples") is not None:
+                made = timing_row(rec, metric, threshold)
+                if made:
+                    rec["row"] = made  # always the judged value: an older line (one measurement) is replaced
+                    if f["id"] not in done:
+                        done.append(f["id"])
+    for f in _findings(report, "str3.product_no_identifier"):
+        for rec in (f.get("evidence") or {}).get("pages") or []:
+            if isinstance(rec, dict) and rec.get("url") and not isinstance(rec.get("row"), dict):
+                has = [x for x in (("sku", rec.get("sku")), ("brand", rec.get("brand"))) if x[1]]
+                tr = "Product işaretlemesinde gtin (gtin8/12/13/14) ve mpn yok" + (
+                    "; var olanlar: " + ", ".join(f"{k} «{v}»" for k, v in has) if has else "")
+                en = "the Product markup has no gtin (gtin8/12/13/14) and no mpn" + (
+                    "; it has: " + ", ".join(f"{k} «{v}»" for k, v in has) if has else "")
+                rec["row"] = {"tr": tr, "en": en}
                 if f["id"] not in done:
                     done.append(f["id"])
     return done

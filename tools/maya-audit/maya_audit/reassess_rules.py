@@ -1401,6 +1401,39 @@ def _decisions_373(report: dict, affected: dict, changes: list[str]) -> None:
             check["status"] = "pass"
 
 
+def _decisions_374(report: dict, affected: dict, changes: list[str]) -> None:
+    """DECISIONS 374 (the owner, MMI Ek): a slow-page finding keeps only pages over its threshold on the value it is
+    judged on (the median); a robots tag outside <head> names the tag, where it sits and why, and is not reported where
+    Maya's Googlebot request got it in <head> (a saved report from before this has no such request: said so)."""
+    from .example_rows import googlebot_heads, robots_outside, timing_metric, timing_threshold, timing_value
+    crawl = report.get("crawl") or {}
+    pages = {p.get("url"): p for p in crawl.get("pages") or [] if isinstance(p, dict)}
+    platform = (report.get("platform") or {}).get("name") if isinstance(report.get("platform"), dict) else None
+    bots = googlebot_heads((crawl.get("access") or {}).get("ua_check"))
+    for check in report.get("checks") or []:
+        for f in list(check.get("findings") or []):
+            rule, ev = f.get("rule_id"), f.get("evidence") or {}
+            if rule == "prf1.slow":
+                metric, threshold = timing_metric(f), timing_threshold(f)
+                if threshold is None:
+                    continue
+                drop = {r.get("url") for r in ev.get("pages") or [] if isinstance(r, dict) and r.get("samples") is not None
+                        and (timing_value(r, metric) or 0) <= threshold}
+                if drop:
+                    _shrink(check, f, drop, affected, changes, "the page's judged median is not over the threshold",
+                            "DECISIONS 374")
+            elif rule == "acc3.robots_outside_head" and not ev.get("pages"):
+                urls = list((ev.get("robots_tags_outside_head") or {}).keys())
+                records = [robots_outside(u, ((pages.get(u) or {}).get("analysis") or {}), platform, bots.get(u)) for u in urls]
+                streamed_fine = any(r["cause"] == "streamed" and r["googlebot_in_head"] for r in records)
+                drop = {r["url"] for r in records if r["googlebot_in_head"] or (streamed_fine and r["cause"] == "streamed")}
+                ev["pages"] = [r for r in records if r["url"] not in drop][:40]
+                if drop:
+                    _shrink(check, f, drop, affected, changes, "Googlebot gets the tag in <head>", "DECISIONS 374")
+        if not check.get("findings") and check.get("status") == "findings":
+            check["status"] = "pass"
+
+
 def _decisions_365(report: dict, changes: list[str]) -> None:
     """DECISIONS 365: the platform worked out again from the saved pages with the current signals (images, the generator
     tag, X-Powered-By, footer credits) and its confidence; a report whose pages show none keeps what it had (DECISIONS
@@ -1764,6 +1797,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_370(r, aff, changes)  # DECISIONS 370: crawler findings only where robots.txt blocks
     _decisions_371(r, aff, changes)  # DECISIONS 371: İlginay's review of the Nature's Garden Ek
     _decisions_373(r, aff, changes)  # DECISIONS 373: Efsa's review (no subheadings, unrendered collections)
+    _decisions_374(r, aff, changes)  # DECISIONS 374: judged timing values, the robots tag outside <head>
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")
@@ -1826,6 +1860,7 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_370(r, affected, cert)  # DECISIONS 370: crawler findings only where robots.txt blocks
         _decisions_371(r, affected, cert)  # DECISIONS 371: İlginay's review of the Nature's Garden Ek
         _decisions_373(r, affected, cert)  # DECISIONS 373: Efsa's review (no subheadings, unrendered collections)
+        _decisions_374(r, affected, cert)  # DECISIONS 374: judged timing values, the robots tag outside <head>
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

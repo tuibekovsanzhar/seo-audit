@@ -682,15 +682,15 @@
   {
    "no": 98,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "21e816d",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "368, 373"
   },
   {
    "no": 99,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "9a922d5",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "369, 371, 372, 373"
   },
   {
@@ -710,79 +710,107 @@
   {
    "no": 102,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "—",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "372"
   },
   {
    "no": 103,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "—",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "372"
   },
   {
    "no": 104,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "—",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "373"
   },
   {
    "no": 105,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "—",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "373"
   },
   {
    "no": 106,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "—",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "373"
   },
   {
    "no": 107,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "—",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "373"
   },
   {
    "no": 108,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "—",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "373"
   },
   {
    "no": 109,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "—",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "373"
   },
   {
    "no": 110,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "—",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "373"
   },
   {
    "no": 111,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "—",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "373"
   },
   {
    "no": 112,
    "durum": "Düzeltildi",
-   "tarih": "2026-11-19",
-   "commit": "—",
+   "tarih": "2026-11-20",
+   "commit": "f778ba5",
    "decisions": "373"
+  },
+  {
+   "no": 113,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-20",
+   "commit": "—",
+   "decisions": "374"
+  },
+  {
+   "no": 114,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-20",
+   "commit": "—",
+   "decisions": "374"
+  },
+  {
+   "no": 115,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-20",
+   "commit": "—",
+   "decisions": "374"
+  },
+  {
+   "no": 116,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-20",
+   "commit": "—",
+   "decisions": "374"
   }
  ]
 }

@@ -727,12 +727,30 @@ def acc3_page_controls(result: CrawlResult, cfg: CrawlConfig) -> CheckResult:
     stray = {p.url: sorted({name for name in (p.analysis.get("outside_head") or {}).get("meta") or [] if name in META_NAMES})
              for p in pages}
     stray = {url: names for url, names in stray.items() if names}
+    # DECISIONS 374: each page's tag, where it sits and why; a tag Googlebot gets in <head> (Maya's Googlebot request) is
+    # not reported, nor, then, the same streamed tag on the site's other pages
+    from ..example_rows import googlebot_heads, robots_outside
+    from ..site_platform import recognise
+    try:
+        platform = (recognise(result) or {}).get("name")
+    except Exception:  # noqa: BLE001  a hint only
+        platform = None
+    access = getattr(result, "access", None)
+    ua = access.get("ua_check") if isinstance(access, dict) else getattr(access, "ua_check", None)
+    bots = googlebot_heads(ua)
+    by_url = {p.url: p for p in pages}
+    records = [robots_outside(u, by_url[u].analysis, platform, bots.get(u)) for u in stray]
+    streamed_fine = any(r["cause"] == "streamed" and r["googlebot_in_head"] for r in records)
+    kept = [r for r in records if not r["googlebot_in_head"] and not (streamed_fine and r["cause"] == "streamed")]
+    left_out = [r["url"] for r in records if r not in kept]
+    stray = {r["url"]: stray[r["url"]] for r in kept}
     if stray:
         urls = list(stray)
         findings.append(Finding(
             "ACC-3", f"{len(urls)} page(s) carry a robots tag outside <head>: browsers ignore it; some crawlers may not",
             Severity.INFO, Confidence.VERIFIED, Rationale.HYPOTHESIS.value, ["crawlers that read a robots tag anywhere in the HTML"],
-            scope_for(urls), {"robots_tags_outside_head": {u: stray[u] for u in urls[:40]}},
+            scope_for(urls), {"robots_tags_outside_head": {u: stray[u] for u in urls[:40]},
+                              "pages": [r for r in kept][:40], "googlebot_in_head_left_out": left_out[:40]},
             "robots meta tags sit in the page's <head>, where every crawler reads them the same way",
             "Move the tag into <head> if it is meant, or remove it from the body if it is not (a widget or an embedded "
             "snippet often brings one along).",

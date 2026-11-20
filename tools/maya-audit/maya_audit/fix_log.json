@@ -2069,6 +2069,92 @@
      "ng-R3-4-429-not-client"
     ]
    }
+  },
+  {
+   "kaynak": "Sahip — MMI Ek kontrolü, 20 Kasım (DECISIONS 374)",
+   "brand_key": "mmi",
+   "sorun": "Ana sayfanın yanıt süresi Özet'te 1,0 sn, Bulgular'da 962 ms, Bulgu bazında 567 ms görünüyordu",
+   "genel": "Aynı sayfanın süresi sayfalarda farklı değerlerle görünüyordu",
+   "nasil": "Her sayfa ve ölçüm için tek değer: bulgunun dayandığı ortanca ve kaç ölçüm olduğu; tek ölçüm 'tek ölçüm' diye ayrı yazılır. Kontrol raporu aynı sayfa ve ölçüm için farklı değeri bildirir (RG-25).",
+   "decisions": [
+    374
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Kontrol raporu",
+     "column": "Kural",
+     "regex": "^RG-25$"
+    },
+    "labels": [
+     "mmi-R374-1-one-value",
+     "mmi-R374-1-judged-median"
+    ],
+    "test": "tests/test_mmi_check_374.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — MMI Ek kontrolü, 20 Kasım (DECISIONS 374)",
+   "brand_key": "mmi",
+   "sorun": "'Yavaş sayfaları hızlandırın' kartının örneği eşiğin altında görünüyordu ('1,0 sn, eşik 1,5 sn')",
+   "genel": "Yavaş sayfa örneği eşiğin altında bir değer gösteriyordu",
+   "nasil": "Örnek, bulgunun dayandığı ölçümde eşiği en çok aşan sayfadır; eşiği aşmayan sayfa satırlardan çıkar; Kontrol raporu eşiğini aşmayan örnek değeri bildirir (RG-26).",
+   "decisions": [
+    374
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Kontrol raporu",
+     "column": "Kural",
+     "regex": "^RG-26$"
+    },
+    "labels": [
+     "mmi-R374-2-over-threshold",
+     "mmi-R374-2-example-metric"
+    ],
+    "test": "tests/test_mmi_check_374.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — MMI Ek kontrolü, 20 Kasım (DECISIONS 374)",
+   "brand_key": "mmi",
+   "sorun": "'Bir robots meta etiketi <head> dışında' satırlarında ölçülen değer '—' idi",
+   "genel": "<head> dışındaki robots etiketi satırları etiketi ve nedenini göstermiyordu",
+   "nasil": "Her sayfada etiket, yeri ve nedeni (head erken mi kapanıyor, etiket gövdeye mi akıtılıyor) ve Googlebot isteğinin sonucu yazılır; Googlebot <head> içinde alıyorsa bulgu çıkmaz.",
+   "decisions": [
+    374
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bulgu bazında",
+     "column": "Ölçülen değer",
+     "regex": "<meta name=\"robots\" content=\"[^\"]*\">: "
+    },
+    "labels": [
+     "mmi-R374-3-robots-tag"
+    ],
+    "test": "tests/test_mmi_check_374.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — MMI Ek kontrolü, 20 Kasım (DECISIONS 374)",
+   "brand_key": "mmi",
+   "sorun": "GTIN/MPN kartının örneği yalnız yapısal veri türlerini sayıyordu",
+   "genel": "GTIN/MPN örneği neyin eksik olduğunu söylemiyordu",
+   "nasil": "Örnek: 'Product işaretlemesinde gtin (gtin8/12/13/14) ve mpn yok; var olanlar: sku, brand'.",
+   "decisions": [
+    374
+   ],
+   "check": {
+    "sheet_has": {
+     "sheet": "Bulgu bazında",
+     "column": "Ölçülen değer",
+     "regex": "gtin .*ve mpn yok"
+    },
+    "labels": [
+     "mmi-R374-4-gtin-plain"
+    ],
+    "test": "tests/test_mmi_check_374.py"
+   }
   }
  ]
 }

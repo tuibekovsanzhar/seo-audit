@@ -19,9 +19,12 @@ def test_each_site_level_finding_says_what_was_measured_where():
                                                        "value": "2026-11-16T14:51:13+03:00"}]})
     assert site_example(stamped) == "sitemap.xml: 412 adresin 398'i aynı lastmod'u taşıyor (2026-11-16)"
     slow = _f("prf1.slow", "1 page(s) take more than 2 s (median) to return their HTML",
-              {"pages": [{"url": SITE + "/kategori/x", "samples": [{"ttfb_ms": 4800}, {"ttfb_ms": 4700}, {"ttfb_ms": 5100}]}]})
-    assert site_example(slow) == "/kategori/x: yanıt 4,8 sn (3 ölçümün ortancası), eşik 2,0 sn"
-    assert site_example(slow, "en") == "/kategori/x: response 4.8 s (median of 3), limit 2 s"
+              {"pages": [{"url": SITE + "/kategori/x", "samples": [{"ttfb_ms": 900, "total_ms": 4800}, {"ttfb_ms": 950, "total_ms": 4700},
+                                                                {"ttfb_ms": 1000, "total_ms": 5100}]}]})
+    # DECISIONS 374: the value the finding is judged on (the full HTML's median), with the single measurements
+    assert site_example(slow) == ("/kategori/x: HTML'in tamamı 4.800 ms (3 ölçümün ortancası; ölçümler: 4.800 ms, 4.700 ms, "
+                                  "5.100 ms), eşik 2.000 ms")
+    assert site_example(slow, "en").startswith("/kategori/x: full HTML 4,800 ms (median of 3")
     images = _f("idx5.no_image_sitemap", "x", {"images": 227, "sitemap_files": 1})
     assert site_example(images) == "site haritası (1 dosya): <image:image> yok; sayfalarda 227 farklı görsel"
     big = _f("rnd6.large", "x", {"pages": [{"url": SITE + "/", "bytes": 1_322_633}], "threshold_bytes": 1_000_000})
