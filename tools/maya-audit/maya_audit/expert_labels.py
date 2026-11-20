@@ -93,7 +93,7 @@ def _text(card: dict, field: str) -> str:
     return str(value or "")
 
 
-def present(label: dict, ctx: dict) -> tuple[bool, str]:
+def present(label: dict, ctx: dict) -> tuple[bool | None, str]:
     """(whether what the label names is there, what was seen)."""
     on = label["on"]
     if on == "finding":
@@ -111,13 +111,16 @@ def present(label: dict, ctx: dict) -> tuple[bool, str]:
     if not rows:
         return False, f"no sheet {label['sheet']!r}"
     head = rows[0]
+    if label.get("column") and label["column"] not in head:  # DECISIONS 376: a missing column is no evidence, never every cell
+        return None, f"no column {label['column']!r} in {label['sheet']!r}"
     col = head.index(label["column"]) if label.get("column") in head else None
     key = head.index(label.get("rule_column") or "Kural") if (label.get("rule_column") or "Kural") in head else None
     hits = 0
     for r in rows[1:]:
         if label.get("rules") and (key is None or key >= len(r) or not _rule_in(str(r[key]), label["rules"])):
             continue
-        cells = [str(r[col])] if col is not None and col < len(r) else [str(c) for c in r]
+        # a row shorter than the column has that cell empty (DECISIONS 376), never every cell of the row
+        cells = ([str(r[col]) if col < len(r) else ""]) if col is not None else [str(c) for c in r]
         if any(re.search(label["regex"], c, re.I) for c in cells):
             hits += 1
     return hits > 0, f"{hits} row(s) of {label['sheet']!r} say it"
@@ -128,6 +131,8 @@ def check(label: dict, ctx: dict | None) -> dict:
     if ctx is None:
         return {"id": label["id"], "kind": label["kind"], "ok": None, "seen": "audit not in the frozen set"}
     there, seen = present(label, ctx)
+    if there is None:  # nothing to judge on: red, whatever the kind
+        return {"id": label["id"], "kind": label["kind"], "ok": False, "seen": seen}
     ok = there if label["kind"] == "must_find" else not there
     return {"id": label["id"], "kind": label["kind"], "ok": ok, "seen": seen}
 

@@ -5900,3 +5900,25 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      were counted several times: it is now the latest 28-day row ("GSC tık (son 28 gün, örneklem)"). Fix log item 118
      (waits for an audit with gsc-top-pages: none of the saved ones has it); item 105's check follows DECISIONS 375
      (the stamp's last row of "Yöntem"). Tests: `tests/test_maya_snapshots_376.py`.
+     *Phase 3, the Search Console and AI sheets* (`maya_audit/sc_sheets.py`, Turkish as the Maya sheets): with Maya
+     data attached the Ek writes "Search Console özeti" (each dataset and its period; site totals for the last 28 days
+     and the file's whole period, one block when the file holds 28 days or fewer, marked "Maya dışa aktarımından
+     hesaplandı"; device, country, intent shares, brand click share, AI Overview, URL inspection and GA4, each "Veri
+     yok" with its reason when the export lacks it; the audit against Search Console: pages read, in the list, with
+     clicks but not read, the click share of pages with a Medium or worse problem, non-brand cannibalization, pages
+     cited by AI and how many were not read; notes on 28-day windows and empty cannibalization clicks), "Trafiğe göre
+     öncelik" (pages read with a problem by clicks), "SC sayfaları" (every listed page with its audit status), "SC
+     sorgular" (gsc-top-queries with intents; with the intent file only, its queries and "Tık ve gösterim: Veri yok"),
+     "SC fırsatlar" (non-brand first; the pages with an audit problem), "AI alıntılanan sayfalar" (tracking parameters
+     and #:~:text removed; citations, AIs, prompts, clicks, audit status), and green Search Console and AI columns on
+     "Sayfa bazında" and "Kilit sayfalar". A sheet whose data the export lacks is left out and Kapsam says why; without
+     Maya data none is made. The checklist keeps the tool's own result in "Sonuç"; what Search Console data measures
+     is a proposal beside it ("Search Console eki: önerilen sonuç", "Search Console kanıtı"), and its totals end with
+     the counts after and before the proposals (Efsa's file); SEO-069 (cannibalization) is measured from Maya's
+     opportunity list, non-brand queries only. RG-27 compares the counts the sheets state (pages read, Search Console
+     pages with clicks not read, non-brand cannibalization, AI-cited pages). Hardened on the way: an expert label or a
+     fix-log check on a column the sheet lacks is no evidence (red / not verified), never a match on every cell, and a
+     row shorter than the column has that cell empty. Enpara with its Downloads export (local copy only): 403.688
+     clicks, CTR %7,5 for 14 Ekim – 10 Kasım (Efsa's dashboard: 388,5 K, %7,5 for 15 Ekim – 10 Kasım); 227 Search
+     Console pages (hers: 227). Tests: `tests/test_sc_sheets_376.py`; fix log items 119-120; labels enp2-R376-2/3 (on
+     MMI's frozen audit, the noted audit having no Maya data).

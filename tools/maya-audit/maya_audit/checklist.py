@@ -39,6 +39,9 @@ WORDS = {
                    "logs": "Sunucu logları", "dataforseo": "DataForSEO", "crm": "CRM", "indexnow": "IndexNow anahtarı",
                    "render": "JS render"},
         "sheet": "Kontrol listesi", "totals_sheet": "Kontrol listesi özeti",
+        "sc_cols": ["Search Console eki: önerilen sonuç", "Search Console kanıtı"],
+        "sc_after_title": "Search Console eki (öneri, uzman onayı bekliyor)",
+        "sc_after": "Search Console eki sonrası (öneri)", "sc_before": "Önceki (araç sonucu)",
         "cols": ["ID", "Grup", "Kontrol maddesi", "Öncelik", "Sonuç", "Kanıt", "Maya kuralı / kart", "Eksik veri kaynağı",
                  "Nasıl kontrol edilir", "Gereken veri / neden uzman", "Otomatikleştirme önerisi"],
         "total_cols": ["Grup", "Madde", "Geçti", "Sorun", "Veri eksik", "İnceleme gerekli", "Uygulanmaz",
@@ -106,6 +109,9 @@ WORDS = {
                    "logs": "Server logs", "dataforseo": "DataForSEO", "crm": "CRM", "indexnow": "IndexNow key",
                    "render": "JS rendering"},
         "sheet": "Checklist", "totals_sheet": "Checklist totals",
+        "sc_cols": ["Search Console addendum: proposed result", "Search Console evidence"],
+        "sc_after_title": "Search Console addendum (proposals, waiting for the expert)",
+        "sc_after": "After the Search Console addendum (proposal)", "sc_before": "Before (the tool's result)",
         "cols": ["ID", "Group", "Item", "Priority", "Result", "Evidence", "Maya rule / card", "Missing data source",
                  "How it is checked", "Data needed / why an expert", "How it could be automated"],
         "total_cols": ["Group", "Items", "Pass", "Issue", "Data missing", "Needs review", "Not applicable",
@@ -532,23 +538,41 @@ def sheets(selection: dict, lang: str = "tr", todos: list[dict] | None = None, t
     them per group."""
     W = WORDS[lang]
     table = rows(selection, lang, todos, title, maya)
+    # DECISIONS 376 (Efsa's final file): "Sonuç" is the tool's own result; what Maya's Search Console data measures is
+    # a proposal beside it, for the expert to approve, never a silent replacement
+    base = rows(selection, lang, todos, title, None) if maya else table
+    proposal = maya is not None and any(r.get("maya") for r in table)
     body = []
-    for r in table:
-        detail, plan = how_detail(r, lang)
+    for r, m in zip(base, table):
+        detail, plan = how_detail(m, lang)
         body.append([r["id"], r["group"], r["item"], r["priority"], W["result"][r["result"]], r["evidence"], r["ref"],
-                     ", ".join(W["source"].get(s, s) for s in r["missing_sources"]), W["how"][r["how"]["kind"]], detail, plan])
+                     ", ".join(W["source"].get(s, s) for s in r["missing_sources"]), W["how"][r["how"]["kind"]], detail, plan]
+                    + ([W["result"][m["result"]], m["evidence"]] if m.get("maya") else ["", ""] if proposal else []))
     c = how_counts(table)
     lines = [W["how_lines"]["auto"].format(n=c["auto"]),
              W["how_lines"]["data"].format(n=c["data"], maya=c["maya"], done=c["done"]),
              W["how_lines"]["expert"].format(n=c["expert"], could=c["could"], s=c["effort"]["S"], m=c["effort"]["M"],
                                              l=c["effort"]["L"])]
-    top = [[W["how_title"] if i == 0 else "", line] + [""] * (len(W["cols"]) - 2) for i, line in enumerate(lines)]
-    t = totals(table)
+    cols = list(W["cols"]) + (W["sc_cols"] if proposal else [])
+    top = [[W["how_title"] if i == 0 else "", line] + [""] * (len(cols) - 2) for i, line in enumerate(lines)]
+    t = totals(base)
     kinds = ("auto", "data", "expert")
     per = {g: [sum(1 for r in table if r["group"] == g and r["how"]["kind"] == k) for k in kinds] for g in {r["group"] for r in table}}
     total_rows = [[W["all"], t["n"], *(t["all"][r] for r in RESULTS), c["auto"], c["data"], c["expert"]]]
     total_rows += [[g["group"], g["n"], *(g["counts"][r] for r in RESULTS), *per[g["group"]]] for g in t["groups"]]
-    return [{"name": W["sheet"], "header": W["cols"], "rows": top + body, "title_rows": len(top),
-             "widths": [9, 34, 34, 8, 16, 80, 30, 26, 18, 60, 60]},
-            {"name": W["totals_sheet"], "header": W["total_cols"], "rows": total_rows,
+    styles: dict[int, str] = {}
+    if proposal:  # the totals before and after the Search Console proposals
+        after = totals(table)
+        total_rows.append([""])
+        styles[len(total_rows)] = "title"
+        total_rows.append([W["sc_after_title"]])
+        total_rows.append([W["sc_after"], after["n"], *(after["all"][r] for r in RESULTS)])
+        total_rows.append([W["sc_before"], t["n"], *(t["all"][r] for r in RESULTS)])
+    return [{"name": W["sheet"], "header": cols, "rows": top + body, "title_rows": len(top),
+             "widths": [9, 34, 34, 8, 16, 80, 30, 26, 18, 60, 60] + ([18, 80] if proposal else []),
+             "header_styles": {len(W["cols"]): "green", len(W["cols"]) + 1: "green"} if proposal else {},
+             "_datasets": [d for d in ("gsc-search-performance", "gsc-daily-stats", "gsc-page-scores", "gsc-top-pages",
+                                       "gsc-query-opportunities") if any(x.get("dataset") == d for x in (maya or {}).get("datasets") or [])]
+             if proposal else None},
+            {"name": W["totals_sheet"], "header": W["total_cols"], "rows": total_rows, "row_styles": styles,
              "widths": [46, 8, 9, 9, 11, 16, 12, 11, 13, 16]}]

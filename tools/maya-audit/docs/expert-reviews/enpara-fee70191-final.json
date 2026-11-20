@@ -34,6 +34,54 @@
      "regex": "^RG-2[78]$|^RG-30$"
     }
    ]
+  },
+  {
+   "card": "R-376-2",
+   "title": "Search Console ve AI sekmeleri Ek'te olmalı",
+   "rule_ids": [],
+   "expert_note": "Search Console özeti, Trafiğe göre öncelik, SC sayfaları, SC sorgular, SC fırsatlar ve AI alıntılanan sayfalar elle eklendi",
+   "verdict": "incomplete",
+   "cell": "Kapak › Sekme rehberi 8, 11, 21-24",
+   "labels": [
+    {
+     "id": "enp2-R376-2-sc-pages",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "SC sayfaları",
+     "column": "Denetimdeki durumu",
+     "regex": "^Okundu",
+     "audit_id": "536b4b648f6440e6877695e5700252ba",
+     "why": "Enpara's frozen audit has no Maya data; MMI's has"
+    },
+    {
+     "id": "enp2-R376-2-computed",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Search Console özeti",
+     "column": "Konu",
+     "regex": "Maya dışa aktarımından hesaplandı",
+     "audit_id": "536b4b648f6440e6877695e5700252ba"
+    }
+   ]
+  },
+  {
+   "card": "R-376-3",
+   "title": "Kontrol listesinde Search Console önerisi araç sonucunun yanında",
+   "rule_ids": [],
+   "expert_note": "Kontrol listesi: yeşil sütunlar SC eki önerisi; özet altında önce/sonra",
+   "verdict": "incomplete",
+   "cell": "Kontrol listesi › Search Console eki: önerilen sonuç",
+   "labels": [
+    {
+     "id": "enp2-R376-3-checklist-proposal",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Kontrol listesi",
+     "column": "Search Console eki: önerilen sonuç",
+     "regex": ".",
+     "audit_id": "536b4b648f6440e6877695e5700252ba"
+    }
+   ]
   }
  ]
 }

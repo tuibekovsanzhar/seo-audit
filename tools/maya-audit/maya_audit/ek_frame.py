@@ -130,6 +130,7 @@ W = {
            "no_ga4": "GA4 verisi yok (ziyaret, oturum, dönüşüm ölçülmedi).",
            "no_inspection": "Search Console URL denetimi ve dizin kapsamı raporu yok (Maya dışa aktarımında bulunmuyor).",
            "no_estimate": "Trafik ya da dönüşüm etkisi tahmini yapılmaz.",
+           "computed_note": "Search Console panosundaki toplamlar ve niyet payları kullanılmadı: «Search Console özeti»ndeki toplamlar ve paylar Maya dışa aktarımından hesaplandı, her biri kendi döneminde; panodaki sayılardan biraz farklı olabilir.",
            "files": "Kaynak dosyalar", "file_cols": ["Dosya", "Kapsama alınan", "Not"],
            "file_audit": "Maya Audit teknik denetimi ({id})", "file_audit_used": "{n} sekme",
            "file_audit_note": "Tarama {date}; motor sürümü «Yöntem» sekmesinin son satırında",
@@ -162,6 +163,7 @@ W = {
            "no_ga4": "No GA4 data (visits, sessions and conversions not measured).",
            "no_inspection": "No Search Console URL inspection or index coverage report (not in Maya's export).",
            "no_estimate": "No traffic or conversion impact is estimated.",
+           "computed_note": "The Search Console dashboard's totals and intent shares were not used: the totals and shares in \"Search Console summary\" are computed from Maya's export, each over its own period; they can differ slightly from the dashboard's.",
            "files": "Source files", "file_cols": ["File", "Used", "Note"],
            "file_audit": "Maya Audit technical audit ({id})", "file_audit_used": "{n} sheets",
            "file_audit_note": "Crawl {date}; the engine version is the last row of \"Method\"",
@@ -242,10 +244,10 @@ def _needs(group: str) -> set[str]:
     return {name for need in NEEDS.get(group) or [] for name in need}
 
 
-def sets_of(key: str, summary: dict | None) -> list[dict]:
-    """The datasets a Maya sheet is made from, those present."""
+def sets_of(key: str, summary: dict | None, named: list[str] | None = None) -> list[dict]:
+    """The datasets a sheet is made from, those present: the ones it names (`_datasets`), else its Maya data group."""
     group = DATA_OF.get(key)
-    wanted = _needs(group) if group else set()
+    wanted = set(named or []) or (_needs(group) if group else set())
     return [d for d in datasets(summary) if d.get("dataset") in wanted]
 
 
@@ -257,13 +259,17 @@ def _sets_text(found: list[dict], lang: str) -> str:
 
 
 def source_line(key: str | None, report: dict | None, summary: dict | None, lang: str = "tr",
-                computed: bool = False) -> str:
+                computed: bool = False, named: list[str] | None = None) -> str:
     """The band's "Kaynak: …" line: the audit with its crawl date, the Maya datasets with each one's own period."""
     w = W[lang_of(lang)]
     when = crawl_day(report)
     audit = w["audit"].format(date=day(when, lang)) if when else w["audit_no_date"]
     if key in ("how", "method", "competitor_notes", "source_map"):
         what = w["method"]
+    elif named:  # a sheet that names the Maya datasets it reads: the audit's sheets with Maya columns, the SC sheets
+        found = sets_of(key or "", summary, named)
+        export = _sets_text(found, lang) if found else w["maya"].format(sets="—")
+        what = export if key in ("sc_summary", "sc_queries", "sc_opportunities") else audit + w["plus"] + export
     elif key in DATA_OF:
         found = sets_of(key, summary)
         what = _sets_text(found, lang) if found else w["maya"].format(sets="—")
@@ -366,6 +372,8 @@ def cover(selection: dict, report: dict | None, summary: dict | None, made: list
     if not any(d.get("dataset") == "ga4-traffic" for d in sets):
         missing.append(w["no_ga4"])
     missing += [w["no_inspection"], w["no_estimate"]]
+    if any(m.get("_computed") for m in made):  # owner: what Maya computes where the team used the dashboard
+        missing.append(w["computed_note"])
     rows.append([w["not_covered"], " ".join(missing)])
     rows.append([""])
     heading(w["files"])
@@ -384,8 +392,9 @@ def cover(selection: dict, report: dict | None, summary: dict | None, made: list
     audit_sheets = [n for n in names if key_of(n) in ("summary", "by_page", "by_finding", "findings", "urls", "templates",
                                                       "where", "redirect", "key_pages", "checklist")]
     rows.append([w["period_audit"], day(when, lang) if when else "—", ", ".join(audit_sheets)])
+    named = {m["name"]: m.get("_datasets") for m in made}
     for d in sets:
-        using = [n for n in names if d in sets_of(key_of(n) or "", summary)]
+        using = [n for n in names if d in sets_of(key_of(n) or "", summary, named.get(n))]
         rows.append([d["dataset"], period(*d["period"], lang) if d.get("period") else w["period_none"], ", ".join(using)])
     rows.append([""])
     heading(w["legend"])
@@ -418,7 +427,8 @@ def frame(made: list[dict], selection: dict, report: dict | None, summary: dict 
     out = []
     for m in sheets:
         k = key_of(m["name"])
-        out.append({**m, "band": band(m["name"], who, source_line(k, report, summary, lang, computed=bool(m.get("_computed"))), lang)})
+        out.append({**m, "band": band(m["name"], who, source_line(k, report, summary, lang, computed=bool(m.get("_computed")),
+                                                                  named=m.get("_datasets")), lang)})
     first = cover(selection, report, summary, out, lang, now)
     colours = first.pop("_colours")
     # the legend's colour cells: the label cell styled as the colour it explains

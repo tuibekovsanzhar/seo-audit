@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from urllib.parse import urlsplit
 
-ITEMS = ("SEO-004", "SEO-005", "SEO-007", "SEO-008", "SEO-025", "SEO-028", "SEO-054", "SEO-057", "SEO-071", "SEO-074",
+ITEMS = ("SEO-004", "SEO-005", "SEO-007", "SEO-008", "SEO-025", "SEO-028", "SEO-054", "SEO-057", "SEO-069", "SEO-071", "SEO-074",
          "SEO-165")
 HISTORY_DAYS = 395  # about 13 months: one season compared with the same season a year before
 TEST_HOST = re.compile(r"(?:^|[.-])(uat|staging|stage|test|dev|preprod|backoffice|admin|preview|qa)(?:[.-]|$)")
@@ -37,6 +37,8 @@ W = {"tr": {"src": "Search Console (Maya verisi, {a} – {b})", "ref": "Maya ver
             "057": "En çok tıklanan {top} ticari sayfadan {n} tanesine okunan sayfalardan {few}'den az bağlantı var{ex}.",
             "057_ok": "En çok tıklanan {top} ticari sayfanın her biri okunan sayfalardan en az {few} bağlantı alıyor.",
             "057_none": "Search Console'da tıklama alan okunmuş ürün ya da kategori sayfası yok.",
+            "069": "Maya'nın fırsat listesinde {n} marka dışı yamyamlaşma sorgusu (gsc-query-opportunities, {when}); en çok gösterim alanlar: {ex}.",
+            "069_none": "Maya'nın fırsat listesinde marka dışı yamyamlaşma sorgusu yok (gsc-query-opportunities, {when}).",
             "071": "{n} sayfanın tıklama oranı aynı sıradaki kendi sayfalarınızın yarısından az{ex} ('Organik×AI - Segmentler').",
             "071_none": "Hiçbir sayfanın tıklama oranı aynı sıradaki kendi sayfalarınızın yarısından az değil.",
             "074": "{n} sayfa için tıklama, gösterim ve sıra var; okunan {both} sayfada sayfa ölçümleriyle birlikte ('Sayfa detay').",
@@ -58,6 +60,8 @@ W = {"tr": {"src": "Search Console (Maya verisi, {a} – {b})", "ref": "Maya ver
             "057": "Of the {top} most clicked commercial pages, {n} get fewer than {few} links from the pages read{ex}.",
             "057_ok": "Each of the {top} most clicked commercial pages gets at least {few} links from the pages read.",
             "057_none": "No product or category page read gets clicks in Search Console.",
+            "069": "Maya's opportunity list has {n} non-brand cannibalization queries (gsc-query-opportunities, {when}); with the most impressions: {ex}.",
+            "069_none": "Maya's opportunity list has no non-brand cannibalization query (gsc-query-opportunities, {when}).",
             "071": "{n} page(s) have under half the CTR of your own pages at the same position{ex} ('Organik×AI - Segmentler').",
             "071_none": "No page has under half the CTR of your own pages at the same position.",
             "074": "Clicks, impressions and position for {n} pages; with the page measures on {both} pages read ('Sayfa detay').",
@@ -90,6 +94,8 @@ def _ex(urls, lang: str, k: int = 3) -> str:
 
 def row(item_id: str, summary: dict | None, selection: dict, lang: str = "tr") -> tuple[str, str, str] | None:
     """(result, evidence, ref) for an item Maya's Search Console data measures, or None."""
+    if item_id == "SEO-069":  # DECISIONS 376: Maya's opportunity list, non-brand cannibalization
+        return _cannibalization(summary, lang)
     if item_id not in ITEMS or not has_gsc(summary):
         return None
     T = W[lang]
@@ -195,3 +201,28 @@ def _days(period) -> int | None:
     except (TypeError, ValueError, IndexError):
         return None
 
+
+
+def _cannibalization(summary: dict | None, lang: str) -> tuple[str, str, str] | None:
+    """SEO-069 from gsc-query-opportunities: the non-brand queries several of the site's pages compete for (a brand
+    query on several pages is normal), by impressions. None without the file."""
+    g = (summary or {}).get("gsc") or {}
+    opps = g.get("opportunities") or {}
+    if not opps.get("rows"):
+        return None
+    from .ek_frame import period
+    from .maya_data import _is_brand
+    intents = (g.get("intents") or {}).get("rows") or {}
+
+    def brand(q):
+        flag = (intents.get(q) or {}).get("brand")
+        return flag if flag is not None else _is_brand(q, (summary or {}).get("brand_names") or [])
+    found = sorted((o for o in opps["rows"] if o.get("type") == "cannibalization" and not brand(o["query"])),
+                   key=lambda o: -(o.get("impressions") or 0))
+    T = W[lang]
+    when = period(*opps["period"], lang) if opps.get("period") else "—"
+    if not found:
+        return "pass", T["069_none"].format(when=when), T["ref"]
+    ex = "; ".join(f"«{o['query']}» {_n(o.get('impressions'), lang)} " + ("gösterim" if lang == "tr" else "impressions")
+                   + f", {len(o.get('pages') or [])} " + ("sayfa" if lang == "tr" else "pages") for o in found[:3])
+    return "issue", T["069"].format(n=_n(len(found), lang), when=when, ex=ex), T["ref"]

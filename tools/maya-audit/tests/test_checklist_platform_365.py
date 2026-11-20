@@ -36,7 +36,7 @@ def test_the_sheet_has_the_columns_and_the_counts_on_its_first_rows():
     assert listed["title_rows"] == 3
     top = [r[1] for r in listed["rows"][:3]]
     assert top[0] == "Otomatik: 55 madde (tarama ölçer)"
-    assert top[1].startswith("Veri gerekir: 37 madde (11 tanesi Maya'nın Search Console verisi eklenince ölçülür; bu denetimde ölçülen: 0)")
+    assert top[1].startswith("Veri gerekir: 37 madde (12 tanesi Maya'nın Search Console verisi eklenince ölçülür; bu denetimde ölçülen: 0)")  # +SEO-069 (376)
     assert top[2].startswith("Uzman incelemesi: 73 madde (64 tanesi otomatikleştirilebilir")
     rows = {r[0]: r for r in listed["rows"][3:]}
     assert len(rows) == 165
@@ -92,8 +92,11 @@ def test_the_items_maya_search_console_data_measures_are_measured_when_it_is_att
     assert "+%5" in checklist_maya.row("SEO-165", s, sel)[1]
     listed, _ = checklist.sheets(sel, "tr", maya=s)
     rows = {r[0]: r for r in listed["rows"][3:]}
-    assert rows["SEO-007"][4] == "Sorun" and rows["SEO-007"][9].endswith("bu denetimde Maya verisiyle ölçüldü")
-    assert rows["SEO-008"][7] == "GA4"  # Maya's summary holds no GA4: still missing
+    # DECISIONS 376: "Sonuç" keeps the tool's result; Maya's measure is the proposal beside it
+    assert listed["header"][-2:] == ["Search Console eki: önerilen sonuç", "Search Console kanıtı"]
+    assert rows["SEO-007"][4] == "Veri eksik" and rows["SEO-007"][11] == "Sorun" and "backoffice-uat" in rows["SEO-007"][12]
+    assert rows["SEO-007"][9].endswith("bu denetimde Maya verisiyle ölçüldü")
+    assert rows["SEO-008"][7] == "Search Console, GA4" and rows["SEO-008"][11]  # the tool row; Maya proposes beside it
     assert rows["SEO-074"][4] == "Uygulanmaz"  # content inventory: the site has no article page
     assert "bu denetimde ölçülen: 10" in listed["rows"][1][1]
 

@@ -2191,6 +2191,39 @@
     "crawl": true,
     "why": "kayıtlı denetimlerin hiçbirinde gsc-top-pages yok: bu veriyle bir denetim gerekli"
    }
+  },
+  {
+   "kaynak": "Efsa — Enpara son dosyası, Search Console / AI eki, 13 Kasım (DECISIONS 376)",
+   "brand_key": "enpara",
+   "sorun": "Search Console ve AI alıntı sekmeleri Ek'te yoktu; elle eklendi",
+   "genel": "Search Console ve AI alıntı sekmeleri Ek'te yoktu; elle eklendi",
+   "nasil": "Maya verisi eklendiğinde Ek «Search Console özeti», «Trafiğe göre öncelik», «SC sayfaları», «SC sorgular», «SC fırsatlar» ve «AI alıntılanan sayfalar» sekmelerini ve «Sayfa bazında» ile «Kilit sayfalar»ın Search Console sütunlarını kendisi yazar; her kaynak kendi döneminde.",
+   "decisions": [
+    376
+   ],
+   "check": {
+    "labels": [
+     "enp2-R376-2-sc-pages",
+     "enp2-R376-2-computed"
+    ],
+    "test": "tests/test_sc_sheets_376.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — Enpara son dosyası, «Kontrol listesi», 13 Kasım (DECISIONS 376)",
+   "brand_key": "enpara",
+   "sorun": "Search Console verisi kontrol listesinin sonucunu sessizce değiştiriyordu",
+   "genel": "Search Console verisi kontrol listesinin sonucunu sessizce değiştiriyordu",
+   "nasil": "«Sonuç» aracın sonucudur; Search Console verisinin ölçtüğü sonuç yanında «Search Console eki: önerilen sonuç» olarak, kanıtıyla yazılır; özet sekmesinde önce/sonra sayıları; yamyamlaşma maddesi (SEO-069) Maya'nın fırsat listesinden ölçülür.",
+   "decisions": [
+    376
+   ],
+   "check": {
+    "labels": [
+     "enp2-R376-3-checklist-proposal"
+    ],
+    "test": "tests/test_sc_sheets_376.py"
+   }
   }
  ]
 }

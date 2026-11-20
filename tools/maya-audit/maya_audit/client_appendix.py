@@ -417,7 +417,18 @@ def sheets(selection: dict, lang: str = "tr", lists: dict | None = None,
             sheet["rows"] = list(sheet["rows"]) + [["Maya verisi", text, ""] for text in made["coverage"]]
         elif sheet["name"] == W["method_sheet"]:
             sheet["rows"] = list(sheet["rows"]) + [list(m) for m in made["method"]]
-    return reader + made["sheets"] + listed + technical
+    # DECISIONS 376, phase 3: the Search Console and AI sheets, and their columns on "Sayfa bazında" and "Kilit
+    # sayfalar"; a sheet whose data the export lacks is left out and Kapsam says why
+    from . import page_rows, sc_sheets
+    rows = page_rows.finding_rows(selection, lists, lang, todos=todos, words=words, title=title, fix=fix)
+    sc = sc_sheets.build(maya.get("summary"), selection, rows)
+    if sc["data"] is not None:
+        reader = [sc_sheets.add_columns(x, sc["data"], 0) if x["name"] == R["by_page"] else x for x in reader]
+        technical = [sc_sheets.add_columns(x, sc["data"], 1) if x["name"] == W["key_pages"] else x for x in technical]
+        for sheet in technical:
+            if sheet["name"] == W["coverage"]:
+                sheet["rows"] = list(sheet["rows"]) + [["Maya verisi", text, ""] for text in sc["missing"]]
+    return reader + sc["sheets"] + made["sheets"] + listed + technical
 
 
 def _link(url: str | None, text: str) -> dict | str:

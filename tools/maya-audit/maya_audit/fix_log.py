@@ -65,7 +65,9 @@ def _cell_rows(ctx: dict, sheet: str, column: str | None):
     if not rows:
         return None
     head = rows[0]
-    cols = [head.index(column)] if column and column in head else range(len(head)) if not column else []
+    if column and column not in head:  # DECISIONS 376: a missing column is no evidence, never a pass of "sheet_not"
+        return None
+    cols = [head.index(column)] if column else range(len(head))
     return [[str(r[i]) for i in cols if i < len(r) and r[i] is not None] for r in rows[1:]]
 
 

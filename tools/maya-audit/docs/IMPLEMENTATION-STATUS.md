@@ -2928,3 +2928,28 @@ Düzeltildi 113, Hâlâ var 1 (item 105, its check still looked for the stamp in
 | fast suite (with the frozen set) | `3541 passed, 4 skipped, 135 deselected, 1 warning in 637.14s (0:10:37)` |
 | `scripts/real_sites_benchmark.py expert` | `92 labels: 92 hold, 0 red` |
 | Push | NOT DONE (owner: don't push) |
+
+## Phase 3: the Search Console and AI sheets (DECISIONS 376, 2026-11-20)
+
+VERIFIED locally; not pushed. With Maya data the Ek writes Search Console özeti, Trafiğe göre öncelik, SC sayfaları,
+SC sorgular, SC fırsatlar and AI alıntılanan sayfalar, and Search Console columns on Sayfa bazında and Kilit sayfalar;
+the checklist keeps the tool's result and proposes beside it, with totals before and after; SEO-069 from Maya's
+opportunity list. Expert labels and fix-log checks on a missing column are no evidence (they matched every cell before).
+
+| Saved audit (rebuilt from copies, no request) | Client sheets | Text check |
+|---|---|---|
+| MMI 536b4b64 (Maya data: 4 of the 6 sheets; no query or opportunity file) | 24 | PASS |
+| Carpex 1fd871f0 (Maya data) | 25 | PASS |
+| Enpara fee70191 (no Maya data saved) | 15 | PASS |
+| Enpara fee70191 + its Downloads export (local copy only) | 24 | PASS |
+| Atasun f06a2129 | 15 | PASS |
+| İş Bankası 1b81bee4 | 15 | PASS |
+| Ticimax c77ebf6d (Maya data) | 25 | PASS |
+| Nature's Garden 342a0b14 (Maya data) | 24 | PASS |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_sc_sheets_376.py` | `8 passed` |
+| fast suite (with the frozen set) | `3549 passed, 4 skipped, 135 deselected, 1 warning in 602.90s (0:10:02)` |
+| `scripts/real_sites_benchmark.py expert` | `95 labels: 95 hold, 0 red` |
+| Push | NOT DONE (owner: don't push) |
