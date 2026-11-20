@@ -431,6 +431,12 @@ def frame(made: list[dict], selection: dict, report: dict | None, summary: dict 
         k = key_of(m["name"])
         out.append({**m, "band": band(m["name"], who, source_line(k, report, summary, lang, computed=bool(m.get("_computed")),
                                                                   named=m.get("_datasets")), lang)})
+    if lang_of(lang) == "tr":  # phase 5: each sheet's source and period, for the reader (Efsa's "Kaynak eşlemesi")
+        from .ek_sources import map_sheet
+        cover_row = {"name": name("cover", lang), "rows": [], "band": [[""], ["Kaynak: Maya Audit (bu dosyanın kendisi)"]]}
+        mapped = map_sheet([cover_row] + out)
+        mapped["band"] = band(mapped["name"], who, source_line("source_map", report, summary, lang), lang)
+        out = order(out + [mapped])
     expert = next((m for m in made if key_of(m["name"]) == "expert" and "_decided" in m), None)
     first = cover(selection, report, summary, out, lang, now, decided=expert["_decided"] if expert else None)
     colours = first.pop("_colours")

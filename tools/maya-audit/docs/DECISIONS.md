@@ -5941,3 +5941,10 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      "Not") in the PDF's text read without whitespace (the reader splits Turkish letters). On Enpara the T-01, T-02 and
      T-03 evidence rows are Bulgu bazında 4, 94 and 115, as in Efsa's file; Uzman teyidi 28 items, as hers.
      Tests: `tests/test_ek_actions_376.py`; fix log item 121; labels enp2-R376-4-*.
+     *Phase 5, sources and competitor notes* (`maya_audit/ek_sources.py`): "Rakip yöntem notları" beside the
+     competitor sheets (the "Yöntem" and Maya "Kapsam" lines that explain them, and how to read n<10 and the
+     "Fark [HİPOTEZ]" column); "Kaynak eşlemesi", each client sheet with the source and period its band says, its
+     rows and what it holds (Efsa's "row shift" and "change made" columns described her manual copy: not made). The
+     competitor sheets already have her C1/C2 columns (the brand written "Marka"); their names stay "Rakip - Konu" and
+     "Rakip - Sayfa yapısı". The action sheets name Maya's datasets in their band when S- or R- rows or Search Console
+     lines come from the export. Tests: `tests/test_ek_sources_376.py`.

@@ -2976,3 +2976,16 @@ rows 4/94/115 as in Efsa's file; Uzman teyidi 28 items as hers; with the skill's
 | fast suite (with the frozen set) | `3556 passed, 4 skipped, 135 deselected, 1 warning in 599.54s (0:09:59)` |
 | `scripts/real_sites_benchmark.py expert` | `98 labels: 98 hold, 0 red` |
 | Push | NOT DONE (owner: don't push) |
+
+## Phase 5: sources and competitor notes (DECISIONS 376, 2026-11-20)
+
+VERIFIED locally; not pushed. "Rakip yöntem notları" beside the competitor sheets and "Kaynak eşlemesi" (each client
+sheet's source and period as its band says). The seven saved audits rebuilt: text check PASS on all (MMI 31 sheets,
+Carpex 32, Enpara 21, Atasun 21, İş Bankası 21, Ticimax 32, Nature's Garden 31).
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_ek_sources_376.py` | `2 passed` |
+| fast suite (with the frozen set) | `3558 passed, 4 skipped, 135 deselected, 1 warning in 606.69s (0:10:06)` |
+| `scripts/real_sites_benchmark.py expert` | ran after phase 6's first edits: `97 hold, 1 red` (enp2-R376-1-rg28: phase 6's new action put a check name in an ID column; fixed in phase 6) |
+| Push | NOT DONE (owner: don't push) |

@@ -898,6 +898,10 @@ def build_files(selection: dict, lang: str = "tr", lists: dict | None = None, te
     if lang == "tr":  # DECISIONS 376, phase 4: the action sheets, from the sheets written (Turkish, as the team's file)
         from . import ek_actions
         made = ek_actions.build(made, selection, wording.get("todos"), report, summary, pdf)[0] + made
+        from . import ek_sources  # phase 5: the competitor sheets' method lines beside them
+        notes = ek_sources.notes_sheet(made)
+        if notes:
+            made.append(notes)
     framed = ek_frame.frame(made, selection, report, summary, lang, now)
     record = None
     if text_check is not None:

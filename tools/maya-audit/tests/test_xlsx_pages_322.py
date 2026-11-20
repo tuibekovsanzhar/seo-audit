@@ -20,7 +20,7 @@ TR_SHEETS = ["Nasıl okunur", "Özet", "Sayfa bazında", "Bulgu bazında", "Kont
              "Bulgular", "Etkilenen adresler", "Kilit sayfalar", "Şablonlar", "Kapsam", "Yöntem"]
 # DECISIONS 376: the written file: Kapak first, the team's order, the Maya band above every header (BAND rows)
 TR_FILE = ["Kapak", "Yönetici özeti", "Aksiyon planı", "Uzman teyidi", "Konum dizini", "Nasıl okunur", "Özet", "Kilit sayfalar", "Sayfa bazında", "Bulgu bazında", "Bulgular", "Etkilenen adresler",
-           "Şablonlar", "Kontrol listesi özeti", "Kontrol listesi", "Kapsam", "Yöntem"]
+           "Şablonlar", "Kontrol listesi özeti", "Kontrol listesi", "Kapsam", "Yöntem", "Kaynak eşlemesi"]
 BAND = 2
 EN_SHEETS = ["How to read", "Summary", "By page", "By finding", "Checklist", "Checklist totals",  # 342
              "Findings", "Affected URLs", "Key pages", "Templates", "Coverage", "Method"]
