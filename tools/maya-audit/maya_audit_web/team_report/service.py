@@ -98,6 +98,14 @@ def _pages(pdf: Path):
         return list(fitz.open(str(pdf)))
 
 
+def appendix_files(report: dict, affected: dict | None, confirmations: dict | None, lang: str,
+                   business: str | None = None, todos: list[dict] | None = None, artifacts=None,
+                   text_check=render.NOT_GIVEN, previous: dict | None = None) -> dict:
+    """DECISIONS 376: {"client": the Ek, "team": the team file (text check, fix log) or None, "record"}."""
+    return render.appendix_files(report, affected, confirmations, lang, business, todos=todos,
+                                 maya=render.maya_bundle(artifacts), text_check=text_check, previous=previous)[0]
+
+
 def appendix(report: dict, affected: dict | None, confirmations: dict | None, lang: str,
              business: str | None = None, todos: list[dict] | None = None, artifacts=None,
              text_check=render.NOT_GIVEN, previous: dict | None = None) -> bytes:

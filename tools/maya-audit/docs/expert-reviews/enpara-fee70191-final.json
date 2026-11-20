@@ -1,0 +1,39 @@
+{
+ "_about": "Efsa's notes on the Ek in her final Enpara client file (13 Nov 2026, «Kaynak eşlemesi» › «Kaynak notları»), kept as labels (DECISIONS 376). The client file itself stays outside the repository.",
+ "audit": "enpara fee70191 (Akıllı ~150, 2026-11-11, run on fb4f070)",
+ "audit_id": "fee70191",
+ "reviewer": "SEO expert (team)",
+ "reviewed_on": "2026-11-13",
+ "review": "final client file",
+ "source_file": "Enpara_SEO_Analizi_2026-11-13.xlsx (not in the repository)",
+ "summary": "Source notes the team left uncorrected in the final file; each is a rule for every audit.",
+ "follow_up": "DECISIONS 376",
+ "cards": [
+  {
+   "card": "R-376-1",
+   "title": "Bulgu kimlikleri «Bulgular» sekmesinde olmalı",
+   "rule_ids": [],
+   "expert_note": "Bulgu bazında: 2 bulgu kimliği «Bulgular» sekmesinde yok (Kaynak notları, düzeltilmedi)",
+   "verdict": "wrong",
+   "cell": "Kaynak eşlemesi › Kaynak notları",
+   "labels": [
+    {
+     "id": "enp2-R376-1-ids-in-findings",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Bulgu bazında",
+     "column": "Bulgu kimliği",
+     "regex": "^[A-Z]{2,5}-\\d+( ·|$)"
+    },
+    {
+     "id": "enp2-R376-1-rg28",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Kontrol raporu",
+     "column": "Kural",
+     "regex": "^RG-2[78]$|^RG-30$"
+    }
+   ]
+  }
+ ]
+}

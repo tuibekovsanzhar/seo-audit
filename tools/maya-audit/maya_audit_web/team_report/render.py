@@ -877,11 +877,14 @@ def write_appendix(d, out):
     from maya_audit import client_appendix, release_gate  # type: ignore
     report = json.loads(Path(d["_report_path"]).read_text(encoding="utf-8"))
     affected = json.loads(Path(d["_affected_path"]).read_text(encoding="utf-8")) if d.get("_affected_path") else None
-    content, sealed = appendix_bytes(report, affected, d.get("_confirmations") or {}, d["lang"], d.get("_business"),
-                                     todos=(d.get("todos") or []) + (d.get("notes_more") or []) or None,
-                                     maya=maya_bundle(d.get("_artifacts")), text_check=text_record(d, report))
+    files, sealed = appendix_files(report, affected, d.get("_confirmations") or {}, d["lang"], d.get("_business"),
+                                   todos=(d.get("todos") or []) + (d.get("notes_more") or []) or None,
+                                   maya=maya_bundle(d.get("_artifacts")), text_check=text_record(d, report))
+    content = files["client"]
     path = out.with_name(out.stem + ("-appendix.xlsx" if d["lang"] == "en" else "-ek.xlsx"))
     path.write_bytes(content)
+    if files.get("team"):  # DECISIONS 376: the text check and the fix log, for the team only
+        path.with_name(out.stem + ("-team.xlsx" if d["lang"] == "en" else "-ekip.xlsx")).write_bytes(files["team"])
     problems = [f"HATA: {v['rule']}: {v['message']}" for v in
                 release_gate.check_client_output(sealed.report, appendix_ids=client_appendix.finding_ids(content))]
     return path, problems
@@ -910,6 +913,19 @@ def text_record(d, report=None):
 
 def appendix_bytes(report, affected, confirmations, lang, business=None, todos=None, maya=None, text_check=NOT_GIVEN,
                    previous=None):
+    """(the client Ek's bytes, the final result): `appendix_files`'s client file (DECISIONS 376)."""
+    files, sealed = appendix_files(report, affected, confirmations, lang, business, todos, maya, text_check, previous)
+    return files["client"], sealed
+
+
+def appendix_book(files: dict) -> dict:
+    """{sheet: rows} of the client Ek and the team file together, for checks that read both (DECISIONS 376)."""
+    from maya_audit import xlsx  # type: ignore
+    return {**xlsx.read(files["client"]), **(xlsx.read(files["team"]) if files.get("team") else {})}
+
+
+def appendix_files(report, affected, confirmations, lang, business=None, todos=None, maya=None, text_check=NOT_GIVEN,
+                   previous=None):
     """The XLSX appendix (DECISIONS 300 (4)) from the saved report, its address list and the owner's manual checks:
     (bytes, the final result). The one function of the skill's `-ek.xlsx` and the web app's "Ek (XLSX)" button, so
     both files are the same (DECISIONS 307). `todos`: the team report's cards, so the "Özet" sheet has the PDF's
@@ -927,7 +943,7 @@ def appendix_bytes(report, affected, confirmations, lang, business=None, todos=N
             untranslated.append((where or "metin", shown[0]))
         return shown[0]
 
-    content = client_appendix.build(selection, lang, sealed.affected,
+    files = client_appendix.build_files(selection, lang, sealed.affected,
                                     title=lambda cid, text: kept(cid, w.title(cid, text, lang)), fix=lambda text: kept("fix", w.fix(text, lang)),
                                     label=lambda text: kept("label", w.label(text, lang)), line=lambda text: kept("line", w.line(text, lang)),
                                     todos=todos, words=plain_words(lang), places=sealed.cards,  # DECISIONS 337
@@ -935,7 +951,7 @@ def appendix_bytes(report, affected, confirmations, lang, business=None, todos=N
                                     text_check=None if text_check is NOT_GIVEN else
                                     (lambda: text_gate.with_untranslated(text_check, untranslated, lang)),
                                     previous=previous, report=sealed.report)  # DECISIONS 363
-    return content, sealed
+    return files, sealed
 
 
 def maya_bundle(artifacts) -> dict:

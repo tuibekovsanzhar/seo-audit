@@ -5864,3 +5864,27 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      (docProps/core.xml: creator "Maya Audit", description "Maya Audit <version> · commit <c> · built <time> UTC",
      version, created; `xlsx.workbook(properties=…)`, `version_stamp.properties`). The PDF's older "Motor" line
      (engine version and audit id, since before 373) is unchanged. Tests: `tests/test_version_stamp_375.py`.
+376. **The Ek as the team's full client file (Efsa's final Enpara file; Owner, 2026-11-20; plan
+     `docs/proposals/EK-FULL-FILE.md` with the owner's decisions D1-D5). Global for every audit; Enpara is only the
+     test case and its file never enters the repository.** Built in phases, a commit each.
+     *Phase 1, the frame* (`maya_audit/ek_frame.py`): the client Ek starts with "Kapak" and follows the team's sheet
+     order (Maya's own data sheets Genel durum, Organik×AI and Sayfa detay last, D1). Every sheet has the Maya band
+     above its header: "maya · <brand> SEO analizi · <sheet>", then "← Kapak" and "Kaynak: …" with each source's own
+     period (the audit and its crawl date; each Maya dataset and its period, listed side by side, never summed or
+     merged; "Maya dışa aktarımından hesaplandı" where Maya computes what the team took from the dashboard). The
+     writer moves the header, the frozen pane, the filter, the dropdowns and every link into a banded sheet down with
+     the band; `xlsx.read` leaves the band out (`band=True` keeps it). Kapak: title, the expert line (D5: "SEO uzmanı
+     değerlendirmesinden geçmiştir" only when every row waiting for an expert has a decision, else "Uzman teyidi
+     bekliyor: N madde", or "Uzman teyidi gereken madde yok"), the date it was made (not a measurement date), what is
+     and is not covered (GA4, URL inspection, no impact estimate, no Maya data), source files, the periods table, the
+     colour legend (source / computed / expert input / green Search Console header) and a linked sheet guide.
+     *Internal sheets* (D1): "Kontrol raporu" and "Düzeltme kaydı" leave the client Ek for a team file
+     (`client_appendix.build_files` → {"client", "team", "record"}; the skill writes `-ekip.xlsx`, the web app offers
+     "Ekip dosyası (XLSX)"); a blocked text check marks the client Ek's cover "TASLAK". *PDF*: the old "Motor: Maya
+     Audit <version> · denetim <id>" line is removed too. *Text check*: RG-27 (one count stated with different values
+     on different sheets), RG-28 (a finding ID or a check name in an ID column that "Bulgular" does not list), RG-30
+     (a link to a missing sheet or past the last row), all hard. RG-28 found Efsa's source note on the saved audits:
+     a note card's observation rows carried the card's check names as finding IDs ("ACC-8-66d7edcf · ACC-8 · IDX-3 ·
+     IDX-5 · STR-10", "STR-2"), and link rows of `idx6.parameters` the check name "IDX-6": such rows now carry no
+     finding ID (the checks go to "Kontrol"; the rule stays in "Kural"). Tests: `tests/test_ek_frame_376.py`; fix log
+     item 117; Enpara labels enp2-R376-1-*.

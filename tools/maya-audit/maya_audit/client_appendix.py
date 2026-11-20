@@ -447,6 +447,13 @@ def read_time(value: str | None, approx: bool, lang: str) -> str:
     return text + (f" — {R['read_approx']}" if approx else "")
 
 
+def _finding_or_blank(fid) -> str:
+    """DECISIONS 376: the "Bulgu kimliği" cell holds a finding's ID or nothing: a check's own observation (a link of
+    `idx6.parameters`, keyed by its check) has no finding; its rule is in "Kural"."""
+    from .page_rows import FINDING_ID
+    return str(fid) if fid and FINDING_ID.fullmatch(str(fid)) else ""
+
+
 def where_rows(places: dict | None, todos: list[dict] | None, lang: str) -> list[list]:
     """DECISIONS 337: the "Bağlantı yerleri" rows: one per address with a problem and the page or entry that names it
     (`final.broken_link_cards`), numbered by the PDF's cards. DECISIONS 340: a sitemap entry's <loc> as the file
@@ -497,7 +504,7 @@ def where_rows(places: dict | None, todos: list[dict] | None, lang: str) -> list
             out.append([card.get(fid, ""), shown(r.get("links_to")), status, page, text, href,
                         Wd["positions"].get(r.get("position") or "", ""), Wd["yes"] if r.get("in_sitemap") or kind == "sitemap" else Wd["no"],
                         unquote(r.get("sitemap_file") or ""), loc, line if line is not None else "", read,
-                        suggest, cause, fid, r.get("rule_id") or ""])
+                        suggest, cause, _finding_or_blank(fid), r.get("rule_id") or ""])
     return sorted(out, key=lambda row: (row[0] == "", row[0] if row[0] != "" else 0))
 
 
@@ -522,7 +529,7 @@ def redirect_rows(places: dict | None, todos: list[dict] | None, lang: str) -> l
             same = bool(r.get("source")) and r.get("source") == r.get("ends_at")
             out.append([card.get(fid, ""), shown(r.get("source")) if r.get("source") else Wd["not_linked"], text,
                         Wd["positions"].get(r.get("position") or "", ""), shown(r.get("links_to")), hop,
-                        shown(r.get("ends_at")), Rw["self"] if same else "", fid, r.get("rule_id") or ""])
+                        shown(r.get("ends_at")), Rw["self"] if same else "", _finding_or_blank(fid), r.get("rule_id") or ""])
     return sorted(out, key=lambda row: (row[0] == "", row[0] if row[0] != "" else 0))
 
 
@@ -852,40 +859,59 @@ def changed_sheet(report: dict, previous: dict | None, lang: str = "tr") -> dict
 
 def build(selection: dict, lang: str = "tr", lists: dict | None = None, text_check=None, previous: dict | None = None,
           report: dict | None = None, **wording) -> bytes:
-    """`text_check`: the release gate's text check (DECISIONS 353), a record or a function returning one once every
-    sheet is written (so the sentences the sheets showed untranslated are in it); its sheet "Kontrol raporu" comes last."""
+    """The client Ek's bytes (`build_files`'s "client"): the team's internal sheets are not in it (DECISIONS 376)."""
+    return build_files(selection, lang, lists, text_check, previous, report, **wording)["client"]
+
+
+def build_files(selection: dict, lang: str = "tr", lists: dict | None = None, text_check=None,
+                previous: dict | None = None, report: dict | None = None, now=None, **wording) -> dict:
+    """{"client": the Ek's bytes, "team": the team file's bytes or None, "record": the text check}.
+
+    `text_check`: the release gate's text check (DECISIONS 353), a record or a function returning one once every
+    sheet is written (so the sentences the sheets showed untranslated are in it). DECISIONS 376: the client Ek is
+    framed (Kapak first, the team's sheet order, the Maya band on every sheet); "Kontrol raporu" and "Düzeltme
+    kaydı" are internal and go into the team file, never the client Ek (owner's D1)."""
+    from . import ek_frame, version_stamp
     made = sheets(selection, lang, lists, **wording)
     changed = changed_sheet(report, previous, lang) if report is not None else None  # DECISIONS 363
     if changed:
         made.append(changed)
+    team: list[dict] = []
+    # DECISIONS 375: the version stamp is for the team: one short line, the last row of "Yöntem", and the file's
+    # document properties (with the build time); never the first row of "Kapsam"
+    method = next((m for m in made if m["name"] == WORDS[lang]["method_sheet"]), None)
+    if method is not None:
+        method["rows"] = list(method["rows"]) + [[version_stamp.short(lang)]]
+    summary = (wording.get("maya") or {}).get("summary")
+    framed = ek_frame.frame(made, selection, report, summary, lang, now)
+    record = None
+    if text_check is not None:
+        from . import text_gate
+        record = text_check() if callable(text_check) else text_check
+        # DECISIONS 361: RG-19 on the file's own "Ne yapılmalı" cells too: advice for another platform blocks
+        record = text_gate.with_platform_advice(record, advice_cells(framed), selection.get("platform"), lang)
+        # DECISIONS 368: RG-24 names each problem the Özet leaves out because it has no concrete example
+        record = text_gate.with_no_example(record, [n for m in framed for n in m.get("_without_example") or []], lang)
+        # DECISIONS 371: a card whose "Örnek" is empty
+        record = text_gate.with_no_example(record, [n for m in framed for n in m.get("_empty_cards") or []], lang, cards=True)
+        record = text_gate.with_consistency(record, framed, lang)  # DECISIONS 374: RG-25, RG-26
+        record = text_gate.with_file_checks(record, framed, lang)  # DECISIONS 376: RG-27, RG-28, RG-30
+        team.append(text_gate.sheet(record, lang))
+        if record and record.get("decision") == text_gate.BLOCKED:  # the client Ek says it is a draft on its cover
+            framed[0]["band"][1] = [text_gate.DRAFT_EK["tr" if lang == "tr" else "en"]] + framed[0]["band"][1]
     from .fix_log import ek_sheet  # DECISIONS 363: the SEO team's notes and how each was fixed, newest first
     # DECISIONS 373: an item measured on another brand's audit says "bu denetimde doğrulanmadı" here
     start = ((report or {}).get("crawl") or {}).get("start_url") or ""
     host = urlsplit(start).hostname if start else None
     log = ek_sheet(lang, host) if lang == "tr" else None  # its texts are Turkish, as the team's notes are
     if log:
-        made.append(log)
-    if text_check is not None:
-        from . import text_gate
-        record = text_check() if callable(text_check) else text_check
-        # DECISIONS 361: RG-19 on the file's own "Ne yapılmalı" cells too: advice for another platform blocks
-        record = text_gate.with_platform_advice(record, advice_cells(made), selection.get("platform"), lang)
-        # DECISIONS 368: RG-24 names each problem the Özet leaves out because it has no concrete example
-        record = text_gate.with_no_example(record, [n for m in made for n in m.get("_without_example") or []], lang)
-        # DECISIONS 371: a card whose "Örnek" is empty
-        record = text_gate.with_no_example(record, [n for m in made for n in m.get("_empty_cards") or []], lang, cards=True)
-        record = text_gate.with_consistency(record, made, lang)  # DECISIONS 374: RG-25, RG-26
-        made.append(text_gate.sheet(record, lang))
-    for m in made:
-        m.pop("_without_example", None)
-        m.pop("_empty_cards", None)
-    # DECISIONS 375: the version stamp is for the team: one short line, the last row of "Yöntem", and the file's
-    # document properties (with the build time); never the first row of "Kapsam"
-    from . import version_stamp
-    method = next((m for m in made if m["name"] == WORDS[lang]["method_sheet"]), None)
-    if method is not None:
-        method["rows"] = list(method["rows"]) + [[version_stamp.short(lang)]]
-    return xlsx.workbook(made, properties=version_stamp.properties())
+        team.append(log)
+    for m in framed + team:
+        for k in [k for k in m if k.startswith("_")]:
+            m.pop(k)
+    props = version_stamp.properties()
+    return {"client": xlsx.workbook(framed, properties=props), "team": xlsx.workbook(team, properties=props) if team else None,
+            "record": record}
 
 
 ADVICE_COLUMNS = ("Ne yapılmalı", "What to do")

@@ -180,8 +180,9 @@ def test_the_summary_lists_a_problem_only_with_a_concrete_example_and_rg24_names
     bare["evidence"] = {"articles": 4, "without_author": 1}
     sel = cs.select(report([shown, bare]))
     record = {"version": "t", "decision": "PASS", "violations": [], "counts": {}, "hard": 0}
-    book = xlsx.read(client_appendix.build(sel, "tr", todos=[{"n": None, "appendix_only": True, "finding_ids": []}],
-                                           text_check=record))
+    files = client_appendix.build_files(sel, "tr", todos=[{"n": None, "appendix_only": True, "finding_ids": []}],
+                                        text_check=record)
+    book = {**xlsx.read(files["client"]), **xlsx.read(files["team"])}  # DECISIONS 376: "Kontrol raporu" is the team's
     summary = book["Özet"]
     assert summary[0][-1] == "Örnek"
     others = next(i for i, r in enumerate(summary) if str(r[1]).startswith("Diğer bulgular"))

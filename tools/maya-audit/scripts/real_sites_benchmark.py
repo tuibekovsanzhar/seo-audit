@@ -462,10 +462,11 @@ def rebuild_expert(aid: str, work: Path, corpus=None) -> dict:
     data, _ = build_data.build_from_files(a / "report.json", "tr", audit_id=aid[:8], affected_path=a / "affected-urls.json")
     report = read(data["_report_path"])
     affected = read(data["_affected_path"])
-    content, _ = render.appendix_bytes(report, affected, data.get("_confirmations") or {}, "tr", data.get("_business"),
-                                       todos=build_data.cards_for_appendix(data), maya=render.maya_bundle(a),
-                                       text_check=render.text_record(data, report))
-    return {"report": report, "data": data, "book": xlsx.read(content), "cards": data.get("todos") or []}
+    files, _ = render.appendix_files(report, affected, data.get("_confirmations") or {}, "tr", data.get("_business"),
+                                     todos=build_data.cards_for_appendix(data), maya=render.maya_bundle(a),
+                                     text_check=render.text_record(data, report))
+    # DECISIONS 376: the client Ek and the team file (its "Kontrol raporu") together
+    return {"report": report, "data": data, "book": render.appendix_book(files), "cards": data.get("todos") or []}
 
 
 def run_expert(work: Path, corpus=None, built: dict | None = None) -> list[dict]:

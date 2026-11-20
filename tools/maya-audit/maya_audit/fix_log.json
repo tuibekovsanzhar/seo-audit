@@ -2155,6 +2155,27 @@
     ],
     "test": "tests/test_mmi_check_374.py"
    }
+  },
+  {
+   "kaynak": "Efsa — Enpara son dosyası, «Kaynak notları», 13 Kasım (DECISIONS 376)",
+   "brand_key": "enpara",
+   "sorun": "Bulgu bazında'da 'Bulgular'da olmayan bulgu kimlikleri vardı (not kartlarının satırlarında kontrol adları)",
+   "genel": "Bir sekmedeki bulgu kimliği «Bulgular»da yoktu: not kartı ve bağlantı satırları kimlik yerine kontrol adı taşıyordu",
+   "nasil": "Bulgu olmayan gözlem satırı kimlik taşımaz (kontrol adı «Kontrol» sütununda); metin kontrolü RG-28 her kimliği «Bulgular»da arar.",
+   "decisions": [
+    376
+   ],
+   "check": {
+    "sheet_not": {
+     "sheet": "Bulgu bazında",
+     "column": "Bulgu kimliği",
+     "regex": "^[A-Z]{2,5}-\\d+( ·|$)"
+    },
+    "labels": [
+     "enp2-R376-1-ids-in-findings"
+    ],
+    "test": "tests/test_ek_frame_376.py"
+   }
   }
  ]
 }

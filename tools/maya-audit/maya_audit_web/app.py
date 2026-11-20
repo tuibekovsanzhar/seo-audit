@@ -64,7 +64,9 @@ DOWNLOAD_NAMES = {"json": ("json", "application/json"), "markdown": ("md", "text
                   # The client brief ("Müşteri özeti"): at most 5 pages for the business owner (DECISIONS 319).
                   "brief": ("pdf", "application/pdf"),
                   # The team's sector audit workbook filled from the audit (DECISIONS 324).
-                  "sector": ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+                  "sector": ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+                  # DECISIONS 376: the team file beside the Ek: the text check and the fix log, never sent to the client.
+                  "teamfile": ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
 _PROJECT_ID = re.compile(r"[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?")
 
 
@@ -1131,6 +1133,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                 "team_report": {"prepare": f"{base}/team-report", "pdf": f"{base}/downloads/team", "xlsx": f"{base}/downloads/xlsx",
                                 "default_lang": "tr", "brief": f"{base}/client-brief",
                                 "sector": f"{base}/downloads/sector", "sector_name": sector_name(audit),  # DECISIONS 324
+                                "teamfile": f"{base}/downloads/teamfile",  # DECISIONS 376
                                 "maya": f"{base}/maya-data"},  # DECISIONS 352
                 "overview_url": f"{base}/overview",
                 # DECISIONS 329: the total time and each step's, for "How the audit ran"
@@ -1665,6 +1668,11 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         lang = lang or current_language()
         return download_name(audit, "xlsx").replace(".xlsx", f"-ek-{lang}.xlsx" if lang == "tr" else f"-appendix-{lang}.xlsx")
 
+    def teamfile_name(audit: dict[str, Any], lang: str | None = None) -> str:
+        """DECISIONS 376: the team file's name: `-ekip-tr.xlsx` / `-team-en.xlsx`."""
+        lang = lang or current_language()
+        return download_name(audit, "xlsx").replace(".xlsx", f"-ekip-{lang}.xlsx" if lang == "tr" else f"-team-{lang}.xlsx")
+
     def sector_name(audit: dict[str, Any]) -> str:
         """DECISIONS 324: the sector audit workbook's file name (Turkish only, as the team's file)."""
         return download_name(audit, "xlsx").replace(".xlsx", "-sektor-audit.xlsx")
@@ -1753,7 +1761,7 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         return {"confirm": [row(g) for g in selection["confirm"]], "reviewed": [row(g) for g in reviewed],
                 "entries": review["entries"], "p0": [p0_row(g) for g in selection["cards"]], "p0_entries": review.get("p0") or []}
 
-    def appendix_xlsx(audit: dict[str, Any], now: tuple | None = None) -> bytes:
+    def appendix_xlsx(audit: dict[str, Any], now: tuple | None = None, part: str = "client") -> bytes | None:
         """The XLSX appendix: the same function the maya-audit-pro skill writes its `-ek.xlsx` with (DECISIONS 307),
         with the team report's cards in this language, so "Özet" lists the PDF's cards (DECISIONS 322), and the
         release gate's text check of those cards as "Kontrol raporu" (DECISIONS 353)."""
@@ -1773,9 +1781,10 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
                         if other else None)
         except Exception:  # noqa: BLE001  the sheet is left out, never the file
             previous = None
-        return service.appendix(report, aff or None, manual_review.confirmations(manual_review.load(review_path(audit))),
-                                lang, business_choice(audit), todos=todos, artifacts=artifact_folder(audit["id"]),
-                                text_check=record, previous=previous)
+        # DECISIONS 376: `part` "client" (the Ek) or "team" (the team file: the text check and the fix log)
+        return service.appendix_files(report, aff or None, manual_review.confirmations(manual_review.load(review_path(audit))),
+                                      lang, business_choice(audit), todos=todos, artifacts=artifact_folder(audit["id"]),
+                                      text_check=record, previous=previous)[part]
 
     def text_check_of(audit: dict[str, Any], lang: str) -> dict[str, Any] | None:
         """DECISIONS 353: the release gate's text check of this audit's team report in `lang` (provider-free, no model),
@@ -1973,13 +1982,13 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         blocked = False
         if format != "evidence":  # the raw evidence is not a report; every report form passes the release gate
             # The appendix belongs to the team report: it is gated and built on the current-engine copy (DECISIONS 308).
-            now = current_report(audit)[:2] if format in ("xlsx", "sector") else None
+            now = current_report(audit)[:2] if format in ("xlsx", "sector", "teamfile") else None
             # DECISIONS 349: the team's working files come from a plain link the browser saves as it is: a blocked
             # report gives the marked draft ("-draft.xlsx"), never a JSON error saved as "xlsx.json".
-            sealed = publishable(audit, draft or format in ("xlsx", "sector"), now)
+            sealed = publishable(audit, draft or format in ("xlsx", "sector", "teamfile"), now)
             blocked = sealed.decision == release_gate.BLOCKED
             gate = {"X-Maya-Release-Gate": str(sealed.decision)}
-            if format in ("xlsx", "sector"):
+            if format in ("xlsx", "sector", "teamfile"):
                 # DECISIONS 353: the text check's blocking problems make the team's files a marked draft too.
                 checked = text_check_of(audit, "tr" if format == "sector" else report_language(audit, lang))
                 gate["X-Maya-Text-Check"] = str((checked or {}).get("decision") or "NOT_RUN")
@@ -2008,6 +2017,17 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
             if blocked:
                 name = name.replace(".xlsx", "-draft.xlsx")
             return Response(appendix_xlsx(audit, now), media_type=media_type,
+                            headers={"Content-Disposition": f'attachment; filename="{name}"', "Cache-Control": "no-store",
+                                     "X-Maya-Language": chosen, **gate})
+        if format == "teamfile":
+            chosen = report_language(audit, lang)
+            content = appendix_xlsx(audit, now, part="team")
+            if content is None:
+                raise ApiError(404, "download_not_found", t("error.download_not_found"))
+            name = teamfile_name(audit, chosen)
+            if blocked:
+                name = name.replace(".xlsx", "-draft.xlsx")
+            return Response(content, media_type=media_type,
                             headers={"Content-Disposition": f'attachment; filename="{name}"', "Cache-Control": "no-store",
                                      "X-Maya-Language": chosen, **gate})
         if format == "sector":

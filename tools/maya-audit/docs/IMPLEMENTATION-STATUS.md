@@ -2887,3 +2887,28 @@ the file's document properties (docProps/core.xml). No check or finding text cha
 
 Next: the plan for the Ek as the team's full client file (`docs/proposals/EK-FULL-FILE.md`), waiting for the
 owner's OK.
+
+## The Ek as the team's full client file, phase 1: the frame (DECISIONS 376, 2026-11-20)
+
+VERIFIED locally; not pushed. Plan `docs/proposals/EK-FULL-FILE.md` (`aa28744`). Kapak first and the team's sheet
+order; the Maya band, "← Kapak" and each source's period on every sheet; the text check and the fix log in a team file
+("-ekip.xlsx", the web app's "Ekip dosyası"); no "Motor" line in the PDF; RG-27, RG-28, RG-30. RG-28 found Efsa's source
+note on the saved audits (note-card rows and `idx6.parameters` link rows with check names as finding IDs): fixed.
+
+| Saved audit (rebuilt from copies, no request) | Client sheets | Text check |
+|---|---|---|
+| MMI 536b4b64 | 20 | PASS (RG-28 before the link-row fix) |
+| Carpex 1fd871f0 | 21 | PASS |
+| Enpara fee70191 | 15 | PASS (RG-28 before the note-row fix) |
+| Atasun f06a2129 | 15 | PASS |
+| İş Bankası 1b81bee4 | 15 | PASS |
+| Ticimax c77ebf6d | 21 | PASS |
+| Nature's Garden 342a0b14 | 20 | PASS |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_ek_frame_376.py` | `16 passed` |
+| fast suite (with the frozen set) | `1 failed, 3535 passed, 4 skipped, 135 deselected` (the 15-card count of the second Enpara review: the new label moved to `enpara-fee70191-final.json`; then the review and lock tests `63 passed`) |
+| `scripts/real_sites_benchmark.py expert` | `92 labels: 92 hold, 0 red` |
+| `ruff --select E9,F821,F841` | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |

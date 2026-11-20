@@ -17,8 +17,11 @@ from test_v03_client_report import SITE, finding, page, report
 
 ROOT = Path(__file__).resolve().parents[1]
 TR_SHEETS = ["Nasıl okunur", "Özet", "Sayfa bazında", "Bulgu bazında", "Kontrol listesi", "Kontrol listesi özeti",  # 342
-             "Bulgular", "Etkilenen adresler", "Kilit sayfalar", "Şablonlar", "Kapsam", "Yöntem",
-             "Düzeltme kaydı"]  # DECISIONS 363: Turkish Eks only
+             "Bulgular", "Etkilenen adresler", "Kilit sayfalar", "Şablonlar", "Kapsam", "Yöntem"]
+# DECISIONS 376: the written file: Kapak first, the team's order, the Maya band above every header (BAND rows)
+TR_FILE = ["Kapak", "Nasıl okunur", "Özet", "Kilit sayfalar", "Sayfa bazında", "Bulgu bazında", "Bulgular", "Etkilenen adresler",
+           "Şablonlar", "Kontrol listesi özeti", "Kontrol listesi", "Kapsam", "Yöntem"]
+BAND = 2
 EN_SHEETS = ["How to read", "Summary", "By page", "By finding", "Checklist", "Checklist totals",  # 342
              "Findings", "Affected URLs", "Key pages", "Templates", "Coverage", "Method"]
 
@@ -45,7 +48,8 @@ def _sheets(lang="tr", todos=None, r=None):
 # ---------------------------------------------------------------- the four sheets
 
 def test_the_reader_sheets_come_first_in_the_file_language():
-    assert list(_sheets("tr")) == TR_SHEETS[:-1]  # "Düzeltme kaydı" is added by build() (DECISIONS 363)
+    assert list(_sheets("tr")) == TR_SHEETS  # the fix log is the team file's (DECISIONS 363, 376)
+    assert list(xlsx.read(client_appendix.build(cs.select(_report()), "tr"))) == TR_FILE
     assert list(_sheets("en")) == EN_SHEETS
     book = xlsx.read(client_appendix.build(cs.select(_report()), "en"))
     assert book["By finding"][0][:7] == ["Problem", "Severity", "Issue type", "Page", "Read?", "Measured value", "What to do"]  # 323
@@ -116,13 +120,13 @@ def test_summary_has_the_pdf_cards_each_linked_to_its_first_row():
     assert [r[7] for r in cards] == ["2", "2", "0"]  # addresses (after "Priority (P0-P3)", DECISIONS 324)
     found = book["By finding"]
     card = found[0].index("Card")
-    for n, ref in ((1, "I4"), (2, "I5")):
+    for n, ref in ((1, f"I{4 + BAND}"), (2, f"I{5 + BAND}")):
         target = links["Summary"][ref]
         m = re.fullmatch(r"#'By finding'!A(\d+)", target)
         assert m, target
-        row = int(m.group(1))
+        row = int(m.group(1)) - BAND  # DECISIONS 376: the link points below the band
         assert found[row - 1][card] == str(n) and all(r[card] != str(n) for r in found[1:row - 1])
-    assert "I6" not in links["Summary"]  # card 3 names checks' observations, no finding row: no link
+    assert f"I{6 + BAND}" not in links["Summary"]  # card 3 names checks' observations, no finding row: no link
     assert all(r[card] != "3" for r in found[1:])  # a check id on a note card never takes a finding
 
 
@@ -139,14 +143,15 @@ def test_addresses_are_clickable_and_hosts_are_plain_names():
     page_col = found[0].index("Sayfa")
     letter = "ABCDEFGHIJKLM"[page_col]
     for i, row in enumerate(found[1:], 2):
-        ref = f"{letter}{i}"
+        ref = f"{letter}{i + BAND}"
         if row[page_col].startswith("https://"):
             assert links["Bulgu bazında"][ref] == row[page_col]
         else:
             # shown as the plain host name, still opening the host's root when clicked
             assert row[page_col] in ("shop.test", "www.shop.test")
             assert links["Bulgu bazında"][ref] == f"https://{row[page_col]}/"
-    assert all(v.startswith(SITE) for v in links["Sayfa bazında"].values()) and links["Sayfa bazında"]
+    pages = {k: v for k, v in links["Sayfa bazında"].items() if v != "#'Kapak'!A1"}  # the band's "← Kapak" (DECISIONS 376)
+    assert all(v.startswith(SITE) for v in pages.values()) and pages
     # DECISIONS 322 (7): the technical address sheet shows a certificate's hosts as host names too
     urls = book["Etkilenen adresler"]
     assert [r[3] for r in urls[1:] if r[0] == "IDX-2-c"] == ["shop.test", "www.shop.test"]
@@ -212,12 +217,13 @@ def test_the_file_is_well_formed_with_frozen_headers_filters_wrapping_and_extern
                 ET.fromstring(z.read(name))  # every part parses
         types = z.read("[Content_Types].xml").decode()
         sheets = [n for n in names if re.fullmatch(r"xl/worksheets/sheet\d+\.xml", n)]
-        assert len(sheets) == len(TR_SHEETS) and all(f"/{n}" in types for n in sheets)
-        how, found = z.read("xl/worksheets/sheet1.xml").decode(), z.read("xl/worksheets/sheet4.xml").decode()
+        assert len(sheets) == len(TR_FILE) and all(f"/{n}" in types for n in sheets)
+        found_at = TR_FILE.index("Bulgu bazında") + 1
+        how, found = z.read("xl/worksheets/sheet2.xml").decode(), z.read(f"xl/worksheets/sheet{found_at}.xml").decode()
         assert 'state="frozen"' not in how and "<autoFilter" not in how
         assert 'state="frozen"' in found and "<autoFilter" in found and "<hyperlinks>" in found
         assert found.index("<autoFilter") < found.index("<hyperlinks>")  # the schema's order
-        rels = z.read("xl/worksheets/_rels/sheet4.xml.rels").decode()
+        rels = z.read(f"xl/worksheets/_rels/sheet{found_at}.xml.rels").decode()
         assert 'TargetMode="External"' in rels and SITE + "/a" in rels
         styles = z.read("xl/styles.xml").decode()
         assert 'wrapText="1"' in styles and "<u/>" in styles
@@ -283,7 +289,7 @@ def test_each_problem_card_offers_its_affected_pages_with_the_full_list(finished
 def test_the_web_appendix_has_the_reader_sheets_and_the_pdf_cards(finished):
     client, audit = finished
     book = xlsx.read(client.get(f"{API}/audits/{audit['id']}/downloads/xlsx", params={"lang": "tr"}).content)
-    assert list(book)[:4] == TR_SHEETS[:4]
+    assert list(book)[:4] == TR_FILE[:4]
     overview = client.get(f"{API}/audits/{audit['id']}/overview", params={"lang": "tr"}).json()
     titles = [row[1] for row in book["Özet"][3:]]
     assert [f["title"] for f in overview["fixes"]] == titles[:len(overview["fixes"])]

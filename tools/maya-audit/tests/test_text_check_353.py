@@ -143,7 +143,7 @@ def test_the_shipped_phrase_file_is_valid_and_holds_the_teams_examples():
 
 # ---------------------------------------------------------------- the sheet and the draft mark
 
-def test_the_kontrol_raporu_sheet_is_last_in_the_appendix():
+def test_the_kontrol_raporu_sheet_is_the_team_files_and_never_the_clients():
     from maya_audit import client_appendix
     record = text_gate.run(data(card(title="{x} düzeltin")), report(finding("F1")))
     sheet = text_gate.sheet(record, "tr")
@@ -155,10 +155,13 @@ def test_the_kontrol_raporu_sheet_is_last_in_the_appendix():
     original = client_appendix.sheets
     client_appendix.sheets = lambda *a, **k: [{"name": "Özet", "header": ["a"], "rows": [], "widths": [10]}]
     try:
-        made = xlsx.read(client_appendix.build({}, "tr", None, text_check=lambda: record))
+        files = client_appendix.build_files({}, "tr", None, text_check=lambda: record)
     finally:
         client_appendix.sheets = original
-    assert list(made)[-1] == "Kontrol raporu"
+    # DECISIONS 376: the text check is the team's: first sheet of the team file, never in the client Ek, whose cover
+    # says it is a draft when the check blocks
+    assert list(xlsx.read(files["team"]))[0] == "Kontrol raporu" and "Kontrol raporu" not in xlsx.read(files["client"])
+    assert xlsx.read(files["client"], band=True)["Kapak"][1][0].startswith("TASLAK")
 
 
 def test_a_blocked_team_report_says_draft_on_every_page():
@@ -352,7 +355,9 @@ def test_the_web_appendix_carries_the_check_and_says_its_decision(web):  # noqa:
     assert ek.status_code == 200
     assert ek.headers["X-Maya-Text-Check"] in ("PASS", "CONDITIONAL", "BLOCKED", "NOT_RUN")
     book = xlsx.read(ek.content)
-    assert list(book)[-1] == "Kontrol raporu"
+    assert "Kontrol raporu" not in book  # DECISIONS 376: in the team file
+    team = client.get(f"{API}/audits/{audit['id']}/downloads/teamfile", params={"lang": "tr"})
+    assert team.status_code == 200 and list(xlsx.read(team.content))[0] == "Kontrol raporu"
     if ek.headers["X-Maya-Text-Check"] == "BLOCKED":
         assert "-draft" in ek.headers["Content-Disposition"]
 

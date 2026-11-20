@@ -11,6 +11,7 @@ first 40), so a page outside the sample says that its detail was not kept, never
 """
 from __future__ import annotations
 
+import re
 from typing import Callable
 from urllib.parse import urlsplit
 
@@ -633,7 +634,10 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
             file = not_a_page(url)  # DECISIONS 347
             rec = {} if file else importance.get(url) or {}
             read = None if file else url.rstrip("/") in read_urls
-            rows.append({"finding_id": " · ".join(t.get("finding_ids") or []), "check_id": None, "rule_id": None,
+            # DECISIONS 376: an observation row is no finding: no finding ID (every ID the Ek shows is in "Bulgular");
+            # the card's checks go to "Kontrol"
+            checks = [i for i in t.get("finding_ids") or [] if not FINDING_ID.fullmatch(str(i))]
+            rows.append({"finding_id": "", "check_id": " · ".join(checks) or None, "rule_id": None,
                          "title": t.get("title") or "", "short": t.get("title") or "", "fix": (t.get("steps") or "").split("\n")[0],
                          "severity": t.get("severity") or "Info", "issue_type": "issue", "placement": "note", "card": t.get("n"),
                          "url": url, "address": display_address(url, None), "host_level": False, "page": not file,
@@ -645,6 +649,9 @@ def finding_rows(selection: dict, lists: dict | None = None, lang: str = "tr", *
     rows.sort(key=lambda r: (r["card"] is None, r["card"] or 0, r["read"] is False, order.get(r["severity"], 9), r["_group"],
                              -(r["importance"] if isinstance(r["importance"], (int, float)) else -1)))
     return rows
+
+
+FINDING_ID = re.compile(r"[A-Z]{2,5}-\d+-[0-9a-f]{6,}")
 
 
 def read_word(read: bool | None, lang: str) -> str:
@@ -693,8 +700,9 @@ def card_pages(rows: list[dict], n: int) -> list[dict]:
                                    "importance": r["importance"], "read": r["read"], "values": [], "finding_ids": []})
         if r["value"] and r["value"] not in row["values"]:
             row["values"].append(r["value"])
-        if r["finding_id"] not in row["finding_ids"]:
-            row["finding_ids"].append(r["finding_id"])
+        ref = r["finding_id"] or r.get("check_id") or ""  # an observation row names its card's checks (DECISIONS 376)
+        if ref and ref not in row["finding_ids"]:
+            row["finding_ids"].append(ref)
     result = list(out.values())
     result.sort(key=lambda p: (p["read"] is False, not isinstance(p["importance"], (int, float)), -(p["importance"] or 0)))
     return result

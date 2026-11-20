@@ -61,11 +61,12 @@ def rebuild(aid: str, work: Path, web: Path = WEB, previous: dict | None = None)
     if previous and (web / "audits" / previous["id"] / "artifacts" / "report.json").is_file():
         before = {**json.loads((web / "audits" / previous["id"] / "artifacts" / "report.json").read_text(encoding="utf-8")),
                   "_audit": {"id": previous["id"][:8], "date": previous["finished_at"][:10]}}
-    content, _ = render.appendix_bytes(report, affected, data.get("_confirmations") or {}, "tr", data.get("_business"),
-                                       todos=build_data.cards_for_appendix(data), maya=render.maya_bundle(a),
-                                       text_check=record, previous=before)
-    return {"report": report, "data": data, "book": xlsx.read(content), "cards": data.get("todos") or [],
-            "gate": (record or {}).get("decision") or text_gate.run(data, report)["decision"]}
+    files, _ = render.appendix_files(report, affected, data.get("_confirmations") or {}, "tr", data.get("_business"),
+                                     todos=build_data.cards_for_appendix(data), maya=render.maya_bundle(a),
+                                     text_check=record, previous=before)
+    # DECISIONS 376: the client Ek and the team file (its "Kontrol raporu") together
+    return {"report": report, "data": data, "book": render.appendix_book(files), "cards": data.get("todos") or [],
+            "gate": (files.get("record") or record or {}).get("decision") or text_gate.run(data, report)["decision"]}
 
 
 def run_tests(files: list[str]) -> dict[str, bool]:

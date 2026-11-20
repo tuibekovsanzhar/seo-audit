@@ -112,7 +112,8 @@ def test_every_card_has_an_example_and_rg24_names_a_card_without_one():
     todos = [{"n": 1, "title": "Sitemap", "severity": "S4", "issue_type": "issue", "finding_ids": ["S"], "all_urls": []},
              {"n": 2, "title": "Authors", "severity": "S4", "issue_type": "issue", "finding_ids": ["B"], "all_urls": []}]
     record = {"version": "t", "decision": "PASS", "violations": [], "counts": {}, "hard": 0}
-    book = xlsx.read(client_appendix.build(cs.select(report([stamped, bare])), "tr", todos=todos, text_check=record))
+    files = client_appendix.build_files(cs.select(report([stamped, bare])), "tr", todos=todos, text_check=record)
+    book = {**xlsx.read(files["client"]), **xlsx.read(files["team"])}  # DECISIONS 376: "Kontrol raporu" is the team's
     cards = {r[0]: r for r in book["Özet"] if r and r[0] in ("1", "2")}
     assert cards["1"][-1] == "sitemap.xml: 10 adresin 10'u aynı lastmod'u taşıyor (2026-11-16)"
     rg = [r for r in book["Kontrol raporu"] if r[0] == "RG-24"]

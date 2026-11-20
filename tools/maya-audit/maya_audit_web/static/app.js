@@ -1452,6 +1452,9 @@ function teamReport(team) {
       el("div", { class: "dl-card" }, el("strong", { text: T("download.pdf.title") }), el("p", { class: "muted small", text: T("download.pdf.about") }), pdfButton, why, ready),
       el("div", { class: "dl-card" }, el("strong", { text: T("download.xlsx.title") }), el("p", { class: "muted small", text: T("download.xlsx.about") }), xlsxLink),
       team.brief ? el("div", { class: "dl-card brief" }, el("strong", { text: T("download.brief.title") }), el("p", { class: "muted small", text: T("download.brief.about") }), briefButton, briefWhy, briefReady) : null,
+      // DECISIONS 376: the team file (text check and fix log), never the client's
+      team.teamfile ? el("div", { class: "dl-card" }, el("strong", { text: T("download.teamfile.title") }), el("p", { class: "muted small", text: T("download.teamfile.about") }),
+        el("a", { class: "button", href: team.teamfile + "?lang=" + lang, download: "" }, T("download.teamfile.get"))) : null,
       // DECISIONS 324: the team's sector audit workbook, filled from this audit (Turkish, as the team's own file)
       team.sector ? el("div", { class: "dl-card" }, el("strong", { text: T("download.sector.title") }), el("p", { class: "muted small", text: T("download.sector.about") }),
         el("a", { class: "button", href: team.sector, download: team.sector_name || "" }, T("download.sector.get"))) : null,

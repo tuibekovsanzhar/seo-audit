@@ -374,12 +374,16 @@ RULE_NAMES = {
            "RG-20": "Menü ya da giriş bağlantısını kaldırma önerisi", "RG-21": "Türkçe metinde İngilizce",
            "RG-22": "Aynı sayfalar için tekrarlanan kart", "RG-23": "Yasaklı ifade",
            "RG-24": "Örneği ve ölçülen değeri olmayan bulgu", "RG-25": "Aynı sayfa ve ölçüm için farklı değer",
-           "RG-26": "Eşiğini aşmayan örnek değer", "LLM": "İkinci okuyucu önerisi"},
+           "RG-26": "Eşiğini aşmayan örnek değer", "RG-27": "Aynı sayı sekmelerde farklı",
+           "RG-28": "Bulgular'da olmayan bulgu kimliği", "RG-30": "Kırık iç bağlantı",
+           "LLM": "İkinci okuyucu önerisi"},
     "en": {"RG-18": "Placeholder or a number not in the evidence", "RG-19": "Advice for another platform",
            "RG-20": "Advice to remove a menu or sign-in link", "RG-21": "English left in Turkish text",
            "RG-22": "Card repeated for the same pages", "RG-23": "Banned phrase",
            "RG-24": "Finding with no example or measured value", "RG-25": "Different values for one page and metric",
-           "RG-26": "Example value not over its own threshold", "LLM": "Second reader's suggestion"},
+           "RG-26": "Example value not over its own threshold", "RG-27": "One count stated differently across sheets",
+           "RG-28": "Finding ID missing from Findings", "RG-30": "Broken link inside the file",
+           "LLM": "Second reader's suggestion"},
 }
 
 
@@ -480,6 +484,73 @@ def with_consistency(record: dict | None, made: list[dict], lang: str = "tr") ->
             shown = ", ".join(f"{w}: {v} ms" for w, v in dict.fromkeys(values))
             extra.append(violation("RG-25", f"Ek: {path} için {metric} farklı değerlerle gösteriliyor ({shown})", hard=True,
                                    where="ek: Özet, Bulgular, Bulgu bazında", text=shown))
+    if not extra:
+        return record
+    violations = list(record["violations"]) + extra
+    counts = dict(record.get("counts") or {})
+    for v in extra:
+        counts[v["rule"]] = counts.get(v["rule"], 0) + 1
+    return {**record, "violations": violations, "counts": counts, "decision": decision(violations)}
+
+
+DRAFT_EK = {"tr": "TASLAK · metin kontrolü engelleyici bulgu buldu (ayrıntı ekip dosyasındaki «Kontrol raporu»nda)",
+            "en": "DRAFT · the text check found a blocking problem (details in the team file's \"Text check\")"}
+ID_COLUMNS = ("Bulgu kimliği", "Finding ID", "Kaynak bulgu kimlikleri", "Source finding IDs")
+
+
+def _cell_text(value) -> str:
+    return str(value.get("text") or "") if isinstance(value, dict) else str(value if value is not None else "")
+
+
+def with_file_checks(record: dict | None, made: list[dict], lang: str = "tr") -> dict | None:
+    """DECISIONS 376, on the client Ek's sheets as written: RG-27 one count (each sheet's `_counts`, {key: (value,
+    where)}) stated with different values; RG-28 a finding ID in a sheet that "Bulgular" does not list; RG-30 an
+    internal link to a sheet the file does not have, or past the last row of its sheet. All hard."""
+    if record is None:
+        return record
+    extra = []
+    stated: dict[str, list[tuple]] = {}
+    for m in made:
+        for key, (value, where) in (m.get("_counts") or {}).items():
+            if value is not None:
+                stated.setdefault(key, []).append((value, where))
+    for key, values in stated.items():
+        if len({str(v) for v, _ in values}) > 1:
+            shown = ", ".join(f"{w}: {v}" for v, w in values)
+            extra.append(violation("RG-27", f"Ek: «{key}» sekmelerde farklı sayılarla yazıyor ({shown})", hard=True,
+                                   where="ek: " + ", ".join(w for _, w in values), text=shown))
+    names = {m["name"]: m for m in made}
+    findings = names.get("Bulgular") or names.get("Findings")
+    if findings:
+        head = findings.get("header") or []
+        col = next((head.index(h) for h in ID_COLUMNS[:2] if h in head), None)
+        known = {_cell_text(r[col]).strip() for r in findings.get("rows") or [] if col is not None and col < len(r)}
+        for m in made:
+            if m is findings:
+                continue
+            head = m.get("header") or []
+            cols = [i for i, h in enumerate(head) if h in ID_COLUMNS]
+            # every token of the cell: a full finding ID that "Bulgular" lists (a check's name is not one)
+            missing = sorted({i for r in m.get("rows") or [] for c in cols if c < len(r)
+                              for i in re.split(r"\s*[·,;]\s*", _cell_text(r[c]).strip()) if i and i not in known})
+            if missing:
+                extra.append(violation("RG-28", f"Ek ({m['name']}): {len(missing)} bulgu kimliği «Bulgular» sekmesinde yok: "
+                                       + ", ".join(missing[:5]) + (" …" if len(missing) > 5 else ""), hard=True,
+                                       where=f"ek: {m['name']}", text=", ".join(missing[:10])))
+    from .xlsx import location_target
+    for m in made:
+        broken = []
+        for r in m.get("rows") or []:
+            for v in r:
+                if isinstance(v, dict) and isinstance(v.get("location"), str):
+                    t = location_target(v["location"])
+                    target = names.get(t[0]) if t else None
+                    if t is None or target is None or t[2] > len(target.get("rows") or []) + 1:
+                        broken.append(v["location"])
+        if broken:
+            extra.append(violation("RG-30", f"Ek ({m['name']}): {len(broken)} iç bağlantı olmayan bir sekmeye ya da satıra "
+                                   f"gidiyor: " + ", ".join(broken[:3]), hard=True, where=f"ek: {m['name']}",
+                                   text=", ".join(broken[:10])))
     if not extra:
         return record
     violations = list(record["violations"]) + extra

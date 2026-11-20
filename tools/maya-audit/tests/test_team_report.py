@@ -207,7 +207,8 @@ def test_the_results_page_offers_the_team_report_in_turkish_first(finished):
                     "brief": f"/api/v1/audits/{audit['id']}/client-brief",
                     # DECISIONS 324: the team's sector audit workbook
                     "sector": f"/api/v1/audits/{audit['id']}/downloads/sector", "sector_name": team["sector_name"],
-                    "maya": f"/api/v1/audits/{audit['id']}/maya-data"}  # DECISIONS 352: the optional Maya data upload
+                    "maya": f"/api/v1/audits/{audit['id']}/maya-data",  # DECISIONS 352: the optional Maya data upload
+                    "teamfile": f"/api/v1/audits/{audit['id']}/downloads/teamfile"}  # DECISIONS 376: the team file
     script = (ROOT / "maya_audit_web" / "static" / "app.js").read_text(encoding="utf-8")
     # DECISIONS 310: the Downloads card (team report PDF, appendix XLSX, client brief: DECISIONS 319), one language switch.
     assert 'T("download.pdf.title")' in script and 'T("download.xlsx.title")' in script and 'choice("tr"), choice("en")' in script
@@ -242,11 +243,16 @@ def test_the_web_appendix_is_the_skills_appendix(finished, tmp_path):
                                           affected_path=folder / "affected-urls.json" if (folder / "affected-urls.json").is_file() else None)
     current = json.loads(Path(data["_report_path"]).read_text(encoding="utf-8"))
     current_affected = json.loads(Path(data["_affected_path"]).read_text(encoding="utf-8")) if data.get("_affected_path") else None
-    # DECISIONS 353: both end with the text check's "Kontrol raporu" of the same cards.
-    skill_file = render.appendix_bytes(current, current_affected, {}, "tr", todos=data["todos"],
-                                       text_check=render.text_record(data, current))[0]
-    assert list(xlsx.read(web_file))[-1] == "Kontrol raporu"
-    assert xlsx.read(web_file) == xlsx.read(skill_file)
+    # DECISIONS 353, 376: the text check's "Kontrol raporu" of the same cards is in the team file, never the client Ek
+    files = render.appendix_files(current, current_affected, {}, "tr", todos=data["todos"],
+                                  text_check=render.text_record(data, current))[0]
+    skill_file = files["client"]
+    assert "Kontrol raporu" not in xlsx.read(web_file) and list(xlsx.read(files["team"]))[0] == "Kontrol raporu"
+    assert list(xlsx.read(web_file))[0] == "Kapak"
+    web_team = client.get(f"{API}/audits/{audit['id']}/downloads/teamfile", params={"lang": "tr"})
+    assert web_team.status_code == 200 and xlsx.read(web_team.content) == xlsx.read(files["team"])
+    strip = lambda book: {k: v for k, v in book.items() if k != "Kapak"}  # noqa: E731  (its date line is the build day)
+    assert strip(xlsx.read(web_file)) == strip(xlsx.read(skill_file))
 
 
 def _skill(*args, cwd):

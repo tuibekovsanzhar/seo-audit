@@ -178,8 +178,8 @@ def test_the_ek_has_every_item_and_the_totals(site):
     content, _ = render.appendix_bytes(sealed.report, sealed.affected, {}, "tr", todos=data["todos"])
     book = xlsx.read(content)
     names = list(book)
-    assert names.index("Kontrol listesi") == names.index("Bulgu bazında") + 1 + sum(
-        n in names for n in ("Bağlantı yerleri", "Yönlendiren bağlantılar"))
+    # DECISIONS 376: the team's order: the checklist's totals, then the checklist, after the technical sheets
+    assert names.index("Kontrol listesi") == names.index("Kontrol listesi özeti") + 1 > names.index("Bulgular")
     rows = book["Kontrol listesi"]
     assert rows[0] == ["ID", "Grup", "Kontrol maddesi", "Öncelik", "Sonuç", "Kanıt", "Maya kuralı / kart", "Eksik veri kaynağı",
                        "Nasıl kontrol edilir", "Gereken veri / neden uzman", "Otomatikleştirme önerisi"]  # DECISIONS 365
