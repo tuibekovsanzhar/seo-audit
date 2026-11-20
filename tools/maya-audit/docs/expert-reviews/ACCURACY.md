@@ -56,4 +56,4 @@ Made by `scripts/expert_accuracy.py` from `enpara-2e5829fb.json`, `enpara-fee701
 | `tseo1.heading_jumps` | 1 | 1 | 0 | 0 | 0 | 100% | correct (mmi-536b4b64) |
 | `tseo1.url_slug_unclear` | 1 | 0 | 0 | 0 | 1 | 0% | incomplete (mmi-536b4b64) |
 
-Cards reviewed: 87; correct 29, wrong 27, wording 2, incomplete 29 (33% correct).
+Cards reviewed: 88; correct 29, wrong 27, wording 2, incomplete 30 (33% correct).

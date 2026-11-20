@@ -375,14 +375,16 @@ RULE_NAMES = {
            "RG-22": "Aynı sayfalar için tekrarlanan kart", "RG-23": "Yasaklı ifade",
            "RG-24": "Örneği ve ölçülen değeri olmayan bulgu", "RG-25": "Aynı sayfa ve ölçüm için farklı değer",
            "RG-26": "Eşiğini aşmayan örnek değer", "RG-27": "Aynı sayı sekmelerde farklı",
-           "RG-28": "Bulgular'da olmayan bulgu kimliği", "RG-30": "Kırık iç bağlantı",
+           "RG-28": "Bulgular'da olmayan bulgu kimliği", "RG-29": "Yönetici özeti sayısı kanıt satırında yok",
+           "RG-30": "Kırık iç bağlantı",
            "LLM": "İkinci okuyucu önerisi"},
     "en": {"RG-18": "Placeholder or a number not in the evidence", "RG-19": "Advice for another platform",
            "RG-20": "Advice to remove a menu or sign-in link", "RG-21": "English left in Turkish text",
            "RG-22": "Card repeated for the same pages", "RG-23": "Banned phrase",
            "RG-24": "Finding with no example or measured value", "RG-25": "Different values for one page and metric",
            "RG-26": "Example value not over its own threshold", "RG-27": "One count stated differently across sheets",
-           "RG-28": "Finding ID missing from Findings", "RG-30": "Broken link inside the file",
+           "RG-28": "Finding ID missing from Findings", "RG-29": "Executive summary number not in its evidence row",
+           "RG-30": "Broken link inside the file",
            "LLM": "Second reader's suggestion"},
 }
 
@@ -496,6 +498,8 @@ def with_consistency(record: dict | None, made: list[dict], lang: str = "tr") ->
 DRAFT_EK = {"tr": "TASLAK · metin kontrolü engelleyici bulgu buldu (ayrıntı ekip dosyasındaki «Kontrol raporu»nda)",
             "en": "DRAFT · the text check found a blocking problem (details in the team file's \"Text check\")"}
 ID_COLUMNS = ("Bulgu kimliği", "Finding ID", "Kaynak bulgu kimlikleri", "Source finding IDs")
+_ID_LIKE = re.compile(r"[A-Z]{2,5}-\d+(?:-[0-9a-f]+)?")
+_CHECKLIST_ID = re.compile(r"SEO-\d{3}")
 
 
 def _cell_text(value) -> str:
@@ -530,13 +534,28 @@ def with_file_checks(record: dict | None, made: list[dict], lang: str = "tr") ->
                 continue
             head = m.get("header") or []
             cols = [i for i, h in enumerate(head) if h in ID_COLUMNS]
-            # every token of the cell: a full finding ID that "Bulgular" lists (a check's name is not one)
+            # every ID-like token of the cell: a full finding ID that "Bulgular" lists (a check's name is not one); a
+            # checklist item ("SEO-071") or a sheet reference ("Rakip - Konu satır 3") is another kind of source
             missing = sorted({i for r in m.get("rows") or [] for c in cols if c < len(r)
-                              for i in re.split(r"\s*[·,;]\s*", _cell_text(r[c]).strip()) if i and i not in known})
+                              for i in re.split(r"\s*[·,;]\s*", _cell_text(r[c]).strip())
+                              if i and i not in known and _ID_LIKE.fullmatch(i) and not _CHECKLIST_ID.fullmatch(i)})
             if missing:
                 extra.append(violation("RG-28", f"Ek ({m['name']}): {len(missing)} bulgu kimliği «Bulgular» sekmesinde yok: "
                                        + ", ".join(missing[:5]) + (" …" if len(missing) > 5 else ""), hard=True,
                                        where=f"ek: {m['name']}", text=", ".join(missing[:10])))
+    # RG-29: each number "Yönetici özeti" states is in the row it is taken from (`_claims`: (row, number, sheet,
+    # key column, key value))
+    for m in made:
+        for i, number, sheet, key_col, key in m.get("_claims") or []:
+            target = names.get(sheet)
+            head = (target or {}).get("header") or []
+            col = head.index(key_col) if key_col in head else None
+            row = next((r for r in (target or {}).get("rows") or [] if col is not None and col < len(r)
+                        and _cell_text(r[col]).strip() == str(key)), None)
+            cells = " ".join(_cell_text(c) for c in row or [])
+            if row is None or not re.search(rf"(?<![\d.,]){re.escape(number)}(?![\d.,])", cells):
+                extra.append(violation("RG-29", f"Ek ({m['name']} satır {i + 1}): «{number}» kaynağı «{sheet}» ({key}) "
+                                       f"satırında yok", hard=True, where=f"ek: {m['name']}", text=cells[:200]))
     from .xlsx import location_target
     for m in made:
         broken = []

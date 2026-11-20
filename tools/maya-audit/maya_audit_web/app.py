@@ -1782,9 +1782,11 @@ def create_app(folder: Path | str, *, engine: Engine | None = None, port: int = 
         except Exception:  # noqa: BLE001  the sheet is left out, never the file
             previous = None
         # DECISIONS 376: `part` "client" (the Ek) or "team" (the team file: the text check and the fix log)
+        # D4: the team report PDF this page built for the audit in this language, if any, gives each card's page
+        printed = next((v[2] for v in reversed(list(team_builds.values())) if v[0] == audit["id"] and v[1] == lang), None)
         return service.appendix_files(report, aff or None, manual_review.confirmations(manual_review.load(review_path(audit))),
                                       lang, business_choice(audit), todos=todos, artifacts=artifact_folder(audit["id"]),
-                                      text_check=record, previous=previous)[part]
+                                      text_check=record, previous=previous, pdf=printed)[part]
 
     def text_check_of(audit: dict[str, Any], lang: str) -> dict[str, Any] | None:
         """DECISIONS 353: the release gate's text check of this audit's team report in `lang` (provider-free, no model),

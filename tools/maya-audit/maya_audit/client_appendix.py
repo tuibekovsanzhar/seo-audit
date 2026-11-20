@@ -875,7 +875,8 @@ def build(selection: dict, lang: str = "tr", lists: dict | None = None, text_che
 
 
 def build_files(selection: dict, lang: str = "tr", lists: dict | None = None, text_check=None,
-                previous: dict | None = None, report: dict | None = None, now=None, **wording) -> dict:
+                previous: dict | None = None, report: dict | None = None, now=None, pdf: bytes | None = None,
+                **wording) -> dict:
     """{"client": the Ek's bytes, "team": the team file's bytes or None, "record": the text check}.
 
     `text_check`: the release gate's text check (DECISIONS 353), a record or a function returning one once every
@@ -894,6 +895,9 @@ def build_files(selection: dict, lang: str = "tr", lists: dict | None = None, te
     if method is not None:
         method["rows"] = list(method["rows"]) + [[version_stamp.short(lang)]]
     summary = (wording.get("maya") or {}).get("summary")
+    if lang == "tr":  # DECISIONS 376, phase 4: the action sheets, from the sheets written (Turkish, as the team's file)
+        from . import ek_actions
+        made = ek_actions.build(made, selection, wording.get("todos"), report, summary, pdf)[0] + made
     framed = ek_frame.frame(made, selection, report, summary, lang, now)
     record = None
     if text_check is not None:
@@ -906,7 +910,7 @@ def build_files(selection: dict, lang: str = "tr", lists: dict | None = None, te
         # DECISIONS 371: a card whose "Örnek" is empty
         record = text_gate.with_no_example(record, [n for m in framed for n in m.get("_empty_cards") or []], lang, cards=True)
         record = text_gate.with_consistency(record, framed, lang)  # DECISIONS 374: RG-25, RG-26
-        record = text_gate.with_file_checks(record, framed, lang)  # DECISIONS 376: RG-27, RG-28, RG-30
+        record = text_gate.with_file_checks(record, framed, lang)  # DECISIONS 376: RG-27, RG-28, RG-29, RG-30
         team.append(text_gate.sheet(record, lang))
         if record and record.get("decision") == text_gate.BLOCKED:  # the client Ek says it is a draft on its cover
             framed[0]["band"][1] = [text_gate.DRAFT_EK["tr" if lang == "tr" else "en"]] + framed[0]["band"][1]

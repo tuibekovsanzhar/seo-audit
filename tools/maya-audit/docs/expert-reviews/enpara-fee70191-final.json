@@ -82,6 +82,40 @@
      "audit_id": "536b4b648f6440e6877695e5700252ba"
     }
    ]
+  },
+  {
+   "card": "R-376-4",
+   "title": "Yönetici özeti, Aksiyon planı, Uzman teyidi, Sayfa grupları, Konum dizini Ek'te olmalı",
+   "rule_ids": [],
+   "expert_note": "Bu sekmeler elle hazırlandı (Kaynak eşlemesi › Yeni sekmeler)",
+   "verdict": "incomplete",
+   "cell": "Kaynak eşlemesi › Yeni sekmeler",
+   "labels": [
+    {
+     "id": "enp2-R376-4-action-plan",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Aksiyon planı",
+     "column": "Kanıt",
+     "regex": "^Bulgu bazında › satır \\d+$"
+    },
+    {
+     "id": "enp2-R376-4-locations",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Konum dizini",
+     "column": "Kanıt (Excel)",
+     "regex": "^Bulgu bazında › \\d+(–\\d+)?$"
+    },
+    {
+     "id": "enp2-R376-4-rg29",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Kontrol raporu",
+     "column": "Kural",
+     "regex": "^RG-29$"
+    }
+   ]
   }
  ]
 }

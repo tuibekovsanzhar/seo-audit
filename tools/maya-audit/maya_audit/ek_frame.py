@@ -51,6 +51,7 @@ SHEETS: dict[str, tuple[str, str]] = {
     "detail": ("Sayfa detay", "Page detail"),
 }
 ORDER = list(SHEETS)
+BAND_ROWS = 2  # the Maya band's rows above every header: "satır N" texts count them
 INTERNAL = ("Kontrol raporu", "Text check", "Düzeltme kaydı", "Fix log")  # D1: the team file, never the client Ek
 
 GROUPS = {"tr": {"maya": "Maya özeti", "audit": "Teknik denetim", "data": "Search Console / AI (Maya dışa aktarımı)",
@@ -300,8 +301,9 @@ def expert_rows(selection: dict) -> list[bool]:
     waiting for confirmation)."""
     from .client_selection import manual
     confirmations = selection.get("_confirmations") or {}
+    from .ek_actions import expert_groups
     return [bool(any((manual(m, confirmations) or {}).get("result") for m in g.get("members") or []))
-            for g in selection.get("confirm") or []]
+            for g in expert_groups(selection)]
 
 
 def review_line(decided: list[bool], when: str | None, lang: str = "tr") -> str:
@@ -429,7 +431,8 @@ def frame(made: list[dict], selection: dict, report: dict | None, summary: dict 
         k = key_of(m["name"])
         out.append({**m, "band": band(m["name"], who, source_line(k, report, summary, lang, computed=bool(m.get("_computed")),
                                                                   named=m.get("_datasets")), lang)})
-    first = cover(selection, report, summary, out, lang, now)
+    expert = next((m for m in made if key_of(m["name"]) == "expert" and "_decided" in m), None)
+    first = cover(selection, report, summary, out, lang, now, decided=expert["_decided"] if expert else None)
     colours = first.pop("_colours")
     # the legend's colour cells: the label cell styled as the colour it explains
     first["row_styles"] = {**first["row_styles"], **{i: s for i, s in colours.items()}}

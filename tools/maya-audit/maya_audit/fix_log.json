@@ -2224,6 +2224,24 @@
     ],
     "test": "tests/test_sc_sheets_376.py"
    }
+  },
+  {
+   "kaynak": "Efsa — Enpara son dosyası, «Kaynak eşlemesi» › «Yeni sekmeler», 13 Kasım (DECISIONS 376)",
+   "brand_key": "enpara",
+   "sorun": "Yönetici özeti, aksiyon planı, uzman teyidi, sayfa grupları ve konum dizini elle hazırlanıyordu",
+   "genel": "Yönetici özeti, aksiyon planı, uzman teyidi, sayfa grupları ve konum dizini elle hazırlanıyordu",
+   "nasil": "Ek bu sekmeleri yazdığı sekmelerden kendisi kurar: her aksiyonun kanıt satırına bağlantısı, uzman ve uygulama sütunları boş ve seçmeli; yönetici özetindeki her sayı bağlandığı satırdan alınır (metin kontrolü RG-29); PDF basıldıysa her kartın sayfası.",
+   "decisions": [
+    376
+   ],
+   "check": {
+    "labels": [
+     "enp2-R376-4-action-plan",
+     "enp2-R376-4-locations",
+     "enp2-R376-4-rg29"
+    ],
+    "test": "tests/test_ek_actions_376.py"
+   }
   }
  ]
 }

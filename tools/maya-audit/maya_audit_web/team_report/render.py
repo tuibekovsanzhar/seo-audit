@@ -868,7 +868,7 @@ def check_pdf(pdf_path, d):
     return problems
 
 
-def write_appendix(d, out):
+def write_appendix(d, out, pdf: bytes | None = None):
     """DECISIONS 300 (4): the appendix, an XLSX with every finding and every affected address, from the same selection
     the cards came from (Maya Audit's client_selection, rebuilt from the report the gate reads). RG-17 is checked on
     the written file: every finding of the report must be in it. Returns (path, problems)."""
@@ -879,7 +879,7 @@ def write_appendix(d, out):
     affected = json.loads(Path(d["_affected_path"]).read_text(encoding="utf-8")) if d.get("_affected_path") else None
     files, sealed = appendix_files(report, affected, d.get("_confirmations") or {}, d["lang"], d.get("_business"),
                                    todos=(d.get("todos") or []) + (d.get("notes_more") or []) or None,
-                                   maya=maya_bundle(d.get("_artifacts")), text_check=text_record(d, report))
+                                   maya=maya_bundle(d.get("_artifacts")), text_check=text_record(d, report), pdf=pdf)
     content = files["client"]
     path = out.with_name(out.stem + ("-appendix.xlsx" if d["lang"] == "en" else "-ek.xlsx"))
     path.write_bytes(content)
@@ -912,9 +912,9 @@ def text_record(d, report=None):
 
 
 def appendix_bytes(report, affected, confirmations, lang, business=None, todos=None, maya=None, text_check=NOT_GIVEN,
-                   previous=None):
+                   previous=None, pdf=None):
     """(the client Ek's bytes, the final result): `appendix_files`'s client file (DECISIONS 376)."""
-    files, sealed = appendix_files(report, affected, confirmations, lang, business, todos, maya, text_check, previous)
+    files, sealed = appendix_files(report, affected, confirmations, lang, business, todos, maya, text_check, previous, pdf)
     return files["client"], sealed
 
 
@@ -925,7 +925,7 @@ def appendix_book(files: dict) -> dict:
 
 
 def appendix_files(report, affected, confirmations, lang, business=None, todos=None, maya=None, text_check=NOT_GIVEN,
-                   previous=None):
+                   previous=None, pdf=None):
     """The XLSX appendix (DECISIONS 300 (4)) from the saved report, its address list and the owner's manual checks:
     (bytes, the final result). The one function of the skill's `-ek.xlsx` and the web app's "Ek (XLSX)" button, so
     both files are the same (DECISIONS 307). `todos`: the team report's cards, so the "Özet" sheet has the PDF's
@@ -950,7 +950,7 @@ def appendix_files(report, affected, confirmations, lang, business=None, todos=N
                                     maya={**(maya or {"summary": None}), "report": sealed.report},  # DECISIONS 352
                                     text_check=None if text_check is NOT_GIVEN else
                                     (lambda: text_gate.with_untranslated(text_check, untranslated, lang)),
-                                    previous=previous, report=sealed.report)  # DECISIONS 363
+                                    previous=previous, report=sealed.report, pdf=pdf)  # DECISIONS 363; 376: PDF pages
     return files, sealed
 
 
@@ -1139,6 +1139,11 @@ def produce(d, out, pdf=None, *, png=None, force=False):
             return result
         result["pdf"] = pdf
         lines.append(f"PDF: {pdf}")
+        if result.get("appendix"):  # DECISIONS 376 (D4): the Ek again, with each card's page of the printed PDF
+            try:
+                write_appendix(d, out, pdf=pdf.read_bytes())
+            except Exception as exc:  # noqa: BLE001  the first Ek stays; its page column says no PDF
+                lines.append(f"UYARI: Ek PDF sayfalarıyla yeniden yazılamadı: {type(exc).__name__}")
         if png:
             write_previews(pdf, png)
             result["previews"] = png

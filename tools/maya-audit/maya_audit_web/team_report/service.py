@@ -100,10 +100,11 @@ def _pages(pdf: Path):
 
 def appendix_files(report: dict, affected: dict | None, confirmations: dict | None, lang: str,
                    business: str | None = None, todos: list[dict] | None = None, artifacts=None,
-                   text_check=render.NOT_GIVEN, previous: dict | None = None) -> dict:
-    """DECISIONS 376: {"client": the Ek, "team": the team file (text check, fix log) or None, "record"}."""
+                   text_check=render.NOT_GIVEN, previous: dict | None = None, pdf: bytes | None = None) -> dict:
+    """DECISIONS 376: {"client": the Ek, "team": the team file (text check, fix log) or None, "record"}; `pdf`: the
+    team report printed for this audit and language, for each card's page (D4)."""
     return render.appendix_files(report, affected, confirmations, lang, business, todos=todos,
-                                 maya=render.maya_bundle(artifacts), text_check=text_check, previous=previous)[0]
+                                 maya=render.maya_bundle(artifacts), text_check=text_check, previous=previous, pdf=pdf)[0]
 
 
 def appendix(report: dict, affected: dict | None, confirmations: dict | None, lang: str,

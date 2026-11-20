@@ -2953,3 +2953,26 @@ opportunity list. Expert labels and fix-log checks on a missing column are no ev
 | fast suite (with the frozen set) | `3549 passed, 4 skipped, 135 deselected, 1 warning in 602.90s (0:10:02)` |
 | `scripts/real_sites_benchmark.py expert` | `95 labels: 95 hold, 0 red` |
 | Push | NOT DONE (owner: don't push) |
+
+## Phase 4: the action sheets (DECISIONS 376, 2026-11-20)
+
+VERIFIED locally; not pushed. Yönetici özeti, Aksiyon planı (30 columns), Uzman teyidi, Sayfa grupları and Konum dizini
+from the sheets written; RG-29; each card's PDF page when the PDF is printed with the Ek. Enpara: T-01/T-02/T-03 evidence
+rows 4/94/115 as in Efsa's file; Uzman teyidi 28 items as hers; with the skill's printed PDF all 15 cards get a page.
+
+| Saved audit (rebuilt from copies, no request) | Client sheets | Text check |
+|---|---|---|
+| MMI 536b4b64 | 29 | PASS |
+| Carpex 1fd871f0 | 30 | PASS |
+| Enpara fee70191 | 20 | PASS |
+| Atasun f06a2129 | 20 | PASS |
+| İş Bankası 1b81bee4 | 20 | PASS |
+| Ticimax c77ebf6d | 30 | PASS |
+| Nature's Garden 342a0b14 | 29 | PASS |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_ek_actions_376.py` | `7 passed` |
+| fast suite (with the frozen set) | `3556 passed, 4 skipped, 135 deselected, 1 warning in 599.54s (0:09:59)` |
+| `scripts/real_sites_benchmark.py expert` | `98 labels: 98 hold, 0 red` |
+| Push | NOT DONE (owner: don't push) |

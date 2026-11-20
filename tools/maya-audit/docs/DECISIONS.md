@@ -5922,3 +5922,22 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      clicks, CTR %7,5 for 14 Ekim – 10 Kasım (Efsa's dashboard: 388,5 K, %7,5 for 15 Ekim – 10 Kasım); 227 Search
      Console pages (hers: 227). Tests: `tests/test_sc_sheets_376.py`; fix log items 119-120; labels enp2-R376-2/3 (on
      MMI's frozen audit, the noted audit having no Maya data).
+     *Phase 4, the action sheets* (`maya_audit/ek_actions.py`, Turkish as the team's file), built from the sheets
+     already written so every link lands on a real row: "Aksiyon planı" (30 columns: T- per PDF card with the card's
+     problem, advice, business reason (`why`), P0-P3, owner, effort, scope, first 3 addresses, links to its full list,
+     evidence and link rows, period, the check method (`verify`) and the card's PDF page; S- per checklist item the
+     Search Console data turns into a problem the tool did not see; R- per competitor topic by its gap rank, "n<10" as
+     an indication; cross links to actions on the same pages; the expert and client columns SEO değerlendirmesi, Uzman
+     notu, Onaylanan öncelik, Uygulama durumu, Hedef tarih empty with dropdowns (D5); the HTML column left out, no
+     shared link exists (D4)), "Uzman teyidi" (every finding waiting for confirmation and every finding an expert
+     already decided, with the decision from the owner's confirmations, and every Search Console proposal that changes
+     a checklist result; the reason in words), "Yönetici özeti" (up to 7: the first problem cards, Search Console
+     proposals, the pages with clicks the audit did not read, the largest competitor gap, the checklist before/after;
+     open decisions, the expert line, units never merged; RG-29 checks each number against the row it comes from),
+     "Sayfa grupları" (first path segment › address › actions, each address linked to its evidence row) and "Konum
+     dizini". A sheet with nothing to list says why. Kapak's expert line reads "Uzman teyidi". The PDF page (D4): the
+     skill writes the Ek again after printing the PDF; the web app uses the team report it built for the audit and
+     language, if any; else "PDF oluşturulmadı". A card's page is its heading (number, title, then severity or
+     "Not") in the PDF's text read without whitespace (the reader splits Turkish letters). On Enpara the T-01, T-02 and
+     T-03 evidence rows are Bulgu bazında 4, 94 and 115, as in Efsa's file; Uzman teyidi 28 items, as hers.
+     Tests: `tests/test_ek_actions_376.py`; fix log item 121; labels enp2-R376-4-*.
