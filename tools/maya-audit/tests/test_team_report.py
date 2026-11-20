@@ -322,6 +322,11 @@ def test_a_saved_report_is_re_evaluated_with_the_current_engine_and_never_writte
     line = current.line(cur, "tr")
     assert line.startswith("Güncel motorla yeniden değerlendirildi (Maya Audit ") and engine["schema"] in line
     assert current.line(cur, "en").startswith("Re-evaluated with the current engine (Maya Audit ")
+    # DECISIONS 376: the PDF's provenance never says the engine's version, schema or commit (the web app's line does)
+    data = build_data.build_from_files(folder / REPORT_JSON, "tr")[0]
+    shown = " ".join(str(v) for _, v in visible_strings(data))
+    assert "yeniden değerlendirildi (Maya Audit" not in shown and engine["schema"] not in shown.split("şema")[-1][:20]
+    assert not re.search(r"Maya Audit \d+\.\d+\.\d+", shown)
     # Made once: the next call reads the copy; a change to the source makes it again.
     stamp = cur.report_path.stat().st_mtime_ns
     assert current.current(folder / REPORT_JSON).report_path.stat().st_mtime_ns == stamp
@@ -362,7 +367,8 @@ def test_confirm_first_the_team_report_and_the_appendix_read_the_current_engine_
     data, notes = build_data.build_from_files(folder / REPORT_JSON, "tr")  # the skill's build step
     assert data["_review_path"] == str(review) and "NEW-1-0000aaaa" in data["_confirmations"]
     assert any("Güncel motorla" in line for line in notes)
-    assert any(line["k"] == "Değerlendirme:" for line in data["provenance"]["lines"])
+    # DECISIONS 376: the build's notes say it was re-evaluated; the PDF's provenance never names the engine
+    assert not any(line["k"] == "Değerlendirme:" for line in data["provenance"]["lines"])
     assert data["_report_path"] == str(folder.parent / "current-engine" / REPORT_JSON)
 
 

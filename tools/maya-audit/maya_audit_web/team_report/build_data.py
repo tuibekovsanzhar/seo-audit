@@ -2218,13 +2218,12 @@ class Builder:
         locales_line = self.locales_line()
         # DECISIONS 375, 376: the engine's version, commit and audit id are for the team, not the client: no PDF line
         # says them (the old "Motor" line is gone too); the Ek's "Yöntem" and its document properties have the stamp
-        # DECISIONS 308: a saved audit re-evaluated with the current engine says so, with that engine and its date.
-        from maya_audit_web.team_report.current import line_of
-        reassessed = (line_of((gen.get("analysis") or {}).get("engine"), lang) if not gen.get("_reassess_failed")
-                      else L["prov_reassess_failed"])
-        if reassessed:
-            prov.append({"k": L["prov_reassessed"], "v": reassessed})
-            self.fact(reassessed)
+        # DECISIONS 308, 376: the PDF says the engine, schema, commit and date of a re-evaluation nowhere (the owner: the
+        # version is only in the Ek's "Yöntem" and its document properties; the web app's own line stays); a saved
+        # report that could not be re-evaluated still says so (no version in that line)
+        if gen.get("_reassess_failed"):
+            prov.append({"k": L["prov_reassessed"], "v": L["prov_reassess_failed"]})
+            self.fact(L["prov_reassess_failed"])
 
         data = {
             "contract": 1, "lang": lang,

@@ -3019,3 +3019,8 @@ were taken out of the DECISIONS text (relative statements only).
 | `tools/fix_log.py --out ~/Downloads/duzeltme-kaydi.xlsx` | written |
 | `ruff --select E9,F821,F841` | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+## The re-evaluation line leaves the PDF (DECISIONS 376, 2026-11-20)
+
+VERIFIED locally. The PDF's provenance no longer names the engine's version, schema or commit after a re-evaluation;
+the "could not be re-evaluated" line stays. `pytest tests/test_team_report.py`: `22 passed`. Full suite and push below.

@@ -5955,3 +5955,7 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      problem, read or not, with its audit status; the weekly-list column reads "İlk listede (N ölçümden)"; "Uzman
      teyidi" says "Bulgu / kanıt (kaynak)" and "Kaynakta ne yapılmalı" as hers. Fix log item 122, label
      enp2-R376-5-unlinked-action. The seven saved audits pass the text check.
+     *Re-evaluation line* (owner, 2026-11-20): the PDF no longer says "Güncel motorla yeniden değerlendirildi (Maya
+     Audit <version> · şema … · commit, tarih)"; the version is only in the Ek's "Yöntem" and its document
+     properties. A saved report that could not be re-evaluated still says so (that line names no version); the web
+     app's own results page keeps its line (the team's tool), and the skill's build notes still say it.
