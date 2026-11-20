@@ -622,7 +622,7 @@ def detail_sheet(summary: dict, crawl: Crawl, rows: list[dict]) -> dict:
         for pid in r["prompts"]:
             others.update(prompt_urls.get(pid) or {})
         total = sum(others.values())
-        competitors = "; ".join(f"{_short(u)} ({round(100 * n / total)}%)" for u, n in others.most_common(3)) if total else ""
+        competitors = "; ".join(f"{_short(u)} (%{round(100 * n / total)})" for u, n in others.most_common(3)) if total else ""
         if m is None or m.get("error"):
             cells = [unread_words(summary, m, own=True)] + [""] * 11
         else:
@@ -930,13 +930,13 @@ def topic_sheet(summary: dict, rows: list[dict], crawl: "Crawl | None" = None) -
         why, act = insight(t)
         topic = (f"{t['topic']} ({', '.join(t['labels'][:8])})" if t.get("labels") else t.get("name") or t["topic"])
         body.append([i, topic, t["n"], "Evet" if t["n"] < 10 else "", _pct(t["brand_share"]),
-                     "; ".join(f"{_short(u)} ({round(100 * s)}%)" for u, s in t["brand_pages"]),
+                     "; ".join(f"{_short(u)} (%{round(100 * s)})" for u, s in t["brand_pages"]),
                      _vis_words(t["vis"], "brand"),
                      (f"{t['rival'][0]} %{_tr(100 * t['rival'][1])} (AI kaynak payı; "
                       + (f"Topic Pulse lideri «{t['vis']['leader_own']}» markanın kendisi)" if (t.get("vis") or {}).get("leader_own")
                          else "Topic Pulse rakip adı vermedi)") if t.get("rival") else _vis_words(t["vis"], "leader")),
                      t["gap"] if t["gap"] is not None else "",
-                     "; ".join(f"{d} ({round(100 * s)}%)" for d, s in t["domains"]),
+                     "; ".join(f"{d} (%{round(100 * s)})" for d, s in t["domains"]),
                      f"{_short(t['competitor_page'][0])} ({t['competitor_page'][1]} koşu, {t['competitor_page'][2]} prompt)" if t["competitor_page"] else "—",
                      f"{_short(t['comparison_page'][0])} ({t['comparison_page'][1]} koşu, {t['comparison_page'][2]} prompt)" if t["comparison_page"] else "—",
                      (list_rank(summary, crawl.measure(t["comparison_page"][0])) or unread_words(summary, crawl.measure(t["comparison_page"][0]), own=False))
@@ -1122,6 +1122,12 @@ def build(summary: dict | None, report: dict, evidence_dir: Path | None = None, 
             if own.get("domains"):
                 coverage.append(f"Markanın kendi siteleri: {', '.join(own['domains'][:8])} markanın adını taşıdığı için markanın "
                                 "sitesi sayıldı (rakip değil); kaynak gösterilen sayfaları marka payına katıldı")
+            # DECISIONS 377: Topic Pulse labels that are no topic, said once, left out of every competitor sheet
+            skipped = (summary.get("visibility") or {}).get("not_topics") or []
+            if skipped:
+                coverage.append("Konu sayılmayan Topic Pulse etiketleri (niyet, marka ya da kayıt etiketi; hiçbir rakip "
+                                "sekmesinde konu olarak yok): " + ", ".join("«" + x + "»" for x in skipped[:12])
+                                + (f" ve {len(skipped) - 12} tane daha" if len(skipped) > 12 else ""))
             # DECISIONS 362: how each prompt got its topic, and where the leader came from
             _, counts = topic_assignment(summary)
             if counts["assigned"] or counts["off_topic"] or counts["unassigned"]:

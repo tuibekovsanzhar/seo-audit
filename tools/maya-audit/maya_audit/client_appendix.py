@@ -458,6 +458,25 @@ def read_time(value: str | None, approx: bool, lang: str) -> str:
     return text + (f" — {R['read_approx']}" if approx else "")
 
 
+_SCOPE = re.compile(r"^(\d[\d.]*) (?:sayfa|adres|page|pages|address(?:es)?)\s*\((.+)\)$")
+_SCOPE_PART = re.compile(r"\+\s*(\d[\d.]*) (?:sayfa|adres|page|pages|address(?:es)?)(?::\s*([^,;)]+))?")
+
+
+def scope_total(scope, severity_word: str = "") -> tuple[int | None, str]:
+    """DECISIONS 377: the PDF card's scope "2 sayfa (+88 sayfa: Orta)" as its total with its parts, "90 (2 Yüksek + 88
+    Orta)"; any other scope ("en az 94 sayfa", "ölçülen 7 sayfadan") as it is. (total or None, text)."""
+    text = str(scope or "")
+    m = _SCOPE.match(text)
+    parts = _SCOPE_PART.findall(m.group(2)) if m else []
+    if not m or not parts:
+        return None, text
+    first = int(m.group(1).replace(".", ""))
+    rest = [(int(n.replace(".", "")), (w or "").strip()) for n, w in parts]
+    total = first + sum(n for n, _ in rest)
+    shown = " + ".join([f"{first} {severity_word}".strip()] + [f"{n} {w}".strip() for n, w in rest])
+    return total, f"{total} ({shown})"
+
+
 def _finding_or_blank(fid) -> str:
     """DECISIONS 376: the "Bulgu kimliği" cell holds a finding's ID or nothing: a check's own observation (a link of
     `idx6.parameters`, keyed by its check) has no finding; its rule is in "Kural"."""
@@ -679,7 +698,8 @@ def reader_sheets(selection: dict, lang: str = "tr", lists: dict | None = None, 
                 c.get("p_level") or "",  # DECISIONS 324
                 c.get("owner") or "", c.get("effort") or "",
                 # DECISIONS 361: the PDF's scope when it says more than a count ("en az 94 sayfa", "ölçülen 7 sayfadan")
-                c["scope"] if c.get("scope") and not re.fullmatch(r"[\d.,]+ \w+", str(c["scope"])) else
+                scope_total(c["scope"], W["severity"].get(c.get("severity"), ""))[1]
+                if c.get("scope") and not re.fullmatch(r"[\d.,]+ \w+", str(c["scope"])) else
                 len(addresses[c["n"]]) if c["n"] in addresses else c.get("addresses") or 0,
                 {"text": R["go"], "location": f"{where}!A{first_row[c['n']]}"} if c["n"] in first_row else "",
                 {"text": R["go_links"], "location": f"{links_sheet}!A{first_link[c['n']]}"} if c["n"] in first_link else "",

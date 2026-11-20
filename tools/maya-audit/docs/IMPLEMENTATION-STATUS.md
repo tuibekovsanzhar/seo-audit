@@ -3024,3 +3024,32 @@ were taken out of the DECISIONS text (relative statements only).
 
 VERIFIED locally. The PDF's provenance no longer names the engine's version, schema or commit after a re-evaluation;
 the "could not be re-evaluated" line stays. `pytest tests/test_team_report.py`: `22 passed`. Full suite and push below.
+
+Pushed `fbe7633` after the full suite (`3694 passed, 4 skipped, 1 warning in 1049.57s (0:17:29)`); CI 44726496394:
+success.
+
+## The owner's check of the Enpara Ek (DECISIONS 377, 2026-11-20)
+
+VERIFIED locally. Plain Turkish titles for Search Console actions (RG-31), a card's scope as its total with its parts,
+Topic Pulse labels that are no topic out of every competitor sheet, competitors in their own display form (RG-32 on a
+combining dot, addresses exempt), shares and rates as percentages; an expert label on a missing sheet is red. The disk
+filled during the first run (ENOSPC); the owner freed space and the saved audits were copied again.
+
+| Saved audit (rebuilt from copies, no request) | Client sheets | Text check |
+|---|---|---|
+| MMI 536b4b64 | 31 | PASS |
+| Carpex 1fd871f0 | 32 | PASS |
+| Enpara fee70191 (with its full Maya export, as the web app has it now) | 34 | PASS |
+| Atasun f06a2129 | 21 | PASS |
+| İş Bankası 1b81bee4 | 21 | PASS |
+| Ticimax c77ebf6d (RG-32 found a competitor address with a decomposed letter: addresses exempt) | 32 | PASS |
+| Nature's Garden 342a0b14 | 31 | PASS |
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_enpara_ek_377.py` | `9 passed` |
+| fast suite (with the frozen set) | `3567 passed, 4 skipped, 135 deselected, 1 warning in 617.23s (0:10:17)` |
+| `scripts/real_sites_benchmark.py expert` | `107 labels: 107 hold, 0 red` |
+| `tools/fix_log.py --work <tmp> --write-status` | 127 items: Düzeltildi 123, Hâlâ var 0, Doğrulanmadı 4 (28, 56, 62, 118: a new crawl or data needed) |
+| `tools/fix_log.py --out ~/Downloads/duzeltme-kaydi.xlsx` | written |
+| `ruff --select E9,F821,F841` | `All checks passed!` |

@@ -65,7 +65,7 @@ names, not intent. **Gap** marks a check with no test on one side: a prompt to l
 | TSEO-1 | 28 | 19 |  |
 | PRF-1 | 13 | 9 |  |
 | PRF-2 | 6 | 5 |  |
-| PRF-3 | 4 | 4 |  |
+| PRF-3 | 5 | 4 |  |
 | ANS-1 | 11 | 8 |  |
 | ANS-2 | 2 | 4 |  |
 | ANS-3 | 1 | 2 |  |
@@ -373,7 +373,7 @@ problems and a 12-page Turkish site that audits clean; `tests/test_web_app.py` r
 
 ### PRF-3
 
-- Finds the problem: `test_checklist_342.py::test_core_web_vitals_come_from_the_field_data`, `test_prf_scenarios.py::test_pagespeed_lab_and_field_on_verified_site`, `test_prf_scenarios.py::test_pagespeed_lab_runs_need_ownership`, `test_wording.py::test_every_title_the_engine_writes_has_one_pattern_an_english_form_and_a_turkish_one_with_the_same_holes`
+- Finds the problem: `test_checklist_342.py::test_core_web_vitals_come_from_the_field_data`, `test_enpara_ek_377.py::test_an_unlinked_checklist_problem_says_what_was_found`, `test_prf_scenarios.py::test_pagespeed_lab_and_field_on_verified_site`, `test_prf_scenarios.py::test_pagespeed_lab_runs_need_ownership`, `test_wording.py::test_every_title_the_engine_writes_has_one_pattern_an_english_form_and_a_turkish_one_with_the_same_holes`
 - Must not flag: `test_ek_actions_376.py::test_a_checklist_problem_no_card_covers_is_an_action_of_its_own`, `test_head_card_339.py::test_kapsam_says_core_web_vitals_came_from_crux_when_only_the_lab_test_was_not_run`, `test_oct18_corrections.py::test_optional_pagespeed_panel_is_not_confused_with_existing_provider_lighthouse`, `test_prf_scenarios.py::test_pagespeed_without_key_is_not_assessed`
 
 ### ANS-1

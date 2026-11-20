@@ -108,8 +108,8 @@ def present(label: dict, ctx: dict) -> tuple[bool | None, str]:
         said = [t for t in cards if re.search(label["regex"], _text(t, label.get("field") or "title"), re.I)]
         return bool(said), f"{len(said)} of {len(cards)} card(s) say it"
     rows = ctx["book"].get(label["sheet"]) or []
-    if not rows:
-        return False, f"no sheet {label['sheet']!r}"
+    if not rows:  # DECISIONS 377: no sheet is no evidence either way (red), never a pass of "must_not_find"
+        return None, f"no sheet {label['sheet']!r}"
     head = rows[0]
     if label.get("column") and label["column"] not in head:  # DECISIONS 376: a missing column is no evidence, never every cell
         return None, f"no column {label['column']!r} in {label['sheet']!r}"

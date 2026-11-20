@@ -5959,3 +5959,22 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Audit <version> · şema … · commit, tarih)"; the version is only in the Ek's "Yöntem" and its document
      properties. A saved report that could not be re-evaluated still says so (that line names no version); the web
      app's own results page keeps its line (the team's tool), and the skill's build notes still say it.
+377. **The owner's check of the Enpara Ek built as the full client file (Owner, 2026-11-20). Global for every audit.**
+     *(1) Titles*: a Search Console action in "Aksiyon planı" and "Yönetici özeti" is a plain Turkish sentence, never the
+     checklist item's name (`ek_actions.sc_title`: SEO-069 "Aynı marka dışı sorguda birden fazla <Marka> sayfası
+     yarışıyor; en belirgin örnek «…»" with the non-brand query of most impressions, SEO-071 "Yüksek gösterim alan bazı
+     sayfalarda tıklama oranı düşük", the other Maya-measured items alike); a checklist problem no card covers says what
+     was found ("INP p75 323 ms (iyileştirilmeli) · Hız ve Core Web Vitals"). RG-31 (hard): a title in those two
+     sheets that is a checklist item's name or has English words. *(2) Scope*: the PDF card's "2 sayfa (+88 sayfa:
+     Orta)" is written "90 (2 Yüksek + 88 Orta)" in "Özet" (`client_appendix.scope_total`) and "90 etkilenen adres (2
+     Yüksek + 88 Orta)" in the action sheets; other scopes ("en az 94 sayfa") stay as they are. *(3) Topics*: a Topic
+     Pulse label that is no topic (an intent "Niyet: …", "Branding", a "word:" label) is left out of the topics, so of
+     every competitor sheet, and Kapsam names the labels left out (same rule as "Konu dışı etiketler"). *(4) Names*:
+     a leader is shown in the competitor's own display form from competitor-mentions-daily (the key itself or a key it
+     starts, the most mentioned: "garanti" → "Garanti BBVA", "i̇ş bankası" → "İş Bankası"), else with Turkish casing
+     restored; the brand's own name is judged as given first (a product starting with the brand's name is not its
+     display form); no combining dot (U+0307) is kept. RG-32 (hard): a combining dot in a cell other than an address.
+     Maya summary version 6. *(5) Percentages*: a share or rate column (header with CTR, "payı", "oranı") holding
+     fractions has the number format "0.0%" (Excel shows %17,6 in Turkish); a percent written in Turkish text is
+     "(%17)", never "(17%)". Tests: `tests/test_enpara_ek_377.py`; fix log items 123-127; labels own377-* (Enpara's
+     frozen audit, and MMI's for the competitor data).

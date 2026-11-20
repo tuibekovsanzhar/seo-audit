@@ -1,6 +1,6 @@
 # Expert review accuracy by rule
 
-Made by `scripts/expert_accuracy.py` from `enpara-2e5829fb.json`, `enpara-fee70191.json`, `enpara-fee70191-review3.json`, `enpara-fee70191-final.json`, `mmi-536b4b64.json`, `naturesgarden-342a0b14.json` (DECISIONS 338, 340). A card's verdict counts once for each rule on it; "wrong" is the expert's verdict, before the evidence was checked (each review file says what the evidence showed and what was fixed).
+Made by `scripts/expert_accuracy.py` from `enpara-2e5829fb.json`, `enpara-fee70191.json`, `enpara-fee70191-review3.json`, `enpara-fee70191-final.json`, `mmi-536b4b64.json`, `naturesgarden-342a0b14.json`, `enpara-fee70191-owner.json` (DECISIONS 338, 340). A card's verdict counts once for each rule on it; "wrong" is the expert's verdict, before the evidence was checked (each review file says what the evidence showed and what was fixed).
 
 | Rule | Cards reviewed | Correct | Wrong | Wording | Incomplete | Share correct | Latest |
 |---|---|---|---|---|---|---|---|
@@ -56,4 +56,4 @@ Made by `scripts/expert_accuracy.py` from `enpara-2e5829fb.json`, `enpara-fee701
 | `tseo1.heading_jumps` | 1 | 1 | 0 | 0 | 0 | 100% | correct (mmi-536b4b64) |
 | `tseo1.url_slug_unclear` | 1 | 0 | 0 | 0 | 1 | 0% | incomplete (mmi-536b4b64) |
 
-Cards reviewed: 89; correct 29, wrong 27, wording 2, incomplete 31 (33% correct).
+Cards reviewed: 94; correct 29, wrong 32, wording 2, incomplete 31 (31% correct).

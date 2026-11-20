@@ -23,6 +23,7 @@ import csv
 import io
 import json
 import re
+import unicodedata
 import zipfile
 from collections import Counter, defaultdict
 from datetime import date
@@ -37,7 +38,9 @@ from urllib.parse import unquote, urlsplit, urlunsplit
 # 5 (DECISIONS 376): the Search Console datasets of the client Ek's sheets: the daily totals (whole period and last 28
 # days) with the AI Overview columns, the weekly 28-day page and query snapshots (latest per page or query, weeks
 # present), page scores, query intents and the query opportunities, each with its own period.
-VERSION = 5
+# 6 (DECISIONS 377): Topic Pulse labels that are no topic (an intent "Niyet: …", a register, "Branding") are left out
+# of the topics; a leader's name is the competitor's own display form ("İş Bankası", not "i̇ş bankası").
+VERSION = 6
 SUMMARY_FILE = "maya-data-summary.json"
 FOLDER = "maya-data"
 
@@ -287,7 +290,9 @@ NOT_TOPICS = frozenset({"multiple", "multi", "mixed", "other", "others", "misc",
                         # DECISIONS 362: Maya's prompt categories (what kind of question, not what about)
                         "discovery", "comparison", "brand", "problem", "buying intent", "competitor comparison",
                         "informational", "information", "navigational", "transactional", "support", "evaluation",
-                        "purchase", "branded", "non-branded", "kesif", "karsilastirma", "marka", "sorun", "satin alma niyeti"})
+                        "purchase", "branded", "non-branded", "kesif", "karsilastirma", "marka", "sorun", "satin alma niyeti",
+                        # DECISIONS 377: a brand or register label is no topic either
+                        "branding", "brand awareness", "niyet"})
 OFF_TOPIC = "Konu dışı etiketler"
 
 
@@ -403,8 +408,8 @@ def prepare(paths: Iterable[str | Path], audited_url: str) -> dict:
                       for sheet, groups in NEEDS.items()}
     out["gsc"] = _gsc(found, origin, brand_names)
     out["ai"] = _ai(found, origin, brand_domains, brand_names, meta.get("labels") or {}, dom_keys)
-    out["visibility"] = _visibility(found, meta, brand_names, keys)
     out["mentions"] = _mentions(found, meta, keys, dom_keys)
+    out["visibility"] = _visibility(found, meta, brand_names, keys, display_names(found))
     out["own_keys"], out["own_domain_keys"] = sorted(keys), sorted(dom_keys)  # what the sheets match the brand by
     out["rival_groups"] = rival_groups  # each rival's aliases, said under one name in the sheets
     own_domains |= set(out["ai"].pop("own_domains", []) or [])
@@ -893,7 +898,44 @@ def is_generic(name: str) -> bool:
     return not words or (len(words) == 1 and words[0] in GENERIC_COMPETITORS)
 
 
-def _visibility(found: dict[str, Source], meta: dict, brand_names: list[str], keys: set[str] | None = None) -> dict | None:
+def display_names(found: dict[str, Source]) -> dict[str, str]:
+    """{name key: the competitor's own display form} from competitor-mentions-daily ("isbankasi" -> "İş Bankası",
+    "garantibbva" -> "Garanti BBVA"), the most mentioned form of each key (DECISIONS 377)."""
+    src = found.get("competitor-mentions-daily")
+    if src is None:
+        return {}
+    seen: dict[str, Counter] = defaultdict(Counter)
+    for r in _rows(src):
+        name = (r.get("displayName") or "").strip()
+        if name:
+            n = int(_num(r.get("mentions"))) or 1
+            for k in {name_key(name), name_key(r.get("competitorKey") or "")} - {""}:
+                seen[k][name] += n
+    # the most mentioned competitors first, so a short key that starts several ("garanti") takes the most mentioned one
+    ranked = sorted(seen.items(), key=lambda kv: -sum(kv[1].values()))
+    return {k: c.most_common(1)[0][0] for k, c in ranked}
+
+
+def display_name(raw: str, names: dict[str, str] | None = None) -> str:
+    """A competitor's name as people write it (DECISIONS 377): its display form from Maya's competitor list (the key
+    itself, or the one key it starts, as "garanti" -> "Garanti BBVA"); else the name with the Turkish casing restored
+    (no combining dot: "i̇ş bankası" -> "İş Bankası")."""
+    text = unicodedata.normalize("NFC", (raw or "").replace("\u0307", "")).strip()
+    if not text:
+        return text
+    k = name_key(text)
+    names = names or {}
+    # the key itself or a key it starts ("garanti" -> "garantibbva"): the most mentioned form (names are in that order)
+    starts = [v for key, v in names.items() if key == k or (len(k) >= 3 and key.startswith(k))]
+    if starts:
+        return starts[0]
+    if text != text.lower():
+        return text  # written with capitals already: its own form
+    return " ".join(w[:1].replace("i", "İ").upper() + w[1:] if w[:1] != "i" else "İ" + w[1:] for w in text.split(" "))
+
+
+def _visibility(found: dict[str, Source], meta: dict, brand_names: list[str], keys: set[str] | None = None,
+                names: dict[str, str] | None = None) -> dict | None:
     src = found.get("topic-visibility-snapshots")
     if src is None:
         return None
@@ -905,17 +947,24 @@ def _visibility(found: dict[str, Source], meta: dict, brand_names: list[str], ke
             by_topic[r["topic"]].append(r)
     topics = []
     own_leaders: set[str] = set()
+    not_topics: list[str] = []
     for topic, rows in sorted(by_topic.items()):
+        if topic_of(topic) is None:  # DECISIONS 377: "Niyet: İşlem rehberi", "Branding": a label, not a topic
+            not_topics.append(topic)
+            continue
         rows.sort(key=lambda r: r.get("week_start") or "")
         first, last = rows[0], rows[-1]
-        leader = last.get("top_competitor_name") or ""
-        # DECISIONS 358: Topic Pulse naming the brand itself as the top "competitor" names no rival
-        own = bool(leader) and bool(keys) and own_name(leader, keys)
+        raw = unicodedata.normalize("NFC", (last.get("top_competitor_name") or "").replace("\u0307", ""))
+        # DECISIONS 358: Topic Pulse naming the brand itself as the top "competitor" names no rival; judged on the name as
+        # given, before its display form (the brand's own product can start with the brand's name: "shop" -> "Shop Kart Pro")
+        own = bool(raw) and bool(keys) and own_name(raw, keys)
         if own:
-            own_leaders.add(leader)
-        generic = is_generic(leader) or own
+            own_leaders.add(raw)
+        generic = is_generic(raw) or own
+        leader = raw if generic else display_name(raw, names)  # DECISIONS 377: a rival in its own display form
         # DECISIONS 372: a rate the file does not give is None ("veri yok"), never 0; the gap needs both
-        lead_first = next((_value(r.get("top_competitor_rate")) for r in rows if r.get("top_competitor_name") == leader), None)
+        lead_first = next((_value(r.get("top_competitor_rate")) for r in rows
+                           if unicodedata.normalize("NFC", (r.get("top_competitor_name") or "").replace("\u0307", "")) == raw), None)
         brand_last, lead_last = _value(last.get("brand_rate")), _value(last.get("top_competitor_rate"))
         total = _value(last.get("total"))
         topics.append({"topic": topic, "first_week": first.get("week_start"), "last_week": last.get("week_start"),
@@ -926,7 +975,7 @@ def _visibility(found: dict[str, Source], meta: dict, brand_names: list[str], ke
                        "leader_last": None if generic else lead_last,
                        "gap": None if generic or brand_last is None or lead_last is None else round(lead_last - brand_last, 1),
                        "answers": int(total) if total is not None else None})
-    return {"rows": n, "topics": topics, "own_leaders": sorted(own_leaders)}
+    return {"rows": n, "topics": topics, "own_leaders": sorted(own_leaders), "not_topics": not_topics}
 
 
 def _mentions(found: dict[str, Source], meta: dict, keys: set[str] | None = None,

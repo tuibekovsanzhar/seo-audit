@@ -1,0 +1,132 @@
+{
+ "_about": "The owner's review of the Enpara Ek built as the full client file (20 Nov 2026, DECISIONS 377), kept as labels.",
+ "audit": "enpara fee70191",
+ "audit_id": "fee70191335c4e608540a08f084abd7c",
+ "reviewer": "Owner",
+ "reviewed_on": "2026-11-20",
+ "review": "Ek check",
+ "source_file": "maya-audit-www.enpara.com-2026-11-11-ek-tr.xlsx (not in the repository)",
+ "summary": "Five global rules from the owner's check of the new Ek.",
+ "follow_up": "DECISIONS 377",
+ "cards": [
+  {
+   "card": "O-377-1",
+   "title": "Yönetici özeti ve Aksiyon planı başlıkları düz Türkçe cümle",
+   "rule_ids": [],
+   "expert_note": "#5 «Cannibalization kanıt testi», #6 «CTR fırsat analizi»: kontrol listesi madde adı başlık olmamalı",
+   "verdict": "wrong",
+   "cell": "Yönetici özeti 5-6",
+   "labels": [
+    {
+     "id": "own377-1-no-item-titles",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Kontrol raporu",
+     "column": "Kural",
+     "regex": "^RG-31$"
+    },
+    {
+     "id": "own377-1-no-item-titles-mmi",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Kontrol raporu",
+     "column": "Kural",
+     "regex": "^RG-31$",
+     "audit_id": "536b4b648f6440e6877695e5700252ba"
+    }
+   ]
+  },
+  {
+   "card": "O-377-2",
+   "title": "Kapsam toplamı parçalarıyla",
+   "rule_ids": [],
+   "expert_note": "«2 sayfa (+88 sayfa: Orta)» yerine «90 etkilenen adres (2 Yüksek + 88 Orta)»",
+   "verdict": "wrong",
+   "cell": "Yönetici özeti 1, T-01",
+   "labels": [
+    {
+     "id": "own377-2-scope-total",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Özet",
+     "column": "Etkilenen adres",
+     "regex": "^\\d+ \\(\\d+ \\w+ \\+ \\d+ \\w+\\)$"
+    },
+    {
+     "id": "own377-2-no-plus-scope",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Özet",
+     "column": "Etkilenen adres",
+     "regex": "\\(\\+\\d+ (sayfa|adres)"
+    }
+   ]
+  },
+  {
+   "card": "O-377-3",
+   "title": "Niyet, marka ve kayıt etiketleri konu değil",
+   "rule_ids": [],
+   "expert_note": "Rakip - Konu «Niyet: İşlem rehberi»yi konu olarak listeliyor",
+   "verdict": "wrong",
+   "cell": "Rakip - Konu 3",
+   "labels": [
+    {
+     "id": "own377-3-no-intent-topic",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Rakip - Konu",
+     "column": "Konu",
+     "regex": "^(Niyet|Intent|Register|Branding)\\b",
+     "audit_id": "536b4b648f6440e6877695e5700252ba",
+     "why": "Enpara's frozen audit has no competitor data; MMI's has"
+    }
+   ]
+  },
+  {
+   "card": "O-377-4",
+   "title": "Rakip markalar kendi yazımıyla, birleşik nokta yok",
+   "rule_ids": [],
+   "expert_note": "«i̇ş bankası» (birleşik nokta); «İş Bankası», «Garanti BBVA» yazılmalı",
+   "verdict": "wrong",
+   "cell": "Rakip - Konu, Genel durum",
+   "labels": [
+    {
+     "id": "own377-4-no-combining-dot",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Kontrol raporu",
+     "column": "Kural",
+     "regex": "^RG-32$"
+    },
+    {
+     "id": "own377-4-no-combining-dot-mmi",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Kontrol raporu",
+     "column": "Kural",
+     "regex": "^RG-32$",
+     "audit_id": "536b4b648f6440e6877695e5700252ba"
+    }
+   ]
+  },
+  {
+   "card": "O-377-5",
+   "title": "Paylar ve oranlar yüzde olarak",
+   "rule_ids": [],
+   "expert_note": "citation payı, CTR, görünürlük 0.1759 gibi ham ondalık değil %17,6 olmalı",
+   "verdict": "wrong",
+   "cell": "Rakip - Konu, SC sayfaları",
+   "labels": [
+    {
+     "id": "own377-5-turkish-text-percent",
+     "kind": "must_not_find",
+     "on": "row",
+     "sheet": "Rakip - Konu",
+     "column": "En çok kaynak gösterilen alan adları (prompt payı)",
+     "regex": "\\(\\d+%\\)",
+     "audit_id": "536b4b648f6440e6877695e5700252ba"
+    }
+   ]
+  }
+ ]
+}

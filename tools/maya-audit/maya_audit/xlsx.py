@@ -33,8 +33,11 @@ def _col(n: int) -> str:
 # 9 an expert or client input cell (pale yellow, kept when empty), 10 a cell Maya computed (pale blue).
 PLAIN, HEADER, WRAP, LINK, TITLE = 0, 1, 2, 3, 4
 BAND, BAND_NOTE, BAND_LINK, HEADER_GREEN, INPUT, COMPUTED = 5, 6, 7, 8, 9, 10
+# DECISIONS 377: 11 a share or rate stored as a fraction and shown as a percentage with one decimal ("0.0%": Excel shows
+# %17,6 in a Turkish locale, 17.6% in an English one)
+PERCENT = 11
 BAND_STYLES = (BAND, BAND_NOTE, BAND_LINK)
-STYLE_OF = {"green": HEADER_GREEN, "input": INPUT, "computed": COMPUTED, "header": HEADER, "title": TITLE}
+STYLE_OF = {"green": HEADER_GREEN, "input": INPUT, "computed": COMPUTED, "header": HEADER, "title": TITLE, "percent": PERCENT}
 MAX_LINKS = 65000  # Excel keeps at most 65,530 hyperlinks per sheet; past that a cell is plain text
 MAX_LINK_LENGTH = 2000  # Excel refuses a hyperlink address longer than 2,079 characters
 
@@ -266,6 +269,7 @@ def workbook(sheets: list[dict], properties: dict | None = None) -> bytes:
         z.writestr("xl/styles.xml",
                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
                    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+                   '<numFmts count="1"><numFmt numFmtId="164" formatCode="0.0%"/></numFmts>'
                    '<fonts count="6"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font>'
                    '<font><u/><sz val="11"/><color rgb="FF0563C1"/><name val="Calibri"/></font>'
                    '<font><b/><sz val="13"/><name val="Calibri"/></font>'
@@ -279,7 +283,7 @@ def workbook(sheets: list[dict], properties: dict | None = None) -> bytes:
                    '<fill><patternFill patternType="solid"><fgColor rgb="FFE3EEFB"/><bgColor indexed="64"/></patternFill></fill></fills>'
                    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
                    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-                   '<cellXfs count="11"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+                   '<cellXfs count="12"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
                    '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1">'
                    '<alignment vertical="top" wrapText="1"/></xf>'
                    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'
@@ -293,6 +297,7 @@ def workbook(sheets: list[dict], properties: dict | None = None) -> bytes:
                    '<alignment vertical="top" wrapText="1"/></xf>'
                    '<xf numFmtId="0" fontId="0" fillId="5" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'
                    '<xf numFmtId="0" fontId="0" fillId="6" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'
+                   '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment vertical="top"/></xf>'
                    "</cellXfs>"
                    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
                    "</styleSheet>")

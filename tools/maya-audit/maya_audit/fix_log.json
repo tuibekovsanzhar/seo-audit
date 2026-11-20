@@ -2258,6 +2258,89 @@
     ],
     "test": "tests/test_ek_actions_376.py"
    }
+  },
+  {
+   "kaynak": "Sahip — Enpara Ek kontrolü (tam dosya), 20 Kasım (DECISIONS 377)",
+   "brand_key": "enpara",
+   "decisions": [
+    377
+   ],
+   "sorun": "Yönetici özeti başlıkları kontrol listesi madde adlarıydı («Cannibalization kanıt testi»)",
+   "genel": "Yönetici özeti ve aksiyon planı başlıkları kontrol listesi madde adlarıydı",
+   "nasil": "Her Search Console aksiyonu düz bir Türkçe cümleyle anlatılır (ör. «Aynı marka dışı sorguda birden fazla sayfa yarışıyor; en belirgin örnek …»); metin kontrolü RG-31 madde adını ya da İngilizce başlığı engeller.",
+   "check": {
+    "labels": [
+     "own377-1-no-item-titles",
+     "own377-1-no-item-titles-mmi"
+    ],
+    "test": "tests/test_enpara_ek_377.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — Enpara Ek kontrolü (tam dosya), 20 Kasım (DECISIONS 377)",
+   "brand_key": "enpara",
+   "decisions": [
+    377
+   ],
+   "sorun": "Kapsam «2 sayfa (+88 sayfa: Orta)» olarak yazılıyordu",
+   "genel": "Kartın kapsamı toplamı söylemeden parçalarla yazılıyordu",
+   "nasil": "Toplam parçalarıyla yazılır: «90 etkilenen adres (2 Yüksek + 88 Orta)».",
+   "check": {
+    "labels": [
+     "own377-2-scope-total",
+     "own377-2-no-plus-scope"
+    ],
+    "test": "tests/test_enpara_ek_377.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — Enpara Ek kontrolü (tam dosya), 20 Kasım (DECISIONS 377)",
+   "brand_key": "enpara",
+   "decisions": [
+    377
+   ],
+   "sorun": "Rakip - Konu «Niyet: İşlem rehberi»yi konu olarak listeliyordu",
+   "genel": "Niyet, marka ve kayıt etiketleri rakip sekmelerinde konu olarak görünüyordu",
+   "nasil": "Topic Pulse'un konu olmayan etiketleri («Niyet: …», «Branding») hiçbir rakip sekmesinde konu olmaz; Kapsam hangilerinin dışarıda kaldığını söyler.",
+   "check": {
+    "labels": [
+     "own377-3-no-intent-topic"
+    ],
+    "test": "tests/test_enpara_ek_377.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — Enpara Ek kontrolü (tam dosya), 20 Kasım (DECISIONS 377)",
+   "brand_key": "enpara",
+   "decisions": [
+    377
+   ],
+   "sorun": "«i̇ş bankası» (birleşik nokta) yazılıyordu",
+   "genel": "Rakip markalar küçük harfe yanlış çevriliyor, birleşik nokta görünüyordu",
+   "nasil": "Rakip, Maya'nın rakip listesindeki kendi yazımıyla gösterilir («İş Bankası», «Garanti BBVA»); metin kontrolü RG-32 birleşik noktayı (U+0307) engeller.",
+   "check": {
+    "labels": [
+     "own377-4-no-combining-dot",
+     "own377-4-no-combining-dot-mmi"
+    ],
+    "test": "tests/test_enpara_ek_377.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — Enpara Ek kontrolü (tam dosya), 20 Kasım (DECISIONS 377)",
+   "brand_key": "enpara",
+   "decisions": [
+    377
+   ],
+   "sorun": "Paylar ve oranlar 0.1759 gibi ham ondalık sayı olarak görünüyordu",
+   "genel": "Paylar ve oranlar ham ondalık sayı olarak görünüyordu",
+   "nasil": "Pay ve oran sütunları Excel'de yüzde biçimindedir (%17,6); metin içindeki yüzdeler Türkçe yazılır («(%17)»).",
+   "check": {
+    "labels": [
+     "own377-5-turkish-text-percent"
+    ],
+    "test": "tests/test_enpara_ek_377.py"
+   }
   }
  ]
 }

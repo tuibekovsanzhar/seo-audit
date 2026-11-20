@@ -95,4 +95,4 @@ def test_an_older_summary_is_made_again_from_the_kept_files(tmp_path):
            [["demo", "brand_search", 0.9, "yes", "llm"]])
     (tmp_path / maya_data.SUMMARY_FILE).write_text('{"version": 4, "origin": "https://www.demo.test"}', encoding="utf-8")
     again = maya_data.load_for(tmp_path)
-    assert again["version"] == maya_data.VERSION == 5 and "demo" in again["gsc"]["intents"]["rows"]
+    assert again["version"] == maya_data.VERSION >= 5 and "demo" in again["gsc"]["intents"]["rows"]

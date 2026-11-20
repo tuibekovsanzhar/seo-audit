@@ -376,7 +376,8 @@ RULE_NAMES = {
            "RG-24": "Örneği ve ölçülen değeri olmayan bulgu", "RG-25": "Aynı sayfa ve ölçüm için farklı değer",
            "RG-26": "Eşiğini aşmayan örnek değer", "RG-27": "Aynı sayı sekmelerde farklı",
            "RG-28": "Bulgular'da olmayan bulgu kimliği", "RG-29": "Yönetici özeti sayısı kanıt satırında yok",
-           "RG-30": "Kırık iç bağlantı",
+           "RG-30": "Kırık iç bağlantı", "RG-31": "Başlık kontrol listesi maddesi ya da İngilizce",
+           "RG-32": "Birleşik nokta (U+0307) içeren metin",
            "LLM": "İkinci okuyucu önerisi"},
     "en": {"RG-18": "Placeholder or a number not in the evidence", "RG-19": "Advice for another platform",
            "RG-20": "Advice to remove a menu or sign-in link", "RG-21": "English left in Turkish text",
@@ -384,7 +385,8 @@ RULE_NAMES = {
            "RG-24": "Finding with no example or measured value", "RG-25": "Different values for one page and metric",
            "RG-26": "Example value not over its own threshold", "RG-27": "One count stated differently across sheets",
            "RG-28": "Finding ID missing from Findings", "RG-29": "Executive summary number not in its evidence row",
-           "RG-30": "Broken link inside the file",
+           "RG-30": "Broken link inside the file", "RG-31": "Title is a checklist item name or English",
+           "RG-32": "Text with a combining dot (U+0307)",
            "LLM": "Second reader's suggestion"},
 }
 
@@ -570,6 +572,7 @@ def with_file_checks(record: dict | None, made: list[dict], lang: str = "tr") ->
             extra.append(violation("RG-30", f"Ek ({m['name']}): {len(broken)} iç bağlantı olmayan bir sekmeye ya da satıra "
                                    f"gidiyor: " + ", ".join(broken[:3]), hard=True, where=f"ek: {m['name']}",
                                    text=", ".join(broken[:10])))
+    extra += title_checks(made) + combining_dot(made)
     if not extra:
         return record
     violations = list(record["violations"]) + extra
@@ -577,6 +580,61 @@ def with_file_checks(record: dict | None, made: list[dict], lang: str = "tr") ->
     for v in extra:
         counts[v["rule"]] = counts.get(v["rule"], 0) + 1
     return {**record, "violations": violations, "counts": counts, "decision": decision(violations)}
+
+
+# DECISIONS 377: English words a Turkish title never needs (a checklist item's English name shows through)
+ENGLISH_TITLE = re.compile(r"\b(cannibalization|opportunit(?:y|ies)|analysis|audit|ranking|keywords?|traffic|performance|"
+                           r"report|overview|insights?|visibility|engagement|conversion|evidence|check|fix|issue|page|pages)\b", re.I)
+TITLE_COLUMNS = {"Yönetici özeti": "Bulgu", "Aksiyon planı": "Konu"}
+
+
+def title_checks(made: list[dict]) -> list[dict]:
+    """RG-31 (hard): a title in "Yönetici özeti" or "Aksiyon planı" ("Konu") that is a checklist item's own name
+    ("Cannibalization kanıt testi") or has English words is never shown; it must be a plain Turkish sentence."""
+    from .checklist import items
+    from .language import lower
+    names = {lower(str(i.get("item") or "")).strip() for i in items()}
+    out = []
+    for m in made:
+        col_name = TITLE_COLUMNS.get(m["name"])
+        head = m.get("header") or []
+        if col_name not in head:
+            continue
+        c = head.index(col_name)
+        bad = []
+        for r in m.get("rows") or []:
+            text = _cell_text(r[c]).strip() if c < len(r) else ""
+            if not text or text.startswith(("Açık konular", "Ölçü birimleri")):
+                continue
+            if lower(text) in names or ENGLISH_TITLE.search(text):
+                bad.append(text)
+        if bad:
+            out.append(violation("RG-31", f"Ek ({m['name']}): {len(bad)} başlık kontrol listesi maddesinin adı ya da İngilizce: "
+                                 + "; ".join(f"«{b}»" for b in bad[:3]), hard=True, where=f"ek: {m['name']}",
+                                 text="; ".join(bad[:5])))
+    return out
+
+
+ADDRESS = re.compile(r"(?:https?://)?[\w.-]+\.[a-z]{2,}(?:/[^\s;,()]*)?", re.I)
+
+
+def combining_dot(made: list[dict]) -> list[dict]:
+    """RG-32 (hard): a combining dot (U+0307) outside an address: a name lower-cased the wrong way ("i̇ş bankası")."""
+    out = []
+    for m in made:
+        hits = []
+        for r in m.get("rows") or []:
+            for v in r:
+                if isinstance(v, dict) and (v.get("link") or v.get("location")):
+                    continue
+                text = _cell_text(v)
+                # an address keeps its own letters (a site's decomposed URL is evidence): only the words around it count
+                if "\u0307" in ADDRESS.sub("", text):
+                    hits.append(text)
+        if hits:
+            out.append(violation("RG-32", f"Ek ({m['name']}): {len(hits)} hücrede birleşik nokta (U+0307): «{hits[0][:60]}»",
+                                 hard=True, where=f"ek: {m['name']}", text=hits[0]))
+    return out
 
 
 def with_no_example(record: dict | None, names: Iterable[str], lang: str = "tr", cards: bool = False) -> dict | None:

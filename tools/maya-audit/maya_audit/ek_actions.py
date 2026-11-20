@@ -116,6 +116,56 @@ def pdf_pages(pdf: bytes | None, todos: list[dict] | None) -> dict:
     return out
 
 
+_GROUP_NO = re.compile(r"^\d+\s*·\s*")  # "11 · Hız ve Core Web Vitals" -> the group's name
+
+
+def _total(cell) -> int | None:
+    m = re.match(r"^(\d+) \((.+)\)$", str(cell or ""))
+    return int(m.group(1)) if m else None
+
+
+def _parts(cell) -> str:
+    m = re.match(r"^\d+ (\(.+\))$", str(cell or ""))
+    return m.group(1) if m else ""
+
+
+# DECISIONS 377: what a Search Console checklist problem means, as a plain Turkish sentence (never the item's name)
+SC_TITLES = {
+    "SEO-069": "Aynı marka dışı sorguda birden fazla {brand} sayfası yarışıyor{example}",
+    "SEO-071": "Yüksek gösterim alan bazı sayfalarda tıklama oranı düşük",
+    "SEO-007": "Test ya da iç kullanım adresleri Search Console'da gösterim alıyor",
+    "SEO-025": "Search Console'da gösterim alan bazı sayfaları tarama bulamadı",
+    "SEO-054": "Bağlantısı bulunmayan bazı sayfalar tıklama alıyor",
+    "SEO-057": "En çok tıklanan ticari sayfaların bazılarına az iç bağlantı veriliyor",
+    "SEO-028": "Okunan sayfaların bir kısmı Search Console listesinde yok",
+}
+
+
+def _brand(summary: dict | None, report: dict | None) -> str:
+    from .ek_frame import brand
+    name = brand(report, summary)
+    return name[:1].replace("i", "İ").upper() + name[1:] if name and name == name.lower() else name
+
+
+def sc_title(item_id: str, summary: dict | None, report: dict | None, evidence: str = "") -> str:
+    """The plain title of a Search Console checklist problem; for cannibalization with the clearest example (the
+    non-brand query with the most impressions)."""
+    example = ""
+    if item_id == "SEO-069":
+        from .maya_data import _is_brand
+        g = (summary or {}).get("gsc") or {}
+        intents = (g.get("intents") or {}).get("rows") or {}
+        rows = [o for o in (g.get("opportunities") or {}).get("rows") or [] if o.get("type") == "cannibalization"
+                and not ((intents.get(o["query"]) or {}).get("brand") if (intents.get(o["query"]) or {}).get("brand") is not None
+                         else _is_brand(o["query"], (summary or {}).get("brand_names") or []))]
+        if rows:
+            example = f"; en belirgin örnek «{max(rows, key=lambda o: o.get('impressions') or 0)['query']}»"
+    if item_id in SC_TITLES:
+        return SC_TITLES[item_id].format(brand=_brand(summary, report), example=example)
+    first = re.split(r"[.;(]", str(evidence or ""))[0].strip()
+    return f"Search Console verisi bir sorun gösteriyor: {first}" if first else "Search Console verisi bir sorun gösteriyor"
+
+
 def _ids(values) -> list[str]:
     return [str(v) for v in values or [] if FINDING_ID.fullmatch(str(v))]
 
@@ -144,9 +194,10 @@ def actions(book: Book, todos: list[dict] | None, report: dict | None, summary: 
             "İşlem metninin kaynağı": "Kaynak («Bulgu bazında» › Ne yapılmalı)" if fix else "Kaynak (PDF kartının ilk adımı)",
             "İş açısından gerekçe": t.get("why") or "", "Kaynak önceliği": t.get("p_level") or "",
             "Öncelik türü": "P0–P3 (Yöntem sekmesi)", "Kaynak sorumlu": t.get("owner") or "", "Kaynak efor": t.get("effort") or "",
-            # the PDF's scope when it says more than a count ("2 sayfa (+88 sayfa: Orta)") is its own unit
-            "Kapsam (sayı)": count if count != "" else len(urls),
-            "Kapsam birimi": "etkilenen adres (Özet)" if count == "" or str(count).isdigit() else "PDF kartının kapsamı (Özet)",
+            # DECISIONS 377: "90 (2 Yüksek + 88 Orta)" is 90 addresses with their parts; another scope is its own unit
+            "Kapsam (sayı)": _total(count) if _total(count) is not None else (count if count != "" else len(urls)),
+            "Kapsam birimi": ("etkilenen adres" + (f" {_parts(count)}" if _parts(count) else "") + " (Özet)")
+            if count == "" or str(count).isdigit() or _total(count) is not None else "PDF kartının kapsamı (Özet)",
             "Benzersiz URL": len(urls), "İlk 3 URL": "\n".join(urls[:3]),
             "Tam liste": _go("Etkilenen adresler", full) if full is not None else "",
             "Kaynak bulgu kimlikleri": "; ".join(ids), "Kanıt": _go("Bulgu bazında", idx[0]) if idx else
@@ -168,7 +219,10 @@ def actions(book: Book, todos: list[dict] | None, report: dict | None, summary: 
         item, evidence = book.cell("Kontrol listesi", i, "Kontrol maddesi"), book.cell("Kontrol listesi", i, "Kanıt")
         group = book.cell("Kontrol listesi", i, "Grup")
         out.append({
-            "Aksiyon kimliği": f"T-{t_next:02d}", "Grup": "Teknik SEO (karta bağlı değil)", "Konu": f"{item} · {group}",
+            # DECISIONS 377: the title says what was found ("INP p75 323 ms (iyileştirilmeli)"), never the item's name alone
+            "Aksiyon kimliği": f"T-{t_next:02d}", "Grup": "Teknik SEO (karta bağlı değil)",
+            "Konu": (str(evidence).strip().rstrip(".") or f"Kontrol listesinde sorun: {item}")
+            + (" · " + _GROUP_NO.sub("", str(group)) if group else ""),
             "Sorun türü": "Sorun", "Sorun veya fırsat (kaynak)": evidence,
             "Önerilen işlem": f"«{item}» maddesini kanıttaki değere göre düzeltin; kontrol listesinde «Geçti» olmalı",
             "İşlem metninin kaynağı": "Maya metni (kontrol listesi kanıtı)", "İş açısından gerekçe": "",
@@ -193,7 +247,7 @@ def actions(book: Book, todos: list[dict] | None, report: dict | None, summary: 
         opp = book.first("SC fırsatlar", "Fırsat türü (Maya)", lambda v: str(v).startswith("Yamyamlaşma")) if r[c_id] == "SEO-069" else None
         m = re.match(r"(?:\D*?)(\d[\d.]*) (?:sayfa|marka dışı|sorgu)", str(evidence))
         out.append({
-            "Aksiyon kimliği": f"S-{s:02d}", "Grup": "Search Console eki", "Konu": item,
+            "Aksiyon kimliği": f"S-{s:02d}", "Grup": "Search Console eki", "Konu": sc_title(r[c_id], summary, report, evidence),
             "Sorun türü": "Search Console eki önerisi: Sorun", "Sorun veya fırsat (kaynak)": evidence,
             "Önerilen işlem": "Aynı sorguda yarışan sayfaların rolünü ayırın: biri hedef sayfa olsun, diğerleri ona bağlantı versin"
             if r[c_id] == "SEO-069" else "Kanıttaki sayfaların başlık ve açıklamasını aramaya göre yeniden yazın",
@@ -342,7 +396,7 @@ def exec_sheet(book: Book, acts: list[dict], summary: dict | None, decided: list
     tech = [a for a in acts if a["Aksiyon kimliği"].startswith("T-") and a["Sorun türü"] == "Sorun"][:4]
     for a in tech:
         claims.append((len(rows), str(a["Kapsam (sayı)"]), "Özet", "Kart", a["Aksiyon kimliği"][2:].lstrip("0")))
-        unit = f" {a['Kapsam birimi']}" if str(a["Kapsam (sayı)"]).isdigit() else ""
+        unit = f" {a['Kapsam birimi'].removesuffix(' (Özet)')}" if str(a["Kapsam (sayı)"]).isdigit() else ""
         rows.append([len(rows) + 1, a["Konu"], f"Kart {a['Aksiyon kimliği'][2:].lstrip('0')} · {a['Kaynak önceliği']} · {a['Kapsam (sayı)']}{unit} · "
                      f"{a['Ölçüm dönemi']}", a["Aksiyon kimliği"], a["Kanıt"] or a["Tam liste"]])
     for a in [a for a in acts if a["Aksiyon kimliği"].startswith("S-")][:2]:

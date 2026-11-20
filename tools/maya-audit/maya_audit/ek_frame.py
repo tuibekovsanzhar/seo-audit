@@ -8,6 +8,7 @@ brands the plan was made from are only test cases (docs/proposals/EK-FULL-FILE.m
 """
 from __future__ import annotations
 
+import re
 from datetime import date, datetime, timezone
 from urllib.parse import urlsplit
 
@@ -421,10 +422,29 @@ def cover(selection: dict, report: dict | None, summary: dict | None, made: list
             "_counts": {"pages_read": (cov.get("pages_read"), name("cover", lang))} if cov.get("pages_read") is not None else {}}
 
 
+RATE_HEADER = re.compile(r"\bCTR\b|\bpayı\b|\boranı\b|\bshare\b|\brate\b", re.I)
+
+
+def percent_columns(sheet: dict) -> dict:
+    """DECISIONS 377: a share or rate column (its header says CTR, "payı", "oranı") whose values are fractions is shown
+    as a percentage ("0.0%"); a column of text or of numbers above 1 is left as it is."""
+    head = sheet.get("header") or []
+    rows = sheet.get("rows") or []
+    styles = dict(sheet.get("col_styles") or {})
+    for i, h in enumerate(head):
+        if not RATE_HEADER.search(str(h)) or i in styles:
+            continue
+        values = [r[i] for r in rows if i < len(r) and r[i] not in ("", None)]
+        numbers = [v for v in values if isinstance(v, (int, float)) and not isinstance(v, bool)]
+        if numbers and len(numbers) >= len(values) * 0.8 and all(0 <= v <= 1 for v in numbers):
+            styles[i] = "percent"
+    return {**sheet, "col_styles": styles} if styles else sheet
+
+
 def frame(made: list[dict], selection: dict, report: dict | None, summary: dict | None, lang: str = "tr",
           now: datetime | None = None) -> list[dict]:
     """The client Ek's sheets in the team's order, each with the Maya band, and "Kapak" first."""
-    sheets = order([m for m in made if m["name"] not in INTERNAL])
+    sheets = order([percent_columns(m) for m in made if m["name"] not in INTERNAL])
     who = brand(report, summary)
     out = []
     for m in sheets:
