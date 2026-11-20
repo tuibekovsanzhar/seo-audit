@@ -116,6 +116,24 @@
      "regex": "^RG-29$"
     }
    ]
+  },
+  {
+   "card": "R-376-5",
+   "title": "Kontrol listesinde «Sorun» olup karta bağlı olmayan madde bir aksiyon olmalı",
+   "rule_ids": [],
+   "expert_note": "T-16 (SEO-112): kontrol listesinde Sorun; hiçbir karta bağlı değil",
+   "verdict": "incomplete",
+   "cell": "Aksiyon planı › T-16",
+   "labels": [
+    {
+     "id": "enp2-R376-5-unlinked-action",
+     "kind": "must_find",
+     "on": "row",
+     "sheet": "Aksiyon planı",
+     "column": "Grup",
+     "regex": "^Teknik SEO \\(karta bağlı değil\\)$"
+    }
+   ]
   }
  ]
 }

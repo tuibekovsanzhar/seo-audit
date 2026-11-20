@@ -120,3 +120,15 @@ def test_each_cards_page_is_read_from_the_printed_pdf():
     book = xlsx.read(_files(pdf=pdf)["client"])
     assert book["Konum dizini"][1][5] == "2"
     assert ek_actions.pdf_pages(None, TODOS) == {}
+
+
+def test_a_checklist_problem_no_card_covers_is_an_action_of_its_own():
+    checklist = {"name": "Kontrol listesi", "header": ["ID", "Grup", "Kontrol maddesi", "Öncelik", "Sonuç", "Kanıt", "Maya kuralı / kart"],
+                 "rows": [["SEO-112", "11 · Hız", "INP p75", "P1", "Sorun", "INP p75 323 ms", "PRF-3 · CrUX"],
+                          ["SEO-020", "2 · Dizin", "Başlık", "P2", "Sorun", "...", "Kart 1"],
+                          ["SEO-030", "2 · Dizin", "Açıklama", "P2", "Geçti", "...", ""]]}
+    acts = ek_actions.actions(ek_actions.Book([checklist]), TODOS, _report(), None, {})
+    extra = [a for a in acts if a["Grup"] == "Teknik SEO (karta bağlı değil)"]
+    assert len(extra) == 1 and extra[0]["Aksiyon kimliği"] == "T-02" and extra[0]["Kaynak bulgu kimlikleri"] == "SEO-112"
+    assert extra[0]["Çapraz bağlantı / not"].endswith("(Maya: PRF-3 · CrUX)")
+    assert extra[0]["Kanıt"]["location"] == "'Kontrol listesi'!A2" and extra[0]["Kaynak önceliği"] == "P1 (kontrol listesi)"

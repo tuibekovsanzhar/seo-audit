@@ -223,3 +223,35 @@ All hard. Without Maya data the SC/AI sheets are left out and Kapsam says so (no
   both), else "PDF oluşturulmadı"; the HTML link column only when a shared HTML link exists, else left out.
 - **D5** Expert/client columns are always empty with dropdowns; "uzman değerlendirmesinden geçmiştir" never written
   by Maya (proposed).
+
+## Result (phase 6, 2026-11-20): the saved Enpara audit rebuilt against Efsa's file
+
+Rebuilt from saved data with the skill's own flow (team report PDF printed, then the Ek with each card's PDF page),
+with the Maya export files from her folder attached to a local copy (never committed). 30 sheets in the client Ek
+(Kapak, the 5 action sheets, the reader and technical sheets, 3 of the 6 Search Console / AI sheets, Kaynak eşlemesi,
+Maya's 4 own sheets) and a team file (Kontrol raporu: Geçti; Düzeltme kaydı). The text check passes.
+
+**Same as her file:** the sheet order; the Maya band, "← Kapak" and the source line on every sheet; Kapak's blocks;
+T-01 to T-16 (her 15 cards and the checklist problem no card covers), with T-01/T-02/T-03 pointing at the same
+"Bulgu bazında" rows; Uzman teyidi's 28 items; SC sayfaları's page list; Sayfa bazında's 176 rows with the Search
+Console columns; Kilit sayfalar, Şablonlar, Yönlendiren bağlantılar and Kontrol listesi özeti row for row; the
+checklist's proposal columns and before/after totals; the competitor sheets' C1/C2 columns (on audits whose export
+has the competitor datasets).
+
+**Remaining differences, with the reason:**
+
+| Where | Ours / hers | Reason |
+|---|---|---|
+| SC fırsatlar | missing / 923 rows | the export in her folder has no gsc-query-opportunities file (her 12 Nov add-on had one); made when the file is attached |
+| SC sorgular | 101 queries, intent only / 251 with clicks | no gsc-top-queries in the export; she used another download (D3) |
+| C1, C2, Rakip yöntem notları | missing / 12, 36, 10 rows | the export has no topic-visibility-snapshots or competitor-mentions-daily; made when attached (MMI shows them) |
+| Aksiyon planı | 17 / 30 actions | follows the three rows above: 1 S- (SEO-071; SEO-069 needs the opportunities file) and no R- (no competitor data) |
+| Search Console özeti | computed from the export / dashboard screenshots | device, country, index health from the dashboard are "Veri yok" with the reason; the 28-day totals are computed from the daily file and marked so; intent shares count the 101 classified queries, not the dashboard's ~900 |
+| AI alıntılanan sayfalar | every cited page over the export's period / 34 pages from three days of runs | D2 |
+| Kitapçıkta aç (HTML) | left out / a link per action | no shared HTML link exists (D4) |
+| PDF page numbers | from today's PDF / from her 12 Nov booklet | the PDF's layout changed since (cards 1-4 on page 5 now) |
+| Bulgu bazında, Etkilenen adresler, Bulgular, Özet, Bağlantı yerleri, Kapsam, Yöntem | different row counts | the current engine (DECISIONS 365-375 came after her 12 Nov copy: other findings in Özet, link places, no check names as IDs, version line) |
+| Sayfa grupları | address rows in their own columns with links / group and address in the same columns | layout; same content |
+| Kaynak eşlemesi | source and period per sheet / her manual copy's source ranges and row shifts | a file Maya writes has no manual copy to trace |
+| Expert columns, "uzman değerlendirmesinden geçmiştir", Açık konular' owners and dates | empty or "Uzman teyidi bekliyor" / filled by her | expert and brand input (D5) |
+| Her own wording (Yönetici özeti sentences, business reasons, C1 advice) | Maya's text | not reproducible; ours comes from the text library and the competitor sheet |

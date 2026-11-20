@@ -25,8 +25,9 @@ INPUT_COLS = ("SEO değerlendirmesi", "Uzman notu", "Onaylanan öncelik", "Uygul
 DROPDOWNS = {"SEO değerlendirmesi": ["Onaylandı", "Değiştirilmeli", "Reddedildi"],
              "Onaylanan öncelik": ["P0", "P1", "P2", "P3"],
              "Uygulama durumu": ["Başlamadı", "Sürüyor", "Tamamlandı", "Ertelendi"]}
-EXPERT_COLS = ["Tür", "Kimlik", "Kontrol / madde", "Bulgu / kanıt", "Önem", "Güven sınıfı", "Teyit nedeni", "Araç sonucu",
-               "SC eki önerilen sonuç", "Ne yapılmalı", "Kanıt", "Kaynak satırı", "SEO değerlendirmesi", "Uzman notu"]
+EXPERT_COLS = ["Tür", "Kimlik", "Kontrol / madde", "Bulgu / kanıt (kaynak)", "Önem", "Güven sınıfı", "Teyit nedeni",
+               "Araç sonucu", "SC eki önerilen sonuç", "Kaynakta ne yapılmalı", "Kanıt", "Kaynak satırı", "SEO değerlendirmesi",
+               "Uzman notu"]
 ITYPE = {"issue": "Sorun", "warning": "Kontrol edin", "opportunity": "Fırsat"}
 SEV = {"S1": "Engelleyici", "S2": "Yüksek", "S3": "Orta", "S4": "Düşük", "Info": "Bilgi"}
 CONF = {"measured": "Ölçülmüş", "estimated": "Tahmini", "inferred": "Çıkarım", "unverified": "Doğrulanmamış kontrol"}
@@ -154,6 +155,31 @@ def actions(book: Book, todos: list[dict] | None, report: dict | None, summary: 
             "Gösterge (n<10)": "", "Çapraz bağlantı / not": "", "Doğrulama yöntemi": t.get("verify") or "",
             "Kitapçık sayfası (PDF)": (pages or {}).get(t["n"], NO_PDF if not pages else "PDF'te yok (yalnız Ek)"),
             "_rows": idx, "_urls": urls})
+    # T- (Efsa's T-16): a checklist item the tool marks "Sorun" that no card covers is an action of its own
+    t_next = max([t["n"] for t in todos or [] if isinstance(t.get("n"), int)], default=0)
+    c_id0, c_res0, c_ref0 = (book.col("Kontrol listesi", h) for h in ("ID", "Sonuç", "Maya kuralı / kart"))
+    for i, r in enumerate(book.rows("Kontrol listesi")):
+        if None in (c_id0, c_res0) or c_res0 >= len(r) or r[c_res0] != "Sorun" or not str(r[c_id0]).startswith("SEO-"):
+            continue
+        ref = str(r[c_ref0]) if c_ref0 is not None and c_ref0 < len(r) else ""
+        if ref.startswith(("Kart ", "Card ")):
+            continue
+        t_next += 1
+        item, evidence = book.cell("Kontrol listesi", i, "Kontrol maddesi"), book.cell("Kontrol listesi", i, "Kanıt")
+        group = book.cell("Kontrol listesi", i, "Grup")
+        out.append({
+            "Aksiyon kimliği": f"T-{t_next:02d}", "Grup": "Teknik SEO (karta bağlı değil)", "Konu": f"{item} · {group}",
+            "Sorun türü": "Sorun", "Sorun veya fırsat (kaynak)": evidence,
+            "Önerilen işlem": f"«{item}» maddesini kanıttaki değere göre düzeltin; kontrol listesinde «Geçti» olmalı",
+            "İşlem metninin kaynağı": "Maya metni (kontrol listesi kanıtı)", "İş açısından gerekçe": "",
+            "Kaynak önceliği": f"{book.cell('Kontrol listesi', i, 'Öncelik')} (kontrol listesi)",
+            "Öncelik türü": "Kontrol listesi madde önceliği (P0–P3 hesabı değil)", "Kaynak sorumlu": "", "Kaynak efor": "",
+            "Kapsam (sayı)": "", "Kapsam birimi": "site geneli ölçüm; adres listesi yok", "Benzersiz URL": "", "İlk 3 URL": "",
+            "Tam liste": "", "Kaynak bulgu kimlikleri": str(r[c_id0]),  # a check's name is no finding ID (RG-28)
+            "Kanıt": _go("Kontrol listesi", i), "Ek kanıt": "", "Ölçüm dönemi": crawl, "Gösterge (n<10)": "",
+            "Çapraz bağlantı / not": "Kontrol listesinde «Sorun»; hiçbir karta bağlı değil" + (f" (Maya: {ref})" if ref else ""),
+            "Doğrulama yöntemi": "Bir sonraki denetimde madde «Geçti» olmalı",
+            "Kitapçık sayfası (PDF)": "Ek'e özgü (PDF'te yok)", "_rows": [], "_urls": []})
     # S-: a checklist item the Search Console data turns into a problem the tool did not see
     c_id, c_res, c_sc, c_ev = (book.col("Kontrol listesi", h) for h in ("ID", "Sonuç", "Search Console eki: önerilen sonuç",
                                                                         "Search Console kanıtı"))
@@ -436,6 +462,11 @@ def build(made: list[dict], selection: dict, todos: list[dict] | None, report: d
     dates = [str(c.get("date") or "")[:10] for c in (selection.get("_confirmations") or {}).values() if isinstance(c, dict)]
     review = review_line(decided, max([d for d in dates if d], default=None), "tr")
     sheets = [exec_sheet(book, acts, summary, decided, review), action_sheet(acts), expert]
+    if any(not a["Aksiyon kimliği"].startswith("T-") for a in acts) or sheets[0].get("_claims") and summary:
+        # S- and R- rows, and the summary's Search Console lines, come from Maya's export: the band names its datasets
+        used = [d["dataset"] for d in (summary or {}).get("datasets") or [] if d.get("dataset") != "meta"]
+        for sh in sheets[:3]:
+            sh["_datasets"] = used or None
     grp = groups_sheet(book, acts)
     if grp:
         sheets.append(grp)

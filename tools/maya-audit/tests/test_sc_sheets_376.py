@@ -88,11 +88,13 @@ def test_the_summary_keeps_each_period_marks_computed_numbers_and_says_why_data_
 def test_page_sheets_say_the_audit_status_and_never_sum_snapshots():
     book, _, _ = _book()
     pages = {r[0]: r for r in book["SC sayfaları"][1:]}
-    assert pages[f"{HOST}/a"][1:5] == ["900", "9000", "0.1", "2.0"] and pages[f"{HOST}/a"][5] == "2 / 2"
+    assert pages[f"{HOST}/a"][1:5] == ["900", "9000", "0.1", "2.0"] and pages[f"{HOST}/a"][5] == "2"
+    assert book["SC sayfaları"][0][5] == "İlk listede (2 ölçümden)"
     assert pages[f"{HOST}/gone"][10] == "Okunmadı"
     assert book["SC sayfaları"][0][1] == "Tık (28 gün)"
     traffic = book["Trafiğe göre öncelik"]
-    assert [r[0] for r in traffic[1:]] == [f"{HOST}/a"]  # pages read with a problem
+    assert [r[0] for r in traffic[1:]] == [f"{HOST}/a"]  # every page with a problem (here one, read)
+    assert traffic[0][-1] == "Denetimdeki durumu" and traffic[1][-1] == "Okundu, sorun var"
     ai = {r[0]: r for r in book["AI alıntılanan sayfalar"][1:]}
     assert ai[f"{HOST}/a"][1:4] == ["6", "chatgpt, gemini", "3"]
     opps = book["SC fırsatlar"]
@@ -106,7 +108,7 @@ def test_page_sheets_say_the_audit_status_and_never_sum_snapshots():
 def test_by_page_and_key_pages_get_green_search_console_columns():
     book, _, _ = _book()
     head = book["Sayfa bazında"][0]
-    assert head[-8:] == ["SC tık (28 gün)", "SC gösterim (28 gün)", "SC CTR", "SC ort. sıra", "SC listede (ölçüm)",
+    assert head[-8:] == ["SC tık (28 gün)", "SC gösterim (28 gün)", "SC CTR", "SC ort. sıra", "SC ilk listede (2 ölçümden)",
                          "SC ölçüm haftası", "AI alıntı sayısı", "Alıntılayan AI"]
     row = next(r for r in book["Sayfa bazında"][1:] if r[0] == f"{HOST}/a")
     assert row[-8:-6] == ["900", "9000"] and row[-1] == "chatgpt, gemini"

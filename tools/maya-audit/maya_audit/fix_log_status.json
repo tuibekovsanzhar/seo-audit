@@ -730,10 +730,10 @@
   },
   {
    "no": 105,
-   "durum": "Hâlâ var",
+   "durum": "Düzeltildi",
    "tarih": "2026-11-20",
-   "commit": "f778ba5",
-   "decisions": "373"
+   "commit": "b2ba356",
+   "decisions": "373, 375"
   },
   {
    "no": 106,
@@ -814,6 +814,41 @@
   },
   {
    "no": 117,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-20",
+   "commit": "aa28744",
+   "decisions": "376"
+  },
+  {
+   "no": 118,
+   "durum": "Doğrulanmadı",
+   "tarih": "2026-11-20",
+   "commit": "aa28744",
+   "decisions": "376"
+  },
+  {
+   "no": 119,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-20",
+   "commit": "aa28744",
+   "decisions": "376"
+  },
+  {
+   "no": 120,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-20",
+   "commit": "aa28744",
+   "decisions": "376"
+  },
+  {
+   "no": 121,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-20",
+   "commit": "aa28744",
+   "decisions": "376"
+  },
+  {
+   "no": 122,
    "durum": "Düzeltildi",
    "tarih": "2026-11-20",
    "commit": "aa28744",

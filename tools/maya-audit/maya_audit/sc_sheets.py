@@ -87,6 +87,11 @@ class Data:
         self.scores = (self.gsc.get("page_scores") or {}).get("rows") or {}
         self.cited = self.ai.get("pages") or {}
 
+    def listed_label(self, prefix: str = "") -> str:
+        """"İlk listede (9 ölçümden)": in how many of the file's weekly lists the page is (Efsa's "İlk 200de")."""
+        first = "ilk" if prefix else "İlk"
+        return f"{prefix}{first} listede ({self.weeks} ölçümden)" if self.weeks else f"{prefix}{first} listede (ölçüm yok)"
+
     def key(self, url: str) -> str:
         return page_url(url, self.origin) or url
 
@@ -267,23 +272,21 @@ def _cells(values: list) -> list:
 
 
 def traffic_sheet(d: Data) -> dict | None:
-    """Pages read with at least one problem, by Search Console clicks."""
+    """Every page with a problem (read or not, as "Sayfa bazında"), by Search Console clicks, with its audit status."""
     if not d.pages:
         return None
     label = d.metric_label()
     rows = []
     for key, p in d.problems.items():
-        if key not in d.read:
-            continue
         cites, _ = d.cites(key)
         rows.append([_link(key), *_cells(_metrics(d, key)), cites if cites is not None else "",
                      p["importance"] if isinstance(p.get("importance"), (int, float)) else "", p["problems"],
                      SEV_WORD.get(p["worst"], "") if p.get("worst") else "", "; ".join(p["names"]),
-                     ", ".join(str(n) for n in p["cards"])])
+                     ", ".join(str(n) for n in p["cards"]), d.status(key)])
     rows.sort(key=lambda r: (-(r[1] or 0) if isinstance(r[1], (int, float)) else 1, -(r[2] or 0) if isinstance(r[2], (int, float)) else 1))
     header = ["Sayfa", f"SC tık ({label})", f"SC gösterim ({label})", "SC CTR", "SC ort. sıra", "AI alıntı sayısı",
-              "Önem puanı (0-100)", "Sorun sayısı", "En yüksek önem", "Sorunlar", "Kartlar"]
-    return {"name": NAMES["traffic"], "header": header, "rows": rows, "widths": [70, 12, 14, 9, 10, 12, 12, 10, 14, 70, 10],
+              "Önem puanı (0-100)", "Sorun sayısı", "En yüksek önem", "Sorunlar", "Kartlar", "Denetimdeki durumu"]
+    return {"name": NAMES["traffic"], "header": header, "rows": rows, "widths": [70, 12, 14, 9, 10, 12, 12, 10, 14, 70, 10, 20],
             "header_styles": {i: "green" for i in range(1, 6)},
             "_datasets": [str(d.gsc.get("page_source")), "citation-mentions"] if d.cited else [str(d.gsc.get("page_source"))]}
 
@@ -297,12 +300,12 @@ def pages_sheet(d: Data) -> dict | None:
     for key in sorted(d.pages, key=lambda k: (-(d.pages[k].get("clicks") or 0), -(d.pages[k].get("impressions") or 0), k)):
         sc = d.scores.get(key) or {}
         cites, _ = d.cites(key)
-        listed = f"{d.listed[key]} / {d.weeks}" if d.weeks and d.listed.get(key) else ""
+        listed = d.listed.get(key) or "" if d.weeks else ""
         rows.append([_link(key), *_cells(_metrics(d, key)), listed, d.week_of.get(key) or "",
                      _whole(sc.get("query_count")) if sc.get("query_count") is not None else "",
                      _whole(sc.get("authority_score")) if sc.get("authority_score") is not None else "",
                      cites if cites is not None else "", d.status(key), *d.problem_cells(key)])
-    header = ["Sayfa", f"Tık ({label})", f"Gösterim ({label})", "CTR", "Ort. sıra", "Listede (ölçüm)", "Ölçüm haftası",
+    header = ["Sayfa", f"Tık ({label})", f"Gösterim ({label})", "CTR", "Ort. sıra", d.listed_label(), "Ölçüm haftası",
               "Sorgu sayısı (Maya skoru)", "Otorite skoru (Maya)", "AI alıntı sayısı", "Denetimdeki durumu", "Sorunlar", "Kartlar"]
     used = [str(d.gsc.get("page_source"))] + (["gsc-page-scores"] if d.scores else []) + (["citation-mentions"] if d.cited else [])
     unread = sum(1 for r in rows if r[10] in (STATUS["unread"], STATUS["unread_problem"]) and isinstance(r[1], (int, float)) and r[1] > 0)
@@ -388,7 +391,8 @@ def add_columns(sheet: dict, d: Data, url_col: int = 0) -> dict:
     if not (d.pages or d.cited) or sheet.get("header") in (None, ["Not"], ["Note"]):
         return sheet
     label = d.metric_label()
-    header = list(sheet["header"]) + [c.replace("28 gün", label) for c in SC_COLS]
+    header = list(sheet["header"]) + [c.replace("28 gün", label).replace("SC listede (ölçüm)", d.listed_label("SC "))
+                                      for c in SC_COLS]
     rows = []
     for r in sheet["rows"]:
         cell = r[url_col] if url_col < len(r) else ""
@@ -396,7 +400,7 @@ def add_columns(sheet: dict, d: Data, url_col: int = 0) -> dict:
         key = d.key(str(url)) if url else ""
         m = _metrics(d, key) if key in d.pages else [None] * 4
         cites, who = d.cites(key)
-        listed = f"{d.listed[key]} / {d.weeks}" if d.weeks and d.listed.get(key) else ""
+        listed = d.listed.get(key) or "" if d.weeks else ""
         rows.append(list(r) + [*_cells(m), listed, d.week_of.get(key) or "", "" if cites is None else cites, who])
     first = len(sheet["header"])
     used = ([str(d.gsc.get("page_source"))] if d.pages else []) + (["citation-mentions"] if d.cited else [])

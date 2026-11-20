@@ -2242,6 +2242,22 @@
     ],
     "test": "tests/test_ek_actions_376.py"
    }
+  },
+  {
+   "kaynak": "Efsa — Enpara son dosyası, «Aksiyon planı» T-16, 13 Kasım (DECISIONS 376)",
+   "brand_key": "enpara",
+   "sorun": "Kontrol listesinde «Sorun» olup hiçbir karta bağlı olmayan madde aksiyon planına elle eklendi",
+   "genel": "Kontrol listesinde «Sorun» olup hiçbir karta bağlı olmayan madde aksiyon planında yoktu",
+   "nasil": "Böyle bir madde «Teknik SEO (karta bağlı değil)» grubunda kendi T- aksiyonu olur: kanıtı, önceliği ve kontrol listesindeki satırına bağlantısıyla.",
+   "decisions": [
+    376
+   ],
+   "check": {
+    "labels": [
+     "enp2-R376-5-unlinked-action"
+    ],
+    "test": "tests/test_ek_actions_376.py"
+   }
   }
  ]
 }

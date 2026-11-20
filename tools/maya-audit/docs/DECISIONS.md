@@ -5918,9 +5918,8 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      opportunity list, non-brand queries only. RG-27 compares the counts the sheets state (pages read, Search Console
      pages with clicks not read, non-brand cannibalization, AI-cited pages). Hardened on the way: an expert label or a
      fix-log check on a column the sheet lacks is no evidence (red / not verified), never a match on every cell, and a
-     row shorter than the column has that cell empty. Enpara with its Downloads export (local copy only): 403.688
-     clicks, CTR %7,5 for 14 Ekim – 10 Kasım (Efsa's dashboard: 388,5 K, %7,5 for 15 Ekim – 10 Kasım); 227 Search
-     Console pages (hers: 227). Tests: `tests/test_sc_sheets_376.py`; fix log items 119-120; labels enp2-R376-2/3 (on
+     row shorter than the column has that cell empty. Enpara with its export (a local copy only): the last-28-day clicks and CTR within 4% of the dashboard figures Efsa
+     used, the same number of Search Console pages as her sheet. Tests: `tests/test_sc_sheets_376.py`; fix log items 119-120; labels enp2-R376-2/3 (on
      MMI's frozen audit, the noted audit having no Maya data).
      *Phase 4, the action sheets* (`maya_audit/ek_actions.py`, Turkish as the team's file), built from the sheets
      already written so every link lands on a real row: "Aksiyon planı" (30 columns: T- per PDF card with the card's
@@ -5948,3 +5947,11 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      competitor sheets already have her C1/C2 columns (the brand written "Marka"); their names stay "Rakip - Konu" and
      "Rakip - Sayfa yapısı". The action sheets name Maya's datasets in their band when S- or R- rows or Search Console
      lines come from the export. Tests: `tests/test_ek_sources_376.py`.
+     *Phase 6, Enpara against Efsa's file*: the saved Enpara audit rebuilt with the skill's flow and the export
+     files from her folder attached to a local copy; the remaining differences and their reasons are listed in
+     `docs/proposals/EK-FULL-FILE.md` ("Result"). Aligned on the way, as global rules: a checklist item the tool marks
+     "Sorun" that no card covers is a T- action of its own, "Teknik SEO (karta bağlı değil)" (her T-16; its check
+     name goes to the note, never the ID column: RG-28 caught it); "Trafiğe göre öncelik" lists every page with a
+     problem, read or not, with its audit status; the weekly-list column reads "İlk listede (N ölçümden)"; "Uzman
+     teyidi" says "Bulgu / kanıt (kaynak)" and "Kaynakta ne yapılmalı" as hers. Fix log item 122, label
+     enp2-R376-5-unlinked-action. The seven saved audits pass the text check.

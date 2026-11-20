@@ -2989,3 +2989,33 @@ Carpex 32, Enpara 21, Atasun 21, İş Bankası 21, Ticimax 32, Nature's Garden 3
 | fast suite (with the frozen set) | `3558 passed, 4 skipped, 135 deselected, 1 warning in 606.69s (0:10:06)` |
 | `scripts/real_sites_benchmark.py expert` | ran after phase 6's first edits: `97 hold, 1 red` (enp2-R376-1-rg28: phase 6's new action put a check name in an ID column; fixed in phase 6) |
 | Push | NOT DONE (owner: don't push) |
+
+## Phase 6: Enpara against Efsa's file, the other saved audits (DECISIONS 376, 2026-11-20)
+
+VERIFIED locally; not pushed. The saved Enpara audit rebuilt with the skill's flow (PDF, then the Ek with each card's
+page) and the export from her folder attached to a local copy: 30 client sheets and a team file, text check Geçti.
+Remaining differences with their reasons: `docs/proposals/EK-FULL-FILE.md` ("Result"); mostly the datasets the export
+in her folder lacks (opportunities, top queries, competitor files), the owner's D2-D5, and engine changes after her copy.
+Aligned on the way: a checklist "Sorun" no card covers is its own T- action (her T-16); "Trafiğe göre öncelik" lists
+every page with a problem; "İlk listede (N ölçümden)"; Uzman teyidi column names. The client's Search Console figures
+were taken out of the DECISIONS text (relative statements only).
+
+| Saved audit (rebuilt from copies, no request) | Client sheets | Text check |
+|---|---|---|
+| MMI 536b4b64 | 31 | PASS |
+| Carpex 1fd871f0 | 32 | PASS |
+| Enpara fee70191 | 21 | PASS |
+| Enpara fee70191 + export, skill flow with PDF (local copy) | 30 | PASS |
+| Atasun f06a2129 | 21 | PASS |
+| İş Bankası 1b81bee4 | 21 | PASS |
+| Ticimax c77ebf6d | 32 | PASS |
+| Nature's Garden 342a0b14 | 31 | PASS |
+
+| Command | Result |
+|---|---|
+| fast suite (with the frozen set) | `3559 passed, 4 skipped, 135 deselected, 1 warning in 602.34s (0:10:02)` |
+| `scripts/real_sites_benchmark.py expert` | `99 labels: 99 hold, 0 red` |
+| `tools/fix_log.py --work <tmp> --write-status` | 122 items: Düzeltildi 118, Hâlâ var 0, Doğrulanmadı 4 (new crawl or data needed) |
+| `tools/fix_log.py --out ~/Downloads/duzeltme-kaydi.xlsx` | written |
+| `ruff --select E9,F821,F841` | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |
