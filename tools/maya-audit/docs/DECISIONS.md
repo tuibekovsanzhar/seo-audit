@@ -5857,3 +5857,10 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      nor then the same streamed tag on the other pages. Saved audits have no such request: "Googlebot isteğiyle
      doğrulanmadı". *(5) GTIN*: "Product işaretlemesinde gtin (gtin8/12/13/14) ve mpn yok; var olanlar: sku, brand".
      Tests: `tests/test_mmi_check_374.py` (6); four MMI labels (mmi-R374-*); fix log items 113-116.
+375. **The version stamp is for the team, not the client (Owner, 2026-11-20).** DECISIONS 373's stamp leaves the PDFs
+     (team report and brief: no "Sürüm" provenance line). The Ek says it in one short line, the last row of "Yöntem"
+     ("Sürüm: 0.2.8 · commit abc1234", `version_stamp.short`), no longer the first row of "Kapsam", which starts with
+     the platform again. The full stamp with the build time goes into the file's document properties
+     (docProps/core.xml: creator "Maya Audit", description "Maya Audit <version> · commit <c> · built <time> UTC",
+     version, created; `xlsx.workbook(properties=…)`, `version_stamp.properties`). The PDF's older "Motor" line
+     (engine version and audit id, since before 373) is unchanged. Tests: `tests/test_version_stamp_375.py`.

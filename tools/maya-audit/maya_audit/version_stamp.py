@@ -1,6 +1,6 @@
-"""DECISIONS 373 (Efsa, A6): which code made a file. Every Ek (the first row of "Kapsam") and every PDF (its provenance
-lines) says the engine version, the commit and when the file was built, so a note on a file can be matched to the
-code that wrote it."""
+"""DECISIONS 373 (Efsa, A6): which code made a file, so a note on a file can be matched to the code that wrote it.
+DECISIONS 375: the stamp is for the team, not the client: no PDF shows it; the Ek says it in one short line, the last
+row of "Yöntem" ("Sürüm: 0.2.8 · commit abc1234"), and in the file's document properties with the build time."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -26,3 +26,18 @@ def line(lang: str = "tr", now: datetime | None = None) -> tuple[str, str]:
     w = WORDS["tr" if lang == "tr" else "en"]
     e = engine(now)
     return w["label"], w["line"].format(version=e["version"], commit=e["commit"] or w["none"], built=e["built"])
+
+
+def short(lang: str = "tr") -> str:
+    """The Ek's one line: "Sürüm: 0.2.8 · commit abc1234" (DECISIONS 375)."""
+    w = WORDS["tr" if lang == "tr" else "en"]
+    e = engine()
+    return f"{w['label']}: {e['version']} · commit {e['commit'] or w['none']}"
+
+
+def properties(now: datetime | None = None) -> dict:
+    """The xlsx document properties (DECISIONS 375): who made the file, the engine version, commit and build time."""
+    e = engine(now)
+    return {"creator": "Maya Audit", "version": e["version"],
+            "description": f"Maya Audit {e['version']} · commit {e['commit'] or 'not recorded'} · built {e['built']} UTC",
+            "created": (now or datetime.now(timezone.utc)).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}

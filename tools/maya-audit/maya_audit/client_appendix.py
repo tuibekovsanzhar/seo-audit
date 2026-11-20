@@ -752,8 +752,6 @@ def technical_sheets(selection: dict, lang: str = "tr", lists: dict | None = Non
     cov = [[W["kind"].get(row["kind"], row["kind"]), coverage_text(row, lang, label, line, title),
             ", ".join(row.get("checks") or [])] for row in selection["coverage"]["lines"]]
     cov.insert(0, [PLATFORM_WORDS[lang]["label"], platform_line(selection, lang), ""])  # DECISIONS 365
-    from .version_stamp import line as version_line
-    cov.insert(0, [*version_line(lang), ""])  # DECISIONS 373: the engine, commit and build time of this file
     out = []
     for name, header, body, widths in ((W["findings"], W["cols"], rows, [16, 8, 22, 11, 13, 11, 16, 9, 10, 16, 6, 16, 26, 70, 70, 9, 9, 10, 10, 20, 60]),
                                        (W["urls"], W["url_cols"], urls, [16, 16, 11, 90]),
@@ -881,7 +879,13 @@ def build(selection: dict, lang: str = "tr", lists: dict | None = None, text_che
     for m in made:
         m.pop("_without_example", None)
         m.pop("_empty_cards", None)
-    return xlsx.workbook(made)
+    # DECISIONS 375: the version stamp is for the team: one short line, the last row of "Yöntem", and the file's
+    # document properties (with the build time); never the first row of "Kapsam"
+    from . import version_stamp
+    method = next((m for m in made if m["name"] == WORDS[lang]["method_sheet"]), None)
+    if method is not None:
+        method["rows"] = list(method["rows"]) + [[version_stamp.short(lang)]]
+    return xlsx.workbook(made, properties=version_stamp.properties())
 
 
 ADVICE_COLUMNS = ("Ne yapılmalı", "What to do")

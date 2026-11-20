@@ -19,7 +19,7 @@ def test_every_ek_says_its_engine_commit_and_build_time():
     label, text = version_line("tr")
     assert label == "Sürüm" and text.startswith("Maya Audit ") and " · commit " in text and text.endswith(" UTC")
     book = xlsx.read(client_appendix.build(cs.select(report([finding("A", "str1.shared", "S4", urls=[SITE + "/a"])])), "tr"))
-    assert book["Kapsam"][1][0] == "Sürüm" and book["Kapsam"][1][1].startswith("Maya Audit ")
+    assert book["Yöntem"][-1][0].startswith("Sürüm: ")  # DECISIONS 375: the last row of "Yöntem", not "Kapsam"
 
 
 # ---------------------------------------------------------------- unapproved rules

@@ -2868,3 +2868,22 @@ No slow-page row left any brand's card: every listed page was over its threshold
 | `tools/fix_log.py --work <tmp> --write-status` | 116 items: Düzeltildi 113, Hâlâ var 0, Doğrulanmadı 3 (new crawl needed) |
 | `ruff --select E9,F821,F841` (maya_audit, scripts, tools) | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+Pushed `38e91a8` after the full suite (`3650 passed, 4 skipped, 1 warning in 1009.46s (0:16:49)`); CI 44676535978:
+success. `f778ba5`'s CI 44619269286 passed on its rerun (the fast-mode llms.txt test failed once, not again).
+
+## The version stamp is for the team (DECISIONS 375, 2026-11-20)
+
+VERIFIED locally; not pushed. No PDF shows the stamp. The Ek says it in one short line, the last row of "Yöntem"
+("Sürüm: 0.2.8 · commit abc1234"); "Kapsam" starts with the platform again. The full stamp with the build time is in
+the file's document properties (docProps/core.xml). No check or finding text changed: no fix-log row.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_version_stamp_375.py tests/test_review_compliance_373.py tests/test_brief_review_321.py` | `73 passed` (with the PDF data checks for tr and en) |
+| fast suite (with the frozen set) | `3520 passed, 4 skipped, 135 deselected, 1 warning in 591.85s (0:09:51)` |
+| `ruff --select E9,F821,F841` (maya_audit, maya_audit_web, scripts, tools) | `All checks passed!` |
+| Push | NOT DONE (owner: don't push) |
+
+Next: the plan for the Ek as the team's full client file (`docs/proposals/EK-FULL-FILE.md`), waiting for the
+owner's OK.

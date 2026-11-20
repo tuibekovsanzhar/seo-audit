@@ -139,14 +139,15 @@ def _safe_name(name: str, used: set[str]) -> str:
     return candidate
 
 
-def workbook(sheets: list[dict]) -> bytes:
+def workbook(sheets: list[dict], properties: dict | None = None) -> bytes:
     """`sheets`: [{"name", "header": [...], "rows": [[...], ...], "widths": [...]}] -> the .xlsx file's bytes.
 
     Optional per sheet: "frozen" and "filter" (default True: the header row stays in view and has filter buttons),
     "wrap" (default True), "title_rows" (that many first rows after the header are bold titles). A cell may be
     {"text": ..., "link": "https://..."} (a clickable address) or {"text": ..., "location": "'Sheet'!A5"} (a link to
     a cell of this file), or {"formula": "=SUM(A1:A3)", "value": 6} (a formula and its value). Optional per sheet:
-    "validations" ([{"ref", "list"}]: a dropdown of those values)."""
+    "validations" ([{"ref", "list"}]: a dropdown of those values). `properties`: the file's document properties
+    ({"creator", "version", "description", "created"}, DECISIONS 375), written to docProps/core.xml."""
     sheets = [{**s, "rows": list(s["rows"])} for s in sheets]  # read twice below (formulas, then cells)
     used: set[str] = set()
     names = [_safe_name(s["name"], used) for s in sheets]
@@ -160,12 +161,27 @@ def workbook(sheets: list[dict]) -> bytes:
                    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
                    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
                    + "".join(f'<Override PartName="/xl/worksheets/sheet{i}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
-                             for i in range(1, len(sheets) + 1)) + "</Types>")
+                             for i in range(1, len(sheets) + 1))
+                   + ('<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>'
+                      if properties else "") + "</Types>")
         z.writestr("_rels/.rels",
                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
                    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
                    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
-                   "</Relationships>")
+                   + ('<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>'
+                      if properties else "") + "</Relationships>")
+        if properties:
+            props = {k: escape(str(v)) for k, v in properties.items() if v is not None}
+            z.writestr("docProps/core.xml",
+                       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                       '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" '
+                       'xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" '
+                       'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
+                       + (f"<dc:creator>{props['creator']}</dc:creator>" if "creator" in props else "")
+                       + (f"<dc:description>{props['description']}</dc:description>" if "description" in props else "")
+                       + (f"<cp:version>{props['version']}</cp:version>" if "version" in props else "")
+                       + (f'<dcterms:created xsi:type="dcterms:W3CDTF">{props["created"]}</dcterms:created>' if "created" in props else "")
+                       + "</cp:coreProperties>")
         z.writestr("xl/workbook.xml",
                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
                    '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
