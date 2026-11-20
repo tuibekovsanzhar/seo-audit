@@ -730,7 +730,7 @@
   },
   {
    "no": 105,
-   "durum": "Düzeltildi",
+   "durum": "Hâlâ var",
    "tarih": "2026-11-20",
    "commit": "f778ba5",
    "decisions": "373"
@@ -788,29 +788,36 @@
    "no": 113,
    "durum": "Düzeltildi",
    "tarih": "2026-11-20",
-   "commit": "—",
+   "commit": "38e91a8",
    "decisions": "374"
   },
   {
    "no": 114,
    "durum": "Düzeltildi",
    "tarih": "2026-11-20",
-   "commit": "—",
+   "commit": "38e91a8",
    "decisions": "374"
   },
   {
    "no": 115,
    "durum": "Düzeltildi",
    "tarih": "2026-11-20",
-   "commit": "—",
+   "commit": "38e91a8",
    "decisions": "374"
   },
   {
    "no": 116,
    "durum": "Düzeltildi",
    "tarih": "2026-11-20",
-   "commit": "—",
+   "commit": "38e91a8",
    "decisions": "374"
+  },
+  {
+   "no": 117,
+   "durum": "Düzeltildi",
+   "tarih": "2026-11-20",
+   "commit": "aa28744",
+   "decisions": "376"
   }
  ]
 }

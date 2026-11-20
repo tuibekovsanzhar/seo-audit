@@ -2912,3 +2912,19 @@ note on the saved audits (note-card rows and `idx6.parameters` link rows with ch
 | `scripts/real_sites_benchmark.py expert` | `92 labels: 92 hold, 0 red` |
 | `ruff --select E9,F821,F841` | `All checks passed!` |
 | Push | NOT DONE (owner: don't push) |
+
+## Phase 2: the Search Console data (DECISIONS 376, 2026-11-20)
+
+VERIFIED locally; not pushed. Maya summary version 5: daily totals (whole period, last 28 days), the AI Overview
+columns, weekly 28-day page and query snapshots (latest row, never summed, weeks listed), page scores, query intents and
+query opportunities, each with its own period; the per-page "GSC haftalık tık" no longer sums overlapping 28-day
+windows (fix log item 118). Fix log item 105's check follows DECISIONS 375. Phase 1's fix-log run: 117 items,
+Düzeltildi 113, Hâlâ var 1 (item 105, its check still looked for the stamp in "Kapsam": updated), Doğrulanmadı 3;
+`~/Downloads/duzeltme-kaydi.xlsx` exported.
+
+| Command | Result |
+|---|---|
+| `pytest tests/test_maya_snapshots_376.py tests/test_maya_data_352.py` | `20 passed` |
+| fast suite (with the frozen set) | `3541 passed, 4 skipped, 135 deselected, 1 warning in 637.14s (0:10:37)` |
+| `scripts/real_sites_benchmark.py expert` | `92 labels: 92 hold, 0 red` |
+| Push | NOT DONE (owner: don't push) |

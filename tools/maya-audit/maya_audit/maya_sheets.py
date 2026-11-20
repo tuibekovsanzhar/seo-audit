@@ -557,7 +557,7 @@ def segment_sheets(summary: dict, crawl: Crawl) -> tuple[dict, dict, list[dict],
     seg_rows.sort(key=lambda r: (ORDER.index(r["segment"]), -r["importance"], r["url"]))
     providers = [p for p, _ in sorted(((summary.get("ai") or {}).get("providers") or {}).items(), key=lambda kv: -kv[1]["rows"])][:5]
     header = ["Önem puanı", "Sayfa", "Segment", "Sayfa türü", "Konu", "GSC'de ölçüldü mü", "GSC tık", "GSC gösterim", "CTR",
-              "Sırasına göre CTR", "Ort. sıra", "GSC haftalık tık (örneklem)", "AI prompt", "AI koşu"] + [f"{p} koşu" for p in providers] + [
+              "Sırasına göre CTR", "Ort. sıra", "GSC tık (son 28 gün, örneklem)", "AI prompt", "AI koşu"] + [f"{p} koşu" for p in providers] + [
               "Konudaki panel prompt sayısı", "Kopya adresler (citation onlara da sayıldı)", "Tarama durumu", "Ne yapılmalı", "Seg. kodu"]
     body = []
     first_row: dict[str, int] = {}
@@ -1069,7 +1069,8 @@ def build(summary: dict | None, report: dict, evidence_dir: Path | None = None, 
                             + (f", {gsc['page_period'][0]} – {gsc['page_period'][1]}" if gsc.get("page_period") else ", dönemi dosyada belirtilmemiş") + ")")
         if (gsc.get("weekly_sample") or {}).get("period"):
             w = gsc["weekly_sample"]
-            coverage.append(f"«GSC haftalık tık» sütunu ayrı kaynak: gsc-top-pages (haftalık ilk sayfalar, {w['weeks']} hafta, "
+            coverage.append(f"«GSC tık (son 28 gün)» sütunu ayrı kaynak: gsc-top-pages (her hafta alınmış 28 günlük ilk sayfalar listesi; "
+                            f"sayfanın en son satırı, haftalar toplanmaz; {w['weeks']} hafta, "
                             f"{w['period'][0]} – {w['period'][1]}); karşılaştırma için gösterilir, segmentlere katılmaz")
         ai = summary.get("ai") or {}
         if ai.get("period"):

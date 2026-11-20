@@ -5888,3 +5888,15 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      IDX-5 · STR-10", "STR-2"), and link rows of `idx6.parameters` the check name "IDX-6": such rows now carry no
      finding ID (the checks go to "Kontrol"; the rule stays in "Kural"). Tests: `tests/test_ek_frame_376.py`; fix log
      item 117; Enpara labels enp2-R376-1-*.
+     *Phase 2, the Search Console data* (`maya_data`, summary version 5; an older summary is made again from the
+     kept export files): the daily rows summed over the whole period and over its last 28 days, each with its own
+     dates, the position weighted by impressions (`gsc.totals`); the AI Overview columns of gsc-daily-stats: absent,
+     present but empty (Enpara: empty on all 88 days → "Veri yok"), or their totals (`gsc.aio`); gsc-top-pages and
+     gsc-top-queries as weekly 28-day snapshots: the latest row per page or query, never summed, with the number of
+     weeks it is listed in (`gsc.top_pages`, `gsc.top_queries`); gsc-page-scores (query count, authority), gsc-query-
+     intents (intent, brand flag) and gsc-query-opportunities (type, pages, impressions, score, its period) kept per
+     row. A page list from gsc-top-pages when no daily or score file gives one. Bug fixed on the way (Efsa's "Dikkat"
+     note): the per-page "GSC haftalık tık" summed the weekly rows, each already a 28-day window, so the same clicks
+     were counted several times: it is now the latest 28-day row ("GSC tık (son 28 gün, örneklem)"). Fix log item 118
+     (waits for an audit with gsc-top-pages: none of the saved ones has it); item 105's check follows DECISIONS 375
+     (the stamp's last row of "Yöntem"). Tests: `tests/test_maya_snapshots_376.py`.

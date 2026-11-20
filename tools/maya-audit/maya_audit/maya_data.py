@@ -34,7 +34,10 @@ from urllib.parse import unquote, urlsplit, urlunsplit
 # brand is never a competitor (its names and its other domains), and only real topics are topics. 4 (DECISIONS 362): the
 # meta's alias groups (a competitor key whose aliases name the brand is the brand), each cited domain's answers per prompt
 # (rivals' shares per topic), unrecognised files only counted, prompt categories and need families.
-VERSION = 4
+# 5 (DECISIONS 376): the Search Console datasets of the client Ek's sheets: the daily totals (whole period and last 28
+# days) with the AI Overview columns, the weekly 28-day page and query snapshots (latest per page or query, weeks
+# present), page scores, query intents and the query opportunities, each with its own period.
+VERSION = 5
 SUMMARY_FILE = "maya-data-summary.json"
 FOLDER = "maya-data"
 
@@ -44,7 +47,7 @@ DATASETS = (
     "gsc-daily-stats", "gsc-top-queries", "gsc-top-pages", "gsc-query-intents", "gsc-query-opportunities",
     "topic-visibility-snapshots", "competitor-mentions-daily", "url-rank-history", "prompt-runs", "visibility-daily",
     "share-of-voice-daily", "sentiment-daily", "domain-citations", "fanout-queries", "brand-mentions", "ga4-traffic")
-SNAPSHOT_DATASETS = frozenset({"gsc-page-scores", "gsc-top-queries", "gsc-query-opportunities"})
+SNAPSHOT_DATASETS = frozenset({"gsc-page-scores", "gsc-top-queries", "gsc-query-opportunities", "gsc-top-pages"})
 DAILY_DATASETS = frozenset({"gsc-search-performance", "gsc-daily-stats"})
 # What each group of sheets needs (any one of a tuple; all of the list).
 NEEDS = {
@@ -502,6 +505,8 @@ def _gsc(found: dict[str, Source], origin: str, brand_names: list[str]) -> dict:
         out["rows"]["gsc-page-scores"] = n
         page_source = "gsc-page-scores"
     daily = found.get("gsc-daily-stats")
+    aio: dict[str, dict] = {}
+    aio_columns = False
     if daily is not None and not days:
         n = 0
         for r in _rows(daily):
@@ -510,10 +515,17 @@ def _gsc(found: dict[str, Source], origin: str, brand_names: list[str]) -> dict:
             if d:
                 impr = _num(r.get("impressions"))
                 days[d] = {"clicks": _num(r.get("clicks")), "impressions": impr, "pos_w": _num(r.get("position")) * impr}
+                if "aio_impressions" in r or "aio_clicks" in r:  # DECISIONS 376: AI Overview columns, when the file has them
+                    aio_columns = True
+                    a_impr, a_clicks = _value(r.get("aio_impressions")), _value(r.get("aio_clicks"))
+                    if a_impr or a_clicks:
+                        aio[d] = {"clicks": a_clicks or 0.0, "impressions": a_impr or 0.0}
         out["rows"]["gsc-daily-stats"] = n
         day_source = "gsc-daily-stats"
+    out.update(_snapshots(found, origin, out["rows"]))  # DECISIONS 376
     weekly = found.get("gsc-top-pages")
-    sample: dict[str, float] = defaultdict(float)
+    sample: dict[str, float] = {}
+    latest_week: dict[str, str] = {}
     if weekly is not None:
         n = 0
         weeks = set()
@@ -521,7 +533,12 @@ def _gsc(found: dict[str, Source], origin: str, brand_names: list[str]) -> dict:
             n += 1
             u = page_url(r.get("page") or "", origin)
             if u:
-                sample[u] += _num(r.get("clicks"))  # weekly rows: disjoint weeks, summed only within this dataset
+                # DECISIONS 376: each weekly row is a 28-day window: the latest row per page, never a sum (summed,
+                # overlapping windows count the same clicks several times)
+                week = str(r.get("week_start") or "")
+                if u not in latest_week or week >= latest_week[u]:
+                    latest_week[u] = week
+                    sample[u] = _num(r.get("clicks"))
                 weeks.add(r.get("week_start"))
         out["rows"]["gsc-top-pages"] = n
         out["weekly_sample"] = {"source": "gsc-top-pages", "weeks": len(weeks),
@@ -552,6 +569,10 @@ def _gsc(found: dict[str, Source], origin: str, brand_names: list[str]) -> dict:
         out["devices"] = {k: dict(v) for k, v in devices.items()}
     if countries:
         out["countries"] = {k: dict(sorted(v.items())) for k, v in sorted(countries.items(), key=lambda kv: -kv[1]["clicks"])[:10]}
+    if not pages and (out.get("top_pages") or {}).get("rows"):  # DECISIONS 376
+        pages = {u: {k: rec[k] for k in ("clicks", "impressions", "ctr", "position")} for u, rec in out["top_pages"]["rows"].items()}
+        page_source = "gsc-top-pages"
+        out.pop("weekly_sample", None)  # the same snapshot: no second column of it
     if pages:
         out["pages"] = pages
         out["page_source"] = page_source
@@ -562,6 +583,123 @@ def _gsc(found: dict[str, Source], origin: str, brand_names: list[str]) -> dict:
         out["day_source"] = day_source
         out["monthly"], out["weeks"] = _months(days)
         out["day_period"] = [min(days), max(days)]
+        out["totals"] = _totals(days)  # DECISIONS 376
+    if day_source == "gsc-daily-stats":
+        # DECISIONS 376: the AI Overview columns: absent, present but empty ("Veri yok"), or their totals
+        out["aio"] = ({"columns": False} if not aio_columns else
+                      {"columns": True, "days": len(aio), "period": [min(aio), max(aio)] if aio else None,
+                       "clicks": round(sum(x["clicks"] for x in aio.values())),
+                       "impressions": round(sum(x["impressions"] for x in aio.values()))})
+    return out
+
+
+LAST_DAYS = 28
+
+
+def _totals(days: dict[str, dict]) -> dict:
+    """DECISIONS 376: the daily rows summed over the whole period and over its last 28 days (each with its own dates):
+    clicks, impressions, CTR, and the position weighted by impressions. Never mixed with a snapshot dataset."""
+    def total(keys: list[str]) -> dict:
+        clicks = sum(days[d]["clicks"] for d in keys)
+        impr = sum(days[d]["impressions"] for d in keys)
+        pos = sum(days[d]["pos_w"] for d in keys) / impr if impr else None
+        return {"period": [min(keys), max(keys)], "days": len(keys), "clicks": round(clicks), "impressions": round(impr),
+                "ctr": round(clicks / impr, 4) if impr else None, "position": round(pos, 1) if pos else None}
+    ordered = sorted(days)
+    last = date.fromisoformat(ordered[-1])
+    recent = [d for d in ordered if (last - date.fromisoformat(d)).days < LAST_DAYS]
+    return {"whole": total(ordered), "last28": total(recent)}
+
+
+SNAPSHOT_CAP = 5000  # rows kept per snapshot list (a summary stays small)
+
+
+def _snapshots(found: dict[str, Source], origin: str, counts: dict) -> dict:
+    """DECISIONS 376: the datasets the Ek's Search Console sheets read, each with its own period:
+    - gsc-top-pages / gsc-top-queries: weekly rows, each a 28-day window: the latest row per page or query (never
+      summed), the number of weeks it is listed in and the weeks in the file;
+    - gsc-page-scores: Maya's page scores (query count, authority) per page;
+    - gsc-query-intents: Maya's intent and brand flag per query;
+    - gsc-query-opportunities: cannibalization, high impressions with a low CTR, striking distance, with the pages."""
+    out: dict[str, Any] = {}
+    for ds, key, field in (("gsc-top-pages", "top_pages", "page"), ("gsc-top-queries", "top_queries", "query")):
+        src = found.get(ds)
+        if src is None:
+            continue
+        latest: dict[str, dict] = {}
+        seen: dict[str, set] = defaultdict(set)
+        weeks: set[str] = set()
+        n = 0
+        for r in _rows(src):
+            n += 1
+            name = page_url(r.get("page") or "", origin) if field == "page" else (r.get("query") or "").strip()
+            week = str(r.get("week_start") or r.get("date") or "")[:10]
+            if not name:
+                continue
+            if week:
+                weeks.add(week)
+                seen[name].add(week)
+            if name not in latest or week >= latest[name]["week"]:
+                ctr, position = _value(r.get("ctr")), _value(r.get("position"))
+                latest[name] = {"week": week, "clicks": _num(r.get("clicks")), "impressions": _num(r.get("impressions")),
+                                "ctr": round(ctr, 4) if ctr is not None else None,
+                                "position": round(position, 1) if position is not None else None}
+        counts[ds] = n
+        rows = sorted(latest.items(), key=lambda kv: (-kv[1]["clicks"], -kv[1]["impressions"], kv[0]))[:SNAPSHOT_CAP]
+        out[key] = {"source": ds, "weeks": sorted(weeks), "period": list(src.period) if src.period else
+                    ([min(weeks), max(weeks)] if weeks else None),
+                    "rows": {name: {**rec, "weeks_listed": len(seen[name])} for name, rec in rows}}
+    scores = found.get("gsc-page-scores")
+    if scores is not None:
+        kept: dict[str, dict] = {}
+        n = 0
+        for r in _rows(scores):
+            n += 1
+            u = page_url(r.get("page") or "", origin)
+            if u:
+                kept[u] = {k: _value(r.get(k)) for k in ("query_count", "authority_score", "clicks", "impressions")}
+        counts["gsc-page-scores"] = n
+        out["page_scores"] = {"source": "gsc-page-scores", "period": list(scores.period) if scores.period else None,
+                              "rows": dict(list(kept.items())[:SNAPSHOT_CAP])}
+    intents = found.get("gsc-query-intents")
+    if intents is not None:
+        kept = {}
+        n = 0
+        for r in _rows(intents):
+            n += 1
+            q = (r.get("query") or "").strip()
+            if q:
+                flag = str(r.get("is_brand") or "").strip().lower()
+                kept[q] = {"intent": (r.get("intent") or "").strip() or None,
+                           "brand": True if flag in ("yes", "true", "1") else False if flag in ("no", "false", "0") else None,
+                           "confidence": _value(r.get("confidence"))}
+        counts["gsc-query-intents"] = n
+        out["intents"] = {"source": "gsc-query-intents", "period": list(intents.period) if intents.period else None,
+                          "rows": dict(list(kept.items())[:SNAPSHOT_CAP])}
+    opps = found.get("gsc-query-opportunities")
+    if opps is not None:
+        rows, periods = [], set()
+        n = 0
+        for r in _rows(opps):
+            n += 1
+            q = (r.get("query") or "").strip()
+            if not q:
+                continue
+            pages = [u for u in (page_url(x, origin) for x in re.split(r"\s*\|\s*", r.get("page") or "") if x.strip()) if u]
+            start, end = _day(r.get("period_start")), _day(r.get("period_end"))
+            if start and end:
+                periods.add((start, end))
+            rows.append({"query": q, "type": (r.get("opportunity_type") or "").strip() or None, "pages": pages,
+                         "impressions": _num(r.get("impressions")), "clicks": _value(r.get("clicks")),
+                         "ctr": _value(r.get("ctr")), "position": _value(r.get("position")),
+                         "score": _value(r.get("opportunity_score")), "action": (r.get("recommended_action") or "")[:300],
+                         "period": [start, end] if start and end else None})
+        counts["gsc-query-opportunities"] = n
+        rows.sort(key=lambda x: (-(x["score"] or 0), -x["impressions"], x["query"]))
+        out["opportunities"] = {"source": "gsc-query-opportunities",
+                                "period": list(opps.period) if opps.period else
+                                ([min(p[0] for p in periods), max(p[1] for p in periods)] if len(periods) == 1 else None),
+                                "periods": sorted(list(p) for p in periods), "rows": rows[:SNAPSHOT_CAP]}
     return out
 
 

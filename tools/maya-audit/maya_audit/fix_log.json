@@ -1928,18 +1928,18 @@
    "kaynak": "Efsa — Maya Audit uyum ve mimari incelemesi, 19 Kasım (DECISIONS 372, 373)",
    "brand_key": "naturesgarden",
    "sorun": "Ek hangi motor sürümüyle yapıldığını söylemiyordu",
-   "genel": "Ek ve PDF hangi motor sürümüyle yapıldığını söylemiyordu",
-   "nasil": "Kapsam'ın ilk satırı ve PDF motorun sürümünü, değişikliğin kimliğini ve dosyanın oluşturulma saatini (UTC) yazar.",
+   "genel": "Ek hangi motor sürümüyle yapıldığını söylemiyordu",
+   "nasil": "«Yöntem»in son satırı motorun sürümünü ve değişiklik kimliğini yazar; oluşturulma saati dosyanın belge özelliklerindedir. PDF'te yoktur (ekip için, DECISIONS 375).",
    "decisions": [
-    373
+    373,
+    375
    ],
    "check": {
     "sheet_has": {
-     "sheet": "Kapsam",
-     "column": "Açıklama",
-     "regex": "^Maya Audit .+ · commit .+ · oluşturuldu"
+     "sheet": "Yöntem",
+     "regex": "^Sürüm: .+ · commit "
     },
-    "test": "tests/test_review_compliance_373.py"
+    "test": "tests/test_version_stamp_375.py"
    }
   },
   {
@@ -2175,6 +2175,21 @@
      "enp2-R376-1-ids-in-findings"
     ],
     "test": "tests/test_ek_frame_376.py"
+   }
+  },
+  {
+   "kaynak": "Efsa — Enpara son dosyası, «Search Console özeti» › «Dikkat», 13 Kasım (DECISIONS 376)",
+   "brand_key": "enpara",
+   "sorun": "Haftalık ilk sayfalar listesindeki 28 günlük satırlar sayfa başına toplanıyordu (tık birkaç kat şişiyordu)",
+   "genel": "Search Console'un haftalık 28 günlük satırları toplanıyordu: aynı tıklar birkaç kez sayılıyordu",
+   "nasil": "Her sayfanın en son 28 günlük satırı kullanılır, haftalar toplanmaz; sütun «GSC tık (son 28 gün)» adını taşır.",
+   "decisions": [
+    376
+   ],
+   "check": {
+    "test": "tests/test_maya_snapshots_376.py",
+    "crawl": true,
+    "why": "kayıtlı denetimlerin hiçbirinde gsc-top-pages yok: bu veriyle bir denetim gerekli"
    }
   }
  ]
