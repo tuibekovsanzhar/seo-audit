@@ -53,7 +53,7 @@ SHEETS: dict[str, tuple[str, str]] = {
 }
 ORDER = list(SHEETS)
 BAND_ROWS = 2  # the Maya band's rows above every header: "satır N" texts count them
-INTERNAL = ("Kontrol raporu", "Text check", "Düzeltme kaydı", "Fix log")  # D1: the team file, never the client Ek
+INTERNAL = ("Kontrol raporu", "Text check", "Düzeltme kaydı", "Fix log", "Kural onayı", "Rule approval")  # D1: the team file, never the client Ek
 
 GROUPS = {"tr": {"maya": "Maya özeti", "audit": "Teknik denetim", "data": "Search Console / AI (Maya dışa aktarımı)",
                  "rivals": "Rakip analizi", "method": "Yöntem ve izlenebilirlik"},

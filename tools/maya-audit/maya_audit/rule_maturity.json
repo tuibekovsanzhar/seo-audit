@@ -1,0 +1,659 @@
+{
+ "_about": "DECISIONS 378: each rule's record in the SEO team's card reviews (docs/expert-reviews), made by scripts/rule_maturity.py. A card's verdict counts once for each rule on it; the brand is the review file's name before its first '-'. maya_audit/rule_maturity.py turns this into a level: approved, disputed or unreviewed.",
+ "rules": {
+  "acc2.blocks.sample": {
+   "correct": 0,
+   "wrong": 1,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "enpara-2e5829fb",
+    "on": "2026-11-11"
+   }
+  },
+  "acc3.robots_outside_head": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "acc8.redirecting": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 2,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "enpara-fee70191",
+    "on": "2026-11-11"
+   }
+  },
+  "acc9.rate_limited_429": {
+   "correct": 0,
+   "wrong": 1,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "naturesgarden-342a0b14",
+    "on": "2026-11-16"
+   }
+  },
+  "idx1.4xx.referenced": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "enpara-2e5829fb",
+    "on": "2026-11-11"
+   }
+  },
+  "idx1.4xx.sitemap_only": {
+   "correct": 1,
+   "wrong": 1,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "enpara"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "enpara-fee70191-review3",
+    "on": "2026-11-12"
+   }
+  },
+  "idx1.error_redirect": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "enpara-fee70191-review3",
+    "on": "2026-11-12"
+   }
+  },
+  "idx2.temporary": {
+   "correct": 0,
+   "wrong": 1,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "enpara-2e5829fb",
+    "on": "2026-11-11"
+   }
+  },
+  "idx4.different": {
+   "correct": 0,
+   "wrong": 1,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "idx5.stamped": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "naturesgarden-342a0b14",
+    "on": "2026-11-16"
+   }
+  },
+  "idx6.alias_links": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "idx6.links_to_redirect": {
+   "correct": 1,
+   "wrong": 1,
+   "incomplete": 0,
+   "wording": 1,
+   "brands_correct": [
+    "enpara"
+   ],
+   "latest": {
+    "verdict": "wrong",
+    "review": "enpara-fee70191-review3",
+    "on": "2026-11-12"
+   }
+  },
+  "idx8.self_canonical_copies": {
+   "correct": 0,
+   "wrong": 1,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "enpara-fee70191-review3",
+    "on": "2026-11-12"
+   }
+  },
+  "judgment.generic.identity": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "prf1.home_ttfb": {
+   "correct": 1,
+   "wrong": 1,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "mmi"
+   ],
+   "latest": {
+    "verdict": "wrong",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "prf1.slow": {
+   "correct": 0,
+   "wrong": 1,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "rnd1.partial": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 2,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "naturesgarden-342a0b14",
+    "on": "2026-11-16"
+   }
+  },
+  "rnd3.revealed": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "rnd6.large": {
+   "correct": 1,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "mmi"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "rnd6.late": {
+   "correct": 1,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "mmi"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "shared.heading_jump_varied": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "naturesgarden-342a0b14",
+    "on": "2026-11-16"
+   }
+  },
+  "shared.link_no_address": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "str1.no_title": {
+   "correct": 0,
+   "wrong": 1,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "str1.shared": {
+   "correct": 1,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "mmi"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "str1.subpage_copies_parent": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "enpara-fee70191-review3",
+    "on": "2026-11-12"
+   }
+  },
+  "str12.headings": {
+   "correct": 0,
+   "wrong": 2,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "naturesgarden-342a0b14",
+    "on": "2026-11-16"
+   }
+  },
+  "str14.no_text": {
+   "correct": 3,
+   "wrong": 0,
+   "incomplete": 2,
+   "wording": 0,
+   "brands_correct": [
+    "enpara"
+   ],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "naturesgarden-342a0b14",
+    "on": "2026-11-16"
+   }
+  },
+  "str15.empty_collections": {
+   "correct": 0,
+   "wrong": 2,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "naturesgarden-342a0b14",
+    "on": "2026-11-16"
+   }
+  },
+  "str16.shared": {
+   "correct": 4,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "enpara",
+    "mmi"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "str19.no_target": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "naturesgarden-342a0b14",
+    "on": "2026-11-16"
+   }
+  },
+  "str2.h1_parent_name": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "enpara-fee70191-review3",
+    "on": "2026-11-12"
+   }
+  },
+  "str2.hidden_h1": {
+   "correct": 0,
+   "wrong": 3,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "naturesgarden-342a0b14",
+    "on": "2026-11-16"
+   }
+  },
+  "str2.home_outline": {
+   "correct": 0,
+   "wrong": 1,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "str2.no_h1": {
+   "correct": 2,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 1,
+   "brands_correct": [
+    "enpara"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "enpara-fee70191-review3",
+    "on": "2026-11-12"
+   }
+  },
+  "str2.no_subheadings": {
+   "correct": 0,
+   "wrong": 1,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "enpara-2e5829fb",
+    "on": "2026-11-11"
+   }
+  },
+  "str2.styled_subheadings": {
+   "correct": 1,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "enpara"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "enpara-fee70191",
+    "on": "2026-11-11"
+   }
+  },
+  "str3.crumb_no_list": {
+   "correct": 1,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "mmi"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "str3.expected_type": {
+   "correct": 1,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "mmi"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "str3.product_no_identifier": {
+   "correct": 1,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [
+    "mmi"
+   ],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "str3.product_on_article": {
+   "correct": 1,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "enpara"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "enpara-fee70191-review3",
+    "on": "2026-11-12"
+   }
+  },
+  "str3.qa_no_faqpage": {
+   "correct": 0,
+   "wrong": 1,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "enpara-fee70191",
+    "on": "2026-11-11"
+   }
+  },
+  "str3.unparsed": {
+   "correct": 3,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [
+    "enpara"
+   ],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "naturesgarden-342a0b14",
+    "on": "2026-11-16"
+   }
+  },
+  "str5.names": {
+   "correct": 0,
+   "wrong": 3,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "str7.over_100kb": {
+   "correct": 3,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "enpara",
+    "mmi"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "str8.headers": {
+   "correct": 1,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [
+    "enpara"
+   ],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "naturesgarden-342a0b14",
+    "on": "2026-11-16"
+   }
+  },
+  "str9.no_return": {
+   "correct": 2,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "enpara"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "enpara-fee70191-review3",
+    "on": "2026-11-12"
+   }
+  },
+  "str9.status": {
+   "correct": 2,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "enpara"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "enpara-fee70191-review3",
+    "on": "2026-11-12"
+   }
+  },
+  "tseo1.head_closed_later": {
+   "correct": 0,
+   "wrong": 3,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "enpara-fee70191-review3",
+    "on": "2026-11-12"
+   }
+  },
+  "tseo1.head_closed_lost": {
+   "correct": 0,
+   "wrong": 3,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "wrong",
+    "review": "enpara-fee70191-review3",
+    "on": "2026-11-12"
+   }
+  },
+  "tseo1.heading_jumps": {
+   "correct": 1,
+   "wrong": 0,
+   "incomplete": 0,
+   "wording": 0,
+   "brands_correct": [
+    "mmi"
+   ],
+   "latest": {
+    "verdict": "correct",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  },
+  "tseo1.url_slug_unclear": {
+   "correct": 0,
+   "wrong": 0,
+   "incomplete": 1,
+   "wording": 0,
+   "brands_correct": [],
+   "latest": {
+    "verdict": "incomplete",
+    "review": "mmi-536b4b64",
+    "on": "2026-11-16"
+   }
+  }
+ }
+}

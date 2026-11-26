@@ -5978,3 +5978,41 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      fractions has the number format "0.0%" (Excel shows %17,6 in Turkish); a percent written in Turkish text is
      "(%17)", never "(17%)". Tests: `tests/test_enpara_ek_377.py`; fix log items 123-127; labels own377-* (Enpara's
      frozen audit, and MMI's for the competitor data).
+378. **Accuracy first: rule maturity, the team's pass conditions and a rule-approval loop (Owner, 2026-11-26, from the
+     SEO team's feedback in the SEO_AUDIT Drive folder: İlginay's reviewed Eks, Efsa's revision-compliance review
+     (A1, A8) and the team checklist; plan `docs/proposals/ACCURACY-FIRST.md`; the thresholds, the policy default and
+     all wording are agent defaults until the owner confirms them).** Global for every audit. Why: of the 94 cards the
+     team reviewed, 31% were correct (`docs/expert-reviews/ACCURACY.md`); every client report is checked and corrected
+     by hand, and the same rule families came back on new brands (Efsa A2). A finding of a rule the team has found
+     wrong should not reach a client as a definite problem until the team approves the rule again.
+     *(1) Rule maturity* (`maya_audit/rule_maturity.py`, register `maya_audit/rule_maturity.json` made by
+     `scripts/rule_maturity.py` from `docs/expert-reviews/`): each rule is `approved` (approved in
+     `rule_approval.json`, or correct on at least 3 reviewed cards on at least 2 brands with a correct or wording-only
+     latest verdict: `APPROVE_MIN_CORRECT = 3`, `APPROVE_MIN_BRANDS = 2`), `disputed` (questioned in
+     `rule_approval.json`, or its latest reviewed card was wrong) or `unreviewed`. An explicit approval beats
+     everything; the run time reads only the packaged register (an installed package has no `docs/`).
+     *(2) Teyit edin* (`client_selection.confirm_reason`): a finding of a disputed rule gets the confirm reason
+     `disputed_rule`; with `rule_approval.json` `policy.unreviewed = "confirm"` a never-approved rule's finding gets
+     `unreviewed_rule` (default `"card"`: today's behaviour). Nothing is deleted and no severity changes: a High or
+     P0/P1 group still takes a card slot as "Kontrol edin" (DECISIONS 367); a finding a person confirmed in
+     review.json is a card whatever its rule. The confirm reason is part of the group key, so in a merge group only
+     the disputed member waits. Words (client-safe; the team's detail is in the team file): "Doğrulama bekliyor:
+     kural SEO ekibinin incelemesinde" / "… kural henüz uzman onayından geçmedi" (en "Awaiting confirmation: the
+     rule is under the SEO team's review" / "… not yet approved by an expert"), in `etiketler.json`, the web app's
+     `c6.reason.*` and the Ek's "Teyit nedeni".
+     *(3) The team's checklist method* (`maya_audit/checklist_method.json`, `checklist.method`,
+     `checklist.items_for_rule`; builder `scripts/checklist_method.py`, columns found by header): the pass condition
+     ("Beklenen / geçme koşulu") and check method of all 165 items of the team's `SEO_Audit_Checklist (1).xlsx`
+     (Drive, 11 Nov), read on 2026-11-26; the sentence every pass condition ends with is kept once (`common_pass`).
+     "how", "action", "tool" and "frequency" are added when the builder is run on the file itself.
+     *(4) "Kural onayı" / "Rule approval"* (`maya_audit/rule_sheet.py`), in the team file only (`ek_frame.INTERNAL`):
+     one row per rule behind the audit's findings, disputed first: what it found in this audit (groups, addresses,
+     placements), its checklist items and the team's pass condition, its status, the expert verdicts and the latest
+     one, and an empty "Karar" column with a dropdown (Onayla / Sorgula). *(5) The import*
+     (`tools/import_rule_approvals.py TEAM.xlsx --by <name> [--write]`): "Onayla" moves the rule to `approved` with
+     who and when, "Sorgula" to `questioned`; an unknown word or rule stops the run and writes nothing.
+     Today's effect: of 51 reviewed rules 2 approved (str16.shared, str7.over_100kb), 19 disputed (18 last found wrong
+     and idx5.stamped, questioned), 30 reviewed without proof; 311 of the catalogue's 332 rules never reviewed.
+     Not done here: the expert lock still has no frozen set on this computer or in CI (DECISIONS 373, plan Task 0,
+     the owner's step). Tests: `tests/test_rule_maturity.py` (14), `tests/test_checklist_method.py` (3),
+     `tests/test_rule_sheet.py` (9).

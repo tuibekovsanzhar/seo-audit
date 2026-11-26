@@ -62,9 +62,11 @@ def test_the_team_file_holds_the_text_check_and_the_fix_log_and_the_client_ek_ne
     files = _files()
     client = xlsx.read(files["client"])
     assert not set(client) & set(ek_frame.INTERNAL)
-    assert list(xlsx.read(files["team"])) == ["Kontrol raporu", "Düzeltme kaydı"]
+    # DECISIONS 378: "Kural onayı" (each rule of the audit, for the team to approve) is a team sheet too
+    assert list(xlsx.read(files["team"])) == ["Kontrol raporu", "Düzeltme kaydı", "Kural onayı"]
     english = _files("en")
-    assert "Text check" not in xlsx.read(english["client"]) and list(xlsx.read(english["team"])) == ["Text check"]
+    assert "Text check" not in xlsx.read(english["client"])
+    assert list(xlsx.read(english["team"])) == ["Text check", "Rule approval"]
 
 
 def test_sheets_follow_the_teams_order_and_mayas_own_data_sheets_come_last():

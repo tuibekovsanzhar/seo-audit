@@ -1,0 +1,673 @@
+{
+ "_about": "DECISIONS 378: the SEO team's own method for each checklist item (their SEO_Audit_Checklist.xlsx), made by scripts/checklist_method.py: \"pass\" is the team's pass condition (\"Beklenen / geçme koşulu\"), \"method\" the team's way of checking (\"Kontrol yöntemi\"), \"shared_test\" the item whose test covers this one. Every pass condition also carries common_pass.",
+ "source": "SEO_Audit_Checklist (1).xlsx (SEO_AUDIT Drive folder, 11 Nov 2026), read 2026-11-26: the pass condition and the check method of every item; how, action, tool and frequency are added when the builder is run on the file",
+ "common_pass": "Gerekli veri yoksa “Veri eksik”; karar belirsizse “İnceleme gerekli”; siteye uygun değilse gerekçeli “Uygulanmaz” olarak raporla.",
+ "items": {
+  "SEO-001": {
+   "pass": "Kritik mülklere erişim ve sorumlu kişiler doğrulanmış.",
+   "method": "Manuel / işletme kararı"
+  },
+  "SEO-002": {
+   "pass": "Hedefler, ana KPI ve en değerli URL'ler dokümante edilmiş.",
+   "method": "Manuel / işletme kararı"
+  },
+  "SEO-003": {
+   "pass": "İlgisiz kontroller Uygulanmaz olarak ayırt edilmiş.",
+   "method": "Manuel / işletme kararı"
+  },
+  "SEO-004": {
+   "pass": "Anlamlı ve karşılaştırılabilir tarih aralığı seçilmiş.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-005": {
+   "pass": "Sadece crawl'a değil gerçek trafik ve sitemap URL'lerine de bakılmış.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-006": {
+   "pass": "Her aktif sayfa şablonu ve bir kötü örnek incelenmiş.",
+   "method": "Manuel / işletme kararı"
+  },
+  "SEO-007": {
+   "pass": "Analiz edilen hostlar GSC mülkiyetinde.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-008": {
+   "pass": "Audit öncesi karşılaştırma tabanı var.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-009": {
+   "pass": "Tek nihai HTTPS host 301/308 ile kullanılıyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-010": {
+   "pass": "Geçerli TLS ve güvenli alt kaynaklar var.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-011": {
+   "pass": "İndekslenmesi gereken URL'ler doğrudan 200 dönüyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-012": {
+   "pass": "Kritik sayfalarda sürekli sunucu hatası yok.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-013": {
+   "pass": "Kayıp sayfa gerçek 404/410 veya doğru alternatif 301 döner.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-014": {
+   "pass": "Kritik taşımalarda tek hop kalıcı yönlendirme var.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-015": {
+   "pass": "Hedef içerik anlamca eşdeğer; herkesi ana sayfaya yönlendirmiyor.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-016": {
+   "pass": "Sadece taklit user-agent testi ile Geçti verme; doğrulanmış bot erişimi ve kritik kaynak erişimi kanıtlanmalı.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-017": {
+   "pass": "Hassas ortamlar kullanıcıya kapalı veya uygun şekilde indeks dışı.",
+   "method": "Manuel / işletme kararı"
+  },
+  "SEO-018": {
+   "pass": "Anormal yavaş yanıt veya bot timeout yok.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-019": {
+   "pass": "HTTP, robots, noindex ve canonical sinyalleri hedef stratejiyle tutarlı olmalı. Bu kontrol indekslenebilirliği ölçer; Google indeksini garanti etmez.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-020": {
+   "pass": "Gelir/lead alan kritik URL yanlışlıkla noindex değil.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-021": {
+   "pass": "Index kararı meta tag ve header seviyesinde tutarlı.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-022": {
+   "pass": "Önemli URL gruplarında açıklanamayan indeks kaybı yok.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-023": {
+   "pass": "Önemli URL'lerde amaçlanan canonical seçiliyor.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-024": {
+   "pass": "Değerli URL keşfi engellenmiyor; atık tarama yönetiliyor.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-025": {
+   "pass": "Önce yetim sayfa adayı üret. Tam tarama ve link incelemesi doğrulanmadan kesin yetim deme; kritik gerçek yetimlere uygun iç link eklenmeli.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-026": {
+   "pass": "Derinliği ölç; proje başlangıcında önemli URL grupları için hedef derinlik tanımla. Hedef aşımı inceleme sinyalidir; tek başına hata değildir.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-027": {
+   "pass": "Düşük değerli dahili arama son uçları indekslenmek üzere çoğaltılmıyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-028": {
+   "pass": "site: yalnız keşif sinyalidir; GSC raporları ve URL bazlı denetimle doğrula. GSC örneklerini eksiksiz tüm indeks envanteri olarak yorumlama.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-029": {
+   "pass": "robots yanıtını koduna ve kurallarına göre değerlendir; dosya yokluğu tek başına P0 değildir. Kritik engel veya erişim arızası varsa kapsamıyla raporla.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-030": {
+   "pass": "Önemli sayfalar ve gerekli render kaynakları engellenmiyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-031": {
+   "pass": "İndeks kaldırma için sadece robots.txt'ye güvenilmiyor.",
+   "method": "Manuel / işletme kararı"
+  },
+  "SEO-032": {
+   "pass": "Geçerli, erişilebilir XML ve güncel kapsam var.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-033": {
+   "pass": "Sitemap esas olarak 200, indexable ve tercih edilen canonical URL içeriyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-034": {
+   "pass": "Dizine alınması istenen değerli URL'ler sitemap kapsamına alınmış.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-035": {
+   "pass": "Gereksiz sürekli güncellenen lastmod yok.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-036": {
+   "pass": "Kullanılan medya sitemap'i geçerli ve uygun URL içeriyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-037": {
+   "pass": "Bing için temel görünürlük verisi ve izleme mevcut.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-038": {
+   "pass": "Değişiklik bildirimi çalışıyor; indeks garantisi olarak sunulmuyor.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-039": {
+   "pass": "Canonical varsa tek ve tutarlı hedef kontrol edilir. Eksik canonical, çoğaltma riski ve site stratejisiyle değerlendirilir; otomatik P0 hata değildir.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-040": {
+   "pass": "Canonical, 200 ve indekslenebilir ilgili URL'yi gösteriyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-041": {
+   "pass": "Amaçlanan birincil URL self canonical veya eşdeğer tutarlı sinyale sahip.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-042": {
+   "pass": "Birbiriyle çelişen canonical sinyali bulunmuyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-043": {
+   "pass": "Gerçekten aynı niyeti hedefleyen sayfalar mantıklı biçimde ayrılmış/birleştirilmiş.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-044": {
+   "pass": "Değerli filtre landing page'leri ile atık parametreler ayrıştırılmış.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-045": {
+   "pass": "Sınırsız URL üretimi ve bot tuzağı yok.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-046": {
+   "pass": "Sayfa 2+ erişilebilir, ürünler keşfedilebilir; tüm sayfalar körlemesine 1'e canonical edilmiyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-047": {
+   "pass": "JS olmadan da izlenebilir ürün/kategori bağlantıları var.",
+   "method": "Tarayıcı / JS render botu",
+   "shared_test": "SEO-134"
+  },
+  "SEO-048": {
+   "pass": "Takip parametreleri ayrı indeks hedefi oluşturmuyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-049": {
+   "pass": "Tek URL politikası ve kararlı yönlendirme var.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-050": {
+   "pass": "Varyant erişimi ve canonical/index stratejisi birbirini destekliyor.",
+   "method": "Manuel / işletme kararı"
+  },
+  "SEO-051": {
+   "pass": "Önemli hizmet/kategorilere kullanıcı ve bot erişimi var.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-052": {
+   "pass": "Gerçek hiyerarşiyi yansıtıyor ve hedefler 200.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-053": {
+   "pass": "Görünür yol ile schema eşleşiyor.",
+   "method": "Tarayıcı / JS render botu",
+   "shared_test": "SEO-103"
+  },
+  "SEO-054": {
+   "pass": "Değerli sayfaların en az bir içerik bağlamında doğal linki var.",
+   "method": "Ek veri / API + analiz",
+   "shared_test": "SEO-025"
+  },
+  "SEO-055": {
+   "pass": "Kritik şablonlarda kırık iç link yok.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-056": {
+   "pass": "Bağlamı açıklayan doğal ve ilgili anchorlar kullanılıyor.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-057": {
+   "pass": "Bilgi içerikleri ilgili ticari landing page'leri destekliyor.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-058": {
+   "pass": "Ana konular için tutarlı konu kümesi bulunuyor.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-059": {
+   "pass": "Önemli sayfalar crawlable a href bağlantısıyla keşfediliyor.",
+   "method": "Tarayıcı / JS render botu",
+   "shared_test": "SEO-133"
+  },
+  "SEO-060": {
+   "pass": "Sabit bir maksimum link sayısı uygulama; alaka, navigasyon ve kritik sayfalara erişim üzerinden uzman değerlendirmesi yap.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-061": {
+   "pass": "Dahili linkler öncelikle tercih edilen final URL'leri gösteriyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-062": {
+   "pass": "Her önemli landing page'de özgün ve açıklayıcı title var.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-063": {
+   "pass": "Başlık doğal ve SERP bağlamında anlaşılır; katı karakter garantisi iddia edilmiyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-064": {
+   "pass": "Açıklama özgün, tutarlı ve kullanıcıya değer sunuyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-065": {
+   "pass": "Ana içerik birincil başlığı net açıklıyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-066": {
+   "pass": "Anlamlı başlık hiyerarşisi ve taranabilir bölümleme var.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-067": {
+   "pass": "URL kararlı ve anlaşılır; sırf kelime eklemek için gereksiz değişmiyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-068": {
+   "pass": "Her ana arama kümesinin net bir hedef sayfası var.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-069": {
+   "pass": "Aynı sorguda iki URL bulunması hata değildir. Zaman, ülke, cihaz ve niyet bazında performans çatışması kanıtı olmadan cannibalization kararı verme.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-070": {
+   "pass": "Sayfa yapısı ilgili sonuç türünü destekliyor.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-071": {
+   "pass": "Öncelikli sayfalar niyetine uygun title/snippet ile rekabetçi.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-072": {
+   "pass": "Paylaşım önizlemesi gerçek ve doğru marka sunuyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-073": {
+   "pass": "Sayfa baskın kullanıcı ihtiyacını gerçekten karşılıyor.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-074": {
+   "pass": "Tutulacak, geliştirilecek, birleştirilecek ve kaldırılacak URL'ler belirlenmiş.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-075": {
+   "pass": "Kelime sayısı yalnız ön sinyaldir. Zayıf içerik kararı niyet, özgün bilgi, ürün/sayfa amacı ve performansla uzman tarafından verilir.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-076": {
+   "pass": "Tekrar veya düşük özgünlük raporlanır; metnin AI tarafından yazıldığına dair kesin hüküm verilmez.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-077": {
+   "pass": "İddialar yetkili ürün verisi veya birincil kaynakla doğrulanmalı. Kaynak yoksa Veri eksik; bot tahmini doğruluk kanıtı değildir.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-078": {
+   "pass": "Konu için uygun doğrulanabilir uzmanlık ve hesap verebilirlik var.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-079": {
+   "pass": "İçerik rakip tekrarı değil, birincil değer sunuyor.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-080": {
+   "pass": "Görünür tarih ve schema tarihleri gerçeği yansıtıyor.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-081": {
+   "pass": "SSS tekrar değil, özgün ve gerçek bilgi sağlıyor.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-082": {
+   "pass": "Fırsatlar arama hacmi, niyet, rekabet ve ticari değerle öncelikli.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-083": {
+   "pass": "Kaldırma kararları kayıp trafik ve link değerini gözetiyor.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-084": {
+   "pass": "İçerik hedef pazarın ihtiyaç ve diline doğal uyuyor.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-085": {
+   "pass": "Her ticari keyword kümesinde doğru koleksiyon/landing URL var.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-086": {
+   "pass": "Kullanıcı ürünleri görebilir; içerik yararlı ve ürünlere özgü.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-087": {
+   "pass": "Başlık ayırt edici, anlaşılır, tekrar ve uydurma özellik içermiyor.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-088": {
+   "pass": "Şablon cümleleri ve üstteki teknik bilgilerin birebir tekrarı minimum.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-089": {
+   "pass": "Görseldeki ürünün bağlama uygun alt metni HTML'de mevcut.",
+   "method": "Tarayıcı / JS render botu",
+   "shared_test": "SEO-139"
+  },
+  "SEO-090": {
+   "pass": "Varyant yapısı kullanıcıya ve arama botuna tutarlı sunuluyor.",
+   "method": "Manuel / işletme kararı",
+   "shared_test": "SEO-050"
+  },
+  "SEO-091": {
+   "pass": "Geçici yok ürünün SEO değeri korunur; kalıcı silmede gerçek karar verilir.",
+   "method": "Manuel / işletme kararı"
+  },
+  "SEO-092": {
+   "pass": "Filtre işlevsel, boş kombinasyonlar anlamlı ele alınıyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-093": {
+   "pass": "Kritik ürünler ve kategoriler birbirinden bulunabilir.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-094": {
+   "pass": "Site, feed ve schema arasında kritik veri çelişkisi yok.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-095": {
+   "pass": "Feed ya da API işliyor; ürünler işlenmiş ve temel hatalar görülüyor.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-096": {
+   "pass": "Kritik katalog engelleri tespit edilmiş ve aksiyonlandırılmış.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-097": {
+   "pass": "Mevcut gerçek kimlikler doğru; uydurma GTIN kullanılmıyor.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-098": {
+   "pass": "Ticari şartlar açık; schema/feed ile çelişmiyor.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-099": {
+   "pass": "Değerli kategori mantıklı içerik ve ürün sunuyor.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-100": {
+   "pass": "Her sayfada yalnızca ilgili ve gerçek içerikle uyumlu türler var.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-101": {
+   "pass": "Uygun rich result için zorunlu alanlar doğru.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-102": {
+   "pass": "Kurumsal entity alanları tutarlı ve doğru.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-103": {
+   "pass": "Sıra ve hedefler gerçek hiyerarşiyle tutarlı.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-104": {
+   "pass": "İlgili sonuç türünün denetim tarihinde geçerli şartları ve görünür fiyat/stok bilgisiyle uyum aranır. Eksik işaretleme otomatik P0 değildir; kritik yanlış fiyat ayrıca önceliklendirilir.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-105": {
+   "pass": "Varyant işaretleme gerçek varyant modelini yansıtıyor.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-106": {
+   "pass": "Görünen içerik ve metadata uyuşuyor.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-107": {
+   "pass": "Schema.org geçerliliği ile Google zengin sonuç desteğini ayır; denetim tarihinde desteklenen türü resmi dokümandan doğrula.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-108": {
+   "pass": "Görünür soru-cevap ile işaretleme uyumlu olmalı; denetim tarihindeki Google destek kapsamını doğrula. Rich result görünümü garanti edilmez.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-109": {
+   "pass": "Tek veya tutarlı graph yapısı var; çelişen ürün/kurum bilgisi yok.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-110": {
+   "pass": "Saha ve laboratuvar sonuçları ayrı raporlanmalı. CrUX verisi yoksa CWV Geçti verme; Veri eksik ve lab teşhisini ayrı kaydet.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-111": {
+   "pass": "İyi hedef LCP ≤ 2,5 sn.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-112": {
+   "pass": "İyi hedef INP ≤ 200 ms.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-113": {
+   "pass": "İyi hedef CLS ≤ 0,1.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-114": {
+   "pass": "Darboğaz şablon ve cihaz bazında adreslenmiş.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-115": {
+   "pass": "Kritik hero içeriği gereksiz lazy yüklenmiyor ve doğru optimize ediliyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-116": {
+   "pass": "Gereksiz büyük görsel indirme azaltılmış.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-117": {
+   "pass": "Gereksiz blocking kaynaklar kritik çizimi geciktirmiyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-118": {
+   "pass": "Kullanılmayan üçüncü taraf script yükü minimum.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-119": {
+   "pass": "Statik assetler uygun cache ve sıkıştırma kullanıyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-120": {
+   "pass": "Yazı ve bileşenler kararlı yükleniyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-121": {
+   "pass": "Mobilde önemli içerik ve linkler kaybolmuyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-122": {
+   "pass": "Ticari ana sayfalara mobilde erişilebiliyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-123": {
+   "pass": "Kritik dönüşüm adımları çalışıyor ve izlenebiliyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-124": {
+   "pass": "Temel akışta okuma ve dokunma engeli yok.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-125": {
+   "pass": "İçeriğe erişim gereksiz kesintiye uğramıyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-126": {
+   "pass": "Etkileşimde içerik ve linkler erişilebilir.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-127": {
+   "pass": "Kritik bilgi ve dönüşüm kontrolları erişilebilir.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-128": {
+   "pass": "CTA amacı açık ve sayfa niyetiyle uyumlu.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-129": {
+   "pass": "Temel içerik render sonunda erişilebilir; mümkünse HTML'de mevcut.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-130": {
+   "pass": "Yerel headless render Google renderı kanıtı değildir. API indeks bilgisi canlı render testi yerine geçmez; canlı test kanıtı yoksa ilgili alt sonuç Veri eksik.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-131": {
+   "pass": "Geçersiz URL 200 boş içerik döndürmüyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-132": {
+   "pass": "Head değişiminde çakışma veya yanlış değer yok.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-133": {
+   "pass": "Önemli bağlantılar href ile taranabilir.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-134": {
+   "pass": "Ana içerik kullanıcı etkileşimine mecbur bırakılmadan erişilebiliyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-135": {
+   "pass": "Hata durumunda sayfa temel içerik ve anlamlı status koruyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-136": {
+   "pass": "Bir sayfa başka URL'nin SEO metadata'sını miras almıyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-137": {
+   "pass": "İndekslenmesi istenen içerik erişim politikasına uygun görünür.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-138": {
+   "pass": "Bilgi taşıyan görsellerin eksik ALT değerini otomatik tespit et. Boş ALT kullanan dekoratif görselleri ayır; anlam doğruluğu için görsel + bağlam ve uzman onayı gerekir.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-139": {
+   "pass": "Veritabanındaki ALT ön yüzde doğru render ediliyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-140": {
+   "pass": "Ana görseller botlara erişilebilir.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-141": {
+   "pass": "Görselin konusu çevre içerikle tutarlı.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-142": {
+   "pass": "Video içerik sayfada kullanıcıya ve aramaya anlaşılır.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-143": {
+   "pass": "Değerli PDF bulunabilir veya HTML eşdeğeri sunuluyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-144": {
+   "pass": "Kullanılan hreflang kümeleri geçerli ve karşılıklı.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-145": {
+   "pass": "Hreflang hedefi uygun kanonik ve indekslenebilir.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-146": {
+   "pass": "Kullanıcı ve bot farklı ülke sürümlerine erişebiliyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-147": {
+   "pass": "Dil sayfaları gerçek yerel kullanıcı niyetini karşılıyor.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-148": {
+   "pass": "Gerçek şube bilgilerinde tutarlılık var.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-149": {
+   "pass": "Temel kurumsal bilgiler tutarlı.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-150": {
+   "pass": "Toplu üretilmiş aynı metinli doorway sayfalar yok.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-151": {
+   "pass": "İşletme yanıtları güncel ve yanıltıcı değil.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-152": {
+   "pass": "Kritik şablonlar ve URL kaynakları kapsanmış; dışlanan alanlar gerekçeli.",
+   "method": "Manuel / işletme kararı"
+  },
+  "SEO-153": {
+   "pass": "Ana içerik, link ve metadata seçilen modda eksiksiz yakalanıyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-154": {
+   "pass": "429/5xx artışı yok; crawl üretimi sınırsız değil; limitler kayıtlı.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-155": {
+   "pass": "Tamamlanma ve bilinen kapsam boşlukları belgeli; eksik crawl kesin sonuç üretmiyor.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-156": {
+   "pass": "Veri kapsamı belli; tek sağlayıcının tüm webi kapsadığı varsayılmıyor.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-157": {
+   "pass": "Değerli bağlantılar ilgili ve erişilebilir nihai sayfaya ulaşıyor.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-158": {
+   "pass": "Salt sağlayıcı toxic puanı ile zarar veya disavow kararı verilmiyor; gerekçe uzman onaylı.",
+   "method": "AI destekli + uzman"
+  },
+  "SEO-159": {
+   "pass": "Aktif işlem yok veya mevcut işlem ve çözüm kapsamı açık.",
+   "method": "Manuel / işletme kararı"
+  },
+  "SEO-160": {
+   "pass": "Aktif sorun yok; tespit varsa kapsamı ve teknik sorumlusu belirli.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-161": {
+   "pass": "Test edilen akışta beklenen event doğru sayıda ve doğru parametreyle çalışıyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-162": {
+   "pass": "Mükerrer transaction ve kritik veri çelişkisi yok; consent ve kapsam farkları belgeli.",
+   "method": "Ek veri / API + analiz"
+  },
+  "SEO-163": {
+   "pass": "Akışın beklenen oturum/kaynak davranışı belgeli; ödeme dönüşü hatalı yeni kaynak üretmiyor.",
+   "method": "Tarayıcı / JS render botu"
+  },
+  "SEO-164": {
+   "pass": "Önce/sonra kanıtı var; hata giderildi ve komşu şablonlarda yeni hata oluşmadı.",
+   "method": "Crawl + kural motoru"
+  },
+  "SEO-165": {
+   "pass": "Teknik kapanış kanıtlı; trafik artışı veya indekslenme garanti edilmiyor; izleme süresi proje bazında tanımlı.",
+   "method": "Ek veri / API + analiz"
+  }
+ }
+}

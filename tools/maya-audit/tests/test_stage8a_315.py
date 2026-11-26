@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 import httpx
+import pytest
 
 from maya_audit import client_appendix, client_selection as cs
 from maya_audit.audit import run_audit
@@ -18,6 +19,14 @@ from maya_audit.report import build_report
 from maya_audit.xlsx import read as read_xlsx
 from test_deadline_hosted_hardening import QUIET
 from test_v03_client_report import finding, page, report
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _maturity_off(maturity_off):
+    """DECISIONS 378: some example rules here were later found wrong by the SEO team; the subject is
+    the issue type and merged cards."""
+    yield
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = "https://chain.test"

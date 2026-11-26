@@ -132,7 +132,8 @@ WORDS = {
            "reason": {"unverified_check": "kontrol gerçek sitelerde doğrulanmadı", "low_confidence": "düşük güven",
                       "intent": "kasıtlı olabilir", "firecrawl_only": "yalnız Firecrawl kopyasında görüldü", "rendered_html": "işlenmiş HTML (Firecrawl), ham boyutla karşılaştırılamaz",
                       "spoofed_googlebot": "Googlebot kimliğiyle yapılan isteğe 403/429",
-                      "names_in_markup": "diğer marka adları yalnız yapısal veride"},
+                      "names_in_markup": "diğer marka adları yalnız yapısal veride",
+                      "disputed_rule": "kural SEO ekibinin incelemesinde", "unreviewed_rule": "kural henüz uzman onayından geçmedi"},
            "kind": {"page_cap": "Sayfa sınırı", "below_limit": "Sınırın altında", "time_budget": "Süre sınırı", "reader": "Okuma yolu", "block_pages": "Engel sayfaları", "sampling": "Akıllı örneklem", "sources": "Kaynaklar", "edit_pages": "Düzenleme adresleri",
                     "not_assessed": "Değerlendirilmedi"},
            "page_type": {"basic_contact": "iletişim sayfası", "basic_about": "hakkımızda sayfası",
@@ -181,7 +182,8 @@ WORDS = {
            "reason": {"unverified_check": "check not yet validated on real sites", "low_confidence": "low confidence",
                       "intent": "may be intentional", "firecrawl_only": "seen only in Firecrawl's copy", "rendered_html": "rendered HTML (Firecrawl), not comparable with a raw size",
                       "spoofed_googlebot": "403/429 to a request with Googlebot's user agent",
-                      "names_in_markup": "the other brand names are only in structured data"},
+                      "names_in_markup": "the other brand names are only in structured data",
+                      "disputed_rule": "rule under the SEO team's review", "unreviewed_rule": "rule not yet approved by an expert"},
            "kind": {"page_cap": "Page cap", "below_limit": "Below the limit", "time_budget": "Time budget", "reader": "How pages were read", "block_pages": "Block pages", "sampling": "Smart sample", "sources": "Sources", "edit_pages": "Edit addresses",
                     "not_assessed": "Not assessed"},
            "page_type": {"basic_contact": "contact page", "basic_about": "about page",
@@ -945,6 +947,10 @@ def build_files(selection: dict, lang: str = "tr", lists: dict | None = None, te
     log = ek_sheet(lang, host) if lang == "tr" else None  # its texts are Turkish, as the team's notes are
     if log:
         team.append(log)
+    from .rule_sheet import sheet as rule_sheet  # DECISIONS 378: each rule of the audit, for the team to approve
+    rules = rule_sheet(selection, lang)
+    if rules:
+        team.append(rules)
     for m in framed + team:
         for k in [k for k in m if k.startswith("_")]:
             m.pop(k)

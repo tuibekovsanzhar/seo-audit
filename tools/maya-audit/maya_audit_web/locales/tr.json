@@ -1214,6 +1214,8 @@
  "result.low_coverage.unplanned": "Düşük kapsam: yalnız {read} sayfa okundu. Bulgular siteyi bütünüyle temsil etmez; bu denetimden müşteri özeti hazırlanmaz.",
  "c6.reason.spoofed_googlebot": "Doğrulama bekliyor: arama motoru kimliğiyle yapılan istek reddedildi; Search Console'da kontrol edin",
  "c6.reason.names_in_markup": "Doğrulama bekliyor: diğer adlar yalnız yapısal veride; işaretlemede kontrol edin",
+ "c6.reason.disputed_rule": "Doğrulama bekliyor: kural SEO ekibinin incelemesinde",
+ "c6.reason.unreviewed_rule": "Doğrulama bekliyor: kural henüz uzman onayından geçmedi",
  "c6.confirm_more": "Teyit edilecek {count} grup daha: ekte",
  "c6.key_pages": "Kilit sayfalar karnesi",
  "c6.key_pages_note": "Okunan en önemli sayfalar (sayfa önemi 0-100: gelen bağlantılar, tıklama derinliği, sayfa türü) ve her birini ilgilendiren kartlar.",

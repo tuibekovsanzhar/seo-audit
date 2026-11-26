@@ -22,6 +22,14 @@ from maya_audit_web.runner import REPORT_JSON
 from test_team_report import _pdf_text, built, finished, synthetic, visible_strings  # noqa: F401  (fixture)
 from test_web_app import API, web  # noqa: F401  (fixture)
 
+
+@pytest.fixture(scope="module", autouse=True)
+def _maturity_off(maturity_off):
+    """DECISIONS 378: some example rules here were later found wrong by the SEO team; the subject is
+    the team report's cards and slots."""
+    yield
+
+
 ROOT = Path(__file__).resolve().parents[1]
 PLATFORM_WORD = re.compile(r"\b(Shopify|WordPress|WooCommerce|Ticimax|Wix|Webflow|ikas|Magento|Shopware|PrestaShop)\b")
 LABELS = build_data.load(build_data.REFS / "etiketler.json")

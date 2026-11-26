@@ -13,6 +13,14 @@ from maya_audit_web.team_report import brief, render, texts
 from test_client_brief_319 import REPORT, _card, _data
 from test_team_report import SITE, built, synthetic
 
+
+@pytest.fixture(scope="module", autouse=True)
+def _maturity_off(maturity_off):
+    """DECISIONS 378: some example rules here were later found wrong by the SEO team; the subject is
+    the cards' wording."""
+    yield
+
+
 NOTE = {"en": "Checked every language version in a normal browser with a cleared cache on desktop and on mobile: the menu, the "
               "filter tabs, the size labels, the store stock labels and the homepage banner stay in Turkish on the English pages, "
               "and one category name is translated with the wrong word, so customers searching in English cannot find it",

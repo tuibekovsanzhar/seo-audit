@@ -268,6 +268,31 @@ def _how_notes() -> dict:
     return json.loads((Path(__file__).parent / "checklist_how.json").read_text(encoding="utf-8"))["items"]
 
 
+@lru_cache(maxsize=1)
+def _methods() -> dict:
+    return json.loads((Path(__file__).parent / "checklist_method.json").read_text(encoding="utf-8"))
+
+
+def method(item_id: str) -> dict | None:
+    """DECISIONS 378: the SEO team's own method for an item (their pass condition "pass", their way of checking
+    "method", and "shared_test" when another item's test covers it), from their checklist file."""
+    return (_methods().get("items") or {}).get(item_id)
+
+
+def items_for_rule(rule_id: str | None, check_id: str | None) -> list[dict]:
+    """DECISIONS 378: every checklist item a rule answers to, with the team's pass condition: an item whose rules hold a
+    prefix of the rule, or, when it names no rules, whose checks hold the check. In item order."""
+    if not rule_id and not check_id:
+        return []
+    out = []
+    for it in items():
+        hit = (any((rule_id or "").startswith(p) for p in it["rules"]) if it["rules"]
+               else bool(check_id) and check_id in (it["checks"] or []))
+        if hit:
+            out.append({"id": it["id"], "item": it["item"], "pass": (method(it["id"]) or {}).get("pass") or ""})
+    return out
+
+
 def how(item: dict) -> dict:
     """DECISIONS 365: how an item is checked. "data" when a data source it needs is outside the crawl (Search Console,
     GA4, Bing, PageSpeed, logs...), with those sources; else "expert" when its decision, or the part Maya does not

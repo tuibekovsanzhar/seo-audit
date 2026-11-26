@@ -24,6 +24,7 @@ The owner's plan for v0.3 (2026-11-03). Each stage records its status here; the 
 | 7 | Type-specific checks | Planned; the 7 checks of the team's sector method that are missing but automatable (BACKLOG, DECISIONS 324); includes switching checks on or off by business type (the "Profiles (Stage 4)" sheet of `reviews/checklist/mapping.xlsx`, moved here from Stage 4, owner 2026-11-05). Done ahead: the checklist's quick checks (DECISIONS 304; mapping 61% -> 66% done) |
 | 8 | Screaming Frog borrowings: redirect chains, image weight and size, mixed content, URL parameters, rich-result schema rules, key-pages list mode, PageSpeed key | 8a done, not pushed (DECISIONS 315): redirect hops and links to redirects, one card per redirect/canonical chain, issue type (Sorun / Kontrol edin / Fırsat), problems per template, canonical chains, hreflang target language, images over 100 KB. Left: mixed content, URL parameters, rich-result rules, list mode, PageSpeed key |
 | 9 | Benchmark and release w15; delete the deprecated `maya-audit-rapor` report (DECISIONS 302) | Planned |
+| A | Accuracy first: rule maturity from the team's reviews, disputed rules wait in "Teyit edin", the team's checklist pass conditions, "Kural onayı" in the team file and its import | Built, not pushed (DECISIONS 378, branch `accuracy-first`). Open: the expert lock's frozen set (DECISIONS 373, owner); the owner's choice of thresholds and the policy for never-reviewed rules |
 
 ## Inputs
 

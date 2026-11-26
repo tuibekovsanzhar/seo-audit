@@ -219,3 +219,15 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if item.nodeid in slow:
             item.add_marker(pytest.mark.slow)
+
+
+@pytest.fixture(scope="module")
+def maturity_off():
+    """DECISIONS 378: rule maturity left out, for older tests of a card's text or placement that use as their example a
+    rule the SEO team later found wrong (str5.names, acc9.rate_limited_429, str1.no_title...). Rule maturity and what a
+    disputed rule's finding becomes are tested in tests/test_rule_maturity.py. Module scope, so a module's own fixtures
+    (built once per module) see it too: a module opts in with an autouse fixture that requests it."""
+    from maya_audit import rule_maturity
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(rule_maturity, "level", lambda rule_id: "unreviewed")
+        yield

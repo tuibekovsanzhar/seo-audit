@@ -375,7 +375,9 @@
    "firecrawl_only": "Doğrulama bekliyor: farklı okuma yolunda görüldü",
    "rendered_html": "Doğrulama bekliyor: işlenmiş HTML, karşılaştırılamaz",
    "spoofed_googlebot": "Doğrulama bekliyor: arama motoru kimliğiyle yapılan istek reddedildi; Search Console'da kontrol edin",
-   "names_in_markup": "Doğrulama bekliyor: diğer adlar yalnız yapısal veride; işaretlemede kontrol edin"
+   "names_in_markup": "Doğrulama bekliyor: diğer adlar yalnız yapısal veride; işaretlemede kontrol edin",
+   "disputed_rule": "Doğrulama bekliyor: kural SEO ekibinin incelemesinde",
+   "unreviewed_rule": "Doğrulama bekliyor: kural henüz uzman onayından geçmedi"
   },
   "kp_title": "Kilit sayfalar karnesi",
   "kp_cols": [
@@ -884,7 +886,9 @@
    "firecrawl_only": "Awaiting confirmation: seen through a different reading path",
    "rendered_html": "Awaiting confirmation: rendered HTML, not comparable",
    "spoofed_googlebot": "Awaiting confirmation: a request with a search engine's identity was refused; check Search Console",
-   "names_in_markup": "Awaiting confirmation: the other names are only in structured data; check the markup"
+   "names_in_markup": "Awaiting confirmation: the other names are only in structured data; check the markup",
+   "disputed_rule": "Awaiting confirmation: the rule is under the SEO team's review",
+   "unreviewed_rule": "Awaiting confirmation: the rule is not yet approved by an expert"
   },
   "kp_title": "Key pages scorecard",
   "kp_cols": [

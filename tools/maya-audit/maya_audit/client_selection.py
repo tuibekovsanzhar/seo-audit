@@ -109,7 +109,7 @@ MERGE_BY_ID = {**{g["id"]: g for g in MERGE_GROUPS}, CHAIN_GROUP["id"]: CHAIN_GR
 # Kept for older callers: the empty-page rules were the first family (DECISIONS 284).
 RULE_FAMILY = {rule: "idx1.empty" for rule in MERGE_BY_RULE if MERGE_BY_RULE[rule]["id"] == "empty_pages"}
 CONFIRM_REASONS = ("unverified_check", "low_confidence", "intent", "firecrawl_only", "spoofed_googlebot", "rendered_html",
-                   "names_in_markup")
+                   "names_in_markup", "disputed_rule", "unreviewed_rule")
 # DECISIONS 339: where a brand name is only a structured-data value (no reader sees it on the page)
 MARKUP_NAME_SOURCES = frozenset({"Organization name", "WebSite name"})
 LG = re.compile(r"^LG-\d+$")
@@ -175,6 +175,15 @@ def confirm_reason(f: dict, confirmations: dict | None = None) -> str | None:
         return "intent"
     if names_in_markup(f):
         return "names_in_markup"
+    # DECISIONS 378 (accuracy first): after the reasons that say what to look at, a rule the SEO team found wrong on its
+    # latest reviewed card, or questioned, waits until the team approves it; under the strict policy so does a rule the
+    # team never approved.
+    from . import rule_maturity
+    maturity = rule_maturity.level(f.get("rule_id"))
+    if maturity == "disputed":
+        return "disputed_rule"
+    if maturity == "unreviewed" and rule_maturity.policy() == "confirm":
+        return "unreviewed_rule"
     cls = confidence_class(f, confirmations)
     if cls == "unverified":
         return "unverified_check"

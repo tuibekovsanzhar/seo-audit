@@ -7,9 +7,19 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from maya_audit import client_selection as cs, priority_levels as pl, sector_audit
 from test_sector_method_324 import CATEGORY, PAGES, _ctx, _group, _sector_report
 from test_v03_client_report import SITE, finding
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _maturity_off(maturity_off):
+    """DECISIONS 378: some example rules here were later found wrong by the SEO team; the subject is
+    the sector audit's rows."""
+    yield
+
 
 ROOT = Path(__file__).resolve().parents[1]
 

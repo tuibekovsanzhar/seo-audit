@@ -245,3 +245,19 @@ Run the provider-free CLI check from AGENTS.md preamble 8 against a `fakeserver`
 2. Automatic approval: 3 correct verdicts on 2 brands with no later "wrong" [yes, 3 and 2].
 3. Who may approve in the sheet [İlginay and Efsa; the tool records the name given with `--by`].
 4. Where the frozen expert set is stored for CI (Task 0) [owner's private storage].
+
+## Result (2026-11-26, DECISIONS 378)
+
+Tasks 1-6 built on branch `accuracy-first`; Task 0 is the owner's. Where the build differs from the plan above:
+
+- **Confirm-reason wording is client-safe.** "Teyit edin" lines reach the client report, so they do not say the team
+  found the rule wrong: "Doğrulama bekliyor: kural SEO ekibinin incelemesinde" / "… kural henüz uzman onayından
+  geçmedi". The team's detail (verdicts, latest review) is in "Kural onayı".
+- **A merge group with one disputed member:** the confirm reason is part of `group_key`, so only the disputed member
+  waits; the other member keeps its card (the plan expected the whole group to wait). This is how every other confirm
+  reason already behaves.
+- **Checklist method source:** the team's xlsx could not be downloaded in this session; the pass condition and check
+  method of all 165 items were read from the Drive file's view and written to `checklist_method.json`. The builder
+  (`scripts/checklist_method.py`) adds how/action/tool/frequency when run on the file.
+- **Levels today:** 2 approved, 19 disputed (18 last found wrong + idx5.stamped, questioned), 30 reviewed without
+  proof, 311 of 332 catalogue rules never reviewed.

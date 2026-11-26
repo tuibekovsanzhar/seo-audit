@@ -21,6 +21,13 @@ from test_review_fixes import TR
 from test_firecrawl import no_lookups  # noqa: F401  (fixture)
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _maturity_off(maturity_off):
+    """DECISIONS 378: some example rules here were later found wrong by the SEO team; the subject is
+    the head and brand-name cards' wording and DECISIONS 339's confirm reason."""
+    yield
+
+
 def head_page(path: str, after: str, links: str = "") -> Response:
     return Response(body=(f'<html lang="tr"><head><title>Sayfa {path}</title><link rel="canonical" href="{path}">'
                           f'<div id="overlay"></div>{after}</head><body><h1>Sayfa {path}</h1><p>{TR}</p>{links}'
