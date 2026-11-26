@@ -6041,4 +6041,5 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      görselleri küçültüp sıkıştırın"); one cause and one fix, so one card "Görselleri küçültüp sıkıştırın" (en "Resize
      and compress the images"), its type the more serious member's (Sorun). Videos (str7.video) stay their own card.
      Texts in `merge_group_texts.json` and the team report's and brief's group texts.
-     Tests: `tests/test_ticimax_check_379.py` (8); fix log items 128-129.
+     Tests: `tests/test_ticimax_check_379.py` (9); fix log items 128-129. The step runs in `saved_data` too: the web app
+     builds a new crawl (current schema) through it, not through the full re-evaluation.
