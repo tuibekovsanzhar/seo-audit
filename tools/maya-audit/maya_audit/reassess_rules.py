@@ -1401,6 +1401,51 @@ def _decisions_373(report: dict, affected: dict, changes: list[str]) -> None:
             check["status"] = "pass"
 
 
+def _decisions_379(report: dict, affected: dict, changes: list[str]) -> None:
+    """DECISIONS 379 (owner, the Ticimax Ek): a file whose folder name holds the space or the combining mark was written
+    «dosya adı «offer.svg» (boşluk); önerilen ad: offer.svg». Each such file of a saved tseo1.file_name_unsafe finding is
+    given its folder (from the address it keeps) and its page rows name the folder instead. A file the page wrote with
+    whitespace inside "https://" ("https: //host/offer.svg", read from the page's own file_names) is a mistyped address:
+    its rows say so with the address as meant. Applied once: a file that already says whether its folder is the problem
+    is left as it is."""
+    from .checks.quick_rules import FILE_NAME_WORDS, file_name_row
+    from .file_names import absolute, folder_problem, mistyped_scheme, plain_name
+    written: dict[str, str] = {}  # the resolved address a saved file keeps -> the mistyped address the page wrote
+    for page in (report.get("crawl") or {}).get("pages") or []:
+        for ref in ((page or {}).get("analysis") or {}).get("file_names") or []:
+            url = (ref or {}).get("url") if isinstance(ref, dict) else None
+            if url and mistyped_scheme(url) and page.get("url"):
+                written[absolute(url, page["url"])] = url.strip()
+    for check in report.get("checks") or []:
+        for f in check.get("findings") or []:
+            if f.get("rule_id") != "tseo1.file_name_unsafe":
+                continue
+            ev = f.get("evidence") or {}
+            fixed = []
+            for rec in ev.get("files") or []:
+                if not isinstance(rec, dict) or "folder" in rec or not rec.get("file"):
+                    continue
+                address = rec.get("address") or ""
+                meant = mistyped_scheme(written[address]) if address in written else None
+                found = None if meant else folder_problem(address)
+                old = {lang: W["row"].format(f=rec["file"], p=", ".join(W[k] for k in rec.get("problems") or []),
+                                             s=rec.get("plain_name") or "") for lang, W in FILE_NAME_WORDS.items()}
+                rec.update({"folder": found[0] if found else None, "folder_problems": found[1] if found else [],
+                            "folder_plain": plain_name(found[0], extension=False) if found else None,
+                            "mistyped": {"written": written[address][:200], "address": meant} if meant else None})
+                if found or meant:
+                    fixed.append((rec, old))
+            for rec, old in fixed:
+                for row in ev.get("pages") or []:
+                    text = (row or {}).get("row") or {}
+                    for lang in FILE_NAME_WORDS:
+                        if old[lang] in (text.get(lang) or ""):
+                            text[lang] = text[lang].replace(old[lang], file_name_row(rec, lang))
+            if fixed:
+                changes.append(f"{f.get('id')}: {len(fixed)} file(s) with a mistyped address or a folder name that "
+                               "holds the problem say so (DECISIONS 379)")
+
+
 def _decisions_374(report: dict, affected: dict, changes: list[str]) -> None:
     """DECISIONS 374 (the owner, MMI Ek): a slow-page finding keeps only pages over its threshold on the value it is
     judged on (the median); a robots tag outside <head> names the tag, where it sits and why, and is not reported where
@@ -1798,6 +1843,7 @@ def apply(report: dict, affected: dict | None = None, *, source_audit_id: str | 
     _decisions_371(r, aff, changes)  # DECISIONS 371: İlginay's review of the Nature's Garden Ek
     _decisions_373(r, aff, changes)  # DECISIONS 373: Efsa's review (no subheadings, unrendered collections)
     _decisions_374(r, aff, changes)  # DECISIONS 374: judged timing values, the robots tag outside <head>
+    _decisions_379(r, aff, changes)  # DECISIONS 379: a file's folder name, when the problem is there
     from .language_regions import attach as attach_regions
     for fid in attach_regions(r):
         changes.append(f"{fid}: page regions in the other language recorded (DECISIONS 301)")

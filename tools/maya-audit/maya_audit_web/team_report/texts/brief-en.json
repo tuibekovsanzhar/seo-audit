@@ -815,6 +815,11 @@
    "what": "Many pages use the same title and the same meta description (the short summary shown under the title in search results).",
    "why": "Customers cannot tell the pages apart in search results, and Google struggles to tell which page covers what."
   },
+  "image_weight": {
+   "title": "Make images lighter",
+   "what": "Some image files are much heavier than the size they are shown at.",
+   "why": "Heavy images make the page open late, on phones especially; customers may leave without waiting, and Google may rank slow pages lower."
+  },
   "redirect_chain": {
    "title": "Bring pages' main addresses and links to one address",
    "what": "Some pages show another address in the tag that tells Google their main address (the canonical address), that address sends visitors on again to other addresses (a redirect), and internal links lead into this chain too.",

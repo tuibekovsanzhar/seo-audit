@@ -2341,6 +2341,32 @@
     ],
     "test": "tests/test_enpara_ek_377.py"
    }
+  },
+  {
+   "kaynak": "Sahip — Ticimax Ek kontrolü, 26 Kasım (DECISIONS 379)",
+   "brand_key": "ticimax",
+   "decisions": [
+    379
+   ],
+   "sorun": "Dosya adı kartı «offer.svg (boşluk); önerilen ad: offer.svg» diyordu: sayfa adresi «https: //…» diye bozuk yazmıştı",
+   "genel": "Bozuk yazılmış bir adres (iki noktadan sonra boşluk) dosya adı sorunu sanılıp dosyanın kendi adı önerilirdi",
+   "nasil": "Bozuk yazılmış adres böyle söylenir ve doğru yazımı verilir; sorun gerçek bir klasör adındaysa klasör ve sade bir klasör adı önerilir.",
+   "check": {
+    "test": "tests/test_ticimax_check_379.py"
+   }
+  },
+  {
+   "kaynak": "Sahip — Ticimax Ek kontrolü, 26 Kasım (DECISIONS 379)",
+   "brand_key": "ticimax",
+   "decisions": [
+    379
+   ],
+   "sorun": "«Büyük görselleri hafifletin» ve «Ağır görselleri küçültüp sıkıştırın» aynı ana sayfa görselleri için iki ayrı karttı",
+   "genel": "100-500 KB ve 500 KB üstü görseller iki ayrı karttı",
+   "nasil": "İki kural tek kök neden grubunda birleşir: «Görselleri küçültüp sıkıştırın».",
+   "check": {
+    "test": "tests/test_ticimax_check_379.py"
+   }
   }
  ]
 }

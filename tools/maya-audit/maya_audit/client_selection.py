@@ -92,6 +92,9 @@ MERGE_GROUPS = (
      "rules": ("idx5.stamped", "idx5.identical", "idx5.future")},
     {"id": "template_meta", "cause": "a template repeats one title or description across pages",
      "rules": ("str1.shared", "str16.shared")},
+    # DECISIONS 379 (owner, the Ticimax Ek): images of 100-500 KB and over 500 KB were two cards on the same files
+    {"id": "image_weight", "cause": "image files are larger than they are shown (100-500 KB, and over 500 KB)",
+     "rules": ("str7.heavy", "str7.over_100kb")},
 )
 MERGE_BY_RULE = {rule: group for group in MERGE_GROUPS for rule in group["rules"]}
 # Stage 8a (DECISIONS 315): canonical, redirect-chain, loop and links-to-redirect findings that name the same addresses

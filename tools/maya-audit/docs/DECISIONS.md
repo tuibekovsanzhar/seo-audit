@@ -6022,3 +6022,23 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      that step: `"confirm_below_high"` sends a never-approved rule's Medium and Low findings to "Teyit edin" and
      keeps its High and Blocker findings as cards. Where the frozen expert set is kept for CI is still open.
      Tests: `tests/test_rule_maturity.py` (17 with these).
+379. **The owner's check of the Ticimax Ek (Owner, 2026-11-26, comparing the 17 Nov and 26 Nov Eks; the wording is an
+     agent default).** Global for every audit; Ticimax is only where it was seen.
+     *(1) A mistyped address or a folder name* (`file_names.mistyped_scheme`, `file_names.folder_problem`,
+     `quick_rules.file_name_row`): tseo1.file_name_unsafe tests the whole address, but its row named only the file, so
+     Ticimax's icon read «dosya adı «offer.svg» (boşluk); önerilen ad: offer.svg» (the suggestion was the name itself).
+     The page's CSS wrote «https: //www.ticimax.com/img/icons/white/duotone/offer.svg» (a space after the colon): a
+     browser reads it as a path under the page, so the icon is not loaded. Such an address is now said as what it is:
+     «offer.svg» dosyasının adresi bozuk yazılmış: «https: //…» (iki noktadan sonra boşluk; tarayıcı dosyayı
+     bulamaz); doğru yazım: https://…» (en "the address of «…» is mistyped: …; correct form: …"). When the file name is
+     clean and a real folder holds the space or the combining mark, the row names the folder and suggests a plain
+     folder name («… dosyasının klasör adı «Kampanya Gorsel» (boşluk); önerilen klasör adı: kampanya-gorsel»); a
+     folder of nothing but spaces is never one. `plain_name(…, extension=False)` for folder names. A saved report's
+     rows are rewritten once (`reassess_rules._decisions_379`; the address as written comes from the page's own
+     `analysis.file_names`).
+     *(2) Image weight* (`client_selection.MERGE_GROUPS` "image_weight"): str7.over_100kb (100-500 KB, Fırsat) and
+     str7.heavy (over 500 KB, Sorun) were two cards on the same homepage banners ("Büyük görselleri hafifletin", "Ağır
+     görselleri küçültüp sıkıştırın"); one cause and one fix, so one card "Görselleri küçültüp sıkıştırın" (en "Resize
+     and compress the images"), its type the more serious member's (Sorun). Videos (str7.video) stay their own card.
+     Texts in `merge_group_texts.json` and the team report's and brief's group texts.
+     Tests: `tests/test_ticimax_check_379.py` (8); fix log items 128-129.

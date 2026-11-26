@@ -132,6 +132,17 @@
    ],
    "verify": "Every page meant to be found has a title and description of its own.",
    "summary": "Shared titles and descriptions"
+  },
+  "image_weight": {
+   "explanation": "Resize images to the largest size they are shown at and compress them, or serve WebP/AVIF; start with the heaviest files.",
+   "why": "Heavy images slow the page down; on mobile in particular the main content appears late and Core Web Vitals suffer.",
+   "steps": [
+    "Resize each image to the largest size it is shown at",
+    "Compress it or serve WebP/AVIF",
+    "Replace the file at the same address"
+   ],
+   "verify": "The browser's network tab shows smaller image files, and PageSpeed Insights shows no suggestions about image size.",
+   "summary": "Image weight"
   }
  },
  "notes": {

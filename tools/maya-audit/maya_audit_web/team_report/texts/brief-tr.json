@@ -815,6 +815,11 @@
    "what": "Birçok sayfa arama sonuçlarında aynı başlığı ve aynı meta açıklamayı (arama sonuçlarında başlığın altında görünen kısa özet) kullanıyor.",
    "why": "Müşteri arama sonucunda sayfaların farkını göremez; Google da hangi sayfanın neyi anlattığını ayırt etmekte zorlanır."
   },
+  "image_weight": {
+   "title": "Görselleri hafifletin",
+   "what": "Bazı görsel dosyaları gösterildikleri boyuttan çok daha ağır.",
+   "why": "Ağır görseller sayfanın özellikle telefonda geç açılmasına yol açar; müşteri beklemeden çıkabilir ve Google yavaş sayfaları geriye atabilir."
+  },
   "redirect_chain": {
    "title": "Sayfaların asıl adreslerini ve bağlantılarını tek adreste toplayın",
    "what": "Bazı sayfalar Google'a asıl adresini söyleyen etikette (kanonik adres) başka bir adres gösteriyor, o adres de ziyaretçiyi yeniden başka adreslere gönderiyor (yönlendirme); site içi bağlantılar da bu zincire gidiyor.",

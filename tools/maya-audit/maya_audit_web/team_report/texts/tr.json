@@ -132,6 +132,17 @@
    ],
    "verify": "Bulunması amaçlanan her sayfanın kendine ait bir başlığı ve açıklaması vardır.",
    "summary": "Ortak başlık ve açıklamalar"
+  },
+  "image_weight": {
+   "explanation": "Görselleri gösterildikleri en büyük boyuta küçültüp sıkıştırın ya da WebP/AVIF olarak sunun; önce en ağır dosyalardan başlayın.",
+   "why": "Ağır görseller sayfanın yüklenmesini yavaşlatır; özellikle mobilde ana içerik geç görünür ve Core Web Vitals ölçümleri kötüleşir.",
+   "steps": [
+    "Görseli gösterildiği en büyük boyuta küçültün",
+    "Sıkıştırın ya da WebP/AVIF olarak sunun",
+    "Dosyayı aynı adreste değiştirin"
+   ],
+   "verify": "Tarayıcının ağ sekmesinde görsel dosyalarının boyutu küçülmeli; PageSpeed Insights'ta görsel boyutuyla ilgili öneri kalmamalı.",
+   "summary": "Görsel ağırlığı"
   }
  },
  "notes": {

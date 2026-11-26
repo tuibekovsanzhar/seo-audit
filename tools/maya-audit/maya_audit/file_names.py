@@ -72,16 +72,61 @@ def problems(ref: str) -> list[str]:
     return out
 
 
+def _segment_problems(raw: str, last: bool) -> list[str]:
+    decoded = unquote(raw)
+    out = []
+    if " " in raw:
+        out.append(SPACE)
+    if any(unicodedata.combining(c) for c in decoded):
+        out.append(COMBINING)
+    if last and BRACKETS_COMMAS & set(decoded):
+        out.append(PUNCT)
+    return out
+
+
+_MISTYPED_SCHEME = re.compile(r"^(https?):(?=[\s/]*\s)[\s/]*", re.I)
+
+
+def mistyped_scheme(ref: str) -> str | None:
+    """DECISIONS 379: the address as it was meant when the page wrote whitespace inside its "https://" ("https:
+    //host/a.svg"): a browser reads that as a relative path under the page, so the file is not loaded. None when the
+    scheme is written correctly."""
+    text = (ref or "").strip()
+    m = _MISTYPED_SCHEME.match(text)
+    if not m:
+        return None
+    rest = text[m.end():]
+    return f"{m.group(1).lower()}://{rest}" if rest and not rest[0].isspace() else None
+
+
+def folder_problem(ref: str) -> tuple[str, list[str]] | None:
+    """DECISIONS 379: (the decoded folder name, its problems) when the file name itself is clean and a folder of the
+    file's address holds the space or the combining mark (`/Kampanya Gorsel/offer.svg`); None otherwise. The row then
+    names the folder, so it never suggests the file's own name back."""
+    ref = (ref or "").strip()
+    if not ref or ref.startswith(("data:", "blob:", "#", "javascript:")):
+        return None
+    segments = [s for s in urlsplit(file_address(ref)).path.split("/") if s]
+    if not segments or _segment_problems(segments[-1], True):
+        return None
+    for raw in segments[:-1]:
+        if not unquote(raw).strip():  # a folder of nothing but spaces is a mistyped address, never a folder to rename
+            return None
+        if found := _segment_problems(raw, False):
+            return unquote(raw), found
+    return None
+
+
 def marks(ref: str) -> list[str]:
     """The combining marks in the file's address, as U+ codes."""
     return sorted({f"U+{ord(c):04X}" for c in unquote(urlsplit(file_address(ref)).path) if unicodedata.combining(c)})
 
 
-def plain_name(name: str) -> str:
+def plain_name(name: str, extension: bool = True) -> str:
     """`name` as plain lower-case letters, digits and hyphens, the extension kept: "BannerWebsite(Espolòn,Día)-01.jpg" ->
-    "banner-website-espolon-dia-01.jpg"."""
+    "banner-website-espolon-dia-01.jpg". `extension=False` for a folder name (a dot in it is no extension)."""
     stem, dot, ext = name.rpartition(".")
-    if not dot or not ext.isalnum() or len(ext) > 5:
+    if not extension or not dot or not ext.isalnum() or len(ext) > 5:
         stem, ext = name, ""
     text = unicodedata.normalize("NFKD", stem.replace("İ", "I").replace("ı", "i"))
     text = "".join(c for c in text if not unicodedata.combining(c))

@@ -113,6 +113,20 @@
     "en": "Stop the template writing one title and description on every page; give each page its own."
    }
   },
+  "image_weight": {
+   "finding": {
+    "tr": "Görsel dosyaları gösterildikleri boyuttan ağır",
+    "en": "Image files are heavier than the size they are shown at"
+   },
+   "title": {
+    "tr": "Görselleri küçültüp sıkıştırın",
+    "en": "Resize and compress the images"
+   },
+   "fix": {
+    "tr": "Her görseli gösterildiği en büyük boyuta küçültün ve sıkıştırın ya da WebP/AVIF olarak sunun; dosyayı aynı adreste değiştirin. Önce en ağır dosyalardan başlayın.",
+    "en": "Resize each image to the largest size it is shown at and compress it, or serve WebP/AVIF; replace the file at the same address. Start with the heaviest files."
+   }
+  },
   "redirect_chain": {
    "finding": {
     "tr": "Kanonik adresler ve bağlantılar bir yönlendirme zincirine gidiyor",

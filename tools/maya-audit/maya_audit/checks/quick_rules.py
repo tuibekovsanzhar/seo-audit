@@ -332,9 +332,30 @@ def decomposed_addresses(known: list[str], read_urls: set[str], sitemap: set[str
 # -- SEO-141: image and file names (DECISIONS 364) ------------------------------------------------------------------
 
 FILE_NAME_WORDS = {"tr": {"space": "boşluk", "combining": "birleşik aksan işareti", "brackets_commas": "parantez/virgül",
-                          "row": "dosya adı «{f}» ({p}); önerilen ad: {s}", "more": "ve {n} dosya daha"},
+                          "row": "dosya adı «{f}» ({p}); önerilen ad: {s}", "more": "ve {n} dosya daha",
+                          "folder_row": "«{f}» dosyasının klasör adı «{d}» ({p}); önerilen klasör adı: {s}",
+                          "mistyped_row": "«{f}» dosyasının adresi bozuk yazılmış: «{w}» (iki noktadan sonra boşluk; "
+                                          "tarayıcı dosyayı bulamaz); doğru yazım: {a}"},
                    "en": {"space": "space", "combining": "combining accent mark", "brackets_commas": "brackets/commas",
-                          "row": "file name «{f}» ({p}); suggested name: {s}", "more": "and {n} more file(s)"}}
+                          "row": "file name «{f}» ({p}); suggested name: {s}", "more": "and {n} more file(s)",
+                          "folder_row": "folder name «{d}» of «{f}» ({p}); suggested folder name: {s}",
+                          "mistyped_row": "the address of «{f}» is mistyped: «{w}» (a space after the colon; browsers "
+                                          "cannot find the file); correct form: {a}"}}
+
+
+def file_name_row(rec: dict, lang: str) -> str:
+    """One file's text in a page row: its name, what is wrong and a plain name; or, when the problem is in a folder of
+    its address (DECISIONS 379), that folder and a plain folder name."""
+    W = FILE_NAME_WORDS[lang]
+    mistyped = rec.get("mistyped")
+    if mistyped:
+        return W["mistyped_row"].format(f=rec["file"], w=mistyped["written"], a=mistyped["address"])
+    folder = rec.get("folder")
+    if folder:
+        problems = rec.get("folder_problems") or rec.get("problems") or []
+        return W["folder_row"].format(f=rec["file"], d=folder, p=", ".join(W[k] for k in problems),
+                                      s=rec.get("folder_plain") or "")
+    return W["row"].format(f=rec["file"], p=", ".join(W[k] for k in rec["problems"]), s=rec["plain_name"])
 
 
 def unsafe_file_names(pages, sample=(), product_refs: dict | None = None, key_urls=frozenset()) -> list[Finding]:
@@ -360,11 +381,17 @@ def unsafe_file_names(pages, sample=(), product_refs: dict | None = None, key_ur
         bad = fn.problems(ref)
         if not bad:
             continue
-        outer = fn.absolute(ref, page) if page else ref.strip()
+        meant = fn.mistyped_scheme(ref)  # DECISIONS 379: "https: //host/a.svg" is a broken address, not a file name
+        outer = meant or (fn.absolute(ref, page) if page else ref.strip())
         key = fn.absolute(fn.file_address(outer), outer)
         name = fn.file_name(outer)
+        folder = None if meant else fn.folder_problem(outer)
         rec = files.setdefault(key, {"file": name, "address": outer[:400], "problems": bad, "characters": fn.marks(outer),
-                                     "plain_name": fn.plain_name(name), "where": [], "pages": []})
+                                     "plain_name": fn.plain_name(name), "where": [], "pages": [],
+                                     "folder": folder[0] if folder else None,
+                                     "folder_problems": folder[1] if folder else [],
+                                     "folder_plain": fn.plain_name(folder[0], extension=False) if folder else None,
+                                     "mistyped": {"written": ref.strip()[:200], "address": meant[:400]} if meant else None})
         if where not in rec["where"]:
             rec["where"].append(where)
         if page and page not in rec["pages"]:
@@ -378,7 +405,7 @@ def unsafe_file_names(pages, sample=(), product_refs: dict | None = None, key_ur
         mine = list({r["file"]: r for r in reversed(rows) if page in r["pages"]}.values())[::-1]  # a name once
         line = {}
         for lang, W in FILE_NAME_WORDS.items():
-            parts = [W["row"].format(f=r["file"], p=", ".join(W[k] for k in r["problems"]), s=r["plain_name"]) for r in mine[:2]]
+            parts = [file_name_row(r, lang) for r in mine[:2]]
             line[lang] = "; ".join(parts + ([W["more"].format(n=len(mine) - 2)] if len(mine) > 2 else []))
         page_rows.append({"url": page, "files": len(mine), "row": line})
     for r in rows:
