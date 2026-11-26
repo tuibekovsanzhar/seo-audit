@@ -1907,6 +1907,9 @@ def saved_data(report: dict, affected: dict | None = None, saved_texts: list[str
         _decisions_371(r, affected, cert)  # DECISIONS 371: İlginay's review of the Nature's Garden Ek
         _decisions_373(r, affected, cert)  # DECISIONS 373: Efsa's review (no subheadings, unrendered collections)
         _decisions_374(r, affected, cert)  # DECISIONS 374: judged timing values, the robots tag outside <head>
+        # DECISIONS 379: a mistyped address or a folder name, also for a report of the current schema (a new crawl made
+        # before the rule, which the web app does not re-evaluate in full)
+        _decisions_379(r, affected, cert)
     if cert:
         from .report import problem_summary
         from .severity import apply as apply_severity

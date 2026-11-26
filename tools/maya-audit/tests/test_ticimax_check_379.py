@@ -129,3 +129,24 @@ def test_a_saved_reports_mistyped_address_is_read_from_the_pages_own_file_names(
     row = r["checks"][0]["findings"][0]["evidence"]["pages"][0]["row"]
     assert row["tr"].startswith("«offer.svg» dosyasının adresi bozuk yazılmış: «https: //s.test/img/icons/offer.svg»")
     assert row["en"].endswith("correct form: https://s.test/img/icons/offer.svg") and changes
+
+
+def test_a_current_schema_reports_rows_are_rewritten_too(monkeypatch):
+    """The web app builds a new crawl's reports through `saved_data` (not the full re-evaluation): the Ticimax Ek made
+    after the fix still read «önerilen ad: offer.svg» until this step ran there too. The other saved-data steps are
+    left out here (they need full page records); this step and the order that follows are what is tested."""
+    for name in dir(reassess_rules):
+        if name.startswith("_decisions_") and name != "_decisions_379":
+            monkeypatch.setattr(reassess_rules, name, lambda *a, **k: None)
+    monkeypatch.setattr(reassess_rules, "_order", lambda r: [])
+    monkeypatch.setattr("maya_audit.report.problem_summary", lambda *a, **k: {})
+    page = "https://s.test/e-ticaret-paketleri/"
+    r = _saved("dosya adı «offer.svg» (boşluk); önerilen ad: offer.svg",
+               "file name «offer.svg» (space); suggested name: offer.svg", page + " /s.test/img/icons/offer.svg")
+    r["checks"][0]["findings"][0]["evidence"]["pages"][0]["url"] = page
+    r["crawl"] = {"pages": [{"url": page, "analysis": {"file_names": [
+        {"url": "https: //s.test/img/icons/offer.svg", "where": ["css background"], "problems": ["space"]}]}}]}
+    new, changes = reassess_rules.saved_data(r, {})
+    row = new["checks"][0]["findings"][0]["evidence"]["pages"][0]["row"]["tr"]
+    assert row.startswith("«offer.svg» dosyasının adresi bozuk yazılmış") and any("379" in c for c in changes)
+    assert r["checks"][0]["findings"][0]["evidence"]["pages"][0]["row"]["tr"].startswith("dosya adı")  # source untouched
