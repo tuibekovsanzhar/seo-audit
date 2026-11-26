@@ -10,6 +10,6 @@
  "approved": {},
  "policy": {
   "unreviewed": "card",
-  "_about": "DECISIONS 378: what a finding of a rule the team has not approved becomes: \"card\" (shown as today) or \"confirm\" (waits in \"Teyit edin\" until approved). A rule whose latest reviewed card was wrong, or that is under \"questioned\", always waits."
+  "_about": "DECISIONS 378: what a finding of a rule the team has not approved becomes: \"card\" (shown as today; the owner's choice on 2026-11-26 until the team has approved the rules most audits show), \"confirm\" (every such finding waits in \"Teyit edin\" until approved) or \"confirm_below_high\" (only its Medium and Low findings wait). A rule whose latest reviewed card was wrong, or that is under \"questioned\", always waits."
  }
 }

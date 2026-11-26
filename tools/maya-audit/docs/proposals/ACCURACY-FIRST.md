@@ -261,3 +261,10 @@ Tasks 1-6 built on branch `accuracy-first`; Task 0 is the owner's. Where the bui
   (`scripts/checklist_method.py`) adds how/action/tool/frequency when run on the file.
 - **Levels today:** 2 approved, 19 disputed (18 last found wrong + idx5.stamped, questioned), 30 reviewed without
   proof, 311 of 332 catalogue rules never reviewed.
+
+### Owner decisions (2026-11-26)
+
+1. Never-reviewed rules: stay cards for now (`"card"`); tighten once the team has approved the rules most audits show. The middle policy `"confirm_below_high"` (Medium and Low wait, High and Blocker stay cards) is built for that step.
+2. Automatic approval: 3 correct on 2 brands, as planned.
+3. Who approves: the name given with `--by` is recorded (unchanged).
+4. Where the frozen expert set is stored for CI: open.

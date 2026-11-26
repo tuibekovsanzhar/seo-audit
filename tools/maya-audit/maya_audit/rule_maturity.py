@@ -21,8 +21,10 @@ from . import rule_approval
 
 FILE = Path(__file__).with_name("rule_maturity.json")
 LEVELS = ("approved", "disputed", "unreviewed")
-POLICIES = ("card", "confirm")
-# Agent defaults until the owner confirms them (DECISIONS 378)
+# "card": shown as today; "confirm": every finding of a never-approved rule waits in "Teyit edin"; "confirm_below_high":
+# only its Medium and Low findings wait, its High and Blocker ones stay cards (owner, 2026-11-26)
+POLICIES = ("card", "confirm", "confirm_below_high")
+# Confirmed by the owner on 2026-11-26 (DECISIONS 378)
 APPROVE_MIN_CORRECT = 3
 APPROVE_MIN_BRANDS = 2
 
@@ -57,7 +59,7 @@ def level(rule_id: str | None) -> str:
 
 
 def policy() -> str:
-    """What a finding of a never-approved rule becomes: "card" (today's behaviour) or "confirm" ("Teyit edin")."""
+    """What a finding of a never-approved rule becomes (POLICIES); "card", today's behaviour, when not set."""
     value = (rule_approval._data().get("policy") or {}).get("unreviewed", "card")
     if value not in POLICIES:
         raise ValueError(f"{rule_approval.FILE.name}: policy.unreviewed must be one of {POLICIES}, not {value!r}")

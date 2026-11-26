@@ -182,7 +182,8 @@ def confirm_reason(f: dict, confirmations: dict | None = None) -> str | None:
     maturity = rule_maturity.level(f.get("rule_id"))
     if maturity == "disputed":
         return "disputed_rule"
-    if maturity == "unreviewed" and rule_maturity.policy() == "confirm":
+    if maturity == "unreviewed" and (rule_maturity.policy() == "confirm" or
+                                     (rule_maturity.policy() == "confirm_below_high" and severity(f) not in HIGH)):
         return "unreviewed_rule"
     cls = confidence_class(f, confirmations)
     if cls == "unverified":

@@ -5980,8 +5980,8 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      frozen audit, and MMI's for the competitor data).
 378. **Accuracy first: rule maturity, the team's pass conditions and a rule-approval loop (Owner, 2026-11-26, from the
      SEO team's feedback in the SEO_AUDIT Drive folder: İlginay's reviewed Eks, Efsa's revision-compliance review
-     (A1, A8) and the team checklist; plan `docs/proposals/ACCURACY-FIRST.md`; the thresholds, the policy default and
-     all wording are agent defaults until the owner confirms them).** Global for every audit. Why: of the 94 cards the
+     (A1, A8) and the team checklist; plan `docs/proposals/ACCURACY-FIRST.md`; the thresholds and the policy confirmed
+     by the owner on 2026-11-26, see (6); the wording is an agent default).** Global for every audit. Why: of the 94 cards the
      team reviewed, 31% were correct (`docs/expert-reviews/ACCURACY.md`); every client report is checked and corrected
      by hand, and the same rule families came back on new brands (Efsa A2). A finding of a rule the team has found
      wrong should not reach a client as a definite problem until the team approves the rule again.
@@ -6016,3 +6016,9 @@ URL association and qualification. No paid acquisition, historical rewrite, coun
      Not done here: the expert lock still has no frozen set on this computer or in CI (DECISIONS 373, plan Task 0,
      the owner's step). Tests: `tests/test_rule_maturity.py` (14), `tests/test_checklist_method.py` (3),
      `tests/test_rule_sheet.py` (9).
+     *(6) The owner's choices (2026-11-26)*: the automatic approval stays at 3 correct on 2 brands; never-reviewed
+     rules stay cards (`policy.unreviewed = "card"`) until the team has approved, through "Kural onayı", the rules
+     most audits show (about the 40-50 most frequent), then the policy is tightened. A middle policy is ready for
+     that step: `"confirm_below_high"` sends a never-approved rule's Medium and Low findings to "Teyit edin" and
+     keeps its High and Blocker findings as cards. Where the frozen expert set is kept for CI is still open.
+     Tests: `tests/test_rule_maturity.py` (17 with these).

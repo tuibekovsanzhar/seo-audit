@@ -139,3 +139,24 @@ def test_a_reason_that_says_what_to_look_at_comes_before_the_rules_maturity():
                                        {"name": "Homepage", "by_source": {"Organization name": 1}}]})
     assert cs.names_in_markup(f) and cs.confirm_reason(f) == "names_in_markup"
     assert cs.confirm_reason({**f, "intent": {"kind": "intent_marking"}}) == "intent"
+
+
+def test_the_middle_policy_holds_only_medium_and_low_findings_of_unreviewed_rules(monkeypatch):
+    """Owner, 2026-11-26: "confirm_below_high" sends a never-approved rule's Medium and Low findings to "Teyit edin";
+    its High and Blocker findings stay cards, and approved rules are never held."""
+    r = report([finding("L", "str14.no_text", "S4", urls=[SITE + "/a"], check="STR-14"),
+                finding("M", "str19.no_target", "S3", urls=[SITE + "/a"], check="STR-19"),
+                finding("H", "str2.no_h1", "S2", urls=[SITE + "/a"], check="STR-2"),
+                finding("B", "str16.shared", "S4", urls=[SITE + "/a"], check="STR-16")])
+    assert rule_maturity.level("str2.no_h1") == "unreviewed"
+    monkeypatch.setattr(rule_maturity, "policy", lambda: "confirm_below_high")
+    by = _by_id(cs.select(r))
+    assert by["L"]["confirm_reason"] == by["M"]["confirm_reason"] == "unreviewed_rule"
+    assert by["L"]["placement"] == by["M"]["placement"] == "confirm"
+    assert by["H"]["confirm_reason"] is None and by["H"]["placement"] == "card"
+    assert by["B"]["placement"] == "card"
+
+
+def test_the_owners_choice_is_today_s_behaviour():
+    assert rule_maturity.policy() == "card"                      # owner, 2026-11-26: until the team approves more rules
+    assert (rule_maturity.APPROVE_MIN_CORRECT, rule_maturity.APPROVE_MIN_BRANDS) == (3, 2)
